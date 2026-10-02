@@ -33,6 +33,9 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [25](#adr-25) | 01/10/2026 | OpenBao lưu bền, AppRole đặc quyền tối thiểu |
 | [26](#adr-26) | 01/10/2026 | Tệp đính kèm qua bucket cách ly và link có chữ ký |
 | [27](#adr-27) | 01/10/2026 | BPMN duyệt tuần tự theo danh sách người duyệt |
+| [28](#adr-28) | 02/10/2026 | Chuỗi duyệt chốt theo vị trí, tìm người khi đến bước |
+| [29](#adr-29) | 02/10/2026 | Bổ nhiệm hợp đồng; quyền theo ngày, không theo khung giờ |
+| [30](#adr-30) | 02/10/2026 | Một tài khoản cho nhiều tenant cùng công ty mẹ |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -73,6 +76,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Cơ cấu tổ chức, vai trò, người duyệt là dữ liệu; quyền gắn với vị trí + phạm vi cây tổ chức
 - **Lý do:** Nền tảng trung lập ngành, doanh nghiệp toàn quyền cấu hình
 - **Đã loại:** Viết cứng phòng ban / role trong Keycloak
+- **Ghi chú (02/10/2026):** Gán vai trò thẳng cho người vẫn được phép, nhưng là ngoại lệ bắt buộc có thời hạn, chỉ dành cho người không nằm trong cây tổ chức (kiểm toán viên bên ngoài, quản trị nền tảng, người vận hành tác tử AI).
 
 (adr-6)=
 ## ADR #6: Keycloak chỉ xác thực, quyền chi tiết ở PostgreSQL
@@ -218,6 +222,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Id tài khoản demo và tenant cố định bằng `uuid5`; Keycloak user id = token `sub` = `core.person.id`; realm sinh bằng script từ danh sách dùng chung, mật khẩu lấy từ biến môi trường lúc import
 - **Lý do:** CSDL và Keycloak khớp nhau mà không cần gọi API lẫn nhau; Hasura so `x-hasura-user-id` trực tiếp với các cột person; không commit mật khẩu
 - **Đã loại:** Seed gọi Admin API Keycloak tạo user; ánh xạ qua `idp_subject` ở mọi permission
+- **Ghi chú:** "`sub` = `core.person.id`" đã được thay ở [ADR #30](#adr-30) cho người làm ở nhiều tenant; phần còn lại vẫn hiệu lực.
 
 (adr-24)=
 ## ADR #24: Sinh metadata Hasura bằng script
@@ -250,6 +255,31 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** BPMN duyệt tuần tự theo danh sách người duyệt truyền vào khi gửi (tính từ `wf.resolve_pr_approvers`); dịch vụ `actions` điều phối Flowable và phản chiếu trạng thái vào CSDL (`wf.task`, lịch sử, trạng thái đề nghị) trong cùng giao dịch; dữ liệu mẫu đang chờ được gắn quy trình thật
 - **Lý do:** BPMN không phụ thuộc cây tổ chức của doanh nghiệp nào; một nơi duy nhất cập nhật trạng thái nên hộp việc không lệch (rủi ro "đồng bộ task Flowable phức tạp" trong timeline); demo duyệt tiếp được ngay
 - **Đã loại:** Hạn mức trong bảng DMN của Flowable (trùng nguồn với `wf.approval_rule`); BPMN gọi HTTP lấy người duyệt; đồng bộ task bằng job định kỳ
+- **Ghi chú:** "Danh sách người duyệt" đã được thay bằng danh sách vị trí ở [ADR #28](#adr-28); phần còn lại vẫn hiệu lực.
+
+(adr-28)=
+## ADR #28: Chuỗi duyệt chốt theo vị trí, tìm người khi đến bước
+
+- **Ngày:** 02/10/2026
+- **Quyết định:** Khi gửi duyệt, chốt chuỗi duyệt là danh sách **vị trí** theo `wf.approval_rule` hiệu lực lúc đó và truyền vào BPMN; khi đến lượt mỗi bước, dịch vụ `actions` mới tìm người đang giữ vị trí (người giữ chính, rồi quyền trưởng; không có ai hoặc trùng người lập thì đẩy lên trưởng đơn vị cấp trên gần nhất). Các bước liền nhau rơi vào cùng một người thì gộp thành một lần duyệt; khi bổ nhiệm vào vị trí thay đổi, việc đang chờ của vị trí tự chuyển sang người giữ mới (việc đã đẩy lên cấp trên thì giữ nguyên, không kéo về); người giữ chính hoặc quyền trưởng nhận việc, người được ủy quyền thấy cùng việc trong hộp việc của mình, ai duyệt trước thì việc đóng và lịch sử ghi "duyệt thay"; lịch sử duyệt ghi rõ việc đẩy lên, gộp và chuyển
+- **Lý do:** Quyền gắn với vị trí ([ADR #5](#adr-5)): bổ nhiệm mới giữa chừng thì người mới nhận việc; quy tắc hạn mức chốt lúc gửi nên kết quả không đổi khi cấu hình bị sửa giữa chừng
+- **Đã loại:** Chốt danh sách người lúc gửi ([ADR #27](#adr-27) bản đầu: người cũ vẫn nhận việc sau khi bàn giao); tính lại toàn bộ chuỗi ở mỗi bước (đổi quy tắc hạn mức làm đổi số bước của đề nghị đang chạy); chặn hoặc treo việc khi vị trí trống; bắt cùng một người duyệt hai lần; giữ việc ở người cũ chờ chuyển tay; kéo việc đã đẩy lên về vị trí vừa có người (phải tách bước đã gộp); gắn việc vào vị trí không lưu người nhận
+
+(adr-29)=
+## ADR #29: Bổ nhiệm hợp đồng; quyền theo ngày, không theo khung giờ
+
+- **Ngày:** 02/10/2026
+- **Quyết định:** Thêm loại bổ nhiệm thứ tư **hợp đồng** cho người được công ty khác thuê ngoài giờ: bắt buộc có ngày kết thúc, gắn số hợp đồng/đối tác, không tính định biên, không được giữ vị trí trưởng nên không bao giờ vào chuỗi duyệt. Quyền hiệu lực theo ngày; khung giờ làm việc là dữ liệu chấm công, không phải điều kiện phân quyền. Vị trí theo hợp đồng báo cáo cho người quản lý hợp đồng bên thuê. Hợp đồng kết thúc thì chứng từ người đó lập chưa duyệt xong (nháp, chờ duyệt, bị trả về) tự hủy, ghi lý do; chứng từ đã duyệt là cam kết của công ty nên chạy tiếp. Đây là ngoại lệ: các bổ nhiệm khác kết thúc (luân chuyển, nghỉ việc) thì chứng từ chưa duyệt xong chuyển cho người giữ vị trí kế tiếp, vì đó là nhu cầu của đơn vị
+- **Lý do:** Phân biệt quan hệ thuê với kiêm nhiệm; người thuê ngoài không tự quyết chi tiền cho bên thuê; quyền theo khung giờ phải làm mới bảng quyền tính sẵn theo lịch ([ADR #21](#adr-21) đã loại) và khóa người dùng giữa chừng
+- **Đã loại:** Dùng kiêm nhiệm kèm ghi chú; gán vai trò thẳng cho người (chỉ cho người không có ghế, [ADR #5](#adr-5)); quyền chỉ hiệu lực trong khung giờ hợp đồng; chuyển chứng từ dang dở cho vị trí người đó từng giữ; giữ quyền cho người lập sau khi hết hạn
+
+(adr-30)=
+## ADR #30: Một tài khoản cho nhiều tenant cùng công ty mẹ
+
+- **Ngày:** 02/10/2026
+- **Quyết định:** Một cá nhân làm ở nhiều tenant có quan hệ qua `core.tenant_relation` (cùng công ty mẹ) dùng **một tài khoản Keycloak**, mỗi tenant một bản ghi `core.person` riêng ánh xạ qua `idp_subject`; khi đăng nhập chọn tenant, token mang đúng một `x-hasura-tenant-id` và `x-hasura-user-id` là `person.id` trong tenant đó. Tenant không liên quan thì tài khoản riêng
+- **Lý do:** Người dùng trong tập đoàn không phải giữ nhiều tài khoản; dữ liệu vẫn cách ly theo tenant vì mỗi phiên chỉ một tenant và `person` vẫn có `tenant_id` (giữ khóa kép [ADR #14](#adr-14))
+- **Đã loại:** Hai tài khoản riêng kể cả trong cùng tập đoàn; `person` toàn nền tảng không có `tenant_id` (phá khóa kép ADR #14); token mang nhiều tenant cùng lúc
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
