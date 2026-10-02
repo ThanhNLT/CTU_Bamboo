@@ -16,6 +16,7 @@ exclude_patterns = [
     ".venv",
     "**/node_modules",
     "README.md",
+    "agents",
     "Thumbs.db",
     ".DS_Store",
 ]
