@@ -1,0 +1,442 @@
+{
+  "realm": "bms",
+  "enabled": true,
+  "displayName": "Bamboo DX-OS",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "vi",
+    "en"
+  ],
+  "defaultLocale": "vi",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "roles": {
+    "realm": [
+      {
+        "name": "platform_admin",
+        "description": "Quản trị kỹ thuật nền tảng (bắt buộc OTP)"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "bms-web",
+      "name": "Ứng dụng Refine",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      }
+    },
+    {
+      "clientId": "bms-e2e",
+      "name": "Kiểm thử tự động (chỉ dev)",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "id": "d8bf03fc-72a6-5e3c-b727-9a9c9b0171b2",
+      "username": "tgd",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Thành",
+      "lastName": "Nguyễn Văn",
+      "email": "tgd@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "5b31a999-8cee-513f-9fd5-dd77644ee448",
+      "username": "pho.tgd",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Mai",
+      "lastName": "Trần Thị",
+      "email": "pho.tgd@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "a04a2fe6-dd28-528a-abb4-18ce063b16a3",
+      "username": "cdo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Huy",
+      "lastName": "Lê Quang",
+      "email": "cdo@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "cdbfba20-785a-5bad-970e-990ca7223f26",
+      "username": "gd.taichinh",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Hà",
+      "lastName": "Phạm Thu",
+      "email": "gd.taichinh@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "689e92a0-9fbc-5a9d-9df3-ee8965805d60",
+      "username": "gd.chip",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Đức",
+      "lastName": "Hoàng Minh",
+      "email": "gd.chip@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "51147931-a84e-5ed4-ad51-f39d70ee882e",
+      "username": "pgd.chip",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Lan",
+      "lastName": "Vũ Thị",
+      "email": "pgd.chip@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "c884e974-d164-5c46-85af-3bc12dfe287e",
+      "username": "qd.phongsach.chip",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Long",
+      "lastName": "Đặng Văn",
+      "email": "qd.phongsach.chip@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "ec2e5b21-721b-5d5c-b2d3-ad9f6bda025e",
+      "username": "kd.chip",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ngọc",
+      "lastName": "Bùi Thị",
+      "email": "kd.chip@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "a191c9c4-7e41-5009-88f9-09f5e9d24cda",
+      "username": "gd.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Sơn",
+      "lastName": "Ngô Thanh",
+      "email": "gd.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "2e77717b-4f85-55da-876b-7021db1118b5",
+      "username": "tp.muahang.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Hương",
+      "lastName": "Đỗ Thị",
+      "email": "tp.muahang.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "199d168a-0c07-5a4c-b0d3-8a9a7b24d68e",
+      "username": "nv.muahang.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Nam",
+      "lastName": "Phan Văn",
+      "email": "nv.muahang.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "a71ee224-de0b-56a0-a091-3689273b2b66",
+      "username": "gd.giadung",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Thảo",
+      "lastName": "Lý Thị",
+      "email": "gd.giadung@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "8958eb4d-5a84-54bf-9c37-051e44eb2b5b",
+      "username": "gd.baohanh.giadung",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Hải",
+      "lastName": "Trịnh Văn",
+      "email": "gd.baohanh.giadung@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "906703cd-9c6c-5ba7-9b8b-c24210b25365",
+      "username": "gd.benhvien",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Bích",
+      "lastName": "Võ Thị",
+      "email": "gd.benhvien@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "bcf0142c-9e3a-59d1-ba8d-e2f4a4d75828",
+      "username": "tk.duoc.benhvien",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Khoa",
+      "lastName": "Dương Văn",
+      "email": "tk.duoc.benhvien@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "8baf7af1-5fce-586a-a764-12b0cb070dd5",
+      "username": "bs.cdha.benhvien",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Yến",
+      "lastName": "Lưu Thị",
+      "email": "bs.cdha.benhvien@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "5d94db89-626c-557e-acd3-f9e4e1ea8fc5",
+      "username": "kiemnhiem",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Phúc",
+      "lastName": "Mai Xuân",
+      "email": "kiemnhiem@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "b703f6b4-ff2d-55cd-89f9-f97cb256ccf0",
+      "username": "hopdong",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Tuấn",
+      "lastName": "Tạ Minh",
+      "email": "hopdong@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "4ae36d76-2519-5828-b78d-ac4928d71835",
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Quân",
+      "lastName": "Kiều Anh",
+      "email": "admin@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms",
+        "platform_admin"
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ]
+    }
+  ]
+}
