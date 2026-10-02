@@ -36,6 +36,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [28](#adr-28) | 02/10/2026 | Chuỗi duyệt chốt theo vị trí, tìm người khi đến bước |
 | [29](#adr-29) | 02/10/2026 | Bổ nhiệm hợp đồng; quyền theo ngày, không theo khung giờ |
 | [30](#adr-30) | 02/10/2026 | Một tài khoản cho nhiều tenant cùng công ty mẹ |
+| [31](#adr-31) | 02/10/2026 | CSDL là nguồn sự thật của luồng duyệt; Flowable phản chiếu |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -231,6 +232,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Metadata Hasura sinh bằng script: quan hệ suy ra từ khóa ngoại, phân quyền khai báo trong script; quyền chi tiết là hàm SQL dùng làm computed field `can_read`; tự nạp bằng image `cli-migrations-v3`
 - **Lý do:** Logic quyền nằm ở CSDL nên kiểm thử được bằng SQL và không lệch với Flowable/dịch vụ khác; 238 quan hệ không phải viết tay; một lệnh `docker compose up` là có API
 - **Đã loại:** Viết tay metadata qua Console; lặp lại logic quyền bằng điều kiện JSON trong Hasura
+- **Ghi chú (02/10/2026):** Script sinh metadata là `services/actions/app/hasura_metadata.py`, ghi `platform/hasura/metadata.json`; job `bootstrap` nạp bằng API `replace_metadata` thay cho image `cli-migrations-v3` (cùng một đường nạp cho chạy thật và kiểm thử, không cần CLI Hasura).
 
 (adr-25)=
 ## ADR #25: OpenBao lưu bền, AppRole đặc quyền tối thiểu
@@ -255,7 +257,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** BPMN duyệt tuần tự theo danh sách người duyệt truyền vào khi gửi (tính từ `wf.resolve_pr_approvers`); dịch vụ `actions` điều phối Flowable và phản chiếu trạng thái vào CSDL (`wf.task`, lịch sử, trạng thái đề nghị) trong cùng giao dịch; dữ liệu mẫu đang chờ được gắn quy trình thật
 - **Lý do:** BPMN không phụ thuộc cây tổ chức của doanh nghiệp nào; một nơi duy nhất cập nhật trạng thái nên hộp việc không lệch (rủi ro "đồng bộ task Flowable phức tạp" trong timeline); demo duyệt tiếp được ngay
 - **Đã loại:** Hạn mức trong bảng DMN của Flowable (trùng nguồn với `wf.approval_rule`); BPMN gọi HTTP lấy người duyệt; đồng bộ task bằng job định kỳ
-- **Ghi chú:** "Danh sách người duyệt" đã được thay bằng danh sách vị trí ở [ADR #28](#adr-28); phần còn lại vẫn hiệu lực.
+- **Ghi chú:** "Danh sách người duyệt" đã được thay bằng danh sách vị trí ở [ADR #28](#adr-28); "phản chiếu trạng thái vào CSDL" đổi chiều ở [ADR #31](#adr-31): CSDL là nguồn sự thật, Flowable phản chiếu.
 
 (adr-28)=
 ## ADR #28: Chuỗi duyệt chốt theo vị trí, tìm người khi đến bước
@@ -280,6 +282,14 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Một cá nhân làm ở nhiều tenant có quan hệ qua `core.tenant_relation` (cùng công ty mẹ) dùng **một tài khoản Keycloak**, mỗi tenant một bản ghi `core.person` riêng ánh xạ qua `idp_subject`; khi đăng nhập chọn tenant, token mang đúng một `x-hasura-tenant-id` và `x-hasura-user-id` là `person.id` trong tenant đó. Tenant không liên quan thì tài khoản riêng
 - **Lý do:** Người dùng trong tập đoàn không phải giữ nhiều tài khoản; dữ liệu vẫn cách ly theo tenant vì mỗi phiên chỉ một tenant và `person` vẫn có `tenant_id` (giữ khóa kép [ADR #14](#adr-14))
 - **Đã loại:** Hai tài khoản riêng kể cả trong cùng tập đoàn; `person` toàn nền tảng không có `tenant_id` (phá khóa kép ADR #14); token mang nhiều tenant cùng lúc
+
+(adr-31)=
+## ADR #31: CSDL là nguồn sự thật của luồng duyệt; Flowable phản chiếu
+
+- **Ngày:** 02/10/2026
+- **Quyết định:** Trạng thái luồng duyệt (chuỗi duyệt, việc duyệt, người nhận, kết quả) chỉ được quyết định trong CSDL (`wf.approval_step`, `wf.task`, ADR #28). Mỗi lần gửi duyệt có một tiến trình Flowable lặp theo danh sách vị trí, mỗi bước một user task; dịch vụ `flow-sync` đối chiếu CSDL → Flowable (khởi tạo, đổi người nhận, hoàn thành, hủy) theo bảng `wf.flow_sync` đánh dấu bằng trigger và `pg_notify`. Mọi thao tác chuyển trạng thái đi qua Hasura Action gọi hàm CSDL; nháp ghi thẳng qua Hasura
+- **Lý do:** Logic đẩy lên, gộp bước, chuyển việc lúc commit, hủy khi hết hợp đồng đã nằm và được kiểm thử trong CSDL; hai bộ máy trạng thái dễ lệch nhau. Đối chiếu theo trạng thái (không theo sự kiện) nên mất tín hiệu hay Flowable tạm ngừng cũng tự khớp lại
+- **Đã loại:** Flowable là nguồn sự thật, BPMN gọi `actions` lấy người duyệt từng bước (hai bộ máy trạng thái); bỏ Flowable khỏi luồng duyệt; gọi Flowable đồng bộ trong Action (không áp dụng được cho chuyển việc do trigger lúc commit)
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
