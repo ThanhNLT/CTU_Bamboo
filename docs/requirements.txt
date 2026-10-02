@@ -1,0 +1,7 @@
+# Công cụ build tài liệu (chỉ dùng trong docs/, tách khỏi constraints.txt của dịch vụ)
+sphinx>=8.1,<9
+myst-parser>=4.0,<5
+furo>=2024.8.6
+sphinxcontrib-mermaid>=1.0
+sphinx-copybutton>=0.5.2
+sphinx-autobuild>=2024.10.3
