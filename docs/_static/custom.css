@@ -1,0 +1,5 @@
+/* Bảng nhiều chữ: chữ nhỏ hơn, căn trên */
+table.docutils { font-size: 0.9em; }
+table.docutils td, table.docutils th { vertical-align: top; }
+/* Sơ đồ mermaid không tràn khung */
+pre.mermaid, .mermaid svg { max-width: 100%; }
