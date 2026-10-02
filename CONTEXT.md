@@ -13,7 +13,7 @@ Phân loại đơn vị do doanh nghiệp tự định nghĩa (Công ty, Khối,
 _Tránh dùng_: cấp, level
 
 **Vị trí** (`position`):
-Một ghế cụ thể trong một đơn vị; tại một thời điểm có tối đa một người giữ chính. Quyền gắn với vị trí, không gắn với người.
+Một ghế cụ thể trong một đơn vị; tại một thời điểm có tối đa một người ngồi, bất kể loại bổ nhiệm. Quyền gắn với vị trí, không gắn với người.
 _Tránh dùng_: chức vụ, slot, định biên
 
 **Chức danh**:
@@ -45,7 +45,7 @@ Bổ nhiệm tạm thời vào một vị trí đang trống; người làm quy�
 _Tránh dùng_: tạm quyền, quyền giám đốc (khi vị trí có người giữ)
 
 **Ủy quyền** (`delegation`):
-Người giữ vị trí tạm giao một phần quyền của vị trí (theo danh sách quyền) cho người khác trong thời gian vắng mặt; người giữ vị trí vẫn giữ quyền của mình.
+Người giữ vị trí tạm giao một phần quyền của vị trí (theo danh sách quyền) cho người khác cùng công ty, không theo hợp đồng, trong thời gian vắng mặt; người giữ vị trí vẫn giữ quyền của mình.
 _Tránh dùng_: quyền trưởng, ủy nhiệm
 
 **Quản lý trực tiếp**:
@@ -79,5 +79,5 @@ Khi vị trí duyệt không có người duyệt hợp lệ (vị trí trống 
 _Tránh dùng_: escalate, bỏ qua bước
 
 **Việc duyệt** (`wf.task`):
-Một bước của chuỗi duyệt đã giao cho một người cụ thể, nằm trong hộp việc của người đó. Khi bổ nhiệm vào vị trí duyệt thay đổi, việc đang chờ tự chuyển sang người giữ mới.
+Một bước của chuỗi duyệt đã giao cho một người cụ thể, nằm trong hộp việc của người đó. Khi bổ nhiệm vào vị trí duyệt thay đổi, việc đang chờ tự chuyển sang người giữ mới. Không còn ai hợp lệ thì việc nằm chờ tại vị trí cho đến khi có người.
 _Tránh dùng_: task, nhiệm vụ
