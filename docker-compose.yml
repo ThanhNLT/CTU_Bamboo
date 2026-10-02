@@ -1,0 +1,38 @@
+# Khung tối thiểu: PostgreSQL + chạy migration (ADR #13: một lệnh `docker compose up -d`).
+name: bamboo
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: bms
+      POSTGRES_USER: bms
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bms -d bms"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Chạy các migration chưa chạy rồi thoát.
+  migrate:
+    image: postgis/postgis:17-3.5
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: bms
+      PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+    volumes:
+      - ./db:/repo/db:ro
+      - ./scripts:/repo/scripts:ro
+    entrypoint: ["/repo/scripts/db/migrate.sh", "bms", "/repo/db/migrations/bms"]
+    restart: "no"
+
+volumes:
+  pgdata:
