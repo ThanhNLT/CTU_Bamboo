@@ -72,10 +72,10 @@ Dừng: `docker compose down` (giữ dữ liệu) hoặc `docker compose down -v
 CI build sẵn mọi image của dự án cho `amd64` và `arm64` (kể cả Mac chip M; riêng image PostGIS của bên thứ ba chỉ có `amd64` nên chạy qua giả lập), đẩy lên GitHub Container Registry cùng tệp compose phát hành. Máy chỉ cần Docker Compose 2.34 trở lên:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:latest up -d
+docker compose -y -f oci://ghcr.io/thanhnlt/bamboo:latest up -d
 ```
 
-Lệnh này kéo tệp compose và các image về rồi dựng toàn bộ hệ thống như khi build từ mã nguồn. Thay `latest` bằng số phiên bản (ví dụ `0.1.0`) để chạy đúng một bản phát hành; bản của một pull request có thẻ `pr-<số>`. Docker Compose cũ hơn: tải tệp `compose.release.yml` (đính kèm mỗi bản phát hành) rồi chạy `docker compose -f compose.release.yml up -d`.
+Lệnh này kéo tệp compose và các image về rồi dựng toàn bộ hệ thống như khi build từ mã nguồn. Cờ `-y` bỏ qua câu hỏi xác nhận mà Docker Compose đặt ra với tệp compose lấy từ xa; bỏ cờ này nếu muốn xem trước danh sách biến cấu hình và giá trị mặc định. Thay `latest` bằng số phiên bản (ví dụ `0.1.0`) để chạy đúng một bản phát hành; bản của một pull request có thẻ `pr-<số>`. Docker Compose cũ hơn: tải tệp `compose.release.yml` (đính kèm mỗi bản phát hành) rồi chạy `docker compose -f compose.release.yml up -d`.
 
 Trong giai đoạn kho mã còn riêng tư, image cũng riêng tư: người chạy cần quyền đọc kho và đăng nhập registry một lần bằng token GitHub có quyền `read:packages`:
 
