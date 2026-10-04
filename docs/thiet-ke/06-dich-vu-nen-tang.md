@@ -1,6 +1,6 @@
 # Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable
 
-> **Hiện trạng repo (04/10/2026):** mục 2 (SeaweedFS, Action tệp đính kèm) và mục 3 (Flowable, Hasura Actions) đã có trong repo. Mục 1 (OpenBao) còn là thiết kế: chưa có job `openbao-init`; khóa S3 tạm lấy từ biến môi trường (`S3_ACCESS_KEY`, `S3_ADMIN_ACCESS_KEY`... có giá trị dev mặc định) và service `storage-config` sinh `s3.json` từ đó.
+> **Hiện trạng repo (04/10/2026):** cả ba mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
 
 Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
 bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
@@ -9,52 +9,59 @@ bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Do
 
 ### Chế độ chạy
 
-- **Lưu bền**: integrated storage (raft) một node trên volume `openbao-data` (`platform/openbao/config.hcl`). OpenBao 2.x không còn backend `file`.
-- **Job `openbao-init`** (`services/bootstrap/openbao_init.py`) chạy mỗi lần `docker compose up`:
-  1. Lần đầu: khởi tạo với 1 khóa unseal (chỉ cho dev), lưu khóa và root token vào volume `openbao-keys`, không in ra log.
-  2. Mỗi lần: unseal nếu đang sealed, đợi raft bầu leader, rồi cấu hình lại một cách idempotent (chạy nhiều lần không tạo trùng).
-- Khởi động lại container `openbao` thì nó ở trạng thái sealed cho tới khi `openbao-init` chạy lại (`docker compose up -d`). Môi trường thật dùng auto-unseal (KMS/HSM) thay cho file khóa.
+- **Lưu bền**: integrated storage (raft) một node ở `/openbao/file` trên volume `openbao-data` (`platform/openbao/config.hcl`). Entrypoint của image tự thêm `-config=/openbao/config` và chown `/openbao/file`.
+- **Job `openbao-init`** (`python -m app.openbao_init`) chạy mỗi lần `docker compose up`, chạy lại không tạo trùng:
+  1. Lần đầu: khởi tạo với 1 khóa unseal (chỉ cho dev), lưu khóa và root token vào volume `openbao-keys` (`init.json`, quyền 0600), không in ra log. Lệnh khởi tạo raft có thể mất hơn 10 giây nên chờ tới 5 phút: hết giờ chờ giữa chừng là mất khóa.
+  2. Mỗi lần: unseal nếu đang sealed, đợi raft có leader, rồi cấu hình lại mount, khóa transit, policy, AppRole.
+  3. OpenBao đã khởi tạo mà không có `init.json` thì dừng với thông báo rõ (khôi phục file khóa hoặc xóa volume `openbao-data`).
+- Khởi động lại container `openbao` thì nó sealed tới khi `openbao-init` chạy lại (`docker compose up -d`). Môi trường thật dùng auto-unseal (KMS/HSM).
 
 ### Nội dung
 
 | Thành phần | Đường dẫn | Ghi chú |
 |---|---|---|
-| KV v2 | `secret/bms/postgres`, `bms/hasura`, `bms/keycloak`, `bms/flowable`, `bms/actions` | Đồng bộ từ `.env` mỗi lần chạy (môi trường dev khai báo ở `.env`) |
-| KV v2 | `secret/bms/seaweedfs` | Khóa S3 (admin và ứng dụng) do OpenBao **tự sinh một lần**, là nguồn duy nhất |
+| KV v2 | `secret/bms/postgres`, `bms/hasura`, `bms/keycloak`, `bms/flowable`, `bms/actions` | Chép từ `.env` mỗi lần chạy, chỉ ghi khi khác bản đang có |
+| KV v2 | `secret/bms/seaweedfs` (`bms-app`), `secret/bms/seaweedfs-admin` (`bms-admin`) | Khóa S3 do OpenBao **sinh một lần**, là nguồn duy nhất; `openbao-init` ghi `s3.json` cho SeaweedFS từ đây |
 | Transit | `transit/keys/pii` (AES-256-GCM) | Mã hóa dữ liệu nhạy cảm (CCCD, lương...); ứng dụng chỉ giữ bản mã `vault:v1:...` |
-| AppRole | `auth/approle/role/actions` | Dịch vụ `actions` đăng nhập bằng role-id + secret-id |
+| AppRole | `auth/approle/role/actions`, `auth/approle/role/bootstrap` | Token 1 giờ, secret-id không hết hạn (dev) |
 
 ### Đặc quyền tối thiểu
 
-Policy `actions` chỉ cho đọc `bms/postgres`, `bms/flowable`, `bms/seaweedfs`, `bms/actions` và mã hóa/giải mã bằng khóa `pii`. Không đọc được secret quản trị Keycloak, Hasura (có kiểm thử).
+| AppRole | Dùng bởi | Được đọc | Bị chặn (có kiểm thử) |
+|---|---|---|---|
+| `actions` | `actions`, `flow-sync` | `bms/postgres`, `bms/flowable`, `bms/seaweedfs`, `bms/actions`; mã hóa/giải mã bằng khóa `pii` | `bms/keycloak`, `bms/hasura`, `bms/seaweedfs-admin`, mọi thao tác ghi |
+| `bootstrap` | job `bootstrap` | `bms/seaweedfs-admin` (tạo bucket), `bms/flowable`, `bms/hasura` | `bms/postgres`, khóa `pii` |
 
-Mỗi dịch vụ có volume secret riêng, chỉ mount vào đúng dịch vụ đó: `openbao-init` ghi AppRole vào `actions-secrets` (`/run/bms/approle.json` trong container `actions`, uid 10001, quyền 0400) và cấu hình S3 vào `seaweedfs-secrets`. Dịch vụ này không nhìn thấy secret của dịch vụ kia. Đây là mô hình giống Vault Agent / External Secrets Operator sẽ dùng trên Kubernetes.
+Mỗi dịch vụ có volume secret riêng chỉ mount vào đúng dịch vụ đó: `openbao-init` ghi file AppRole (role-id + secret-id, quyền 0400) vào `actions-secrets` và `bootstrap-secrets`, cấu hình S3 vào `seaweedfs-config`. Dịch vụ nào cũng thấy `/run/bms/approle.json` của riêng mình, không thấy secret của dịch vụ kia. Mô hình giống Vault Agent / External Secrets Operator sẽ dùng trên Kubernetes.
 
-Dịch vụ hạ tầng (PostgreSQL, Keycloak, Hasura) vẫn nhận mật khẩu qua biến môi trường vì Docker Compose không có cơ chế inject secret từ OpenBao; trên k3s dùng External Secrets Operator đọc từ OpenBao.
+Dịch vụ Python đọc secret lúc khởi động (`config.load()`): có `BAO_ADDR` và `BAO_APPROLE_FILE` thì đăng nhập AppRole và thay giá trị env bằng secret đọc được (`SECRET_FIELDS` trong `config.py`); đường dẫn bị policy chặn thì giữ giá trị env. Chạy ngoài compose (kiểm thử native) không đặt hai biến này thì dùng env.
+
+Dịch vụ hạ tầng (PostgreSQL, Keycloak, Hasura, Flowable) vẫn nhận mật khẩu qua biến môi trường vì Docker Compose không có cơ chế inject secret từ OpenBao; trên k3s dùng External Secrets Operator đọc từ OpenBao.
 
 ### Lệnh
 
 ```bash
-make test-secrets     # 6 kiểm tra: AppRole, đặc quyền tối thiểu, transit
-make bao-token        # in root token (dev) để vào UI http://localhost:8200
+make test-actions T=tests/test_openbao.py   # khởi tạo lặp lại, đặc quyền tối thiểu, transit, cấu hình đọc từ két
+make bao-token                              # in root token (dev) để vào UI http://localhost:8200
 ```
 
-Dùng trong code Python (`services/actions/openbao.py`):
+Dùng trong code Python (`services/actions/app/openbao.py`):
 
 ```python
-from openbao import bao
-bao().secret("bms/flowable")        # {"username": ..., "password": ...}
-bao().encrypt("079123456789")       # "vault:v1:..."
+from app.openbao import Bao
+bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")
+bao.read("bms/flowable")        # {"username": ..., "password": ...}
+bao.encrypt("079123456789")     # "vault:v1:..."
 ```
 
 ## 2. SeaweedFS – lưu trữ đối tượng S3 (ADR #26)
 
 ### Cấu hình
 
-- **Không có truy cập ẩn danh.** Service `storage-config` (`python -m app.storage`) ghi `s3.json` vào volume `seaweedfs-config`; SeaweedFS chạy với `-s3.config=/etc/bms/s3.json`. Khi có OpenBao, khóa sẽ do OpenBao sinh và job này đọc từ két thay cho biến môi trường.
+- **Không có truy cập ẩn danh.** `openbao-init` ghi `s3.json` (khóa lấy từ OpenBao) vào volume `seaweedfs-config`; SeaweedFS chạy với `-s3.config=/etc/bms/s3.json`.
 - Hai định danh:
-  - `admin` (`S3_ADMIN_ACCESS_KEY`): toàn quyền, chỉ job `bootstrap` dùng để tạo bucket.
-  - `bms-app` (`S3_ACCESS_KEY`): chỉ `Read/Write/List/Tagging` trên `bms-quarantine` và `bms-documents`, không tạo/xóa bucket (có kiểm thử).
+  - `admin` (`secret/bms/seaweedfs-admin`): toàn quyền, chỉ job `bootstrap` dùng để tạo bucket.
+  - `bms-app` (`secret/bms/seaweedfs`): chỉ `Read/Write/List/Tagging` trên `bms-quarantine` và `bms-documents`, không tạo/xóa bucket (có kiểm thử).
 - **CORS**: `-s3.allowedOrigins=${WEB_ORIGIN}` (mặc định `http://localhost:5173`) để trình duyệt PUT tệp thẳng lên S3.
 - Volume nhỏ (`-master.volumeSizeLimitMB=256 -volume.max=32`): mỗi bucket là một collection cần volume riêng; mặc định 30 GB/volume làm máy dev hết chỗ cấp volume.
 - Job `bootstrap` tạo bucket nếu chưa có (`storage.ensure_buckets`).

@@ -148,12 +148,18 @@ def flowable(database) -> FlowableClient:
 
 @pytest.fixture(scope="session")
 def s3(database) -> storage.Storage:
-    """SeaweedFS với hai bucket (job bootstrap tạo khi chạy thật)."""
+    """SeaweedFS với hai bucket. Job bootstrap tạo bucket khi chạy thật; khóa ứng dụng không tạo
+    được bucket nên chỉ dùng khóa admin khi bucket chưa có (chạy ngoài compose)."""
     deadline = time.monotonic() + WAIT_SECONDS
     while True:
         try:
-            storage.ensure_buckets(SETTINGS)
-            return storage.Storage(SETTINGS)
+            s3 = storage.Storage(SETTINGS)
+            try:
+                for bucket in (s3.quarantine, s3.documents):
+                    s3.s3.head_bucket(Bucket=bucket)
+            except Exception:  # noqa: BLE001
+                storage.ensure_buckets(SETTINGS)
+            return s3
         except Exception:  # noqa: BLE001
             if time.monotonic() > deadline:
                 _missing("SeaweedFS")
