@@ -1,7 +1,6 @@
 import {
   Refine,
   GitHubBanner,
-  WelcomePage,
   Authenticated,
   AuthProvider,
 } from "@refinedev/core";
@@ -9,7 +8,6 @@ import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import {
-  AuthPage,
   ErrorComponent,
   useNotificationProvider,
   ThemedLayout,
@@ -48,17 +46,26 @@ import { ColorModeContextProvider } from "./contexts/color-mode";
 import { Header } from "./components/header";
 import { Login } from "./pages/login";
 
-const API_URL = "https://flowing-mammal-24.hasura.app/v1/graphql";
-const WS_URL = "ws://flowing-mammal-24.hasura.app/v1/graphql";
+// Hasura của dự án; xác thực bằng webhook: token Keycloak + tenant đã chọn (ADR #32,
+// docs/thiet-ke/08-api-giao-dien.md). Chưa chọn tenant thì chỉ gọi được query my_tenants.
+const API_URL = import.meta.env.VITE_HASURA_URL ?? "http://localhost:8081/v1/graphql";
+const WS_URL = API_URL.replace(/^http/, "ws");
+const TENANT_KEY = "bamboo.tenant";
 
-const client = new GraphQLClient(API_URL, {
-  headers: {
-    "x-hasura-role": "public",
-  },
-});
+const authHeaders = (token?: string): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const tenant = localStorage.getItem(TENANT_KEY);
+  if (tenant) headers["x-bamboo-tenant"] = tenant;
+  return headers;
+};
+
+const client = new GraphQLClient(API_URL);
+let currentToken: string | undefined;
 
 const webSocketClient = graphqlWS.createClient({
   url: WS_URL,
+  connectionParams: () => ({ headers: authHeaders(currentToken) }),
 });
 
 function App() {
@@ -88,7 +95,7 @@ function App() {
           success: true,
           redirectTo: "/login",
         };
-      } catch (error) {
+      } catch {
         return {
           success: false,
           error: new Error("Logout failed"),
@@ -101,8 +108,11 @@ function App() {
     },
     check: async () => {
       try {
+        await keycloak.updateToken(30);
         const { token } = keycloak;
         if (token) {
+          currentToken = token;
+          client.setHeaders(authHeaders(token));
           axios.defaults.headers.common = {
             Authorization: `Bearer ${token}`,
           };
@@ -120,7 +130,7 @@ function App() {
             },
           };
         }
-      } catch (error) {
+      } catch {
         return {
           authenticated: false,
           logout: true,

@@ -15,6 +15,7 @@ Schema đầy đủ: Hasura Console (`http://localhost:8081`) hoặc introspecti
 - Token **không** mang claim Hasura ([ADR #32](#adr-32)): luật CASL dựng từ query `core_v_permission_grant` (chỉ trả quyền của chính người gọi), không đọc claim trong token như mục 2.3 của thiết kế giao diện.
 - Một tài khoản có thể vào nhiều tenant ([ADR #30](#adr-30)); `my_tenants` trả `person_id` của người dùng trong từng tenant. Mọi cột người (`requester_id`, `assignee_id`, `recipient_id`...) so với `person_id` này.
 - Subscription: cùng header, qua websocket `/v1/graphql`; hạn kết nối theo hạn token.
+- Ứng dụng Refine (`apps/web/web`) đọc địa chỉ từ biến Vite (`.env.example`): `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT`, `VITE_HASURA_URL`; mặc định trỏ vào stack `docker compose` trên máy dev. Tenant đã chọn lưu ở `localStorage["bamboo.tenant"]` và gửi kèm mọi request (cả websocket).
 
 ## 2. Ánh xạ màn hình
 

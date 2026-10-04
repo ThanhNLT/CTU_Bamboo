@@ -29,7 +29,7 @@ def _load(conn: psycopg.Connection, session: dict, attachment_id: str, lock: boo
     person = session_identity(session, row[1] if row else None)
     if row[-1] is not None:
         raise ActionError("Không tìm thấy tệp đính kèm", "not-found", 404)
-    return dict(zip(_COLUMNS.split(", "), row)), person
+    return dict(zip(_COLUMNS.split(", "), row[:-1], strict=True)), person
 
 
 def _require_storage(ctx: Context) -> storage.Storage:

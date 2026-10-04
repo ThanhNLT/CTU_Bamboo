@@ -7,13 +7,13 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { type BaseRecord, useMany } from "@refinedev/core";
+import { type BaseRecord } from "@refinedev/core";
 import { Space, Table } from "antd";
 import React from "react";
 import { BLOG_POSTS_QUERY } from "./queries";
 
 export const BlogPostList = () => {
-  const { result, tableProps } = useTable({
+  const { tableProps } = useTable({
     syncWithLocation: true,
     meta: {
       fields: BLOG_POSTS_QUERY,
@@ -28,7 +28,7 @@ export const BlogPostList = () => {
         <Table.Column
           dataIndex="content"
           title={"Content"}
-          render={(value: any) => {
+          render={(value?: string) => {
             if (!value) return "-";
             return <MarkdownField value={value.slice(0, 80) + "..."} />;
           }}
@@ -38,7 +38,7 @@ export const BlogPostList = () => {
         <Table.Column
           dataIndex={["created_at"]}
           title={"Created at"}
-          render={(value: any) => <DateField value={value} />}
+          render={(value: string) => <DateField value={value} />}
         />
         <Table.Column
           title={"Actions"}
