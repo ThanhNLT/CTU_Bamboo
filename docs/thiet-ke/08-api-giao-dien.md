@@ -1,8 +1,8 @@
 # API cho giao diện (Hasura GraphQL)
 
-Giao diện Refine chỉ gọi một endpoint GraphQL của Hasura (sau này qua APISIX). Trang này liệt kê
+Giao diện Refine chỉ gọi một endpoint GraphQL: `/graphql` trên cổng API APISIX ([ADR #34](#adr-34)), cùng origin với trang. Trang này liệt kê
 những gì backend đang có, ánh xạ sang các màn hình trong [Thiết kế giao diện](07-thiet-ke-UI.md).
-Schema đầy đủ: Hasura Console (`http://localhost:8081`) hoặc introspection; sinh type bằng graphql-codegen.
+Schema đầy đủ: Hasura Console (`http://localhost:8081`, cổng quản trị trên máy dev) hoặc introspection qua `/graphql`; sinh type bằng graphql-codegen.
 
 ## 1. Kết nối và phiên
 
@@ -15,7 +15,8 @@ Schema đầy đủ: Hasura Console (`http://localhost:8081`) hoặc introspecti
 - Token **không** mang claim Hasura ([ADR #32](#adr-32)): luật CASL dựng từ query `core_v_permission_grant` (chỉ trả quyền của chính người gọi), không đọc claim trong token như mục 2.3 của thiết kế giao diện.
 - Một tài khoản có thể vào nhiều tenant ([ADR #30](#adr-30)); `my_tenants` trả `person_id` của người dùng trong từng tenant. Mọi cột người (`requester_id`, `assignee_id`, `recipient_id`...) so với `person_id` này.
 - Subscription: cùng header, qua websocket `/v1/graphql`; hạn kết nối theo hạn token.
-- Ứng dụng Refine (`apps/web/web`) đọc địa chỉ từ biến Vite (`.env.example`): `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT`, `VITE_HASURA_URL`; mặc định trỏ vào stack `docker compose` trên máy dev. Tenant đã chọn lưu ở `localStorage["bamboo.tenant"]` và gửi kèm mọi request (cả websocket).
+- Ứng dụng Refine (`apps/web/web`) mặc định gọi Keycloak (`/realms`) và Hasura (`/graphql`) cùng origin với trang; `npm run dev` dùng `.env.development` trỏ vào cổng `http://localhost:8000`. Ghi đè bằng `/config.js` lúc chạy hoặc biến `VITE_*` lúc build khi backend ở địa chỉ khác.
+- Cổng API trả **401** khi request `/graphql` không có token hợp lệ (trước khi tới Hasura), **429** khi vượt giới hạn tần suất, **403** khi WAF chặn; mọi phản hồi có `X-Request-Id` để đối chiếu log. Tenant đã chọn lưu ở `localStorage["bamboo.tenant"]` và gửi kèm mọi request (cả websocket).
 
 ## 2. Ánh xạ màn hình
 
