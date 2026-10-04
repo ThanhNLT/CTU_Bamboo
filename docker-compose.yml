@@ -153,14 +153,13 @@ services:
       FLOWABLE_REST_APP_CREATE_DEMO_DEFINITIONS: "false"
       FLOWABLE_REST_APP_ADMIN_USER_ID: ${FLOWABLE_ADMIN:-rest-admin}
       FLOWABLE_REST_APP_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
-      # Giới hạn heap theo bộ nhớ container thay cho mặc định 1/4 RAM máy.
-      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
     ports:
       - "127.0.0.1:8082:8080"
     restart: unless-stopped
+    # Image dựng trên Alpine (không có bash, image tự đặt -Xmx512M): dùng nc của busybox.
     # Tomcat chỉ mở cổng sau khi Spring khởi động xong.
     healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8080"]
       interval: 5s
       timeout: 3s
       retries: 60
