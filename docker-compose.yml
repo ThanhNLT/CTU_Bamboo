@@ -70,10 +70,13 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bms -d bms"]
+      # Kiểm tra qua TCP: lúc khởi tạo volume mới, image chạy một server tạm chỉ nghe unix socket
+      # rồi khởi động lại; kiểm tra qua socket sẽ báo sẵn sàng quá sớm.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bms -d bms"]
       interval: 2s
       timeout: 3s
       retries: 30
+      start_period: 10s
 
   # Tạo database phụ, chạy các migration chưa chạy rồi thoát.
   migrate:
