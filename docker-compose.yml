@@ -15,6 +15,9 @@ x-actions-env: &actions-env
   FLOWABLE_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
   HASURA_URL: http://hasura:8080
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
+  # Webhook lấy JWKS qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME).
+  KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
+  KEYCLOAK_ISSUER: http://localhost:8080/realms/bms
 
 x-actions-image: &actions-image
   build:
@@ -29,8 +32,8 @@ x-hasura-env: &hasura-env
   HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
   HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log
   ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
-  # Bật khi có Keycloak: Hasura dừng hẳn nếu không lấy được JWKS.
-  # HASURA_GRAPHQL_JWT_SECRET: '{"jwk_url":"http://keycloak:8080/realms/bms/protocol/openid-connect/certs","claims_namespace":"https://hasura.io/jwt/claims"}'
+  # Xác thực bằng webhook (ADR #32): token Keycloak + tenant đã chọn (header x-bamboo-tenant).
+  HASURA_GRAPHQL_AUTH_HOOK_MODE: GET
 
 services:
   db:
@@ -57,12 +60,51 @@ services:
         condition: service_healthy
     environment:
       <<: *db-env
-      EXTRA_DATABASES: flowable hasura_meta hasura_meta_test bms_hasura_test
+      EXTRA_DATABASES: flowable keycloak hasura_meta hasura_meta_test bms_hasura_test
     volumes:
       - ./db:/repo/db:ro
       - ./scripts:/repo/scripts:ro
     entrypoint: ["/repo/scripts/db/up.sh"]
     restart: "no"
+
+  # Dữ liệu demo Tập đoàn X (ADR #16): bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
+  seed:
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+      args:
+        APP_DIR: services/seed
+    image: bamboo/seed:dev
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
+      SEED_DEMO: ${SEED_DEMO:-true}
+    command: ["python", "-m", "app.seed"]
+    restart: "no"
+
+  # Chỉ xác thực (ADR #6, #32). Realm sinh bằng `python -m app.realm` (services/seed), import lần đầu.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: bms
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
+    volumes:
+      - ./platform/keycloak/realm:/opt/keycloak/data/import:ro
+    ports:
+      - "127.0.0.1:8080:8080"
 
   flowable:
     image: flowable/flowable-rest:8.0.0
@@ -89,6 +131,7 @@ services:
       HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/hasura_meta
       BMS_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
       ACTIONS_URL: http://actions:8000
+      HASURA_GRAPHQL_AUTH_HOOK: http://actions:8000/auth/hasura
     ports:
       - "127.0.0.1:8081:8080"
 
@@ -136,6 +179,7 @@ services:
       BMS_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
       # Container chạy kiểm thử (`make test-actions` đặt --name bamboo-actions-test).
       ACTIONS_URL: http://bamboo-actions-test:8090
+      HASURA_GRAPHQL_AUTH_HOOK: http://bamboo-actions-test:8090/auth/hasura
 
   actions-test:
     profiles: [test]

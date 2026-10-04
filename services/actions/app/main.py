@@ -13,7 +13,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
-from . import config
+from . import auth, config
 
 DECISIONS = {"APPROVE", "REJECT", "RETURN"}
 
@@ -71,6 +71,7 @@ def act_on_task(conn: psycopg.Connection, session: dict, task_id: str, decision:
 
 
 HANDLERS = {
+    "my_tenants": lambda conn, session, args: auth.my_tenants(conn, session),
     "submit_purchase_request": lambda conn, session, args: submit_purchase_request(
         conn, session, args["request_id"]),
     "act_on_task": lambda conn, session, args: act_on_task(
@@ -93,8 +94,11 @@ def run_action(pool: ConnectionPool, name: str, payload: dict) -> dict:
         raise ActionError(exc.diag.message_primary or str(exc), "rejected") from exc
 
 
-def create_app(settings: config.Settings | None = None, pool: ConnectionPool | None = None) -> FastAPI:
+def create_app(settings: config.Settings | None = None, pool: ConnectionPool | None = None,
+               verifier: auth.KeycloakVerifier | None = None) -> FastAPI:
     settings = settings or config.load()
+    verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
+                                                 set(settings.keycloak_clients))
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -104,10 +108,28 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
             app.state.pool.close()
 
     app = FastAPI(title="Bamboo actions", lifespan=lifespan)
+    memberships = auth.MembershipCache()
 
     @app.get("/healthz")
     def healthz():
         return {"ok": True}
+
+    @app.get("/auth/hasura")
+    def hasura_auth(request: Request):
+        """Hasura auth webhook (chế độ GET, Hasura chuyển nguyên header của client)."""
+        header = request.headers.get("authorization", "")
+        if not header.lower().startswith("bearer "):
+            return JSONResponse({"message": "Thiếu token"}, 401)
+        try:
+            claims = verifier.verify(header[7:].strip())
+            with app.state.pool.connection() as conn:
+                session = auth.session_for(conn, claims, request.headers.get("x-bamboo-tenant"),
+                                           request.headers.get("x-hasura-role"), memberships)
+        except auth.AuthError as exc:
+            return JSONResponse({"message": str(exc)}, 401)
+        except psycopg.errors.InvalidTextRepresentation:
+            return JSONResponse({"message": "Mã tenant không hợp lệ"}, 401)
+        return JSONResponse(session)
 
     @app.post("/actions/{name}")
     async def action(name: str, request: Request, x_actions_secret: str | None = Header(default=None)):

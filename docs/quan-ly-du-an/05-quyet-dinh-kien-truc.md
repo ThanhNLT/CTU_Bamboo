@@ -37,6 +37,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [29](#adr-29) | 02/10/2026 | Bổ nhiệm hợp đồng; quyền theo ngày, không theo khung giờ |
 | [30](#adr-30) | 02/10/2026 | Một tài khoản cho nhiều tenant cùng công ty mẹ |
 | [31](#adr-31) | 02/10/2026 | CSDL là nguồn sự thật của luồng duyệt; Flowable phản chiếu |
+| [32](#adr-32) | 02/10/2026 | Hasura xác thực bằng webhook: Keycloak token + tenant đã chọn |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -223,7 +224,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Id tài khoản demo và tenant cố định bằng `uuid5`; Keycloak user id = token `sub` = `core.person.id`; realm sinh bằng script từ danh sách dùng chung, mật khẩu lấy từ biến môi trường lúc import
 - **Lý do:** CSDL và Keycloak khớp nhau mà không cần gọi API lẫn nhau; Hasura so `x-hasura-user-id` trực tiếp với các cột person; không commit mật khẩu
 - **Đã loại:** Seed gọi Admin API Keycloak tạo user; ánh xạ qua `idp_subject` ở mọi permission
-- **Ghi chú:** "`sub` = `core.person.id`" đã được thay ở [ADR #30](#adr-30) cho người làm ở nhiều tenant; phần còn lại vẫn hiệu lực.
+- **Ghi chú:** "`sub` = `core.person.id`" đã được thay ở [ADR #30](#adr-30) cho người làm ở nhiều tenant; token không còn mang claim Hasura ([ADR #32](#adr-32)), `person.id` tra theo `idp_subject`. Id cố định bằng `uuid5` và realm sinh từ danh sách dùng chung vẫn hiệu lực.
 
 (adr-24)=
 ## ADR #24: Sinh metadata Hasura bằng script
@@ -290,6 +291,14 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Trạng thái luồng duyệt (chuỗi duyệt, việc duyệt, người nhận, kết quả) chỉ được quyết định trong CSDL (`wf.approval_step`, `wf.task`, ADR #28). Mỗi lần gửi duyệt có một tiến trình Flowable lặp theo danh sách vị trí, mỗi bước một user task; dịch vụ `flow-sync` đối chiếu CSDL → Flowable (khởi tạo, đổi người nhận, hoàn thành, hủy) theo bảng `wf.flow_sync` đánh dấu bằng trigger và `pg_notify`. Mọi thao tác chuyển trạng thái đi qua Hasura Action gọi hàm CSDL; nháp ghi thẳng qua Hasura
 - **Lý do:** Logic đẩy lên, gộp bước, chuyển việc lúc commit, hủy khi hết hợp đồng đã nằm và được kiểm thử trong CSDL; hai bộ máy trạng thái dễ lệch nhau. Đối chiếu theo trạng thái (không theo sự kiện) nên mất tín hiệu hay Flowable tạm ngừng cũng tự khớp lại
 - **Đã loại:** Flowable là nguồn sự thật, BPMN gọi `actions` lấy người duyệt từng bước (hai bộ máy trạng thái); bỏ Flowable khỏi luồng duyệt; gọi Flowable đồng bộ trong Action (không áp dụng được cho chuyển việc do trigger lúc commit)
+
+(adr-32)=
+## ADR #32: Hasura xác thực bằng webhook: Keycloak token + tenant đã chọn
+
+- **Ngày:** 02/10/2026
+- **Quyết định:** Keycloak chỉ xác thực, access token chỉ cần `sub`. Hasura chạy chế độ auth webhook (`/auth/hasura` trong dịch vụ `actions`): kiểm tra token bằng JWKS của Keycloak, đọc tenant đã chọn ở header `x-bamboo-tenant`, tra `core.account_tenants(sub)` để lấy `person.id` trong tenant đó. Chưa chọn tenant thì role `account` (chỉ gọi query `my_tenants`); đã chọn thì role `user`; realm role `platform_admin` của Keycloak cho phép xin role `platform_admin`. Tài khoản `platform_admin` bắt buộc OTP
+- **Lý do:** Một tài khoản ứng với nhiều `person.id` ([ADR #30](#adr-30)) mà Keycloak không biết tenant người dùng chọn; quyền nằm ở PostgreSQL ([ADR #6](#adr-6)) nên không đồng bộ thông tin tổ chức sang Keycloak; không tự ký token. Hasura CE gọi webhook ở mọi request (không cache; `Cache-Control` chỉ đặt hạn kết nối websocket theo hạn token), nên webhook giữ JWKS và kết quả tra tenant trong bộ nhớ (60 giây)
+- **Đã loại:** Claim Hasura trong token Keycloak (Keycloak Organizations + mapper, phải lưu `person.id` từng tenant trong Keycloak); dịch vụ riêng tự ký JWT sau khi chọn tenant (tự quản lý khóa, refresh); realm role `hospital_staff` (trùng cách ly theo tenant)
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
