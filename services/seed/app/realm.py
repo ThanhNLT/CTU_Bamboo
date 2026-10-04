@@ -16,7 +16,10 @@ import pathlib
 
 from .demo import DEMO_USERS
 
-WEB_ORIGIN = "http://localhost:5173"
+# Địa chỉ ứng dụng qua cổng API, đọc từ biến WEB_ORIGIN lúc Keycloak import realm (mặc định stack
+# docker compose); thêm cổng 5173 cho `npm run dev`.
+WEB_ORIGIN = "${WEB_ORIGIN:http://localhost:8000}"
+DEV_ORIGIN = "http://localhost:5173"
 
 
 def build() -> dict:
@@ -64,9 +67,10 @@ def build() -> dict:
                 "publicClient": True,
                 "standardFlowEnabled": True,
                 "directAccessGrantsEnabled": False,
-                "redirectUris": [f"{WEB_ORIGIN}/*"],
-                "webOrigins": [WEB_ORIGIN],
-                "attributes": {"pkce.code.challenge.method": "S256", "post.logout.redirect.uris": f"{WEB_ORIGIN}/*"},
+                "redirectUris": [f"{WEB_ORIGIN}/*", f"{DEV_ORIGIN}/*"],
+                "webOrigins": [WEB_ORIGIN, DEV_ORIGIN],
+                "attributes": {"pkce.code.challenge.method": "S256",
+                               "post.logout.redirect.uris": f"{WEB_ORIGIN}/*##{DEV_ORIGIN}/*"},
             },
             {
                 "clientId": "bms-e2e",

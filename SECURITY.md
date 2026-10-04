@@ -16,7 +16,7 @@ Dự án đang ở giai đoạn trước 1.0: chỉ bản phát hành mới nh�
 
 ## Phạm vi
 
-Trong phạm vi: mã trong kho (dịch vụ Python, giao diện, migration CSDL, cấu hình Keycloak/Hasura/OpenBao/SeaweedFS trong `docker-compose.yml` và `platform/`), image phát hành trên `ghcr.io/thanhnlt/bamboo-*`.
+Trong phạm vi: mã trong kho (dịch vụ Python, giao diện, migration CSDL, cấu hình cổng API, Keycloak, Hasura, OpenBao, SeaweedFS trong `docker-compose.yml` và `platform/`), image phát hành trên `ghcr.io/thanhnlt/bamboo-*`.
 
 Ngoài phạm vi: lỗ hổng của phần mềm bên thứ ba chưa sửa ở upstream (báo cho dự án đó), cấu hình dev mặc định khi chưa đặt `BAMBOO_ENV=production`, tài khoản và dữ liệu demo.
 
@@ -24,6 +24,7 @@ Ngoài phạm vi: lỗ hổng của phần mềm bên thứ ba chưa sửa ở u
 
 | Lớp | Cơ chế | Tài liệu |
 |---|---|---|
+| Biên mạng | Cổng API APISIX là điểm vào duy nhất: token kiểm tại biên, WAF Coraza/OWASP CRS, giới hạn tần suất, chặn realm quản trị và API nội bộ | ADR #34 |
 | Xác thực | Keycloak (OIDC, PKCE), OTP bắt buộc cho quản trị nền tảng | ADR #6, #32 |
 | Cách ly tenant | Khóa kép `(tenant_id, id)` trong CSDL; mỗi phiên đúng một tenant | ADR #14, #30 |
 | Phân quyền | Quyền gắn vị trí, kiểm tra trong CSDL (`can_read`), Hasura chỉ là lớp API | ADR #5, #24 |

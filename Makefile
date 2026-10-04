@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata realm psql bao-token
+.PHONY: test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
 
@@ -36,6 +36,10 @@ test-auth:
 	docker compose run --rm -u 0 -v ./:/repo -e DEMO_STACK=1 -e DEMO_PASSWORD=$(DEMO_PASSWORD) \
 		-e KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/bms/protocol/openid-connect/token \
 		actions sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q tests/test_demo_login.py"
+
+# Cổng API trên stack đang chạy (`make up`): token tại biên, WAF, chặn dịch vụ nội bộ, giới hạn tần suất.
+test-gateway:
+	scripts/ci/gateway-smoke.sh
 
 test-all: test-db test-seed test-actions test-auth
 

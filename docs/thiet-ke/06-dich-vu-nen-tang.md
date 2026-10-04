@@ -1,6 +1,6 @@
-# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable
+# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API
 
-> **Hiện trạng repo (04/10/2026):** cả ba mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
+> **Hiện trạng repo (04/10/2026):** cả bốn mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
 
 Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
 bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
@@ -62,7 +62,7 @@ bao.encrypt("079123456789")     # "vault:v1:..."
 - Hai định danh:
   - `admin` (`secret/bms/seaweedfs-admin`): toàn quyền, chỉ job `bootstrap` dùng để tạo bucket.
   - `bms-app` (`secret/bms/seaweedfs`): chỉ `Read/Write/List/Tagging` trên `bms-quarantine` và `bms-documents`, không tạo/xóa bucket (có kiểm thử).
-- **CORS**: `-s3.allowedOrigins=${WEB_ORIGIN}` (mặc định `http://localhost:5173`) để trình duyệt PUT tệp thẳng lên S3.
+- **Truy cập từ trình duyệt** qua cổng API ([ADR #34](#adr-34)): route `/bms-quarantine/*` chỉ cho `PUT`, `/bms-documents/*` chỉ cho `GET`/`HEAD`; SeaweedFS không mở cổng ra ngoài. CORS (`-s3.allowedOrigins=${CORS_ORIGINS}`) chỉ cần cho `npm run dev` ở nguồn khác.
 - Volume nhỏ (`-master.volumeSizeLimitMB=256 -volume.max=32`): mỗi bucket là một collection cần volume riêng; mặc định 30 GB/volume làm máy dev hết chỗ cấp volume.
 - Job `bootstrap` tạo bucket nếu chưa có (`storage.ensure_buckets`).
 
@@ -92,7 +92,7 @@ get_download_url ─► link GET có chữ ký 5 phút, tên tệp tiếng Việ
 - Loại chứng từ đính kèm được: `proc.purchase_request` (`ENTITY_TYPES` trong `storage.py`); thêm loại mới thì bổ sung cả `collab.entity_tenant` và `wf.entity_can_read`.
 - Giao diện xem danh sách tệp qua quan hệ `attachments` của đề nghị hoặc bảng `core_attachment` (không có cột `storage_key`; tệp đã xóa không hiện).
 - **ClamAV tùy chọn**: chưa đặt `CLAMAV_HOST` thì `scan_result = "bỏ qua: ClamAV chưa được cấu hình"` và tệp vẫn được nhận sau khi qua kiểm tra kích thước và chữ ký đầu tệp. Bật: `docker compose --profile scan up -d` với `CLAMAV_HOST=clamav`.
-- Link có chữ ký dùng `S3_PUBLIC_ENDPOINT` (mặc định `http://localhost:8333`); khi có APISIX đổi thành route của gateway.
+- Link có chữ ký dùng `S3_PUBLIC_ENDPOINT` (mặc định `http://localhost:8000`, cổng API). Cổng giữ nguyên đường dẫn và host khi chuyển tới SeaweedFS, vì chữ ký tính trên hai giá trị này.
 - Lỗi S3 trả về `storage-unavailable` (503).
 
 ### Lệnh
@@ -151,3 +151,28 @@ make test-all         # test-db + test-actions
 ```
 
 Flowable REST (dev): http://localhost:8082/flowable-rest, tài khoản `FLOWABLE_ADMIN` / `FLOWABLE_ADMIN_PASSWORD` (mặc định `rest-admin` / `test`).
+
+## 4. Cổng API – Apache APISIX (ADR #34)
+
+Điểm vào duy nhất từ trình duyệt (`127.0.0.1:8000`). Chế độ standalone: `platform/apisix/config.yaml` (chế độ chạy, WAF) và `platform/apisix/apisix.yaml` (route), đóng gói vào image `bamboo-gateway`; không có Admin API, đổi route bằng commit rồi build lại image.
+
+| Route | Tới | Kiểm soát |
+|---|---|---|
+| `/graphql` (HTTP) | Hasura `/v1/graphql` | `forward-auth` → `actions` `/auth/gateway` (token Keycloak hợp lệ mới qua), 600 request/phút/IP, tối đa 1 MB, WAF (bỏ nhóm luật SQLi) |
+| `/graphql` (websocket) | Hasura | 120 kết nối/phút/IP; Hasura kiểm token trong `connection_init` |
+| `/realms/*`, `/resources/*` | Keycloak | WAF; `/realms/master` trả 403; đăng nhập/cấp token 60 request/phút/IP |
+| `/bms-quarantine/*` | SeaweedFS | Chỉ `PUT`, tối đa 26 MB |
+| `/bms-documents/*` | SeaweedFS | Chỉ `GET`, `HEAD` |
+| `/` | web | Chỉ `GET`, `HEAD`; WAF |
+| còn lại | | 404 |
+
+- **WAF**: Coraza (Proxy-Wasm) với OWASP CRS nhúng sẵn, mức paranoia 1, chặn (403) khi vượt ngưỡng điểm bất thường. Không áp cho route tải tệp (nhị phân, đã kiểm tra và quét ở `confirm_upload`) và websocket.
+- **Truy vết**: mọi phản hồi có `X-Request-Id`; log truy cập ra stdout của container.
+- **Số liệu**: plugin `prometheus` xuất ở `gateway:9091` (chỉ mạng nội bộ).
+- **Keycloak sau cổng**: `KC_HOSTNAME` là địa chỉ qua cổng (issuer của token), trang quản trị dùng `KC_HOSTNAME_ADMIN` (`127.0.0.1:8080`).
+
+### Lệnh
+
+```bash
+make test-gateway   # 25 kiểm tra trên stack đang chạy: token tại biên, WAF, chặn dịch vụ nội bộ, giới hạn tần suất
+```

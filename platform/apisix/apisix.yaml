@@ -1,0 +1,202 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Route của cổng API (ADR #34). Trình duyệt chỉ biết một địa chỉ; mọi dịch vụ phía sau không mở ra ngoài.
+#   /graphql            → Hasura /v1/graphql   token bắt buộc (forward-auth), giới hạn tần suất, WAF
+#   /realms, /resources → Keycloak             chặn realm master, giới hạn tần suất đăng nhập, WAF
+#   /bms-quarantine/*   → SeaweedFS            chỉ PUT (link có chữ ký), tối đa 26 MB
+#   /bms-documents/*    → SeaweedFS            chỉ GET/HEAD (link có chữ ký)
+#   /                   → web                  chỉ GET/HEAD, WAF
+# Đường dẫn khác: 404. Tệp phải kết thúc bằng dòng #END (APISIX chỉ nạp tệp hoàn chỉnh).
+
+upstreams:
+  - id: web
+    type: roundrobin
+    nodes:
+      "web:8080": 1
+  - id: hasura
+    type: roundrobin
+    nodes:
+      "hasura:8080": 1
+    timeout: { connect: 5, send: 60, read: 60 }
+  - id: keycloak
+    type: roundrobin
+    nodes:
+      "keycloak:8080": 1
+  # Giữ nguyên Host của trình duyệt (mặc định pass_host: pass): chữ ký link S3 tính trên host công khai.
+  - id: s3
+    type: roundrobin
+    nodes:
+      "seaweedfs:8333": 1
+    timeout: { connect: 5, send: 120, read: 120 }
+
+plugin_configs:
+  # WAF: OWASP CRS mức paranoia 1, chặn khi vượt ngưỡng điểm bất thường.
+  - id: waf
+    plugins:
+      coraza-filter:
+        conf:
+          directives_map:
+            default:
+              - Include @recommended-conf
+              - SecRuleEngine On
+              - SecResponseBodyAccess Off
+              - Include @crs-setup-conf
+              - Include @owasp_crs/*.conf
+              # Luồng OIDC bắt buộc mang URL chuyển hướng về ứng dụng (localhost khi chạy máy dev):
+              # bỏ hai tham số chuẩn này khỏi luật SSRF 934110, các tham số khác vẫn bị kiểm.
+              - SecRuleUpdateTargetById 934110 "!ARGS:redirect_uri"
+              - SecRuleUpdateTargetById 934110 "!ARGS:post_logout_redirect_uri"
+          default_directives: default
+  # WAF cho GraphQL: bỏ nhóm luật SQL injection. Truy vấn GraphQL chứa từ khóa trùng SQL (where,
+  # order_by...) gây báo nhầm; Hasura luôn dùng câu lệnh tham số hóa nên lớp này không có SQL thô.
+  - id: waf-graphql
+    plugins:
+      coraza-filter:
+        conf:
+          directives_map:
+            default:
+              - Include @recommended-conf
+              - SecRuleEngine On
+              - SecResponseBodyAccess Off
+              - Include @crs-setup-conf
+              - Include @owasp_crs/*.conf
+              - SecRuleRemoveByTag attack-sqli
+          default_directives: default
+
+global_rules:
+  - id: 1
+    plugins:
+      # Mã truy vết cho mọi request, trả về cả trình duyệt để đối chiếu log.
+      request-id:
+        header_name: X-Request-Id
+        include_in_response: true
+      prometheus: {}
+
+routes:
+  - id: healthz
+    uri: /healthz
+    priority: 100
+    plugins:
+      mocking:
+        response_status: 200
+        content_type: text/plain
+        response_example: ok
+
+  # --- GraphQL ------------------------------------------------------------------
+  # Websocket (subscription): trình duyệt không gửi được header Authorization khi nâng cấp kết nối;
+  # Hasura kiểm token trong gói connection_init qua auth webhook.
+  - id: graphql-ws
+    uri: /graphql
+    priority: 30
+    vars:
+      - ["http_upgrade", "~*", "websocket"]
+    enable_websocket: true
+    upstream_id: hasura
+    plugins:
+      proxy-rewrite:
+        uri: /v1/graphql
+      limit-count:
+        count: 120
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều kết nối, thử lại sau"
+
+  # Preflight CORS (giao diện chạy ở nguồn khác khi phát triển): không mang token.
+  - id: graphql-preflight
+    uri: /graphql
+    priority: 20
+    methods: [OPTIONS]
+    upstream_id: hasura
+    plugins:
+      proxy-rewrite:
+        uri: /v1/graphql
+
+  - id: graphql
+    uri: /graphql
+    priority: 10
+    methods: [POST, GET]
+    upstream_id: hasura
+    plugin_config_id: waf-graphql
+    plugins:
+      # Zero-trust tại biên: không có token Keycloak hợp lệ thì dừng ở cổng, không tới Hasura.
+      forward-auth:
+        uri: http://actions:8000/auth/gateway
+        request_method: GET
+        request_headers: [Authorization]
+        upstream_headers: [X-User-Sub]
+        timeout: 3000
+      limit-count:
+        count: 600
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều yêu cầu, thử lại sau"
+      client-control:
+        max_body_size: 1048576
+      proxy-rewrite:
+        uri: /v1/graphql
+
+  # --- Keycloak --------------------------------------------------------------------
+  # Realm master là realm quản trị Keycloak: không bao giờ đi qua cổng công khai
+  # (trang quản trị dùng cổng riêng 127.0.0.1:8080, KC_HOSTNAME_ADMIN).
+  - id: keycloak-master
+    uris: [/realms/master, /realms/master/*]
+    priority: 40
+    plugins:
+      mocking:
+        response_status: 403
+        content_type: text/plain
+        response_example: "Forbidden"
+
+  # Đăng nhập và cấp token: giới hạn tần suất chống dò mật khẩu.
+  - id: keycloak-login
+    uri: /realms/*
+    priority: 20
+    vars:
+      - ["uri", "~~", "^/realms/[^/]+/(protocol/openid-connect/token|login-actions/)"]
+    upstream_id: keycloak
+    plugin_config_id: waf
+    plugins:
+      limit-count:
+        count: 60
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều lần đăng nhập, thử lại sau"
+
+  - id: keycloak
+    uris: [/realms/*, /resources/*]
+    priority: 10
+    methods: [GET, POST, HEAD, OPTIONS]
+    upstream_id: keycloak
+    plugin_config_id: waf
+
+  # --- Tệp đính kèm (S3) ---------------------------------------------------------------
+  # Chỉ hai bucket của ứng dụng, mỗi bucket đúng thao tác cần thiết; quyền thật nằm ở chữ ký
+  # link do dịch vụ actions cấp (ADR #26). Không đi qua WAF: nội dung tệp được kiểm tra và quét
+  # virus ở confirm_upload trước khi rời bucket cách ly.
+  - id: s3-quarantine
+    uri: /bms-quarantine/*
+    priority: 10
+    methods: [PUT, OPTIONS]
+    upstream_id: s3
+    plugins:
+      client-control:
+        max_body_size: 27262976
+
+  - id: s3-documents
+    uri: /bms-documents/*
+    priority: 10
+    methods: [GET, HEAD, OPTIONS]
+    upstream_id: s3
+
+  # --- Ứng dụng web -----------------------------------------------------------------------
+  - id: web
+    uri: /*
+    priority: 0
+    methods: [GET, HEAD]
+    upstream_id: web
+    plugin_config_id: waf
+#END
