@@ -5,7 +5,7 @@
 import type { RefineThemedLayoutHeaderProps } from "@refinedev/antd";
 import { useLogout } from "@refinedev/core";
 import { Avatar, Dropdown, Layout as AntdLayout, Space, Switch, Tag, theme, Typography } from "antd";
-import { LogoutOutlined, SwapOutlined, UserOutlined } from "@ant-design/icons";
+import { LogoutOutlined, MoonOutlined, SunOutlined, SwapOutlined, UserOutlined } from "@ant-design/icons";
 import React, { useContext } from "react";
 import { useSession } from "../../auth/session";
 import { ColorModeContext } from "../../contexts/color-mode";
@@ -38,7 +38,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({ sticky = true 
       <Tag color="geekblue" style={{ fontSize: 14, padding: "4px 10px" }}>{tenant.tenant_name}</Tag>
       <Space size="middle">
         <NotificationBell />
-        <Switch checkedChildren="🌛" unCheckedChildren="🔆" aria-label="Chế độ tối"
+        <Switch checkedChildren={<MoonOutlined />} unCheckedChildren={<SunOutlined />} aria-label="Chế độ tối"
                 onChange={() => setMode(mode === "light" ? "dark" : "light")} defaultChecked={mode === "dark"} />
         <Dropdown menu={menu} trigger={["click"]}>
           <Space style={{ cursor: "pointer" }}>

@@ -101,7 +101,7 @@ export const PurchaseRequestShow = () => {
       {returnedNote && <Alert style={{ marginBottom: 16 }} type="warning" showIcon message="Bị trả về" description={returnedNote} />}
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={15}>
-          <Descriptions bordered size="small" column={{ xs: 1, md: 2 }} title={pr.title}>
+          <Descriptions bordered size="small" column={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }} title={pr.title}>
             <Descriptions.Item label="Người lập">{pr.requester?.full_name}</Descriptions.Item>
             <Descriptions.Item label="Tư cách lập">{pr.requester_position?.name} – {pr.org_unit?.name}</Descriptions.Item>
             <Descriptions.Item label="Tổng tiền"><Typography.Text strong>{formatMoney(pr.total_amount)}</Typography.Text></Descriptions.Item>

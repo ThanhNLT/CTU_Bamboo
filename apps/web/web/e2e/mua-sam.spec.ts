@@ -92,7 +92,7 @@ test("một tài khoản hai tenant: chọn tenant, không thấy dữ liệu te
 
 test("kiểm toán viên đối soát chuỗi hash nhật ký", async ({ page }) => {
   await login(page, "gd.taichinh");
-  await page.locator("aside").getByText("Nhật ký kiểm toán").click();
+  await page.locator("aside").getByText("Kiểm toán").click();
   await expect(page.locator("tr.ant-table-row").first()).toBeVisible();
   await page.getByRole("button", { name: "Đối soát chuỗi hash" }).click();
   await expect(page.getByText(/Chuỗi nguyên vẹn: \d+ bản ghi/)).toBeVisible();
@@ -101,5 +101,5 @@ test("kiểm toán viên đối soát chuỗi hash nhật ký", async ({ page })
 test("nhân viên không thấy menu nhật ký kiểm toán", async ({ page }) => {
   await login(page, "nv.muahang.dienthoai");
   await expect(page.locator("aside").getByText("Đề nghị mua sắm")).toBeVisible();
-  await expect(page.locator("aside").getByText("Nhật ký kiểm toán")).toHaveCount(0);
+  await expect(page.locator("aside").getByText("Kiểm toán")).toHaveCount(0);
 });

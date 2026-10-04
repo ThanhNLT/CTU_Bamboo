@@ -47,7 +47,7 @@ export const InboxList = () => {
         <Table.Column<Row> title="Đề nghị" render={(_, r) => (
           <Space direction="vertical" size={0}>
             <a onClick={() => go({ to: { resource: "proc_purchase_request", action: "show", id: r.purchase_request!.id } })}>
-              <Typography.Text code>{r.purchase_request?.doc_no}</Typography.Text> {r.purchase_request?.title}
+              <Typography.Text code style={{ whiteSpace: "nowrap" }}>{r.purchase_request?.doc_no}</Typography.Text> {r.purchase_request?.title}
             </a>
             <Typography.Text type="secondary">{r.purchase_request?.requester?.full_name} · {r.purchase_request?.org_unit?.name}</Typography.Text>
           </Space>)} />
