@@ -28,6 +28,7 @@ Ngoài phạm vi: lỗ hổng của phần mềm bên thứ ba chưa sửa ở u
 | Xác thực | Keycloak (OIDC, PKCE), OTP bắt buộc cho quản trị nền tảng | ADR #6, #32 |
 | Cách ly tenant | Khóa kép `(tenant_id, id)` trong CSDL; mỗi phiên đúng một tenant | ADR #14, #30 |
 | Phân quyền | Quyền gắn vị trí, kiểm tra trong CSDL (`can_read`), Hasura chỉ là lớp API | ADR #5, #24 |
+| CSDL | Mỗi dịch vụ một tài khoản không phải superuser; ứng dụng chỉ đọc được nhật ký kiểm toán, không đổi được cấu trúc | ADR #35 |
 | Secret | OpenBao, AppRole đặc quyền tối thiểu theo dịch vụ; khóa S3 do két sinh | ADR #25 |
 | Tệp đính kèm | Bucket cách ly, link có chữ ký, kiểm tra kích thước và chữ ký đầu tệp, quét ClamAV | ADR #26 |
 | Toàn vẹn dữ liệu | Nhật ký kiểm toán nối chuỗi hash theo tenant, chỉ ghi thêm | ADR #18, #33 |

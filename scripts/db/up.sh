@@ -4,7 +4,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Service `migrate`: tạo các database phụ (Flowable, metadata Hasura) nếu chưa có, rồi migrate `bms`.
+# Service `migrate`: tạo các database phụ (Flowable, Keycloak, metadata Hasura) nếu chưa có, migrate `bms`,
+# rồi đặt tài khoản đặc quyền tối thiểu cho từng dịch vụ (ADR #35, db/roles). Chạy lại mỗi lần khởi động.
 set -euo pipefail
 export PGOPTIONS="${PGOPTIONS:--c client_min_messages=warning}"
 
@@ -20,4 +21,27 @@ for db in ${EXTRA_DATABASES:-flowable hasura_meta}; do
         psql -X -q -d postgres -c "CREATE DATABASE \"$db\""
     fi
 done
-exec "$(dirname "$0")/migrate.sh" bms "$(dirname "$0")/../../db/migrations/bms"
+HERE="$(dirname "$0")"
+ROLES="$HERE/../../db/roles"
+"$HERE/migrate.sh" bms "$HERE/../../db/migrations/bms"
+
+PSQL=(psql -X -q -v ON_ERROR_STOP=1)
+"${PSQL[@]}" -d postgres -f "$ROLES/roles.sql" \
+    -v hasura_password="${HASURA_DB_PASSWORD:-hasura-db-dev}" \
+    -v actions_password="${ACTIONS_DB_PASSWORD:-actions-db-dev}" \
+    -v keycloak_password="${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}" \
+    -v flowable_password="${FLOWABLE_DB_PASSWORD:-flowable-db-dev}"
+
+# Mỗi dịch vụ là chủ CSDL của mình (tự migrate schema); bản cũ để `bms` làm chủ thì chuyển sang.
+for pair in ${SERVICE_DATABASES:-keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura}; do
+    db="${pair%%:*}"
+    owner="${pair#*:}"
+    if [[ -n "$("${PSQL[@]}" -At -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$db'")" ]]; then
+        "${PSQL[@]}" -d "$db" -v owner="$owner" -f "$ROLES/reown.sql"
+    fi
+done
+
+for db in ${APP_DATABASES:-bms}; do
+    "${PSQL[@]}" -d "$db" -f "$ROLES/grants.sql"
+done
+echo "roles: bamboo_hasura, bamboo_actions, bamboo_keycloak, bamboo_flowable"

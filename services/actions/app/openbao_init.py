@@ -55,7 +55,8 @@ def env_secrets() -> dict[str, dict]:
     """Secret hạ tầng khai báo ở .env (môi trường dev); OpenBao giữ bản để dịch vụ đọc."""
     env = os.environ.get
     return {
-        "bms/postgres": {"username": env("POSTGRES_USER", "bms"), "password": env("POSTGRES_PASSWORD", "bms-dev")},
+        # Tài khoản CSDL của actions/flow-sync (ADR #35), không phải superuser.
+        "bms/postgres": {"username": "bamboo_actions", "password": env("ACTIONS_DB_PASSWORD", "actions-db-dev")},
         "bms/hasura": {"admin_secret": env("HASURA_GRAPHQL_ADMIN_SECRET", "dev-admin-secret")},
         "bms/keycloak": {"username": env("KEYCLOAK_ADMIN", "kcadmin"),
                          "password": env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev")},

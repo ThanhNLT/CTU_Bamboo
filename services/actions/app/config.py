@@ -53,6 +53,10 @@ class Settings:
 # BAMBOO_ENV=production mà còn giá trị nào trong số này thì dừng ngay, không khởi động.
 DEV_DEFAULTS = {
     "POSTGRES_PASSWORD": "bms-dev",
+    "ACTIONS_DB_PASSWORD": "actions-db-dev",
+    "HASURA_DB_PASSWORD": "hasura-db-dev",
+    "KEYCLOAK_DB_PASSWORD": "keycloak-db-dev",
+    "FLOWABLE_DB_PASSWORD": "flowable-db-dev",
     "HASURA_GRAPHQL_ADMIN_SECRET": "dev-admin-secret",
     "ACTIONS_SECRET": "dev-actions-secret",
     "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",
@@ -114,7 +118,7 @@ def load() -> Settings:
 def _from_env() -> Settings:
     env = os.environ.get
     return Settings(
-        database_url=env("DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms"),
+        database_url=env("DATABASE_URL", "postgresql://bamboo_actions:actions-db-dev@db:5432/bms"),
         actions_secret=env("ACTIONS_SECRET", "dev-actions-secret"),
         flowable_url=env("FLOWABLE_URL", "http://flowable:8080/flowable-rest/service"),
         flowable_user=env("FLOWABLE_USER", "rest-admin"),
