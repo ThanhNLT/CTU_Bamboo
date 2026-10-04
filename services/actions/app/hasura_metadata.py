@@ -175,7 +175,7 @@ def build(conn: psycopg.Connection) -> dict:
         obj_name = _strip(own[0])
         if obj_name in columns[(s, t)]:  # cột không có hậu tố _id, ví dụ acted_by → acted_by_person
             obj_name = f"{obj_name}_{tt}"
-        mapping = dict(zip(src_cols, dst_cols))
+        mapping = dict(zip(src_cols, dst_cols, strict=True))
         add_rel("object", (s, t), obj_name, (ts, tt), mapping)
         if (ts, tt) == ("core", "tenant"):
             continue  # không sinh quan hệ mảng từ tenant (quá rộng)

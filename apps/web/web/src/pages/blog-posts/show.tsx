@@ -1,11 +1,10 @@
 import {
   DateField,
   MarkdownField,
-  NumberField,
   Show,
   TextField,
 } from "@refinedev/antd";
-import { useOne, useShow } from "@refinedev/core";
+import { useShow } from "@refinedev/core";
 import { Typography } from "antd";
 import React from "react";
 import { BLOG_POSTS_QUERY } from "./queries";
