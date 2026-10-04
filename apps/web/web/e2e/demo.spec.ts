@@ -36,6 +36,8 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   browserRef = browser;
   let page = first;
   await page.goto("/login");
+  await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
+  await page.waitForTimeout(500);
   await shot(page, "01-dang-nhap");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await expect(page.locator("#username")).toBeVisible();
