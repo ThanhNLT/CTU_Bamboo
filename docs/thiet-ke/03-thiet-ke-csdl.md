@@ -7,6 +7,17 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 | `bms` | `db/migrations/bms/` | Tổ chức, phân quyền, dữ liệu chủ, mua sắm, giao dịch nội bộ, sản xuất, kết luận khám sức khỏe, nhật ký |
 | `bms_hospital` | `db/migrations/hospital/` | Hồ sơ bệnh án (EMR) của Bệnh viện X, cách ly cứng ([ADR #15](#adr-15)) |
 
+**Hiện trạng repo (02/10/2026):** mới có migration `bms` 001–004, phần tổ chức, phân quyền và phê duyệt; các bảng và số migration bên dưới là thiết kế đích, chưa có trong repo.
+
+| Migration | Nội dung |
+|---|---|
+| `001_to_chuc.sql` | Tenant, quan hệ tenant, danh mục, đơn vị (ltree), vị trí (vị trí trưởng, báo cáo cho), người (tài khoản nhiều tenant – ADR #30), bổ nhiệm 4 loại (ADR #29); `core.position_holder`, `core.manager_position`, `core.company_of`, `core.account_tenants` |
+| `002_phan_quyen.sql` | Quyền, vai trò, nhóm, gán vai trò, ủy quyền một phần; `core.v_permission_grant`, `core.has_permission` (view thường, chưa tính sẵn theo ADR #21) |
+| `003_chung_tu.sql` | `proc.purchase_request` (tư cách lập), `ic.ic_order` tối thiểu |
+| `004_phe_duyet.sql` | `wf.approval_rule`, chuỗi duyệt theo vị trí (`wf.approval_step`), việc duyệt `wf.task`, lịch sử; `proc.submit_purchase_request`, `wf.act`, `wf.resolve_assignee`, `wf.refresh_position`, `wf.refresh_all`, `wf.v_inbox` (ADR #28) |
+
+Chạy thử: `docker compose up -d` (tự chạy migration), `make test-db` (hoặc `make test-db T=bms_031`). Cần chạy `SELECT wf.refresh_all()` định kỳ để xử lý bổ nhiệm hết hạn theo lịch.
+
 Kiểm thử: `make test-db` chạy mọi file `db/tests/bms_*.sql` và `hospital_*.sql` (tự rollback); hàm tiện ích dùng chung ở `db/tests/helpers.sql`.
 Dữ liệu mẫu: `scripts/seed/seed.py`, tự nạp sau migration ([ADR #16](#adr-16)).
 

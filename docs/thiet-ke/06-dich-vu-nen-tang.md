@@ -105,7 +105,7 @@ Gửi đề nghị ─► [Duyệt đề nghị mua sắm] ─► ◇ Quyết đ
                      │                      └─ trả về ─────────────► ● Trả về người lập
 ```
 
-- **Không viết cứng người duyệt.** Khi gửi, dịch vụ `actions` tính chuỗi người duyệt bằng `wf.resolve_pr_approvers` (cây tổ chức + bảng hạn mức `wf.approval_rule`, [ADR #17](#adr-17)) và truyền vào quy trình: `approvers` (danh sách person.id), `approverCount`, `stepIndex`. User task giao cho `${approvers.split(',')[stepIndex]}`.
+- **Không viết cứng người duyệt.** Khi gửi, dịch vụ `actions` tính chuỗi người duyệt bằng `wf.resolve_pr_approvers` (cây tổ chức + bảng hạn mức `wf.approval_rule`, [ADR #17](#adr-17)) và truyền vào quy trình: `approvers` (danh sách person.id), `approverCount`, `stepIndex`. User task giao cho `${approvers.split(',')[stepIndex]}`. **Cần đổi theo [ADR #28](#adr-28):** truyền danh sách vị trí, tìm người giữ vị trí khi đến từng bước.
 - Hạn mức nằm ở `wf.approval_rule` (doanh nghiệp tự cấu hình, có kiểm thử SQL), không nằm trong bảng DMN của Flowable. Nếu cần trình diễn DMN, có thể sinh bảng DMN từ `wf.approval_rule` (chỉ để hiển thị).
 - **Job `flowable-init`** (image `actions`, `services/actions/flowable_init.py`) chạy mỗi lần `up`:
   1. Deploy BPMN khi nội dung đổi (tên deployment kèm sha256, không deploy trùng).
