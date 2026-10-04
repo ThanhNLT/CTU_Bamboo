@@ -6,6 +6,8 @@ nguyên cho giao diện.
 """
 
 import json
+import logging
+import pathlib
 from contextlib import asynccontextmanager
 
 import psycopg
@@ -14,8 +16,22 @@ from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
 from . import auth, config
+from .flow_sync import PROCESS_KEY, business_key
+from .flowable import FlowableClient
 
 DECISIONS = {"APPROVE", "REJECT", "RETURN"}
+BPMN = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
+log = logging.getLogger("actions")
+
+# Các phần tử BPMN đã đi qua theo trạng thái đề nghị, khi không hỏi được Flowable.
+_PATH = ["submitted", "toApprove", "approveStep", "toDecision", "decision"]
+_DB_ACTIVITIES = {
+    "PENDING": (_PATH[:2], ["approveStep"]),
+    "APPROVED": (_PATH + ["toApproved", "approved"], []),
+    "REJECTED": (_PATH + ["toRejected", "rejected"], []),
+    "RETURNED": (_PATH + ["toReturned", "returned"], []),
+    "CANCELLED": (_PATH[:3], []),
+}
 
 
 class ActionError(Exception):
@@ -70,23 +86,86 @@ def act_on_task(conn: psycopg.Connection, session: dict, task_id: str, decision:
     return {"request_id": str(entity_id), "status": status}
 
 
+def cancel_purchase_request(conn: psycopg.Connection, session: dict, request_id: str, reason: str) -> dict:
+    row = conn.execute("SELECT tenant_id FROM proc.purchase_request WHERE id = %s", (request_id,)).fetchone()
+    person = session_identity(session, row[0] if row else None)
+    _bind_session(conn, session)
+    conn.execute("SELECT proc.cancel_purchase_request(%s, %s, %s)", (request_id, person, reason))
+    return {"request_id": request_id, "status": "CANCELLED"}
+
+
+def _require_read(conn: psycopg.Connection, request_id: str, person: str) -> None:
+    if not conn.execute("SELECT wf.entity_can_read('proc.purchase_request', %s, %s)", (request_id, person)).fetchone()[0]:
+        raise ActionError("Không tìm thấy chứng từ", "not-found", 404)
+
+
+def process_state(conn: psycopg.Connection, session: dict, request_id: str, flowable: FlowableClient | None) -> dict:
+    """Sơ đồ và bước hiện tại của lần gửi duyệt gần nhất. Đọc từ Flowable (bản phản chiếu,
+    ADR #31); Flowable chưa đồng bộ hoặc không truy cập được thì suy ra từ trạng thái trong CSDL."""
+    row = conn.execute("SELECT tenant_id, status, approval_round FROM proc.purchase_request WHERE id = %s",
+                       (request_id,)).fetchone()
+    person = session_identity(session, row[0] if row else None)
+    _require_read(conn, request_id, person)
+    _, status, round_no = row
+    sync = conn.execute(
+        """SELECT process_instance_id FROM wf.flow_sync
+           WHERE entity_type = 'proc.purchase_request' AND entity_id = %s AND round = %s""",
+        (request_id, round_no)).fetchone()
+    process_id = sync[0] if sync else None
+    result = {"request_id": request_id, "round": round_no, "status": status, "process_instance_id": process_id}
+
+    if process_id and flowable is not None:
+        try:
+            instance = flowable.find_process(PROCESS_KEY, business_key(request_id, round_no))
+            activities = flowable.historic_activities(process_id)
+            completed = list(dict.fromkeys(a["activityId"] for a in activities if a.get("endTime")))
+            active = list(dict.fromkeys(a["activityId"] for a in activities if not a.get("endTime")))
+            return {**result, "bpmn_xml": flowable.process_definition_xml(instance["processDefinitionId"]),
+                    "completed_activity_ids": completed, "active_activity_ids": active, "source": "flowable"}
+        except Exception as exc:  # noqa: BLE001 - Flowable là bản phản chiếu, lỗi thì dùng CSDL
+            log.warning("process_state: không đọc được Flowable cho %s: %s", request_id, exc)
+    completed, active = _DB_ACTIVITIES.get(status, ([], []))
+    return {**result, "bpmn_xml": BPMN.read_text(encoding="utf-8"),
+            "completed_activity_ids": completed, "active_activity_ids": active, "source": "database"}
+
+
+def verify_audit_chain(conn: psycopg.Connection, session: dict) -> dict:
+    tenant = session.get("x-hasura-tenant-id")
+    person = session_identity(session, tenant)
+    if not conn.execute("SELECT 1 FROM audit.v_reader WHERE tenant_id = %s AND person_id = %s",
+                        (tenant, person)).fetchone():
+        raise ActionError("Cần quyền audit.read để đối soát nhật ký", "forbidden", 403)
+    problems = conn.execute("SELECT seq, log_id, problem FROM audit.verify_chain(%s)", (tenant,)).fetchall()
+    checked = conn.execute("SELECT count(*) FROM audit.log WHERE tenant_id = %s", (tenant,)).fetchone()[0]
+    head = conn.execute("SELECT seq, encode(hash, 'hex') FROM audit.chain_head WHERE tenant_id = %s",
+                        (tenant,)).fetchone()
+    return {"tenant_id": tenant, "ok": not problems, "checked": checked,
+            "head_seq": head[0] if head else 0, "head_hash": head[1] if head else None,
+            "problems": [{"seq": p[0], "log_id": p[1], "problem": p[2]} for p in problems]}
+
+
 HANDLERS = {
-    "my_tenants": lambda conn, session, args: auth.my_tenants(conn, session),
-    "submit_purchase_request": lambda conn, session, args: submit_purchase_request(
+    "my_tenants": lambda conn, session, args, _flowable: auth.my_tenants(conn, session),
+    "submit_purchase_request": lambda conn, session, args, _flowable: submit_purchase_request(
         conn, session, args["request_id"]),
-    "act_on_task": lambda conn, session, args: act_on_task(
+    "act_on_task": lambda conn, session, args, _flowable: act_on_task(
         conn, session, args["task_id"], args["decision"], args.get("note")),
+    "cancel_purchase_request": lambda conn, session, args, _flowable: cancel_purchase_request(
+        conn, session, args["request_id"], args["reason"]),
+    "process_state": lambda conn, session, args, flowable: process_state(conn, session, args["request_id"], flowable),
+    "verify_audit_chain": lambda conn, session, args, _flowable: verify_audit_chain(conn, session),
 }
 
 
-def run_action(pool: ConnectionPool, name: str, payload: dict) -> dict:
+def run_action(pool: ConnectionPool, name: str, payload: dict, flowable: FlowableClient | None = None) -> dict:
     handler = HANDLERS.get(name)
     if handler is None:
         raise ActionError(f"Không có action {name}", "not-found", 404)
     session = {k.lower(): v for k, v in (payload.get("session_variables") or {}).items()}
+    args = payload.get("input") or {}
     try:
         with pool.connection() as conn, conn.transaction():
-            return handler(conn, session, payload.get("input") or {})
+            return handler(conn, session, args, flowable)
     except psycopg.errors.InvalidTextRepresentation as exc:
         raise ActionError("Mã không hợp lệ", "bad-request") from exc
     except (psycopg.errors.RaiseException, psycopg.errors.DataError, psycopg.errors.IntegrityError) as exc:
@@ -95,8 +174,10 @@ def run_action(pool: ConnectionPool, name: str, payload: dict) -> dict:
 
 
 def create_app(settings: config.Settings | None = None, pool: ConnectionPool | None = None,
-               verifier: auth.KeycloakVerifier | None = None) -> FastAPI:
+               verifier: auth.KeycloakVerifier | None = None, flowable: FlowableClient | None = None) -> FastAPI:
     settings = settings or config.load()
+    flowable = flowable or FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password,
+                                          timeout=5.0)
     verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
                                                  set(settings.keycloak_clients))
 
@@ -137,7 +218,7 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
             return JSONResponse({"message": "Sai mã bí mật actions", "extensions": {"code": "unauthorized"}}, 401)
         payload = await request.json()
         try:
-            result = run_action(app.state.pool, name, payload)
+            result = run_action(app.state.pool, name, payload, flowable)
         except ActionError as exc:
             return JSONResponse({"message": exc.message, "extensions": {"code": exc.code}}, exc.status)
         return result
