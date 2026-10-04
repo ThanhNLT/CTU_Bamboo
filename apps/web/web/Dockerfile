@@ -18,6 +18,12 @@ RUN npm run build
 
 # nginx nhánh stable, chạy không cần root.
 FROM nginxinc/nginx-unprivileged:1.30-alpine
+LABEL org.opencontainers.image.title="bamboo-web" \
+      org.opencontainers.image.description="Bamboo DX-OS: ứng dụng Refine (Tầng 2) phục vụ bằng nginx" \
+      org.opencontainers.image.source="https://github.com/ThanhNLT/Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
+      org.opencontainers.image.licenses="Apache-2.0"
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=0755 docker/40-bamboo-config.sh /docker-entrypoint.d/40-bamboo-config.sh
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080

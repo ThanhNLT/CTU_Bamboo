@@ -7,8 +7,9 @@
 // (header x-bamboo-tenant). Chưa chọn tenant thì chỉ gọi được query my_tenants.
 import { GraphQLClient, graphqlWS } from "@refinedev/hasura";
 import type { HttpError } from "@refinedev/core";
+import { config } from "../config";
 
-export const API_URL = import.meta.env.VITE_HASURA_URL ?? "http://localhost:8081/v1/graphql";
+export const API_URL = config.hasuraUrl;
 const WS_URL = API_URL.replace(/^http/, "ws");
 const TENANT_KEY = "bamboo.tenant";
 

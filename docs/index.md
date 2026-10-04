@@ -12,6 +12,7 @@ Nền tảng trung lập ngành; đặc thù ngành chỉ nằm ở Tầng 3.
 | Cấu hình OpenBao, SeaweedFS, Flowable | [Dịch vụ nền tảng](thiet-ke/06-dich-vu-nen-tang.md) |
 | Biết vì sao chọn công nghệ X | [Nhật ký quyết định kiến trúc](quan-ly-du-an/05-quyet-dinh-kien-truc.md) |
 | Biết tuần này làm gì | [Timeline](quan-ly-du-an/04-timeline.md) |
+| Triển khai thật, sao lưu, nâng cấp | [Triển khai production](van-hanh/trien-khai.md) |
 
 ```{toctree}
 :maxdepth: 2
@@ -20,4 +21,5 @@ Nền tảng trung lập ngành; đặc thù ngành chỉ nằm ở Tầng 3.
 tong-quan/index
 thiet-ke/index
 quan-ly-du-an/index
+van-hanh/index
 ```

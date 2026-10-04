@@ -28,12 +28,12 @@ test-actions:
 
 # Seed vào database bms_seed_test sạch: dữ liệu đúng, chạy lại không trùng, khớp realm.
 test-seed:
-	docker compose run --rm --build -v ./:/repo -e TEST_DATABASE_URL=postgresql://bms:$${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_seed_test \
+	docker compose run --rm --build -u 0 -v ./:/repo -e TEST_DATABASE_URL=postgresql://bms:$${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_seed_test \
 		seed sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q"
 
 # Đăng nhập thật mọi tài khoản demo qua Keycloak + Hasura trên stack đang chạy (`make up`).
 test-auth:
-	docker compose run --rm -v ./:/repo -e DEMO_STACK=1 -e DEMO_PASSWORD=$(DEMO_PASSWORD) \
+	docker compose run --rm -u 0 -v ./:/repo -e DEMO_STACK=1 -e DEMO_PASSWORD=$(DEMO_PASSWORD) \
 		-e KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/bms/protocol/openid-connect/token \
 		actions sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q tests/test_demo_login.py"
 
@@ -41,12 +41,12 @@ test-all: test-db test-seed test-actions test-auth
 
 # Sinh lại platform/hasura/metadata.json từ CSDL `bms` (ADR #24), rồi nạp vào Hasura.
 hasura-metadata:
-	docker compose run --rm -v ./:/repo actions python -m app.hasura_metadata
+	docker compose run --rm -u 0 -v ./:/repo actions python -m app.hasura_metadata
 	docker compose run --rm bootstrap
 
 # Sinh lại realm Keycloak từ danh sách tài khoản demo (services/seed/app/demo.py).
 realm:
-	docker compose run --rm -v ./:/repo seed python -m app.realm
+	docker compose run --rm -u 0 -v ./:/repo seed python -m app.realm
 
 psql:
 	docker compose exec db psql -U bms -d bms

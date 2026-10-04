@@ -2,4 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Keycloak kèm realm bms (sinh bằng `make realm`), import ở lần khởi động đầu (--import-realm).
 FROM quay.io/keycloak/keycloak:26.8.0
+LABEL org.opencontainers.image.title="bamboo-keycloak" \
+      org.opencontainers.image.description="Bamboo DX-OS: Keycloak kèm realm bms" \
+      org.opencontainers.image.source="https://github.com/ThanhNLT/Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
+      org.opencontainers.image.licenses="Apache-2.0"
 COPY realm/ /opt/keycloak/data/import/
