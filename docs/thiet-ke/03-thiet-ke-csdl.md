@@ -20,7 +20,7 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 Chạy thử: `docker compose up -d` (tự chạy migration), `make test-db` (hoặc `make test-db T=bms_031`). Cần chạy `SELECT wf.refresh_all()` định kỳ để xử lý bổ nhiệm hết hạn theo lịch.
 
 Kiểm thử: `make test-db` chạy mọi file `db/tests/bms_*.sql` và `hospital_*.sql` (tự rollback); hàm tiện ích dùng chung ở `db/tests/helpers.sql`.
-Dữ liệu mẫu: `scripts/seed/seed.py`, tự nạp sau migration ([ADR #16](#adr-16)).
+Dữ liệu mẫu: `services/seed/app/seed.py`, tự nạp sau migration bằng service `seed` ([ADR #16](#adr-16)): cây tổ chức 5 đơn vị, khoảng 140 người (Faker `vi_VN`, seed cố định), hạn mức, vai trò, ủy quyền và 10 đề nghị mua sắm dừng ở các bước khác nhau.
 
 ## 1. Nguyên tắc
 
@@ -207,9 +207,25 @@ Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](.
 
 ## 5. Tích hợp
 
-- **Keycloak chỉ xác thực.** `core.person.idp_subject` = `sub` trong token. Với tài khoản demo, id Keycloak = `sub` = `core.person.id` = `uuid5(DEMO_NS, username)`; tenant id = `uuid5(DEMO_NS, 'tenant:<mã>')` ([ADR #23](#adr-23)). Danh sách ở `scripts/seed/demo_users.py`, dùng chung cho seed và `scripts/keycloak/gen_realm.py` (`make realm`).
-- Realm `bms` (`platform/keycloak/realm/bms-realm.json`) tự import khi Keycloak khởi động lần đầu. Token mang claim Hasura `https://hasura.io/jwt/claims`: `x-hasura-user-id` (= person.id), `x-hasura-tenant-id`, `x-hasura-allowed-roles` (realm role: `user`, `hospital_staff`, `platform_admin`), `x-hasura-default-role = user`. Client `bms-web` (PKCE S256) cho Refine; client `bms-e2e` (password grant) chỉ cho kiểm thử dev. `make test-auth` đăng nhập thử mọi tài khoản và đối chiếu token với CSDL.
-- **Hasura** ([ADR #24](#adr-24)): metadata ở `platform/hasura/metadata`, tự nạp khi khởi động (image `cli-migrations-v3`), xác thực JWT bằng JWKS của Keycloak.
+- **Keycloak chỉ xác thực** ([ADR #6](#adr-6), [ADR #32](#adr-32)). Access token chỉ cần `sub`; `core.person.idp_subject` = `sub`. Tài khoản demo: id Keycloak = `sub` = `person.id` ở tenant giữ chính = `uuid5(DEMO_NS, 'account:<tên đăng nhập>')`; tenant id = `uuid5(DEMO_NS, 'tenant:<mã>')` ([ADR #23](#adr-23)). Danh sách ở `services/seed/app/demo.py`, dùng chung cho seed (`python -m app.seed`) và realm (`python -m app.realm`, `make realm`).
+- Realm `bms` (`platform/keycloak/realm/bms-realm.json`) tự import khi Keycloak khởi động lần đầu; mật khẩu demo lấy từ biến `DEMO_PASSWORD` lúc import. Client `bms-web` (PKCE S256) cho Refine; client `bms-e2e` (password grant) chỉ cho kiểm thử dev. Realm role `platform_admin` bắt buộc cài OTP ở lần đăng nhập đầu.
+- **Hasura xác thực bằng webhook** `GET /auth/hasura` của dịch vụ `actions` ([ADR #32](#adr-32)): kiểm tra token bằng JWKS của Keycloak, đọc tenant đã chọn ở header `x-bamboo-tenant`, tra `core.account_tenants(sub)`. Chưa chọn tenant: role `account`, chỉ gọi query `my_tenants`. Đã chọn: role `user` với `x-hasura-user-id` = `person.id` trong tenant đó; xin `x-hasura-role: platform_admin` khi có realm role tương ứng. `make test-auth` đăng nhập thử mọi tài khoản demo.
+- **Hasura** ([ADR #24](#adr-24)): metadata sinh bằng `services/actions/app/hasura_metadata.py` vào `platform/hasura/metadata.json`, job `bootstrap` nạp khi khởi động.
+
+**Tài khoản demo** (mật khẩu chung `DEMO_PASSWORD`, mặc định `demo-password`):
+
+| Tên đăng nhập | Vai trò |
+|---|---|
+| `tgd`, `pho.tgd` | Tổng giám đốc, Phó TGĐ Tập đoàn X |
+| `cdo`, `gd.taichinh` | Giám đốc chuyển đổi số, Giám đốc tài chính |
+| `gd.chip`, `pgd.chip` | Giám đốc Chip X (đang ủy quyền), Phó giám đốc (duyệt thay) |
+| `qd.phongsach.chip`, `kd.chip` | Quản đốc phòng sạch, Chuyên viên kinh doanh B2B |
+| `gd.dienthoai`, `tp.muahang.dienthoai`, `nv.muahang.dienthoai` | Giám đốc, Trưởng phòng mua hàng, Chuyên viên mua hàng Điện thoại X |
+| `gd.giadung`, `gd.baohanh.giadung` | Giám đốc Gia dụng X, Giám đốc trung tâm bảo hành (người quản lý hợp đồng) |
+| `gd.benhvien`, `tk.duoc.benhvien`, `bs.cdha.benhvien` | Bệnh viện X (tenant riêng) |
+| `kiemnhiem` | Một tài khoản, hai tenant: Tập đoàn X và Bệnh viện X ([ADR #30](#adr-30)) |
+| `hopdong` | Giữ chính ở Chip X, hợp đồng ngoài giờ cho Gia dụng X ([ADR #29](#adr-29)) |
+| `admin` | Đội nền tảng, realm role `platform_admin`, bắt buộc OTP |
   - Source `bms` (58 bảng/view, 238 quan hệ suy ra từ khóa ngoại) cho role `user`; source `hospital` (`bms_hospital`) chỉ cho role `hospital_staff`. Tài khoản tập đoàn không có trường `emr_*` trong schema GraphQL.
   - Mặc định lọc `tenant_id = X-Hasura-Tenant-Id`. Dữ liệu cần quyền chi tiết dùng computed field `can_read` (migration 013): đề nghị mua sắm và chuỗi đơn mua – nhận hàng – hóa đơn – thanh toán, bình luận, task, lịch sử duyệt, kết luận khám sức khỏe, nhật ký kiểm toán. `can_approve` cho biết đề nghị đang chờ chính người gọi duyệt.
   - Ghi dữ liệu qua Hasura chỉ cho: tạo/sửa/xóa đề nghị nháp của mình và dòng hàng (người lập, tenant lấy từ token; chỉ lập cho đơn vị mình công tác), bình luận, đánh dấu thông báo đã đọc, nhật ký thao tác Refine. Duyệt, đặt hàng, nhận hàng, thanh toán đi qua Hasura Actions + Flowable.

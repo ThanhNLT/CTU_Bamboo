@@ -68,6 +68,18 @@
                 },
                 "allow_aggregations": true
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
             }
           ]
         },
@@ -151,6 +163,18 @@
                 },
                 "allow_aggregations": true
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
             }
           ]
         },
@@ -223,6 +247,36 @@
           "select_permissions": [
             {
               "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_or": [
+                        {
+                          "delegator_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "delegate_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
@@ -438,6 +492,18 @@
                 },
                 "allow_aggregations": true
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
             }
           ]
         },
@@ -465,6 +531,14 @@
           "select_permissions": [
             {
               "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {},
@@ -688,6 +762,18 @@
                 },
                 "allow_aggregations": true
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
             }
           ]
         },
@@ -876,6 +962,18 @@
                 },
                 "allow_aggregations": true
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
             }
           ]
         },
@@ -929,6 +1027,20 @@
                     "id": "role_id"
                   }
                 }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
               }
             }
           ]
@@ -1043,6 +1155,20 @@
                 }
               }
             }
+          ],
+          "select_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
           ]
         },
         {
@@ -1078,6 +1204,20 @@
                     "role_id": "id"
                   }
                 }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
               }
             }
           ]
@@ -1134,6 +1274,20 @@
                 }
               }
             }
+          ],
+          "select_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
           ]
         },
         {
@@ -1172,6 +1326,20 @@
                 }
               }
             }
+          ],
+          "select_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
           ]
         },
         {
@@ -1182,6 +1350,18 @@
           "select_permissions": [
             {
               "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
@@ -1238,6 +1418,18 @@
           "select_permissions": [
             {
               "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
@@ -1336,6 +1528,18 @@
           "select_permissions": [
             {
               "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
@@ -1475,6 +1679,30 @@
           "select_permissions": [
             {
               "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
@@ -1704,6 +1932,30 @@
                   "can_read"
                 ]
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
             }
           ]
         },
@@ -1778,6 +2030,18 @@
           "select_permissions": [
             {
               "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
@@ -1954,6 +2218,30 @@
                   "can_read"
                 ]
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
             }
           ]
         },
@@ -2060,6 +2348,30 @@
                   "can_read"
                 ]
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
             }
           ]
         },
@@ -2133,6 +2445,27 @@
                 },
                 "allow_aggregations": true
               }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
             }
           ]
         }
@@ -2149,6 +2482,35 @@
     }
   ],
   "actions": [
+    {
+      "name": "my_tenants",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/my_tenants",
+        "arguments": [],
+        "output_type": "[AccountTenant!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "account"
+        },
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Các tenant tài khoản được vào (chọn tenant khi đăng nhập, ADR #30)"
+    },
     {
       "name": "submit_purchase_request",
       "definition": {
@@ -2173,6 +2535,9 @@
       "permissions": [
         {
           "role": "user"
+        },
+        {
+          "role": "platform_admin"
         }
       ],
       "comment": "Gửi duyệt đề nghị mua sắm (người lập)"
@@ -2209,6 +2574,9 @@
       "permissions": [
         {
           "role": "user"
+        },
+        {
+          "role": "platform_admin"
         }
       ],
       "comment": "Duyệt / từ chối / trả về một việc duyệt (kể cả duyệt thay qua ủy quyền)"
@@ -2232,6 +2600,31 @@
       }
     ],
     "objects": [
+      {
+        "name": "AccountTenant",
+        "fields": [
+          {
+            "name": "tenant_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "tenant_code",
+            "type": "String!"
+          },
+          {
+            "name": "tenant_name",
+            "type": "String!"
+          },
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "full_name",
+            "type": "String!"
+          }
+        ]
+      },
       {
         "name": "PurchaseRequestActionResult",
         "fields": [

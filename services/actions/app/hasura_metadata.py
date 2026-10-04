@@ -19,6 +19,8 @@ from . import config
 SCHEMAS = ("core", "wf", "proc", "ic")
 HIDDEN = {("wf", "flow_sync"), ("wf", "v_flow_state")}
 ROLE = "user"
+ADMIN_ROLE = "platform_admin"   # realm role Keycloak, bắt buộc OTP (ADR #32)
+ACCOUNT_ROLE = "account"        # đã đăng nhập, chưa chọn tenant: chỉ gọi my_tenants
 ME = "X-Hasura-User-Id"
 TENANT = {"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}
 
@@ -150,6 +152,9 @@ def build(conn: psycopg.Connection) -> dict:
 
     for key, entry in entries.items():
         if key in ADMIN_ONLY:
+            if "tenant_id" in columns[key]:
+                entry["select_permissions"] = [{"role": ADMIN_ROLE, "permission": {
+                    "columns": "*", "filter": TENANT, "allow_aggregations": True}}]
             continue
         if key in SELECT_FILTER:
             flt = SELECT_FILTER[key]
@@ -161,7 +166,8 @@ def build(conn: psycopg.Connection) -> dict:
         if key in CAN_READ:
             perm["filter"] = {"_and": [TENANT, {"can_read": {"_eq": True}}]}
             perm["computed_fields"] = ["can_read"]
-        entry["select_permissions"] = [{"role": ROLE, "permission": perm}]
+        # platform_admin xem như người dùng thường, cộng thêm các bảng phân quyền.
+        entry["select_permissions"] = [{"role": ROLE, "permission": perm}, {"role": ADMIN_ROLE, "permission": perm}]
 
     pr = entries[("proc", "purchase_request")]
     own_draft = {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_in": ["DRAFT", "RETURNED"]}}]}
@@ -191,6 +197,19 @@ def build(conn: psycopg.Connection) -> dict:
         }],
         "actions": [
             {
+                "name": "my_tenants",
+                "definition": {
+                    "kind": "synchronous", "type": "query",
+                    "handler": "{{ACTIONS_URL}}/actions/my_tenants",
+                    "arguments": [],
+                    "output_type": "[AccountTenant!]!",
+                    "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
+                    "timeout": 10,
+                },
+                "permissions": [{"role": ACCOUNT_ROLE}, {"role": ROLE}, {"role": ADMIN_ROLE}],
+                "comment": "Các tenant tài khoản được vào (chọn tenant khi đăng nhập, ADR #30)",
+            },
+            {
                 "name": "submit_purchase_request",
                 "definition": {
                     "kind": "synchronous", "type": "mutation",
@@ -200,7 +219,7 @@ def build(conn: psycopg.Connection) -> dict:
                     "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
                     "timeout": 30,
                 },
-                "permissions": [{"role": ROLE}],
+                "permissions": [{"role": ROLE}, {"role": ADMIN_ROLE}],
                 "comment": "Gửi duyệt đề nghị mua sắm (người lập)",
             },
             {
@@ -215,7 +234,7 @@ def build(conn: psycopg.Connection) -> dict:
                     "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
                     "timeout": 30,
                 },
-                "permissions": [{"role": ROLE}],
+                "permissions": [{"role": ROLE}, {"role": ADMIN_ROLE}],
                 "comment": "Duyệt / từ chối / trả về một việc duyệt (kể cả duyệt thay qua ủy quyền)",
             },
         ],
@@ -223,6 +242,11 @@ def build(conn: psycopg.Connection) -> dict:
             "enums": [{"name": "ApprovalDecision",
                        "values": [{"value": "APPROVE"}, {"value": "REJECT"}, {"value": "RETURN"}]}],
             "objects": [{
+                "name": "AccountTenant",
+                "fields": [{"name": "tenant_id", "type": "uuid!"}, {"name": "tenant_code", "type": "String!"},
+                           {"name": "tenant_name", "type": "String!"}, {"name": "person_id", "type": "uuid!"},
+                           {"name": "full_name", "type": "String!"}],
+            }, {
                 "name": "PurchaseRequestActionResult",
                 "fields": [{"name": "request_id", "type": "uuid!"}, {"name": "status", "type": "String!"}],
                 "relationships": [{
