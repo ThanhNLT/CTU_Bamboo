@@ -107,3 +107,17 @@ def test_my_tenants(client, conn, account):
                "session_variables": {"x-hasura-role": "account", "x-hasura-account-id": account}}
     resp = client.post("/actions/my_tenants", json=payload, headers={"x-actions-secret": SETTINGS.actions_secret})
     assert [t["tenant_code"] for t in resp.json()] == ["BVX", "TDX"]
+
+
+def test_cong_api_kiem_token(client):
+    """forward-auth của cổng API: chỉ cho qua token Keycloak hợp lệ, trả về sub cho upstream."""
+    resp = client.get("/auth/gateway")
+    assert resp.status_code == 401 and resp.headers["www-authenticate"] == "Bearer"
+    resp = client.get("/auth/gateway", headers={"Authorization": "Bearer khong-phai-jwt"})
+    assert resp.status_code == 401 and "invalid_token" in resp.headers["www-authenticate"]
+    resp = client.get("/auth/gateway", headers={"Authorization": f"Bearer {token('u1', key=OTHER_KEY)}"})
+    assert resp.status_code == 401, "chữ ký sai"
+    resp = client.get("/auth/gateway", headers={"Authorization": f"Bearer {token('u1', exp=int(time.time()) - 10)}"})
+    assert resp.status_code == 401, "token hết hạn"
+    resp = client.get("/auth/gateway", headers={"Authorization": f"Bearer {token('u1')}"})
+    assert resp.status_code == 200 and resp.headers["x-user-sub"] == "u1"

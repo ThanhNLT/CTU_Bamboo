@@ -77,6 +77,8 @@ jobs:
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
           npm run test:e2e
+      - name: Kiểm thử cổng API (token tại biên, WAF, chặn dịch vụ nội bộ, giới hạn tần suất)
+        run: scripts/ci/gateway-smoke.sh
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

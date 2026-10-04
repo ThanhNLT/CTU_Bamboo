@@ -17,7 +17,7 @@ let browserRef: Browser;
 // Mỗi người dùng một phiên trình duyệt riêng (cookie Keycloak, tenant đã chọn không lẫn nhau).
 async function login(_old: Page | null, username: string, pick?: RegExp): Promise<Page> {
   const context = await browserRef.newContext({
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173", viewport: { width: 1440, height: 900 }, locale: "vi-VN",
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8000", viewport: { width: 1440, height: 900 }, locale: "vi-VN",
   });
   const page = await context.newPage();
   await page.goto("/login");
