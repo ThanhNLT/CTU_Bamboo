@@ -7,6 +7,508 @@
       "tables": [
         {
           "table": {
+            "schema": "audit",
+            "name": "log"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "actor",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "actor_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "readers",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "audit",
+                    "name": "v_reader"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "readers": {
+                        "person_id": {
+                          "_eq": "X-Hasura-User-Id"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "readers": {
+                        "person_id": {
+                          "_eq": "X-Hasura-User-Id"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "audit",
+            "name": "v_reader"
+          },
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "collab",
+            "name": "comment"
+          },
+          "object_relationships": [
+            {
+              "name": "author",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "author_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "parent",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "parent_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "children",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "parent_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "collab",
+                  "name": "comment_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "author_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "entity_type",
+                  "entity_id",
+                  "parent_id",
+                  "body",
+                  "mentions"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "author_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "entity_type",
+                  "entity_id",
+                  "parent_id",
+                  "body",
+                  "mentions"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "author_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "deleted_at": {
+                        "_is_null": true
+                      }
+                    }
+                  ]
+                },
+                "check": {},
+                "columns": [
+                  "body",
+                  "deleted_at"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "author_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "deleted_at": {
+                        "_is_null": true
+                      }
+                    }
+                  ]
+                },
+                "check": {},
+                "columns": [
+                  "body",
+                  "deleted_at"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "collab",
+            "name": "notification"
+          },
+          "object_relationships": [
+            {
+              "name": "actor",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "actor_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "recipient",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "recipient_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "recipient_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "recipient_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
             "schema": "core",
             "name": "assignment"
           },
@@ -450,6 +952,21 @@
               }
             },
             {
+              "name": "partners",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mdm",
+                    "name": "partner"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "internal_unit_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "purchase_requests",
               "using": {
                 "manual_configuration": {
@@ -553,6 +1070,51 @@
             "name": "person"
           },
           "array_relationships": [
+            {
+              "name": "comments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "author_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "notifications_by_actor",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "notification"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "actor_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "notifications_by_recipient",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "notification"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "recipient_id"
+                  }
+                }
+              }
+            },
             {
               "name": "assignments",
               "using": {
@@ -1421,9 +1983,18 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -1433,9 +2004,18 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -1554,6 +2134,235 @@
         },
         {
           "table": {
+            "schema": "mdm",
+            "name": "item"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "purchase_request_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "item_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id"
+                },
+                "columns": [
+                  "code",
+                  "name",
+                  "uom",
+                  "category_code",
+                  "ref_price",
+                  "is_active"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "check": {},
+                "columns": [
+                  "code",
+                  "name",
+                  "uom",
+                  "category_code",
+                  "ref_price",
+                  "is_active"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "mdm",
+            "name": "partner"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "internal_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "internal_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "purchase_requests",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "partner_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id"
+                },
+                "columns": [
+                  "code",
+                  "name",
+                  "tax_code",
+                  "address",
+                  "email",
+                  "phone",
+                  "internal_unit_id",
+                  "is_active"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "check": {},
+                "columns": [
+                  "code",
+                  "name",
+                  "tax_code",
+                  "address",
+                  "email",
+                  "phone",
+                  "internal_unit_id",
+                  "is_active"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
             "schema": "proc",
             "name": "purchase_request"
           },
@@ -1603,6 +2412,21 @@
               }
             },
             {
+              "name": "partner",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mdm",
+                    "name": "partner"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "partner_id": "id"
+                  }
+                }
+              }
+            },
+            {
               "name": "requester",
               "using": {
                 "manual_configuration": {
@@ -1635,6 +2459,21 @@
           ],
           "array_relationships": [
             {
+              "name": "purchase_request_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "request_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "approval_steps",
               "using": {
                 "manual_configuration": {
@@ -1655,6 +2494,20 @@
                   "remote_table": {
                     "schema": "wf",
                     "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "comments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
                   },
                   "column_mapping": {
                     "id": "entity_id"
@@ -1738,8 +2591,11 @@
                 "columns": [
                   "requester_position_id",
                   "title",
+                  "description",
                   "category_code",
                   "total_amount",
+                  "needed_by",
+                  "partner_id",
                   "ic_order_id"
                 ]
               }
@@ -1781,8 +2637,11 @@
                 },
                 "columns": [
                   "title",
+                  "description",
                   "category_code",
                   "total_amount",
+                  "needed_by",
+                  "partner_id",
                   "ic_order_id"
                 ]
               }
@@ -1807,6 +2666,281 @@
                     {
                       "status": {
                         "_eq": "DRAFT"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "proc",
+            "name": "purchase_request_item"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "item",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mdm",
+                    "name": "item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "item_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "request_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "request": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "request": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "request": {
+                        "_and": [
+                          {
+                            "tenant_id": {
+                              "_eq": "X-Hasura-Tenant-Id"
+                            }
+                          },
+                          {
+                            "requester_id": {
+                              "_eq": "X-Hasura-User-Id"
+                            }
+                          },
+                          {
+                            "status": {
+                              "_in": [
+                                "DRAFT",
+                                "RETURNED"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id"
+                },
+                "columns": [
+                  "request_id",
+                  "item_id",
+                  "line_no",
+                  "description",
+                  "uom",
+                  "quantity",
+                  "unit_price",
+                  "note"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "request": {
+                        "_and": [
+                          {
+                            "tenant_id": {
+                              "_eq": "X-Hasura-Tenant-Id"
+                            }
+                          },
+                          {
+                            "requester_id": {
+                              "_eq": "X-Hasura-User-Id"
+                            }
+                          },
+                          {
+                            "status": {
+                              "_in": [
+                                "DRAFT",
+                                "RETURNED"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "request": {
+                        "_and": [
+                          {
+                            "tenant_id": {
+                              "_eq": "X-Hasura-Tenant-Id"
+                            }
+                          },
+                          {
+                            "requester_id": {
+                              "_eq": "X-Hasura-User-Id"
+                            }
+                          },
+                          {
+                            "status": {
+                              "_in": [
+                                "DRAFT",
+                                "RETURNED"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "columns": [
+                  "item_id",
+                  "line_no",
+                  "description",
+                  "uom",
+                  "quantity",
+                  "unit_price",
+                  "note"
+                ]
+              }
+            }
+          ],
+          "delete_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "request": {
+                        "_and": [
+                          {
+                            "tenant_id": {
+                              "_eq": "X-Hasura-Tenant-Id"
+                            }
+                          },
+                          {
+                            "requester_id": {
+                              "_eq": "X-Hasura-User-Id"
+                            }
+                          },
+                          {
+                            "status": {
+                              "_in": [
+                                "DRAFT",
+                                "RETURNED"
+                              ]
+                            }
+                          }
+                        ]
                       }
                     }
                   ]
@@ -2470,6 +3604,27 @@
           ]
         }
       ],
+      "functions": [
+        {
+          "function": {
+            "schema": "collab",
+            "name": "mark_notifications_read"
+          },
+          "configuration": {
+            "session_argument": "hasura_session",
+            "exposed_as": "mutation"
+          },
+          "permissions": [
+            {
+              "role": "user"
+            },
+            {
+              "role": "platform_admin"
+            }
+          ],
+          "comment": "Đánh dấu đã đọc thông báo của người gọi (ids bỏ trống: tất cả)"
+        }
+      ],
       "configuration": {
         "connection_info": {
           "database_url": {
@@ -2580,6 +3735,98 @@
         }
       ],
       "comment": "Duyệt / từ chối / trả về một việc duyệt (kể cả duyệt thay qua ủy quyền)"
+    },
+    {
+      "name": "cancel_purchase_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_purchase_request",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "PurchaseRequestActionResult",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người lập hủy đề nghị chưa duyệt xong (nháp, chờ duyệt, bị trả về)"
+    },
+    {
+      "name": "process_state",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/process_state",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProcessState",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho bpmn-js)"
+    },
+    {
+      "name": "verify_audit_chain",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/verify_audit_chain",
+        "arguments": [],
+        "output_type": "AuditChainResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đối soát chuỗi hash nhật ký kiểm toán của tenant (cần quyền audit.read)"
     }
   ],
   "custom_types": {
@@ -2649,6 +3896,89 @@
             "field_mapping": {
               "request_id": "id"
             }
+          }
+        ]
+      },
+      {
+        "name": "ProcessState",
+        "fields": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "round",
+            "type": "Int!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "process_instance_id",
+            "type": "String"
+          },
+          {
+            "name": "bpmn_xml",
+            "type": "String!"
+          },
+          {
+            "name": "active_activity_ids",
+            "type": "[String!]!"
+          },
+          {
+            "name": "completed_activity_ids",
+            "type": "[String!]!"
+          },
+          {
+            "name": "source",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "AuditChainProblem",
+        "fields": [
+          {
+            "name": "seq",
+            "type": "Int"
+          },
+          {
+            "name": "log_id",
+            "type": "Int"
+          },
+          {
+            "name": "problem",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "AuditChainResult",
+        "fields": [
+          {
+            "name": "tenant_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "ok",
+            "type": "Boolean!"
+          },
+          {
+            "name": "checked",
+            "type": "Int!"
+          },
+          {
+            "name": "head_seq",
+            "type": "Int!"
+          },
+          {
+            "name": "head_hash",
+            "type": "String"
+          },
+          {
+            "name": "problems",
+            "type": "[AuditChainProblem!]!"
           }
         ]
       }

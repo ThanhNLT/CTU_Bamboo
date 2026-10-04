@@ -38,6 +38,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [30](#adr-30) | 02/10/2026 | Một tài khoản cho nhiều tenant cùng công ty mẹ |
 | [31](#adr-31) | 02/10/2026 | CSDL là nguồn sự thật của luồng duyệt; Flowable phản chiếu |
 | [32](#adr-32) | 02/10/2026 | Hasura xác thực bằng webhook: Keycloak token + tenant đã chọn |
+| [33](#adr-33) | 04/10/2026 | Chuỗi hash nhật ký kiểm toán theo từng tenant |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -299,6 +300,14 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Keycloak chỉ xác thực, access token chỉ cần `sub`. Hasura chạy chế độ auth webhook (`/auth/hasura` trong dịch vụ `actions`): kiểm tra token bằng JWKS của Keycloak, đọc tenant đã chọn ở header `x-bamboo-tenant`, tra `core.account_tenants(sub)` để lấy `person.id` trong tenant đó. Chưa chọn tenant thì role `account` (chỉ gọi query `my_tenants`); đã chọn thì role `user`; realm role `platform_admin` của Keycloak cho phép xin role `platform_admin`. Tài khoản `platform_admin` bắt buộc OTP
 - **Lý do:** Một tài khoản ứng với nhiều `person.id` ([ADR #30](#adr-30)) mà Keycloak không biết tenant người dùng chọn; quyền nằm ở PostgreSQL ([ADR #6](#adr-6)) nên không đồng bộ thông tin tổ chức sang Keycloak; không tự ký token. Hasura CE gọi webhook ở mọi request (không cache; `Cache-Control` chỉ đặt hạn kết nối websocket theo hạn token), nên webhook giữ JWKS và kết quả tra tenant trong bộ nhớ (60 giây)
 - **Đã loại:** Claim Hasura trong token Keycloak (Keycloak Organizations + mapper, phải lưu `person.id` từng tenant trong Keycloak); dịch vụ riêng tự ký JWT sau khi chọn tenant (tự quản lý khóa, refresh); realm role `hospital_staff` (trùng cách ly theo tenant)
+
+(adr-33)=
+## ADR #33: Chuỗi hash nhật ký kiểm toán theo từng tenant
+
+- **Ngày:** 04/10/2026
+- **Quyết định:** Hiện thực [ADR #18](#adr-18) bằng một chuỗi hash **mỗi tenant**: `audit.log` có số thứ tự `seq` liên tục trong tenant, `hash = sha256(prev_hash || nội dung jsonb)`; đầu chuỗi giữ ở `audit.chain_head` và khóa theo giao dịch nên các giao dịch ghi cùng tenant xếp hàng ở bước ghi nhật ký. `audit.verify_chain(tenant)` phát hiện dòng bị sửa, thiếu dòng, lệch đầu chuỗi; Action `verify_audit_chain` cho người có quyền `audit.read` (quyền cấp tenant, không xét phạm vi đơn vị). Người thực hiện lấy từ `hasura.user`
+- **Lý do:** Kiểm toán viên của tenant đối soát được chuỗi của mình mà không cần đọc dữ liệu tenant khác; seq liên tục phát hiện được cả việc xóa; khóa đầu chuỗi đảm bảo chuỗi không rẽ nhánh khi ghi đồng thời
+- **Đã loại:** Một chuỗi toàn nền tảng (khóa chung mọi tenant, đối soát phải đọc chéo tenant); băm theo lô định kỳ (khoảng hở chưa niêm phong); ghi nhật ký bất đồng bộ qua `pg_notify` (mất sự kiện thì mất nhật ký)
 
 (adr-mau)=
 ## Mẫu cho quyết định mới

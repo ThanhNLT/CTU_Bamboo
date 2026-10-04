@@ -58,6 +58,15 @@ class FlowableClient:
         resp = self._check(self.http.get(f"runtime/process-instances/{process_id}/variables/{name}"))
         return resp.json()["value"]
 
+    def historic_activities(self, process_id: str) -> list[dict]:
+        """Các bước đã đi qua và đang đứng (endTime rỗng), theo thứ tự thời gian."""
+        resp = self._check(self.http.get("history/historic-activity-instances", params={
+            "processInstanceId": process_id, "sort": "startTime", "order": "asc", "size": 1000}))
+        return resp.json()["data"]
+
+    def process_definition_xml(self, definition_id: str) -> str:
+        return self._check(self.http.get(f"repository/process-definitions/{definition_id}/resourcedata")).text
+
     # --- User task ------------------------------------------------------------
 
     def tasks(self, process_id: str) -> list[dict]:

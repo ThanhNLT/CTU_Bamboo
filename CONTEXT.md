@@ -81,3 +81,43 @@ _Tránh dùng_: escalate, bỏ qua bước
 **Việc duyệt** (`wf.task`):
 Một bước của chuỗi duyệt đã giao cho một người cụ thể, nằm trong hộp việc của người đó. Khi bổ nhiệm vào vị trí duyệt thay đổi, việc đang chờ tự chuyển sang người giữ mới. Không còn ai hợp lệ thì việc nằm chờ tại vị trí cho đến khi có người.
 _Tránh dùng_: task, nhiệm vụ
+
+## Mua sắm
+
+**Đề nghị mua sắm** (`proc.purchase_request`):
+Chứng từ người lập gửi để xin mua hàng hóa, dịch vụ; có số chứng từ, lập dưới một tư cách lập, đi qua chuỗi duyệt. Người lập hủy được khi chưa duyệt xong.
+_Tránh dùng_: phiếu yêu cầu, PR (chỉ dùng làm tiền tố số chứng từ)
+
+**Số chứng từ**:
+Mã hiển thị dạng `PR-2026-000001`, đánh theo tenant, loại chứng từ và năm (giờ Việt Nam), không nhảy số.
+_Tránh dùng_: mã phiếu, id
+
+**Dòng hàng** (`proc.purchase_request_item`):
+Một mặt hàng trong đề nghị: mô tả, đơn vị tính, số lượng, đơn giá. Đề nghị có dòng hàng thì tổng tiền là tổng các dòng; chỉ sửa được khi đề nghị còn nháp hoặc bị trả về.
+_Tránh dùng_: chi tiết, line item
+
+**Nhà cung cấp** (`mdm.partner`):
+Đối tác bán hàng cho doanh nghiệp. **Nhà cung cấp nội bộ** trỏ tới một công ty trong cùng tenant, dùng cho giao dịch nội bộ.
+_Tránh dùng_: vendor, đối tác (khi chỉ người bán)
+
+**Vật tư** (`mdm.item`):
+Mặt hàng trong danh mục dùng chung của tenant (mã, tên, đơn vị tính, nhóm hàng, giá tham khảo). **Nhóm hàng** là danh mục `ITEM_CATEGORY`; quy tắc hạn mức có thể chỉ áp cho một nhóm hàng.
+_Tránh dùng_: sản phẩm, hàng hóa (khi nói danh mục)
+
+## Kiểm toán và cộng tác
+
+**Nhật ký kiểm toán** (`audit.log`):
+Bản ghi mọi thay đổi trên bảng nghiệp vụ (dữ liệu cũ/mới, cột đổi, người thực hiện), nối chuỗi hash theo từng tenant, chỉ ghi thêm. Người có quyền `audit.read` trong tenant xem và đối soát được.
+_Tránh dùng_: log, lịch sử duyệt (lịch sử duyệt là `wf.approval_history`)
+
+**Đối soát chuỗi**:
+Tính lại hash từng dòng nhật ký của tenant để phát hiện dòng bị sửa, bị xóa hoặc mất ở cuối chuỗi.
+_Tránh dùng_: verify ledger (chỉ dùng cho immudb)
+
+**Bình luận** (`collab.comment`):
+Trao đổi gắn với một chứng từ, trả lời theo luồng, nhắc tên được người xem được chứng từ; xóa là xóa mềm.
+_Tránh dùng_: chat, ghi chú duyệt (ghi chú duyệt nằm ở bước duyệt)
+
+**Thông báo** (`collab.notification`):
+Tin báo cho đúng một người, sinh tự động khi được giao việc duyệt, khi đề nghị của mình có kết quả, khi có bình luận hoặc được nhắc tên. Người gây ra sự kiện không tự nhận thông báo.
+_Tránh dùng_: alert, tin nhắn
