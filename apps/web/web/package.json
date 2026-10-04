@@ -12,9 +12,8 @@
     "@refinedev/hasura": "^7.0.0",
     "@refinedev/kbar": "^2.0.0",
     "@refinedev/react-router": "^2.0.0",
-    "@uiw/react-md-editor": "^4.0.8",
     "antd": "^5.23.0",
-    "axios": "^1.6.2",
+    "dayjs": "^1.11.23",
     "graphql": "^15.6.1",
     "graphql-request": "^5.2.0",
     "graphql-tag": "^2.12.6",
@@ -25,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@playwright/test": "^1.63.0",
     "@refinedev/cli": "^2.16.52",
     "@types/node": "^20",
     "@types/react": "^19.1.0",
@@ -43,7 +43,8 @@
     "build": "tsc && refine build",
     "start": "refine start",
     "lint": "eslint .",
-    "refine": "refine"
+    "refine": "refine",
+    "test:e2e": "playwright test"
   },
   "browserslist": {
     "production": [
