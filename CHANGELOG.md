@@ -19,6 +19,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - Kiểm thử đầu–cuối bằng Playwright (`npm run test:e2e`) trên stack thật.
 - Toàn bộ hệ thống chạy bằng một lệnh `docker compose up -d`: healthcheck cho mọi dịch vụ chạy lâu, khởi động theo trạng thái healthy, tự khởi động lại (ADR #13).
 - README, NOTICE, `.env.example`, header SPDX cho mọi tệp (chuẩn REUSE 3.3).
+- Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
 
 ### Sửa
 - Frontend gọi Keycloak/Hasura demo bên ngoài thay vì stack của dự án; 12 lỗi ESLint.
