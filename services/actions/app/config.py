@@ -14,6 +14,17 @@ class Settings:
     keycloak_jwks_url: str
     keycloak_issuer: str
     keycloak_clients: frozenset[str]
+    s3_endpoint: str
+    s3_public_endpoint: str
+    s3_region: str
+    s3_access_key: str
+    s3_secret_key: str
+    s3_admin_access_key: str
+    s3_admin_secret_key: str
+    s3_quarantine_bucket: str
+    s3_documents_bucket: str
+    clamav_host: str
+    clamav_port: int
 
 
 def load() -> Settings:
@@ -30,4 +41,17 @@ def load() -> Settings:
         keycloak_jwks_url=env("KEYCLOAK_JWKS_URL", "http://keycloak:8080/realms/bms/protocol/openid-connect/certs"),
         keycloak_issuer=env("KEYCLOAK_ISSUER", "http://localhost:8080/realms/bms"),
         keycloak_clients=frozenset(env("KEYCLOAK_CLIENTS", "bms-web,bms-e2e").split(",")),
+        # S3 (SeaweedFS). Link có chữ ký dùng địa chỉ trình duyệt thấy (ADR #26).
+        s3_endpoint=env("S3_ENDPOINT", "http://seaweedfs:8333"),
+        s3_public_endpoint=env("S3_PUBLIC_ENDPOINT", "http://localhost:8333"),
+        s3_region=env("S3_REGION", "us-east-1"),
+        s3_access_key=env("S3_ACCESS_KEY", "bms-app"),
+        s3_secret_key=env("S3_SECRET_KEY", "bms-app-dev-secret"),
+        s3_admin_access_key=env("S3_ADMIN_ACCESS_KEY", "bms-admin"),
+        s3_admin_secret_key=env("S3_ADMIN_SECRET_KEY", "bms-admin-dev-secret"),
+        s3_quarantine_bucket=env("S3_QUARANTINE_BUCKET", "bms-quarantine"),
+        s3_documents_bucket=env("S3_DOCUMENTS_BUCKET", "bms-documents"),
+        # Bỏ trống: chưa quét virus, confirm_upload ghi "bỏ qua" và vẫn nhận tệp.
+        clamav_host=env("CLAMAV_HOST", ""),
+        clamav_port=int(env("CLAMAV_PORT", "3310")),
     )

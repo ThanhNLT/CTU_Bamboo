@@ -1,4 +1,4 @@
-"""Job khởi tạo chạy mỗi lần `docker compose up`: deploy BPMN, nạp metadata Hasura."""
+"""Job khởi tạo chạy mỗi lần `docker compose up`: tạo bucket S3, deploy BPMN, nạp metadata Hasura."""
 
 import hashlib
 import json
@@ -9,7 +9,7 @@ import time
 
 import httpx
 
-from . import config
+from . import config, storage
 from .flowable import FlowableClient
 
 log = logging.getLogger("bootstrap")
@@ -55,6 +55,8 @@ def apply_hasura_metadata(hasura_url: str, admin_secret: str, path: pathlib.Path
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     settings = config.load()
+    wait_for("SeaweedFS", lambda: storage.ensure_buckets(settings))
+    log.info("bucket S3 sẵn sàng: %s, %s", settings.s3_quarantine_bucket, settings.s3_documents_bucket)
     flowable = FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password)
     wait_for("Flowable", lambda: flowable.deployments_named("-"))
     deploy_bpmn(flowable)

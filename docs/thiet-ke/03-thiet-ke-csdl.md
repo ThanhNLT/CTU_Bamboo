@@ -7,7 +7,7 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 | `bms` | `db/migrations/bms/` | Tổ chức, phân quyền, dữ liệu chủ, mua sắm, giao dịch nội bộ, sản xuất, kết luận khám sức khỏe, nhật ký |
 | `bms_hospital` | `db/migrations/hospital/` | Hồ sơ bệnh án (EMR) của Bệnh viện X, cách ly cứng ([ADR #15](#adr-15)) |
 
-**Hiện trạng repo (04/10/2026):** đã có migration `bms` 001–008: tổ chức, phân quyền, phê duyệt, Hasura và đồng bộ Flowable, mua sắm (dữ liệu chủ, số chứng từ, dòng hàng), nhật ký kiểm toán, bình luận và thông báo. Các bảng và số migration ở mục 2–4 là thiết kế đích; phần chưa có trong repo: đơn mua – nhận hàng – hóa đơn – thanh toán, ngân sách, giao dịch nội bộ đầy đủ, sản xuất (`mfg`), `hr`, `bms_hospital`, CDC, bảng quyền tính sẵn, tệp đính kèm.
+**Hiện trạng repo (04/10/2026):** đã có migration `bms` 001–009: tổ chức, phân quyền, phê duyệt, Hasura và đồng bộ Flowable, mua sắm (dữ liệu chủ, số chứng từ, dòng hàng), nhật ký kiểm toán, bình luận và thông báo, tệp đính kèm. Các bảng và số migration ở mục 2–4 là thiết kế đích; phần chưa có trong repo: đơn mua – nhận hàng – hóa đơn – thanh toán, ngân sách, giao dịch nội bộ đầy đủ, sản xuất (`mfg`), `hr`, `bms_hospital`, CDC, bảng quyền tính sẵn.
 
 | Migration | Nội dung |
 |---|---|
@@ -19,6 +19,7 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 | `006_mua_sam.sql` | `mdm.partner` (nhà cung cấp, nhà cung cấp nội bộ), `mdm.item`; số chứng từ `core.next_doc_no` (bảng đếm `core.doc_sequence`, không nhảy số); `proc.purchase_request` thêm `doc_no`, `description`, `needed_by`, `partner_id`; dòng hàng `proc.purchase_request_item` (tổng tiền đầu phiếu tự tính, khóa sau khi gửi duyệt); `proc.cancel_purchase_request` (người lập hủy, `wf.cancel_entity` ghi người hủy) |
 | `007_kiem_toan.sql` | `audit.log` nối chuỗi hash theo tenant, chỉ ghi thêm; `audit.enable`, `audit.verify_chain`, `audit.v_reader` (người có quyền `audit.read`) ([ADR #33](#adr-33)) |
 | `008_cong_tac.sql` | `collab.comment` (nhắc tên, trả lời, xóa mềm), `collab.notification` sinh bằng trigger trên `wf.task`, `proc.purchase_request`, `collab.comment` và `pg_notify('bms_notification')`; `collab.mark_notifications_read` |
+| `009_tep_dinh_kem.sql` | `core.attachment` (PENDING → CLEAN / INFECTED / REJECTED, chỉ đi tiếp từ PENDING), quyền xem theo chứng từ gốc, giữ tệp của đề nghị đã có kết quả ([ADR #26](#adr-26)) |
 
 Chạy thử: `docker compose up -d` (tự chạy migration), `make test-db` (hoặc `make test-db T=bms_031`). Cần chạy `SELECT wf.refresh_all()` định kỳ để xử lý bổ nhiệm hết hạn theo lịch.
 

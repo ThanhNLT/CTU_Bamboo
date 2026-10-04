@@ -251,6 +251,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Tệp đính kèm: trình duyệt tải thẳng lên S3 bằng link có chữ ký vào bucket cách ly `bms-quarantine`; Action `confirm_upload` quét rồi chuyển sang `bms-documents`; chỉ cấp link tải về cho tệp sạch và người xem được chứng từ gốc
 - **Lý do:** Tệp lớn không đi qua Hasura/dịch vụ; tệp chưa quét không bao giờ tải về được; quyền tải tệp dùng chung logic `can_read` với dữ liệu
 - **Đã loại:** Tải tệp qua Hasura Action (base64); bucket công khai; quét bất đồng bộ không chặn tải về
+- **Ghi chú (04/10/2026):** Hiện thực ở `services/actions/app/attachments.py`. `confirm_upload` kiểm tra thêm kích thước thực so với khai báo và chữ ký đầu tệp so với loại tệp (sai thì `REJECTED`, xóa tệp) trước khi quét; ClamAV là tùy chọn (profile `scan`). Chưa có OpenBao nên khóa S3 tạm lấy từ biến môi trường.
 
 (adr-27)=
 ## ADR #27: BPMN duyệt tuần tự theo danh sách người duyệt
