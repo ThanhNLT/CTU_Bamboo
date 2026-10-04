@@ -43,7 +43,7 @@ export const PurchaseRequestList = () => {
           ] }] : [], "replace")} />
       </Space>
       <Table {...tableProps} rowKey="id">
-        <Table.Column dataIndex="doc_no" title="Số" sorter render={(v: string) => <Typography.Text code>{v}</Typography.Text>} />
+        <Table.Column dataIndex="doc_no" title="Số" sorter render={(v: string) => <Typography.Text code style={{ whiteSpace: "nowrap" }}>{v}</Typography.Text>} />
         <Table.Column dataIndex="title" title="Tiêu đề" />
         <Table.Column dataIndex={["requester", "full_name"]} title="Người lập" />
         <Table.Column dataIndex={["org_unit", "name"]} title="Đơn vị" responsive={["lg"]} />

@@ -10,19 +10,20 @@ JOBS=(migrate seed openbao-init bootstrap)
 SERVICES=(db keycloak flowable hasura openbao seaweedfs actions web)
 deadline=$((SECONDS + TIMEOUT))
 
-state() { docker compose ps -a --format '{{.Service}} {{.State}} {{.Health}} {{.ExitCode}}' | awk -v s="$1" '$1 == s'; }
+# Dấu | phân cách cột: Health rỗng (dịch vụ không có healthcheck) không làm lệch cột sau.
+state() { docker compose ps -a --format '{{.Service}}|{{.State}}|{{.Health}}|{{.ExitCode}}' | awk -F'|' -v s="$1" '$1 == s'; }
 
 while :; do
     pending=()
     for job in "${JOBS[@]}"; do
-        read -r _ st _ code <<<"$(state "$job") x x x x"
+        IFS='|' read -r _ st _ code <<<"$(state "$job")"
         if [[ "$st" == exited && "$code" != 0 ]]; then
             echo "Job $job thoát với mã $code"; docker compose logs "$job" | tail -50; exit 1
         fi
         [[ "$st" == exited ]] || pending+=("$job")
     done
     for svc in "${SERVICES[@]}"; do
-        read -r _ st health _ <<<"$(state "$svc") x x x x"
+        IFS='|' read -r _ st health _ <<<"$(state "$svc")"
         [[ "$st" == running && "$health" == healthy ]] || pending+=("$svc($st/$health)")
     done
     if [[ ${#pending[@]} -eq 0 ]]; then

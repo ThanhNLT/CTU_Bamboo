@@ -62,7 +62,7 @@ function App() {
                     meta: { label: "Đề nghị mua sắm", icon: <FileTextOutlined /> },
                   },
                   { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
-                  { name: "audit_log", list: "/admin/audit-logs", meta: { label: "Nhật ký kiểm toán", icon: <AuditOutlined /> } },
+                  { name: "audit_log", list: "/admin/audit-logs", meta: { label: "Kiểm toán", icon: <AuditOutlined /> } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
                 options={{ syncWithLocation: true, warnWhenUnsavedChanges: true, liveMode: "auto", disableTelemetry: true }}
