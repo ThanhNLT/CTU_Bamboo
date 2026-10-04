@@ -13,6 +13,8 @@ dịch vụ hoặc thư viện không sửa đổi (không đóng gói kèm mã 
 ------------------------------------------------------------------------------------------------
 Thành phần chạy dưới dạng dịch vụ (image Docker chính thức, không sửa đổi)
 ------------------------------------------------------------------------------------------------
+Apache APISIX 3.19 (apache/apisix)              Apache-2.0
+Coraza proxy-wasm 0.6 + OWASP CRS (nhúng trong image cổng API) Apache-2.0
 PostgreSQL 17 + PostGIS 3.5 (postgis/postgis)   PostgreSQL License; PostGIS: GPL-2.0-or-later
 Keycloak 26 (quay.io/keycloak/keycloak)          Apache-2.0
 Hasura GraphQL Engine v2 CE (hasura/graphql-engine) Apache-2.0
@@ -23,6 +25,7 @@ ClamAV 1.4 (clamav/clamav, tùy chọn)             GPL-2.0-only
 nginx (nginxinc/nginx-unprivileged)              BSD-2-Clause
 Python 3.13 (python:3.13-slim)                   PSF-2.0
 Node.js 22 (node:22-alpine, chỉ lúc build)       MIT
+Alpine Linux (alpine:3.22, chỉ lúc build image cổng API) MIT và các giấy phép của từng gói
 
 ------------------------------------------------------------------------------------------------
 Thư viện Python (phiên bản ghim trong constraints.txt, cài từ PyPI)

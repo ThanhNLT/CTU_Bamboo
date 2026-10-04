@@ -15,19 +15,19 @@ Bamboo là nền tảng lõi headless (Tầng 1) cùng ứng dụng mẫu **Đ�
 ## Kiến trúc
 
 ```text
-Trình duyệt ──► web (Refine + Ant Design)          :5173
-                 │ OIDC + PKCE                      │ GraphQL (token Keycloak + tenant đã chọn)
-                 ▼                                  ▼
-              Keycloak :8080 ◄── JWKS ──── actions (FastAPI) ◄── auth webhook ── Hasura :8081
-                                            │  Hasura Actions: gửi duyệt, duyệt, tệp đính kèm...
-                                            ├──► PostgreSQL + PostGIS :5432 (nguồn sự thật, nhật ký hash)
-                                            ├──► SeaweedFS S3 :8333 (bucket cách ly + bucket chính)
-                                            └──► OpenBao :8200 (secret, khóa S3, mã hóa PII)
-              flow-sync ── đối chiếu CSDL → Flowable :8082 (BPMN, bản phản chiếu luồng duyệt)
+Trình duyệt ──► Cổng API APISIX :8000 (một điểm vào; WAF Coraza/OWASP CRS, giới hạn tần suất, X-Request-Id)
+                 ├── /                    → web (Refine + Ant Design)
+                 ├── /realms, /resources  → Keycloak (OIDC + PKCE; realm master bị chặn)
+                 ├── /graphql             → Hasura ──auth webhook──► actions (FastAPI)
+                 │     token kiểm tại biên (forward-auth → actions)    │  Hasura Actions: gửi duyệt, duyệt, tệp...
+                 └── /bms-quarantine, /bms-documents → SeaweedFS S3     ├──► PostgreSQL + PostGIS (nguồn sự thật, nhật ký hash)
+                                                                        └──► OpenBao (secret, khóa S3, mã hóa PII)
+              flow-sync ── đối chiếu CSDL → Flowable (BPMN, bản phản chiếu luồng duyệt)
 ```
 
 | Thành phần | Công nghệ | Giấy phép |
 |---|---|---|
+| Cổng API, WAF | Apache APISIX 3.19, Coraza + OWASP CRS | Apache-2.0 |
 | Định danh, SSO, MFA | Keycloak 26 | Apache-2.0 |
 | API GraphQL, phân quyền theo dòng | Hasura GraphQL Engine v2 CE | Apache-2.0 |
 | Dữ liệu có cấu trúc | PostgreSQL 17 + PostGIS 3.5 | PostgreSQL, GPL-2.0 (PostGIS) |
@@ -57,11 +57,11 @@ docker compose ps          # mọi dịch vụ chạy lâu phải là "healthy";
 docker compose logs -f bootstrap
 ```
 
-Mở ứng dụng tại **<http://localhost:5173>** (đúng `localhost`, không dùng `127.0.0.1`: Keycloak chỉ chấp nhận chuyển hướng về địa chỉ này). Tài khoản demo và địa chỉ các trang quản trị ở mục ngay dưới.
+Mở ứng dụng tại **<http://localhost:8000>**: cổng API là địa chỉ duy nhất trình duyệt cần (dùng đúng `localhost`, không dùng `127.0.0.1`: Keycloak chỉ chấp nhận chuyển hướng về địa chỉ này). Tài khoản demo và địa chỉ các trang quản trị ở mục ngay dưới.
 
 ### Tài khoản
 
-Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến `DEMO_PASSWORD`, đặt lúc Keycloak import realm lần đầu). Đăng nhập tại <http://localhost:5173> bằng nút **Đăng nhập bằng tài khoản tập đoàn**; đổi người dùng bằng **Đăng xuất** ở thanh bên trái. Hạn mức duyệt mẫu: dưới 50 triệu quản lý trực tiếp duyệt; 50–500 triệu giám đốc công ty con; từ 500 triệu thêm Tổng giám đốc.
+Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến `DEMO_PASSWORD`, đặt lúc Keycloak import realm lần đầu). Đăng nhập tại <http://localhost:8000> bằng nút **Đăng nhập bằng tài khoản tập đoàn**; đổi người dùng bằng **Đăng xuất** ở thanh bên trái. Hạn mức duyệt mẫu: dưới 50 triệu quản lý trực tiếp duyệt; 50–500 triệu giám đốc công ty con; từ 500 triệu thêm Tổng giám đốc.
 
 **Tập đoàn X – công ty mẹ**
 
@@ -112,7 +112,7 @@ Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến
 | `hopdong` | Tạ Minh Tuấn, kỹ sư Chip X, làm hợp đồng cho Gia dụng X | Bổ nhiệm hợp đồng: lập được đề nghị ở Gia dụng X nhưng không bao giờ là người duyệt (ADR #29) |
 | `admin` | Kiều Anh Quân, đội nền tảng | Realm role `platform_admin`; **bắt buộc cài OTP** (ứng dụng xác thực) ở lần đăng nhập đầu |
 
-**Quản trị hệ thống** (giá trị mặc định cho máy dev; đổi trong `.env` khi triển khai thật)
+**Quản trị hệ thống** (giá trị mặc định cho máy dev; đổi trong `.env` khi triển khai thật). Các cổng này chỉ nghe `127.0.0.1` trên máy chủ, không đi qua cổng API.
 
 | Thành phần | Địa chỉ | Đăng nhập |
 |---|---|---|
@@ -176,7 +176,7 @@ Cấu hình qua biến môi trường (xem `services/actions/app/config.py`); c�
 cd apps/web/web
 npm ci
 cp .env.example .env.local      # địa chỉ Keycloak/Hasura nếu khác mặc định
-npm run dev                     # phát triển: http://localhost:5173
+npm run dev                     # phát triển: http://localhost:5173, gọi backend qua cổng API :8000
 npm run build                   # bản tĩnh trong dist/, phục vụ bằng web server bất kỳ
 ```
 

@@ -4,6 +4,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+### Thêm
+- Cổng API Apache APISIX là điểm vào duy nhất từ trình duyệt (`http://localhost:8000`, ADR #34): định tuyến tới web, Keycloak, Hasura, SeaweedFS; token Keycloak kiểm tại biên (`forward-auth`); WAF Coraza với OWASP CRS; giới hạn tần suất GraphQL và đăng nhập; chặn realm quản trị Keycloak, Hasura Admin API và thao tác S3 ngoài hai bucket của ứng dụng; `X-Request-Id`, số liệu Prometheus nội bộ. Image `bamboo-gateway`, kiểm thử `make test-gateway`.
+
+### Thay đổi
+- Web và SeaweedFS không còn mở cổng ra ngoài; địa chỉ công khai mặc định chuyển sang cổng API (`KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `WEB_ORIGIN`); giao diện gọi API cùng origin; redirect URI của Keycloak lấy từ `WEB_ORIGIN` khi import realm. Trang quản trị Keycloak tách riêng ở cổng 8080.
+
 ## [0.1.0] - 2026-10-04
 
 Bản phát hành đầu tiên: nền tảng lõi (Keycloak, Hasura, PostgreSQL, Flowable, SeaweedFS, OpenBao) và ứng dụng Đề nghị mua sắm cho kịch bản Tập đoàn X, chạy bằng một lệnh.
