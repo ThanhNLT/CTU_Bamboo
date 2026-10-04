@@ -1,6 +1,6 @@
 # Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable
 
-> **Hiện trạng repo (04/10/2026):** mục 3 (Flowable, Hasura Actions) đã có trong repo. Mục 1 (OpenBao) và mục 2 (SeaweedFS, Action tệp đính kèm) là thiết kế, chưa có job `services/bootstrap/`, `openbao.py`, `storage.py` và service tương ứng trong `docker-compose.yml`.
+> **Hiện trạng repo (04/10/2026):** mục 2 (SeaweedFS, Action tệp đính kèm) và mục 3 (Flowable, Hasura Actions) đã có trong repo. Mục 1 (OpenBao) còn là thiết kế: chưa có job `openbao-init`; khóa S3 tạm lấy từ biến môi trường (`S3_ACCESS_KEY`, `S3_ADMIN_ACCESS_KEY`... có giá trị dev mặc định) và service `storage-config` sinh `s3.json` từ đó.
 
 Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
 bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
@@ -51,46 +51,47 @@ bao().encrypt("079123456789")       # "vault:v1:..."
 
 ### Cấu hình
 
-- **Không còn truy cập ẩn danh.** `openbao-init` sinh `s3.json` từ khóa trong `secret/bms/seaweedfs` và ghi vào volume `seaweedfs-secrets`; SeaweedFS chạy với `-s3.config=/etc/bms/s3.json`.
+- **Không có truy cập ẩn danh.** Service `storage-config` (`python -m app.storage`) ghi `s3.json` vào volume `seaweedfs-config`; SeaweedFS chạy với `-s3.config=/etc/bms/s3.json`. Khi có OpenBao, khóa sẽ do OpenBao sinh và job này đọc từ két thay cho biến môi trường.
 - Hai định danh:
-  - `admin`: toàn quyền, chỉ job khởi tạo dùng.
-  - `bms-app`: chỉ `Read/Write/List/Tagging` trên `bms-quarantine` và `bms-documents`, không tạo/xóa bucket (có kiểm thử).
-- **CORS**: `-s3.allowedOrigins=${WEB_ORIGIN}` (mặc định `http://localhost:5173`, ứng dụng Refine) để trình duyệt tải tệp thẳng lên S3.
-- **Job `storage-init`** (`services/bootstrap/storage_init.py`) tạo bucket nếu chưa có.
+  - `admin` (`S3_ADMIN_ACCESS_KEY`): toàn quyền, chỉ job `bootstrap` dùng để tạo bucket.
+  - `bms-app` (`S3_ACCESS_KEY`): chỉ `Read/Write/List/Tagging` trên `bms-quarantine` và `bms-documents`, không tạo/xóa bucket (có kiểm thử).
+- **CORS**: `-s3.allowedOrigins=${WEB_ORIGIN}` (mặc định `http://localhost:5173`) để trình duyệt PUT tệp thẳng lên S3.
+- Volume nhỏ (`-master.volumeSizeLimitMB=256 -volume.max=32`): mỗi bucket là một collection cần volume riêng; mặc định 30 GB/volume làm máy dev hết chỗ cấp volume.
+- Job `bootstrap` tạo bucket nếu chưa có (`storage.ensure_buckets`).
 
 | Bucket | Dùng cho |
 |---|---|
-| `bms-quarantine` | Tệp vừa tải lên, chờ quét virus. Không bao giờ cấp link tải về từ bucket này |
-| `bms-documents` | Tệp đã quét sạch |
+| `bms-quarantine` | Tệp vừa tải lên, chờ kiểm tra. Không bao giờ cấp link tải về từ bucket này |
+| `bms-documents` | Tệp đã kiểm tra sạch |
 
-### Luồng đính kèm (Hasura Actions → `services/actions/storage.py`)
+### Luồng đính kèm (`services/actions/app/attachments.py`, `storage.py`)
 
 ```text
-get_upload_url ──► trình duyệt PUT tệp lên bms-quarantine (link có chữ ký, 15 phút)
-      │
-confirm_upload ──► kiểm tra kích thước, tính sha256, quét ClamAV, chuyển sang bms-documents
-      │
-get_download_url ─► link GET có chữ ký (chỉ tệp CLEAN, chỉ người xem được chứng từ gốc)
+get_upload_url ──► core.attachment PENDING; link PUT có chữ ký vào bms-quarantine (15 phút)
+      │            trình duyệt PUT tệp, header Content-Type đúng như đã khai báo
+confirm_upload ──► kích thước khớp khai báo? chữ ký đầu tệp khớp loại tệp? ── không ─► REJECTED, xóa tệp
+      │            sha256; quét ClamAV (INSTREAM) ── nhiễm ─► INFECTED, xóa tệp
+      │            sạch ─► chuyển sang bms-documents, CLEAN
+get_download_url ─► link GET có chữ ký 5 phút, tên tệp tiếng Việt (RFC 5987)
 ```
 
 | Action | Kiểm tra |
 |---|---|
-| `get_upload_url(entity_type, entity_id, file_name, content_type, size_bytes)` | Chứng từ cùng tenant và người gọi xem được (`collab.entity_can_read`); loại tệp trong danh sách cho phép (PDF, ảnh, DOCX, XLSX, TXT); tối đa 25 MB. Tạo `core.attachment` trạng thái `PENDING` |
-| `confirm_upload(attachment_id)` | Chỉ người tải lên; tệp INFECTED bị xóa ngay |
+| `get_upload_url(entity_type, entity_id, file_name, content_type, size_bytes)` | Chứng từ cùng tenant và người gọi xem được (`wf.entity_can_read`); loại tệp: PDF, PNG, JPEG, DOCX, XLSX, TXT; tối đa 25 MB; tên tệp bỏ phần đường dẫn |
+| `confirm_upload(attachment_id)` | Chỉ người tải lên; chưa PUT thì báo `not-uploaded` và giữ PENDING; ClamAV không trả lời thì báo `scanner-unavailable`, tệp ở lại bucket cách ly để thử lại |
 | `get_download_url(attachment_id)` | Cùng tenant, xem được chứng từ gốc, trạng thái `CLEAN` |
-| `delete_attachment(attachment_id)` | Chỉ người tải lên |
+| `delete_attachment(attachment_id)` | Chỉ người tải lên; đề nghị đã có kết quả (duyệt, từ chối, hủy) thì giữ tệp làm chứng cứ (CSDL chặn) |
 
-- Loại chứng từ đính kèm được: `purchase_request`, `quotation`, `invoice`, `ic_order`, `incident` (`ENTITY_TABLES` trong `storage.py`).
-- **ClamAV chưa chạy**: khi chưa đặt `CLAMAV_HOST`, `confirm_upload` ghi `extracted.scan = "bỏ qua: ClamAV chưa được cấu hình"` và vẫn chuyển tệp sang `bms-documents`. Khi thêm ClamAV (gateway, ngày 10/10) chỉ cần đặt `CLAMAV_HOST`, mã quét INSTREAM đã có sẵn.
+- Loại chứng từ đính kèm được: `proc.purchase_request` (`ENTITY_TYPES` trong `storage.py`); thêm loại mới thì bổ sung cả `collab.entity_tenant` và `wf.entity_can_read`.
+- Giao diện xem danh sách tệp qua quan hệ `attachments` của đề nghị hoặc bảng `core_attachment` (không có cột `storage_key`; tệp đã xóa không hiện).
+- **ClamAV tùy chọn**: chưa đặt `CLAMAV_HOST` thì `scan_result = "bỏ qua: ClamAV chưa được cấu hình"` và tệp vẫn được nhận sau khi qua kiểm tra kích thước và chữ ký đầu tệp. Bật: `docker compose --profile scan up -d` với `CLAMAV_HOST=clamav`.
 - Link có chữ ký dùng `S3_PUBLIC_ENDPOINT` (mặc định `http://localhost:8333`); khi có APISIX đổi thành route của gateway.
-- Hasura gọi action kèm header `X-Actions-Secret` (= `secret/bms/actions`); dịch vụ `actions` từ chối mọi lời gọi không có secret này.
-- Dịch vụ `actions` ghi CSDL bằng thông tin từ OpenBao và đặt `hasura.user` theo session nên `created_by`, nhật ký kiểm toán ghi đúng người dùng.
+- Lỗi S3 trả về `storage-unavailable` (503).
 
 ### Lệnh
 
 ```bash
-make test-storage     # 15 kiểm thử: tải lên, quét, tải về, phân quyền, chặn loại tệp, xóa
-make test-secrets     # gồm cả kiểm tra khóa S3 của ứng dụng không tạo được bucket
+make test-actions T=tests/test_tep_dinh_kem.py   # tải lên, quét (clamd giả), tải về, phân quyền, chặn loại tệp, xóa, đặc quyền tối thiểu
 ```
 
 ## 3. Flowable – quy trình duyệt đề nghị mua sắm (ADR #27, #28, #31)

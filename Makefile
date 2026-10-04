@@ -19,7 +19,7 @@ test-db:
 # Kiểm thử tích hợp dịch vụ actions với Hasura (hasura-test) và Flowable thật.
 # Chạy một nhóm: make test-actions T=tests/test_flow_sync.py
 test-actions:
-	docker compose --profile test up -d --build hasura-test flowable
+	docker compose --profile test up -d --build hasura-test flowable seaweedfs
 	docker compose --profile test run --rm --build --name bamboo-actions-test actions-test $(T)
 
 # Seed vào database bms_seed_test sạch: dữ liệu đúng, chạy lại không trùng, khớp realm.

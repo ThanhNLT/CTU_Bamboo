@@ -18,6 +18,16 @@ x-actions-env: &actions-env
   # Webhook lấy JWKS qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME).
   KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
   KEYCLOAK_ISSUER: http://localhost:8080/realms/bms
+  # Tệp đính kèm (ADR #26). Link có chữ ký dùng địa chỉ trình duyệt thấy; khóa dev, khi có
+  # OpenBao (ADR #25) sẽ lấy từ két.
+  S3_ENDPOINT: http://seaweedfs:8333
+  S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8333}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-bms-app}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-bms-app-dev-secret}
+  S3_ADMIN_ACCESS_KEY: ${S3_ADMIN_ACCESS_KEY:-bms-admin}
+  S3_ADMIN_SECRET_KEY: ${S3_ADMIN_SECRET_KEY:-bms-admin-dev-secret}
+  # Bỏ trống: chưa quét virus. Bật ClamAV: `docker compose --profile scan up -d` và CLAMAV_HOST=clamav.
+  CLAMAV_HOST: ${CLAMAV_HOST:-}
 
 x-actions-image: &actions-image
   build:
@@ -135,6 +145,38 @@ services:
     ports:
       - "127.0.0.1:8081:8080"
 
+  # Ghi cấu hình định danh S3 (admin, bms-app chỉ đọc/ghi hai bucket) cho SeaweedFS rồi thoát.
+  storage-config:
+    <<: *actions-image
+    environment:
+      <<: *actions-env
+      S3_CONFIG_PATH: /etc/bms/s3.json
+    command: ["python", "-m", "app.storage"]
+    volumes:
+      - seaweedfs-config:/etc/bms
+    restart: "no"
+
+  # Lưu trữ đối tượng S3 (ADR #2, #26). Không cho truy cập ẩn danh; CORS cho ứng dụng Refine.
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    depends_on:
+      storage-config:
+        condition: service_completed_successfully
+    command: >-
+      server -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0
+      -master.volumeSizeLimitMB=256 -volume.max=32 -filer
+      -s3 -s3.port=8333 -s3.config=/etc/bms/s3.json -s3.allowedOrigins=${WEB_ORIGIN:-http://localhost:5173}
+    volumes:
+      - seaweedfs-data:/data
+      - seaweedfs-config:/etc/bms:ro
+    ports:
+      - "127.0.0.1:8333:8333"
+
+  # Quét virus cho tệp đính kèm (tùy chọn, cần khoảng 1,5 GB RAM, tải chữ ký lần đầu mất vài phút).
+  clamav:
+    profiles: [scan]
+    image: clamav/clamav:1.4
+
   # Hasura Actions bọc hàm CSDL.
   actions:
     <<: *actions-image
@@ -154,13 +196,15 @@ services:
     command: ["python", "-m", "app.flow_sync"]
     restart: unless-stopped
 
-  # Deploy BPMN và nạp metadata Hasura rồi thoát.
+  # Tạo bucket S3, deploy BPMN và nạp metadata Hasura rồi thoát.
   bootstrap:
     <<: *actions-image
     depends_on:
       flowable:
         condition: service_started
       hasura:
+        condition: service_started
+      seaweedfs:
         condition: service_started
     environment: *actions-env
     command: ["python", "-m", "app.bootstrap"]
@@ -189,8 +233,12 @@ services:
         condition: service_started
       flowable:
         condition: service_started
+      seaweedfs:
+        condition: service_started
     environment:
       <<: *actions-env
+      # Kiểm thử tải tệp lên/xuống từ trong container nên link có chữ ký trỏ vào mạng nội bộ.
+      S3_PUBLIC_ENDPOINT: http://seaweedfs:8333
       TEST_DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
       HASURA_URL: http://hasura-test:8080
       ACTIONS_PORT: "8090"
@@ -201,3 +249,5 @@ services:
 
 volumes:
   pgdata:
+  seaweedfs-data:
+  seaweedfs-config:
