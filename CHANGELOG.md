@@ -4,6 +4,11 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp:** thêm bốn biến mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD` (bắt buộc khi `BAMBOO_ENV=production`; máy dev dùng giá trị mặc định). Job `migrate` tự tạo role và chuyển chủ sở hữu CSDL Keycloak, Flowable, metadata Hasura sang role mới, không mất dữ liệu.
+
+### Bảo mật
+- Mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu thay cho superuser `bms` (ADR #35): Hasura và actions chỉ đọc/ghi dữ liệu nghiệp vụ, không đổi cấu trúc, không TRUNCATE, không chạy lệnh trên máy chủ CSDL; Keycloak, Flowable, Hasura (metadata) là chủ CSDL riêng của mình và chỉ chủ sở hữu kết nối được. Nhật ký kiểm toán chỉ đọc với ứng dụng: trigger ghi chuỗi hash chạy `SECURITY DEFINER`, ứng dụng không tự ghi, sửa, xóa hay tắt trigger chỉ-ghi-thêm được. Kiểm thử `db/tests/bms_100_vai_tro.sql`; kiểm thử tích hợp chạy actions và Hasura bằng tài khoản ứng dụng.
+
 ## [0.2.1] - 2026-10-04
 
 Sửa lỗi đăng nhập sau khi nâng cấp từ 0.1.0, không phải xóa dữ liệu.
