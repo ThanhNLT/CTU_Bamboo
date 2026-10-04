@@ -7,7 +7,7 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 | `bms` | `db/migrations/bms/` | Tổ chức, phân quyền, dữ liệu chủ, mua sắm, giao dịch nội bộ, sản xuất, kết luận khám sức khỏe, nhật ký |
 | `bms_hospital` | `db/migrations/hospital/` | Hồ sơ bệnh án (EMR) của Bệnh viện X, cách ly cứng ([ADR #15](#adr-15)) |
 
-**Hiện trạng repo (02/10/2026):** mới có migration `bms` 001–005, phần tổ chức, phân quyền, phê duyệt, Hasura và đồng bộ Flowable; các bảng và số migration bên dưới là thiết kế đích, chưa có trong repo.
+**Hiện trạng repo (04/10/2026):** đã có migration `bms` 001–008: tổ chức, phân quyền, phê duyệt, Hasura và đồng bộ Flowable, mua sắm (dữ liệu chủ, số chứng từ, dòng hàng), nhật ký kiểm toán, bình luận và thông báo. Các bảng và số migration ở mục 2–4 là thiết kế đích; phần chưa có trong repo: đơn mua – nhận hàng – hóa đơn – thanh toán, ngân sách, giao dịch nội bộ đầy đủ, sản xuất (`mfg`), `hr`, `bms_hospital`, CDC, bảng quyền tính sẵn, tệp đính kèm.
 
 | Migration | Nội dung |
 |---|---|
@@ -16,6 +16,9 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 | `003_chung_tu.sql` | `proc.purchase_request` (tư cách lập), `ic.ic_order` tối thiểu |
 | `004_phe_duyet.sql` | `wf.approval_rule`, chuỗi duyệt theo vị trí (`wf.approval_step`), việc duyệt `wf.task`, lịch sử; `proc.submit_purchase_request`, `wf.act`, `wf.resolve_assignee`, `wf.refresh_position`, `wf.refresh_all`, `wf.v_inbox` (ADR #28) |
 | `005_hasura_flowable.sql` | Computed field `can_read` (`wf.entity_can_read`: người lập, người nhận việc kể cả qua ủy quyền, quyền xem trên đơn vị); kiểm tra lập nháp qua phiên Hasura (`hasura.user`); `wf.flow_sync` + `pg_notify` cho đồng bộ Flowable (ADR #31). Lỗi nghiệp vụ Hasura ghi thẳng chạm tới dùng `ERRCODE = 'data_exception'` để Hasura chuyển nguyên thông báo |
+| `006_mua_sam.sql` | `mdm.partner` (nhà cung cấp, nhà cung cấp nội bộ), `mdm.item`; số chứng từ `core.next_doc_no` (bảng đếm `core.doc_sequence`, không nhảy số); `proc.purchase_request` thêm `doc_no`, `description`, `needed_by`, `partner_id`; dòng hàng `proc.purchase_request_item` (tổng tiền đầu phiếu tự tính, khóa sau khi gửi duyệt); `proc.cancel_purchase_request` (người lập hủy, `wf.cancel_entity` ghi người hủy) |
+| `007_kiem_toan.sql` | `audit.log` nối chuỗi hash theo tenant, chỉ ghi thêm; `audit.enable`, `audit.verify_chain`, `audit.v_reader` (người có quyền `audit.read`) ([ADR #33](#adr-33)) |
+| `008_cong_tac.sql` | `collab.comment` (nhắc tên, trả lời, xóa mềm), `collab.notification` sinh bằng trigger trên `wf.task`, `proc.purchase_request`, `collab.comment` và `pg_notify('bms_notification')`; `collab.mark_notifications_read` |
 
 Chạy thử: `docker compose up -d` (tự chạy migration), `make test-db` (hoặc `make test-db T=bms_031`). Cần chạy `SELECT wf.refresh_all()` định kỳ để xử lý bổ nhiệm hết hạn theo lịch.
 
@@ -250,6 +253,8 @@ Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](.
 - [x] Hasura Actions: `start_process`, `complete_task` (Flowable, gọi `wf.resolve_pr_approvers`), `get_upload_url`, `confirm_upload`, `get_download_url`, `delete_attachment` (xem [Dịch vụ nền tảng](06-dich-vu-nen-tang.md)).
 - [ ] (Tùy chọn, để trình diễn) Sinh bảng DMN chỉ-đọc từ `wf.approval_rule`; quyết định hạn mức vẫn ở CSDL ([ADR #17](#adr-17), [ADR #27](#adr-27)).
 - [x] Chuẩn bị CDC phía CSDL: publication, replica identity, role (migration 011). Còn: connector Debezium (Tuần 3).
+- [x] Nhật ký kiểm toán chuỗi hash theo tenant, đối soát qua Action `verify_audit_chain` (migration 007, [ADR #33](#adr-33)).
+- [x] Bình luận, thông báo bằng trigger (migration 008). Còn: dịch vụ realtime (Centrifugo) nghe kênh `bms_notification`.
 - [ ] Dịch vụ đồng bộ `audit.log` sang immudb (cột `sealed_at`).
 - [ ] Thay dữ liệu bệnh nhân Faker bằng Synthea (FHIR) nếu còn thời gian.
 - [x] Hiệu năng phân quyền: bảng quyền tính sẵn (migration 012).
