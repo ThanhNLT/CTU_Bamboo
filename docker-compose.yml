@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Toàn bộ hệ thống (lõi + giao diện) chạy bằng một lệnh `docker compose up -d` (ADR #13).
+# Toàn bộ hệ thống (lõi + giao diện) chạy bằng một lệnh `docker compose up -d` (ADR #13), build image từ
+# mã nguồn. Không cần mã nguồn: dùng image dựng sẵn trên GHCR (compose.release.yml, xem README).
 # Kiểm thử tích hợp: `make test-actions` (profile test: Hasura riêng trỏ vào bms_hasura_test).
 name: bamboo
 
@@ -47,7 +48,7 @@ x-actions-image: &actions-image
     dockerfile: docker/python.Dockerfile
     args:
       APP_DIR: services/actions
-  image: bamboo/actions:dev
+  image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-actions:${BAMBOO_TAG:-dev}
 
 x-hasura-env: &hasura-env
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
@@ -80,17 +81,16 @@ services:
 
   # Tạo database phụ, chạy các migration chưa chạy rồi thoát.
   migrate:
-    image: postgis/postgis:17-3.5
+    build:
+      context: .
+      dockerfile: docker/migrate.Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-migrate:${BAMBOO_TAG:-dev}
     depends_on:
       db:
         condition: service_healthy
     environment:
       <<: *db-env
       EXTRA_DATABASES: flowable keycloak hasura_meta hasura_meta_test bms_hasura_test
-    volumes:
-      - ./db:/repo/db:ro
-      - ./scripts:/repo/scripts:ro
-    entrypoint: ["/repo/scripts/db/up.sh"]
     restart: "no"
 
   # Dữ liệu demo Tập đoàn X (ADR #16): bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
@@ -100,7 +100,7 @@ services:
       dockerfile: docker/python.Dockerfile
       args:
         APP_DIR: services/seed
-    image: bamboo/seed:dev
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-seed:${BAMBOO_TAG:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -110,9 +110,11 @@ services:
     command: ["python", "-m", "app.seed"]
     restart: "no"
 
-  # Chỉ xác thực (ADR #6, #32). Realm sinh bằng `python -m app.realm` (services/seed), import lần đầu.
+  # Chỉ xác thực (ADR #6, #32). Realm sinh bằng `make realm`, đóng gói vào image, import lần đầu.
   keycloak:
-    image: quay.io/keycloak/keycloak:26.8.0
+    build:
+      context: ./platform/keycloak
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-keycloak:${BAMBOO_TAG:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -128,8 +130,6 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
-    volumes:
-      - ./platform/keycloak/realm:/opt/keycloak/data/import:ro
     ports:
       - "127.0.0.1:8080:8080"
     restart: unless-stopped
@@ -187,11 +187,12 @@ services:
 
   # Két secret lưu bền (raft một node, ADR #2, #25). Khởi động lại thì sealed tới khi openbao-init chạy lại.
   openbao:
-    image: openbao/openbao:2.7.1
+    build:
+      context: ./platform/openbao
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-openbao:${BAMBOO_TAG:-dev}
     # Entrypoint của image tự thêm -config=/openbao/config.
     command: ["server"]
     volumes:
-      - ./platform/openbao/config.hcl:/openbao/config/config.hcl:ro
       - openbao-data:/openbao/file
     ports:
       - "127.0.0.1:8200:8200"
@@ -306,7 +307,7 @@ services:
   web:
     build:
       context: ./apps/web/web
-    image: bamboo/web:dev
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-web:${BAMBOO_TAG:-dev}
     ports:
       - "127.0.0.1:5173:8080"
     restart: unless-stopped

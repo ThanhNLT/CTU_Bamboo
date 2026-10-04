@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata realm psql bao-token
+.PHONY: release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
 
@@ -13,12 +13,12 @@ down:
 	docker compose down
 
 migrate:
-	docker compose run --rm migrate
+	docker compose run --rm --build migrate
 
 # Tạo database bms_test sạch, chạy migration và mọi file db/tests/bms_*.sql (tự rollback).
 # Chạy một nhóm: make test-db T=bms_031
 test-db:
-	docker compose run --rm --entrypoint /repo/scripts/db/test.sh migrate $(T)
+	docker compose run --rm --build --entrypoint /repo/scripts/db/test.sh migrate $(T)
 
 # Kiểm thử tích hợp dịch vụ actions với Hasura (hasura-test) và Flowable thật.
 # Chạy một nhóm: make test-actions T=tests/test_flow_sync.py
@@ -50,6 +50,10 @@ realm:
 
 psql:
 	docker compose exec db psql -U bms -d bms
+
+# Sinh compose.release.yml (chạy bằng image dựng sẵn trên GHCR, không cần mã nguồn). CI làm việc này khi phát hành.
+release-compose:
+	python3 scripts/release/compose_release.py $(or $(VERSION),dev)
 
 # Root token OpenBao (chỉ dev) để vào UI http://localhost:8200.
 bao-token:

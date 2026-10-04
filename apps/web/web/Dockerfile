@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Ứng dụng Refine: build tĩnh bằng Node 22 (react-router 7 cần Node >= 20), phục vụ bằng nginx.
 # Địa chỉ Keycloak/Hasura gắn vào bundle lúc build (biến VITE_*, mặc định stack docker compose).
-FROM node:22-alpine AS build
+# Bước build chạy trên kiến trúc của máy build (bản tĩnh không phụ thuộc CPU): build đa kiến trúc nhanh.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci --no-audit --no-fund

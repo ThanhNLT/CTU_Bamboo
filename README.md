@@ -48,7 +48,7 @@ cd Bamboo
 docker compose up -d
 ```
 
-Không cần tạo `.env` hay chạy migration tay. Lệnh trên build image từ mã nguồn, rồi tự chạy theo thứ tự: migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp metadata Hasura. Lần đầu mất khoảng 5–10 phút (tải image, build giao diện). Theo dõi tiến độ:
+Không cần tạo `.env` hay chạy migration tay. Lệnh trên build image từ mã nguồn (muốn bỏ qua bước build: xem mục *Chạy bằng image dựng sẵn* bên dưới), rồi tự chạy theo thứ tự: migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp metadata Hasura. Lần đầu mất khoảng 5–10 phút (tải image, build giao diện). Theo dõi tiến độ:
 
 ```bash
 docker compose ps          # mọi dịch vụ chạy lâu phải là "healthy"; migrate, seed, openbao-init, bootstrap "exited (0)"
@@ -66,6 +66,22 @@ docker compose logs -f bootstrap
 Tài khoản demo (mật khẩu `demo-password`): `tgd` (Tổng giám đốc), `nv.muahang.dienthoai` (người lập đề nghị), `tp.muahang.dienthoai`, `gd.chip`, `pgd.chip` (duyệt thay theo ủy quyền), `kiemnhiem` (một tài khoản, hai tenant), `gd.taichinh` (xem nhật ký kiểm toán)… Danh sách đủ ở [thiết kế CSDL, mục Tích hợp](docs/thiet-ke/03-thiet-ke-csdl.md).
 
 Dừng: `docker compose down` (giữ dữ liệu) hoặc `docker compose down -v` (xóa sạch, kể cả khóa OpenBao).
+
+### Chạy bằng image dựng sẵn (không cần mã nguồn)
+
+CI build sẵn mọi image của dự án cho `amd64` và `arm64` (kể cả Mac chip M), đẩy lên GitHub Container Registry cùng tệp compose phát hành. Máy chỉ cần Docker Compose 2.34 trở lên:
+
+```bash
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:latest up -d
+```
+
+Lệnh này kéo tệp compose và các image về rồi dựng toàn bộ hệ thống như khi build từ mã nguồn. Thay `latest` bằng số phiên bản (ví dụ `0.1.0`) để chạy đúng một bản phát hành; bản của một pull request có thẻ `pr-<số>`. Docker Compose cũ hơn: tải tệp `compose.release.yml` (đính kèm mỗi bản phát hành) rồi chạy `docker compose -f compose.release.yml up -d`.
+
+Trong giai đoạn kho mã còn riêng tư, image cũng riêng tư: người chạy cần quyền đọc kho và đăng nhập registry một lần bằng token GitHub có quyền `read:packages`:
+
+```bash
+echo <token> | docker login ghcr.io -u <tài-khoản-github> --password-stdin
+```
 
 ### Cấu hình
 
