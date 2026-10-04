@@ -243,6 +243,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** OpenBao chạy lưu bền (raft một node) với job `openbao-init` tự khởi tạo/unseal mỗi lần `up`; dịch vụ đọc secret bằng AppRole + policy đặc quyền tối thiểu; khóa S3 do OpenBao sinh và là nguồn duy nhất
 - **Lý do:** Gần cách triển khai thật, demo được Zero-Trust (mỗi dịch vụ chỉ đọc đúng secret của mình); khởi động lại không mất secret
 - **Đã loại:** Chế độ dev (mất dữ liệu khi restart); để secret trong `.env` cho mọi dịch vụ
+- **Ghi chú (04/10/2026):** Hiện thực ở `services/actions/app/openbao_init.py` (job) và `openbao.py` (client). Hai AppRole: `actions` (dịch vụ actions, flow-sync) và `bootstrap` (tạo bucket bằng khóa S3 admin, nạp metadata Hasura); dịch vụ Python thay giá trị env bằng secret đọc được lúc khởi động.
 
 (adr-26)=
 ## ADR #26: Tệp đính kèm qua bucket cách ly và link có chữ ký
@@ -251,7 +252,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Tệp đính kèm: trình duyệt tải thẳng lên S3 bằng link có chữ ký vào bucket cách ly `bms-quarantine`; Action `confirm_upload` quét rồi chuyển sang `bms-documents`; chỉ cấp link tải về cho tệp sạch và người xem được chứng từ gốc
 - **Lý do:** Tệp lớn không đi qua Hasura/dịch vụ; tệp chưa quét không bao giờ tải về được; quyền tải tệp dùng chung logic `can_read` với dữ liệu
 - **Đã loại:** Tải tệp qua Hasura Action (base64); bucket công khai; quét bất đồng bộ không chặn tải về
-- **Ghi chú (04/10/2026):** Hiện thực ở `services/actions/app/attachments.py`. `confirm_upload` kiểm tra thêm kích thước thực so với khai báo và chữ ký đầu tệp so với loại tệp (sai thì `REJECTED`, xóa tệp) trước khi quét; ClamAV là tùy chọn (profile `scan`). Chưa có OpenBao nên khóa S3 tạm lấy từ biến môi trường.
+- **Ghi chú (04/10/2026):** Hiện thực ở `services/actions/app/attachments.py`. `confirm_upload` kiểm tra thêm kích thước thực so với khai báo và chữ ký đầu tệp so với loại tệp (sai thì `REJECTED`, xóa tệp) trước khi quét; ClamAV là tùy chọn (profile `scan`). Khóa S3 lấy từ OpenBao ([ADR #25](#adr-25)).
 
 (adr-27)=
 ## ADR #27: BPMN duyệt tuần tự theo danh sách người duyệt

@@ -1,4 +1,4 @@
-import { useTranslate, useLogin } from "@refinedev/core";
+import { useLogin } from "@refinedev/core";
 import { ThemedTitle } from "@refinedev/antd";
 import { Button, Typography, Layout, Space } from "antd";
 

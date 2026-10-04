@@ -18,16 +18,24 @@ x-actions-env: &actions-env
   # Webhook lấy JWKS qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME).
   KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
   KEYCLOAK_ISSUER: http://localhost:8080/realms/bms
-  # Tệp đính kèm (ADR #26). Link có chữ ký dùng địa chỉ trình duyệt thấy; khóa dev, khi có
-  # OpenBao (ADR #25) sẽ lấy từ két.
+  # Tệp đính kèm (ADR #26). Link có chữ ký dùng địa chỉ trình duyệt thấy.
   S3_ENDPOINT: http://seaweedfs:8333
   S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8333}
-  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-bms-app}
-  S3_SECRET_KEY: ${S3_SECRET_KEY:-bms-app-dev-secret}
-  S3_ADMIN_ACCESS_KEY: ${S3_ADMIN_ACCESS_KEY:-bms-admin}
-  S3_ADMIN_SECRET_KEY: ${S3_ADMIN_SECRET_KEY:-bms-admin-dev-secret}
+  # Secret (CSDL, Flowable, khóa S3, actions) đọc từ OpenBao bằng AppRole của từng dịch vụ (ADR #25);
+  # giá trị env ở trên chỉ là dự phòng khi chạy ngoài compose.
+  BAO_ADDR: http://openbao:8200
+  BAO_APPROLE_FILE: /run/bms/approle.json
   # Bỏ trống: chưa quét virus. Bật ClamAV: `docker compose --profile scan up -d` và CLAMAV_HOST=clamav.
   CLAMAV_HOST: ${CLAMAV_HOST:-}
+
+# Secret hạ tầng openbao-init chép vào OpenBao (môi trường dev khai báo ở .env).
+x-bao-sync-env: &bao-sync-env
+  POSTGRES_USER: bms
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+  KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
+  KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
+  FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
+  FLOWABLE_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
 
 x-actions-image: &actions-image
   build:
@@ -145,14 +153,35 @@ services:
     ports:
       - "127.0.0.1:8081:8080"
 
-  # Ghi cấu hình định danh S3 (admin, bms-app chỉ đọc/ghi hai bucket) cho SeaweedFS rồi thoát.
-  storage-config:
-    <<: *actions-image
-    environment:
-      <<: *actions-env
-      S3_CONFIG_PATH: /etc/bms/s3.json
-    command: ["python", "-m", "app.storage"]
+  # Két secret lưu bền (raft một node, ADR #2, #25). Khởi động lại thì sealed tới khi openbao-init chạy lại.
+  openbao:
+    image: openbao/openbao:2.7.1
+    # Entrypoint của image tự thêm -config=/openbao/config.
+    command: ["server"]
     volumes:
+      - ./platform/openbao/config.hcl:/openbao/config/config.hcl:ro
+      - openbao-data:/openbao/file
+    ports:
+      - "127.0.0.1:8200:8200"
+
+  # Khởi tạo/unseal, policy, AppRole, đồng bộ secret từ .env, sinh khóa S3; ghi s3.json cho SeaweedFS
+  # và file AppRole vào volume riêng của từng dịch vụ (dịch vụ này không thấy secret của dịch vụ kia).
+  openbao-init:
+    <<: *actions-image
+    depends_on:
+      openbao:
+        condition: service_started
+    environment:
+      <<: [*actions-env, *bao-sync-env]
+      BAO_APPROLE_FILE: ""
+      BAO_KEYS_FILE: /openbao/keys/init.json
+      APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json
+      S3_CONFIG_PATH: /etc/bms/s3.json
+    command: ["python", "-m", "app.openbao_init"]
+    volumes:
+      - openbao-keys:/openbao/keys
+      - actions-secrets:/run/bms-actions
+      - bootstrap-secrets:/run/bms-bootstrap
       - seaweedfs-config:/etc/bms
     restart: "no"
 
@@ -160,7 +189,7 @@ services:
   seaweedfs:
     image: chrislusf/seaweedfs:4.48
     depends_on:
-      storage-config:
+      openbao-init:
         condition: service_completed_successfully
     command: >-
       server -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0
@@ -183,7 +212,11 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      openbao-init:
+        condition: service_completed_successfully
     environment: *actions-env
+    volumes:
+      - actions-secrets:/run/bms:ro
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
   # Đối chiếu CSDL → Flowable (ADR #31); chạy wf.refresh_all() mỗi phút.
@@ -193,6 +226,8 @@ services:
       bootstrap:
         condition: service_completed_successfully
     environment: *actions-env
+    volumes:
+      - actions-secrets:/run/bms:ro
     command: ["python", "-m", "app.flow_sync"]
     restart: unless-stopped
 
@@ -206,7 +241,11 @@ services:
         condition: service_started
       seaweedfs:
         condition: service_started
+      openbao-init:
+        condition: service_completed_successfully
     environment: *actions-env
+    volumes:
+      - bootstrap-secrets:/run/bms:ro
     command: ["python", "-m", "app.bootstrap"]
     restart: "no"
 
@@ -239,15 +278,22 @@ services:
       <<: *actions-env
       # Kiểm thử tải tệp lên/xuống từ trong container nên link có chữ ký trỏ vào mạng nội bộ.
       S3_PUBLIC_ENDPOINT: http://seaweedfs:8333
+      BAO_KEYS_FILE: /openbao/keys/init.json
       TEST_DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
       HASURA_URL: http://hasura-test:8080
       ACTIONS_PORT: "8090"
       REQUIRE_SERVICES: "1"
     volumes:
       - ./:/repo
+      - actions-secrets:/run/bms:ro
+      - openbao-keys:/openbao/keys:ro
     entrypoint: ["sh", "-c", "pip install -q -r requirements-dev.txt -c /repo/constraints.txt && python -m pytest -q \"$$@\"", "--"]
 
 volumes:
   pgdata:
   seaweedfs-data:
   seaweedfs-config:
+  openbao-data:
+  openbao-keys:
+  actions-secrets:
+  bootstrap-secrets:

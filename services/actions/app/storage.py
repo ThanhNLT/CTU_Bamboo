@@ -116,7 +116,7 @@ def scan(data: bytes, host: str, port: int = 3310, timeout: float = 30.0) -> tup
     raise RuntimeError(f"ClamAV trả lời không hợp lệ: {text}")
 
 
-# --- Khởi tạo (job bootstrap, service storage-config) ----------------------------
+# --- Khởi tạo (job openbao-init ghi s3.json, job bootstrap tạo bucket) -------------
 
 def s3_identities(settings: config.Settings) -> dict:
     """Cấu hình định danh S3 cho SeaweedFS (-s3.config): admin toàn quyền, ứng dụng chỉ đọc/ghi hai bucket."""
@@ -144,15 +144,3 @@ def ensure_buckets(settings: config.Settings) -> list[str]:
             created.append(bucket)
     return created
 
-
-if __name__ == "__main__":
-    # Service storage-config: ghi s3.json cho SeaweedFS rồi thoát.
-    import json
-    import os
-    import pathlib
-
-    out = pathlib.Path(os.environ.get("S3_CONFIG_PATH", "/etc/bms/s3.json"))
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(s3_identities(config.load()), indent=2), encoding="utf-8")
-    out.chmod(0o644)
-    print(f"đã ghi {out}")

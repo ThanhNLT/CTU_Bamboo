@@ -11,7 +11,7 @@ import sys
 import psycopg
 from faker import Faker
 
-from .demo import CONTRACT_SEATS, DEMO_USERS, TENANTS, TREES, UNIT_TYPES, VACANT, account_id, uid, walk
+from .demo import CONTRACT_SEATS, DEMO_USERS, TENANTS, TREES, UNIT_TYPES, VACANT, uid, walk
 
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"

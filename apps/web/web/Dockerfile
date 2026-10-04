@@ -1,7 +1,8 @@
 # This Dockerfile uses `serve` npm package to serve the static files with node process.
 # You can find the Dockerfile for nginx in the following link:
 # https://github.com/refinedev/dockerfiles/blob/main/vite/Dockerfile.nginx
-FROM refinedev/node:18 AS base
+# react-router 7 cần Node >= 20.
+FROM refinedev/node:22 AS base
 
 FROM base as deps
 
