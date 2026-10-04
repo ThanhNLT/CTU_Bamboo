@@ -7,12 +7,21 @@
 # Kiểm thử tích hợp: `make test-actions` (profile test: Hasura riêng trỏ vào bms_hasura_test).
 name: bamboo
 
+# Xoay vòng log của mọi container (mặc định json-file không giới hạn, có thể làm đầy đĩa).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 x-db-env: &db-env
   PGHOST: db
   PGUSER: bms
   PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
 
 x-actions-env: &actions-env
+  # production: từ chối khởi động nếu còn mật khẩu/secret mặc định của môi trường dev.
+  BAMBOO_ENV: ${BAMBOO_ENV:-development}
   DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
   ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
   FLOWABLE_URL: http://flowable:8080/flowable-rest/service
@@ -22,7 +31,7 @@ x-actions-env: &actions-env
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
   # Webhook lấy JWKS qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME).
   KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
-  KEYCLOAK_ISSUER: http://localhost:8080/realms/bms
+  KEYCLOAK_ISSUER: ${KEYCLOAK_URL:-http://localhost:8080}/realms/bms
   # Tệp đính kèm (ADR #26). Link có chữ ký dùng địa chỉ trình duyệt thấy.
   S3_ENDPOINT: http://seaweedfs:8333
   S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8333}
@@ -41,6 +50,8 @@ x-bao-sync-env: &bao-sync-env
   KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
   FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
   FLOWABLE_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
+  # Không chép vào OpenBao; chỉ để openbao-init kiểm tra khi BAMBOO_ENV=production.
+  DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
 
 x-actions-image: &actions-image
   build:
@@ -52,7 +63,10 @@ x-actions-image: &actions-image
 
 x-hasura-env: &hasura-env
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
-  HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+  # Production: HASURA_ENABLE_CONSOLE=false (quản trị bằng metadata trong Git, ADR #24).
+  HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
+  # Chỉ ứng dụng web được gọi GraphQL từ trình duyệt.
+  HASURA_GRAPHQL_CORS_DOMAIN: ${WEB_ORIGIN:-http://localhost:5173}
   HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log
   ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
   # Xác thực bằng webhook (ADR #32): token Keycloak + tenant đã chọn (header x-bamboo-tenant).
@@ -60,6 +74,7 @@ x-hasura-env: &hasura-env
 
 services:
   db:
+    logging: *logging
     image: postgis/postgis:17-3.5
     # Image PostGIS chỉ có bản amd64; máy arm64 (Mac chip M) chạy qua giả lập, các image khác chạy native.
     platform: linux/amd64
@@ -83,6 +98,7 @@ services:
 
   # Tạo database phụ, chạy các migration chưa chạy rồi thoát.
   migrate:
+    logging: *logging
     build:
       context: .
       dockerfile: docker/migrate.Dockerfile
@@ -97,6 +113,7 @@ services:
 
   # Dữ liệu demo Tập đoàn X (ADR #16): bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
   seed:
+    logging: *logging
     build:
       context: .
       dockerfile: docker/python.Dockerfile
@@ -114,19 +131,24 @@ services:
 
   # Chỉ xác thực (ADR #6, #32). Realm sinh bằng `make realm`, đóng gói vào image, import lần đầu.
   keycloak:
+    logging: *logging
     build:
       context: ./platform/keycloak
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-keycloak:${BAMBOO_TAG:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
-    command: ["start-dev", "--import-realm"]
+    # start-dev cho máy dev; production: KEYCLOAK_MODE=start sau reverse proxy TLS (docs/van-hanh).
+    command: ["${KEYCLOAK_MODE:-start-dev}", "--import-realm"]
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://db:5432/keycloak
       KC_DB_USERNAME: bms
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
-      KC_HOSTNAME: http://localhost:8080
+      # Địa chỉ trình duyệt thấy; phải khớp issuer mà actions kiểm tra và cấu hình của web.
+      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8080}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
@@ -144,6 +166,7 @@ services:
       start_period: 30s
 
   flowable:
+    logging: *logging
     image: flowable/flowable-rest:8.0.0
     depends_on:
       migrate:
@@ -168,6 +191,7 @@ services:
       start_period: 20s
 
   hasura:
+    logging: *logging
     image: hasura/graphql-engine:v2.51.0-ce
     depends_on:
       migrate:
@@ -189,6 +213,7 @@ services:
 
   # Két secret lưu bền (raft một node, ADR #2, #25). Khởi động lại thì sealed tới khi openbao-init chạy lại.
   openbao:
+    logging: *logging
     build:
       context: ./platform/openbao
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-openbao:${BAMBOO_TAG:-dev}
@@ -209,6 +234,7 @@ services:
   # Khởi tạo/unseal, policy, AppRole, đồng bộ secret từ .env, sinh khóa S3; ghi s3.json cho SeaweedFS
   # và file AppRole vào volume riêng của từng dịch vụ (dịch vụ này không thấy secret của dịch vụ kia).
   openbao-init:
+    logging: *logging
     <<: *actions-image
     depends_on:
       openbao:
@@ -217,9 +243,13 @@ services:
       <<: [*actions-env, *bao-sync-env]
       BAO_APPROLE_FILE: ""
       BAO_KEYS_FILE: /openbao/keys/init.json
+      # File AppRole thuộc người dùng chạy dịch vụ (uid 10001 trong image Python).
+      APPROLE_UID: "10001"
       APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json
       S3_CONFIG_PATH: /etc/bms/s3.json
     command: ["python", "-m", "app.openbao_init"]
+    # Ghi vào các volume secret (sở hữu bởi root).
+    user: "0"
     volumes:
       - openbao-keys:/openbao/keys
       - actions-secrets:/run/bms-actions
@@ -229,6 +259,7 @@ services:
 
   # Lưu trữ đối tượng S3 (ADR #2, #26). Không cho truy cập ẩn danh; CORS cho ứng dụng Refine.
   seaweedfs:
+    logging: *logging
     image: chrislusf/seaweedfs:4.48
     depends_on:
       openbao-init:
@@ -251,11 +282,13 @@ services:
 
   # Quét virus cho tệp đính kèm (tùy chọn, cần khoảng 1,5 GB RAM, tải chữ ký lần đầu mất vài phút).
   clamav:
+    logging: *logging
     profiles: [scan]
     image: clamav/clamav:1.4
 
   # Hasura Actions bọc hàm CSDL.
   actions:
+    logging: *logging
     <<: *actions-image
     depends_on:
       migrate:
@@ -275,6 +308,7 @@ services:
 
   # Đối chiếu CSDL → Flowable (ADR #31); chạy wf.refresh_all() mỗi phút.
   flow-sync:
+    logging: *logging
     <<: *actions-image
     depends_on:
       bootstrap:
@@ -287,6 +321,7 @@ services:
 
   # Tạo bucket S3, deploy BPMN và nạp metadata Hasura rồi thoát.
   bootstrap:
+    logging: *logging
     <<: *actions-image
     depends_on:
       flowable:
@@ -307,9 +342,14 @@ services:
   # Keycloak bms-web và CORS của SeaweedFS. Phát triển giao diện bằng `npm run dev` thì
   # `docker compose stop web` trước để nhường cổng.
   web:
+    logging: *logging
     build:
       context: ./apps/web/web
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-web:${BAMBOO_TAG:-dev}
+    environment:
+      # Cấu hình lúc chạy (docker/40-bamboo-config.sh): cùng một image chạy được trên mọi tên miền.
+      BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+      BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8081/v1/graphql}
     ports:
       - "127.0.0.1:5173:8080"
     restart: unless-stopped
@@ -321,6 +361,7 @@ services:
 
   # --- profile test ---------------------------------------------------------
   hasura-test:
+    logging: *logging
     profiles: [test]
     image: hasura/graphql-engine:v2.51.0-ce
     depends_on:
@@ -335,6 +376,7 @@ services:
       HASURA_GRAPHQL_AUTH_HOOK: http://bamboo-actions-test:8090/auth/hasura
 
   actions-test:
+    logging: *logging
     profiles: [test]
     <<: *actions-image
     depends_on:
@@ -357,6 +399,7 @@ services:
       - ./:/repo
       - actions-secrets:/run/bms:ro
       - openbao-keys:/openbao/keys:ro
+    user: "0"
     entrypoint: ["sh", "-c", "pip install -q -r requirements-dev.txt -c /repo/constraints.txt && python -m pytest -q \"$$@\"", "--"]
 
 volumes:

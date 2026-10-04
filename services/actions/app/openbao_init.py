@@ -10,6 +10,8 @@
 3. Cấu hình: KV v2 `secret/`, transit `transit/` + khóa `pii`, AppRole, policy đặc quyền tối thiểu.
 4. Đồng bộ secret hạ tầng từ biến môi trường; khóa S3 do OpenBao sinh một lần và là nguồn duy nhất.
 5. Ghi s3.json cho SeaweedFS và file AppRole (role-id + secret-id) cho từng dịch vụ.
+Với BAMBOO_ENV=production: từ chối chạy nếu còn mật khẩu/secret mặc định của môi trường dev, nên
+không dịch vụ nào khởi động được với cấu hình dev.
 
     python -m app.openbao_init
 """
@@ -134,19 +136,25 @@ def sync_secrets(root: Bao) -> None:
             log.info("đã sinh khóa S3 secret/%s", path)
 
 
-def write_approle(root: Bao, addr: str, role: str, path: pathlib.Path) -> None:
-    """Giữ file cũ nếu còn đăng nhập được; nếu không thì cấp secret-id mới."""
+def write_approle(root: Bao, addr: str, role: str, path: pathlib.Path, uid: int | None = None) -> None:
+    """Giữ file cũ nếu còn đăng nhập được; nếu không thì cấp secret-id mới. File thuộc `uid`
+    (người dùng chạy dịch vụ, image Python chạy bằng uid 10001), quyền 0400."""
+    keep = False
     if path.exists():
         try:
             creds = json.loads(path.read_text(encoding="utf-8"))
             Bao.login_approle(addr, creds["role_id"], creds["secret_id"])
-            return
+            keep = True
         except (BaoError, ValueError, KeyError):
             pass
-    role_id = root.request("GET", f"auth/approle/role/{role}/role-id")["data"]["role_id"]
-    secret_id = root.request("POST", f"auth/approle/role/{role}/secret-id")["data"]["secret_id"]
-    _write_private(path, {"role_id": role_id, "secret_id": secret_id}, mode=0o400)
-    log.info("đã cấp AppRole %s vào %s", role, path)
+    if not keep:
+        role_id = root.request("GET", f"auth/approle/role/{role}/role-id")["data"]["role_id"]
+        secret_id = root.request("POST", f"auth/approle/role/{role}/secret-id")["data"]["secret_id"]
+        _write_private(path, {"role_id": role_id, "secret_id": secret_id}, mode=0o400)
+        log.info("đã cấp AppRole %s vào %s", role, path)
+    # Cả file cũ (bản trước chạy dịch vụ bằng root) cũng chuyển cho đúng người dùng.
+    if uid is not None and path.stat().st_uid != uid:
+        os.chown(path, uid, uid)
 
 
 def parse_outputs(spec: str) -> dict[str, pathlib.Path]:
@@ -155,7 +163,7 @@ def parse_outputs(spec: str) -> dict[str, pathlib.Path]:
 
 
 def run(addr: str, keys_file: pathlib.Path, approle_outputs: dict[str, pathlib.Path],
-        s3_config_path: pathlib.Path | None) -> None:
+        s3_config_path: pathlib.Path | None, approle_uid: int | None = None) -> None:
     wait_reachable(addr)
     root = Bao(addr, init_and_unseal(addr, keys_file))
     configure(root)
@@ -167,18 +175,21 @@ def run(addr: str, keys_file: pathlib.Path, approle_outputs: dict[str, pathlib.P
     for role, path in approle_outputs.items():
         if role not in POLICIES:
             raise ValueError(f"Không có AppRole {role}")
-        write_approle(root, addr, role, path)
+        write_approle(root, addr, role, path, approle_uid)
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    config.assert_production_ready()
     env = os.environ.get
     s3_path = env("S3_CONFIG_PATH")
+    uid = env("APPROLE_UID")
     run(env("BAO_ADDR", "http://openbao:8200"),
         pathlib.Path(env("BAO_KEYS_FILE", "/openbao/keys/init.json")),
         parse_outputs(env("APPROLE_OUTPUTS", "")),
-        pathlib.Path(s3_path) if s3_path else None)
+        pathlib.Path(s3_path) if s3_path else None,
+        int(uid) if uid else None)
     return 0
 
 

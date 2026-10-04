@@ -21,6 +21,9 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - README, NOTICE, `.env.example`, header SPDX cho mọi tệp (chuẩn REUSE 3.3).
 - Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
 
+- Sẵn sàng production: `BAMBOO_ENV=production` từ chối khởi động khi còn mật khẩu mặc định; container Python chạy bằng uid 10001; image `web` đọc địa chỉ Keycloak/Hasura lúc khởi động (`/config.js`); nginx nén gzip, header bảo mật, không cache `index.html`; xoay vòng log mọi container; Hasura Console và CORS, địa chỉ và chế độ chạy Keycloak cấu hình được; nhãn OCI cho mọi image.
+- Tài liệu triển khai production (tên miền TLS, sao lưu/khôi phục, nâng cấp, khóa OpenBao), SECURITY.md, mẫu báo lỗi và đề xuất trên GitHub Issues.
+
 ### Sửa
 - Frontend gọi Keycloak/Hasura demo bên ngoài thay vì stack của dự án; 12 lỗi ESLint.
 - Gỡ trang mẫu blog, `axios`, `@uiw/react-md-editor` không dùng; tách thư viện vào chunk `vendor` riêng (mã ứng dụng 45 kB, đổi mã không phải tải lại thư viện).

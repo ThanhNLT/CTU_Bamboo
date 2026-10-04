@@ -8,6 +8,8 @@ Bamboo là nền tảng lõi headless (Tầng 1) cùng ứng dụng mẫu **Đ�
 - Báo lỗi, đề xuất: [GitHub Issues](https://github.com/ThanhNLT/Bamboo/issues)
 - Lịch sử thay đổi: [CHANGELOG.md](CHANGELOG.md)
 - Tài liệu thiết kế: [`docs/`](docs/) (build HTML bằng `make -C docs html`)
+- Triển khai production, sao lưu, nâng cấp: [docs/van-hanh/trien-khai.md](docs/van-hanh/trien-khai.md)
+- Báo lỗ hổng bảo mật: [SECURITY.md](SECURITY.md)
 - Giấy phép: [Apache-2.0](LICENSE)
 
 ## Kiến trúc
@@ -85,7 +87,9 @@ echo <token> | docker login ghcr.io -u <tài-khoản-github> --password-stdin
 
 ### Cấu hình
 
-Mọi biến đều có giá trị mặc định cho máy dev. Muốn đổi thì `cp .env.example .env` rồi sửa; danh sách và ý nghĩa ở [.env.example](.env.example). Triển khai thật phải đổi toàn bộ mật khẩu. Secret được chép vào OpenBao; dịch vụ ứng dụng đọc từ két bằng AppRole riêng ([ADR #25](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)).
+Mọi biến đều có giá trị mặc định cho máy dev. Muốn đổi thì `cp .env.example .env` rồi sửa; danh sách và ý nghĩa ở [.env.example](.env.example).
+
+**Triển khai thật** (có người dùng, có tên miền): đặt `BAMBOO_ENV=production` và đổi mọi biến đánh dấu `[BẮT BUỘC]`; hệ thống từ chối khởi động nếu còn mật khẩu mặc định. Tên miền HTTPS, Keycloak chế độ production, sao lưu và khôi phục, nâng cấp: [Triển khai production](docs/van-hanh/trien-khai.md). Secret được chép vào OpenBao; dịch vụ ứng dụng đọc từ két bằng AppRole riêng ([ADR #25](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)).
 
 ## Build từ mã nguồn (không dùng Docker)
 
