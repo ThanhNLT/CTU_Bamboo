@@ -79,6 +79,29 @@ def test_de_nghi_mau_dung_buoc(conn):
     assert one(conn, "SELECT count(*) FROM wf.flow_sync WHERE dirty") >= 8, "flow-sync sẽ tạo tiến trình Flowable"
 
 
+def test_dong_hang_va_so_chung_tu(conn):
+    assert one(conn, """SELECT count(*) FROM proc.purchase_request r
+                        WHERE r.total_amount <> (SELECT sum(amount) FROM proc.purchase_request_item i
+                                                 WHERE i.request_id = r.id)""") == 0
+    assert one(conn, "SELECT total_amount FROM proc.purchase_request WHERE title = 'Linh kiện thay thế cho lô điện thoại bị ảnh hưởng'") == 650_000_000
+    assert one(conn, "SELECT count(DISTINCT (tenant_id, doc_no)) FROM proc.purchase_request WHERE doc_no ~ '^PR-'") == 10
+    assert one(conn, "SELECT count(*) FROM mdm.partner WHERE internal_unit_id IS NOT NULL") == 3
+
+
+def test_nhat_ky_va_thong_bao(conn):
+    for code in ("TDX", "BVX"):
+        assert one(conn, "SELECT count(*) FROM audit.verify_chain(%s)", uid("tenant", code)) == 0
+    assert one(conn, "SELECT count(*) FROM audit.log WHERE table_name = 'proc.purchase_request_item'") >= 12
+    assert one(conn, "SELECT count(*) FROM audit.v_reader WHERE person_id = %s", account_id("gd.taichinh")) == 1
+    # TGĐ có hai việc chờ duyệt; người lập đề nghị bị trả về được báo kèm lý do.
+    assert one(conn, """SELECT count(*) FROM collab.notification
+                        WHERE recipient_id = %s AND kind = 'TASK_ASSIGNED'""", account_id("tgd")) == 2
+    assert one(conn, """SELECT body FROM collab.notification
+                        WHERE recipient_id = %s AND kind = 'REQUEST_RETURNED'""",
+               account_id("nv.muahang.dienthoai")) == "Tách riêng mực in, bổ sung báo giá thứ hai"
+    assert one(conn, "SELECT count(*) FROM collab.comment") == 2
+
+
 def test_uy_quyen_hien_trong_hop_viec(conn):
     assert one(conn, """SELECT count(*) FROM wf.v_inbox WHERE person_id = %s AND via_delegation""",
                account_id("pgd.chip")) == 1

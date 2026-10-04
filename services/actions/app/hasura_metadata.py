@@ -16,8 +16,8 @@ import psycopg
 
 from . import config
 
-SCHEMAS = ("core", "wf", "proc", "ic")
-HIDDEN = {("wf", "flow_sync"), ("wf", "v_flow_state")}
+SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "collab", "audit")
+HIDDEN = {("wf", "flow_sync"), ("wf", "v_flow_state"), ("core", "doc_sequence"), ("audit", "chain_head")}
 ROLE = "user"
 ADMIN_ROLE = "platform_admin"   # realm role Keycloak, bắt buộc OTP (ADR #32)
 ACCOUNT_ROLE = "account"        # đã đăng nhập, chưa chọn tenant: chỉ gọi my_tenants
@@ -34,6 +34,7 @@ CAN_READ = {
     ("wf", "approval_step"): ("wf", "approval_step_can_read"),
     ("wf", "approval_history"): ("wf", "approval_history_can_read"),
     ("wf", "task"): ("wf", "task_can_read"),
+    ("collab", "comment"): ("collab", "comment_can_read"),
 }
 
 # Bộ lọc xem riêng cho một số bảng (mặc định: cùng tenant).
@@ -43,6 +44,13 @@ SELECT_FILTER = {
     ("core", "delegation"): {"_and": [TENANT, {"_or": [{"delegator_id": {"_eq": ME}},
                                                         {"delegate_id": {"_eq": ME}}]}]},
     ("wf", "v_inbox"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    # Quyền của chính người gọi (giao diện dựng luật CASL), không xem quyền của người khác.
+    ("core", "v_permission_grant"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    ("collab", "notification"): {"_and": [TENANT, {"recipient_id": {"_eq": ME}}]},
+    # Nhật ký: người có quyền audit.read trong tenant (audit.v_reader).
+    ("audit", "log"): {"_and": [TENANT, {"readers": {"person_id": {"_eq": ME}}}]},
+    ("audit", "v_reader"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    ("proc", "purchase_request_item"): {"_and": [TENANT, {"request": {"can_read": {"_eq": True}}}]},
 }
 
 # Quan hệ không có khóa ngoại (chứng từ được duyệt là đa hình: entity_type + entity_id).
@@ -54,9 +62,36 @@ MANUAL_RELATIONSHIPS = [
     ("object", ("wf", "v_inbox"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
     ("object", ("wf", "v_inbox"), "task", ("wf", "task"), {"task_id": "id"}),
     ("object", ("wf", "v_inbox"), "assigned_position", ("core", "position"), {"assigned_position_id": "id"}),
+    ("object", ("collab", "comment"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
+    ("array", ("proc", "purchase_request"), "comments", ("collab", "comment"), {"id": "entity_id"}),
+    ("object", ("collab", "notification"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
+    ("object", ("audit", "log"), "actor", ("core", "person"), {"actor_id": "id"}),
+    ("array", ("audit", "log"), "readers", ("audit", "v_reader"), {"tenant_id": "tenant_id"}),
 ]
 
-PR_EDITABLE = ["title", "category_code", "total_amount", "ic_order_id"]
+PR_EDITABLE = ["title", "description", "category_code", "total_amount", "needed_by", "partner_id", "ic_order_id"]
+ITEM_EDITABLE = ["item_id", "line_no", "description", "uom", "quantity", "unit_price", "note"]
+MDM_EDITABLE = {
+    ("mdm", "partner"): ["code", "name", "tax_code", "address", "email", "phone", "internal_unit_id", "is_active"],
+    ("mdm", "item"): ["code", "name", "uom", "category_code", "ref_price", "is_active"],
+}
+
+
+def _action(name: str, kind: str, args: list[tuple[str, str]], output: str, roles: list[str], comment: str,
+            timeout: int = 30) -> dict:
+    return {
+        "name": name,
+        "definition": {
+            "kind": "synchronous", "type": kind,
+            "handler": f"{{{{ACTIONS_URL}}}}/actions/{name}",
+            "arguments": [{"name": n, "type": t} for n, t in args],
+            "output_type": output,
+            "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
+            "timeout": timeout,
+        },
+        "permissions": [{"role": r} for r in roles],
+        "comment": comment,
+    }
 
 
 def introspect(conn: psycopg.Connection):
@@ -183,12 +218,47 @@ def build(conn: psycopg.Connection) -> dict:
         "filter": {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_eq": "DRAFT"}}]},
     }}]
 
+    # Dòng hàng: người lập sửa khi đề nghị còn nháp hoặc bị trả về (CSDL cũng chặn).
+    item = entries[("proc", "purchase_request_item")]
+    own_item = {"_and": [TENANT, {"request": own_draft}]}
+    item["insert_permissions"] = [{"role": ROLE, "permission": {
+        "check": own_item, "set": {"tenant_id": "X-Hasura-Tenant-Id"}, "columns": ["request_id", *ITEM_EDITABLE],
+    }}]
+    item["update_permissions"] = [{"role": ROLE, "permission": {
+        "filter": own_item, "check": own_item, "columns": ITEM_EDITABLE,
+    }}]
+    item["delete_permissions"] = [{"role": ROLE, "permission": {"filter": own_item}}]
+
+    # Bình luận: người viết là người gọi; CSDL kiểm tra quyền xem chứng từ và người được nhắc tên.
+    comment = entries[("collab", "comment")]
+    comment["insert_permissions"] = [{"role": r, "permission": {
+        "check": {}, "set": {"tenant_id": "X-Hasura-Tenant-Id", "author_id": ME},
+        "columns": ["entity_type", "entity_id", "parent_id", "body", "mentions"],
+    }} for r in (ROLE, ADMIN_ROLE)]
+    comment["update_permissions"] = [{"role": r, "permission": {
+        "filter": {"_and": [TENANT, {"author_id": {"_eq": ME}}, {"deleted_at": {"_is_null": True}}]},
+        "check": {}, "columns": ["body", "deleted_at"],
+    }} for r in (ROLE, ADMIN_ROLE)]
+
+    # Dữ liệu chủ: đội nền tảng nhập (người dùng thường chỉ xem).
+    for key, cols in MDM_EDITABLE.items():
+        entries[key]["insert_permissions"] = [{"role": ADMIN_ROLE, "permission": {
+            "check": {}, "set": {"tenant_id": "X-Hasura-Tenant-Id"}, "columns": cols}}]
+        entries[key]["update_permissions"] = [{"role": ADMIN_ROLE, "permission": {
+            "filter": TENANT, "check": {}, "columns": cols}}]
+
     return {
         "version": 3,
         "sources": [{
             "name": "bms",
             "kind": "postgres",
             "tables": [entries[k] for k in sorted(entries)],
+            "functions": [{
+                "function": {"schema": "collab", "name": "mark_notifications_read"},
+                "configuration": {"session_argument": "hasura_session", "exposed_as": "mutation"},
+                "permissions": [{"role": ROLE}, {"role": ADMIN_ROLE}],
+                "comment": "Đánh dấu đã đọc thông báo của người gọi (ids bỏ trống: tất cả)",
+            }],
             "configuration": {"connection_info": {
                 "database_url": {"from_env": "BMS_DATABASE_URL"},
                 "isolation_level": "read-committed",
@@ -196,47 +266,21 @@ def build(conn: psycopg.Connection) -> dict:
             }},
         }],
         "actions": [
-            {
-                "name": "my_tenants",
-                "definition": {
-                    "kind": "synchronous", "type": "query",
-                    "handler": "{{ACTIONS_URL}}/actions/my_tenants",
-                    "arguments": [],
-                    "output_type": "[AccountTenant!]!",
-                    "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
-                    "timeout": 10,
-                },
-                "permissions": [{"role": ACCOUNT_ROLE}, {"role": ROLE}, {"role": ADMIN_ROLE}],
-                "comment": "Các tenant tài khoản được vào (chọn tenant khi đăng nhập, ADR #30)",
-            },
-            {
-                "name": "submit_purchase_request",
-                "definition": {
-                    "kind": "synchronous", "type": "mutation",
-                    "handler": "{{ACTIONS_URL}}/actions/submit_purchase_request",
-                    "arguments": [{"name": "request_id", "type": "uuid!"}],
-                    "output_type": "PurchaseRequestActionResult",
-                    "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
-                    "timeout": 30,
-                },
-                "permissions": [{"role": ROLE}, {"role": ADMIN_ROLE}],
-                "comment": "Gửi duyệt đề nghị mua sắm (người lập)",
-            },
-            {
-                "name": "act_on_task",
-                "definition": {
-                    "kind": "synchronous", "type": "mutation",
-                    "handler": "{{ACTIONS_URL}}/actions/act_on_task",
-                    "arguments": [{"name": "task_id", "type": "uuid!"},
-                                  {"name": "decision", "type": "ApprovalDecision!"},
-                                  {"name": "note", "type": "String"}],
-                    "output_type": "PurchaseRequestActionResult",
-                    "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
-                    "timeout": 30,
-                },
-                "permissions": [{"role": ROLE}, {"role": ADMIN_ROLE}],
-                "comment": "Duyệt / từ chối / trả về một việc duyệt (kể cả duyệt thay qua ủy quyền)",
-            },
+            _action("my_tenants", "query", [], "[AccountTenant!]!", [ACCOUNT_ROLE, ROLE, ADMIN_ROLE],
+                    "Các tenant tài khoản được vào (chọn tenant khi đăng nhập, ADR #30)", timeout=10),
+            _action("submit_purchase_request", "mutation", [("request_id", "uuid!")], "PurchaseRequestActionResult",
+                    [ROLE, ADMIN_ROLE], "Gửi duyệt đề nghị mua sắm (người lập)"),
+            _action("act_on_task", "mutation",
+                    [("task_id", "uuid!"), ("decision", "ApprovalDecision!"), ("note", "String")],
+                    "PurchaseRequestActionResult", [ROLE, ADMIN_ROLE],
+                    "Duyệt / từ chối / trả về một việc duyệt (kể cả duyệt thay qua ủy quyền)"),
+            _action("cancel_purchase_request", "mutation", [("request_id", "uuid!"), ("reason", "String!")],
+                    "PurchaseRequestActionResult", [ROLE, ADMIN_ROLE],
+                    "Người lập hủy đề nghị chưa duyệt xong (nháp, chờ duyệt, bị trả về)"),
+            _action("process_state", "query", [("request_id", "uuid!")], "ProcessState", [ROLE, ADMIN_ROLE],
+                    "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho bpmn-js)"),
+            _action("verify_audit_chain", "query", [], "AuditChainResult!", [ROLE, ADMIN_ROLE],
+                    "Đối soát chuỗi hash nhật ký kiểm toán của tenant (cần quyền audit.read)", timeout=60),
         ],
         "custom_types": {
             "enums": [{"name": "ApprovalDecision",
@@ -254,6 +298,25 @@ def build(conn: psycopg.Connection) -> dict:
                     "remote_table": {"schema": "proc", "name": "purchase_request"},
                     "field_mapping": {"request_id": "id"},
                 }],
+            }, {
+                "name": "ProcessState",
+                "fields": [{"name": "request_id", "type": "uuid!"}, {"name": "round", "type": "Int!"},
+                           {"name": "status", "type": "String!"},
+                           {"name": "process_instance_id", "type": "String"},
+                           {"name": "bpmn_xml", "type": "String!"},
+                           {"name": "active_activity_ids", "type": "[String!]!"},
+                           {"name": "completed_activity_ids", "type": "[String!]!"},
+                           {"name": "source", "type": "String!"}],
+            }, {
+                "name": "AuditChainProblem",
+                "fields": [{"name": "seq", "type": "Int"}, {"name": "log_id", "type": "Int"},
+                           {"name": "problem", "type": "String!"}],
+            }, {
+                "name": "AuditChainResult",
+                "fields": [{"name": "tenant_id", "type": "uuid!"}, {"name": "ok", "type": "Boolean!"},
+                           {"name": "checked", "type": "Int!"}, {"name": "head_seq", "type": "Int!"},
+                           {"name": "head_hash", "type": "String"},
+                           {"name": "problems", "type": "[AuditChainProblem!]!"}],
             }],
         },
     }

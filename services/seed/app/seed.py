@@ -1,6 +1,6 @@
 """Nạp dữ liệu demo Tập đoàn X (ADR #16): chạy sau `migrate`, bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
 
-Đề nghị mua sắm mẫu đi qua đúng các hàm CSDL (gửi duyệt, duyệt, trả về) nên dừng ở
+Đề nghị mua sắm mẫu (kèm dòng hàng) đi qua đúng các hàm CSDL (gửi duyệt, duyệt, trả về) nên dừng ở
 đúng bước của chuỗi duyệt; flow-sync tự tạo tiến trình Flowable tương ứng.
 """
 
@@ -16,21 +16,74 @@ from .demo import CONTRACT_SEATS, DEMO_USERS, TENANTS, TREES, UNIT_TYPES, VACANT
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
 
-# (tenant, ghế người lập, tiêu đề, số tiền, nhóm hàng, các bước đã xử lý: (quyết định, ghế người xử lý, ghi chú))
+# Nhóm hàng (danh mục ITEM_CATEGORY, khớp wf.approval_rule.category_code).
+ITEM_CATEGORIES = {
+    "TDX": {"LINH_KIEN": "Linh kiện điện tử", "THIET_BI": "Thiết bị, máy móc", "CNTT": "Thiết bị CNTT",
+            "VAN_PHONG": "Văn phòng phẩm", "DICH_VU": "Dịch vụ"},
+    "BVX": {"TBYT": "Thiết bị y tế", "VAT_TU_YT": "Vật tư y tế", "VAN_PHONG": "Văn phòng phẩm"},
+}
+
+# Nhà cung cấp: (tenant, mã, tên, mã đơn vị nội bộ). Tên hư cấu (ADR #19).
+PARTNERS = [
+    ("TDX", "NB_CHIP", "Công ty Chip X", "CHIP"),
+    ("TDX", "NB_DT", "Công ty Điện thoại X", "DT"),
+    ("TDX", "NB_GD", "Công ty Gia dụng X", "GD"),
+    ("TDX", "NCC_KTA", "Công ty TNHH Thiết bị Kỹ thuật A", None),
+    ("TDX", "NCC_MCB", "Công ty CP Máy chủ B", None),
+    ("TDX", "NCC_VPC", "Công ty TNHH Văn phòng phẩm C", None),
+    ("TDX", "NCC_DVD", "Công ty CP Dịch vụ Cơ điện D", None),
+    ("BVX", "NCC_YTE", "Công ty CP Thiết bị Y tế E", None),
+]
+
+# Vật tư: (tenant, mã, tên, đơn vị tính, nhóm hàng, giá tham khảo).
+ITEMS = [
+    ("TDX", "LK-PMIC", "Chip quản lý nguồn PMIC", "cái", "LINH_KIEN", 12_000),
+    ("TDX", "LK-SOC-MAU", "SoC mẫu thử kỹ thuật", "cái", "LINH_KIEN", 300_000),
+    ("TDX", "LK-BOMACH", "Bo mạch thử nghiệm", "cái", "LINH_KIEN", 500_000),
+    ("TDX", "TB-DEMHAT", "Máy đếm hạt bụi phòng sạch", "bộ", "THIET_BI", 35_000_000),
+    ("TDX", "TB-DUNGCU", "Bộ dụng cụ sửa chữa điện tử", "bộ", "THIET_BI", 3_000_000),
+    ("TDX", "TB-DONGHO", "Đồng hồ vạn năng", "cái", "THIET_BI", 3_000_000),
+    ("TDX", "CNTT-MAYCHU", "Máy chủ 2U 64 nhân", "cái", "CNTT", 150_000_000),
+    ("TDX", "VPP-GIAY", "Giấy A4", "ram", "VAN_PHONG", 80_000),
+    ("TDX", "VPP-MUC", "Mực in laser", "hộp", "VAN_PHONG", 400_000),
+    ("TDX", "DV-VC", "Vận chuyển hàng nhanh", "chuyến", "DICH_VU", None),
+    ("TDX", "DV-HVAC", "Bảo trì hệ thống điều hòa phòng sạch", "lần", "DICH_VU", None),
+    ("BVX", "TBYT-SIEUAM", "Máy siêu âm 4D", "máy", "TBYT", 200_000_000),
+]
+
+# (tenant, ghế người lập, tiêu đề, nhóm hàng, nhà cung cấp, dòng hàng: (mã vật tư, số lượng, đơn giá),
+#  các bước đã xử lý: (quyết định, ghế người xử lý, ghi chú))
 PURCHASE_REQUESTS = [
-    ("TDX", "DT_MH.S1", "Linh kiện thay thế cho lô điện thoại bị ảnh hưởng", 650_000_000, None,
-     [("APPROVE", "DT.HEAD", None)]),                                   # chờ TGĐ
-    ("TDX", "CHIP_PS.S1", "Máy đếm hạt bụi phòng sạch", 35_000_000, None, []),   # chờ quản đốc phòng sạch
-    ("TDX", "CHIP_KD.S2", "Mẫu thử cho khách hàng B2B", 90_000_000, None, []),   # chờ giám đốc Chip X (đang ủy quyền)
-    ("TDX", "GD_KTHT.S1", "Bộ dụng cụ sửa chữa cho đội kỹ thuật", 120_000_000, None, []),  # chờ giám đốc Gia dụng X
-    ("TDX", "CHIP_RD_KC.S1", "Bo mạch thử nghiệm cho kiểm chứng", 25_000_000, None, []),  # trưởng phòng trống: lên giám đốc R&D
-    ("TDX", "GD_BH.HD1", "Thiết bị đo cho tư vấn bảo hành", 15_000_000, None, []),  # người làm hợp đồng lập
-    ("TDX", "TDX_CDS.S2", "Máy chủ cho nền tảng DX-OS", 300_000_000, None, []),   # công ty mẹ: lên TGĐ
-    ("TDX", "DT_MH.S1", "Văn phòng phẩm quý IV", 8_000_000, None,
+    ("TDX", "DT_MH.S1", "Linh kiện thay thế cho lô điện thoại bị ảnh hưởng", None, "NB_CHIP",
+     [("LK-PMIC", 50_000, 12_000), ("DV-VC", 1, 50_000_000)],
+     [("APPROVE", "DT.HEAD", None)]),                                   # 650 tr: chờ TGĐ
+    ("TDX", "CHIP_PS.S1", "Máy đếm hạt bụi phòng sạch", None, "NCC_KTA",
+     [("TB-DEMHAT", 1, 35_000_000)], []),                              # chờ quản đốc phòng sạch
+    ("TDX", "CHIP_KD.S2", "Mẫu thử cho khách hàng B2B", None, None,
+     [("LK-SOC-MAU", 300, 300_000)], []),                              # chờ giám đốc Chip X (đang ủy quyền)
+    ("TDX", "GD_KTHT.S1", "Bộ dụng cụ sửa chữa cho đội kỹ thuật", None, "NCC_KTA",
+     [("TB-DUNGCU", 40, 3_000_000)], []),                              # chờ giám đốc Gia dụng X
+    ("TDX", "CHIP_RD_KC.S1", "Bo mạch thử nghiệm cho kiểm chứng", None, None,
+     [("LK-BOMACH", 50, 500_000)], []),                                # trưởng phòng trống: lên giám đốc R&D
+    ("TDX", "GD_BH.HD1", "Thiết bị đo cho tư vấn bảo hành", None, None,
+     [("TB-DONGHO", 5, 3_000_000)], []),                               # người làm hợp đồng lập
+    ("TDX", "TDX_CDS.S2", "Máy chủ cho nền tảng DX-OS", None, "NCC_MCB",
+     [("CNTT-MAYCHU", 2, 150_000_000)], []),                           # công ty mẹ: lên TGĐ
+    ("TDX", "DT_MH.S1", "Văn phòng phẩm quý IV", None, "NCC_VPC",
+     [("VPP-GIAY", 50, 80_000), ("VPP-MUC", 10, 400_000)],
      [("RETURN", "DT_MH.HEAD", "Tách riêng mực in, bổ sung báo giá thứ hai")]),
-    ("TDX", "CHIP_PS.S2", "Bảo trì hệ thống điều hòa phòng sạch", 45_000_000, None,
-     [("APPROVE", "CHIP_PS.HEAD", None)]),                               # đã duyệt
-    ("BVX", "BVX_CDHA.S1", "Máy siêu âm 4D", 200_000_000, "TBYT", []),   # thiết bị y tế: 2 cấp
+    ("TDX", "CHIP_PS.S2", "Bảo trì hệ thống điều hòa phòng sạch", None, "NCC_DVD",
+     [("DV-HVAC", 1, 45_000_000)],
+     [("APPROVE", "CHIP_PS.HEAD", None)]),                              # đã duyệt
+    ("BVX", "BVX_CDHA.S1", "Máy siêu âm 4D", "TBYT", "NCC_YTE",
+     [("TBYT-SIEUAM", 1, 200_000_000)], []),                           # thiết bị y tế: 2 cấp
+]
+
+# Bình luận mẫu: (tiêu đề đề nghị, ghế người viết, nội dung).
+COMMENTS = [
+    ("Văn phòng phẩm quý IV", "DT_MH.S1", "Em sẽ tách mực in sang đề nghị riêng và bổ sung báo giá của nhà cung cấp thứ hai."),
+    ("Linh kiện thay thế cho lô điện thoại bị ảnh hưởng", "DT.HEAD",
+     "Đã duyệt cấp công ty. Đề nghị Tổng giám đốc xem xét sớm để kịp thay linh kiện cho lô bị ảnh hưởng."),
 ]
 
 
@@ -138,7 +191,7 @@ class Seeder:
         roles = {
             "NHAN_VIEN": ("Nhân viên", ["proc.purchase_request.create", "proc.purchase_request.read"]),
             "QUAN_LY": ("Quản lý", ["proc.purchase_request.read", "wf.approval.act"]),
-            "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read"]),
+            "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read", "audit.read"]),
             "QUAN_TRI_TO_CHUC": ("Quản trị tổ chức", ["core.org.manage", "core.permission.manage"]),
         }
         for code, (name, perms) in roles.items():
@@ -192,19 +245,45 @@ class Seeder:
                self.tenant_id("TDX"), self.holders[("TDX", "CHIP.HEAD")], self.holders[("TDX", "CHIP.DEP1")],
                self.positions[("TDX", "CHIP.HEAD")])
 
+    def master_data(self, tenant: str):
+        tid = self.tenant_id(tenant)
+        for code, name in ITEM_CATEGORIES[tenant].items():
+            self.x("""INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
+                      VALUES (%s, %s, 'ITEM_CATEGORY', %s, %s)""", tid, uid(tenant, "ITEM_CATEGORY", code), code, name)
+        for t, code, name, unit in PARTNERS:
+            if t == tenant:
+                self.x("""INSERT INTO mdm.partner (tenant_id, id, code, name, internal_unit_id)
+                          VALUES (%s, %s, %s, %s, %s)""",
+                       tid, uid(tenant, "partner", code), code, name, uid(tenant, "unit", unit) if unit else None)
+        for t, code, name, uom, category, price in ITEMS:
+            if t == tenant:
+                self.x("""INSERT INTO mdm.item (tenant_id, id, code, name, uom, category_code, ref_price)
+                          VALUES (%s, %s, %s, %s, %s, %s, %s)""", tid, uid(tenant, "item", code), code, name, uom,
+                       category, price)
+
     def purchase_requests(self):
-        for tenant, seat, title, amount, category, steps in PURCHASE_REQUESTS:
+        ids = {}
+        for tenant, seat, title, category, partner, lines, steps in PURCHASE_REQUESTS:
             requester = self.holders[(tenant, seat)]
             pr_id = self.x("""INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id,
-                                                                 total_amount, category_code)
+                                                                 category_code, partner_id)
                               VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-                           self.tenant_id(tenant), title, requester, self.positions[(tenant, seat)], amount,
-                           category).fetchone()[0]
+                           self.tenant_id(tenant), title, requester, self.positions[(tenant, seat)], category,
+                           uid(tenant, "partner", partner) if partner else None).fetchone()[0]
+            for item, quantity, price in lines:
+                self.x("""INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
+                          VALUES (%s, %s, %s, %s)""", pr_id, uid(tenant, "item", item), quantity, price)
             self.x("SELECT proc.submit_purchase_request(%s, %s)", pr_id, requester)
             for decision, actor_seat, note in steps:
                 task = self.x("""SELECT t.id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
                                  WHERE s.entity_id = %s AND t.status = 'OPEN'""", pr_id).fetchone()[0]
                 self.x("SELECT wf.act(%s, %s, %s, %s)", task, self.holders[(tenant, actor_seat)], decision, note)
+            ids[title] = (tenant, pr_id)
+        for title, seat, body in COMMENTS:
+            tenant, pr_id = ids[title]
+            self.x("""INSERT INTO collab.comment (tenant_id, entity_type, entity_id, author_id, body)
+                      VALUES (%s, 'proc.purchase_request', %s, %s, %s)""",
+                   self.tenant_id(tenant), pr_id, self.holders[(tenant, seat)], body)
 
     def run(self):
         for t in TENANTS:
@@ -220,6 +299,8 @@ class Seeder:
         self.x("SET CONSTRAINTS ALL IMMEDIATE")
         for t in TENANTS:
             self.roles(t.code)
+        for t in TENANTS:
+            self.master_data(t.code)
         self.approval_rules()
         self.delegation()
         self.purchase_requests()
