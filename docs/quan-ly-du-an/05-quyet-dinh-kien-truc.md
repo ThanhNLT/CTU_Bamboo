@@ -39,6 +39,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [31](#adr-31) | 02/10/2026 | CSDL là nguồn sự thật của luồng duyệt; Flowable phản chiếu |
 | [32](#adr-32) | 02/10/2026 | Hasura xác thực bằng webhook: Keycloak token + tenant đã chọn |
 | [33](#adr-33) | 04/10/2026 | Chuỗi hash nhật ký kiểm toán theo từng tenant |
+| [34](#adr-34) | 04/10/2026 | Cổng API APISIX standalone là điểm vào duy nhất |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -311,6 +312,14 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Hiện thực [ADR #18](#adr-18) bằng một chuỗi hash **mỗi tenant**: `audit.log` có số thứ tự `seq` liên tục trong tenant, `hash = sha256(prev_hash || nội dung jsonb)`; đầu chuỗi giữ ở `audit.chain_head` và khóa theo giao dịch nên các giao dịch ghi cùng tenant xếp hàng ở bước ghi nhật ký. `audit.verify_chain(tenant)` phát hiện dòng bị sửa, thiếu dòng, lệch đầu chuỗi; Action `verify_audit_chain` cho người có quyền `audit.read` (quyền cấp tenant, không xét phạm vi đơn vị). Người thực hiện lấy từ `hasura.user`
 - **Lý do:** Kiểm toán viên của tenant đối soát được chuỗi của mình mà không cần đọc dữ liệu tenant khác; seq liên tục phát hiện được cả việc xóa; khóa đầu chuỗi đảm bảo chuỗi không rẽ nhánh khi ghi đồng thời
 - **Đã loại:** Một chuỗi toàn nền tảng (khóa chung mọi tenant, đối soát phải đọc chéo tenant); băm theo lô định kỳ (khoảng hở chưa niêm phong); ghi nhật ký bất đồng bộ qua `pg_notify` (mất sự kiện thì mất nhật ký)
+
+(adr-34)=
+## ADR #34: Cổng API APISIX standalone là điểm vào duy nhất
+
+- **Ngày:** 04/10/2026
+- **Quyết định:** Mọi truy cập từ trình duyệt đi qua một cổng Apache APISIX (cổng 8000), chạy chế độ standalone: route khai báo trong `platform/apisix/apisix.yaml` (Git là nguồn duy nhất, không có Admin API lúc chạy). Route: `/graphql` → Hasura `/v1/graphql`; `/realms`, `/resources` → Keycloak; `/bms-quarantine/*` (chỉ `PUT`) và `/bms-documents/*` (chỉ `GET`/`HEAD`) → SeaweedFS; `/` → web; đường dẫn khác trả 404. Token Keycloak được kiểm **tại biên** bằng plugin `forward-auth` gọi `actions` `/auth/gateway` (cùng bộ kiểm token với Hasura webhook); websocket subscription đi route riêng không kiểm header vì trình duyệt không gửi được `Authorization` khi nâng cấp kết nối, Hasura kiểm token trong `connection_init`. WAF Coraza (OWASP CRS, paranoia 1, chặn theo ngưỡng điểm) dạng Proxy-Wasm trên giao diện, Keycloak và GraphQL; GraphQL bỏ nhóm luật SQLi. Realm `master` bị chặn ở cổng; trang quản trị Keycloak dùng cổng riêng `127.0.0.1:8080` (`KC_HOSTNAME_ADMIN`). Giới hạn tần suất theo IP: GraphQL 600/phút, đăng nhập 60/phút. Web và SeaweedFS không mở cổng ra ngoài; các cổng quản trị còn lại chỉ nghe `127.0.0.1`
+- **Lý do:** Đề bắt buộc dịch vụ cổng API và nguyên lý Zero-Trust; một origin bỏ được CORS giữa giao diện và API; request không có token dừng ở biên, không tới Hasura; route theo tên bucket (không dùng tiền tố `/files`) vì chữ ký link S3 tính trên đường dẫn và host gốc, đổi đường dẫn ở cổng làm sai chữ ký; `forward-auth` dùng lại mã kiểm token đã có kiểm thử thay vì cấu hình lại issuer/audience trong plugin `openid-connect`; standalone không cần etcd và hợp với GitOps
+- **Đã loại:** Plugin `openid-connect` của APISIX (trùng logic kiểm token, khó khớp `aud` của Keycloak); APISIX có etcd và Admin API (thêm một dịch vụ, cấu hình lúc chạy lệch Git); tiền tố `/files` cho S3 (sai chữ ký); WAF trên route tải tệp (nội dung nhị phân tới 25 MB, đã kiểm tra và quét virus ở `confirm_upload`); mỗi dịch vụ một tên miền công khai
 
 (adr-mau)=
 ## Mẫu cho quyết định mới

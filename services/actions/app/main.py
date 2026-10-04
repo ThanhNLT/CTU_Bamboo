@@ -180,6 +180,21 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
     def healthz():
         return {"ok": True}
 
+    @app.get("/auth/gateway")
+    def gateway_auth(request: Request):
+        """Cổng API (forward-auth, ADR #34): chặn tại biên request GraphQL không có token Keycloak hợp lệ.
+        Chỉ kiểm token (chữ ký, hạn, issuer, client); tenant và quyền do Hasura webhook xử lý."""
+        header = request.headers.get("authorization", "")
+        if not header.lower().startswith("bearer "):
+            return JSONResponse({"message": "Cần đăng nhập", "extensions": {"code": "unauthorized"}}, 401,
+                                headers={"WWW-Authenticate": "Bearer"})
+        try:
+            claims = verifier.verify(header[7:].strip())
+        except auth.AuthError as exc:
+            return JSONResponse({"message": str(exc), "extensions": {"code": "unauthorized"}}, 401,
+                                headers={"WWW-Authenticate": 'Bearer error="invalid_token"'})
+        return JSONResponse({"ok": True}, headers={"X-User-Sub": claims["sub"]})
+
     @app.get("/auth/hasura")
     def hasura_auth(request: Request):
         """Hasura auth webhook (chế độ GET, Hasura chuyển nguyên header của client)."""

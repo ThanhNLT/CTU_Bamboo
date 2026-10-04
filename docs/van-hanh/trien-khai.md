@@ -19,9 +19,9 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 1 | Bật chế độ production | `BAMBOO_ENV=production` trong `.env`. `openbao-init` từ chối chạy (và không dịch vụ nào khởi động) nếu còn bất kỳ mật khẩu mặc định nào |
 | 2 | Đổi mọi secret | Các biến đánh dấu `[BẮT BUỘC]` trong `.env.example`; dùng chuỗi ngẫu nhiên dài (`openssl rand -base64 32`) |
 | 3 | Tắt dữ liệu demo | `SEED_DEMO=false`; xóa hoặc vô hiệu hóa tài khoản demo trong Keycloak sau lần import đầu (realm có sẵn tài khoản demo) |
-| 4 | Tên miền HTTPS | Đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT` là địa chỉ HTTPS công khai (mục 3) |
+| 4 | Tên miền HTTPS | Một tên miền trỏ vào cổng API; đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó (mục 3) |
 | 5 | Keycloak chế độ production | `KEYCLOAK_MODE=start` (bắt buộc đi sau reverse proxy TLS) |
-| 6 | Redirect URI của ứng dụng | Keycloak → realm `bms` → Clients → `bms-web`: thêm `https://<tên miền web>/*` vào *Valid redirect URIs* và `https://<tên miền web>` vào *Web origins* |
+| 6 | Redirect URI của ứng dụng | Tự lấy từ `WEB_ORIGIN` khi Keycloak import realm lần đầu. Đổi tên miền sau lần import đầu: sửa trong Keycloak → realm `bms` → Clients → `bms-web` (*Valid redirect URIs*, *Web origins*); có thể xóa `http://localhost:5173` (chỉ dùng cho `npm run dev`) |
 | 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp) |
 | 8 | Quét virus | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav` |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
@@ -29,35 +29,25 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 
 ## 3. Tên miền và TLS
 
-Mọi cổng trong `docker-compose.yml` chỉ mở trên `127.0.0.1`; đặt một reverse proxy kết thúc TLS phía trước. Trình duyệt cần bốn địa chỉ:
-
-| Tên miền (ví dụ) | Chuyển tới | Ghi chú |
-|---|---|---|
-| `app.example.vn` | `127.0.0.1:5173` | Ứng dụng web (`WEB_ORIGIN`) |
-| `sso.example.vn` | `127.0.0.1:8080` | Keycloak (`KEYCLOAK_URL`); gửi kèm `X-Forwarded-*` |
-| `api.example.vn` | `127.0.0.1:8081` | Hasura (`HASURA_PUBLIC_URL=https://api.example.vn/v1/graphql`); cho phép nâng cấp websocket |
-| `files.example.vn` | `127.0.0.1:8333` | SeaweedFS S3 (`S3_PUBLIC_ENDPOINT`); cho phép thân request 25 MB |
+Trình duyệt chỉ cần **một địa chỉ**: cổng API APISIX ([ADR #34](#adr-34)), nghe `127.0.0.1:8000` (`GATEWAY_PORT`). Đặt một reverse proxy kết thúc TLS phía trước, trỏ một tên miền vào cổng này, rồi đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `S3_PUBLIC_ENDPOINT` bằng tên miền đó, `HASURA_PUBLIC_URL` bằng tên miền đó thêm `/graphql`, và `CORS_ORIGINS` chỉ còn tên miền đó.
 
 Ví dụ với Caddy (tự lấy chứng chỉ Let's Encrypt, tự chuyển tiếp websocket và `X-Forwarded-*`):
 
 ```text
-app.example.vn   { reverse_proxy 127.0.0.1:5173 }
-sso.example.vn   { reverse_proxy 127.0.0.1:8080 }
-api.example.vn   { reverse_proxy 127.0.0.1:8081 }
-files.example.vn {
+bamboo.example.vn {
     request_body { max_size 30MB }
-    reverse_proxy 127.0.0.1:8333
+    reverse_proxy 127.0.0.1:8000
 }
 ```
 
-Image `web` đọc địa chỉ Keycloak và Hasura lúc khởi động (`KEYCLOAK_URL`, `HASURA_PUBLIC_URL` → `/config.js`), nên cùng một image dựng sẵn chạy được trên mọi tên miền mà không cần build lại. Trong kế hoạch, APISIX sẽ thay vai trò reverse proxy này (gom về một tên miền, thêm WAF, giới hạn tần suất).
+Cổng API đã lo phần còn lại: chặn đường dẫn không khai báo, kiểm token tại biên, WAF, giới hạn tần suất, không lộ Hasura Admin API, realm quản trị Keycloak hay thao tác S3 ngoài hai bucket của ứng dụng. Image `web` gọi Keycloak và Hasura cùng origin với trang, nên cùng một image dựng sẵn chạy được trên mọi tên miền mà không cần build lại.
 
 ## 4. Chạy và nâng cấp
 
 Chạy bằng image dựng sẵn (không cần mã nguồn), trong thư mục có `.env`:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y
 ```
 
 Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura và deploy BPMN khi nội dung đổi. Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
@@ -96,13 +86,16 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 
 ## 7. Cổng và dịch vụ
 
-| Dịch vụ | Cổng (chỉ 127.0.0.1) | Công khai qua proxy | Vai trò |
+| Dịch vụ | Cổng trên máy chủ | Công khai | Vai trò |
 |---|---|---|---|
-| `web` | 5173 | Có | Ứng dụng Refine (nginx) |
-| `keycloak` | 8080 | Có | Đăng nhập, quản lý tài khoản |
-| `hasura` | 8081 | Có (`/v1/graphql`) | API GraphQL; Console tắt ở production |
-| `seaweedfs` | 8333 | Có | Tải tệp qua link có chữ ký |
-| `flowable` | 8082 | Không | Động cơ BPMN, chỉ dịch vụ `actions` gọi |
-| `openbao` | 8200 | Không | Két secret |
-| `db` | 5432 | Không | PostgreSQL |
-| `actions`, `flow-sync` | không mở | Không | Hasura Actions, auth webhook, đồng bộ Flowable |
+| `gateway` | 8000 (`GATEWAY_PORT`) | **Có, điểm vào duy nhất** | Cổng API APISIX: định tuyến, WAF, token tại biên, giới hạn tần suất |
+| `web` | không mở | Qua cổng (`/`) | Ứng dụng Refine (nginx) |
+| `keycloak` | 8080, chỉ 127.0.0.1 | Qua cổng (`/realms`, `/resources`) | Đăng nhập; cổng 8080 chỉ cho trang quản trị |
+| `hasura` | 8081, chỉ 127.0.0.1 | Qua cổng (`/graphql`) | API GraphQL; cổng 8081 chỉ cho Console (tắt ở production) |
+| `seaweedfs` | không mở | Qua cổng (`/bms-quarantine`, `/bms-documents`) | Lưu tệp, link có chữ ký |
+| `flowable` | 8082, chỉ 127.0.0.1 | Không | Động cơ BPMN, chỉ dịch vụ `actions` gọi |
+| `openbao` | 8200, chỉ 127.0.0.1 | Không | Két secret |
+| `db` | 5432, chỉ 127.0.0.1 | Không | PostgreSQL |
+| `actions`, `flow-sync` | không mở | Không | Hasura Actions, auth webhook, kiểm token cho cổng, đồng bộ Flowable |
+
+Số liệu Prometheus của cổng: `gateway:9091/apisix/prometheus/metrics`, chỉ trong mạng nội bộ compose.
