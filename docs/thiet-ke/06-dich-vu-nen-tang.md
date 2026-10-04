@@ -91,42 +91,50 @@ make test-storage     # 15 kiểm thử: tải lên, quét, tải về, phân qu
 make test-secrets     # gồm cả kiểm tra khóa S3 của ứng dụng không tạo được bucket
 ```
 
-## 3. Flowable – quy trình duyệt đề nghị mua sắm (ADR #27)
+## 3. Flowable – quy trình duyệt đề nghị mua sắm (ADR #27, #28, #31)
 
-### Quy trình `purchase_request`
+### Nguồn sự thật
+
+CSDL quyết định toàn bộ luồng duyệt: chuỗi duyệt chốt theo vị trí, người nhận việc, đẩy lên cấp trên, gộp bước, chuyển việc, hủy ([ADR #28](#adr-28)). Flowable là **bản phản chiếu** ([ADR #31](#adr-31)): mỗi lần gửi duyệt một tiến trình, dùng để trình diễn sơ đồ, trạng thái hiện tại và lịch sử quy trình.
+
+### Quy trình `purchaseRequestApproval`
 
 File `platform/flowable/purchase_request.bpmn20.xml` (có sơ đồ DI cho bpmn-js):
 
 ```text
-Gửi đề nghị ─► [Duyệt đề nghị mua sắm] ─► ◇ Quyết định?
-                     ▲                      ├─ duyệt, còn cấp trên ─► (stepIndex + 1) ─┘
-                     │                      ├─ duyệt, cấp cuối ────► ● Đã duyệt
-                     │                      ├─ từ chối ────────────► ● Từ chối
-                     │                      └─ trả về ─────────────► ● Trả về người lập
+Gửi duyệt ─► [Duyệt bước i/n] ─► ◇ Quyết định?
+                  ▲                ├─ APPROVE, còn bước ─┘ (stepIndex = i + 1)
+                                   ├─ APPROVE, bước cuối ─► ● Đã duyệt
+                                   ├─ REJECT ─────────────► ● Từ chối
+                                   └─ RETURN ─────────────► ● Trả về người lập
 ```
 
-- **Không viết cứng người duyệt.** Khi gửi, dịch vụ `actions` tính chuỗi người duyệt bằng `wf.resolve_pr_approvers` (cây tổ chức + bảng hạn mức `wf.approval_rule`, [ADR #17](#adr-17)) và truyền vào quy trình: `approvers` (danh sách person.id), `approverCount`, `stepIndex`. User task giao cho `${approvers.split(',')[stepIndex]}`. **Cần đổi theo [ADR #28](#adr-28):** truyền danh sách vị trí, tìm người giữ vị trí khi đến từng bước.
-- Hạn mức nằm ở `wf.approval_rule` (doanh nghiệp tự cấu hình, có kiểm thử SQL), không nằm trong bảng DMN của Flowable. Nếu cần trình diễn DMN, có thể sinh bảng DMN từ `wf.approval_rule` (chỉ để hiển thị).
-- **Job `flowable-init`** (image `actions`, `services/actions/flowable_init.py`) chạy mỗi lần `up`:
-  1. Deploy BPMN khi nội dung đổi (tên deployment kèm sha256, không deploy trùng).
-  2. Gắn quy trình Flowable thật cho các đề nghị đang chờ duyệt trong dữ liệu mẫu, đúng bước đang chờ, nên demo duyệt tiếp được ngay (ví dụ đề nghị AOI chờ Tổng giám đốc).
+Biến tiến trình: `entityType`, `entityId`, `round`, `stepCount`, `stepIndex`, `positions` (danh sách vị trí của chuỗi duyệt); khi hoàn thành task: `decision`, `actedBy`, `onBehalfOf`, `note`. Business key `<id đề nghị>:<lần gửi>`.
 
-### Hasura Actions (`services/actions/procurement.py`)
+### Đồng bộ CSDL → Flowable (`services/actions/app/flow_sync.py`)
+
+- Trigger trên `wf.approval_step`, `wf.task` đánh dấu `wf.flow_sync` (một dòng mỗi lần gửi duyệt) và phát `pg_notify('wf_flow_sync')`.
+- Service `flow-sync` nghe kênh, đối chiếu theo trạng thái: bước hiện tại trong Flowable (`stepIndex`) so với bước đó trong CSDL – đã duyệt thì hoàn thành task, từ chối/trả về thì hoàn thành với quyết định đó, bị hủy thì xóa tiến trình, đang chờ thì đặt người nhận theo việc duyệt đang mở. Chạy lại bao nhiêu lần cũng cho cùng kết quả; lỗi ghi `last_error`, thử lại tối đa 20 lần.
+- Mỗi phút chạy `wf.refresh_all()` cho bổ nhiệm hết hạn theo lịch.
+- Job `bootstrap` deploy BPMN khi nội dung đổi (tên deployment kèm sha256) và nạp metadata Hasura.
+- Flowable chạy với `FLOWABLE_REST_APP_CREATE_DEMO_DEFINITIONS=false` (không nạp quy trình mẫu).
+
+### Hasura Actions (`services/actions/app/main.py`)
 
 | Action | Làm gì |
 |---|---|
-| `start_process(request_id)` | Chỉ người lập; đề nghị DRAFT/RETURNED và có dòng hàng; tìm đủ người duyệt. Chuyển SUBMITTED → IN_APPROVAL, ghi lịch sử SUBMIT, khởi tạo quy trình, sao task vào `wf.task` (trigger gửi thông báo cho người duyệt và người nhận ủy quyền) |
-| `complete_task(task_id, decision, comment)` | `task_id` là `wf.task.id` (lấy từ `wf_v_inbox`). Chỉ người có việc trong hộp việc (kể cả qua ủy quyền); từ chối/trả về bắt buộc lý do. Hoàn thành task Flowable, ghi lịch sử (người duyệt, duyệt thay ai), rồi: còn cấp trên → task mới cho cấp tiếp theo; hết → APPROVED / REJECTED / RETURNED (trigger báo người lập) |
+| `submit_purchase_request(request_id)` | Gọi `proc.submit_purchase_request` dưới tên người gọi (`x-hasura-user-id`); chứng từ phải cùng tenant với phiên |
+| `act_on_task(task_id, decision, note)` | `decision`: `APPROVE` / `REJECT` / `RETURN`; từ chối/trả về bắt buộc lý do. Gọi `wf.act` (kiểm tra người nhận việc hoặc người được ủy quyền) |
 
-Flowable giữ trạng thái quy trình; CSDL là bản phản chiếu cho giao diện (trạng thái đề nghị, hộp việc, lịch sử, thông báo). Nếu ghi CSDL lỗi sau khi đã khởi tạo quy trình, `actions` xóa quy trình vừa tạo để không để lại quy trình mồ côi.
+Kết quả `PurchaseRequestActionResult { request_id, status, purchase_request }`. Lỗi nghiệp vụ trả về `400 {message, extensions.code}`; Hasura chuyển nguyên thông báo cho giao diện. Gọi Action phải kèm header `x-actions-secret` (Hasura gửi từ biến `ACTIONS_SECRET`).
 
-Giao diện chỉ gọi Hasura (Quy tắc 1). Flowable REST chỉ dịch vụ `actions` gọi được, bằng tài khoản quản trị lấy từ OpenBao.
+Giao diện chỉ gọi Hasura (Quy tắc 1). Flowable REST chỉ dịch vụ `actions` gọi được.
 
 ### Lệnh
 
 ```bash
-make test-flow        # 25 kiểm thử: 1 cấp, trả về/gửi lại/từ chối, 2 cấp, ủy quyền, dữ liệu mẫu
-make test-all         # chạy mọi bộ kiểm thử
+make test-actions     # pytest: Actions, quyền xem qua Hasura, đồng bộ Flowable (Hasura và Flowable thật)
+make test-all         # test-db + test-actions
 ```
 
-Flowable REST (dev): http://localhost:8082/flowable-rest, tài khoản `FLOWABLE_ADMIN` / `FLOWABLE_ADMIN_PASSWORD` trong `.env`.
+Flowable REST (dev): http://localhost:8082/flowable-rest, tài khoản `FLOWABLE_ADMIN` / `FLOWABLE_ADMIN_PASSWORD` (mặc định `rest-admin` / `test`).

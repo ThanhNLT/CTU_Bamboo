@@ -7,7 +7,7 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 | `bms` | `db/migrations/bms/` | Tổ chức, phân quyền, dữ liệu chủ, mua sắm, giao dịch nội bộ, sản xuất, kết luận khám sức khỏe, nhật ký |
 | `bms_hospital` | `db/migrations/hospital/` | Hồ sơ bệnh án (EMR) của Bệnh viện X, cách ly cứng ([ADR #15](#adr-15)) |
 
-**Hiện trạng repo (02/10/2026):** mới có migration `bms` 001–004, phần tổ chức, phân quyền và phê duyệt; các bảng và số migration bên dưới là thiết kế đích, chưa có trong repo.
+**Hiện trạng repo (02/10/2026):** mới có migration `bms` 001–005, phần tổ chức, phân quyền, phê duyệt, Hasura và đồng bộ Flowable; các bảng và số migration bên dưới là thiết kế đích, chưa có trong repo.
 
 | Migration | Nội dung |
 |---|---|
@@ -15,6 +15,7 @@ Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker comp
 | `002_phan_quyen.sql` | Quyền, vai trò, nhóm, gán vai trò, ủy quyền một phần; `core.v_permission_grant`, `core.has_permission` (view thường, chưa tính sẵn theo ADR #21) |
 | `003_chung_tu.sql` | `proc.purchase_request` (tư cách lập), `ic.ic_order` tối thiểu |
 | `004_phe_duyet.sql` | `wf.approval_rule`, chuỗi duyệt theo vị trí (`wf.approval_step`), việc duyệt `wf.task`, lịch sử; `proc.submit_purchase_request`, `wf.act`, `wf.resolve_assignee`, `wf.refresh_position`, `wf.refresh_all`, `wf.v_inbox` (ADR #28) |
+| `005_hasura_flowable.sql` | Computed field `can_read` (`wf.entity_can_read`: người lập, người nhận việc kể cả qua ủy quyền, quyền xem trên đơn vị); kiểm tra lập nháp qua phiên Hasura (`hasura.user`); `wf.flow_sync` + `pg_notify` cho đồng bộ Flowable (ADR #31). Lỗi nghiệp vụ Hasura ghi thẳng chạm tới dùng `ERRCODE = 'data_exception'` để Hasura chuyển nguyên thông báo |
 
 Chạy thử: `docker compose up -d` (tự chạy migration), `make test-db` (hoặc `make test-db T=bms_031`). Cần chạy `SELECT wf.refresh_all()` định kỳ để xử lý bổ nhiệm hết hạn theo lịch.
 

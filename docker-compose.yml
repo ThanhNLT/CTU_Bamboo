@@ -1,5 +1,36 @@
-# Khung tối thiểu: PostgreSQL + chạy migration (ADR #13: một lệnh `docker compose up -d`).
+# Lõi chạy bằng một lệnh `docker compose up -d` (ADR #13).
+# Kiểm thử tích hợp: `make test-actions` (profile test: Hasura riêng trỏ vào bms_hasura_test).
 name: bamboo
+
+x-db-env: &db-env
+  PGHOST: db
+  PGUSER: bms
+  PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+
+x-actions-env: &actions-env
+  DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
+  ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
+  FLOWABLE_URL: http://flowable:8080/flowable-rest/service
+  FLOWABLE_USER: ${FLOWABLE_ADMIN:-rest-admin}
+  FLOWABLE_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
+  HASURA_URL: http://hasura:8080
+  HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
+
+x-actions-image: &actions-image
+  build:
+    context: .
+    dockerfile: docker/python.Dockerfile
+    args:
+      APP_DIR: services/actions
+  image: bamboo/actions:dev
+
+x-hasura-env: &hasura-env
+  HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
+  HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+  HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log
+  ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
+  # Bật khi có Keycloak: Hasura dừng hẳn nếu không lấy được JWKS.
+  # HASURA_GRAPHQL_JWT_SECRET: '{"jwk_url":"http://keycloak:8080/realms/bms/protocol/openid-connect/certs","claims_namespace":"https://hasura.io/jwt/claims"}'
 
 services:
   db:
@@ -18,21 +49,111 @@ services:
       timeout: 3s
       retries: 30
 
-  # Chạy các migration chưa chạy rồi thoát.
+  # Tạo database phụ, chạy các migration chưa chạy rồi thoát.
   migrate:
     image: postgis/postgis:17-3.5
     depends_on:
       db:
         condition: service_healthy
     environment:
-      PGHOST: db
-      PGUSER: bms
-      PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      <<: *db-env
+      EXTRA_DATABASES: flowable hasura_meta hasura_meta_test bms_hasura_test
     volumes:
       - ./db:/repo/db:ro
       - ./scripts:/repo/scripts:ro
-    entrypoint: ["/repo/scripts/db/migrate.sh", "bms", "/repo/db/migrations/bms"]
+    entrypoint: ["/repo/scripts/db/up.sh"]
     restart: "no"
+
+  flowable:
+    image: flowable/flowable-rest:8.0.0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/flowable
+      SPRING_DATASOURCE_USERNAME: bms
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      FLOWABLE_REST_APP_CREATE_DEMO_DEFINITIONS: "false"
+      FLOWABLE_REST_APP_ADMIN_USER_ID: ${FLOWABLE_ADMIN:-rest-admin}
+      FLOWABLE_REST_APP_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
+    ports:
+      - "127.0.0.1:8082:8080"
+
+  hasura:
+    image: hasura/graphql-engine:v2.51.0-ce
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *hasura-env
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/hasura_meta
+      BMS_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
+      ACTIONS_URL: http://actions:8000
+    ports:
+      - "127.0.0.1:8081:8080"
+
+  # Hasura Actions bọc hàm CSDL.
+  actions:
+    <<: *actions-image
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment: *actions-env
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  # Đối chiếu CSDL → Flowable (ADR #31); chạy wf.refresh_all() mỗi phút.
+  flow-sync:
+    <<: *actions-image
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    environment: *actions-env
+    command: ["python", "-m", "app.flow_sync"]
+    restart: unless-stopped
+
+  # Deploy BPMN và nạp metadata Hasura rồi thoát.
+  bootstrap:
+    <<: *actions-image
+    depends_on:
+      flowable:
+        condition: service_started
+      hasura:
+        condition: service_started
+    environment: *actions-env
+    command: ["python", "-m", "app.bootstrap"]
+    restart: "no"
+
+  # --- profile test ---------------------------------------------------------
+  hasura-test:
+    profiles: [test]
+    image: hasura/graphql-engine:v2.51.0-ce
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *hasura-env
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/hasura_meta_test
+      BMS_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
+      # Container chạy kiểm thử (`make test-actions` đặt --name bamboo-actions-test).
+      ACTIONS_URL: http://bamboo-actions-test:8090
+
+  actions-test:
+    profiles: [test]
+    <<: *actions-image
+    depends_on:
+      hasura-test:
+        condition: service_started
+      flowable:
+        condition: service_started
+    environment:
+      <<: *actions-env
+      TEST_DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
+      HASURA_URL: http://hasura-test:8080
+      ACTIONS_PORT: "8090"
+      REQUIRE_SERVICES: "1"
+    volumes:
+      - ./:/repo
+    entrypoint: ["sh", "-c", "pip install -q -r requirements-dev.txt -c /repo/constraints.txt && python -m pytest -q \"$$@\"", "--"]
 
 volumes:
   pgdata:

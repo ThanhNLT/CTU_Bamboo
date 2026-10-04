@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Duyệt đề nghị mua sắm: bản phản chiếu luồng duyệt trong CSDL (ADR #31).
+  Mỗi vòng của user task là một bước của chuỗi duyệt (wf.approval_step).
+  Dịch vụ flow-sync đặt người nhận theo wf.task và hoàn thành task với biến
+  `decision` (APPROVE / REJECT / RETURN) và `stepIndex` của bước kế tiếp.
+  Chứng từ bị hủy: flow-sync xóa tiến trình.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  <process id="purchaseRequestApproval" name="Duyệt đề nghị mua sắm" isExecutable="true">
+    <startEvent id="submitted" name="Gửi duyệt"/>
+    <sequenceFlow id="toApprove" sourceRef="submitted" targetRef="approveStep"/>
+
+    <userTask id="approveStep" name="Duyệt bước ${stepIndex + 1}/${stepCount}"/>
+    <sequenceFlow id="toDecision" sourceRef="approveStep" targetRef="decision"/>
+
+    <exclusiveGateway id="decision" name="Quyết định?" default="toReturned"/>
+    <sequenceFlow id="toNextStep" name="Duyệt, còn bước" sourceRef="decision" targetRef="approveStep">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE' && stepIndex < stepCount}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="toApproved" name="Duyệt, bước cuối" sourceRef="decision" targetRef="approved">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE' && stepIndex >= stepCount}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="toRejected" name="Từ chối" sourceRef="decision" targetRef="rejected">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="toReturned" name="Trả về" sourceRef="decision" targetRef="returned"/>
+
+    <endEvent id="approved" name="Đã duyệt"/>
+    <endEvent id="rejected" name="Từ chối"/>
+    <endEvent id="returned" name="Trả về người lập"/>
+  </process>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="purchaseRequestApproval">
+      <bpmndi:BPMNShape id="submitted_di" bpmnElement="submitted">
+        <dc:Bounds x="100" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approveStep_di" bpmnElement="approveStep">
+        <dc:Bounds x="190" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="decision_di" bpmnElement="decision" isMarkerVisible="true">
+        <dc:Bounds x="370" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approved_di" bpmnElement="approved">
+        <dc:Bounds x="502" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rejected_di" bpmnElement="rejected">
+        <dc:Bounds x="502" y="282" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="returned_di" bpmnElement="returned">
+        <dc:Bounds x="502" y="372" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="toApprove_di" bpmnElement="toApprove">
+        <di:waypoint x="136" y="200"/>
+        <di:waypoint x="190" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toDecision_di" bpmnElement="toDecision">
+        <di:waypoint x="310" y="200"/>
+        <di:waypoint x="370" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toNextStep_di" bpmnElement="toNextStep">
+        <di:waypoint x="395" y="175"/>
+        <di:waypoint x="395" y="110"/>
+        <di:waypoint x="250" y="110"/>
+        <di:waypoint x="250" y="160"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toApproved_di" bpmnElement="toApproved">
+        <di:waypoint x="420" y="200"/>
+        <di:waypoint x="502" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toRejected_di" bpmnElement="toRejected">
+        <di:waypoint x="395" y="225"/>
+        <di:waypoint x="395" y="300"/>
+        <di:waypoint x="502" y="300"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toReturned_di" bpmnElement="toReturned">
+        <di:waypoint x="395" y="225"/>
+        <di:waypoint x="395" y="390"/>
+        <di:waypoint x="502" y="390"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
