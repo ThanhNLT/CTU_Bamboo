@@ -5,19 +5,21 @@ từ session_variables. Lỗi trả về 400 {message, extensions.code} để Ha
 nguyên cho giao diện.
 """
 
-import json
 import logging
 import pathlib
 from contextlib import asynccontextmanager
 
 import psycopg
+from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
-from . import auth, config
+from . import attachments, auth, config
+from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
+from .storage import Storage
 
 DECISIONS = {"APPROVE", "REJECT", "RETURN"}
 BPMN = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
@@ -34,34 +36,10 @@ _DB_ACTIVITIES = {
 }
 
 
-class ActionError(Exception):
-    def __init__(self, message: str, code: str = "bad-request", status: int = 400):
-        super().__init__(message)
-        self.message = message
-        self.code = code
-        self.status = status
-
-
-def session_identity(session: dict, tenant_id) -> str:
-    """Trả về person.id của người gọi; chặn khi chứng từ thuộc tenant khác phiên."""
-    person = session.get("x-hasura-user-id")
-    tenant = session.get("x-hasura-tenant-id")
-    if not person or not tenant:
-        raise ActionError("Thiếu x-hasura-user-id hoặc x-hasura-tenant-id", "unauthorized", 401)
-    if tenant_id is None or str(tenant_id) != tenant:
-        raise ActionError("Không tìm thấy chứng từ", "not-found", 404)
-    return person
-
-
-def _bind_session(conn: psycopg.Connection, session: dict) -> None:
-    # Cùng biến Hasura đặt cho mutation, để trigger và nhật ký biết người gọi.
-    conn.execute("SELECT set_config('hasura.user', %s, true)", (json.dumps(session),))
-
-
 def submit_purchase_request(conn: psycopg.Connection, session: dict, request_id: str) -> dict:
     row = conn.execute("SELECT tenant_id FROM proc.purchase_request WHERE id = %s", (request_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
-    _bind_session(conn, session)
+    bind_session(conn, session)
     conn.execute("SELECT proc.submit_purchase_request(%s, %s)", (request_id, person))
     status = conn.execute("SELECT status FROM proc.purchase_request WHERE id = %s", (request_id,)).fetchone()[0]
     return {"request_id": request_id, "status": status}
@@ -79,7 +57,7 @@ def act_on_task(conn: psycopg.Connection, session: dict, task_id: str, decision:
         (task_id,),
     ).fetchone()
     person = session_identity(session, row[0] if row else None)
-    _bind_session(conn, session)
+    bind_session(conn, session)
     conn.execute("SELECT wf.act(%s, %s, %s, %s)", (task_id, person, decision, note))
     entity_type, entity_id = row[1], row[2]
     status = conn.execute("SELECT status FROM proc.purchase_request WHERE id = %s", (entity_id,)).fetchone()[0]
@@ -89,14 +67,9 @@ def act_on_task(conn: psycopg.Connection, session: dict, task_id: str, decision:
 def cancel_purchase_request(conn: psycopg.Connection, session: dict, request_id: str, reason: str) -> dict:
     row = conn.execute("SELECT tenant_id FROM proc.purchase_request WHERE id = %s", (request_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
-    _bind_session(conn, session)
+    bind_session(conn, session)
     conn.execute("SELECT proc.cancel_purchase_request(%s, %s, %s)", (request_id, person, reason))
     return {"request_id": request_id, "status": "CANCELLED"}
-
-
-def _require_read(conn: psycopg.Connection, request_id: str, person: str) -> None:
-    if not conn.execute("SELECT wf.entity_can_read('proc.purchase_request', %s, %s)", (request_id, person)).fetchone()[0]:
-        raise ActionError("Không tìm thấy chứng từ", "not-found", 404)
 
 
 def process_state(conn: psycopg.Connection, session: dict, request_id: str, flowable: FlowableClient | None) -> dict:
@@ -105,7 +78,7 @@ def process_state(conn: psycopg.Connection, session: dict, request_id: str, flow
     row = conn.execute("SELECT tenant_id, status, approval_round FROM proc.purchase_request WHERE id = %s",
                        (request_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
-    _require_read(conn, request_id, person)
+    require_read(conn, 'proc.purchase_request', request_id, person)
     _, status, round_no = row
     sync = conn.execute(
         """SELECT process_instance_id FROM wf.flow_sync
@@ -145,19 +118,23 @@ def verify_audit_chain(conn: psycopg.Connection, session: dict) -> dict:
 
 
 HANDLERS = {
-    "my_tenants": lambda conn, session, args, _flowable: auth.my_tenants(conn, session),
-    "submit_purchase_request": lambda conn, session, args, _flowable: submit_purchase_request(
+    "my_tenants": lambda conn, session, args, _ctx: auth.my_tenants(conn, session),
+    "submit_purchase_request": lambda conn, session, args, _ctx: submit_purchase_request(
         conn, session, args["request_id"]),
-    "act_on_task": lambda conn, session, args, _flowable: act_on_task(
+    "act_on_task": lambda conn, session, args, _ctx: act_on_task(
         conn, session, args["task_id"], args["decision"], args.get("note")),
-    "cancel_purchase_request": lambda conn, session, args, _flowable: cancel_purchase_request(
+    "cancel_purchase_request": lambda conn, session, args, _ctx: cancel_purchase_request(
         conn, session, args["request_id"], args["reason"]),
-    "process_state": lambda conn, session, args, flowable: process_state(conn, session, args["request_id"], flowable),
-    "verify_audit_chain": lambda conn, session, args, _flowable: verify_audit_chain(conn, session),
+    "process_state": lambda conn, session, args, ctx: process_state(conn, session, args["request_id"], ctx.flowable),
+    "verify_audit_chain": lambda conn, session, args, _ctx: verify_audit_chain(conn, session),
+    "get_upload_url": attachments.get_upload_url,
+    "confirm_upload": attachments.confirm_upload,
+    "get_download_url": attachments.get_download_url,
+    "delete_attachment": attachments.delete_attachment,
 }
 
 
-def run_action(pool: ConnectionPool, name: str, payload: dict, flowable: FlowableClient | None = None) -> dict:
+def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | None = None) -> dict:
     handler = HANDLERS.get(name)
     if handler is None:
         raise ActionError(f"Không có action {name}", "not-found", 404)
@@ -165,19 +142,23 @@ def run_action(pool: ConnectionPool, name: str, payload: dict, flowable: Flowabl
     args = payload.get("input") or {}
     try:
         with pool.connection() as conn, conn.transaction():
-            return handler(conn, session, args, flowable)
+            return handler(conn, session, args, ctx or Context())
     except psycopg.errors.InvalidTextRepresentation as exc:
         raise ActionError("Mã không hợp lệ", "bad-request") from exc
     except (psycopg.errors.RaiseException, psycopg.errors.DataError, psycopg.errors.IntegrityError) as exc:
         # Lỗi nghiệp vụ từ hàm CSDL (RAISE EXCEPTION, mã 22000) hoặc vi phạm ràng buộc.
         raise ActionError(exc.diag.message_primary or str(exc), "rejected") from exc
+    except (BotoCoreError, ClientError) as exc:
+        log.warning("action %s: lỗi S3: %s", name, exc)
+        raise ActionError("Kho lưu trữ tệp tạm thời không truy cập được", "storage-unavailable", 503) from exc
 
 
 def create_app(settings: config.Settings | None = None, pool: ConnectionPool | None = None,
-               verifier: auth.KeycloakVerifier | None = None, flowable: FlowableClient | None = None) -> FastAPI:
+               verifier: auth.KeycloakVerifier | None = None, ctx: Context | None = None) -> FastAPI:
     settings = settings or config.load()
-    flowable = flowable or FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password,
-                                          timeout=5.0)
+    ctx = ctx or Context(
+        flowable=FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password, timeout=5.0),
+        storage=Storage(settings), clamav_host=settings.clamav_host, clamav_port=settings.clamav_port)
     verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
                                                  set(settings.keycloak_clients))
 
@@ -218,7 +199,7 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
             return JSONResponse({"message": "Sai mã bí mật actions", "extensions": {"code": "unauthorized"}}, 401)
         payload = await request.json()
         try:
-            result = run_action(app.state.pool, name, payload, flowable)
+            result = run_action(app.state.pool, name, payload, ctx)
         except ActionError as exc:
             return JSONResponse({"message": exc.message, "extensions": {"code": exc.code}}, exc.status)
         return result
