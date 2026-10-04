@@ -69,7 +69,7 @@ Dừng: `docker compose down` (giữ dữ liệu) hoặc `docker compose down -v
 
 ### Chạy bằng image dựng sẵn (không cần mã nguồn)
 
-CI build sẵn mọi image của dự án cho `amd64` và `arm64` (kể cả Mac chip M), đẩy lên GitHub Container Registry cùng tệp compose phát hành. Máy chỉ cần Docker Compose 2.34 trở lên:
+CI build sẵn mọi image của dự án cho `amd64` và `arm64` (kể cả Mac chip M; riêng image PostGIS của bên thứ ba chỉ có `amd64` nên chạy qua giả lập), đẩy lên GitHub Container Registry cùng tệp compose phát hành. Máy chỉ cần Docker Compose 2.34 trở lên:
 
 ```bash
 docker compose -f oci://ghcr.io/thanhnlt/bamboo:latest up -d
