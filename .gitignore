@@ -7,3 +7,6 @@ __pycache__/
 *.pyc
 .env
 compose.release.yml
+
+# Bản sao lưu dữ liệu (scripts/ops/backup.*)
+/backups/

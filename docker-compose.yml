@@ -324,7 +324,7 @@ services:
     command: ["python", "-m", "app.flow_sync"]
     restart: unless-stopped
 
-  # Tạo bucket S3, deploy BPMN và nạp metadata Hasura rồi thoát.
+  # Tạo bucket S3, deploy BPMN, nạp metadata Hasura, đồng bộ client Keycloak rồi thoát.
   bootstrap:
     logging: *logging
     <<: *actions-image
@@ -335,9 +335,16 @@ services:
         condition: service_healthy
       seaweedfs:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
       openbao-init:
         condition: service_completed_successfully
-    environment: *actions-env
+    environment:
+      <<: *actions-env
+      # Bổ sung địa chỉ ứng dụng vào redirect URI của client bms-web nếu thiếu (realm chỉ import
+      # ở lần chạy đầu; đổi WEB_ORIGIN hoặc nâng cấp từ 0.1.0 vẫn đăng nhập được, không mất dữ liệu).
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
     volumes:
       - bootstrap-secrets:/run/bms:ro
     command: ["python", "-m", "app.bootstrap"]

@@ -14,6 +14,7 @@ SECRET_FIELDS = {
     "bms/actions": {"secret": "actions_secret"},
     "bms/flowable": {"username": "flowable_user", "password": "flowable_password"},
     "bms/hasura": {"admin_secret": "hasura_admin_secret"},
+    "bms/keycloak": {"username": "keycloak_admin_user", "password": "keycloak_admin_password"},
     "bms/seaweedfs": {"access_key": "s3_access_key", "secret_key": "s3_secret_key"},
     "bms/seaweedfs-admin": {"access_key": "s3_admin_access_key", "secret_key": "s3_admin_secret_key"},
 }
@@ -42,6 +43,10 @@ class Settings:
     s3_documents_bucket: str
     clamav_host: str
     clamav_port: int
+    keycloak_url: str             # địa chỉ nội bộ (Admin API), không qua cổng công khai
+    keycloak_admin_user: str
+    keycloak_admin_password: str
+    web_origin: str               # địa chỉ ứng dụng trình duyệt thấy (redirect URI của bms-web)
 
 
 # Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
@@ -133,4 +138,8 @@ def _from_env() -> Settings:
         # Bỏ trống: chưa quét virus, confirm_upload ghi "bỏ qua" và vẫn nhận tệp.
         clamav_host=env("CLAMAV_HOST", ""),
         clamav_port=int(env("CLAMAV_PORT", "3310")),
+        keycloak_url=env("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080"),
+        keycloak_admin_user=env("KEYCLOAK_ADMIN", "kcadmin"),
+        keycloak_admin_password=env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"),
+        web_origin=env("WEB_ORIGIN", "http://localhost:8000"),
     )
