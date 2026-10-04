@@ -61,6 +61,8 @@ x-hasura-env: &hasura-env
 services:
   db:
     image: postgis/postgis:17-3.5
+    # Image PostGIS chỉ có bản amd64; máy arm64 (Mac chip M) chạy qua giả lập, các image khác chạy native.
+    platform: linux/amd64
     environment:
       POSTGRES_DB: bms
       POSTGRES_USER: bms
