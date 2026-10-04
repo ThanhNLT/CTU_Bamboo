@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 001: Tenant, cây tổ chức, vị trí, người, bổ nhiệm (CONTEXT.md mục "Tổ chức").
 -- Khóa kép (tenant_id, id) chặn tham chiếu chéo tenant (ADR #14).
 

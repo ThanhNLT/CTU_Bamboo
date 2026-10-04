@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 <!--
   Duyệt đề nghị mua sắm: bản phản chiếu luồng duyệt trong CSDL (ADR #31).
   Mỗi vòng của user task là một bước của chuỗi duyệt (wf.approval_step).

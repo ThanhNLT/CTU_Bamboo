@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 006: Dữ liệu chủ (nhà cung cấp, vật tư), số chứng từ, dòng hàng của đề nghị
 -- mua sắm, người lập hủy đề nghị (thiết kế CSDL mục 4.3).
 

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Tệp đính kèm (ADR #26): tải lên qua link có chữ ký, kiểm tra, quét virus, tải về, phân quyền."""
 
 import socket

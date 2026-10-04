@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Sinh realm Keycloak `bms` từ danh sách tài khoản demo (ADR #23, #32).
 
     python -m app.realm [--out platform/keycloak/realm/bms-realm.json]

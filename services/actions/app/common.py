@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Phần dùng chung của các Hasura Action: lỗi trả về giao diện, người gọi từ phiên Hasura."""
 
 import json

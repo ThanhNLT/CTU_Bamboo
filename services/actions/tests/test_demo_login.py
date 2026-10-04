@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Đăng nhập thật mọi tài khoản demo qua Keycloak + Hasura (`make test-auth`, cần stack đã seed).
 
 Chỉ đọc, không đổi dữ liệu demo. Bật bằng DEMO_STACK=1.

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import MDEditor from "@uiw/react-md-editor";
 import { Form, Input, Select } from "antd";

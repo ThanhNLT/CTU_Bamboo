@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Nạp dữ liệu demo Tập đoàn X (ADR #16): chạy sau `migrate`, bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
 
 Đề nghị mua sắm mẫu (kèm dòng hàng) đi qua đúng các hàm CSDL (gửi duyệt, duyệt, trả về) nên dừng ở

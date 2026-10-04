@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Hasura auth webhook (ADR #32): token Keycloak + tenant đã chọn → biến phiên Hasura.
 
     Authorization: Bearer <access token Keycloak>

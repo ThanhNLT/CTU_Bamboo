@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Vai trò, quyền, ủy quyền: quyền gắn với vị trí (ADR #5).
 SELECT test.fixture();
 

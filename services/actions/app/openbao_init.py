@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Job openbao-init (ADR #25): chạy mỗi lần `docker compose up`, làm lại bao nhiêu lần cũng được.
 
 1. Lần đầu: khởi tạo OpenBao với 1 khóa unseal (chỉ cho dev), lưu khóa + root token vào

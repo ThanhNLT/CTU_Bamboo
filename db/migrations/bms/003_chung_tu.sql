@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 003: Chứng từ tối thiểu cho luồng duyệt: đề nghị mua sắm và đơn hàng nội bộ.
 
 CREATE SCHEMA IF NOT EXISTS proc;

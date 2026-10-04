@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 .PHONY: up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
 # Image Python dùng chung cho mọi dịch vụ (ADR #10): build arg APP_DIR là thư mục dịch vụ.
 FROM python:3.13-slim
 ARG APP_DIR

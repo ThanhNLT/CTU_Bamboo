@@ -1,10 +1,13 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import {
   Refine,
   GitHubBanner,
   Authenticated,
   AuthProvider,
 } from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import {
@@ -159,7 +162,6 @@ function App() {
       <RefineKbarProvider>
         <ColorModeContextProvider>
           <AntdApp>
-            <DevtoolsProvider>
               <Refine
                 dataProvider={dataProvider(client)}
                 liveProvider={liveProvider(webSocketClient)}
@@ -247,8 +249,6 @@ function App() {
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler />
               </Refine>
-              <DevtoolsPanel />
-            </DevtoolsProvider>
           </AntdApp>
         </ColorModeContextProvider>
       </RefineKbarProvider>

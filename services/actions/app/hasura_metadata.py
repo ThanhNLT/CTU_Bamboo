@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Sinh metadata Hasura từ CSDL (ADR #24).
 
 Quan hệ suy ra từ khóa ngoại; phân quyền khai báo ở đây; quyền chi tiết là hàm

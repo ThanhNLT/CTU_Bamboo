@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Qua Hasura thật: dòng hàng, bình luận và thông báo, hủy đề nghị, nhật ký kiểm toán, sơ đồ quy trình."""
 
 import psycopg

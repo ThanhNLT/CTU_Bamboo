@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 008: Bình luận trên chứng từ và thông báo sinh bằng trigger (ADR #20; thiết kế CSDL mục 4.8).
 --
 -- Thông báo không phụ thuộc ứng dụng nào ghi dữ liệu: trigger trên wf.task,

@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Số chứng từ, dòng hàng (tổng tiền, khóa sau khi gửi), dữ liệu chủ, người lập hủy đề nghị.
 SELECT test.fixture();
 
