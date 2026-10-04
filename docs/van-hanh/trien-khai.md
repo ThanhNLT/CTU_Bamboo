@@ -47,7 +47,7 @@ Cổng API đã lo phần còn lại: chặn đường dẫn không khai báo, k
 Chạy bằng image dựng sẵn (không cần mã nguồn), trong thư mục có `.env`:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y
 ```
 
 Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura và deploy BPMN khi nội dung đổi. Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
