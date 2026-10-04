@@ -588,6 +588,146 @@
         {
           "table": {
             "schema": "core",
+            "name": "attachment"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "uploaded_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "uploaded_by": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "core",
+                  "name": "attachment_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": [
+                  "content_type",
+                  "created_at",
+                  "deleted_at",
+                  "entity_id",
+                  "entity_type",
+                  "file_name",
+                  "id",
+                  "scan_result",
+                  "scanned_at",
+                  "sha256",
+                  "size_bytes",
+                  "status",
+                  "tenant_id",
+                  "uploaded_by"
+                ],
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    },
+                    {
+                      "deleted_at": {
+                        "_is_null": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": [
+                  "content_type",
+                  "created_at",
+                  "deleted_at",
+                  "entity_id",
+                  "entity_type",
+                  "file_name",
+                  "id",
+                  "scan_result",
+                  "scanned_at",
+                  "sha256",
+                  "size_bytes",
+                  "status",
+                  "tenant_id",
+                  "uploaded_by"
+                ],
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    },
+                    {
+                      "deleted_at": {
+                        "_is_null": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
             "name": "catalog_item"
           },
           "object_relationships": [
@@ -1126,6 +1266,21 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "attachments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "uploaded_by"
                   }
                 }
               }
@@ -2514,6 +2669,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "attachments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
             }
           ],
           "computed_fields": [
@@ -3827,6 +3996,146 @@
         }
       ],
       "comment": "Đối soát chuỗi hash nhật ký kiểm toán của tenant (cần quyền audit.read)"
+    },
+    {
+      "name": "get_upload_url",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/get_upload_url",
+        "arguments": [
+          {
+            "name": "entity_type",
+            "type": "String!"
+          },
+          {
+            "name": "entity_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "content_type",
+            "type": "String!"
+          },
+          {
+            "name": "size_bytes",
+            "type": "Int!"
+          }
+        ],
+        "output_type": "AttachmentUpload!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Cấp link có chữ ký để trình duyệt PUT tệp lên bucket cách ly (ADR #26)"
+    },
+    {
+      "name": "confirm_upload",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/confirm_upload",
+        "arguments": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "AttachmentResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 120
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Kiểm tra, quét virus và nhận tệp đã tải lên"
+    },
+    {
+      "name": "get_download_url",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/get_download_url",
+        "arguments": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "AttachmentDownload!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Link tải về có chữ ký (chỉ tệp sạch, người xem được chứng từ)"
+    },
+    {
+      "name": "delete_attachment",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/delete_attachment",
+        "arguments": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "AttachmentResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người tải lên xóa tệp (đề nghị chưa có kết quả)"
     }
   ],
   "custom_types": {
@@ -3933,6 +4242,93 @@
           {
             "name": "source",
             "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "AttachmentUpload",
+        "fields": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "upload_url",
+            "type": "String!"
+          },
+          {
+            "name": "method",
+            "type": "String!"
+          },
+          {
+            "name": "content_type",
+            "type": "String!"
+          },
+          {
+            "name": "expires_in",
+            "type": "Int!"
+          }
+        ],
+        "relationships": [
+          {
+            "name": "attachment",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "core",
+              "name": "attachment"
+            },
+            "field_mapping": {
+              "attachment_id": "id"
+            }
+          }
+        ]
+      },
+      {
+        "name": "AttachmentResult",
+        "fields": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "scan_result",
+            "type": "String"
+          }
+        ],
+        "relationships": [
+          {
+            "name": "attachment",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "core",
+              "name": "attachment"
+            },
+            "field_mapping": {
+              "attachment_id": "id"
+            }
+          }
+        ]
+      },
+      {
+        "name": "AttachmentDownload",
+        "fields": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "url",
+            "type": "String!"
+          },
+          {
+            "name": "expires_in",
+            "type": "Int!"
           }
         ]
       },

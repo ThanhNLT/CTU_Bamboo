@@ -27,6 +27,7 @@ Schema đầy đủ: Hasura Console (`http://localhost:8081`) hoặc introspecti
 | `/p/process/:documentId` (`process-state`) | Action `process_state(request_id)`: `bpmn_xml`, `active_activity_ids`, `completed_activity_ids` cho bpmn-js |
 | Thông báo ở header | `collab_notification` (của mình), subscription; `collab_mark_notifications_read(args: {ids})` (bỏ `ids`: tất cả) |
 | Bình luận trên chứng từ | `insert_collab_comment_one` (`entity_type: "proc.purchase_request"`, `entity_id`, `body`, `parent_id`, `mentions`); sửa `body`, xóa mềm bằng cách đặt `deleted_at` |
+| Tệp đính kèm (`file-upload` mục 6.3 thiết kế giao diện) | `get_upload_url` → PUT tệp lên `upload_url` (header `Content-Type` = `content_type` trả về) → `confirm_upload` (trả `status`: `CLEAN`, `REJECTED`, `INFECTED` kèm `scan_result`); danh sách: quan hệ `attachments` của đề nghị; tải về: query `get_download_url`; xóa: `delete_attachment` |
 | `/admin/audit-logs` (`audit_events` trong thiết kế) | `audit_log` (+ `actor`), chỉ người có quyền `audit.read` |
 | `/d/ledger` (`verify-ledger`) | Action `verify_audit_chain`: `ok`, `checked`, `head_seq`, `head_hash`, `problems` ([ADR #33](#adr-33)) |
 | Danh mục chọn trong form | `mdm_partner`, `mdm_item`, `core_catalog_item(where: {catalog: {_eq: "ITEM_CATEGORY"}})`, tư cách lập: `core_assignment` của mình |

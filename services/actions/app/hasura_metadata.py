@@ -35,7 +35,11 @@ CAN_READ = {
     ("wf", "approval_history"): ("wf", "approval_history_can_read"),
     ("wf", "task"): ("wf", "task_can_read"),
     ("collab", "comment"): ("collab", "comment_can_read"),
+    ("core", "attachment"): ("core", "attachment_can_read"),
 }
+
+# Cột nội bộ không trả cho giao diện.
+HIDDEN_COLUMNS = {("core", "attachment"): {"storage_key"}}
 
 # Bộ lọc xem riêng cho một số bảng (mặc định: cùng tenant).
 SELECT_FILTER = {
@@ -66,6 +70,7 @@ MANUAL_RELATIONSHIPS = [
     ("array", ("proc", "purchase_request"), "comments", ("collab", "comment"), {"id": "entity_id"}),
     ("object", ("collab", "notification"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
     ("object", ("audit", "log"), "actor", ("core", "person"), {"actor_id": "id"}),
+    ("array", ("proc", "purchase_request"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
     ("array", ("audit", "log"), "readers", ("audit", "v_reader"), {"tenant_id": "tenant_id"}),
 ]
 
@@ -92,6 +97,11 @@ def _action(name: str, kind: str, args: list[tuple[str, str]], output: str, role
         "permissions": [{"role": r} for r in roles],
         "comment": comment,
     }
+
+
+def _attachment_rel() -> dict:
+    return {"name": "attachment", "type": "object", "source": "bms",
+            "remote_table": {"schema": "core", "name": "attachment"}, "field_mapping": {"attachment_id": "id"}}
 
 
 def introspect(conn: psycopg.Connection):
@@ -197,9 +207,12 @@ def build(conn: psycopg.Connection) -> dict:
             flt = TENANT
         else:
             continue
-        perm = {"columns": "*", "filter": flt, "allow_aggregations": True}
+        cols = sorted(columns[key] - HIDDEN_COLUMNS[key]) if key in HIDDEN_COLUMNS else "*"
+        perm = {"columns": cols, "filter": flt, "allow_aggregations": True}
         if key in CAN_READ:
             perm["filter"] = {"_and": [TENANT, {"can_read": {"_eq": True}}]}
+            if "deleted_at" in columns[key] and key != ("collab", "comment"):
+                perm["filter"]["_and"].append({"deleted_at": {"_is_null": True}})
             perm["computed_fields"] = ["can_read"]
         # platform_admin xem như người dùng thường, cộng thêm các bảng phân quyền.
         entry["select_permissions"] = [{"role": ROLE, "permission": perm}, {"role": ADMIN_ROLE, "permission": perm}]
@@ -281,6 +294,17 @@ def build(conn: psycopg.Connection) -> dict:
                     "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho bpmn-js)"),
             _action("verify_audit_chain", "query", [], "AuditChainResult!", [ROLE, ADMIN_ROLE],
                     "Đối soát chuỗi hash nhật ký kiểm toán của tenant (cần quyền audit.read)", timeout=60),
+            _action("get_upload_url", "mutation",
+                    [("entity_type", "String!"), ("entity_id", "uuid!"), ("file_name", "String!"),
+                     ("content_type", "String!"), ("size_bytes", "Int!")],
+                    "AttachmentUpload!", [ROLE, ADMIN_ROLE],
+                    "Cấp link có chữ ký để trình duyệt PUT tệp lên bucket cách ly (ADR #26)"),
+            _action("confirm_upload", "mutation", [("attachment_id", "uuid!")], "AttachmentResult!",
+                    [ROLE, ADMIN_ROLE], "Kiểm tra, quét virus và nhận tệp đã tải lên", timeout=120),
+            _action("get_download_url", "query", [("attachment_id", "uuid!")], "AttachmentDownload!",
+                    [ROLE, ADMIN_ROLE], "Link tải về có chữ ký (chỉ tệp sạch, người xem được chứng từ)"),
+            _action("delete_attachment", "mutation", [("attachment_id", "uuid!")], "AttachmentResult!",
+                    [ROLE, ADMIN_ROLE], "Người tải lên xóa tệp (đề nghị chưa có kết quả)"),
         ],
         "custom_types": {
             "enums": [{"name": "ApprovalDecision",
@@ -307,6 +331,21 @@ def build(conn: psycopg.Connection) -> dict:
                            {"name": "active_activity_ids", "type": "[String!]!"},
                            {"name": "completed_activity_ids", "type": "[String!]!"},
                            {"name": "source", "type": "String!"}],
+            }, {
+                "name": "AttachmentUpload",
+                "fields": [{"name": "attachment_id", "type": "uuid!"}, {"name": "upload_url", "type": "String!"},
+                           {"name": "method", "type": "String!"}, {"name": "content_type", "type": "String!"},
+                           {"name": "expires_in", "type": "Int!"}],
+                "relationships": [_attachment_rel()],
+            }, {
+                "name": "AttachmentResult",
+                "fields": [{"name": "attachment_id", "type": "uuid!"}, {"name": "status", "type": "String!"},
+                           {"name": "scan_result", "type": "String"}],
+                "relationships": [_attachment_rel()],
+            }, {
+                "name": "AttachmentDownload",
+                "fields": [{"name": "attachment_id", "type": "uuid!"}, {"name": "url", "type": "String!"},
+                           {"name": "expires_in", "type": "Int!"}],
             }, {
                 "name": "AuditChainProblem",
                 "fields": [{"name": "seq", "type": "Int"}, {"name": "log_id", "type": "Int"},

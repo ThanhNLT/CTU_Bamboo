@@ -3,9 +3,10 @@
 Biến môi trường (mặc định khớp `make test-actions` trong docker compose):
   TEST_DATABASE_URL   CSDL kiểm thử, bị xóa và tạo lại mỗi phiên (Hasura phải trỏ BMS_DATABASE_URL vào đây)
   HASURA_URL, HASURA_GRAPHQL_ADMIN_SECRET, FLOWABLE_URL, FLOWABLE_USER, FLOWABLE_PASSWORD
+  S3_ENDPOINT, S3_PUBLIC_ENDPOINT, S3_*_KEY  SeaweedFS (kiểm thử tệp đính kèm)
   ACTIONS_PORT        cổng chạy dịch vụ actions trong lúc kiểm thử (Hasura gọi vào ACTIONS_URL)
-  WAIT_FOR_SERVICES   số giây chờ Hasura/Flowable trước khi bỏ qua kiểm thử cần chúng (mặc định 180)
-  REQUIRE_SERVICES=1  thiếu Hasura/Flowable thì báo lỗi thay vì bỏ qua (dùng trong `make test-actions`)
+  WAIT_FOR_SERVICES   số giây chờ Hasura/Flowable/SeaweedFS trước khi bỏ qua kiểm thử cần chúng (mặc định 180)
+  REQUIRE_SERVICES=1  thiếu Hasura/Flowable/SeaweedFS thì báo lỗi thay vì bỏ qua (dùng trong `make test-actions`)
 """
 
 import os
@@ -21,7 +22,7 @@ import pytest
 import uvicorn
 from psycopg.rows import dict_row
 
-from app import bootstrap, config, main
+from app import bootstrap, config, main, storage
 from app.flowable import FlowableClient
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
@@ -143,6 +144,20 @@ def flowable(database) -> FlowableClient:
     client = FlowableClient(SETTINGS.flowable_url, SETTINGS.flowable_user, SETTINGS.flowable_password)
     bootstrap.deploy_bpmn(client)
     return client
+
+
+@pytest.fixture(scope="session")
+def s3(database) -> storage.Storage:
+    """SeaweedFS với hai bucket (job bootstrap tạo khi chạy thật)."""
+    deadline = time.monotonic() + WAIT_SECONDS
+    while True:
+        try:
+            storage.ensure_buckets(SETTINGS)
+            return storage.Storage(SETTINGS)
+        except Exception:  # noqa: BLE001
+            if time.monotonic() > deadline:
+                _missing("SeaweedFS")
+            time.sleep(2)
 
 
 @pytest.fixture(scope="session")
