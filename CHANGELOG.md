@@ -4,6 +4,18 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+## [0.2.1] - 2026-10-04
+
+Sửa lỗi đăng nhập sau khi nâng cấp từ 0.1.0, không phải xóa dữ liệu.
+
+**Nâng cấp từ 0.1.0 hoặc 0.2.0:** sao lưu (`scripts/ops/backup.sh` hoặc `scripts\ops\backup.ps1`), rồi `docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.1 up -d -y` (hoặc `git pull && docker compose up -d --build` khi chạy từ mã nguồn). Dữ liệu demo giữ nguyên.
+
+### Sửa
+- Keycloak báo `Invalid parameter: redirect_uri` sau khi nâng cấp 0.1.0 → 0.2.0: realm đã import ở lần chạy đầu giữ redirect URI cũ (`http://localhost:5173`). Job `bootstrap` nay bổ sung `WEB_ORIGIN` vào redirect URI, web origin và URI sau đăng xuất của client `bms-web` qua Admin API mỗi lần khởi động (chỉ thêm, không xóa; tài khoản quản trị đọc từ OpenBao `bms/keycloak`).
+
+### Thêm
+- Script sao lưu `scripts/ops/backup.sh` và `scripts/ops/backup.ps1`: CSDL (`pg_dumpall`), két OpenBao (dữ liệu và khóa), tệp đính kèm SeaweedFS.
+
 ## [0.2.0] - 2026-10-04
 
 Cổng API Apache APISIX trở thành điểm vào duy nhất của hệ thống.
@@ -12,7 +24,7 @@ Cổng API Apache APISIX trở thành điểm vào duy nhất của hệ thống
 docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
 ```
 
-**Nâng cấp từ 0.1.0:** địa chỉ ứng dụng đổi từ `http://localhost:5173` sang `http://localhost:8000`. Keycloak chỉ import realm ở lần chạy đầu, nên máy đã chạy 0.1.0 cần dựng lại dữ liệu (`docker compose down -v`, mất dữ liệu demo) hoặc thêm `http://localhost:8000/*` vào *Valid redirect URIs* và `http://localhost:8000` vào *Web origins* của client `bms-web` trong Keycloak. Triển khai thật: một tên miền trỏ vào cổng và đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó.
+**Nâng cấp từ 0.1.0:** địa chỉ ứng dụng đổi từ `http://localhost:5173` sang `http://localhost:8000`. Keycloak chỉ import realm ở lần chạy đầu, nên máy đã chạy 0.1.0 cần thêm `http://localhost:8000/*` vào *Valid redirect URIs* và `http://localhost:8000` vào *Web origins* của client `bms-web` trong Keycloak (từ 0.2.1 việc này tự động, xem trên). Triển khai thật: một tên miền trỏ vào cổng và đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó.
 
 ### Thêm
 - Cổng API Apache APISIX là điểm vào duy nhất từ trình duyệt (`http://localhost:8000`, ADR #34): định tuyến tới web, Keycloak, Hasura, SeaweedFS; token Keycloak kiểm tại biên (`forward-auth`); WAF Coraza với OWASP CRS; giới hạn tần suất GraphQL và đăng nhập; chặn realm quản trị Keycloak, Hasura Admin API và thao tác S3 ngoài hai bucket của ứng dụng; `X-Request-Id`, số liệu Prometheus nội bộ. Image `bamboo-gateway`, kiểm thử `make test-gateway`.
@@ -56,6 +68,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.0...HEAD
+[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0
