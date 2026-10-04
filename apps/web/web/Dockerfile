@@ -15,7 +15,8 @@ ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REAL
     VITE_KEYCLOAK_CLIENT=$VITE_KEYCLOAK_CLIENT VITE_HASURA_URL=$VITE_HASURA_URL
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.30-alpine   # nhánh stable
+# nginx nhánh stable, chạy không cần root.
+FROM nginxinc/nginx-unprivileged:1.30-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
