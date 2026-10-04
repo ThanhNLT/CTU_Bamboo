@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { createRoot } from "react-dom/client";
 
 import Keycloak from "keycloak-js";

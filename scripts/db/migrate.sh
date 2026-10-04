@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Chạy các migration chưa chạy của một database, theo thứ tự tên file.
 # Dùng biến môi trường chuẩn của psql: PGHOST, PGPORT, PGUSER, PGPASSWORD.
 #   scripts/db/migrate.sh [database] [thư mục migration]

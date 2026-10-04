@@ -1,38 +1,21 @@
-# This Dockerfile uses `serve` npm package to serve the static files with node process.
-# You can find the Dockerfile for nginx in the following link:
-# https://github.com/refinedev/dockerfiles/blob/main/vite/Dockerfile.nginx
-# react-router 7 cần Node >= 20.
-FROM refinedev/node:22 AS base
-
-FROM base as deps
-
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
-
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-FROM base as builder
-
-ENV NODE_ENV production
-
-COPY --from=deps /app/refine/node_modules ./node_modules
-
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
+# Ứng dụng Refine: build tĩnh bằng Node 22 (react-router 7 cần Node >= 20), phục vụ bằng nginx.
+# Địa chỉ Keycloak/Hasura gắn vào bundle lúc build (biến VITE_*, mặc định stack docker compose).
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --no-audit --no-fund
 COPY . .
-
+ARG VITE_KEYCLOAK_URL=http://localhost:8080
+ARG VITE_KEYCLOAK_REALM=bms
+ARG VITE_KEYCLOAK_CLIENT=bms-web
+ARG VITE_HASURA_URL=http://localhost:8081/v1/graphql
+ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
+    VITE_KEYCLOAK_CLIENT=$VITE_KEYCLOAK_CLIENT VITE_HASURA_URL=$VITE_HASURA_URL
 RUN npm run build
 
-FROM base as runner
-
-ENV NODE_ENV production
-
-RUN npm install -g serve
-
-COPY --from=builder /app/refine/dist ./
-
-USER refine
-
-CMD ["serve"]
+FROM nginxinc/nginx-unprivileged:1.30-alpine   # nhánh stable
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 8080

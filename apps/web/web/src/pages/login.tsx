@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { useLogin } from "@refinedev/core";
 import { ThemedTitle } from "@refinedev/antd";
 import { Button, Typography, Layout, Space } from "antd";

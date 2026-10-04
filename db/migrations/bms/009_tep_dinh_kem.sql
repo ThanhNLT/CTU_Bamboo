@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 009: Tệp đính kèm chứng từ (ADR #26; dịch vụ nền tảng mục 2).
 --
 -- Tệp nằm ở S3 (SeaweedFS), CSDL chỉ giữ metadata. Vòng đời:

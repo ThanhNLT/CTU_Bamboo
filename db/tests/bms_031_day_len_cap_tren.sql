@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Tìm người duyệt khi đến bước: quyền trưởng, đẩy lên cấp trên, gộp bước,
 -- hợp đồng không duyệt, chặn xung đột giao dịch nội bộ (ADR #28, #29).
 SELECT test.fixture();

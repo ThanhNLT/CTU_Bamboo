@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Auth webhook (ADR #32) với khóa ký tự tạo: không cần Keycloak."""
 
 import time

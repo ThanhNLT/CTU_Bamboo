@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Cây tổ chức, vị trí, bổ nhiệm, tài khoản nhiều tenant (CONTEXT.md mục "Tổ chức").
 SELECT test.fixture();
 

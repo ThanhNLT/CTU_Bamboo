@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { Show, TextField } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Typography } from "antd";

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Kiểm thử tích hợp: PostgreSQL thật, Hasura và Flowable thật (bỏ qua nếu không truy cập được).
 
 Biến môi trường (mặc định khớp `make test-actions` trong docker compose):

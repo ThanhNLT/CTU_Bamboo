@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Hàm tiện ích dùng chung cho kiểm thử. Nạp một lần sau migration; mỗi file
 -- kiểm thử gọi test.fixture() bên trong transaction của mình.
 

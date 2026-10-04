@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Dữ liệu demo: nạp đúng, chạy lại không trùng, khớp realm Keycloak (ADR #16, #23)."""
 
 import json

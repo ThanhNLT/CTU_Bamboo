@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Build context của image Python (context = gốc repo): chỉ cần services/, platform/, constraints.txt.
+.git
+apps
+docs
+db
+**/__pycache__
+**/.pytest_cache
+**/*.pyc
+.env

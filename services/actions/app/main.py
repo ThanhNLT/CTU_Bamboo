@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Hasura Actions: mọi thao tác chuyển trạng thái chứng từ đi qua hàm CSDL (ADR #31).
 
 Hasura gửi payload {action, input, session_variables}; người gọi và tenant lấy

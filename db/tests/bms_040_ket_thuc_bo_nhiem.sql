@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Chứng từ dang dở khi bổ nhiệm của người lập kết thúc (ADR #29).
 SELECT test.fixture();
 

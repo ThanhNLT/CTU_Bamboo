@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 005: Phục vụ Hasura (quyền xem, kiểm tra khi ghi nháp) và đồng bộ sang Flowable (ADR #31).
 
 -- ---------------------------------------------------------------------------

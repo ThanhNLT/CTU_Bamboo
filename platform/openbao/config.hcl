@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # OpenBao lưu bền bằng integrated storage (raft) một node (ADR #25).
 # Khởi tạo, unseal và cấu hình do job openbao-init (services/actions/app/openbao_init.py).
 ui            = true

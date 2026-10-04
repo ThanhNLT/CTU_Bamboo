@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Job khởi tạo chạy mỗi lần `docker compose up`: tạo bucket S3, deploy BPMN, nạp metadata Hasura."""
 
 import hashlib
