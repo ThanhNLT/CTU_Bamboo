@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Image dựng sẵn để người khác chạy toàn bộ hệ thống bằng một lệnh, không cần mã nguồn:
-#   docker compose -y -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d
+#   docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y
 # 1. build: 6 image của dự án, amd64 + arm64, đẩy lên GHCR.
 # 2. compose: sinh compose.release.yml (chỉ image, không build, không bind mount) và phát hành
 #    dưới dạng OCI artifact cùng registry.
-# 3. smoke: trên máy sạch, chạy đúng lệnh một dòng ở trên (-y: không hỏi xác nhận biến của compose từ xa) rồi chạy kiểm thử đầu–cuối qua giao diện.
+# 3. smoke: trên máy sạch, chạy đúng lệnh một dòng ở trên (cờ -y đặt sau `up`: chạy được trên Compose 2.34+ và v5, không hỏi xác nhận biến của compose từ xa) rồi chạy kiểm thử đầu–cuối qua giao diện.
 #
 # Thẻ: pull request → pr-<số>; nhánh main → sha-<7 ký tự> và latest; thẻ git vX.Y.Z → X.Y.Z.
 name: Images
@@ -126,7 +126,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Một lệnh, không cần mã nguồn
         working-directory: ${{ runner.temp }}
-        run: time docker compose -y -f "oci://${PREFIX}:${TAG}" up -d
+        run: time docker compose -f "oci://${PREFIX}:${TAG}" up -d -y
       # Mã nguồn chỉ để lấy script chờ và bộ kiểm thử, không dùng để dựng hệ thống.
       - uses: actions/checkout@v7
       - name: Chờ sẵn sàng
