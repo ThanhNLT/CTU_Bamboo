@@ -57,15 +57,72 @@ docker compose ps          # mọi dịch vụ chạy lâu phải là "healthy";
 docker compose logs -f bootstrap
 ```
 
-| Địa chỉ | Dùng để |
-|---|---|
-| <http://localhost:5173> | Ứng dụng web |
-| <http://localhost:8081/console> | Hasura Console (admin secret `dev-admin-secret`) |
-| <http://localhost:8080/admin> | Keycloak (`kcadmin` / `kcadmin-dev`) |
-| <http://localhost:8200> | OpenBao UI (`make bao-token` in root token dev) |
-| <http://localhost:8082/flowable-rest> | Flowable REST (`rest-admin` / `test`) |
+Mở ứng dụng tại **<http://localhost:5173>** (đúng `localhost`, không dùng `127.0.0.1`: Keycloak chỉ chấp nhận chuyển hướng về địa chỉ này). Tài khoản demo và địa chỉ các trang quản trị ở mục ngay dưới.
 
-Tài khoản demo (mật khẩu `demo-password`): `tgd` (Tổng giám đốc), `nv.muahang.dienthoai` (người lập đề nghị), `tp.muahang.dienthoai`, `gd.chip`, `pgd.chip` (duyệt thay theo ủy quyền), `kiemnhiem` (một tài khoản, hai tenant), `gd.taichinh` (xem nhật ký kiểm toán)… Danh sách đủ ở [thiết kế CSDL, mục Tích hợp](docs/thiet-ke/03-thiet-ke-csdl.md).
+### Tài khoản
+
+Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến `DEMO_PASSWORD`, đặt lúc Keycloak import realm lần đầu). Đăng nhập tại <http://localhost:5173> bằng nút **Đăng nhập bằng tài khoản tập đoàn**; đổi người dùng bằng **Đăng xuất** ở thanh bên trái. Hạn mức duyệt mẫu: dưới 50 triệu quản lý trực tiếp duyệt; 50–500 triệu giám đốc công ty con; từ 500 triệu thêm Tổng giám đốc.
+
+**Tập đoàn X – công ty mẹ**
+
+| Tên đăng nhập | Họ tên, vị trí | Nên thử |
+|---|---|---|
+| `tgd` | Nguyễn Văn Thành, Tổng giám đốc | Thấy đề nghị toàn tập đoàn; hộp việc có đề nghị 650 triệu (đã qua giám đốc Điện thoại X) và 300 triệu của Văn phòng Chuyển đổi số chờ duyệt |
+| `pho.tgd` | Trần Thị Mai, Phó tổng giám đốc | Vị trí báo cáo cho Tổng giám đốc |
+| `gd.taichinh` | Phạm Thu Hà, Giám đốc tài chính | Vai trò kiểm soát: xem mọi đề nghị trong tenant, menu **Kiểm toán**, đối soát chuỗi hash |
+| `cdo` | Lê Quang Huy, Giám đốc chuyển đổi số | Vai trò quản trị tổ chức |
+
+**Công ty Chip X**
+
+| Tên đăng nhập | Họ tên, vị trí | Nên thử |
+|---|---|---|
+| `gd.chip` | Hoàng Minh Đức, Giám đốc | Đang đi công tác, đã ủy quyền cho phó giám đốc |
+| `pgd.chip` | Vũ Thị Lan, Phó giám đốc | Hộp việc có đề nghị 90 triệu gắn nhãn **Duyệt thay (ủy quyền)** |
+| `qd.phongsach.chip` | Đặng Văn Long, Quản đốc phòng sạch | Hộp việc có đề nghị máy đếm hạt bụi 35 triệu |
+| `kd.chip` | Bùi Thị Ngọc, Chuyên viên kinh doanh B2B | Lập đề nghị dưới tư cách nhân viên |
+
+**Công ty Điện thoại X**
+
+| Tên đăng nhập | Họ tên, vị trí | Nên thử |
+|---|---|---|
+| `nv.muahang.dienthoai` | Phan Văn Nam, Chuyên viên mua hàng | Lập đề nghị kèm dòng hàng, đính kèm báo giá, gửi duyệt; xem đề nghị **Văn phòng phẩm quý IV** bị trả về |
+| `tp.muahang.dienthoai` | Đỗ Thị Hương, Trưởng phòng mua hàng | Duyệt đề nghị dưới 50 triệu của phòng |
+| `gd.dienthoai` | Ngô Thanh Sơn, Giám đốc | Đã duyệt bước 1 của đề nghị 650 triệu |
+
+**Công ty Gia dụng X**
+
+| Tên đăng nhập | Họ tên, vị trí | Nên thử |
+|---|---|---|
+| `gd.giadung` | Lý Thị Thảo, Giám đốc | Hộp việc có đề nghị bộ dụng cụ sửa chữa 120 triệu |
+| `gd.baohanh.giadung` | Trịnh Văn Hải, Giám đốc trung tâm bảo hành | Người quản lý hợp đồng: duyệt đề nghị 15 triệu do người làm hợp đồng lập |
+
+**Bệnh viện X** (tenant riêng, cách ly dữ liệu với Tập đoàn X)
+
+| Tên đăng nhập | Họ tên, vị trí | Nên thử |
+|---|---|---|
+| `gd.benhvien` | Võ Thị Bích, Giám đốc bệnh viện | Bước 2 của đề nghị máy siêu âm 4D (thiết bị y tế luôn duyệt 2 cấp) |
+| `bs.cdha.benhvien` | Lưu Thị Yến, Bác sĩ chẩn đoán hình ảnh | Người lập đề nghị máy siêu âm 4D |
+| `tk.duoc.benhvien` | Dương Văn Khoa, Trưởng khoa Dược | Người dùng của tenant bệnh viện, không thấy dữ liệu tập đoàn |
+
+**Tài khoản đặc biệt**
+
+| Tên đăng nhập | Họ tên, vị trí | Nên thử |
+|---|---|---|
+| `kiemnhiem` | Mai Xuân Phúc, chuyên viên pháp chế Tập đoàn X, kiêm nhiệm ở Bệnh viện X | Một tài khoản, hai tenant: màn hình **Chọn đơn vị làm việc**, đổi tenant ở menu người dùng (ADR #30) |
+| `hopdong` | Tạ Minh Tuấn, kỹ sư Chip X, làm hợp đồng cho Gia dụng X | Bổ nhiệm hợp đồng: lập được đề nghị ở Gia dụng X nhưng không bao giờ là người duyệt (ADR #29) |
+| `admin` | Kiều Anh Quân, đội nền tảng | Realm role `platform_admin`; **bắt buộc cài OTP** (ứng dụng xác thực) ở lần đăng nhập đầu |
+
+**Quản trị hệ thống** (giá trị mặc định cho máy dev; đổi trong `.env` khi triển khai thật)
+
+| Thành phần | Địa chỉ | Đăng nhập |
+|---|---|---|
+| Keycloak (người dùng, realm, client) | <http://localhost:8080/admin> | `kcadmin` / `kcadmin-dev` (`KEYCLOAK_ADMIN`, `KEYCLOAK_ADMIN_PASSWORD`) |
+| Hasura Console (API, dữ liệu) | <http://localhost:8081/console> | admin secret `dev-admin-secret` (`HASURA_GRAPHQL_ADMIN_SECRET`) |
+| OpenBao UI (secret) | <http://localhost:8200> | root token in bằng `make bao-token` |
+| Flowable REST (quy trình) | <http://localhost:8082/flowable-rest> | `rest-admin` / `test` (`FLOWABLE_ADMIN`, `FLOWABLE_ADMIN_PASSWORD`) |
+| PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`POSTGRES_PASSWORD`); `make psql` |
+
+Danh sách tài khoản sinh từ `services/seed/app/demo.py` (dùng chung cho dữ liệu CSDL và realm Keycloak); các vị trí còn lại có người giả lập (Faker). Bảng quyền và hạn mức đầy đủ: [thiết kế CSDL, mục Tích hợp](docs/thiet-ke/03-thiet-ke-csdl.md).
 
 Dừng: `docker compose down` (giữ dữ liệu) hoặc `docker compose down -v` (xóa sạch, kể cả khóa OpenBao).
 
