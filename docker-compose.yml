@@ -22,7 +22,8 @@ x-db-env: &db-env
 x-actions-env: &actions-env
   # production: từ chối khởi động nếu còn mật khẩu/secret mặc định của môi trường dev.
   BAMBOO_ENV: ${BAMBOO_ENV:-development}
-  DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
+  # Tài khoản ứng dụng đặc quyền tối thiểu (ADR #35); không phải superuser `bms`.
+  DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms
   ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
   FLOWABLE_URL: http://flowable:8080/flowable-rest/service
   FLOWABLE_USER: ${FLOWABLE_ADMIN:-rest-admin}
@@ -44,8 +45,11 @@ x-actions-env: &actions-env
 
 # Secret hạ tầng openbao-init chép vào OpenBao (môi trường dev khai báo ở .env).
 x-bao-sync-env: &bao-sync-env
-  POSTGRES_USER: bms
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+  ACTIONS_DB_PASSWORD: ${ACTIONS_DB_PASSWORD:-actions-db-dev}
+  HASURA_DB_PASSWORD: ${HASURA_DB_PASSWORD:-hasura-db-dev}
+  KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
+  FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
   KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
   KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
   FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
@@ -96,7 +100,8 @@ services:
       retries: 30
       start_period: 10s
 
-  # Tạo database phụ, chạy các migration chưa chạy rồi thoát.
+  # Tạo database phụ, chạy các migration chưa chạy, đặt tài khoản đặc quyền tối thiểu cho từng dịch vụ
+  # (ADR #35, db/roles) rồi thoát. Chỉ job này và seed dùng superuser `bms`.
   migrate:
     logging: *logging
     build:
@@ -109,6 +114,11 @@ services:
     environment:
       <<: *db-env
       EXTRA_DATABASES: flowable keycloak hasura_meta hasura_meta_test bms_hasura_test
+      SERVICE_DATABASES: keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura hasura_meta_test:bamboo_hasura
+      HASURA_DB_PASSWORD: ${HASURA_DB_PASSWORD:-hasura-db-dev}
+      ACTIONS_DB_PASSWORD: ${ACTIONS_DB_PASSWORD:-actions-db-dev}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
+      FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
     restart: "no"
 
   # Dữ liệu demo Tập đoàn X (ADR #16): bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
@@ -143,8 +153,8 @@ services:
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://db:5432/keycloak
-      KC_DB_USERNAME: bms
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      KC_DB_USERNAME: bamboo_keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
       # Địa chỉ trình duyệt thấy (qua cổng API); phải khớp issuer mà actions kiểm tra và cấu hình của web.
       KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8000}
       # Trang quản trị không đi qua cổng công khai (cổng chặn realm master): dùng cổng riêng 127.0.0.1:8080.
@@ -178,8 +188,8 @@ services:
         condition: service_completed_successfully
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/flowable
-      SPRING_DATASOURCE_USERNAME: bms
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      SPRING_DATASOURCE_USERNAME: bamboo_flowable
+      SPRING_DATASOURCE_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
       FLOWABLE_REST_APP_CREATE_DEMO_DEFINITIONS: "false"
       FLOWABLE_REST_APP_ADMIN_USER_ID: ${FLOWABLE_ADMIN:-rest-admin}
       FLOWABLE_REST_APP_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
@@ -203,8 +213,8 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *hasura-env
-      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/hasura_meta
-      BMS_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/hasura_meta
+      BMS_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/bms
       ACTIONS_URL: http://actions:8000
       HASURA_GRAPHQL_AUTH_HOOK: http://actions:8000/auth/hasura
     # Chỉ dành cho Hasura Console và công cụ quản trị trên máy dev; ứng dụng gọi qua cổng API (/graphql).
@@ -406,8 +416,8 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *hasura-env
-      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/hasura_meta_test
-      BMS_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/hasura_meta_test
+      BMS_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/bms_hasura_test
       # Container chạy kiểm thử (`make test-actions` đặt --name bamboo-actions-test).
       ACTIONS_URL: http://bamboo-actions-test:8090
       HASURA_GRAPHQL_AUTH_HOOK: http://bamboo-actions-test:8090/auth/hasura
@@ -428,7 +438,9 @@ services:
       # Kiểm thử tải tệp lên/xuống từ trong container nên link có chữ ký trỏ vào mạng nội bộ.
       S3_PUBLIC_ENDPOINT: http://seaweedfs:8333
       BAO_KEYS_FILE: /openbao/keys/init.json
+      # Kiểm thử dựng dữ liệu bằng superuser; dịch vụ actions chạy trong lúc kiểm thử dùng tài khoản ứng dụng.
       TEST_DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
+      TEST_APP_DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms_hasura_test
       HASURA_URL: http://hasura-test:8080
       ACTIONS_PORT: "8090"
       REQUIRE_SERVICES: "1"

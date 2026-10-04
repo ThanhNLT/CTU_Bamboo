@@ -120,7 +120,7 @@ Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến
 | Hasura Console (API, dữ liệu) | <http://localhost:8081/console> | admin secret `dev-admin-secret` (`HASURA_GRAPHQL_ADMIN_SECRET`) |
 | OpenBao UI (secret) | <http://localhost:8200> | root token in bằng `make bao-token` |
 | Flowable REST (quy trình) | <http://localhost:8082/flowable-rest> | `rest-admin` / `test` (`FLOWABLE_ADMIN`, `FLOWABLE_ADMIN_PASSWORD`) |
-| PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`POSTGRES_PASSWORD`); `make psql` |
+| PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`POSTGRES_PASSWORD`); `make psql`. Dịch vụ dùng tài khoản riêng không phải superuser: `bamboo_hasura`, `bamboo_actions`, `bamboo_keycloak`, `bamboo_flowable` (mật khẩu dev `hasura-db-dev`, `actions-db-dev`, `keycloak-db-dev`, `flowable-db-dev`; biến `*_DB_PASSWORD`; ADR #35) |
 
 Danh sách tài khoản sinh từ `services/seed/app/demo.py` (dùng chung cho dữ liệu CSDL và realm Keycloak); các vị trí còn lại có người giả lập (Faker). Bảng quyền và hạn mức đầy đủ: [thiết kế CSDL, mục Tích hợp](docs/thiet-ke/03-thiet-ke-csdl.md).
 
@@ -165,7 +165,7 @@ scripts/db/migrate.sh bms                    # chạy các migration chưa chạ
 cd services/actions
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt -c ../../constraints.txt   # phiên bản ghim chung (ADR #10)
-DATABASE_URL=postgresql://bms:bms-dev@localhost:5432/bms uvicorn app.main:app --port 8000
+DATABASE_URL=postgresql://bamboo_actions:actions-db-dev@localhost:5432/bms uvicorn app.main:app --port 8000
 ```
 
 Cấu hình qua biến môi trường (xem `services/actions/app/config.py`); có `BAO_ADDR` và `BAO_APPROLE_FILE` thì secret đọc từ OpenBao.
