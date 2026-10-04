@@ -5,19 +5,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Tách thư viện lớn thành chunk riêng: đổi mã ứng dụng không làm trình duyệt tải lại vendor.
+// Thư viện gom vào một chunk `vendor`, tách khỏi mã ứng dụng: đổi mã ứng dụng không làm trình duyệt
+// tải lại thư viện. Không chia nhỏ vendor theo gói: React, antd, Refine tham chiếu lẫn nhau, chia
+// ra làm react-dom chạy trước react ở bản build (trang trắng).
 export default defineConfig({
   plugins: [react()],
   build: {
-    chunkSizeWarningLimit: 1300,
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ["react", "react-dom", "react-router"],
-          antd: ["antd", "@ant-design/icons"],
-          refine: ["@refinedev/core", "@refinedev/antd", "@refinedev/hasura", "@refinedev/react-router", "@refinedev/kbar"],
-          keycloak: ["keycloak-js", "@react-keycloak/web"],
-        },
+        manualChunks: (id) => (id.includes("node_modules") ? "vendor" : undefined),
       },
     },
   },
