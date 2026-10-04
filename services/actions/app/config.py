@@ -1,5 +1,18 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from urllib.parse import quote, urlparse, urlunparse
+
+from .openbao import Bao, BaoError
+
+# Secret trong OpenBao (KV v2 secret/<đường dẫn>) → trường Settings. Mỗi dịch vụ chỉ đọc
+# được những đường dẫn policy của nó cho phép (ADR #25); đường dẫn bị từ chối thì giữ giá trị env.
+SECRET_FIELDS = {
+    "bms/actions": {"secret": "actions_secret"},
+    "bms/flowable": {"username": "flowable_user", "password": "flowable_password"},
+    "bms/hasura": {"admin_secret": "hasura_admin_secret"},
+    "bms/seaweedfs": {"access_key": "s3_access_key", "secret_key": "s3_secret_key"},
+    "bms/seaweedfs-admin": {"access_key": "s3_admin_access_key", "secret_key": "s3_admin_secret_key"},
+}
 
 
 @dataclass(frozen=True)
@@ -27,7 +40,40 @@ class Settings:
     clamav_port: int
 
 
+def with_openbao(settings: Settings, bao: Bao) -> Settings:
+    """Thay các giá trị env bằng secret đọc được từ OpenBao."""
+    def read(path: str) -> dict | None:
+        try:
+            return bao.read(path)
+        except BaoError as exc:
+            if exc.status == 403:
+                return None
+            raise
+
+    changes = {}
+    for path, fields in SECRET_FIELDS.items():
+        values = read(path) or {}
+        changes.update({attr: values[key] for key, attr in fields.items() if key in values})
+    pg = read("bms/postgres")
+    if pg:
+        url = urlparse(settings.database_url)
+        netloc = f"{quote(pg['username'], safe='')}:{quote(pg['password'], safe='')}@{url.hostname}"
+        if url.port:
+            netloc += f":{url.port}"
+        changes["database_url"] = urlunparse(url._replace(netloc=netloc))
+    return replace(settings, **changes)
+
+
 def load() -> Settings:
+    """Cấu hình từ biến môi trường; có BAO_ADDR và BAO_APPROLE_FILE thì secret lấy từ OpenBao."""
+    settings = _from_env()
+    addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
+    if addr and approle:
+        settings = with_openbao(settings, Bao.from_approle_file(addr, approle))
+    return settings
+
+
+def _from_env() -> Settings:
     env = os.environ.get
     return Settings(
         database_url=env("DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms"),
