@@ -59,7 +59,7 @@ def act_on_task(conn: psycopg.Connection, session: dict, task_id: str, decision:
     person = session_identity(session, row[0] if row else None)
     bind_session(conn, session)
     conn.execute("SELECT wf.act(%s, %s, %s, %s)", (task_id, person, decision, note))
-    entity_type, entity_id = row[1], row[2]
+    entity_id = row[2]
     status = conn.execute("SELECT status FROM proc.purchase_request WHERE id = %s", (entity_id,)).fetchone()[0]
     return {"request_id": str(entity_id), "status": status}
 

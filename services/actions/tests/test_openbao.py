@@ -56,7 +56,7 @@ def test_dac_quyen_toi_thieu(roles):
     assert actions.read("bms/seaweedfs")["access_key"] == "bms-app"
     assert actions.read("bms/postgres") and actions.read("bms/actions")
     for path in ("bms/keycloak", "bms/hasura", "bms/seaweedfs-admin"):
-        assert denied(lambda: actions.read(path)), f"actions không được đọc {path}"
+        assert denied(lambda p=path: actions.read(p)), f"actions không được đọc {path}"
     assert denied(lambda: actions.write("bms/actions", {"secret": "x"})), "actions không ghi được secret"
 
     bootstrap = Bao.from_approle_file(ADDR, roles["bootstrap"])
