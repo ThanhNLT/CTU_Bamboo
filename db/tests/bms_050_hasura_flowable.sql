@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Quyền xem chứng từ (computed field can_read của Hasura) và cờ đồng bộ Flowable (ADR #31).
 SELECT test.fixture();
 

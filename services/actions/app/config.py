@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 from dataclasses import dataclass, replace
 from urllib.parse import quote, urlparse, urlunparse
@@ -38,6 +42,35 @@ class Settings:
     s3_documents_bucket: str
     clamav_host: str
     clamav_port: int
+
+
+# Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
+# BAMBOO_ENV=production mà còn giá trị nào trong số này thì dừng ngay, không khởi động.
+DEV_DEFAULTS = {
+    "POSTGRES_PASSWORD": "bms-dev",
+    "HASURA_GRAPHQL_ADMIN_SECRET": "dev-admin-secret",
+    "ACTIONS_SECRET": "dev-actions-secret",
+    "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",
+    "FLOWABLE_ADMIN_PASSWORD": "test",
+    "DEMO_PASSWORD": "demo-password",
+}
+
+
+def production_problems(env: dict[str, str] | None = None) -> list[str]:
+    """Biến còn giữ giá trị dev mặc định hoặc để trống."""
+    env = os.environ if env is None else env
+    return [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
+
+
+def assert_production_ready(env: dict[str, str] | None = None) -> None:
+    """BAMBOO_ENV=production mà còn giá trị dev mặc định thì dừng (job openbao-init gọi trước mọi dịch vụ)."""
+    env = os.environ if env is None else env
+    if env.get("BAMBOO_ENV", "development").lower() != "production":
+        return
+    problems = production_problems(env)
+    if problems:
+        raise SystemExit("BAMBOO_ENV=production nhưng còn giá trị mặc định của môi trường dev: "
+                         + ", ".join(problems) + ". Đặt giá trị riêng trong .env (xem .env.example).")
 
 
 def with_openbao(settings: Settings, bao: Bao) -> Settings:

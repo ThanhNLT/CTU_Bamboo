@@ -1,255 +1,105 @@
-import {
-  Refine,
-  GitHubBanner,
-  Authenticated,
-  AuthProvider,
-} from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import { Authenticated, Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-
-import {
-  ErrorComponent,
-  useNotificationProvider,
-  ThemedLayout,
-  ThemedSider,
-} from "@refinedev/antd";
+import { ErrorComponent, ThemedLayout, ThemedSider, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
-
-import dataProvider, {
-  GraphQLClient,
-  graphqlWS,
-  liveProvider,
-} from "@refinedev/hasura";
-import { App as AntdApp } from "antd";
-import { BrowserRouter, Route, Routes, Outlet } from "react-router";
 import routerProvider, {
-  NavigateToResource,
-  CatchAllNavigate,
-  UnsavedChangesNotifier,
-  DocumentTitleHandler,
+  CatchAllNavigate, DocumentTitleHandler, NavigateToResource, UnsavedChangesNotifier,
 } from "@refinedev/react-router";
-import axios from "axios";
+import { App as AntdApp, ConfigProvider } from "antd";
+import viVN from "antd/locale/vi_VN";
+import { AuditOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
+import "dayjs/locale/vi";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import { useKeycloak } from "@react-keycloak/web";
-import {
-  BlogPostList,
-  BlogPostCreate,
-  BlogPostEdit,
-  BlogPostShow,
-} from "./pages/blog-posts";
-import {
-  CategoryList,
-  CategoryCreate,
-  CategoryEdit,
-  CategoryShow,
-} from "./pages/categories";
-import { ColorModeContextProvider } from "./contexts/color-mode";
+import { TenantGate } from "./auth/session";
 import { Header } from "./components/header";
+import { ColorModeContextProvider } from "./contexts/color-mode";
+import { AuditLogList } from "./pages/audit/list";
+import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
+import {
+  PurchaseRequestCreate, PurchaseRequestEdit, PurchaseRequestList, PurchaseRequestShow,
+} from "./pages/purchase-requests";
+import { accessControlProvider } from "./providers/access";
+import { authProvider } from "./providers/auth";
+import { dataProvider, liveProvider } from "./providers/data";
+import { i18nProvider } from "./providers/i18n";
 
-// Hasura của dự án; xác thực bằng webhook: token Keycloak + tenant đã chọn (ADR #32,
-// docs/thiet-ke/08-api-giao-dien.md). Chưa chọn tenant thì chỉ gọi được query my_tenants.
-const API_URL = import.meta.env.VITE_HASURA_URL ?? "http://localhost:8081/v1/graphql";
-const WS_URL = API_URL.replace(/^http/, "ws");
-const TENANT_KEY = "bamboo.tenant";
+dayjs.locale("vi");
 
-const authHeaders = (token?: string): Record<string, string> => {
-  const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const tenant = localStorage.getItem(TENANT_KEY);
-  if (tenant) headers["x-bamboo-tenant"] = tenant;
-  return headers;
-};
-
-const client = new GraphQLClient(API_URL);
-let currentToken: string | undefined;
-
-const webSocketClient = graphqlWS.createClient({
-  url: WS_URL,
-  connectionParams: () => ({ headers: authHeaders(currentToken) }),
-});
+const Title = ({ collapsed }: { collapsed: boolean }) => <ThemedTitle collapsed={collapsed} text="Bamboo DX-OS" />;
 
 function App() {
-  const { keycloak, initialized } = useKeycloak();
-
-  if (!initialized) {
-    return <div>Loading...</div>;
-  }
-
-  const authProvider: AuthProvider = {
-    login: async () => {
-      const urlSearchParams = new URLSearchParams(window.location.search);
-      const { to } = Object.fromEntries(urlSearchParams.entries());
-      await keycloak.login({
-        redirectUri: to ? `${window.location.origin}${to}` : undefined,
-      });
-      return {
-        success: true,
-      };
-    },
-    logout: async () => {
-      try {
-        await keycloak.logout({
-          redirectUri: window.location.origin,
-        });
-        return {
-          success: true,
-          redirectTo: "/login",
-        };
-      } catch {
-        return {
-          success: false,
-          error: new Error("Logout failed"),
-        };
-      }
-    },
-    onError: async (error) => {
-      console.error(error);
-      return { error };
-    },
-    check: async () => {
-      try {
-        await keycloak.updateToken(30);
-        const { token } = keycloak;
-        if (token) {
-          currentToken = token;
-          client.setHeaders(authHeaders(token));
-          axios.defaults.headers.common = {
-            Authorization: `Bearer ${token}`,
-          };
-          return {
-            authenticated: true,
-          };
-        } else {
-          return {
-            authenticated: false,
-            logout: true,
-            redirectTo: "/login",
-            error: {
-              message: "Check failed",
-              name: "Token not found",
-            },
-          };
-        }
-      } catch {
-        return {
-          authenticated: false,
-          logout: true,
-          redirectTo: "/login",
-          error: {
-            message: "Check failed",
-            name: "Token not found",
-          },
-        };
-      }
-    },
-    getPermissions: async () => null,
-    getIdentity: async () => {
-      if (keycloak?.tokenParsed) {
-        return {
-          name: keycloak.tokenParsed.family_name,
-        };
-      }
-      return null;
-    },
-  };
+  const { initialized } = useKeycloak();
+  if (!initialized) return <div style={{ padding: 48 }}>Đang kết nối máy chủ đăng nhập...</div>;
 
   return (
     <BrowserRouter>
-      <GitHubBanner />
       <RefineKbarProvider>
         <ColorModeContextProvider>
-          <AntdApp>
-            <DevtoolsProvider>
+          <ConfigProvider locale={viVN}>
+            <AntdApp>
               <Refine
-                dataProvider={dataProvider(client)}
-                liveProvider={liveProvider(webSocketClient)}
+                dataProvider={dataProvider}
+                liveProvider={liveProvider}
+                authProvider={authProvider}
+                accessControlProvider={accessControlProvider}
+                i18nProvider={i18nProvider}
                 notificationProvider={useNotificationProvider}
                 routerProvider={routerProvider}
-                authProvider={authProvider}
                 resources={[
                   {
-                    name: "blog_posts",
-                    list: "/blog-posts",
-                    create: "/blog-posts/create",
-                    edit: "/blog-posts/edit/:id",
-                    show: "/blog-posts/show/:id",
-                    meta: {
-                      canDelete: true,
-                    },
+                    name: "proc_purchase_request",
+                    list: "/p/documents",
+                    create: "/p/documents/create",
+                    edit: "/p/documents/edit/:id",
+                    show: "/p/documents/show/:id",
+                    meta: { label: "Đề nghị mua sắm", icon: <FileTextOutlined /> },
                   },
-                  {
-                    name: "categories",
-                    list: "/categories",
-                    create: "/categories/create",
-                    edit: "/categories/edit/:id",
-                    show: "/categories/show/:id",
-                    meta: {
-                      canDelete: true,
-                    },
-                  },
+                  { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
+                  { name: "audit_log", list: "/admin/audit-logs", meta: { label: "Kiểm toán", icon: <AuditOutlined /> } },
+                  { name: "collab_notification", meta: { hide: true } },
                 ]}
-                options={{
-                  syncWithLocation: true,
-                  warnWhenUnsavedChanges: true,
-                  projectId: "v5edDH-KsC4mO-GFP98r",
-                  liveMode: "auto",
-                }}
+                options={{ syncWithLocation: true, warnWhenUnsavedChanges: true, liveMode: "auto", disableTelemetry: true }}
               >
                 <Routes>
                   <Route
                     element={
-                      <Authenticated
-                        key="authenticated-inner"
-                        fallback={<CatchAllNavigate to="/login" />}
-                      >
-                        <ThemedLayout
-                          Header={Header}
-                          Sider={(props) => <ThemedSider {...props} fixed />}
-                        >
-                          <Outlet />
-                        </ThemedLayout>
+                      <Authenticated key="authenticated-inner" fallback={<CatchAllNavigate to="/login" />}>
+                        <TenantGate>
+                          <ThemedLayout Header={Header} Title={Title} Sider={(props) => <ThemedSider {...props} fixed />}>
+                            <Outlet />
+                          </ThemedLayout>
+                        </TenantGate>
                       </Authenticated>
                     }
                   >
-                    <Route
-                      index
-                      element={<NavigateToResource resource="blog_posts" />}
-                    />
-                    <Route path="/blog-posts">
-                      <Route index element={<BlogPostList />} />
-                      <Route path="create" element={<BlogPostCreate />} />
-                      <Route path="edit/:id" element={<BlogPostEdit />} />
-                      <Route path="show/:id" element={<BlogPostShow />} />
+                    <Route index element={<NavigateToResource resource="proc_purchase_request" />} />
+                    <Route path="/p/documents">
+                      <Route index element={<PurchaseRequestList />} />
+                      <Route path="create" element={<PurchaseRequestCreate />} />
+                      <Route path="edit/:id" element={<PurchaseRequestEdit />} />
+                      <Route path="show/:id" element={<PurchaseRequestShow />} />
                     </Route>
-                    <Route path="/categories">
-                      <Route index element={<CategoryList />} />
-                      <Route path="create" element={<CategoryCreate />} />
-                      <Route path="edit/:id" element={<CategoryEdit />} />
-                      <Route path="show/:id" element={<CategoryShow />} />
-                    </Route>
+                    <Route path="/p/inbox" element={<InboxList />} />
+                    <Route path="/admin/audit-logs" element={<AuditLogList />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
-                  <Route
-                    element={
-                      <Authenticated
-                        key="authenticated-outer"
-                        fallback={<Outlet />}
-                      >
-                        <NavigateToResource />
-                      </Authenticated>
-                    }
-                  >
+                  <Route element={<Authenticated key="authenticated-outer" fallback={<Outlet />}><NavigateToResource /></Authenticated>}>
                     <Route path="/login" element={<Login />} />
                   </Route>
                 </Routes>
-
                 <RefineKbar />
                 <UnsavedChangesNotifier />
-                <DocumentTitleHandler />
+                <DocumentTitleHandler handler={({ resource }) => `${resource?.meta?.label ?? "Bamboo"} | Bamboo DX-OS`} />
               </Refine>
-              <DevtoolsPanel />
-            </DevtoolsProvider>
-          </AntdApp>
+            </AntdApp>
+          </ConfigProvider>
         </ColorModeContextProvider>
       </RefineKbarProvider>
     </BrowserRouter>

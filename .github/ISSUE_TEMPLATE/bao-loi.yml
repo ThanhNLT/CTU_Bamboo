@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Báo lỗi
+description: Hệ thống chạy sai, báo lỗi hoặc không khởi động được
+labels: ["needs-triage"]
+body:
+  - type: textarea
+    id: hien-tuong
+    attributes:
+      label: Hiện tượng
+      description: Bạn thấy gì, và lẽ ra phải thấy gì
+    validations:
+      required: true
+  - type: textarea
+    id: tai-hien
+    attributes:
+      label: Các bước tái hiện
+      placeholder: |
+        1. Đăng nhập bằng tài khoản nv.muahang.dienthoai
+        2. Lập đề nghị 60 triệu, gửi duyệt
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: phien-ban
+    attributes:
+      label: Phiên bản
+      description: Thẻ image (ví dụ 0.1.0, pr-7) hoặc commit; cách chạy (docker compose từ mã nguồn hay oci://)
+    validations:
+      required: true
+  - type: textarea
+    id: nhat-ky
+    attributes:
+      label: Nhật ký
+      description: Kết quả `docker compose ps` và `docker compose logs <dịch vụ> --tail 100`. Xóa mật khẩu, token trước khi dán.
+      render: text

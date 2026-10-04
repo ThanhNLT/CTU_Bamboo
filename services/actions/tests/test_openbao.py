@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """OpenBao (ADR #25): khởi tạo lặp lại được, AppRole đặc quyền tối thiểu, transit, cấu hình đọc từ két.
 
 Cần OpenBao đã được openbao-init khởi tạo: BAO_ADDR và BAO_KEYS_FILE (file khóa của openbao-init).

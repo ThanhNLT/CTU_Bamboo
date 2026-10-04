@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Tạo database kiểm thử sạch, chạy migration, rồi chạy từng file db/tests/bms_*.sql
 # trong một transaction tự rollback.
 #   scripts/db/test.sh [mẫu tên file, ví dụ bms_030]

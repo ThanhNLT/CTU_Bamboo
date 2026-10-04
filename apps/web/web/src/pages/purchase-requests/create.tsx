@@ -1,0 +1,16 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import { Create } from "@refinedev/antd";
+import { useGo } from "@refinedev/core";
+import { PurchaseRequestForm } from "./form";
+
+export const PurchaseRequestCreate = () => {
+  const go = useGo();
+  return (
+    <Create title="Lập đề nghị mua sắm" footerButtons={() => null}>
+      <PurchaseRequestForm onSaved={(id) => go({ to: { resource: "proc_purchase_request", action: "show", id } })} />
+    </Create>
+  );
+};

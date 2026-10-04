@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
 # Phiên bản ghim chung cho mọi dịch vụ Python (ADR #10).
 # Mỗi dịch vụ ghi tên gói trong requirements.txt; cài bằng: pip install -r requirements.txt -c constraints.txt
 annotated-doc==0.0.5

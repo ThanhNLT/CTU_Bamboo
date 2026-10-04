@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* Bảng nhiều chữ: chữ nhỏ hơn, căn trên */
 table.docutils { font-size: 0.9em; }
 table.docutils td, table.docutils th { vertical-align: top; }

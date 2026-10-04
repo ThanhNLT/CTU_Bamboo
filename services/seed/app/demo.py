@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Dữ liệu demo Tập đoàn X: cây tổ chức, tài khoản demo (dùng chung cho seed và realm Keycloak, ADR #23).
 
 Id tenant, đơn vị, vị trí và tài khoản demo cố định bằng uuid5 nên CSDL và Keycloak

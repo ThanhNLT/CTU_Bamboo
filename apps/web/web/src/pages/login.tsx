@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { useLogin } from "@refinedev/core";
 import { ThemedTitle } from "@refinedev/antd";
 import { Button, Typography, Layout, Space } from "antd";
@@ -16,6 +20,7 @@ export const Login: React.FC = () => {
       <Space direction="vertical" align="center">
         <ThemedTitle
           collapsed={false}
+          text="Bamboo DX-OS"
           wrapperStyles={{
             fontSize: "22px",
             marginBottom: "36px",
@@ -27,15 +32,10 @@ export const Login: React.FC = () => {
           size="middle"
           onClick={() => login({})}
         >
-          Sign in
+          Đăng nhập bằng tài khoản tập đoàn
         </Button>
         <Typography.Text type="secondary">
-          Powered by
-          <img
-            style={{ padding: "0 5px" }}
-            alt="Keycloak"
-            src="https://refine.ams3.cdn.digitaloceanspaces.com/superplate-auth-icons%2Fkeycloak.svg"
-          />
+          Xác thực qua 
           Keycloak
         </Typography.Text>
       </Space>

@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Nhật ký kiểm toán: ghi đủ thao tác, người thực hiện từ phiên Hasura, chuỗi hash phát hiện sửa/xóa.
 SELECT test.fixture();
 

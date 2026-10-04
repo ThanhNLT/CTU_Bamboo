@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Tệp đính kèm: cùng tenant với chứng từ, trạng thái chỉ đi tiếp từ PENDING, quyền xem theo chứng từ.
 SELECT test.fixture();
 SELECT test.pr('pr', 'c', 'P_NV_MH_DT', 20000000);

@@ -19,6 +19,8 @@ Schema đầy đủ: Hasura Console (`http://localhost:8081`) hoặc introspecti
 
 ## 2. Ánh xạ màn hình
 
+Các màn hình [P] dưới đây đã hiện thực trong `apps/web/web/src/pages` (kiểm thử đầu–cuối: `apps/web/web/e2e`).
+
 | Màn hình (07-thiet-ke-UI) | Backend hiện có |
 |---|---|
 | `/p/documents` danh sách, chi tiết | `proc_purchase_request` (+ `purchase_request_items`, `approval_steps`, `approval_history`, `comments`, `partner`, `requester`, `org_unit`). Chỉ trả dòng người gọi được xem (`can_read`) |
