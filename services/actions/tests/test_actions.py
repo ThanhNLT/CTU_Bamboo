@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Hasura Actions gọi thẳng (không qua Hasura): kiểm tra phiên, tenant, lỗi nghiệp vụ."""
 
 import pytest

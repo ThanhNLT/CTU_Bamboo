@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Đối chiếu luồng duyệt CSDL → Flowable (ADR #31).
 
 CSDL là nguồn sự thật. Mỗi lần gửi duyệt (entity, round) có một tiến trình

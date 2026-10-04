@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 007: Nhật ký kiểm toán nối chuỗi hash, chỉ ghi thêm (ADR #18; thiết kế CSDL mục 4.7).
 --
 -- Mỗi tenant một chuỗi: dòng thứ n có hash = sha256(hash dòng n-1 || nội dung dòng n).

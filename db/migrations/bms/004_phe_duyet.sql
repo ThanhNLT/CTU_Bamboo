@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 004: Hạn mức duyệt, chuỗi duyệt theo vị trí, việc duyệt, lịch sử duyệt.
 -- ADR #17 (hạn mức theo loại đơn vị), ADR #28 (chuỗi duyệt chốt theo vị trí,
 -- tìm người khi đến bước), ADR #29 (bổ nhiệm hợp đồng).

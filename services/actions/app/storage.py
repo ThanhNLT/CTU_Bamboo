@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Tệp đính kèm qua S3 (SeaweedFS), ADR #26.
 
     get_upload_url ─► trình duyệt PUT tệp lên bucket cách ly (link có chữ ký, 15 phút)

@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Thông báo tự sinh (giao việc, ủy quyền, kết quả đề nghị, bình luận) và kiểm tra bình luận.
 SELECT test.fixture();
 

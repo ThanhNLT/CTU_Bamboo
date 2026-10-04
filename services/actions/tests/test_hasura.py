@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Qua Hasura thật: quyền xem (can_read), cách ly tenant, ghi nháp, Action đầu–cuối."""
 
 from conftest import ids, open_task, pr, status

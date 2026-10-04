@@ -1,0 +1,55 @@
+Bamboo – DX-OS Open-Core
+Copyright 2026 DX-OS Open-Core contributors
+
+Sản phẩm này phát hành theo Apache License 2.0 (tệp LICENSE). Mỗi tệp mã nguồn ghi giấy phép
+bằng header SPDX; ngoại lệ liệt kê trong REUSE.toml.
+
+Mục đích giấy phép: Apache-2.0 cho phép mọi tổ chức, doanh nghiệp tự do dùng, sửa đổi, phân phối
+lại và tích hợp nền tảng (kể cả vào sản phẩm thương mại), với điều kiện giữ thông báo bản quyền,
+tệp NOTICE này và ghi rõ thay đổi; đồng thời cấp quyền sáng chế từ những người đóng góp. Mọi
+thành phần bên thứ ba bên dưới đều dùng giấy phép được OSI phê duyệt và tương thích khi dùng như
+dịch vụ hoặc thư viện không sửa đổi (không đóng gói kèm mã nguồn của dự án phụ thuộc).
+
+------------------------------------------------------------------------------------------------
+Thành phần chạy dưới dạng dịch vụ (image Docker chính thức, không sửa đổi)
+------------------------------------------------------------------------------------------------
+PostgreSQL 17 + PostGIS 3.5 (postgis/postgis)   PostgreSQL License; PostGIS: GPL-2.0-or-later
+Keycloak 26 (quay.io/keycloak/keycloak)          Apache-2.0
+Hasura GraphQL Engine v2 CE (hasura/graphql-engine) Apache-2.0
+Flowable REST 8 (flowable/flowable-rest)         Apache-2.0
+SeaweedFS 4 (chrislusf/seaweedfs)                Apache-2.0
+OpenBao 2 (openbao/openbao)                      MPL-2.0
+ClamAV 1.4 (clamav/clamav, tùy chọn)             GPL-2.0-only
+nginx (nginxinc/nginx-unprivileged)              BSD-2-Clause
+Python 3.13 (python:3.13-slim)                   PSF-2.0
+Node.js 22 (node:22-alpine, chỉ lúc build)       MIT
+
+------------------------------------------------------------------------------------------------
+Thư viện Python (phiên bản ghim trong constraints.txt, cài từ PyPI)
+------------------------------------------------------------------------------------------------
+FastAPI, Pydantic, Starlette, Uvicorn, AnyIO, h11           MIT / BSD-3-Clause
+httpx, httpcore, idna, certifi                              BSD-3-Clause / MPL-2.0 (certifi)
+psycopg, psycopg-binary, psycopg-pool                       LGPL-3.0-only (dùng như thư viện, không sửa)
+PyJWT, cryptography, cffi, pycparser                        MIT / Apache-2.0 OR BSD-3-Clause / MIT-0 / BSD-3-Clause
+boto3, botocore, s3transfer, jmespath, python-dateutil, six, urllib3   Apache-2.0 / MIT
+Faker (chỉ service seed)                                    MIT
+pytest, PyYAML (chỉ kiểm thử)                               MIT
+
+------------------------------------------------------------------------------------------------
+Thư viện JavaScript (apps/web/web, phiên bản khóa trong package-lock.json, cài từ npm)
+------------------------------------------------------------------------------------------------
+Phụ thuộc production (379 gói, kiểm bằng `npx license-checker --production --summary`):
+MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, BlueOak-1.0.0, 0BSD, CC0-1.0.
+Thư viện chính: Refine (@refinedev/core, antd, hasura, react-router, kbar) MIT; React, React DOM
+MIT; Ant Design MIT; keycloak-js Apache-2.0; @react-keycloak/web MIT; graphql MIT;
+graphql-request MIT; axios MIT.
+Công cụ build (devDependencies, không nằm trong bản phát hành): Vite, TypeScript, ESLint,
+@refinedev/cli – MIT / Apache-2.0 / BSD-2-Clause; kèm dữ liệu caniuse-lite (CC-BY-4.0).
+
+------------------------------------------------------------------------------------------------
+Nội dung khác
+------------------------------------------------------------------------------------------------
+apps/web/web/public/   Biểu tượng mẫu create-refine-app, (c) Refine Development Inc., MIT
+docs/tong-quan/00-de-thi-goc.pdf
+                       Bản lưu đề thi do VFOSSA công bố, chỉ để tham chiếu
+                       (LICENSES/LicenseRef-VFOSSA-public-notice.txt)

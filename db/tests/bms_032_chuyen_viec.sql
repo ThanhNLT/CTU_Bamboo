@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Việc duyệt khi người ngồi ghế thay đổi (ADR #28) và ủy quyền (CONTEXT.md "Ủy quyền").
 SELECT test.fixture();
 

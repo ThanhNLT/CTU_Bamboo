@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Hasura Action cho tệp đính kèm (ADR #26). Lưu trữ và quét virus ở `storage.py`."""
 
 import hashlib

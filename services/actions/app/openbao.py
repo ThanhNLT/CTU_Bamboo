@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Client tối thiểu cho OpenBao (ADR #25): KV v2 ở `secret/`, transit ở `transit/`, đăng nhập AppRole.
 
     bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")

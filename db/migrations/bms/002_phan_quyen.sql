@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 -- 002: Vai trò, quyền, nhóm, ủy quyền; quyền hiệu lực của từng người.
 -- Quyền gắn với vị trí (ADR #5); gán thẳng cho người chỉ là ngoại lệ có thời hạn.
 
