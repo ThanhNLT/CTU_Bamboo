@@ -46,6 +46,7 @@ path "transit/decrypt/pii"       { capabilities = ["update"] }
 path "secret/data/bms/seaweedfs-admin" { capabilities = ["read"] }
 path "secret/data/bms/flowable"        { capabilities = ["read"] }
 path "secret/data/bms/hasura"          { capabilities = ["read"] }
+path "secret/data/bms/keycloak"        { capabilities = ["read"] }
 """,
 }
 

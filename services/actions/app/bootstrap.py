@@ -13,7 +13,7 @@ import time
 
 import httpx
 
-from . import config, storage
+from . import config, keycloak_sync, storage
 from .flowable import FlowableClient
 
 log = logging.getLogger("bootstrap")
@@ -66,6 +66,10 @@ def main() -> int:
     deploy_bpmn(flowable)
     wait_for("Hasura", lambda: httpx.get(f"{settings.hasura_url}/healthz", timeout=5).raise_for_status())
     apply_hasura_metadata(settings.hasura_url, settings.hasura_admin_secret)
+    wait_for("Keycloak", lambda: keycloak_sync.ensure_web_client(
+        settings.keycloak_url, settings.keycloak_admin_user, settings.keycloak_admin_password,
+        settings.web_origin))
+    log.info("client %s chấp nhận %s", keycloak_sync.CLIENT_ID, settings.web_origin)
     return 0
 
 

@@ -47,10 +47,10 @@ Cổng API đã lo phần còn lại: chặn đường dẫn không khai báo, k
 Chạy bằng image dựng sẵn (không cần mã nguồn), trong thư mục có `.env`:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.1 up -d -y
 ```
 
-Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura và deploy BPMN khi nội dung đổi. Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
+Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura, deploy BPMN khi nội dung đổi và bổ sung `WEB_ORIGIN` vào redirect URI của client `bms-web` trong Keycloak nếu còn thiếu (đổi tên miền không cần import lại realm; giá trị cũ được giữ, gỡ thủ công trong trang quản trị nếu muốn). Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
 
 Theo dõi: `docker compose -p bamboo ps` (dịch vụ chạy lâu phải `healthy`, job khởi tạo `exited (0)`), `docker compose -p bamboo logs -f <dịch vụ>`. Log mỗi container xoay vòng 3 tệp × 10 MB.
 
@@ -61,6 +61,18 @@ Theo dõi: `docker compose -p bamboo ps` (dịch vụ chạy lâu phải `health
 | CSDL `bms`, `keycloak`, `flowable`, `hasura_meta` | volume `pgdata` | `pg_dumpall` (nhất quán khi đang chạy) |
 | Secret, khóa S3, khóa mã hóa PII | volume `openbao-data` **và** `openbao-keys` | Sao lưu cả hai cùng lúc: thiếu `openbao-keys` thì không unseal được `openbao-data` |
 | Tệp đính kèm | volume `seaweedfs-data` | Dừng `seaweedfs` rồi nén volume, hoặc đồng bộ bucket bằng công cụ S3 |
+
+Script có sẵn làm đủ ba mục trên vào thư mục `backups/<thời điểm>/` (`postgres.sql`, `openbao-data.tgz`, `openbao-keys.tgz`, `seaweedfs-data.tgz`). OpenBao và SeaweedFS chỉ bị tạm dừng (`pause`) trong vài giây lúc chép, không cần khởi động lại; không cần mã nguồn của hệ thống, chỉ cần tải script:
+
+```bash
+scripts/ops/backup.sh                       # Linux, macOS
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\ops\backup.ps1   # Windows
+```
+
+Làm thủ công:
 
 ```bash
 # CSDL (khi hệ thống đang chạy)
@@ -74,7 +86,7 @@ done
 docker compose -p bamboo start openbao seaweedfs && docker compose -p bamboo up -d   # openbao-init unseal lại
 ```
 
-Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` vào đúng volume, chạy `docker compose ... up -d db`, nạp CSDL bằng `gunzip -c bamboo-db-*.sql.gz | docker compose -p bamboo exec -T db psql -U bms -d postgres`, rồi `up -d` toàn bộ.
+Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` vào đúng volume, chạy `docker compose ... up -d db`, nạp CSDL bằng `gunzip -c bamboo-db-*.sql.gz | docker compose -p bamboo exec -T db psql -U bms -d postgres` (bản của script: `docker compose -p bamboo cp postgres.sql db:/tmp/ && docker compose -p bamboo exec -T db psql -U bms -d postgres -f /tmp/postgres.sql`), rồi `up -d` toàn bộ.
 
 ## 6. Khóa OpenBao
 
