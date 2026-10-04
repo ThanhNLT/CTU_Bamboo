@@ -3,7 +3,7 @@
 #
 # Image dựng sẵn để người khác chạy toàn bộ hệ thống bằng một lệnh, không cần mã nguồn:
 #   docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y
-# 1. build: 6 image của dự án, amd64 + arm64, đẩy lên GHCR.
+# 1. build: 7 image của dự án, amd64 + arm64, đẩy lên GHCR.
 # 2. compose: sinh compose.release.yml (chỉ image, không build, không bind mount) và phát hành
 #    dưới dạng OCI artifact cùng registry.
 # 3. smoke: trên máy sạch, chạy đúng lệnh một dòng ở trên (cờ -y đặt sau `up`: chạy được trên Compose 2.34+ và v5, không hỏi xác nhận biến của compose từ xa) rồi chạy kiểm thử đầu–cuối qua giao diện.
@@ -41,6 +41,7 @@ jobs:
           - { name: migrate, context: ., file: docker/migrate.Dockerfile, args: "" }
           - { name: keycloak, context: platform/keycloak, file: platform/keycloak/Dockerfile, args: "" }
           - { name: openbao, context: platform/openbao, file: platform/openbao/Dockerfile, args: "" }
+          - { name: gateway, context: platform/apisix, file: platform/apisix/Dockerfile, args: "" }
           - { name: web, context: apps/web/web, file: apps/web/web/Dockerfile, args: "" }
     steps:
       - uses: actions/checkout@v7
@@ -142,6 +143,8 @@ jobs:
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
           npm run test:e2e
+      - name: Kiểm thử cổng API
+        run: scripts/ci/gateway-smoke.sh
       - name: Tài nguyên sử dụng
         if: always()
         run: docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'

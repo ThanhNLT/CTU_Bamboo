@@ -7,7 +7,7 @@
 set -euo pipefail
 TIMEOUT="${1:-900}"
 JOBS=(migrate seed openbao-init bootstrap)
-SERVICES=(db keycloak flowable hasura openbao seaweedfs actions web)
+SERVICES=(db keycloak flowable hasura openbao seaweedfs actions web gateway)
 deadline=$((SECONDS + TIMEOUT))
 # Theo tên project: chạy được cả khi hệ thống dựng từ compose.release.yml hay oci:// (không cần tệp compose ở đây).
 DC=(docker compose -p "${COMPOSE_PROJECT_NAME:-bamboo}")

@@ -29,12 +29,12 @@ x-actions-env: &actions-env
   FLOWABLE_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
   HASURA_URL: http://hasura:8080
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
-  # Webhook lấy JWKS qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME).
+  # Webhook lấy JWKS qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME, qua cổng API).
   KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
-  KEYCLOAK_ISSUER: ${KEYCLOAK_URL:-http://localhost:8080}/realms/bms
+  KEYCLOAK_ISSUER: ${KEYCLOAK_URL:-http://localhost:8000}/realms/bms
   # Tệp đính kèm (ADR #26). Link có chữ ký dùng địa chỉ trình duyệt thấy.
   S3_ENDPOINT: http://seaweedfs:8333
-  S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8333}
+  S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8000}
   # Secret (CSDL, Flowable, khóa S3, actions) đọc từ OpenBao bằng AppRole của từng dịch vụ (ADR #25);
   # giá trị env ở trên chỉ là dự phòng khi chạy ngoài compose.
   BAO_ADDR: http://openbao:8200
@@ -65,8 +65,8 @@ x-hasura-env: &hasura-env
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
   # Production: HASURA_ENABLE_CONSOLE=false (quản trị bằng metadata trong Git, ADR #24).
   HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
-  # Chỉ ứng dụng web được gọi GraphQL từ trình duyệt.
-  HASURA_GRAPHQL_CORS_DOMAIN: ${WEB_ORIGIN:-http://localhost:5173}
+  # Chỉ ứng dụng web (qua cổng API) và dev server `npm run dev` được gọi GraphQL từ trình duyệt.
+  HASURA_GRAPHQL_CORS_DOMAIN: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
   HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log
   ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
   # Xác thực bằng webhook (ADR #32): token Keycloak + tenant đã chọn (header x-bamboo-tenant).
@@ -145,8 +145,10 @@ services:
       KC_DB_URL: jdbc:postgresql://db:5432/keycloak
       KC_DB_USERNAME: bms
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
-      # Địa chỉ trình duyệt thấy; phải khớp issuer mà actions kiểm tra và cấu hình của web.
-      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8080}
+      # Địa chỉ trình duyệt thấy (qua cổng API); phải khớp issuer mà actions kiểm tra và cấu hình của web.
+      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8000}
+      # Trang quản trị không đi qua cổng công khai (cổng chặn realm master): dùng cổng riêng 127.0.0.1:8080.
+      KC_HOSTNAME_ADMIN: ${KEYCLOAK_ADMIN_URL:-http://localhost:8080}
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
@@ -154,6 +156,9 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
+      # Redirect URI của client bms-web khi import realm (platform/keycloak/realm).
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
+    # Chỉ dành cho trang quản trị Keycloak; người dùng đăng nhập qua cổng API.
     ports:
       - "127.0.0.1:8080:8080"
     restart: unless-stopped
@@ -202,6 +207,7 @@ services:
       BMS_DATABASE_URL: postgres://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
       ACTIONS_URL: http://actions:8000
       HASURA_GRAPHQL_AUTH_HOOK: http://actions:8000/auth/hasura
+    # Chỉ dành cho Hasura Console và công cụ quản trị trên máy dev; ứng dụng gọi qua cổng API (/graphql).
     ports:
       - "127.0.0.1:8081:8080"
     restart: unless-stopped
@@ -267,12 +273,11 @@ services:
     command: >-
       server -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0
       -master.volumeSizeLimitMB=256 -volume.max=32 -filer
-      -s3 -s3.port=8333 -s3.config=/etc/bms/s3.json -s3.allowedOrigins=${WEB_ORIGIN:-http://localhost:5173}
+      -s3 -s3.port=8333 -s3.config=/etc/bms/s3.json -s3.allowedOrigins=${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
     volumes:
       - seaweedfs-data:/data
       - seaweedfs-config:/etc/bms:ro
-    ports:
-      - "127.0.0.1:8333:8333"
+    # Không mở cổng ra ngoài: trình duyệt tải tệp qua cổng API (/bms-quarantine, /bms-documents).
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333"]
@@ -338,9 +343,35 @@ services:
     command: ["python", "-m", "app.bootstrap"]
     restart: "no"
 
-  # Ứng dụng Refine (Tầng 2), build tĩnh phục vụ bằng nginx. Cổng 5173 khớp redirect URI của client
-  # Keycloak bms-web và CORS của SeaweedFS. Phát triển giao diện bằng `npm run dev` thì
-  # `docker compose stop web` trước để nhường cổng.
+  # Cổng API (ADR #34): điểm vào duy nhất từ trình duyệt. APISIX standalone, route trong
+  # platform/apisix/apisix.yaml; WAF Coraza (OWASP CRS); token kiểm tại biên (forward-auth → actions).
+  gateway:
+    logging: *logging
+    build:
+      context: ./platform/apisix
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-gateway:${BAMBOO_TAG:-dev}
+    depends_on:
+      web:
+        condition: service_started
+      hasura:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      seaweedfs:
+        condition: service_started
+      actions:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8000}:9080"
+    restart: unless-stopped
+    # Image không có curl: hỏi route /healthz bằng /dev/tcp của bash.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9080 && printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3 && grep -q ok <&3"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  # Ứng dụng Refine (Tầng 2), build tĩnh phục vụ bằng nginx, chỉ truy cập qua cổng API.
   web:
     logging: *logging
     build:
@@ -348,10 +379,9 @@ services:
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-web:${BAMBOO_TAG:-dev}
     environment:
       # Cấu hình lúc chạy (docker/40-bamboo-config.sh): cùng một image chạy được trên mọi tên miền.
-      BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
-      BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8081/v1/graphql}
-    ports:
-      - "127.0.0.1:5173:8080"
+      BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}
+      BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8000/graphql}
+    # Không mở cổng ra ngoài: phục vụ qua cổng API (cổng 5173 để trống cho `npm run dev`).
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
