@@ -8,7 +8,7 @@ import { useGo, useParsed } from "@refinedev/core";
 import {
   Alert, App, Button, Card, Col, Descriptions, Input, Modal, Row, Space, Spin, Steps, Table, Tabs, Tag, Timeline, Typography,
 } from "antd";
-import { EditOutlined, SendOutlined, StopOutlined, AuditOutlined } from "@ant-design/icons";
+import { ApartmentOutlined, AuditOutlined, EditOutlined, PrinterOutlined, SendOutlined, StopOutlined } from "@ant-design/icons";
 import { request } from "../../api/client";
 import { useSession } from "../../auth/session";
 import { ActModal } from "../../components/approval/ActModal";
@@ -18,7 +18,7 @@ import {
 import { StatusTag } from "../../components/StatusTag";
 import { Attachments } from "./attachments";
 import { Comments } from "./comments";
-import { CANCEL_PR, MY_TASK_FOR, PR_DETAIL, SUBMIT_PR } from "./queries";
+import { CANCEL_PR, MY_TASK_FOR, PR_DETAIL, PR_PDF, SUBMIT_PR } from "./queries";
 import type { PurchaseRequest } from "./types";
 
 const stepState = (s: string): "wait" | "process" | "finish" | "error" =>
@@ -32,6 +32,7 @@ export const PurchaseRequestShow = () => {
   const [pr, setPr] = useState<PurchaseRequest | null>();
   const [task, setTask] = useState<{ task_id: string; via_delegation: boolean } | null>(null);
   const [acting, setActing] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [error, setError] = useState<string>();
 
   const load = useCallback(async () => {
@@ -70,6 +71,21 @@ export const PurchaseRequestShow = () => {
     }
   };
 
+  // Link có chữ ký trả PDF dạng tệp tải về (Content-Disposition: attachment) nên trang hiện tại không rời đi.
+  const print = async () => {
+    setPrinting(true);
+    try {
+      const { get_purchase_request_pdf: pdf } = await request<{ get_purchase_request_pdf: { url: string; file_name: string; check_code: string } }>(
+        PR_PDF, { id: pr.id });
+      window.location.assign(pdf.url);
+      message.success(`Đã tải phiếu ${pdf.file_name} (mã kiểm tra ${pdf.check_code})`);
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   const cancel = () => {
     let reason = "";
     Modal.confirm({
@@ -95,6 +111,8 @@ export const PurchaseRequestShow = () => {
           {editable && <Button icon={<EditOutlined />} onClick={() => go({ to: { resource: "proc_purchase_request", action: "edit", id: pr.id } })}>Sửa</Button>}
           {editable && <Button type="primary" icon={<SendOutlined />} onClick={submit}>Gửi duyệt</Button>}
           {cancellable && <Button danger icon={<StopOutlined />} onClick={cancel}>Hủy</Button>}
+          <Button icon={<ApartmentOutlined />} onClick={() => go({ to: `/p/process/${pr.id}` })}>Sơ đồ quy trình</Button>
+          <Button icon={<PrinterOutlined />} loading={printing} onClick={print}>In phiếu</Button>
         </Space>
       )}
     >

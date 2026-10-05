@@ -9,11 +9,12 @@ import "@refinedev/antd/dist/reset.css";
 import routerProvider, {
   CatchAllNavigate, DocumentTitleHandler, NavigateToResource, UnsavedChangesNotifier,
 } from "@refinedev/react-router";
-import { App as AntdApp, ConfigProvider } from "antd";
+import { App as AntdApp, ConfigProvider, Spin } from "antd";
 import viVN from "antd/locale/vi_VN";
-import { AuditOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
+import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import { useKeycloak } from "@react-keycloak/web";
 import { TenantGate } from "./auth/session";
@@ -25,12 +26,16 @@ import { Login } from "./pages/login";
 import {
   PurchaseRequestCreate, PurchaseRequestEdit, PurchaseRequestList, PurchaseRequestShow,
 } from "./pages/purchase-requests";
+import { SearchPage } from "./pages/search";
 import { accessControlProvider } from "./providers/access";
 import { authProvider } from "./providers/auth";
 import { dataProvider, liveProvider } from "./providers/data";
 import { i18nProvider } from "./providers/i18n";
 
 dayjs.locale("vi");
+
+// bpmn-js nặng: chỉ tải khi mở sơ đồ quy trình.
+const ProcessDiagram = lazy(() => import("./pages/process/diagram"));
 
 const Title = ({ collapsed }: { collapsed: boolean }) => <ThemedTitle collapsed={collapsed} text="Bamboo DX-OS" />;
 
@@ -62,6 +67,7 @@ function App() {
                     meta: { label: "Đề nghị mua sắm", icon: <FileTextOutlined /> },
                   },
                   { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
+                  { name: "search", list: "/i/search", meta: { label: "Tìm kiếm", icon: <SearchOutlined /> } },
                   { name: "audit_log", list: "/admin/audit-logs", meta: { label: "Kiểm toán", icon: <AuditOutlined /> } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
@@ -87,6 +93,8 @@ function App() {
                       <Route path="show/:id" element={<PurchaseRequestShow />} />
                     </Route>
                     <Route path="/p/inbox" element={<InboxList />} />
+                    <Route path="/p/process/:id" element={<Suspense fallback={<Spin />}><ProcessDiagram /></Suspense>} />
+                    <Route path="/i/search" element={<SearchPage />} />
                     <Route path="/admin/audit-logs" element={<AuditLogList />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
