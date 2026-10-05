@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata realm psql bao-token
+.PHONY: test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
 
@@ -20,7 +20,7 @@ migrate:
 test-db:
 	docker compose run --rm --build --entrypoint /repo/scripts/db/test.sh migrate $(T)
 
-# Kiểm thử tích hợp dịch vụ actions với Hasura (hasura-test), Flowable, Meilisearch, Tika, Gotenberg, Kafka, Debezium, Iceberg thật.
+# Kiểm thử tích hợp dịch vụ actions với Hasura (hasura-test), Flowable, Meilisearch, Tika, Gotenberg, Kafka, Debezium, Iceberg, Trino thật.
 # Chạy một nhóm: make test-actions T=tests/test_flow_sync.py
 test-actions:
 	docker compose --profile test up -d --build hasura-test flowable bootstrap
@@ -47,6 +47,11 @@ test-all: test-db test-seed test-actions test-auth
 hasura-metadata:
 	docker compose run --rm -u 0 -v ./:/repo actions python -m app.hasura_metadata
 	docker compose run --rm bootstrap
+
+# Sinh lại bảng bronze + view silver cho Trino sau khi đổi CSDL (ADR #40), rồi áp dụng.
+trino-sql:
+	docker compose run --rm -u 0 -v ./:/repo actions python -m app.lakehouse_silver
+	docker compose up -d --build trino && docker compose run --rm trino-init
 
 # Sinh lại realm Keycloak từ danh sách tài khoản demo (services/seed/app/demo.py).
 realm:

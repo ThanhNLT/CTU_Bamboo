@@ -26,6 +26,7 @@ Apache Tika 4 (apache/tika)                      Apache-2.0
 Gotenberg 8 (gotenberg/gotenberg, bản -chromium) MIT; Chromium: BSD-3-Clause và giấy phép của từng thành phần
 Apache Kafka 4 (apache/kafka)                    Apache-2.0
 Debezium Server 3 (quay.io/debezium/server)      Apache-2.0
+Trino 483 (trinodb/trino)                        Apache-2.0
 ClamAV 1.4 (clamav/clamav, tùy chọn)             GPL-2.0-only
 nginx (nginxinc/nginx-unprivileged)              BSD-2-Clause
 Python 3.13 (python:3.13-slim)                   PSF-2.0
