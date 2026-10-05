@@ -4,30 +4,31 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+## [0.3.0] - 2026-10-05
+
+Tìm kiếm toàn văn, mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, đăng nhập được sau khi nâng cấp. Gồm cả các sửa lỗi ghi ở mục 0.2.1 trước đây (chưa từng phát hành riêng).
+
+```bash
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y   # mở http://localhost:8000
+```
+
+**Nâng cấp từ 0.1.0 hoặc 0.2.0:** sao lưu (`scripts/ops/backup.sh` hoặc `scripts\ops\backup.ps1`), rồi chạy lệnh trên (hoặc `git pull && docker compose up -d --build` khi chạy từ mã nguồn). Dữ liệu demo giữ nguyên:
+- Job `migrate` tự tạo tài khoản CSDL cho từng dịch vụ và chuyển chủ sở hữu CSDL Keycloak, Flowable, metadata Hasura sang tài khoản mới. Triển khai thật (`BAMBOO_ENV=production`) phải đặt thêm `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`; máy dev dùng giá trị mặc định.
+- Migration `011` đánh dấu mọi đề nghị và tệp sạch hiện có; `search-sync` đưa vào chỉ mục tìm kiếm trong lần chạy đầu. Cần thêm khoảng 300 MB RAM cho Meilisearch và Tika.
+- Image cũ trên máy chạy với tệp compose mới thì Hasura, Keycloak, Flowable khởi động lại liên tục (`password authentication failed`): kéo image mới (`docker compose pull`) hoặc build lại (`--build`).
+
 ### Thêm
 - Tìm kiếm toàn văn (ADR #36): Action `search_documents` tìm đề nghị mua sắm (số chứng từ, tiêu đề, mô tả, dòng hàng, nhà cung cấp, người lập, đơn vị) và nội dung tệp đính kèm đã kiểm tra (PDF, DOCX, XLSX, TXT); gõ tiếng Việt không dấu vẫn tìm được, đoạn trích đánh dấu chữ khớp. Chỉ trả chứng từ người gọi xem được: quyền kiểm tra lại trong CSDL cho từng kết quả. Dịch vụ mới `meilisearch` (bản Community, MIT), `tika` (trích chữ) và `search-sync` (đồng bộ CSDL → chỉ mục bằng trigger, tự dựng lại chỉ mục trống). Khóa chủ Meilisearch do OpenBao sinh; khóa chỉ tìm cho `actions`, khóa ghi chỉ mục và định danh S3 chỉ đọc cho `search-sync` (AppRole `search`).
+- Script sao lưu `scripts/ops/backup.sh` và `scripts/ops/backup.ps1`: CSDL (`pg_dumpall`), két OpenBao (dữ liệu và khóa), tệp đính kèm SeaweedFS.
 
 ### Thay đổi
 - SeaweedFS tự nạp lại định danh S3 khi `openbao-init` ghi `s3.json` mới (healthcheck gửi `SIGHUP`), không phải khởi động lại khi nâng cấp.
 
-**Nâng cấp:** `docker compose up -d` (hoặc `--build` khi chạy từ mã nguồn). Migration `011` đánh dấu toàn bộ đề nghị và tệp sạch hiện có; `search-sync` đưa vào chỉ mục trong lần chạy đầu. Cần thêm khoảng 300 MB RAM cho Meilisearch và Tika.
-
-**Nâng cấp:** thêm bốn biến mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD` (bắt buộc khi `BAMBOO_ENV=production`; máy dev dùng giá trị mặc định). Job `migrate` tự tạo role và chuyển chủ sở hữu CSDL Keycloak, Flowable, metadata Hasura sang role mới, không mất dữ liệu.
-
-### Bảo mật
-- Mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu thay cho superuser `bms` (ADR #35): Hasura và actions chỉ đọc/ghi dữ liệu nghiệp vụ, không đổi cấu trúc, không TRUNCATE, không chạy lệnh trên máy chủ CSDL; Keycloak, Flowable, Hasura (metadata) là chủ CSDL riêng của mình và chỉ chủ sở hữu kết nối được. Nhật ký kiểm toán chỉ đọc với ứng dụng: trigger ghi chuỗi hash chạy `SECURITY DEFINER`, ứng dụng không tự ghi, sửa, xóa hay tắt trigger chỉ-ghi-thêm được. Kiểm thử `db/tests/bms_100_vai_tro.sql`; kiểm thử tích hợp chạy actions và Hasura bằng tài khoản ứng dụng.
-
-## [0.2.1] - 2026-10-04
-
-Sửa lỗi đăng nhập sau khi nâng cấp từ 0.1.0, không phải xóa dữ liệu.
-
-**Nâng cấp từ 0.1.0 hoặc 0.2.0:** sao lưu (`scripts/ops/backup.sh` hoặc `scripts\ops\backup.ps1`), rồi `docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.1 up -d -y` (hoặc `git pull && docker compose up -d --build` khi chạy từ mã nguồn). Dữ liệu demo giữ nguyên.
-
 ### Sửa
 - Keycloak báo `Invalid parameter: redirect_uri` sau khi nâng cấp 0.1.0 → 0.2.0: realm đã import ở lần chạy đầu giữ redirect URI cũ (`http://localhost:5173`). Job `bootstrap` nay bổ sung `WEB_ORIGIN` vào redirect URI, web origin và URI sau đăng xuất của client `bms-web` qua Admin API mỗi lần khởi động (chỉ thêm, không xóa; tài khoản quản trị đọc từ OpenBao `bms/keycloak`).
 
-### Thêm
-- Script sao lưu `scripts/ops/backup.sh` và `scripts/ops/backup.ps1`: CSDL (`pg_dumpall`), két OpenBao (dữ liệu và khóa), tệp đính kèm SeaweedFS.
+### Bảo mật
+- Mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu thay cho superuser `bms` (ADR #35): Hasura và actions chỉ đọc/ghi dữ liệu nghiệp vụ, không đổi cấu trúc, không TRUNCATE, không chạy lệnh trên máy chủ CSDL; Keycloak, Flowable, Hasura (metadata) là chủ CSDL riêng của mình và chỉ chủ sở hữu kết nối được. Nhật ký kiểm toán chỉ đọc với ứng dụng: trigger ghi chuỗi hash chạy `SECURITY DEFINER`, ứng dụng không tự ghi, sửa, xóa hay tắt trigger chỉ-ghi-thêm được. Kiểm thử `db/tests/bms_100_vai_tro.sql`; kiểm thử tích hợp chạy actions và Hasura bằng tài khoản ứng dụng.
 
 ## [0.2.0] - 2026-10-04
 
@@ -37,7 +38,7 @@ Cổng API Apache APISIX trở thành điểm vào duy nhất của hệ thống
 docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
 ```
 
-**Nâng cấp từ 0.1.0:** địa chỉ ứng dụng đổi từ `http://localhost:5173` sang `http://localhost:8000`. Keycloak chỉ import realm ở lần chạy đầu, nên máy đã chạy 0.1.0 cần thêm `http://localhost:8000/*` vào *Valid redirect URIs* và `http://localhost:8000` vào *Web origins* của client `bms-web` trong Keycloak (từ 0.2.1 việc này tự động, xem trên). Triển khai thật: một tên miền trỏ vào cổng và đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó.
+**Nâng cấp từ 0.1.0:** địa chỉ ứng dụng đổi từ `http://localhost:5173` sang `http://localhost:8000`. Keycloak chỉ import realm ở lần chạy đầu, nên máy đã chạy 0.1.0 cần thêm `http://localhost:8000/*` vào *Valid redirect URIs* và `http://localhost:8000` vào *Web origins* của client `bms-web` trong Keycloak (từ 0.3.0 việc này tự động, xem trên). Triển khai thật: một tên miền trỏ vào cổng và đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó.
 
 ### Thêm
 - Cổng API Apache APISIX là điểm vào duy nhất từ trình duyệt (`http://localhost:8000`, ADR #34): định tuyến tới web, Keycloak, Hasura, SeaweedFS; token Keycloak kiểm tại biên (`forward-auth`); WAF Coraza với OWASP CRS; giới hạn tần suất GraphQL và đăng nhập; chặn realm quản trị Keycloak, Hasura Admin API và thao tác S3 ngoài hai bucket của ứng dụng; `X-Request-Id`, số liệu Prometheus nội bộ. Image `bamboo-gateway`, kiểm thử `make test-gateway`.
@@ -81,7 +82,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.1...HEAD
-[0.2.1]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.0...v0.2.1
+[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0
