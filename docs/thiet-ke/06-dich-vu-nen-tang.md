@@ -1,6 +1,6 @@
-# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF
+# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF, CDC
 
-> **Hiện trạng repo (05/10/2026):** cả sáu mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
+> **Hiện trạng repo (05/10/2026):** cả bảy mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
 
 Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
 bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
@@ -271,4 +271,40 @@ get_purchase_request_pdf(request_id)
 
 ```bash
 make test-actions T=tests/test_phieu_pdf.py   # bằng chữ, escape, in qua Hasura, tái dùng theo nội dung, quyền, chặn mạng
+```
+
+## 7. CDC – Debezium Server → Kafka (ADR #22, #38)
+
+```text
+PostgreSQL bms (wal_level=logical, publication bms_cdc)
+   └─ slot bms_debezium ─► Debezium Server (bamboo_cdc) ─► Kafka (KRaft) topic bms.<schema>.<bảng>
+                              └─ mỗi 10 giây: UPDATE cdc.heartbeat (slot luôn tiến)
+```
+
+| Dịch vụ | Image | Ghi chú |
+|---|---|---|
+| `kafka` | `apache/kafka:4.3.1` | KRaft một node (broker + controller), `kafka:9092`, chỉ mạng nội bộ, không xác thực. Giữ 7 ngày, heap 512 MB. Dữ liệu ở volume `kafka-data` |
+| `debezium` | `quay.io/debezium/server:3.7.0.Final` | Connector PostgreSQL (`pgoutput`), cấu hình bằng biến `DEBEZIUM_*` trong `docker-compose.yml`. Vị trí đọc ở volume `debezium-data`; xóa volume thì chụp ảnh lại toàn bộ |
+
+### Sự kiện
+
+- Topic `bms.<schema>.<bảng>` (ví dụ `bms.proc.purchase_request`, `bms.wf.approval_step`), một partition; khóa là khóa chính (`{"id": "…"}`).
+- Giá trị: JSON không kèm schema, dạng phong bì Debezium `{before, after, source, op, ts_ms}`; `op`: `r` (chụp ảnh), `c`, `u`, `d`. Thao tác xóa có thêm một bản ghi rỗng (tombstone) cho log compaction.
+- `before` của thao tác sửa là `null` (replica identity mặc định); xóa chỉ có khóa chính trong `before`.
+- `numeric` (số tiền, số lượng) dạng chuỗi để không mất chính xác; `timestamptz` dạng chuỗi ISO-8601 UTC; `uuid` dạng chuỗi.
+- `source` có `db`, `schema`, `table`, `lsn`, `txId`, `ts_ms`; dùng để sắp thứ tự và loại trùng (Debezium bảo đảm ít nhất một lần).
+- Không có topic cho `audit`, `search`, `public` (có kiểm thử). Topic `__debezium-heartbeat.bms` và `bms.cdc.heartbeat` chỉ phục vụ nhịp tim.
+
+### Vận hành
+
+- PostgreSQL: `max_slot_wal_keep_size=1GB`. Debezium dừng lâu hơn mức WAL này thì slot bị vô hiệu; xóa volume `debezium-data` và slot (`SELECT pg_drop_replication_slot('bms_debezium')`) để chụp ảnh lại.
+- Độ trễ slot: `SELECT slot_name, active, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)) FROM pg_replication_slots`.
+- Xem topic: `docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list`; đọc sự kiện: `docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic bms.proc.purchase_request --from-beginning`.
+- Bước tiếp theo: Kafka → Iceberg (Lakehouse), SASL/ACL khi ứng dụng Tầng 3 ghi vào Kafka.
+
+### Lệnh
+
+```bash
+make test-db T=bms_120              # publication, quyền của bamboo_cdc
+make test-actions T=tests/test_cdc.py   # nhịp tim đi hết CSDL → Debezium → Kafka; topic nghiệp vụ; không lộ audit
 ```
