@@ -9,3 +9,4 @@ psycopg-pool
 httpx
 pyjwt[crypto]
 boto3
+jinja2

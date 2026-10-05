@@ -1,0 +1,23 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+SPDX-License-Identifier: Apache-2.0
+
+Chân trang phiếu PDF (Gotenberg/Chromium điền pageNumber, totalPages).
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; }
+  .footer { box-sizing: border-box; width: 100%; padding: 0 0.6in; display: flex; justify-content: space-between;
+            font-family: "Noto Sans", "DejaVu Sans", sans-serif; font-size: 7.5pt; color: #555; }
+</style>
+</head>
+<body>
+<div class="footer">
+  <span>{{ doc_no }} · Mã kiểm tra {{ check_code }}</span>
+  <span>Trang <span class="pageNumber"></span>/<span class="totalPages"></span></span>
+</div>
+</body>
+</html>

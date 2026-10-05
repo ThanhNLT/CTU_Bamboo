@@ -1,0 +1,132 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+SPDX-License-Identifier: Apache-2.0
+
+Phiếu đề nghị mua sắm (ADR #37). Mọi giá trị được Jinja2 escape; trang không tải tài nguyên ngoài.
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>{{ pr.doc_no }} – {{ pr.title }}</title>
+<style>
+  @page { size: A4; }
+  * { box-sizing: border-box; }
+  body { font-family: "Noto Sans", "DejaVu Sans", "Liberation Sans", sans-serif; font-size: 10.5pt;
+         color: #111; margin: 0; line-height: 1.4; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+           border-bottom: 1.5px solid #111; padding-bottom: 6px; }
+  .org { font-size: 9.5pt; }
+  .org strong { display: block; text-transform: uppercase; }
+  .doc { text-align: right; font-size: 9.5pt; }
+  .doc .no { font-size: 12pt; font-weight: 700; }
+  h1 { text-align: center; font-size: 15pt; margin: 18px 0 2px; letter-spacing: .5px; }
+  .subtitle { text-align: center; font-style: italic; margin-bottom: 14px; }
+  .status { display: inline-block; border: 1px solid #111; border-radius: 3px; padding: 0 6px;
+            font-size: 9pt; font-style: normal; font-weight: 600; }
+  dl { display: grid; grid-template-columns: 34mm 1fr 30mm 1fr; gap: 3px 10px; margin: 0 0 12px; }
+  dt { color: #444; }
+  dd { margin: 0; font-weight: 500; }
+  dd.wide { grid-column: 2 / 5; }
+  h2 { font-size: 11pt; margin: 14px 0 6px; text-transform: uppercase; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #555; padding: 4px 6px; vertical-align: top; }
+  th { background: #eee; font-size: 9.5pt; font-weight: 600; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  .num { text-align: right; white-space: nowrap; }
+  .center { text-align: center; }
+  .total td { font-weight: 700; }
+  .words { margin: 6px 0 0; font-style: italic; }
+  .note { color: #444; font-size: 9pt; }
+  .steps td.result { white-space: nowrap; }
+  .empty { color: #666; font-style: italic; }
+  .watermark { position: fixed; top: 42%; left: 0; right: 0; text-align: center; transform: rotate(-30deg);
+               font-size: 64pt; font-weight: 800; color: rgba(160, 0, 0, .10); text-transform: uppercase;
+               letter-spacing: 6px; z-index: -1; }
+  .sign { margin-top: 18px; font-size: 9pt; color: #333; }
+</style>
+</head>
+<body>
+{% if pr.status != "APPROVED" %}
+<div class="watermark">{{ status_label }}</div>
+{% endif %}
+
+<header>
+  <div class="org">
+    <strong>{{ pr.company or pr.tenant_name }}</strong>
+    {{ pr.unit_name }}
+  </div>
+  <div class="doc">
+    Số: <span class="no">{{ pr.doc_no }}</span><br>
+    Ngày lập: {{ pr.created_on }}
+  </div>
+</header>
+
+<h1>PHIẾU ĐỀ NGHỊ MUA SẮM</h1>
+<div class="subtitle">{{ pr.title }} &nbsp; <span class="status">{{ status_label }}</span></div>
+
+<dl>
+  <dt>Người đề nghị</dt><dd>{{ pr.requester }}{% if pr.employee_code %} ({{ pr.employee_code }}){% endif %}</dd>
+  <dt>Chức danh</dt><dd>{{ pr.position_name }}</dd>
+  <dt>Đơn vị</dt><dd>{{ pr.unit_name }}</dd>
+  <dt>Cần trước ngày</dt><dd>{{ pr.needed_by or "—" }}</dd>
+  <dt>Nhà cung cấp</dt>
+  <dd class="wide">
+    {% if pr.partner_name %}{{ pr.partner_name }}{% if pr.partner_tax_code %} – MST {{ pr.partner_tax_code }}{% endif %}{% if pr.partner_address %}<br><span class="note">{{ pr.partner_address }}</span>{% endif %}{% else %}—{% endif %}
+  </dd>
+  {% if pr.category %}<dt>Nhóm hàng</dt><dd class="wide">{{ pr.category }}</dd>{% endif %}
+  {% if pr.description %}<dt>Lý do, mô tả</dt><dd class="wide">{{ pr.description }}</dd>{% endif %}
+</dl>
+
+<h2>Hàng hóa, dịch vụ đề nghị</h2>
+<table>
+  <thead>
+    <tr><th style="width:8mm">TT</th><th>Tên hàng hóa, dịch vụ</th><th style="width:16mm">ĐVT</th>
+        <th style="width:22mm">Số lượng</th><th style="width:28mm">Đơn giá (₫)</th><th style="width:32mm">Thành tiền (₫)</th></tr>
+  </thead>
+  <tbody>
+    {% for i in pr["items"] %}
+    <tr>
+      <td class="center">{{ i.line_no }}</td>
+      <td>{{ i.description }}{% if i.item_code %} <span class="note">[{{ i.item_code }}]</span>{% endif %}{% if i.note %}<br><span class="note">{{ i.note }}</span>{% endif %}</td>
+      <td class="center">{{ i.uom }}</td>
+      <td class="num">{{ i.quantity | number(3) }}</td>
+      <td class="num">{{ i.unit_price | number }}</td>
+      <td class="num">{{ i.amount | number }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty">Không có dòng hàng</td></tr>
+    {% endfor %}
+    <tr class="total"><td colspan="5" class="num">Tổng cộng</td><td class="num">{{ pr.total_amount | number }}</td></tr>
+  </tbody>
+</table>
+<p class="words">Bằng chữ: {{ amount_words }}.</p>
+
+<h2>Phê duyệt{% if pr.approval_round > 1 %} (lần gửi thứ {{ pr.approval_round }}){% endif %}</h2>
+{% if pr.steps %}
+<table class="steps">
+  <thead>
+    <tr><th style="width:8mm">Bước</th><th>Vị trí duyệt</th><th>Người thực hiện</th>
+        <th style="width:24mm">Kết quả</th><th style="width:30mm">Thời điểm</th></tr>
+  </thead>
+  <tbody>
+    {% for s in pr.steps %}
+    <tr>
+      <td class="center">{{ s.step_order }}</td>
+      <td>{{ s.position_name }}</td>
+      <td>{% if s.acted_by %}{{ s.acted_by }}{% if s.on_behalf_of %} <span class="note">(thay {{ s.on_behalf_of }})</span>{% endif %}{% else %}—{% endif %}{% if s.note %}<br><span class="note">Ý kiến: {{ s.note }}</span>{% endif %}</td>
+      <td class="result">{{ step_labels.get(s.status, s.status) }}</td>
+      <td class="result">{{ s.acted_at or "" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Đề nghị chưa gửi duyệt.</p>
+{% endif %}
+
+<p class="sign">Phê duyệt điện tử trên hệ thống Bamboo DX-OS; mỗi thao tác duyệt được ghi vào nhật ký kiểm toán nối chuỗi hash.
+Đối chiếu phiếu với hệ thống bằng số chứng từ và mã kiểm tra ở chân trang.</p>
+</body>
+</html>

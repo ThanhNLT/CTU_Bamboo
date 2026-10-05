@@ -314,6 +314,10 @@ def build(conn: psycopg.Connection) -> dict:
                     "[SearchHit!]!", [ROLE, ADMIN_ROLE],
                     "Tìm toàn văn đề nghị mua sắm và nội dung tệp đính kèm, chỉ trả chứng từ người gọi xem được (ADR #36)",
                     timeout=15),
+            _action("get_purchase_request_pdf", "query", [("request_id", "uuid!")], "PurchaseRequestPdf!",
+                    [ROLE, ADMIN_ROLE],
+                    "Phiếu đề nghị mua sắm dạng PDF: link tải về có chữ ký, chỉ người xem được chứng từ (ADR #37)",
+                    timeout=60),
         ],
         "custom_types": {
             "enums": [{"name": "ApprovalDecision",
@@ -368,6 +372,12 @@ def build(conn: psycopg.Connection) -> dict:
                     "remote_table": {"schema": "proc", "name": "purchase_request"},
                     "field_mapping": {"entity_id": "id"},
                 }, _attachment_rel()],
+            }, {
+                "name": "PurchaseRequestPdf",
+                "fields": [{"name": "request_id", "type": "uuid!"}, {"name": "url", "type": "String!"},
+                           {"name": "file_name", "type": "String!"}, {"name": "check_code", "type": "String!"},
+                           {"name": "status", "type": "String!"}, {"name": "cached", "type": "Boolean!"},
+                           {"name": "expires_in", "type": "Int!"}],
             }, {
                 "name": "AuditChainProblem",
                 "fields": [{"name": "seq", "type": "Int"}, {"name": "log_id", "type": "Int"},
