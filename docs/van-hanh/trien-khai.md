@@ -21,11 +21,12 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 3 | Tắt dữ liệu demo | `SEED_DEMO=false`; xóa hoặc vô hiệu hóa tài khoản demo trong Keycloak sau lần import đầu (realm có sẵn tài khoản demo) |
 | 4 | Tên miền HTTPS | Một tên miền trỏ vào cổng API; đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó (mục 3) |
 | 5 | Keycloak chế độ production | `KEYCLOAK_MODE=start` (bắt buộc đi sau reverse proxy TLS) |
-| 6 | Redirect URI của ứng dụng | Tự lấy từ `WEB_ORIGIN` khi Keycloak import realm lần đầu. Đổi tên miền sau lần import đầu: sửa trong Keycloak → realm `bms` → Clients → `bms-web` (*Valid redirect URIs*, *Web origins*); có thể xóa `http://localhost:5173` (chỉ dùng cho `npm run dev`) |
+| 6 | Redirect URI của ứng dụng | Job `bootstrap` tự bổ sung `WEB_ORIGIN` vào client `bms-web` mỗi lần khởi động (cả khi đổi tên miền sau lần import đầu). Giá trị cũ không bị xóa: gỡ `http://localhost:5173` (chỉ dùng cho `npm run dev`) và tên miền cũ trong Keycloak → realm `bms` → Clients → `bms-web` |
 | 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp) |
 | 8 | Quét virus | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav` |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
+| 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`; superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
 
 ## 3. Tên miền và TLS
 
