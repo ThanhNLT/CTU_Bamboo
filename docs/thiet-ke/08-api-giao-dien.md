@@ -20,7 +20,7 @@ Schema đầy đủ: Hasura Console (`http://localhost:8081`, cổng quản tr�
 
 ## 2. Ánh xạ màn hình
 
-Các màn hình [P] dưới đây đã hiện thực trong `apps/web/web/src/pages` (kiểm thử đầu–cuối: `apps/web/web/e2e`).
+Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong `apps/web/web/src/pages` (kiểm thử đầu–cuối: `apps/web/web/e2e`).
 
 | Màn hình (07-thiet-ke-UI) | Backend hiện có |
 |---|---|
@@ -28,15 +28,15 @@ Các màn hình [P] dưới đây đã hiện thực trong `apps/web/web/src/pag
 | `/p/documents/create`, `/edit/:id` | `insert_proc_purchase_request_one` (lồng `purchase_request_items`), `update_…_by_pk`, dòng hàng `insert/update/delete_proc_purchase_request_item`; gửi duyệt bằng Action `submit_purchase_request`; hủy bằng `cancel_purchase_request` |
 | `/p/inbox` (Action `my-tasks` trong thiết kế) | `wf_v_inbox` (việc của mình và việc nhận qua ủy quyền, `via_delegation`), subscription được |
 | `/p/inbox/:taskId` (`complete-task`) | Action `act_on_task(task_id, decision: APPROVE/REJECT/RETURN, note)` |
-| `/p/process/:documentId` (`process-state`) | Action `process_state(request_id)`: `bpmn_xml`, `active_activity_ids`, `completed_activity_ids` cho bpmn-js |
+| `/p/process/:id` (`process-state`, nút **Sơ đồ quy trình** trên chi tiết đề nghị) | Action `process_state(request_id)`: `bpmn_xml`, `active_activity_ids`, `completed_activity_ids` cho bpmn-js; `source` = `flowable` hoặc `database` (Flowable chưa đồng bộ thì suy ra từ trạng thái chứng từ). Giao diện tải bpmn-js lười, giữ watermark bpmn.io |
 | Thông báo ở header | `collab_notification` (của mình), subscription; `collab_mark_notifications_read(args: {ids})` (bỏ `ids`: tất cả) |
 | Bình luận trên chứng từ | `insert_collab_comment_one` (`entity_type: "proc.purchase_request"`, `entity_id`, `body`, `parent_id`, `mentions`); sửa `body`, xóa mềm bằng cách đặt `deleted_at` |
 | Tệp đính kèm (`file-upload` mục 6.3 thiết kế giao diện) | `get_upload_url` → PUT tệp lên `upload_url` (header `Content-Type` = `content_type` trả về) → `confirm_upload` (trả `status`: `CLEAN`, `REJECTED`, `INFECTED` kèm `scan_result`); danh sách: quan hệ `attachments` của đề nghị; tải về: query `get_download_url`; xóa: `delete_attachment` |
 | `/admin/audit-logs` (`audit_events` trong thiết kế) | `audit_log` (+ `actor`), chỉ người có quyền `audit.read` |
 | `/d/ledger` (`verify-ledger`) | Action `verify_audit_chain`: `ok`, `checked`, `head_seq`, `head_hash`, `problems` ([ADR #33](#adr-33)) |
 | Danh mục chọn trong form | `mdm_partner`, `mdm_item`, `core_catalog_item(where: {catalog: {_eq: "ITEM_CATEGORY"}})`, tư cách lập: `core_assignment` của mình |
-| `/i/search` (tìm kiếm toàn văn) | Action `search_documents(query, kind, limit, offset)` → `[SearchHit]`: `kind` (`purchase_request`/`attachment`), `entity_id`, `attachment_id`, `file_name`, `matched_field`, `snippet` (HTML an toàn, chữ khớp trong `<mark>`), quan hệ `purchase_request`, `attachment`. Gõ không dấu được; chỉ trả chứng từ người gọi xem được ([ADR #36](#adr-36)). Kết quả có độ trễ đồng bộ vài giây sau khi sửa |
-| Nút **In phiếu** trên chi tiết đề nghị | Query `get_purchase_request_pdf(request_id)` → `url` (link tải PDF có chữ ký 5 phút), `file_name` (`<số chứng từ>.pdf`), `check_code`, `status`, `cached` ([ADR #37](#adr-37)). Mở `url` trong tab mới hoặc tải về |
+| `/i/search?q=&kind=` (tìm kiếm toàn văn) | Action `search_documents(query, kind, limit, offset)` → `[SearchHit]`: `kind` (`purchase_request`/`attachment`), `entity_id`, `attachment_id`, `file_name`, `matched_field`, `snippet` (HTML an toàn, chữ khớp trong `<mark>`), quan hệ `purchase_request`, `attachment`. Gõ không dấu được; chỉ trả chứng từ người gọi xem được ([ADR #36](#adr-36)). Kết quả có độ trễ đồng bộ vài giây sau khi sửa |
+| Nút **In phiếu** trên chi tiết đề nghị | Query `get_purchase_request_pdf(request_id)` → `url` (link tải PDF có chữ ký 5 phút), `file_name` (`<số chứng từ>.pdf`), `check_code`, `status`, `cached` ([ADR #37](#adr-37)). Link trả `Content-Disposition: attachment`: điều hướng tới `url` là tải tệp về, trang hiện tại giữ nguyên (mở tab mới sẽ để lại tab trống) |
 | `/i/chat`, `/i/ocr`, `/d/*` | Chưa có |
 
 ## 3. Lưu ý khi dùng
