@@ -218,6 +218,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "onboarding_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "array_relationships": [
@@ -454,6 +468,20 @@
                   "remote_table": {
                     "schema": "proc",
                     "name": "purchase_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "onboarding_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
                   },
                   "column_mapping": {
                     "entity_id": "id"
@@ -1062,6 +1090,36 @@
               }
             },
             {
+              "name": "onboarding_requests_by_org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "onboarding_requests_by_target_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_unit_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "ic_orders_by_buyer_unit",
               "using": {
                 "manual_configuration": {
@@ -1346,6 +1404,36 @@
               }
             },
             {
+              "name": "onboarding_requests_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "onboarding_requests_by_requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "ic_orders",
               "using": {
                 "manual_configuration": {
@@ -1556,6 +1644,36 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "onboarding_requests_by_requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "onboarding_requests_by_target_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_position_id"
                   }
                 }
               }
@@ -2173,6 +2291,526 @@
                   ]
                 },
                 "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "onboarding_request"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "comments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "attachments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "onboarding_request_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            },
+            {
+              "name": "can_read_private",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "onboarding_request_can_read_private"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi được xem bản rõ CCCD, số tài khoản, địa chỉ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": [
+                  "account_error",
+                  "account_status",
+                  "address_masked",
+                  "approval_round",
+                  "bank_account_masked",
+                  "bank_name",
+                  "contract_type",
+                  "created_at",
+                  "date_of_birth",
+                  "doc_no",
+                  "education",
+                  "full_name",
+                  "gender",
+                  "id",
+                  "major",
+                  "national_id_masked",
+                  "note",
+                  "org_unit_id",
+                  "person_id",
+                  "phone",
+                  "requester_id",
+                  "requester_position_id",
+                  "salary",
+                  "start_date",
+                  "status",
+                  "target_position_id",
+                  "target_unit_id",
+                  "tenant_id",
+                  "updated_at",
+                  "username",
+                  "work_email"
+                ],
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "can_read_private"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": [
+                  "account_error",
+                  "account_status",
+                  "address_masked",
+                  "approval_round",
+                  "bank_account_masked",
+                  "bank_name",
+                  "contract_type",
+                  "created_at",
+                  "date_of_birth",
+                  "doc_no",
+                  "education",
+                  "full_name",
+                  "gender",
+                  "id",
+                  "major",
+                  "national_id_masked",
+                  "note",
+                  "org_unit_id",
+                  "person_id",
+                  "phone",
+                  "requester_id",
+                  "requester_position_id",
+                  "salary",
+                  "start_date",
+                  "status",
+                  "target_position_id",
+                  "target_unit_id",
+                  "tenant_id",
+                  "updated_at",
+                  "username",
+                  "work_email"
+                ],
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "can_read_private"
+                ]
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "requester_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "requester_position_id",
+                  "full_name",
+                  "gender",
+                  "date_of_birth",
+                  "work_email",
+                  "phone",
+                  "education",
+                  "major",
+                  "target_position_id",
+                  "start_date",
+                  "contract_type",
+                  "salary",
+                  "note",
+                  "bank_name",
+                  "username"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "requester_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "requester_position_id",
+                  "full_name",
+                  "gender",
+                  "date_of_birth",
+                  "work_email",
+                  "phone",
+                  "education",
+                  "major",
+                  "target_position_id",
+                  "start_date",
+                  "contract_type",
+                  "salary",
+                  "note",
+                  "bank_name",
+                  "username"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_in": [
+                          "DRAFT",
+                          "RETURNED"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "status": {
+                    "_in": [
+                      "DRAFT",
+                      "RETURNED"
+                    ]
+                  }
+                },
+                "columns": [
+                  "full_name",
+                  "gender",
+                  "date_of_birth",
+                  "work_email",
+                  "phone",
+                  "education",
+                  "major",
+                  "target_position_id",
+                  "start_date",
+                  "contract_type",
+                  "salary",
+                  "note",
+                  "bank_name",
+                  "username"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_in": [
+                          "DRAFT",
+                          "RETURNED"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "status": {
+                    "_in": [
+                      "DRAFT",
+                      "RETURNED"
+                    ]
+                  }
+                },
+                "columns": [
+                  "full_name",
+                  "gender",
+                  "date_of_birth",
+                  "work_email",
+                  "phone",
+                  "education",
+                  "major",
+                  "target_position_id",
+                  "start_date",
+                  "contract_type",
+                  "salary",
+                  "note",
+                  "bank_name",
+                  "username"
+                ]
+              }
+            }
+          ],
+          "delete_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_eq": "DRAFT"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_eq": "DRAFT"
+                      }
+                    }
+                  ]
+                }
               }
             }
           ]
@@ -3196,6 +3834,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "onboarding_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "computed_fields": [
@@ -3482,6 +4134,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "onboarding_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "computed_fields": [
@@ -3722,6 +4388,20 @@
                   },
                   "column_mapping": {
                     "assigned_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "onboarding_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
                   }
                 }
               }
@@ -4210,6 +4890,185 @@
         }
       ],
       "comment": "Phiếu đề nghị mua sắm dạng PDF: link tải về có chữ ký, chỉ người xem được chứng từ (ADR #37)"
+    },
+    {
+      "name": "save_onboarding_private",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/save_onboarding_private",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "national_id",
+            "type": "String"
+          },
+          {
+            "name": "bank_account",
+            "type": "String"
+          },
+          {
+            "name": "bank_name",
+            "type": "String"
+          },
+          {
+            "name": "address",
+            "type": "String"
+          }
+        ],
+        "output_type": "OnboardingActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Ghi CCCD, số tài khoản, địa chỉ của hồ sơ tiếp nhận (mã hóa bằng OpenBao, lưu kèm bản che)"
+    },
+    {
+      "name": "reveal_onboarding_private",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/reveal_onboarding_private",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "OnboardingPrivate!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xem bản rõ dữ liệu nhạy cảm (cần hr.onboarding.private.read; mỗi lần xem ghi nhật ký)"
+    },
+    {
+      "name": "submit_onboarding_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/submit_onboarding_request",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "OnboardingActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi duyệt đề nghị tiếp nhận nhân sự (người lập)"
+    },
+    {
+      "name": "cancel_onboarding_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_onboarding_request",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "OnboardingActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người lập hủy đề nghị tiếp nhận chưa duyệt xong"
+    },
+    {
+      "name": "retry_onboarding_account",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/retry_onboarding_account",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "username",
+            "type": "String"
+          }
+        ],
+        "output_type": "OnboardingActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tạo lại tài khoản đăng nhập khi lần trước lỗi (có thể đổi tên đăng nhập)"
     }
   ],
   "custom_types": {
@@ -4510,6 +5369,66 @@
           {
             "name": "expires_in",
             "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "OnboardingActionResult",
+        "fields": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "account_status",
+            "type": "String!"
+          }
+        ],
+        "relationships": [
+          {
+            "name": "onboarding_request",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "hr",
+              "name": "onboarding_request"
+            },
+            "field_mapping": {
+              "request_id": "id"
+            }
+          }
+        ]
+      },
+      {
+        "name": "OnboardingPrivate",
+        "fields": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "national_id",
+            "type": "String"
+          },
+          {
+            "name": "bank_account",
+            "type": "String"
+          },
+          {
+            "name": "address",
+            "type": "String"
+          },
+          {
+            "name": "username",
+            "type": "String"
+          },
+          {
+            "name": "initial_password",
+            "type": "String"
           }
         ]
       },

@@ -24,6 +24,7 @@ export const myPermissions = (): Promise<Set<string>> => {
 const RULES: Record<string, Partial<Record<string, string>>> = {
   audit_log: { list: "audit.read" },
   proc_purchase_request: { create: "proc.purchase_request.create" },
+  hr_onboarding_request: { list: "hr.onboarding.read", create: "hr.onboarding.create" },
 };
 
 export const accessControlProvider: AccessControlProvider = {

@@ -15,6 +15,7 @@ SECRET_FIELDS = {
     "bms/flowable": {"username": "flowable_user", "password": "flowable_password"},
     "bms/hasura": {"admin_secret": "hasura_admin_secret"},
     "bms/keycloak": {"username": "keycloak_admin_user", "password": "keycloak_admin_password"},
+    "bms/keycloak-provisioner": {"client_secret": "keycloak_provisioner_secret"},
     "bms/seaweedfs": {"access_key": "s3_access_key", "secret_key": "s3_secret_key"},
     "bms/seaweedfs-admin": {"access_key": "s3_admin_access_key", "secret_key": "s3_admin_secret_key"},
     "bms/seaweedfs-search": {"access_key": "s3_search_access_key", "secret_key": "s3_search_secret_key"},
@@ -52,6 +53,7 @@ class Settings:
     keycloak_admin_user: str
     keycloak_admin_password: str
     web_origin: str               # địa chỉ ứng dụng trình duyệt thấy (redirect URI của bms-web)
+    keycloak_provisioner_secret: str  # client bms-provisioner: chỉ quản lý người dùng realm bms (ADR #41)
     s3_search_access_key: str     # search-sync: chỉ đọc bucket tài liệu (ADR #36)
     s3_search_secret_key: str
     meili_url: str
@@ -176,6 +178,7 @@ def _from_env() -> Settings:
         keycloak_admin_user=env("KEYCLOAK_ADMIN", "kcadmin"),
         keycloak_admin_password=env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"),
         web_origin=env("WEB_ORIGIN", "http://localhost:8000"),
+        keycloak_provisioner_secret=env("KEYCLOAK_PROVISIONER_SECRET", ""),
         s3_search_access_key=env("S3_SEARCH_ACCESS_KEY", "bms-search"),
         s3_search_secret_key=env("S3_SEARCH_SECRET_KEY", "bms-search-dev-secret"),
         meili_url=env("MEILI_URL", "http://meilisearch:7700"),

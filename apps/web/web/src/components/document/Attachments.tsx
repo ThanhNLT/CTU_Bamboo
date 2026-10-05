@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
-import type { PurchaseRequest } from "./types";
+import type { DocumentFiles } from "./types";
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt";
 const MAX = 25 * 1024 * 1024;
@@ -26,12 +26,15 @@ const SCAN: Record<string, { color: string; icon: ReactElement; label: string }>
 
 const size = (b: number) => (b < 1024 * 1024 ? `${Math.ceil(b / 1024)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
-type Props = { pr: PurchaseRequest; me: string; canUpload: boolean; onChange: () => void };
+type Props = {
+  doc: DocumentFiles; entityType: string; me: string; canUpload: boolean; onChange: () => void;
+  hint?: string;                    // loại giấy tờ gợi ý đính kèm
+};
 
-export const Attachments = ({ pr, me, canUpload, onChange }: Props) => {
+export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "báo giá, hóa đơn" }: Props) => {
   const { message } = App.useApp();
   const [uploading, setUploading] = useState(false);
-  const locked = ["APPROVED", "REJECTED", "CANCELLED"].includes(pr.status);
+  const locked = ["APPROVED", "REJECTED", "CANCELLED"].includes(doc.status);
 
   const upload = async (file: File) => {
     if (file.size > MAX) {
@@ -41,10 +44,10 @@ export const Attachments = ({ pr, me, canUpload, onChange }: Props) => {
     setUploading(true);
     try {
       const { get_upload_url: t } = await request<{ get_upload_url: { attachment_id: string; upload_url: string; content_type: string } }>(
-        `mutation Up($id: uuid!, $name: String!, $type: String!, $size: Int!) {
-           get_upload_url(entity_type: "proc.purchase_request", entity_id: $id, file_name: $name, content_type: $type, size_bytes: $size) {
+        `mutation Up($entity: String!, $id: uuid!, $name: String!, $type: String!, $size: Int!) {
+           get_upload_url(entity_type: $entity, entity_id: $id, file_name: $name, content_type: $type, size_bytes: $size) {
              attachment_id upload_url content_type } }`,
-        { id: pr.id, name: file.name, type: file.type || "application/octet-stream", size: file.size },
+        { entity: entityType, id: doc.id, name: file.name, type: file.type || "application/octet-stream", size: file.size },
       );
       const put = await fetch(t.upload_url, { method: "PUT", body: file, headers: { "Content-Type": t.content_type } });
       if (!put.ok) throw new Error(`Tải lên kho lưu trữ thất bại (${put.status})`);
@@ -86,12 +89,12 @@ export const Attachments = ({ pr, me, canUpload, onChange }: Props) => {
         <Upload.Dragger accept={ACCEPT} showUploadList={false} disabled={uploading}
                         customRequest={({ file }) => { void upload(file as File); }}>
           <p className="ant-upload-drag-icon">{uploading ? <LoadingOutlined /> : <CloudUploadOutlined />}</p>
-          <p>Kéo thả hoặc bấm để đính kèm báo giá, hóa đơn (PDF, ảnh, DOCX, XLSX, TXT; tối đa 25 MB)</p>
+          <p>Kéo thả hoặc bấm để đính kèm {hint} (PDF, ảnh, DOCX, XLSX, TXT; tối đa 25 MB)</p>
           <Typography.Text type="secondary">Tệp được kiểm tra kích thước, định dạng và quét virus trước khi nhận.</Typography.Text>
         </Upload.Dragger>
       )}
       <List
-        dataSource={pr.attachments}
+        dataSource={doc.attachments}
         locale={{ emptyText: "Chưa có tệp đính kèm" }}
         renderItem={(a) => {
           const s = SCAN[a.status] ?? SCAN.PENDING;

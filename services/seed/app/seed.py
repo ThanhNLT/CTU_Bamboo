@@ -15,7 +15,8 @@ import sys
 import psycopg
 from faker import Faker
 
-from .demo import CONTRACT_SEATS, DEMO_USERS, TENANTS, TREES, UNIT_TYPES, VACANT, uid, walk
+from .demo import (CONTRACT_SEATS, DEMO_USERS, HR_DEMO_USERS, HR_SCOPE, HR_UNITS, OPEN_SEATS, TENANTS, TREES,
+                   UNIT_TYPES, VACANT, uid, walk)
 
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
@@ -289,6 +290,111 @@ class Seeder:
                       VALUES (%s, 'proc.purchase_request', %s, %s, %s)""",
                    self.tenant_id(tenant), pr_id, self.holders[(tenant, seat)], body)
 
+    # --- Nhân sự (ADR #41): chạy cả ở bản đã cài, bỏ qua phần đã có ---------------
+
+    def _next_code(self, tenant: str) -> int:
+        """Số mã nhân viên tiếp theo dạng <tenant>-NNNN (đọc từ CSDL khi bổ sung vào bản đã cài)."""
+        if tenant not in self.codes:
+            self.codes[tenant] = self.x(
+                """SELECT coalesce(max(substring(employee_code FROM '-(\\d+)$')::int), 0) FROM core.person
+                   WHERE tenant_id = %s AND employee_code ~ '^[A-Z]+-\\d+$'""", self.tenant_id(tenant)).fetchone()[0]
+        return self.codes[tenant]
+
+    def _seat(self, tenant, key, unit_code, name, head=False):
+        pid = uid(tenant, "position", key)
+        if not self.x("SELECT 1 FROM core.position WHERE id = %s", pid).fetchone():
+            title = self.x("""SELECT id FROM core.catalog_item WHERE tenant_id = %s AND catalog = 'JOB_TITLE' AND name = %s""",
+                           self.tenant_id(tenant), name).fetchone()
+            title_id = title[0] if title else uid(tenant, "JOB_TITLE", name)
+            if not title:
+                last = self.x("""SELECT coalesce(max(substring(code FROM 3)::int), 0) FROM core.catalog_item
+                                 WHERE tenant_id = %s AND catalog = 'JOB_TITLE' AND code ~ '^CT\\d+$'""",
+                              self.tenant_id(tenant)).fetchone()[0]
+                self.x("""INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
+                          VALUES (%s, %s, 'JOB_TITLE', %s, %s)""", self.tenant_id(tenant), title_id,
+                       f"CT{last + 1:03d}", name)
+            self.x("""INSERT INTO core.position (tenant_id, id, org_unit_id, job_title_id, name, is_head, valid_period)
+                      VALUES (%s, %s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
+                   self.tenant_id(tenant), pid, uid(tenant, "unit", unit_code), title_id, name, head, START)
+        self.positions[(tenant, key)] = pid
+        return pid
+
+    def _hr_person(self, tenant, seat, full_name, person_id=None, subject=None):
+        pid = self.positions[(tenant, seat)]
+        if self.x("SELECT 1 FROM core.position_holder(%s)", pid).fetchone():
+            return
+        person_id = person_id or uid(tenant, "person", "hr", seat)
+        if not self.x("SELECT 1 FROM core.person WHERE id = %s", person_id).fetchone():
+            self.codes[tenant] = self._next_code(tenant) + 1
+            self.x("""INSERT INTO core.person (tenant_id, id, idp_subject, full_name, employee_code)
+                      VALUES (%s, %s, %s, %s, %s)""",
+                   self.tenant_id(tenant), person_id, subject, full_name, f"{tenant}-{self.codes[tenant]:04d}")
+        self.x("""INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period)
+                  VALUES (%s, %s, %s, 'PRIMARY', tstzrange(%s, NULL))""", self.tenant_id(tenant), person_id, pid, START)
+        self.holders.setdefault((tenant, seat), person_id)
+
+    def hr_demo(self):
+        """Phòng nhân sự từng công ty, chuyên viên nhân sự demo, ghế tuyển mới, vai trò NHAN_SU và quy tắc duyệt
+        ONBOARDING (trưởng đơn vị nhận người rồi giám đốc công ty). Chạy lại không tạo trùng."""
+        fake = Faker("vi_VN")
+        fake.seed_instance(4141)
+        for tenant, code, name, parent, type_, head, staff, staff_title in HR_UNITS:
+            tid = self.tenant_id(tenant)
+            if not self.x("SELECT 1 FROM core.org_unit WHERE tenant_id = %s AND code = %s", tid, code).fetchone():
+                self.x("""INSERT INTO core.org_unit (tenant_id, id, parent_id, unit_type_id, code, name, valid_period)
+                          VALUES (%s, %s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
+                       tid, uid(tenant, "unit", code), uid(tenant, "unit", parent), uid(tenant, "UNIT_TYPE", type_),
+                       code, name, START)
+            self._seat(tenant, f"{code}.HEAD", code, head, head=True)
+            for i in range(1, staff + 1):
+                self._seat(tenant, f"{code}.S{i}", code, staff_title)
+        for tenant, key, unit_code, title in OPEN_SEATS:
+            self._seat(tenant, key, unit_code, title)
+
+        for user in HR_DEMO_USERS:
+            seat = user.seats[0]
+            self._hr_person(seat.tenant, seat.position, user.full_name, person_id=user.id, subject=str(user.id))
+        for tenant, code, _name, _parent, _type, _head, staff, _title in HR_UNITS:
+            for key in [f"{code}.HEAD", *(f"{code}.S{i}" for i in range(1, staff + 1))]:
+                first = fake.first_name_male() if fake.boolean() else fake.first_name_female()
+                self._hr_person(tenant, key, f"{fake.last_name()} {fake.middle_name()} {first}")
+
+        for t in TENANTS:
+            tid = self.tenant_id(t.code)
+            role = uid(t.code, "role", "NHAN_SU")
+            if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
+                self.x("INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, 'NHAN_SU', 'Nhân sự')", tid, role)
+            for perm in ("hr.onboarding.create", "hr.onboarding.read", "hr.onboarding.private.read"):
+                self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)
+                          ON CONFLICT DO NOTHING""", tid, role, perm)
+            self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                      SELECT tenant_id, id, 'hr.onboarding.read' FROM core.role WHERE id = %s
+                      ON CONFLICT DO NOTHING""", uid(t.code, "role", "QUAN_LY"))
+            for unit, scope in HR_SCOPE.items():
+                unit_id = uid(t.code, "unit", unit)
+                if not self.x("SELECT 1 FROM core.org_unit WHERE id = %s AND tenant_id = %s", unit_id, tid).fetchone():
+                    continue
+                if not self.x("SELECT 1 FROM core.role_grant WHERE role_id = %s AND org_unit_id = %s", role,
+                              unit_id).fetchone():
+                    self.x("""INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope, scope_unit_id, valid_period)
+                              VALUES (%s, %s, %s, 'SUBTREE', %s, tstzrange(%s, NULL))""",
+                           tid, role, unit_id, uid(t.code, "unit", scope), START)
+
+        if not self.x("SELECT 1 FROM wf.approval_rule WHERE process_code = 'ONBOARDING'").fetchone():
+            tdx, bvx = self.tenant_id("TDX"), self.tenant_id("BVX")
+            rules = [(tdx, 1, None, None), (tdx, 2, "CONG_TY", None), (bvx, 1, None, None), (bvx, 2, "BENH_VIEN", None)]
+            # Các khối của công ty mẹ: bước 2 là Tổng giám đốc.
+            for unit in TREES["TDX"].children:
+                if unit.type != "CONG_TY":
+                    rules += [(tdx, 1, None, unit.code), (tdx, 2, "TAP_DOAN", unit.code)]
+            for tid, step, unit_type, scope in rules:
+                tenant = "TDX" if tid == tdx else "BVX"
+                self.x("""INSERT INTO wf.approval_rule (tenant_id, process_code, min_amount, step_order,
+                                                        approver_unit_type_id, scope_unit_id, valid_period)
+                          VALUES (%s, 'ONBOARDING', 0, %s, %s, %s, tstzrange(%s, NULL))""",
+                       tid, step, uid(tenant, "UNIT_TYPE", unit_type) if unit_type else None,
+                       uid(tenant, "unit", scope) if scope else None, START)
+
     def run(self):
         for t in TENANTS:
             self.x("INSERT INTO core.tenant (id, code, name) VALUES (%s, %s, %s)", self.tenant_id(t.code), t.code, t.name)
@@ -308,11 +414,16 @@ class Seeder:
         self.approval_rules()
         self.delegation()
         self.purchase_requests()
+        self.hr_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
-    """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có."""
+    """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
+        with conn.transaction():
+            seeder = Seeder(conn)
+            seeder.x("SET CONSTRAINTS ALL IMMEDIATE")
+            seeder.hr_demo()
         return False
     with conn.transaction():
         Seeder(conn).run()
@@ -326,7 +437,7 @@ def main() -> int:
         return 0
     url = os.environ.get("DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms")
     with psycopg.connect(url) as conn:
-        log.info("đã nạp dữ liệu demo" if seed(conn) else "đã có dữ liệu demo: bỏ qua")
+        log.info("đã nạp dữ liệu demo" if seed(conn) else "đã có dữ liệu demo: chỉ bổ sung phần mới")
     return 0
 
 

@@ -13,7 +13,7 @@ import psycopg
 import pytest
 
 from app import realm, seed
-from app.demo import DEMO_USERS, account_id, uid
+from app.demo import DEMO_USERS, HR_DEMO_USERS, OPEN_SEATS, account_id, uid
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_seed_test")
@@ -46,14 +46,14 @@ def test_chay_lai_khong_trung(conn):
 def test_quy_mo(conn):
     assert one(conn, "SELECT count(*) FROM core.org_unit") >= 40
     assert 100 <= one(conn, "SELECT count(*) FROM core.person") <= 160
-    # Mỗi ghế có người, trừ ghế cố ý để trống.
+    # Mỗi ghế có người, trừ ghế cố ý để trống và ghế tuyển mới.
     assert one(conn, """SELECT count(*) FROM core.position p
-                        WHERE NOT EXISTS (SELECT 1 FROM core.position_holder(p.id))""") == 1
+                        WHERE NOT EXISTS (SELECT 1 FROM core.position_holder(p.id))""") == 1 + len(OPEN_SEATS)
 
 
 def test_tai_khoan_demo_khop_keycloak(conn):
     """Id tài khoản = sub = person.id ở tenant giữ chính; tenant khác ánh xạ qua idp_subject."""
-    for user in DEMO_USERS:
+    for user in [*DEMO_USERS, *HR_DEMO_USERS]:
         tenants = {s.tenant for s in user.seats}
         rows = conn.execute("SELECT tenant_code, person_id FROM core.account_tenants(%s)", (str(user.id),)).fetchall()
         assert {r[0] for r in rows} == tenants, user.username
@@ -118,3 +118,35 @@ def test_realm_khop_file_da_commit():
     assert users["admin"]["requiredActions"] == ["CONFIGURE_TOTP"]
     assert all(u["credentials"][0]["value"] == "${DEMO_PASSWORD}" for u in users.values())
     assert users["tgd"]["id"] == str(uid("account", "tgd"))
+
+
+def test_nhan_su(conn):
+    """Phòng nhân sự lập hồ sơ cho cả công ty mình; quy tắc duyệt tiếp nhận; ghế tuyển mới còn trống (ADR #41)."""
+    ns = account_id("ns.dienthoai")
+    assert one(conn, "SELECT core.has_permission(%s, 'hr.onboarding.create', %s)", ns, uid("TDX", "unit", "DT_RD_PM"))
+    assert not one(conn, "SELECT core.has_permission(%s, 'hr.onboarding.create', %s)", ns, uid("TDX", "unit", "CHIP_PS"))
+    assert one(conn, "SELECT core.has_permission(%s, 'hr.onboarding.read', %s)",
+               account_id("gd.dienthoai"), uid("TDX", "unit", "DT_RD_PM"))
+    assert one(conn, "SELECT count(*) FROM wf.approval_rule WHERE process_code = 'ONBOARDING'") >= 4
+    for tenant, key, *_ in OPEN_SEATS:
+        assert not conn.execute("SELECT 1 FROM core.position_holder(%s)", (uid(tenant, "position", key),)).fetchone()
+    chain = conn.execute("""SELECT array_agg(p.name ORDER BY c.step_order)
+                            FROM wf.resolve_approval_chain(%s, 'ONBOARDING', %s, 0, NULL) c
+                            JOIN core.position p ON p.id = c.position_id""",
+                         (uid("tenant", "TDX"), uid("TDX", "position", "DT_RD_PM.S4"))).fetchone()[0]
+    assert chain == ["Trưởng phòng", "Giám đốc"]
+
+
+def test_bo_sung_ban_da_cai(conn):
+    """Bản đã cài trước khi có nhân sự: chạy seed lại thì bổ sung phòng nhân sự, không đổi dữ liệu cũ."""
+    with conn.transaction():
+        conn.execute("DELETE FROM core.role_grant WHERE role_id IN (SELECT id FROM core.role WHERE code = 'NHAN_SU')")
+        conn.execute("DELETE FROM core.role_permission WHERE permission_code LIKE 'hr.%'")
+        conn.execute("DELETE FROM core.role WHERE code = 'NHAN_SU'")
+        conn.execute("DELETE FROM wf.approval_rule WHERE process_code = 'ONBOARDING'")
+        before = one(conn, "SELECT count(*) FROM core.person")
+        assert seed.seed(conn) is False
+        assert one(conn, "SELECT count(*) FROM core.person") == before
+        assert one(conn, "SELECT count(*) FROM wf.approval_rule WHERE process_code = 'ONBOARDING'") >= 4
+        assert one(conn, "SELECT core.has_permission(%s, 'hr.onboarding.create', %s)",
+                   account_id("ns.chip"), uid("TDX", "unit", "CHIP_PS"))

@@ -4,6 +4,7 @@
 
 """Bootstrap bổ sung WEB_ORIGIN vào client bms-web (nâng cấp không cần import lại realm)."""
 
+import json
 import os
 
 import httpx
@@ -62,3 +63,53 @@ def test_dong_bo_tren_keycloak_that(admin):
     assert origin in client["webOrigins"]
     assert f"{origin}/*" in client["attributes"]["post.logout.redirect.uris"].split("##")
     assert keycloak_sync.ensure_web_client(KEYCLOAK, *ADMIN, origin) is False
+
+
+def test_client_tao_tai_khoan(admin):
+    """bms-provisioner: client bí mật chỉ có service account, quyền quản lý người dùng realm bms (ADR #41);
+    tạo được người dùng bằng token của chính nó; chạy lại không đổi."""
+    http, _ = admin
+    found = http.get("/clients", params={"clientId": keycloak_sync.PROVISIONER_ID}).json()
+    # Stack đang chạy dùng secret trong két: kiểm thử xong đặt lại đúng secret đó.
+    original = http.get(f"/clients/{found[0]['id']}/client-secret").json()["value"] if found else None
+    secret = "provisioner-test-secret"
+    try:
+        _check_provisioner(http, secret)
+    finally:
+        if original:
+            keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, original)
+
+
+def _check_provisioner(http, secret):
+    keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, secret)
+    assert keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, secret) is False
+    client = http.get("/clients", params={"clientId": keycloak_sync.PROVISIONER_ID}).json()[0]
+    assert client["serviceAccountsEnabled"] and not client["publicClient"] and not client["standardFlowEnabled"]
+    token = httpx.post(f"{KEYCLOAK}/realms/bms/protocol/openid-connect/token", timeout=15, data={
+        "grant_type": "client_credentials", "client_id": keycloak_sync.PROVISIONER_ID, "client_secret": secret})
+    assert token.status_code == 200
+    users = httpx.get(f"{KEYCLOAK}/admin/realms/bms/users", params={"max": 1}, timeout=15,
+                      headers={"Authorization": f"Bearer {token.json()['access_token']}"})
+    assert users.status_code == 200
+    # Không có quyền quản trị client hay realm.
+    clients = httpx.get(f"{KEYCLOAK}/admin/realms/bms/clients", timeout=15,
+                        headers={"Authorization": f"Bearer {token.json()['access_token']}"})
+    assert clients.status_code == 403
+    # Đổi secret (ví dụ két sinh lại): bootstrap đặt theo két.
+    assert keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, secret + "-2") is True
+
+
+def test_bo_sung_tai_khoan_demo(admin, tmp_path):
+    """Realm đã import từ trước: tài khoản demo mới được thêm, giữ id; tài khoản đã có không bị đụng."""
+    http, _ = admin
+    realm = tmp_path / "realm.json"
+    user = {"id": "6f0c1d2e-0000-4000-8000-00000000e2e1", "username": "demo.sync.test", "enabled": True,
+            "credentials": [{"type": "password", "value": "${DEMO_PASSWORD}", "temporary": False}]}
+    realm.write_text(json.dumps({"users": [user]}), encoding="utf-8")
+    try:
+        assert keycloak_sync.ensure_demo_users(KEYCLOAK, *ADMIN, "pw-sync-test", realm) == 1
+        assert keycloak_sync.ensure_demo_users(KEYCLOAK, *ADMIN, "pw-sync-test", realm) == 0
+        assert http.get(f"/users/{user['id']}").json()["username"] == "demo.sync.test"
+        assert keycloak_sync.ensure_demo_users(KEYCLOAK, *ADMIN, "", realm) == 0
+    finally:
+        http.delete(f"/users/{user['id']}")

@@ -92,7 +92,7 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | | Thiết kế biểu mẫu, quy trình | form-js, bpmn-js, dmn-js | Demo |
 | | Giải mã tài liệu trên RAM | OpenBao transit + PDF.js + watermark | Mở rộng |
 | | Thanh toán, hóa đơn điện tử | Hyperswitch; module XML + xmlsec | Mở rộng |
-| | Nhân sự, KPI; dự án | Module trên Hasura; OpenProject/Plane | Mở rộng |
+| | Nhân sự: tiếp nhận nhân sự (đã có, [ADR #41](#adr-41)); KPI; dự án | Module trên Hasura; OpenProject/Plane | Mở rộng |
 | [D] Dữ liệu số (ấm) | Cổng NGSI-LD, Digital Twin | Orion-LD + widget React | Demo |
 | | Lakehouse | Iceberg + Trino/DuckDB | Demo |
 | | WebGIS | GeoServer + MapLibre | Demo |
