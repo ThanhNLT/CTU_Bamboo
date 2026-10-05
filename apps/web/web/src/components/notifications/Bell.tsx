@@ -13,13 +13,21 @@ import { formatDate } from "../../utils/format";
 const NOTIFICATIONS = gql`
   query Notifications($limit: Int, $offset: Int, $order_by: [collab_notification_order_by!], $where: collab_notification_bool_exp) {
     collab_notification(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id kind title body created_at read_at entity_id
+      id kind title body created_at read_at entity_type entity_id
     }
     collab_notification_aggregate(where: $where) { aggregate { count } }
   }
 `;
 
-type Note = { id: string; kind: string; title: string; body: string | null; created_at: string; read_at: string | null; entity_id: string | null };
+type Note = {
+  id: string; kind: string; title: string; body: string | null; created_at: string; read_at: string | null;
+  entity_type: string | null; entity_id: string | null;
+};
+
+// Loại chứng từ → resource Refine của trang chi tiết.
+const RESOURCE: Record<string, string> = {
+  "proc.purchase_request": "proc_purchase_request", "hr.onboarding_request": "hr_onboarding_request",
+};
 
 export const NotificationBell = () => {
   const go = useGo();
@@ -42,7 +50,8 @@ export const NotificationBell = () => {
 
   const open = async (n: Note) => {
     await markRead([n.id]);
-    if (n.entity_id) go({ to: { resource: "proc_purchase_request", action: "show", id: n.entity_id } });
+    const resource = n.entity_type ? RESOURCE[n.entity_type] : undefined;
+    if (n.entity_id && resource) go({ to: { resource, action: "show", id: n.entity_id } });
   };
 
   const content = (

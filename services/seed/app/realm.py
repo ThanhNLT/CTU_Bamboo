@@ -14,7 +14,7 @@ import argparse
 import json
 import pathlib
 
-from .demo import DEMO_USERS
+from .demo import DEMO_USERS, HR_DEMO_USERS
 
 # Địa chỉ ứng dụng qua cổng API, đọc từ biến WEB_ORIGIN lúc Keycloak import realm (mặc định stack
 # docker compose); thêm cổng 5173 cho `npm run dev`.
@@ -24,7 +24,7 @@ DEV_ORIGIN = "http://localhost:5173"
 
 def build() -> dict:
     users = []
-    for user in DEMO_USERS:
+    for user in [*DEMO_USERS, *HR_DEMO_USERS]:
         last, _, first = user.full_name.rpartition(" ")
         users.append({
             "id": str(user.id),
@@ -91,7 +91,7 @@ def main() -> None:
     out = pathlib.Path(parser.parse_args().out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(build(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"đã ghi {out}: {len(DEMO_USERS)} tài khoản")
+    print(f"đã ghi {out}: {len(DEMO_USERS) + len(HR_DEMO_USERS)} tài khoản")
 
 
 if __name__ == "__main__":

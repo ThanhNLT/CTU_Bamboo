@@ -11,7 +11,7 @@ import routerProvider, {
 } from "@refinedev/react-router";
 import { App as AntdApp, ConfigProvider, Spin } from "antd";
 import viVN from "antd/locale/vi_VN";
-import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined } from "@ant-design/icons";
+import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined, UserAddOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import { lazy, Suspense } from "react";
@@ -23,6 +23,7 @@ import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
 import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
+import { OnboardingCreate, OnboardingEdit, OnboardingList, OnboardingShow } from "./pages/onboarding";
 import {
   PurchaseRequestCreate, PurchaseRequestEdit, PurchaseRequestList, PurchaseRequestShow,
 } from "./pages/purchase-requests";
@@ -66,6 +67,14 @@ function App() {
                     show: "/p/documents/show/:id",
                     meta: { label: "Đề nghị mua sắm", icon: <FileTextOutlined /> },
                   },
+                  {
+                    name: "hr_onboarding_request",
+                    list: "/h/onboarding",
+                    create: "/h/onboarding/create",
+                    edit: "/h/onboarding/edit/:id",
+                    show: "/h/onboarding/show/:id",
+                    meta: { label: "Tiếp nhận nhân sự", icon: <UserAddOutlined /> },
+                  },
                   { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
                   { name: "search", list: "/i/search", meta: { label: "Tìm kiếm", icon: <SearchOutlined /> } },
                   { name: "audit_log", list: "/admin/audit-logs", meta: { label: "Kiểm toán", icon: <AuditOutlined /> } },
@@ -91,6 +100,12 @@ function App() {
                       <Route path="create" element={<PurchaseRequestCreate />} />
                       <Route path="edit/:id" element={<PurchaseRequestEdit />} />
                       <Route path="show/:id" element={<PurchaseRequestShow />} />
+                    </Route>
+                    <Route path="/h/onboarding">
+                      <Route index element={<OnboardingList />} />
+                      <Route path="create" element={<OnboardingCreate />} />
+                      <Route path="edit/:id" element={<OnboardingEdit />} />
+                      <Route path="show/:id" element={<OnboardingShow />} />
                     </Route>
                     <Route path="/p/inbox" element={<InboxList />} />
                     <Route path="/p/process/:id" element={<Suspense fallback={<Spin />}><ProcessDiagram /></Suspense>} />

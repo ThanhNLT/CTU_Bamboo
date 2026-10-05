@@ -23,16 +23,17 @@ bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Do
 | KV v2 | `secret/bms/postgres`, `bms/hasura`, `bms/keycloak`, `bms/flowable`, `bms/actions` | Chép từ `.env` mỗi lần chạy, chỉ ghi khi khác bản đang có |
 | KV v2 | `secret/bms/seaweedfs` (`bms-app`), `secret/bms/seaweedfs-admin` (`bms-admin`), `secret/bms/seaweedfs-search` (`bms-search`) | Khóa S3 do OpenBao **sinh một lần**, là nguồn duy nhất; `openbao-init` ghi `s3.json` cho SeaweedFS từ đây |
 | KV v2 | `secret/bms/meilisearch-admin` (khóa chủ), `bms/meilisearch-search`, `bms/meilisearch-indexer` | Khóa chủ Meilisearch **sinh một lần**; hai khóa API suy ra từ khóa chủ (mục 5); `openbao-init` ghi tệp cấu hình Meilisearch |
-| Transit | `transit/keys/pii` (AES-256-GCM) | Mã hóa dữ liệu nhạy cảm (CCCD, lương...); ứng dụng chỉ giữ bản mã `vault:v1:...` |
+| KV v2 | `secret/bms/keycloak-provisioner` | Secret của client Keycloak `bms-provisioner` (tạo tài khoản nhân viên mới, ADR #41), **sinh một lần**; `bootstrap` đặt cho client |
+| Transit | `transit/keys/pii` (AES-256-GCM) | Mã hóa dữ liệu nhạy cảm: CCCD, số tài khoản, địa chỉ của hồ sơ tiếp nhận nhân sự, mật khẩu tạm (ADR #41); CSDL chỉ giữ bản mã `vault:v1:...` và bản che |
 | AppRole | `auth/approle/role/actions`, `auth/approle/role/bootstrap`, `auth/approle/role/search` | Token 1 giờ, secret-id không hết hạn (dev) |
 
 ### Đặc quyền tối thiểu
 
 | AppRole | Dùng bởi | Được đọc | Bị chặn (có kiểm thử) |
 |---|---|---|---|
-| `actions` | `actions`, `flow-sync` | `bms/postgres`, `bms/flowable`, `bms/seaweedfs`, `bms/actions`, `bms/meilisearch-search`; mã hóa/giải mã bằng khóa `pii` | `bms/keycloak`, `bms/hasura`, `bms/seaweedfs-admin`, `bms/meilisearch-admin`, `bms/meilisearch-indexer`, mọi thao tác ghi |
-| `bootstrap` | job `bootstrap` | `bms/seaweedfs-admin` (tạo bucket), `bms/flowable`, `bms/hasura`, `bms/meilisearch-admin` (tạo index, khóa API) | `bms/postgres`, khóa `pii` |
-| `search` | `search-sync` | `bms/postgres`, `bms/seaweedfs-search`, `bms/meilisearch-indexer` | `bms/seaweedfs`, `bms/meilisearch-admin`, `bms/meilisearch-search`, `bms/actions`, khóa `pii` |
+| `actions` | `actions`, `flow-sync` | `bms/postgres`, `bms/flowable`, `bms/seaweedfs`, `bms/actions`, `bms/meilisearch-search`, `bms/keycloak-provisioner`; mã hóa/giải mã bằng khóa `pii` | `bms/keycloak`, `bms/hasura`, `bms/seaweedfs-admin`, `bms/meilisearch-admin`, `bms/meilisearch-indexer`, mọi thao tác ghi |
+| `bootstrap` | job `bootstrap` | `bms/seaweedfs-admin` (tạo bucket), `bms/flowable`, `bms/hasura`, `bms/meilisearch-admin` (tạo index, khóa API), `bms/keycloak`, `bms/keycloak-provisioner` (client tạo tài khoản) | `bms/postgres`, khóa `pii` |
+| `search` | `search-sync` | `bms/postgres`, `bms/seaweedfs-search`, `bms/meilisearch-indexer` | `bms/seaweedfs`, `bms/meilisearch-admin`, `bms/meilisearch-search`, `bms/actions`, `bms/keycloak-provisioner`, khóa `pii` |
 
 Mỗi dịch vụ có volume secret riêng chỉ mount vào đúng dịch vụ đó: `openbao-init` ghi file AppRole (role-id + secret-id, quyền 0400) vào `actions-secrets`, `bootstrap-secrets` và `search-secrets`, cấu hình S3 vào `seaweedfs-config`, cấu hình Meilisearch (quyền 0600) vào `meilisearch-config`. Dịch vụ nào cũng thấy `/run/bms/approle.json` của riêng mình, không thấy secret của dịch vụ kia. Mô hình giống Vault Agent / External Secrets Operator sẽ dùng trên Kubernetes.
 
