@@ -58,6 +58,11 @@ path "secret/data/bms/postgres"            { capabilities = ["read"] }
 path "secret/data/bms/seaweedfs-search"    { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-indexer" { capabilities = ["read"] }
 """,
+    # Dịch vụ lakehouse-sink (ADR #39): CSDL catalog Iceberg, bucket lakehouse.
+    "lakehouse": """
+path "secret/data/bms/lakehouse"           { capabilities = ["read"] }
+path "secret/data/bms/seaweedfs-lakehouse" { capabilities = ["read"] }
+""",
 }
 
 
@@ -73,6 +78,8 @@ def env_secrets() -> dict[str, dict]:
         "bms/flowable": {"username": env("FLOWABLE_ADMIN", "rest-admin"),
                          "password": env("FLOWABLE_ADMIN_PASSWORD", "test")},
         "bms/actions": {"secret": env("ACTIONS_SECRET", "dev-actions-secret")},
+        "bms/lakehouse": {"username": "bamboo_lakehouse",
+                          "password": env("LAKEHOUSE_DB_PASSWORD", "lakehouse-db-dev")},
     }
 
 
@@ -143,7 +150,7 @@ def sync_secrets(root: Bao) -> None:
             root.write(path, values)
             log.info("đã cập nhật secret/%s", path)
     for path, access_key in (("bms/seaweedfs", "bms-app"), ("bms/seaweedfs-admin", "bms-admin"),
-                             ("bms/seaweedfs-search", "bms-search")):
+                             ("bms/seaweedfs-search", "bms-search"), ("bms/seaweedfs-lakehouse", "bms-lakehouse")):
         if root.read(path) is None:
             root.write(path, {"access_key": access_key, "secret_key": secrets.token_urlsafe(32)})
             log.info("đã sinh khóa S3 secret/%s", path)

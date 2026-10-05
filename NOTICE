@@ -38,7 +38,10 @@ Thư viện Python (phiên bản ghim trong constraints.txt, cài từ PyPI)
 FastAPI, Pydantic, Starlette, Uvicorn, AnyIO, h11           MIT / BSD-3-Clause
 httpx, httpcore, idna, certifi                              BSD-3-Clause / MPL-2.0 (certifi)
 Jinja2, MarkupSafe                                          BSD-3-Clause
-kafka-python (chỉ kiểm thử)                                  Apache-2.0
+kafka-python                                                Apache-2.0
+pyiceberg, pyarrow, requests, tenacity (image lakehouse)    Apache-2.0
+SQLAlchemy, cachetools, mmh3, pyparsing, pyroaring, rich, strictyaml, markdown-it-py, mdurl, charset-normalizer  MIT
+fsspec, zstandard                                           BSD-3-Clause
 psycopg, psycopg-binary, psycopg-pool                       LGPL-3.0-only (dùng như thư viện, không sửa)
 PyJWT, cryptography, cffi, pycparser                        MIT / Apache-2.0 OR BSD-3-Clause / MIT-0 / BSD-3-Clause
 boto3, botocore, s3transfer, jmespath, python-dateutil, six, urllib3   Apache-2.0 / MIT

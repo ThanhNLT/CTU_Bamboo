@@ -37,6 +37,7 @@ jobs:
       matrix:
         include:
           - { name: actions, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/actions" }
+          - { name: lakehouse, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/actions\nREQUIREMENTS=requirements-lakehouse.txt" }
           - { name: seed, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/seed" }
           - { name: migrate, context: ., file: docker/migrate.Dockerfile, args: "" }
           - { name: keycloak, context: platform/keycloak, file: platform/keycloak/Dockerfile, args: "" }
