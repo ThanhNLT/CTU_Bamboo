@@ -51,6 +51,7 @@ x-bao-sync-env: &bao-sync-env
   KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
   FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
   CDC_DB_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
+  LAKEHOUSE_DB_PASSWORD: ${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}
   KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
   KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
   FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
@@ -118,13 +119,14 @@ services:
         condition: service_healthy
     environment:
       <<: *db-env
-      EXTRA_DATABASES: flowable keycloak hasura_meta hasura_meta_test bms_hasura_test
-      SERVICE_DATABASES: keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura hasura_meta_test:bamboo_hasura
+      EXTRA_DATABASES: flowable keycloak hasura_meta hasura_meta_test bms_hasura_test lakehouse
+      SERVICE_DATABASES: keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura hasura_meta_test:bamboo_hasura lakehouse:bamboo_lakehouse
       HASURA_DB_PASSWORD: ${HASURA_DB_PASSWORD:-hasura-db-dev}
       ACTIONS_DB_PASSWORD: ${ACTIONS_DB_PASSWORD:-actions-db-dev}
       KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
       FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
       CDC_DB_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
+      LAKEHOUSE_DB_PASSWORD: ${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}
     restart: "no"
 
   # Dữ liệu demo Tập đoàn X (ADR #16): bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
@@ -267,7 +269,7 @@ services:
       BAO_KEYS_FILE: /openbao/keys/init.json
       # File AppRole thuộc người dùng chạy dịch vụ (uid 10001 trong image Python).
       APPROLE_UID: "10001"
-      APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json,search=/run/bms-search/approle.json
+      APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json,search=/run/bms-search/approle.json,lakehouse=/run/bms-lakehouse/approle.json
       S3_CONFIG_PATH: /etc/bms/s3.json
       # Khóa chủ Meilisearch do OpenBao sinh, ghi vào tệp cấu hình (ADR #36).
       MEILI_CONFIG_PATH: /etc/meilisearch/config.toml
@@ -279,6 +281,7 @@ services:
       - actions-secrets:/run/bms-actions
       - bootstrap-secrets:/run/bms-bootstrap
       - search-secrets:/run/bms-search
+      - lakehouse-secrets:/run/bms-lakehouse
       - seaweedfs-config:/etc/bms
       - meilisearch-config:/etc/meilisearch
     restart: "no"
@@ -517,6 +520,30 @@ services:
       retries: 30
       start_period: 20s
 
+  # Lakehouse (ADR #39): đọc các topic CDC, ghi lịch sử thay đổi vào bảng Iceberg bronze.<schema>_<bảng> trên
+  # bucket bms-lakehouse; catalog ở CSDL `lakehouse` (JDBC catalog của Iceberg). Image riêng vì có pyarrow.
+  lakehouse-sink:
+    logging: *logging
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+      args:
+        APP_DIR: services/actions
+        REQUIREMENTS: requirements-lakehouse.txt
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-lakehouse:${BAMBOO_TAG:-dev}
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *actions-env
+      KAFKA_BOOTSTRAP: kafka:9092
+    volumes:
+      - lakehouse-secrets:/run/bms:ro
+    command: ["python", "-m", "app.lakehouse_sink"]
+    restart: unless-stopped
+
   # Cổng API (ADR #34): điểm vào duy nhất từ trình duyệt. APISIX standalone, route trong
   # platform/apisix/apisix.yaml; WAF Coraza (OWASP CRS); token kiểm tại biên (forward-auth → actions).
   gateway:
@@ -629,3 +656,4 @@ volumes:
   meilisearch-config:
   kafka-data:
   debezium-data:
+  lakehouse-secrets:

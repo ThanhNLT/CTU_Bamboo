@@ -12,8 +12,10 @@ LABEL org.opencontainers.image.title="bamboo-python" \
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 WORKDIR /repo/${APP_DIR}
 COPY constraints.txt /repo/constraints.txt
-COPY ${APP_DIR}/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt -c /repo/constraints.txt
+# REQUIREMENTS: tệp gói cần cài (image bamboo-lakehouse dùng requirements-lakehouse.txt, ADR #39).
+ARG REQUIREMENTS=requirements.txt
+COPY ${APP_DIR}/requirements*.txt ./
+RUN pip install --no-cache-dir -r ${REQUIREMENTS} -c /repo/constraints.txt
 COPY ${APP_DIR}/app ./app
 COPY platform /repo/platform
 # Chạy bằng người dùng không đặc quyền. Job openbao-init (ghi volume secret) và kiểm thử
