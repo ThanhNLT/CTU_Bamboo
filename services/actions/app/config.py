@@ -17,6 +17,10 @@ SECRET_FIELDS = {
     "bms/keycloak": {"username": "keycloak_admin_user", "password": "keycloak_admin_password"},
     "bms/seaweedfs": {"access_key": "s3_access_key", "secret_key": "s3_secret_key"},
     "bms/seaweedfs-admin": {"access_key": "s3_admin_access_key", "secret_key": "s3_admin_secret_key"},
+    "bms/seaweedfs-search": {"access_key": "s3_search_access_key", "secret_key": "s3_search_secret_key"},
+    "bms/meilisearch-admin": {"master_key": "meili_master_key"},
+    "bms/meilisearch-search": {"key": "meili_search_key"},
+    "bms/meilisearch-indexer": {"key": "meili_indexer_key"},
 }
 
 
@@ -47,6 +51,14 @@ class Settings:
     keycloak_admin_user: str
     keycloak_admin_password: str
     web_origin: str               # địa chỉ ứng dụng trình duyệt thấy (redirect URI của bms-web)
+    s3_search_access_key: str     # search-sync: chỉ đọc bucket tài liệu (ADR #36)
+    s3_search_secret_key: str
+    meili_url: str
+    meili_index: str
+    meili_master_key: str         # chỉ job bootstrap (tạo index, khóa API)
+    meili_search_key: str         # actions: chỉ tìm
+    meili_indexer_key: str        # search-sync: ghi chỉ mục
+    tika_url: str
 
 
 # Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
@@ -117,6 +129,10 @@ def load() -> Settings:
 
 def _from_env() -> Settings:
     env = os.environ.get
+    from .search import INDEXER_KEY_UID, SEARCH_KEY_UID, derive_key  # search dùng config: import muộn
+
+    # Chạy ngoài compose (kiểm thử native): đặt MEILI_MASTER_KEY thì hai khóa API suy ra từ khóa chủ.
+    master = env("MEILI_MASTER_KEY", "")
     return Settings(
         database_url=env("DATABASE_URL", "postgresql://bamboo_actions:actions-db-dev@db:5432/bms"),
         actions_secret=env("ACTIONS_SECRET", "dev-actions-secret"),
@@ -146,4 +162,12 @@ def _from_env() -> Settings:
         keycloak_admin_user=env("KEYCLOAK_ADMIN", "kcadmin"),
         keycloak_admin_password=env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"),
         web_origin=env("WEB_ORIGIN", "http://localhost:8000"),
+        s3_search_access_key=env("S3_SEARCH_ACCESS_KEY", "bms-search"),
+        s3_search_secret_key=env("S3_SEARCH_SECRET_KEY", "bms-search-dev-secret"),
+        meili_url=env("MEILI_URL", "http://meilisearch:7700"),
+        meili_index=env("MEILI_INDEX", "documents"),
+        meili_master_key=master,
+        meili_search_key=env("MEILI_SEARCH_KEY") or (derive_key(master, SEARCH_KEY_UID) if master else ""),
+        meili_indexer_key=env("MEILI_INDEXER_KEY") or (derive_key(master, INDEXER_KEY_UID) if master else ""),
+        tika_url=env("TIKA_URL", "http://tika:9998"),
     )

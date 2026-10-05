@@ -19,7 +19,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
-from . import attachments, auth, config
+from . import attachments, auth, config, search
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
@@ -135,6 +135,7 @@ HANDLERS = {
     "confirm_upload": attachments.confirm_upload,
     "get_download_url": attachments.get_download_url,
     "delete_attachment": attachments.delete_attachment,
+    "search_documents": search.search_documents,
 }
 
 
@@ -162,7 +163,9 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
     settings = settings or config.load()
     ctx = ctx or Context(
         flowable=FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password, timeout=5.0),
-        storage=Storage(settings), clamav_host=settings.clamav_host, clamav_port=settings.clamav_port)
+        storage=Storage(settings), clamav_host=settings.clamav_host, clamav_port=settings.clamav_port,
+        search=search.Meili(settings.meili_url, settings.meili_search_key, timeout=5.0),
+        search_index=settings.meili_index)
     verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
                                                  set(settings.keycloak_clients))
 

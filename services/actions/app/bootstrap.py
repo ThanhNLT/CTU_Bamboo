@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Job khởi tạo chạy mỗi lần `docker compose up`: tạo bucket S3, deploy BPMN, nạp metadata Hasura."""
+"""Job khởi tạo chạy mỗi lần `docker compose up`: tạo bucket S3, deploy BPMN, nạp metadata Hasura,
+tạo index và khóa API Meilisearch."""
 
 import hashlib
 import json
@@ -13,7 +14,7 @@ import time
 
 import httpx
 
-from . import config, keycloak_sync, storage
+from . import config, keycloak_sync, search, storage
 from .flowable import FlowableClient
 
 log = logging.getLogger("bootstrap")
@@ -64,6 +65,11 @@ def main() -> int:
     flowable = FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password)
     wait_for("Flowable", lambda: flowable.deployments_named("-"))
     deploy_bpmn(flowable)
+    meili = search.Meili(settings.meili_url, settings.meili_master_key)
+    wait_for("Meilisearch", lambda: meili.request("GET", "/health"))
+    if search.ensure_index(meili, settings.meili_index):
+        log.info("đã tạo index tìm kiếm %s", settings.meili_index)
+    search.ensure_keys(meili)
     wait_for("Hasura", lambda: httpx.get(f"{settings.hasura_url}/healthz", timeout=5).raise_for_status())
     apply_hasura_metadata(settings.hasura_url, settings.hasura_admin_secret)
     wait_for("Keycloak", lambda: keycloak_sync.ensure_web_client(
