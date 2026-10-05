@@ -150,6 +150,9 @@ def s3_identities(settings: config.Settings) -> dict:
         {"name": "bms-search", "credentials": [{"accessKey": settings.s3_search_access_key,
                                                 "secretKey": settings.s3_search_secret_key}],
          "actions": [f"Read:{settings.s3_documents_bucket}"]},
+        {"name": "bms-lakehouse", "credentials": [{"accessKey": settings.s3_lakehouse_access_key,
+                                                   "secretKey": settings.s3_lakehouse_secret_key}],
+         "actions": [f"{a}:{settings.s3_lakehouse_bucket}" for a in ("Read", "Write", "List", "Tagging")]},
     ]}
 
 
@@ -172,7 +175,7 @@ def ensure_buckets(settings: config.Settings) -> list[str]:
                     settings.s3_region)
     existing = {b["Name"] for b in admin.list_buckets().get("Buckets", [])}
     created = []
-    for bucket in (settings.s3_quarantine_bucket, settings.s3_documents_bucket):
+    for bucket in (settings.s3_quarantine_bucket, settings.s3_documents_bucket, settings.s3_lakehouse_bucket):
         if bucket not in existing:
             admin.create_bucket(Bucket=bucket)
             created.append(bucket)

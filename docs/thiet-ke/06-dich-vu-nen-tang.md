@@ -1,6 +1,6 @@
-# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF, CDC
+# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF, CDC, Lakehouse
 
-> **Hiện trạng repo (05/10/2026):** cả bảy mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
+> **Hiện trạng repo (05/10/2026):** cả tám mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
 
 Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
 bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
@@ -300,11 +300,51 @@ PostgreSQL bms (wal_level=logical, publication bms_cdc)
 - PostgreSQL: `max_slot_wal_keep_size=1GB`. Debezium dừng lâu hơn mức WAL này thì slot bị vô hiệu; xóa volume `debezium-data` và slot (`SELECT pg_drop_replication_slot('bms_debezium')`) để chụp ảnh lại.
 - Độ trễ slot: `SELECT slot_name, active, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)) FROM pg_replication_slots`.
 - Xem topic: `docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list`; đọc sự kiện: `docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic bms.proc.purchase_request --from-beginning`.
-- Bước tiếp theo: Kafka → Iceberg (Lakehouse), SASL/ACL khi ứng dụng Tầng 3 ghi vào Kafka.
+- Kafka → Iceberg: mục 8. Còn: SASL/ACL khi ứng dụng Tầng 3 ghi vào Kafka.
 
 ### Lệnh
 
 ```bash
 make test-db T=bms_120              # publication, quyền của bamboo_cdc
 make test-actions T=tests/test_cdc.py   # nhịp tim đi hết CSDL → Debezium → Kafka; topic nghiệp vụ; không lộ audit
+```
+
+## 8. Lakehouse bronze – Kafka → Iceberg (ADR #39)
+
+```text
+Kafka bms.<schema>.<bảng>  (core, mdm, wf, proc, ic, collab; bỏ nhịp tim)
+   └─► lakehouse-sink: lô ≤ 5.000 dòng hoặc 30 giây ─► append bronze.<schema>_<bảng>
+          snapshot summary "kafka.offsets" = vị trí tiếp theo của từng partition (khởi động lại đọc tiếp từ đây)
+Catalog: PostgreSQL CSDL lakehouse (bảng iceberg_tables, iceberg_namespace_properties – JDBC catalog)
+Dữ liệu: s3://bms-lakehouse/warehouse/bronze/<bảng>/{metadata,data}/  (Parquet, phân vùng source_date)
+```
+
+| Cột | Kiểu | Ý nghĩa |
+|---|---|---|
+| `op` | string | `r` chụp ảnh ban đầu, `c` thêm, `u` sửa, `d` xóa |
+| `source_ts`, `source_date` | timestamp UTC, date | Thời điểm giao dịch trong CSDL; `source_date` là khóa phân vùng |
+| `lsn`, `tx_id` | long | Vị trí WAL, mã giao dịch PostgreSQL (sắp thứ tự, gom theo giao dịch) |
+| `tenant_id` | string | Tenant của dòng (lọc theo công ty khi phân tích) |
+| `record_key` | string | Khóa chính dạng JSON, ví dụ `{"id":"…"}` |
+| `before`, `after` | string (JSON) | Ảnh dòng trước/sau; sửa thì `before` null (replica identity mặc định, ADR #38) |
+| `kafka_partition`, `kafka_offset` | int, long | Vị trí sự kiện trong Kafka, duy nhất trong bảng |
+| `ingested_at` | timestamp UTC | Lúc ghi vào lakehouse |
+
+- Trạng thái hiện tại của một bảng: dòng có `lsn` lớn nhất theo `record_key`, bỏ dòng `op = 'd'` (tầng silver, dựng bằng Trino ở bước sau).
+- Đúng một lần theo từng bảng: dữ liệu và vị trí Kafka nằm trong cùng một commit Iceberg. Tombstone (bản ghi rỗng sau xóa) không ghi thành dòng.
+- Bảng nguồn mới (topic mới) được nhận trong vòng 60 giây; bảng bronze tạo tự động.
+- Lô nhỏ sinh nhiều tệp Parquet nhỏ: gộp định kỳ (`ALTER TABLE … EXECUTE optimize` của Trino) khi có Trino.
+- Sao lưu: catalog nằm trong `pg_dumpall`, dữ liệu trong volume `seaweedfs-data` (script sao lưu đã gồm cả hai).
+
+| Thành phần | Quyền |
+|---|---|
+| AppRole `lakehouse` | đọc `bms/lakehouse` (tài khoản catalog), `bms/seaweedfs-lakehouse`; không đọc `bms/postgres`, khóa S3 khác, `pii` |
+| Role CSDL `bamboo_lakehouse` | chủ CSDL `lakehouse`; không kết nối được CSDL `bms` |
+| Định danh S3 `bms-lakehouse` | `Read/Write/List/Tagging` chỉ trên `bms-lakehouse`; `bms-app`, `bms-search` không vào được bucket này |
+
+### Lệnh
+
+```bash
+make test-actions T=tests/test_lakehouse.py   # sự kiện → dòng bronze, ghi từ topic thật, không trùng khi khởi động lại
+docker compose logs -f lakehouse-sink
 ```
