@@ -18,6 +18,9 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y   # mở http://l
 - Image cũ trên máy chạy với tệp compose mới thì Hasura, Keycloak, Flowable khởi động lại liên tục (`password authentication failed`): kéo image mới (`docker compose pull`) hoặc build lại (`--build`).
 
 ### Thêm
+- Phiếu đề nghị mua sắm dạng PDF (ADR #37): query `get_purchase_request_pdf` trả link tải phiếu khổ A4 gồm thông tin đề nghị, dòng hàng, tổng tiền bằng chữ, chuỗi phê duyệt, chữ chìm trạng thái khi chưa duyệt, chân trang có số chứng từ, mã kiểm tra và số trang. Chỉ người xem được chứng từ mới in được; cùng nội dung thì dùng lại tệp đã in. Dịch vụ mới `gotenberg` (bản Chromium, chỉ mạng nội bộ, chặn mọi truy cập mạng khi in).
+
+### Thêm
 - Tìm kiếm toàn văn (ADR #36): Action `search_documents` tìm đề nghị mua sắm (số chứng từ, tiêu đề, mô tả, dòng hàng, nhà cung cấp, người lập, đơn vị) và nội dung tệp đính kèm đã kiểm tra (PDF, DOCX, XLSX, TXT); gõ tiếng Việt không dấu vẫn tìm được, đoạn trích đánh dấu chữ khớp. Chỉ trả chứng từ người gọi xem được: quyền kiểm tra lại trong CSDL cho từng kết quả. Dịch vụ mới `meilisearch` (bản Community, MIT), `tika` (trích chữ) và `search-sync` (đồng bộ CSDL → chỉ mục bằng trigger, tự dựng lại chỉ mục trống). Khóa chủ Meilisearch do OpenBao sinh; khóa chỉ tìm cho `actions`, khóa ghi chỉ mục và định danh S3 chỉ đọc cho `search-sync` (AppRole `search`).
 - Script sao lưu `scripts/ops/backup.sh` và `scripts/ops/backup.ps1`: CSDL (`pg_dumpall`), két OpenBao (dữ liệu và khóa), tệp đính kèm SeaweedFS.
 

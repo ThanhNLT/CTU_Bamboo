@@ -24,6 +24,7 @@ Trình duyệt ──► Cổng API APISIX :8000 (một điểm vào; WAF Coraza
                                                                         └──► OpenBao (secret, khóa S3, mã hóa PII)
               flow-sync ── đối chiếu CSDL → Flowable (BPMN, bản phản chiếu luồng duyệt)
               search-sync ── CSDL + nội dung tệp (Tika) → Meilisearch (Action search_documents lọc lại theo quyền)
+              actions ── HTML (Jinja2) → Gotenberg → phiếu PDF trong SeaweedFS (Action get_purchase_request_pdf)
 ```
 
 | Thành phần | Công nghệ | Giấy phép |
@@ -36,6 +37,7 @@ Trình duyệt ──► Cổng API APISIX :8000 (một điểm vào; WAF Coraza
 | Lưu trữ đối tượng S3 | SeaweedFS 4 | Apache-2.0 |
 | Két secret | OpenBao 2 | MPL-2.0 |
 | Tìm kiếm toàn văn, trích chữ tệp | Meilisearch 1 (Community), Apache Tika 4 | MIT, Apache-2.0 |
+| In phiếu PDF | Gotenberg 8 (Chromium), Jinja2 | MIT, BSD-3-Clause |
 | Quét virus (tùy chọn) | ClamAV | GPL-2.0 |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI | MIT |
 | Giao diện | Refine 5, React 19, Ant Design 5 | MIT |
@@ -187,7 +189,7 @@ npm run build                   # bản tĩnh trong dist/, phục vụ bằng we
 ```bash
 make test-db        # kiểm thử SQL: tổ chức, phân quyền, chuỗi duyệt, mua sắm, kiểm toán, cộng tác, tệp đính kèm
 make test-seed      # dữ liệu demo đúng, chạy lại không trùng, khớp realm Keycloak
-make test-actions   # Hasura, Flowable, SeaweedFS, OpenBao, Meilisearch, Tika thật
+make test-actions   # Hasura, Flowable, SeaweedFS, OpenBao, Meilisearch, Tika, Gotenberg thật
 make test-auth      # đăng nhập thật mọi tài khoản demo (cần `docker compose up -d` trước)
 make test-all
 ```
