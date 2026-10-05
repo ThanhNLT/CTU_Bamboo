@@ -93,6 +93,19 @@ class Storage:
                             ContentType=content_type, MetadataDirective="REPLACE")
         self.s3.delete_object(Bucket=self.quarantine, Key=key)
 
+    def document_exists(self, key: str) -> bool:
+        try:
+            self.s3.head_object(Bucket=self.documents, Key=key)
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] in ("NoSuchKey", "404", "NotFound"):
+                return False
+            raise
+        return True
+
+    def put_document(self, key: str, data: bytes, content_type: str) -> None:
+        """Tệp hệ thống tự sinh (phiếu PDF) ghi thẳng vào bucket tài liệu, không qua bucket cách ly."""
+        self.s3.put_object(Bucket=self.documents, Key=key, Body=data, ContentType=content_type)
+
     def delete(self, key: str) -> None:
         for bucket in (self.quarantine, self.documents):
             self.s3.delete_object(Bucket=bucket, Key=key)

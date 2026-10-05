@@ -10,6 +10,7 @@ Biến môi trường (mặc định khớp `make test-actions` trong docker com
                       trong lúc kiểm thử dùng URL này để lộ quyền còn thiếu như production (ADR #35)
   HASURA_URL, HASURA_GRAPHQL_ADMIN_SECRET, FLOWABLE_URL, FLOWABLE_USER, FLOWABLE_PASSWORD
   S3_ENDPOINT, S3_PUBLIC_ENDPOINT, S3_*_KEY  SeaweedFS (kiểm thử tệp đính kèm)
+  GOTENBERG_URL       in phiếu PDF
   MEILI_URL, MEILI_MASTER_KEY, TIKA_URL  tìm kiếm (khóa chủ đọc từ OpenBao nếu có BAO_KEYS_FILE); index
                       kiểm thử MEILI_TEST_INDEX (mặc định documents_test), tạo lại mỗi phiên
   ACTIONS_PORT        cổng chạy dịch vụ actions trong lúc kiểm thử (Hasura gọi vào ACTIONS_URL)
@@ -178,6 +179,13 @@ def s3(database) -> storage.Storage:
             if time.monotonic() > deadline:
                 _missing("SeaweedFS")
             time.sleep(2)
+
+
+@pytest.fixture(scope="session")
+def gotenberg(database) -> str:
+    if not _reachable(SETTINGS.gotenberg_url + "/health"):
+        _missing("Gotenberg")
+    return SETTINGS.gotenberg_url
 
 
 @pytest.fixture(scope="session")

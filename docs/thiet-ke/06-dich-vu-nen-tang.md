@@ -1,6 +1,6 @@
-# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm
+# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF
 
-> **Hiện trạng repo (05/10/2026):** cả năm mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
+> **Hiện trạng repo (05/10/2026):** cả sáu mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
 
 Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
 bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
@@ -239,4 +239,36 @@ Nội dung đề nghị lấy từ hàm `search.purchase_request_doc(id)`. Thêm
 make test-actions T=tests/test_tim_kiem.py   # không dấu, nội dung DOCX, lọc quyền, tenant, gỡ tệp đã xóa, khóa API
 docker compose exec db psql -U bms -d bms -c "SELECT entity_type, entity_id, attempts, last_error FROM search.pending WHERE dirty"
 docker compose exec db psql -U bms -d bms -c "SELECT search.mark_all()"   # dựng lại toàn bộ chỉ mục
+```
+
+## 6. Phiếu PDF – Gotenberg (ADR #37)
+
+```text
+get_purchase_request_pdf(request_id)
+  ├─ người gọi xem được chứng từ? (wf.entity_can_read) ── không ─► not-found
+  ├─ dữ liệu: đề nghị, công ty (đơn vị pháp nhân gần nhất), người lập, nhà cung cấp, dòng hàng,
+  │           chuỗi duyệt của lần gửi gần nhất (giờ Việt Nam do PostgreSQL định dạng)
+  ├─ HTML = Jinja2(templates/phieu_de_nghi_mua_sam.html), escape tự động; mã nội dung = sha256(FORM_VERSION + HTML)
+  ├─ bms-documents/<tenant>/proc.purchase_request/<id>/forms/<mã>.pdf đã có? ── có ─► cached = true
+  │     └─ chưa: Gotenberg /forms/chromium/convert/html (A4, chân trang chan_trang.html) ─► lưu
+  └─► link GET có chữ ký 5 phút, tên tệp <số chứng từ>.pdf
+```
+
+| Mục | Nội dung |
+|---|---|
+| Đầu phiếu | Công ty (đơn vị pháp nhân chứa đơn vị lập), đơn vị, số chứng từ, ngày lập |
+| Thân | Tiêu đề, trạng thái, người đề nghị (mã nhân viên), chức danh, cần trước ngày, nhà cung cấp (MST, địa chỉ), nhóm hàng, mô tả; bảng dòng hàng (số kiểu Việt Nam `1.234.567`), tổng cộng, **bằng chữ** (`forms.amount_in_words`) |
+| Phê duyệt | Từng bước: vị trí, người thực hiện (kể cả duyệt thay), kết quả, thời điểm, ý kiến |
+| Chân trang | Số chứng từ · mã kiểm tra (16 ký tự đầu của mã nội dung) · Trang x/y |
+| Chữ chìm | Trạng thái (Bản nháp, Chờ duyệt, Bị trả về, Từ chối, Đã hủy) khi chưa duyệt xong |
+
+- `gotenberg`: image `gotenberg/gotenberg:8.37.0-chromium` (MIT), chỉ mạng nội bộ, chỉ `actions` gọi. Cờ: `--chromium-disable-javascript`, `--chromium-deny-private-ips`, `--chromium-deny-public-ips`, `--api-disable-download-from`, `--webhook-disable`; trang in không tải được tài nguyên mạng nào (có kiểm thử).
+- Phiếu không có giờ in nên in lại cùng nội dung trả đúng tệp cũ (`cached`); sửa mẫu theo cách không đổi HTML thì tăng `FORM_VERSION`.
+- Tệp phiếu nằm cùng bucket với tệp đính kèm (sao lưu chung `seaweedfs-data`), không có dòng trong `core.attachment`.
+- Lỗi: `not-found`, `pdf-unavailable` (503, Gotenberg không truy cập được).
+
+### Lệnh
+
+```bash
+make test-actions T=tests/test_phieu_pdf.py   # bằng chữ, escape, in qua Hasura, tái dùng theo nội dung, quyền, chặn mạng
 ```

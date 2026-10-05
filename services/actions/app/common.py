@@ -26,6 +26,7 @@ class Context:
     clamav_port: int = 3310
     search: "Meili | None" = None       # khóa chỉ được tìm (ADR #36)
     search_index: str = "documents"
+    gotenberg_url: str = ""           # in phiếu PDF (ADR #37)
 
 
 class ActionError(Exception):
