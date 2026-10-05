@@ -123,7 +123,8 @@ def scan(data: bytes, host: str, port: int = 3310, timeout: float = 30.0) -> tup
 # --- Khởi tạo (job openbao-init ghi s3.json, job bootstrap tạo bucket) -------------
 
 def s3_identities(settings: config.Settings) -> dict:
-    """Cấu hình định danh S3 cho SeaweedFS (-s3.config): admin toàn quyền, ứng dụng chỉ đọc/ghi hai bucket."""
+    """Cấu hình định danh S3 cho SeaweedFS (-s3.config): admin toàn quyền, ứng dụng chỉ đọc/ghi hai bucket,
+    search-sync chỉ đọc bucket tài liệu đã kiểm tra (ADR #36)."""
     app_actions = [f"{a}:{b}" for b in (settings.s3_quarantine_bucket, settings.s3_documents_bucket)
                    for a in ("Read", "Write", "List", "Tagging")]
     return {"identities": [
@@ -133,7 +134,23 @@ def s3_identities(settings: config.Settings) -> dict:
         {"name": "bms-app", "credentials": [{"accessKey": settings.s3_access_key,
                                              "secretKey": settings.s3_secret_key}],
          "actions": app_actions},
+        {"name": "bms-search", "credentials": [{"accessKey": settings.s3_search_access_key,
+                                                "secretKey": settings.s3_search_secret_key}],
+         "actions": [f"Read:{settings.s3_documents_bucket}"]},
     ]}
+
+
+def read_document(settings: config.Settings, key: str, limit: int = MAX_BYTES) -> bytes | None:
+    """Nội dung tệp đã kiểm tra (bucket tài liệu) bằng khóa chỉ đọc của search-sync; None nếu không còn."""
+    client = _client(settings.s3_endpoint, settings.s3_search_access_key, settings.s3_search_secret_key,
+                     settings.s3_region)
+    try:
+        obj = client.get_object(Bucket=settings.s3_documents_bucket, Key=key, Range=f"bytes=0-{limit - 1}")
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] in ("NoSuchKey", "404", "InvalidRange"):
+            return None
+        raise
+    return obj["Body"].read()
 
 
 def ensure_buckets(settings: config.Settings) -> list[str]:

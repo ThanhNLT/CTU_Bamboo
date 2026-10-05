@@ -10,11 +10,14 @@ Biến môi trường (mặc định khớp `make test-actions` trong docker com
                       trong lúc kiểm thử dùng URL này để lộ quyền còn thiếu như production (ADR #35)
   HASURA_URL, HASURA_GRAPHQL_ADMIN_SECRET, FLOWABLE_URL, FLOWABLE_USER, FLOWABLE_PASSWORD
   S3_ENDPOINT, S3_PUBLIC_ENDPOINT, S3_*_KEY  SeaweedFS (kiểm thử tệp đính kèm)
+  MEILI_URL, MEILI_MASTER_KEY, TIKA_URL  tìm kiếm (khóa chủ đọc từ OpenBao nếu có BAO_KEYS_FILE); index
+                      kiểm thử MEILI_TEST_INDEX (mặc định documents_test), tạo lại mỗi phiên
   ACTIONS_PORT        cổng chạy dịch vụ actions trong lúc kiểm thử (Hasura gọi vào ACTIONS_URL)
   WAIT_FOR_SERVICES   số giây chờ Hasura/Flowable/SeaweedFS trước khi bỏ qua kiểm thử cần chúng (mặc định 180)
   REQUIRE_SERVICES=1  thiếu Hasura/Flowable/SeaweedFS thì báo lỗi thay vì bỏ qua (dùng trong `make test-actions`)
 """
 
+import json
 import os
 import pathlib
 import threading
@@ -28,13 +31,15 @@ import pytest
 import uvicorn
 from psycopg.rows import dict_row
 
-from app import bootstrap, config, main, storage
+from app import bootstrap, config, main, search, storage
 from app.flowable import FlowableClient
+from app.openbao import Bao
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_hasura_test")
 TEST_APP_DB_URL = os.environ.get("TEST_APP_DATABASE_URL") or TEST_DB_URL
 ACTIONS_PORT = int(os.environ.get("ACTIONS_PORT", "8090"))
+MEILI_TEST_INDEX = os.environ.get("MEILI_TEST_INDEX", "documents_test")
 SETTINGS = config.load()
 
 
@@ -176,8 +181,32 @@ def s3(database) -> storage.Storage:
 
 
 @pytest.fixture(scope="session")
+def search_settings(database) -> config.Settings:
+    """Cấu hình tìm kiếm cho kiểm thử: khóa chủ, khóa ghi chỉ mục, khóa S3 chỉ đọc lấy từ OpenBao bằng root token
+    (container kiểm thử chỉ có AppRole actions) hoặc từ MEILI_MASTER_KEY khi chạy native. Index kiểm thử tạo lại."""
+    settings = SETTINGS
+    keys = pathlib.Path(os.environ.get("BAO_KEYS_FILE", "/openbao/keys/init.json"))
+    addr = os.environ.get("BAO_ADDR")
+    if addr and keys.exists():
+        settings = config.with_openbao(config._from_env(), Bao(addr, json.loads(keys.read_text())["root_token"]))
+    settings = config.Settings(**{**settings.__dict__, "database_url": TEST_APP_DB_URL,
+                                  "meili_index": MEILI_TEST_INDEX})
+    if not settings.meili_master_key or not _reachable(settings.meili_url + "/health"):
+        _missing("Meilisearch")
+    if not _reachable(settings.tika_url + "/version"):
+        _missing("Tika")
+    admin = search.Meili(settings.meili_url, settings.meili_master_key)
+    if admin.request("GET", f"/indexes/{MEILI_TEST_INDEX}", ok404=True):
+        admin.wait(admin.request("DELETE", f"/indexes/{MEILI_TEST_INDEX}"))
+    search.ensure_index(admin, MEILI_TEST_INDEX)
+    search.ensure_keys(admin)
+    return settings
+
+
+@pytest.fixture(scope="session")
 def actions_server(database):
-    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": TEST_APP_DB_URL})
+    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": TEST_APP_DB_URL,
+                                  "meili_index": MEILI_TEST_INDEX})
     server = uvicorn.Server(uvicorn.Config(main.create_app(settings), host="0.0.0.0", port=ACTIONS_PORT,
                                            log_level="warning"))
     thread = threading.Thread(target=server.run, daemon=True)

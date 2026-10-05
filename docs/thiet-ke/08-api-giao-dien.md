@@ -35,14 +35,15 @@ Các màn hình [P] dưới đây đã hiện thực trong `apps/web/web/src/pag
 | `/admin/audit-logs` (`audit_events` trong thiết kế) | `audit_log` (+ `actor`), chỉ người có quyền `audit.read` |
 | `/d/ledger` (`verify-ledger`) | Action `verify_audit_chain`: `ok`, `checked`, `head_seq`, `head_hash`, `problems` ([ADR #33](#adr-33)) |
 | Danh mục chọn trong form | `mdm_partner`, `mdm_item`, `core_catalog_item(where: {catalog: {_eq: "ITEM_CATEGORY"}})`, tư cách lập: `core_assignment` của mình |
-| `/i/search`, `/i/chat`, `/i/ocr`, `/d/*` | Chưa có |
+| `/i/search` (tìm kiếm toàn văn) | Action `search_documents(query, kind, limit, offset)` → `[SearchHit]`: `kind` (`purchase_request`/`attachment`), `entity_id`, `attachment_id`, `file_name`, `matched_field`, `snippet` (HTML an toàn, chữ khớp trong `<mark>`), quan hệ `purchase_request`, `attachment`. Gõ không dấu được; chỉ trả chứng từ người gọi xem được ([ADR #36](#adr-36)). Kết quả có độ trễ đồng bộ vài giây sau khi sửa |
+| `/i/chat`, `/i/ocr`, `/d/*` | Chưa có |
 
 ## 3. Lưu ý khi dùng
 
 - **Tổng tiền sau khi tạo kèm dòng hàng:** phản hồi của `insert_proc_purchase_request_one` lồng `purchase_request_items` chụp dòng cha trước khi chèn dòng hàng nên `total_amount` còn là 0; đọc lại bằng `proc_purchase_request_by_pk` (Refine tự refetch sau create).
 - Có dòng hàng thì `total_amount` luôn bằng tổng các dòng; sửa tay bị ghi đè. `doc_no` do CSDL sinh, không gửi lên.
 - Đề nghị đang chờ duyệt hoặc đã xong thì update/delete trả về `null`/`affected_rows: 0` (không khớp quyền) hoặc lỗi "không sửa được dòng hàng".
-- **Lỗi nghiệp vụ** trả về `errors[0].message` tiếng Việt, dùng thẳng được trên giao diện; `extensions.code`: `not-found`, `forbidden`, `note-required`, `rejected`, `unauthorized`, `constraint-violation`.
+- **Lỗi nghiệp vụ** trả về `errors[0].message` tiếng Việt, dùng thẳng được trên giao diện; `extensions.code`: `not-found`, `forbidden`, `note-required`, `rejected`, `unauthorized`, `constraint-violation`, `query-required`, `search-unavailable`.
 - Trạng thái đề nghị: `DRAFT`, `PENDING`, `RETURNED`, `APPROVED`, `REJECTED`, `CANCELLED`. Loại thông báo: `TASK_ASSIGNED`, `REQUEST_APPROVED`, `REQUEST_REJECTED`, `REQUEST_RETURNED`, `REQUEST_CANCELLED`, `COMMENT`, `MENTION`.
 
 ## 4. Ví dụ
@@ -62,6 +63,14 @@ mutation CreatePR($pos: uuid!) {
     requester_position_id: $pos, title: "Linh kiện thay thế", partner_id: null,
     purchase_request_items: {data: [{item_id: "…", quantity: 1000, unit_price: 12000}]}
   }) { id doc_no }
+}
+
+# Tìm kiếm toàn văn (đề nghị và nội dung tệp)
+query Search($q: String!) {
+  search_documents(query: $q, limit: 20) {
+    kind snippet matched_field file_name attachment_id
+    purchase_request { id doc_no title status }
+  }
 }
 
 # Quyền của tôi (dựng CASL)
