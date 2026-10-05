@@ -1,6 +1,6 @@
-# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF, CDC, Lakehouse
+# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF, CDC, Lakehouse, Trino
 
-> **Hiện trạng repo (05/10/2026):** cả tám mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
+> **Hiện trạng repo (05/10/2026):** cả chín mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
 
 Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
 bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
@@ -330,10 +330,10 @@ Dữ liệu: s3://bms-lakehouse/warehouse/bronze/<bảng>/{metadata,data}/  (Par
 | `kafka_partition`, `kafka_offset` | int, long | Vị trí sự kiện trong Kafka, duy nhất trong bảng |
 | `ingested_at` | timestamp UTC | Lúc ghi vào lakehouse |
 
-- Trạng thái hiện tại của một bảng: dòng có `lsn` lớn nhất theo `record_key`, bỏ dòng `op = 'd'` (tầng silver, dựng bằng Trino ở bước sau).
+- Trạng thái hiện tại của một bảng: view silver (mục 9).
 - Đúng một lần theo từng bảng: dữ liệu và vị trí Kafka nằm trong cùng một commit Iceberg. Tombstone (bản ghi rỗng sau xóa) không ghi thành dòng.
 - Bảng nguồn mới (topic mới) được nhận trong vòng 60 giây; bảng bronze tạo tự động.
-- Lô nhỏ sinh nhiều tệp Parquet nhỏ: gộp định kỳ (`ALTER TABLE … EXECUTE optimize` của Trino) khi có Trino.
+- Lô nhỏ sinh nhiều tệp Parquet nhỏ: gộp bằng Trino `ALTER TABLE lakehouse.bronze.<bảng> EXECUTE optimize` (mục 9).
 - Sao lưu: catalog nằm trong `pg_dumpall`, dữ liệu trong volume `seaweedfs-data` (script sao lưu đã gồm cả hai).
 
 | Thành phần | Quyền |
@@ -347,4 +347,54 @@ Dữ liệu: s3://bms-lakehouse/warehouse/bronze/<bảng>/{metadata,data}/  (Par
 ```bash
 make test-actions T=tests/test_lakehouse.py   # sự kiện → dòng bronze, ghi từ topic thật, không trùng khi khởi động lại
 docker compose logs -f lakehouse-sink
+```
+
+## 9. Tầng silver và Trino (ADR #40)
+
+```text
+platform/trino/silver.sql  (sinh bằng app.lakehouse_silver từ kiểu cột PostgreSQL, commit vào Git)
+   └─ trino-init (mỗi lần khởi động): CREATE TABLE IF NOT EXISTS bronze.* ; CREATE OR REPLACE VIEW silver.*
+Trino (catalog lakehouse = JDBC catalog Iceberg của lakehouse-sink) ─► lakehouse.silver.<schema>_<bảng>
+```
+
+| Dịch vụ | Image | Ghi chú |
+|---|---|---|
+| `trino` | `bamboo-trino` (`trinodb/trino:483` + cấu hình) | Một node, heap 1 GB, `127.0.0.1:8085` (giao diện web, `trino` CLI). Catalog `/etc/trino/bms-catalog/lakehouse.properties` do `openbao-init` ghi (mật khẩu CSDL `lakehouse`, khóa S3 `bms-lakehouse`) |
+| `trino-init` | cùng image | Chạy `platform/trino/silver.sql` rồi thoát |
+
+### View silver
+
+- `lakehouse.silver.<schema>_<bảng>` cho mọi bảng trong publication `bms_cdc` (trừ `cdc`): cột như PostgreSQL, thêm `_changed_at` (thời điểm thay đổi gần nhất), `_lsn`.
+- Mỗi khóa chính một dòng: sự kiện mới nhất theo (`kafka_partition`, `kafka_offset`); dòng mới nhất là xóa thì không hiện.
+- Ánh xạ kiểu: `uuid` → `uuid`; `numeric(p,s)` → `decimal(p,s)` (không có độ chính xác → `double`); số nguyên → `smallint/integer/bigint`; `date` → `date`; `timestamptz` → `timestamp(6) with time zone`; mảng → `array(varchar)`; `jsonb`, `ltree`, khoảng thời gian (`tstzrange`), `text` → `varchar`.
+- Cột sinh tự động (`GENERATED ALWAYS … STORED`, ví dụ `proc.purchase_request_item.amount`) không có trong silver: PostgreSQL 17 không đưa cột này vào replication logic.
+- Độ trễ từ lúc ghi CSDL tới silver: khoảng 30 giây (lô của lakehouse-sink).
+- Đổi cấu trúc CSDL (migration mới): `make trino-sql` sinh lại `silver.sql`; kiểm thử `test_tep_sql_khop_csdl` báo lỗi nếu quên.
+
+### Truy vấn
+
+```bash
+docker compose exec trino trino --catalog lakehouse --schema silver
+```
+
+```sql
+-- Tổng giá trị đề nghị đã duyệt theo tenant
+SELECT t.name, count(*) AS so_de_nghi, sum(r.total_amount) AS tong_tien
+FROM lakehouse.silver.proc_purchase_request r JOIN lakehouse.silver.core_tenant t ON t.id = r.tenant_id
+WHERE r.status = 'APPROVED' GROUP BY t.name;
+
+-- Lịch sử thay đổi trạng thái của một đề nghị (bronze)
+SELECT source_ts, op, json_extract_scalar(after, '$.status') AS status
+FROM lakehouse.bronze.proc_purchase_request
+WHERE json_extract_scalar(after, '$.doc_no') = 'PR-2026-000001' ORDER BY kafka_offset;
+
+-- Gộp tệp Parquet nhỏ
+ALTER TABLE lakehouse.bronze.proc_purchase_request EXECUTE optimize;
+```
+
+### Lệnh
+
+```bash
+make trino-sql                                  # sinh lại silver.sql sau migration và áp dụng
+make test-actions T=tests/test_lakehouse_silver.py   # kiểu cột, tệp SQL khớp CSDL, silver khớp CSDL nguồn qua cả đường CDC
 ```

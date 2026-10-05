@@ -41,6 +41,15 @@ def table_name(topic: str) -> str:
     return f"{NAMESPACE}.{schema}_{table}"
 
 
+# Cột bronze và kiểu Trino tương ứng (lakehouse_silver tạo bảng bằng Trino với đúng danh sách này, ADR #40).
+BRONZE_COLUMNS = [
+    ("op", "varchar"), ("source_ts", "timestamp(6) with time zone"), ("source_date", "date"), ("lsn", "bigint"),
+    ("tx_id", "bigint"), ("tenant_id", "varchar"), ("record_key", "varchar"), ("before", "varchar"),
+    ("after", "varchar"), ("kafka_partition", "integer"), ("kafka_offset", "bigint"),
+    ("ingested_at", "timestamp(6) with time zone"),
+]
+
+
 def arrow_schema():
     import pyarrow as pa
     ts = pa.timestamp("us", tz="UTC")
@@ -98,10 +107,14 @@ def catalog(settings: config.Settings, warehouse: str = "warehouse"):
 def ensure_table(cat, name: str):
     """Bảng bronze phân vùng theo ngày thay đổi (identity trên source_date: không cần pyiceberg-core)."""
     from pyiceberg.transforms import IdentityTransform
+    from pyiceberg.exceptions import TableAlreadyExistsError
     cat.create_namespace_if_not_exists(NAMESPACE)
     if cat.table_exists(name):
         return cat.load_table(name)
-    table = cat.create_table(name, schema=arrow_schema(), properties={"format-version": "2"})
+    try:
+        table = cat.create_table(name, schema=arrow_schema(), properties={"format-version": "2"})
+    except TableAlreadyExistsError:  # trino-init vừa tạo cùng lúc
+        return cat.load_table(name)
     with table.update_spec() as spec:
         spec.add_field("source_date", IdentityTransform(), "source_date")
     log.info("đã tạo bảng %s", name)
@@ -175,12 +188,16 @@ class Sink:
         deadline = time.monotonic() + wait_seconds
         count = 0
         now = dt.datetime.now(dt.UTC)
+        idle = 0
         while count < MAX_BATCH and time.monotonic() < deadline:
             batch = self.consumer.poll(timeout_ms=500, max_records=MAX_BATCH - count)
             if not batch:
-                if stop_when_idle:
+                # Lần poll đầu sau khi gán partition thường rỗng (chưa kịp fetch): coi là hết dữ liệu sau 3 lần.
+                idle += 1
+                if stop_when_idle and idle >= 3:
                     break
                 continue
+            idle = 0
             for tp, records in batch.items():
                 for rec in records:
                     offsets.setdefault(tp.topic, {})[tp.partition] = rec.offset + 1
