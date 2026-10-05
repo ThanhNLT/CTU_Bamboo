@@ -1,0 +1,56 @@
+/*
+ * SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Nền sáng cố định kể cả chế độ tối: sơ đồ BPMN vẽ nét đen. Không đặt gì đè lên watermark bpmn.io. */
+.bamboo-bpmn {
+  height: 480px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #fff;
+  position: relative;
+}
+
+/* Bước đang chạy: viền đậm màu xanh; bước đã qua: tô nhạt. Chữ chú giải đi kèm nên không chỉ dựa vào màu (UI-10). */
+.bamboo-bpmn .bamboo-active .djs-visual > :nth-child(1) {
+  stroke: #1677ff !important;
+  stroke-width: 4px !important;
+  fill: #e6f4ff !important;
+}
+.bamboo-bpmn .bamboo-done .djs-visual > :nth-child(1) {
+  fill: #f6ffed !important;
+  stroke: #52c41a !important;
+}
+.bamboo-bpmn .bamboo-done.djs-connection .djs-visual > path {
+  stroke: #52c41a !important;
+}
+
+.bamboo-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bamboo-legend::before {
+  content: "";
+  width: 18px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid #8c8c8c;
+  background: #fff;
+}
+.bamboo-legend-active::before {
+  border: 3px solid #1677ff;
+  background: #e6f4ff;
+}
+.bamboo-legend-done::before {
+  border-color: #52c41a;
+  background: #f6ffed;
+}
+
+.bamboo-step-picked {
+  outline: 2px solid #1677ff;
+  outline-offset: 4px;
+  border-radius: 4px;
+}

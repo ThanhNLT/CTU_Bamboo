@@ -43,9 +43,12 @@ jobs:
           npm run build
       - name: Giấy phép phụ thuộc production của giao diện
         working-directory: apps/web/web
-        run: >-
-          npx --yes license-checker@25 --production --excludePrivatePackages
-          --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;BlueOak-1.0.0;CC0-1.0;MIT OR CC0-1.0'
+        # bpmn-js: giấy phép bpmn.io (MIT kèm điều kiện giữ watermark, license-checker báo `MIT*`), đã xét
+        # tay và ghi ở NOTICE; chỉ loại đúng phiên bản đang khóa, các gói khác vẫn kiểm như cũ.
+        run: |
+          npx --yes license-checker@25 --production --excludePrivatePackages \
+            --excludePackages "bpmn-js@$(node -p "require('./node_modules/bpmn-js/package.json').version")" \
+            --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;BlueOak-1.0.0;CC0-1.0;MIT OR CC0-1.0'
       - name: Tài liệu (cảnh báo là lỗi)
         run: make -C docs check
 

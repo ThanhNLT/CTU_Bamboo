@@ -73,6 +73,9 @@ export const UPDATE_PR = `
 
 export const SUBMIT_PR = `mutation Submit($id: uuid!) { submit_purchase_request(request_id: $id) { status } }`;
 export const CANCEL_PR = `mutation Cancel($id: uuid!, $reason: String!) { cancel_purchase_request(request_id: $id, reason: $reason) { status } }`;
+export const PR_PDF = `
+  query PurchaseRequestPdf($id: uuid!) { get_purchase_request_pdf(request_id: $id) { url file_name check_code } }
+`;
 export const ACT_ON_TASK = `
   mutation Act($task: uuid!, $decision: ApprovalDecision!, $note: String) {
     act_on_task(task_id: $task, decision: $decision, note: $note) { status }
