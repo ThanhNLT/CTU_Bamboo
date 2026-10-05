@@ -20,7 +20,7 @@ migrate:
 test-db:
 	docker compose run --rm --build --entrypoint /repo/scripts/db/test.sh migrate $(T)
 
-# Kiểm thử tích hợp dịch vụ actions với Hasura (hasura-test), Flowable, Meilisearch, Tika, Gotenberg thật.
+# Kiểm thử tích hợp dịch vụ actions với Hasura (hasura-test), Flowable, Meilisearch, Tika, Gotenberg, Kafka, Debezium thật.
 # Chạy một nhóm: make test-actions T=tests/test_flow_sync.py
 test-actions:
 	docker compose --profile test up -d --build hasura-test flowable bootstrap
