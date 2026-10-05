@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
+# Image bamboo-lakehouse (ADR #39): mã actions + thư viện ghi Iceberg (pyarrow lớn, không đưa vào image actions).
+-r requirements.txt
+pyiceberg[pyarrow]
+sqlalchemy
+kafka-python

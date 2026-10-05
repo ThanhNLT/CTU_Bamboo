@@ -31,7 +31,8 @@ PSQL=(psql -X -q -v ON_ERROR_STOP=1)
     -v actions_password="${ACTIONS_DB_PASSWORD:-actions-db-dev}" \
     -v keycloak_password="${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}" \
     -v flowable_password="${FLOWABLE_DB_PASSWORD:-flowable-db-dev}" \
-    -v cdc_password="${CDC_DB_PASSWORD:-cdc-db-dev}"
+    -v cdc_password="${CDC_DB_PASSWORD:-cdc-db-dev}" \
+    -v lakehouse_password="${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}"
 
 # Mỗi dịch vụ là chủ CSDL của mình (tự migrate schema); bản cũ để `bms` làm chủ thì chuyển sang.
 for pair in ${SERVICE_DATABASES:-keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura}; do
@@ -45,4 +46,4 @@ done
 for db in ${APP_DATABASES:-bms}; do
     "${PSQL[@]}" -d "$db" -f "$ROLES/grants.sql"
 done
-echo "roles: bamboo_hasura, bamboo_actions, bamboo_keycloak, bamboo_flowable, bamboo_cdc"
+echo "roles: bamboo_hasura, bamboo_actions, bamboo_keycloak, bamboo_flowable, bamboo_cdc, bamboo_lakehouse"

@@ -31,7 +31,8 @@ def roles(tmp_path_factory) -> dict[str, pathlib.Path]:
     except httpx.HTTPError:
         _missing("OpenBao")
     out = tmp_path_factory.mktemp("bao")
-    files = {"actions": out / "actions.json", "bootstrap": out / "bootstrap.json", "search": out / "search.json"}
+    files = {"actions": out / "actions.json", "bootstrap": out / "bootstrap.json", "search": out / "search.json",
+             "lakehouse": out / "lakehouse.json"}
     openbao_init.run(ADDR, KEYS, files, out / "s3.json", meili_config_path=out / "meili.toml")
     return {**files, "s3": out / "s3.json", "meili": out / "meili.toml"}
 
@@ -124,3 +125,17 @@ def test_cau_hinh_doc_tu_ket(roles, monkeypatch):
     s3 = json.loads(roles["s3"].read_text())
     keys = {i["name"]: i["credentials"][0]["secretKey"] for i in s3["identities"]}
     assert keys["bms-app"] == settings.s3_secret_key, "SeaweedFS dùng đúng khóa trong két"
+
+
+def test_dac_quyen_lakehouse(roles):
+    """ADR #39: lakehouse-sink chỉ đọc tài khoản catalog và khóa S3 của bucket lakehouse."""
+    lake = Bao.from_approle_file(ADDR, roles["lakehouse"])
+    assert lake.read("bms/lakehouse")["username"] == "bamboo_lakehouse"
+    assert lake.read("bms/seaweedfs-lakehouse")["access_key"] == "bms-lakehouse"
+    for path in ("bms/postgres", "bms/seaweedfs", "bms/seaweedfs-admin", "bms/actions", "bms/meilisearch-admin"):
+        assert denied(lambda p=path: lake.read(p)), f"lakehouse-sink không được đọc {path}"
+    assert denied(lambda: lake.encrypt("x"))
+    s3 = {i["name"]: i for i in json.loads(roles["s3"].read_text())["identities"]}
+    assert s3["bms-lakehouse"]["actions"] == [f"{a}:bms-lakehouse" for a in ("Read", "Write", "List", "Tagging")]
+    for name in ("bms-app", "bms-search"):
+        assert not any("bms-lakehouse" in a for a in s3[name]["actions"]), f"{name} không vào bucket lakehouse"

@@ -8,8 +8,8 @@ from urllib.parse import quote, urlparse, urlunparse
 
 from .openbao import Bao, BaoError
 
-# Secret trong OpenBao (KV v2 secret/<đường dẫn>) → trường Settings. Mỗi dịch vụ chỉ đọc
-# được những đường dẫn policy của nó cho phép (ADR #25); đường dẫn bị từ chối thì giữ giá trị env.
+# Secret trong OpenBao (KV v2 secret/<đường dẫn>) → trường Settings (ADR #25). Mỗi dịch vụ chỉ đọc
+# được những đường dẫn mà policy của nó cho phép; đường dẫn bị từ chối thì giữ giá trị env.
 SECRET_FIELDS = {
     "bms/actions": {"secret": "actions_secret"},
     "bms/flowable": {"username": "flowable_user", "password": "flowable_password"},
@@ -18,6 +18,7 @@ SECRET_FIELDS = {
     "bms/seaweedfs": {"access_key": "s3_access_key", "secret_key": "s3_secret_key"},
     "bms/seaweedfs-admin": {"access_key": "s3_admin_access_key", "secret_key": "s3_admin_secret_key"},
     "bms/seaweedfs-search": {"access_key": "s3_search_access_key", "secret_key": "s3_search_secret_key"},
+    "bms/seaweedfs-lakehouse": {"access_key": "s3_lakehouse_access_key", "secret_key": "s3_lakehouse_secret_key"},
     "bms/meilisearch-admin": {"master_key": "meili_master_key"},
     "bms/meilisearch-search": {"key": "meili_search_key"},
     "bms/meilisearch-indexer": {"key": "meili_indexer_key"},
@@ -60,6 +61,11 @@ class Settings:
     meili_indexer_key: str        # search-sync: ghi chỉ mục
     tika_url: str
     gotenberg_url: str            # in phiếu PDF (ADR #37)
+    kafka_bootstrap: str          # CDC (ADR #38)
+    lakehouse_catalog_url: str    # catalog Iceberg (SQLAlchemy, CSDL lakehouse; ADR #39)
+    s3_lakehouse_bucket: str
+    s3_lakehouse_access_key: str  # lakehouse-sink: chỉ đọc/ghi bucket lakehouse
+    s3_lakehouse_secret_key: str
 
 
 # Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
@@ -71,6 +77,7 @@ DEV_DEFAULTS = {
     "KEYCLOAK_DB_PASSWORD": "keycloak-db-dev",
     "FLOWABLE_DB_PASSWORD": "flowable-db-dev",
     "CDC_DB_PASSWORD": "cdc-db-dev",
+    "LAKEHOUSE_DB_PASSWORD": "lakehouse-db-dev",
     "HASURA_GRAPHQL_ADMIN_SECRET": "dev-admin-secret",
     "ACTIONS_SECRET": "dev-actions-secret",
     "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",
@@ -110,14 +117,19 @@ def with_openbao(settings: Settings, bao: Bao) -> Settings:
     for path, fields in SECRET_FIELDS.items():
         values = read(path) or {}
         changes.update({attr: values[key] for key, attr in fields.items() if key in values})
-    pg = read("bms/postgres")
-    if pg:
-        url = urlparse(settings.database_url)
-        netloc = f"{quote(pg['username'], safe='')}:{quote(pg['password'], safe='')}@{url.hostname}"
-        if url.port:
-            netloc += f":{url.port}"
-        changes["database_url"] = urlunparse(url._replace(netloc=netloc))
+    for path, attr in (("bms/postgres", "database_url"), ("bms/lakehouse", "lakehouse_catalog_url")):
+        creds = read(path)
+        if creds:
+            changes[attr] = _with_credentials(getattr(settings, attr), creds["username"], creds["password"])
     return replace(settings, **changes)
+
+
+def _with_credentials(url: str, username: str, password: str) -> str:
+    parsed = urlparse(url)
+    netloc = f"{quote(username, safe='')}:{quote(password, safe='')}@{parsed.hostname}"
+    if parsed.port:
+        netloc += f":{parsed.port}"
+    return urlunparse(parsed._replace(netloc=netloc))
 
 
 def load() -> Settings:
@@ -173,4 +185,10 @@ def _from_env() -> Settings:
         meili_indexer_key=env("MEILI_INDEXER_KEY") or (derive_key(master, INDEXER_KEY_UID) if master else ""),
         tika_url=env("TIKA_URL", "http://tika:9998"),
         gotenberg_url=env("GOTENBERG_URL", "http://gotenberg:3000"),
+        kafka_bootstrap=env("KAFKA_BOOTSTRAP", "kafka:9092"),
+        lakehouse_catalog_url=env("LAKEHOUSE_CATALOG_URL",
+                                  "postgresql+psycopg://bamboo_lakehouse:lakehouse-db-dev@db:5432/lakehouse"),
+        s3_lakehouse_bucket=env("S3_LAKEHOUSE_BUCKET", "bms-lakehouse"),
+        s3_lakehouse_access_key=env("S3_LAKEHOUSE_ACCESS_KEY", "bms-lakehouse"),
+        s3_lakehouse_secret_key=env("S3_LAKEHOUSE_SECRET_KEY", "bms-lakehouse-dev-secret"),
     )

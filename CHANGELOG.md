@@ -4,11 +4,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
-**Nâng cấp:** container `db` khởi động lại một lần với `wal_level=logical`. Triển khai thật đặt thêm `CDC_DB_PASSWORD`. Cần thêm khoảng 900 MB RAM cho Kafka và Debezium.
+**Nâng cấp:** container `db` khởi động lại một lần với `wal_level=logical`. Triển khai thật đặt thêm `CDC_DB_PASSWORD`, `LAKEHOUSE_DB_PASSWORD`. Cần thêm khoảng 1,1 GB RAM cho Kafka, Debezium và lakehouse-sink.
 
 ### Thêm
 - Phiếu đề nghị mua sắm dạng PDF (ADR #37): query `get_purchase_request_pdf` trả link tải phiếu khổ A4 gồm thông tin đề nghị, dòng hàng, tổng tiền bằng chữ, chuỗi phê duyệt, chữ chìm trạng thái khi chưa duyệt, chân trang có số chứng từ, mã kiểm tra và số trang. Chỉ người xem được chứng từ mới in được; cùng nội dung thì dùng lại tệp đã in. Dịch vụ mới `gotenberg` (bản Chromium, chỉ mạng nội bộ, chặn mọi truy cập mạng khi in).
 - CDC (ADR #38): Debezium Server đọc WAL logic của CSDL `bms` và ghi mọi thay đổi của các schema nghiệp vụ vào Kafka (KRaft một node), topic `bms.<schema>.<bảng>` dạng JSON; lần đầu chụp ảnh toàn bộ. Migration 012: publication `bms_cdc` theo schema (bảng mới tự vào), không gồm nhật ký kiểm toán và hàng đợi tìm kiếm; role `bamboo_cdc` chỉ đọc có quyền replication; nhịp tim 10 giây để replication slot không giữ WAL, giới hạn 1 GB WAL cho slot.
+- Lakehouse bronze (ADR #39): dịch vụ `lakehouse-sink` ghi mọi thay đổi từ Kafka vào bảng Iceberg `bronze.<schema>_<bảng>` (lịch sử đầy đủ, kể cả dòng đã sửa, xóa ở CSDL nghiệp vụ) trên bucket `bms-lakehouse`, phân vùng theo ngày; catalog JDBC ở CSDL `lakehouse`. Ghi đúng một lần nhờ lưu vị trí Kafka trong snapshot Iceberg. Image mới `bamboo-lakehouse`.
 
 ## [0.3.0] - 2026-10-05
 
