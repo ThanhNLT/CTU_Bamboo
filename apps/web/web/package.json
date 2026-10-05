@@ -13,6 +13,7 @@
     "@refinedev/kbar": "^2.0.0",
     "@refinedev/react-router": "^2.0.0",
     "antd": "^5.23.0",
+    "bpmn-js": "^18.31.0",
     "dayjs": "^1.11.23",
     "graphql": "^15.6.1",
     "graphql-request": "^5.2.0",
