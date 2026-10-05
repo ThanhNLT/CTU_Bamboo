@@ -23,6 +23,7 @@ SeaweedFS 4 (chrislusf/seaweedfs)                Apache-2.0
 OpenBao 2 (openbao/openbao)                      MPL-2.0
 Meilisearch 1 Community (getmeili/meilisearch)   MIT (bản Community; không dùng image -enterprise có phần BUSL-1.1)
 Apache Tika 4 (apache/tika)                      Apache-2.0
+Gotenberg 8 (gotenberg/gotenberg, bản -chromium) MIT; Chromium: BSD-3-Clause và giấy phép của từng thành phần
 ClamAV 1.4 (clamav/clamav, tùy chọn)             GPL-2.0-only
 nginx (nginxinc/nginx-unprivileged)              BSD-2-Clause
 Python 3.13 (python:3.13-slim)                   PSF-2.0
@@ -34,6 +35,7 @@ Thư viện Python (phiên bản ghim trong constraints.txt, cài từ PyPI)
 ------------------------------------------------------------------------------------------------
 FastAPI, Pydantic, Starlette, Uvicorn, AnyIO, h11           MIT / BSD-3-Clause
 httpx, httpcore, idna, certifi                              BSD-3-Clause / MPL-2.0 (certifi)
+Jinja2, MarkupSafe                                          BSD-3-Clause
 psycopg, psycopg-binary, psycopg-pool                       LGPL-3.0-only (dùng như thư viện, không sửa)
 PyJWT, cryptography, cffi, pycparser                        MIT / Apache-2.0 OR BSD-3-Clause / MIT-0 / BSD-3-Clause
 boto3, botocore, s3transfer, jmespath, python-dateutil, six, urllib3   Apache-2.0 / MIT

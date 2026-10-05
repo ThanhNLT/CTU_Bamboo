@@ -59,6 +59,7 @@ class Settings:
     meili_search_key: str         # actions: chỉ tìm
     meili_indexer_key: str        # search-sync: ghi chỉ mục
     tika_url: str
+    gotenberg_url: str            # in phiếu PDF (ADR #37)
 
 
 # Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
@@ -170,4 +171,5 @@ def _from_env() -> Settings:
         meili_search_key=env("MEILI_SEARCH_KEY") or (derive_key(master, SEARCH_KEY_UID) if master else ""),
         meili_indexer_key=env("MEILI_INDEXER_KEY") or (derive_key(master, INDEXER_KEY_UID) if master else ""),
         tika_url=env("TIKA_URL", "http://tika:9998"),
+        gotenberg_url=env("GOTENBERG_URL", "http://gotenberg:3000"),
     )

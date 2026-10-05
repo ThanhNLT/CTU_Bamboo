@@ -400,6 +400,21 @@ services:
       retries: 30
       start_period: 10s
 
+  # In phiếu PDF (ADR #37): Chromium của Gotenberg chuyển HTML do actions sinh sang PDF. Chỉ actions gọi, không
+  # mở cổng. Trang không cần tải gì từ ngoài: tắt JavaScript, chặn mọi địa chỉ mạng (riêng và công khai) và
+  # tính năng tải tệp từ URL, webhook (chống SSRF).
+  gotenberg:
+    logging: *logging
+    image: gotenberg/gotenberg:8.37.0-chromium
+    command: ["gotenberg", "--chromium-auto-start", "--chromium-disable-javascript", "--chromium-deny-private-ips",
+              "--chromium-deny-public-ips", "--api-disable-download-from", "--webhook-disable", "--api-timeout=60s"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
   # Đồng bộ CSDL → chỉ mục (ADR #36): nghe kênh search_sync, đọc tệp đã kiểm tra, trích chữ bằng Tika.
   search-sync:
     logging: *logging
@@ -491,6 +506,8 @@ services:
       meilisearch:
         condition: service_started
       tika:
+        condition: service_started
+      gotenberg:
         condition: service_started
     environment:
       <<: *actions-env
