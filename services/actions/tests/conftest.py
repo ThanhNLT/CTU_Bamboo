@@ -6,6 +6,8 @@
 
 Biến môi trường (mặc định khớp `make test-actions` trong docker compose):
   TEST_DATABASE_URL   CSDL kiểm thử, bị xóa và tạo lại mỗi phiên (Hasura phải trỏ BMS_DATABASE_URL vào đây)
+  TEST_APP_DATABASE_URL  cùng CSDL nhưng bằng tài khoản ứng dụng (bamboo_actions): dịch vụ actions chạy
+                      trong lúc kiểm thử dùng URL này để lộ quyền còn thiếu như production (ADR #35)
   HASURA_URL, HASURA_GRAPHQL_ADMIN_SECRET, FLOWABLE_URL, FLOWABLE_USER, FLOWABLE_PASSWORD
   S3_ENDPOINT, S3_PUBLIC_ENDPOINT, S3_*_KEY  SeaweedFS (kiểm thử tệp đính kèm)
   ACTIONS_PORT        cổng chạy dịch vụ actions trong lúc kiểm thử (Hasura gọi vào ACTIONS_URL)
@@ -31,6 +33,7 @@ from app.flowable import FlowableClient
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_hasura_test")
+TEST_APP_DB_URL = os.environ.get("TEST_APP_DATABASE_URL") or TEST_DB_URL
 ACTIONS_PORT = int(os.environ.get("ACTIONS_PORT", "8090"))
 SETTINGS = config.load()
 
@@ -60,6 +63,8 @@ def database() -> str:
             INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
             SELECT r.tenant_id, r.id, test.id('P_NV_MH_DT'), 'UNIT' FROM core.role r WHERE r.code = 'MUA_HANG';
         """)
+        # Quyền của tài khoản ứng dụng như job migrate cấp cho CSDL bms (bỏ qua nếu chưa có role).
+        conn.execute((ROOT / "db/roles/grants.sql").read_text(encoding="utf-8"))
     return TEST_DB_URL
 
 
@@ -172,7 +177,7 @@ def s3(database) -> storage.Storage:
 
 @pytest.fixture(scope="session")
 def actions_server(database):
-    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
+    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": TEST_APP_DB_URL})
     server = uvicorn.Server(uvicorn.Config(main.create_app(settings), host="0.0.0.0", port=ACTIONS_PORT,
                                            log_level="warning"))
     thread = threading.Thread(target=server.run, daemon=True)
