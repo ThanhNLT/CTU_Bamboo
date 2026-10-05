@@ -6,11 +6,15 @@
 
 import json
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import psycopg
 
 from .flowable import FlowableClient
 from .storage import Storage
+
+if TYPE_CHECKING:
+    from .search import Meili
 
 
 @dataclass
@@ -20,6 +24,8 @@ class Context:
     storage: Storage | None = None
     clamav_host: str = ""
     clamav_port: int = 3310
+    search: "Meili | None" = None       # khóa chỉ được tìm (ADR #36)
+    search_index: str = "documents"
 
 
 class ActionError(Exception):

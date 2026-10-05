@@ -9,7 +9,8 @@
 2. Mỗi lần: unseal nếu đang sealed, chờ raft bầu leader.
 3. Cấu hình: KV v2 `secret/`, transit `transit/` + khóa `pii`, AppRole, policy đặc quyền tối thiểu.
 4. Đồng bộ secret hạ tầng từ biến môi trường; khóa S3 do OpenBao sinh một lần và là nguồn duy nhất.
-5. Ghi s3.json cho SeaweedFS và file AppRole (role-id + secret-id) cho từng dịch vụ.
+5. Ghi s3.json cho SeaweedFS, tệp cấu hình Meilisearch (khóa chủ do OpenBao sinh) và file AppRole
+   (role-id + secret-id) cho từng dịch vụ.
 Với BAMBOO_ENV=production: từ chối chạy nếu còn mật khẩu/secret mặc định của môi trường dev, nên
 không dịch vụ nào khởi động được với cấu hình dev.
 
@@ -26,7 +27,7 @@ import time
 
 import httpx
 
-from . import config, storage
+from . import config, search, storage
 from .openbao import Bao, BaoError
 
 log = logging.getLogger("openbao_init")
@@ -38,15 +39,24 @@ path "secret/data/bms/postgres"  { capabilities = ["read"] }
 path "secret/data/bms/flowable"  { capabilities = ["read"] }
 path "secret/data/bms/seaweedfs" { capabilities = ["read"] }
 path "secret/data/bms/actions"   { capabilities = ["read"] }
+path "secret/data/bms/meilisearch-search" { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
 """,
-    # Job bootstrap: tạo bucket (khóa S3 admin), deploy BPMN, nạp metadata Hasura.
+    # Job bootstrap: tạo bucket (khóa S3 admin), deploy BPMN, nạp metadata Hasura, tạo index và khóa API
+    # Meilisearch (khóa chủ).
     "bootstrap": """
 path "secret/data/bms/seaweedfs-admin" { capabilities = ["read"] }
+path "secret/data/bms/meilisearch-admin" { capabilities = ["read"] }
 path "secret/data/bms/flowable"        { capabilities = ["read"] }
 path "secret/data/bms/hasura"          { capabilities = ["read"] }
 path "secret/data/bms/keycloak"        { capabilities = ["read"] }
+""",
+    # Dịch vụ search-sync (ADR #36): đọc CSDL, đọc tệp đã kiểm tra, ghi chỉ mục tìm kiếm.
+    "search": """
+path "secret/data/bms/postgres"            { capabilities = ["read"] }
+path "secret/data/bms/seaweedfs-search"    { capabilities = ["read"] }
+path "secret/data/bms/meilisearch-indexer" { capabilities = ["read"] }
 """,
 }
 
@@ -132,10 +142,23 @@ def sync_secrets(root: Bao) -> None:
         if root.read(path) != values:
             root.write(path, values)
             log.info("đã cập nhật secret/%s", path)
-    for path, access_key in (("bms/seaweedfs", "bms-app"), ("bms/seaweedfs-admin", "bms-admin")):
+    for path, access_key in (("bms/seaweedfs", "bms-app"), ("bms/seaweedfs-admin", "bms-admin"),
+                             ("bms/seaweedfs-search", "bms-search")):
         if root.read(path) is None:
             root.write(path, {"access_key": access_key, "secret_key": secrets.token_urlsafe(32)})
             log.info("đã sinh khóa S3 secret/%s", path)
+    # Meilisearch: khóa chủ sinh một lần; hai khóa API suy ra từ khóa chủ và uid cố định (ADR #36).
+    admin = root.read("bms/meilisearch-admin")
+    if admin is None:
+        admin = {"master_key": secrets.token_urlsafe(32)}
+        root.write("bms/meilisearch-admin", admin)
+        log.info("đã sinh khóa chủ Meilisearch")
+    for path, uid in (("bms/meilisearch-search", search.SEARCH_KEY_UID),
+                      ("bms/meilisearch-indexer", search.INDEXER_KEY_UID)):
+        values = {"key": search.derive_key(admin["master_key"], uid)}
+        if root.read(path) != values:
+            root.write(path, values)
+            log.info("đã cập nhật secret/%s", path)
 
 
 def write_approle(root: Bao, addr: str, role: str, path: pathlib.Path, uid: int | None = None) -> None:
@@ -164,16 +187,34 @@ def parse_outputs(spec: str) -> dict[str, pathlib.Path]:
     return {k.strip(): pathlib.Path(v.strip()) for k, v in (item.split("=", 1) for item in spec.split(",") if item)}
 
 
+def _write_if_changed(path: pathlib.Path, text: str, mode: int) -> bool:
+    """Chỉ ghi khi nội dung đổi: SeaweedFS nạp lại s3.json khi thời điểm sửa tệp đổi (healthcheck)."""
+    if path.exists() and path.read_text(encoding="utf-8") == text:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.chmod(mode)
+    tmp.replace(path)
+    return True
+
+
 def run(addr: str, keys_file: pathlib.Path, approle_outputs: dict[str, pathlib.Path],
-        s3_config_path: pathlib.Path | None, approle_uid: int | None = None) -> None:
+        s3_config_path: pathlib.Path | None, approle_uid: int | None = None,
+        meili_config_path: pathlib.Path | None = None) -> None:
     wait_reachable(addr)
     root = Bao(addr, init_and_unseal(addr, keys_file))
     configure(root)
     sync_secrets(root)
     if s3_config_path:
         settings = config.with_openbao(config._from_env(), root)
-        _write_private(s3_config_path, storage.s3_identities(settings), mode=0o644)
-        log.info("đã ghi cấu hình S3 %s", s3_config_path)
+        if _write_if_changed(s3_config_path, json.dumps(storage.s3_identities(settings), indent=2), 0o644):
+            log.info("đã ghi cấu hình S3 %s", s3_config_path)
+    if meili_config_path:
+        # Meilisearch chạy bằng root trong container nên tệp chứa khóa chủ chỉ root đọc được.
+        if _write_if_changed(meili_config_path, search.config_toml(root.read("bms/meilisearch-admin")["master_key"]),
+                             0o600):
+            log.info("đã ghi cấu hình Meilisearch %s", meili_config_path)
     for role, path in approle_outputs.items():
         if role not in POLICIES:
             raise ValueError(f"Không có AppRole {role}")
@@ -186,12 +227,14 @@ def main() -> int:
     config.assert_production_ready()
     env = os.environ.get
     s3_path = env("S3_CONFIG_PATH")
+    meili_path = env("MEILI_CONFIG_PATH")
     uid = env("APPROLE_UID")
     run(env("BAO_ADDR", "http://openbao:8200"),
         pathlib.Path(env("BAO_KEYS_FILE", "/openbao/keys/init.json")),
         parse_outputs(env("APPROLE_OUTPUTS", "")),
         pathlib.Path(s3_path) if s3_path else None,
-        int(uid) if uid else None)
+        int(uid) if uid else None,
+        pathlib.Path(meili_path) if meili_path else None)
     return 0
 
 

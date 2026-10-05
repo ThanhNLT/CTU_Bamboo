@@ -4136,6 +4136,49 @@
         }
       ],
       "comment": "Người tải lên xóa tệp (đề nghị chưa có kết quả)"
+    },
+    {
+      "name": "search_documents",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/search_documents",
+        "arguments": [
+          {
+            "name": "query",
+            "type": "String!"
+          },
+          {
+            "name": "kind",
+            "type": "SearchKind"
+          },
+          {
+            "name": "limit",
+            "type": "Int"
+          },
+          {
+            "name": "offset",
+            "type": "Int"
+          }
+        ],
+        "output_type": "[SearchHit!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 15
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tìm toàn văn đề nghị mua sắm và nội dung tệp đính kèm, chỉ trả chứng từ người gọi xem được (ADR #36)"
     }
   ],
   "custom_types": {
@@ -4151,6 +4194,17 @@
           },
           {
             "value": "RETURN"
+          }
+        ]
+      },
+      {
+        "name": "SearchKind",
+        "values": [
+          {
+            "value": "purchase_request"
+          },
+          {
+            "value": "attachment"
           }
         ]
       }
@@ -4329,6 +4383,69 @@
           {
             "name": "expires_in",
             "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "SearchHit",
+        "fields": [
+          {
+            "name": "kind",
+            "type": "SearchKind!"
+          },
+          {
+            "name": "entity_type",
+            "type": "String!"
+          },
+          {
+            "name": "entity_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "attachment_id",
+            "type": "uuid"
+          },
+          {
+            "name": "file_name",
+            "type": "String"
+          },
+          {
+            "name": "matched_field",
+            "type": "String"
+          },
+          {
+            "name": "snippet",
+            "type": "String!"
+          },
+          {
+            "name": "score",
+            "type": "Float!"
+          }
+        ],
+        "relationships": [
+          {
+            "name": "purchase_request",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "proc",
+              "name": "purchase_request"
+            },
+            "field_mapping": {
+              "entity_id": "id"
+            }
+          },
+          {
+            "name": "attachment",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "core",
+              "name": "attachment"
+            },
+            "field_mapping": {
+              "attachment_id": "id"
+            }
           }
         ]
       },
