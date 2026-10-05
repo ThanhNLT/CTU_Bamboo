@@ -50,6 +50,7 @@ x-bao-sync-env: &bao-sync-env
   HASURA_DB_PASSWORD: ${HASURA_DB_PASSWORD:-hasura-db-dev}
   KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
   FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
+  CDC_DB_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
   KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
   KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
   FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
@@ -86,6 +87,10 @@ services:
       POSTGRES_DB: bms
       POSTGRES_USER: bms
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+    # WAL logic cho CDC (ADR #38). Slot của Debezium giữ WAL tối đa 1 GB khi Debezium dừng lâu; vượt mức
+    # thì slot bị vô hiệu (Debezium chụp ảnh lại) thay vì làm đầy đĩa của CSDL.
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_wal_senders=10", "-c", "max_replication_slots=10",
+              "-c", "max_slot_wal_keep_size=1GB"]
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -119,6 +124,7 @@ services:
       ACTIONS_DB_PASSWORD: ${ACTIONS_DB_PASSWORD:-actions-db-dev}
       KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
       FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
+      CDC_DB_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
     restart: "no"
 
   # Dữ liệu demo Tập đoàn X (ADR #16): bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
@@ -430,6 +436,87 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
+  # Trục sự kiện (ADR #2, #38): Kafka KRaft một node, chỉ mạng nội bộ, không xác thực (chưa có dịch vụ nào
+  # ngoài Debezium ghi vào; SASL/ACL khi mở cho ứng dụng Tầng 3). Giữ sự kiện 7 ngày.
+  kafka:
+    logging: *logging
+    image: apache/kafka:4.3.1
+    environment:
+      CLUSTER_ID: b5T4hzPsQrOmfv9Kr38lIg
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_HEAP_OPTS: -Xmx512m -Xms256m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+      start_period: 15s
+
+  # CDC (ADR #22, #38): Debezium Server đọc WAL logic của CSDL bms (publication bms_cdc, tài khoản bamboo_cdc)
+  # và ghi mỗi thay đổi vào topic bms.<schema>.<bảng> dạng JSON. Lần đầu chụp ảnh toàn bộ; vị trí đọc lưu ở
+  # volume debezium-data. Cấu hình bằng biến môi trường (Quarkus), không cần tệp.
+  debezium:
+    logging: *logging
+    image: quay.io/debezium/server:3.7.0.Final
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    environment:
+      DEBEZIUM_SINK_TYPE: kafka
+      DEBEZIUM_SINK_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      DEBEZIUM_SINK_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      DEBEZIUM_SINK_KAFKA_PRODUCER_VALUE_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      DEBEZIUM_SOURCE_CONNECTOR_CLASS: io.debezium.connector.postgresql.PostgresConnector
+      DEBEZIUM_SOURCE_OFFSET_STORAGE_FILE_FILENAME: /debezium/data/offsets.dat
+      DEBEZIUM_SOURCE_OFFSET_FLUSH_INTERVAL_MS: 5000
+      DEBEZIUM_SOURCE_DATABASE_HOSTNAME: db
+      DEBEZIUM_SOURCE_DATABASE_PORT: 5432
+      DEBEZIUM_SOURCE_DATABASE_USER: bamboo_cdc
+      DEBEZIUM_SOURCE_DATABASE_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
+      DEBEZIUM_SOURCE_DATABASE_DBNAME: bms
+      DEBEZIUM_SOURCE_TOPIC_PREFIX: bms
+      DEBEZIUM_SOURCE_PLUGIN_NAME: pgoutput
+      DEBEZIUM_SOURCE_PUBLICATION_NAME: bms_cdc
+      DEBEZIUM_SOURCE_PUBLICATION_AUTOCREATE_MODE: disabled
+      DEBEZIUM_SOURCE_SLOT_NAME: bms_debezium
+      DEBEZIUM_SOURCE_SCHEMA_INCLUDE_LIST: core,mdm,wf,proc,ic,collab,cdc
+      DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
+      DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
+      DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string
+      DEBEZIUM_SOURCE_SNAPSHOT_MODE: initial
+      DEBEZIUM_FORMAT_KEY: json
+      DEBEZIUM_FORMAT_VALUE: json
+      DEBEZIUM_FORMAT_KEY_SCHEMAS_ENABLE: "false"
+      DEBEZIUM_FORMAT_VALUE_SCHEMAS_ENABLE: "false"
+    volumes:
+      - debezium-data:/debezium/data
+    restart: unless-stopped
+    # Hỏi /q/health bằng /dev/tcp của bash (không phụ thuộc curl trong image); Quarkus trả 503 khi có kiểm tra DOWN.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health HTTP/1.0\r\n\r\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
   # Cổng API (ADR #34): điểm vào duy nhất từ trình duyệt. APISIX standalone, route trong
   # platform/apisix/apisix.yaml; WAF Coraza (OWASP CRS); token kiểm tại biên (forward-auth → actions).
   gateway:
@@ -509,6 +596,8 @@ services:
         condition: service_started
       gotenberg:
         condition: service_started
+      debezium:
+        condition: service_started
     environment:
       <<: *actions-env
       # Kiểm thử tải tệp lên/xuống từ trong container nên link có chữ ký trỏ vào mạng nội bộ.
@@ -538,3 +627,5 @@ volumes:
   search-secrets:
   meilisearch-data:
   meilisearch-config:
+  kafka-data:
+  debezium-data:

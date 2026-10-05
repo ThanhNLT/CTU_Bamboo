@@ -26,7 +26,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 8 | Quét virus | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav` |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
-| 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`; superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
+| 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`, `CDC_DB_PASSWORD` (Debezium); superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
 
 ## 3. Tên miền và TLS
 
@@ -62,6 +62,7 @@ Theo dõi: `docker compose -p bamboo ps` (dịch vụ chạy lâu phải `health
 | CSDL `bms`, `keycloak`, `flowable`, `hasura_meta` | volume `pgdata` | `pg_dumpall` (nhất quán khi đang chạy) |
 | Secret, khóa S3, khóa mã hóa PII | volume `openbao-data` **và** `openbao-keys` | Sao lưu cả hai cùng lúc: thiếu `openbao-keys` thì không unseal được `openbao-data` |
 | Tệp đính kèm | volume `seaweedfs-data` | Dừng `seaweedfs` rồi nén volume, hoặc đồng bộ bucket bằng công cụ S3 |
+| Sự kiện CDC | volume `kafka-data`, `debezium-data` | Không cần: Kafka chỉ giữ 7 ngày, CSDL là nguồn. Khôi phục CSDL thì xóa `debezium-data` và slot `bms_debezium` để Debezium chụp ảnh lại (Dịch vụ nền tảng mục 7) |
 | Chỉ mục tìm kiếm | volume `meilisearch-data` | Không cần: dựng lại từ CSDL và tệp đính kèm. Khôi phục xong, xóa volume (hoặc gọi `SELECT search.mark_all()`), `search-sync` tự đưa lại toàn bộ vào chỉ mục |
 
 Script có sẵn làm đủ ba mục trên vào thư mục `backups/<thời điểm>/` (`postgres.sql`, `openbao-data.tgz`, `openbao-keys.tgz`, `seaweedfs-data.tgz`). OpenBao và SeaweedFS chỉ bị tạm dừng (`pause`) trong vài giây lúc chép, không cần khởi động lại; không cần mã nguồn của hệ thống, chỉ cần tải script:

@@ -18,9 +18,10 @@ psql -X -q -d postgres -c "DROP DATABASE IF EXISTS $DB" -c "CREATE DATABASE $DB"
 "$ROOT/scripts/db/migrate.sh" "$DB" "$ROOT/db/migrations/bms" >/dev/null
 psql -X -q -v ON_ERROR_STOP=1 -d "$DB" -1 -f "$ROOT/db/tests/helpers.sql"
 # Tài khoản ứng dụng (ADR #35): máy chưa chạy job migrate thì tạo role với mật khẩu dev.
-if [[ -z "$(psql -X -At -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = 'bamboo_app'")" ]]; then
+if [[ -z "$(psql -X -At -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = 'bamboo_cdc'")" ]]; then
     psql -X -q -v ON_ERROR_STOP=1 -d postgres -f "$ROOT/db/roles/roles.sql" -v hasura_password=hasura-db-dev \
-        -v actions_password=actions-db-dev -v keycloak_password=keycloak-db-dev -v flowable_password=flowable-db-dev
+        -v actions_password=actions-db-dev -v keycloak_password=keycloak-db-dev -v flowable_password=flowable-db-dev \
+        -v cdc_password=cdc-db-dev
 fi
 psql -X -q -v ON_ERROR_STOP=1 -d "$DB" -f "$ROOT/db/roles/grants.sql"
 

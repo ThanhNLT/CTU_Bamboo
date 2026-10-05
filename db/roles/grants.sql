@@ -34,4 +34,19 @@ BEGIN
             EXECUTE format('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA %I TO bamboo_app', s);
         END IF;
     END LOOP;
+
+    -- Debezium (ADR #38): đọc các schema trong publication bms_cdc (chụp ảnh ban đầu) và ghi nhịp tim.
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'bamboo_cdc') THEN
+        EXECUTE format('GRANT CONNECT ON DATABASE %I TO bamboo_cdc', current_database());
+        FOR s IN
+            SELECT DISTINCT schemaname FROM pg_publication_tables WHERE pubname = 'bms_cdc'
+        LOOP
+            EXECUTE format('GRANT USAGE ON SCHEMA %I TO bamboo_cdc', s);
+            EXECUTE format('GRANT SELECT ON ALL TABLES IN SCHEMA %I TO bamboo_cdc', s);
+        END LOOP;
+        IF to_regclass('cdc.heartbeat') IS NOT NULL THEN
+            GRANT USAGE ON SCHEMA cdc TO bamboo_cdc;
+            GRANT SELECT, UPDATE ON cdc.heartbeat TO bamboo_cdc;
+        END IF;
+    END IF;
 END $$;
