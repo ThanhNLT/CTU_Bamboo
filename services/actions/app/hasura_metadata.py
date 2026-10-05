@@ -309,10 +309,17 @@ def build(conn: psycopg.Connection) -> dict:
                     [ROLE, ADMIN_ROLE], "Link tải về có chữ ký (chỉ tệp sạch, người xem được chứng từ)"),
             _action("delete_attachment", "mutation", [("attachment_id", "uuid!")], "AttachmentResult!",
                     [ROLE, ADMIN_ROLE], "Người tải lên xóa tệp (đề nghị chưa có kết quả)"),
+            _action("search_documents", "query",
+                    [("query", "String!"), ("kind", "SearchKind"), ("limit", "Int"), ("offset", "Int")],
+                    "[SearchHit!]!", [ROLE, ADMIN_ROLE],
+                    "Tìm toàn văn đề nghị mua sắm và nội dung tệp đính kèm, chỉ trả chứng từ người gọi xem được (ADR #36)",
+                    timeout=15),
         ],
         "custom_types": {
             "enums": [{"name": "ApprovalDecision",
-                       "values": [{"value": "APPROVE"}, {"value": "REJECT"}, {"value": "RETURN"}]}],
+                       "values": [{"value": "APPROVE"}, {"value": "REJECT"}, {"value": "RETURN"}]},
+                      {"name": "SearchKind",
+                       "values": [{"value": "purchase_request"}, {"value": "attachment"}]}],
             "objects": [{
                 "name": "AccountTenant",
                 "fields": [{"name": "tenant_id", "type": "uuid!"}, {"name": "tenant_code", "type": "String!"},
@@ -350,6 +357,17 @@ def build(conn: psycopg.Connection) -> dict:
                 "name": "AttachmentDownload",
                 "fields": [{"name": "attachment_id", "type": "uuid!"}, {"name": "url", "type": "String!"},
                            {"name": "expires_in", "type": "Int!"}],
+            }, {
+                "name": "SearchHit",
+                "fields": [{"name": "kind", "type": "SearchKind!"}, {"name": "entity_type", "type": "String!"},
+                           {"name": "entity_id", "type": "uuid!"}, {"name": "attachment_id", "type": "uuid"},
+                           {"name": "file_name", "type": "String"}, {"name": "matched_field", "type": "String"},
+                           {"name": "snippet", "type": "String!"}, {"name": "score", "type": "Float!"}],
+                "relationships": [{
+                    "name": "purchase_request", "type": "object", "source": "bms",
+                    "remote_table": {"schema": "proc", "name": "purchase_request"},
+                    "field_mapping": {"entity_id": "id"},
+                }, _attachment_rel()],
             }, {
                 "name": "AuditChainProblem",
                 "fields": [{"name": "seq", "type": "Int"}, {"name": "log_id", "type": "Int"},

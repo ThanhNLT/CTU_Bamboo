@@ -4,6 +4,14 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+### Thêm
+- Tìm kiếm toàn văn (ADR #36): Action `search_documents` tìm đề nghị mua sắm (số chứng từ, tiêu đề, mô tả, dòng hàng, nhà cung cấp, người lập, đơn vị) và nội dung tệp đính kèm đã kiểm tra (PDF, DOCX, XLSX, TXT); gõ tiếng Việt không dấu vẫn tìm được, đoạn trích đánh dấu chữ khớp. Chỉ trả chứng từ người gọi xem được: quyền kiểm tra lại trong CSDL cho từng kết quả. Dịch vụ mới `meilisearch` (bản Community, MIT), `tika` (trích chữ) và `search-sync` (đồng bộ CSDL → chỉ mục bằng trigger, tự dựng lại chỉ mục trống). Khóa chủ Meilisearch do OpenBao sinh; khóa chỉ tìm cho `actions`, khóa ghi chỉ mục và định danh S3 chỉ đọc cho `search-sync` (AppRole `search`).
+
+### Thay đổi
+- SeaweedFS tự nạp lại định danh S3 khi `openbao-init` ghi `s3.json` mới (healthcheck gửi `SIGHUP`), không phải khởi động lại khi nâng cấp.
+
+**Nâng cấp:** `docker compose up -d` (hoặc `--build` khi chạy từ mã nguồn). Migration `011` đánh dấu toàn bộ đề nghị và tệp sạch hiện có; `search-sync` đưa vào chỉ mục trong lần chạy đầu. Cần thêm khoảng 300 MB RAM cho Meilisearch và Tika.
+
 **Nâng cấp:** thêm bốn biến mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD` (bắt buộc khi `BAMBOO_ENV=production`; máy dev dùng giá trị mặc định). Job `migrate` tự tạo role và chuyển chủ sở hữu CSDL Keycloak, Flowable, metadata Hasura sang role mới, không mất dữ liệu.
 
 ### Bảo mật

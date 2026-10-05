@@ -261,8 +261,10 @@ services:
       BAO_KEYS_FILE: /openbao/keys/init.json
       # File AppRole thuộc người dùng chạy dịch vụ (uid 10001 trong image Python).
       APPROLE_UID: "10001"
-      APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json
+      APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json,search=/run/bms-search/approle.json
       S3_CONFIG_PATH: /etc/bms/s3.json
+      # Khóa chủ Meilisearch do OpenBao sinh, ghi vào tệp cấu hình (ADR #36).
+      MEILI_CONFIG_PATH: /etc/meilisearch/config.toml
     command: ["python", "-m", "app.openbao_init"]
     # Ghi vào các volume secret (sở hữu bởi root).
     user: "0"
@@ -270,7 +272,9 @@ services:
       - openbao-keys:/openbao/keys
       - actions-secrets:/run/bms-actions
       - bootstrap-secrets:/run/bms-bootstrap
+      - search-secrets:/run/bms-search
       - seaweedfs-config:/etc/bms
+      - meilisearch-config:/etc/meilisearch
     restart: "no"
 
   # Lưu trữ đối tượng S3 (ADR #2, #26). Không cho truy cập ẩn danh; CORS cho ứng dụng Refine.
@@ -289,8 +293,10 @@ services:
       - seaweedfs-config:/etc/bms:ro
     # Không mở cổng ra ngoài: trình duyệt tải tệp qua cổng API (/bms-quarantine, /bms-documents).
     restart: unless-stopped
+    # Healthcheck còn nạp lại định danh S3 (SIGHUP cho weed, PID 1) khi openbao-init ghi s3.json mới,
+    # ví dụ khi nâng cấp thêm định danh: không phải khởi động lại SeaweedFS.
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333 && { [ ! /etc/bms/s3.json -nt /tmp/s3.json.loaded ] || { touch /tmp/s3.json.loaded && kill -HUP 1; }; }"]
       interval: 3s
       timeout: 3s
       retries: 40
@@ -347,6 +353,8 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      meilisearch:
+        condition: service_healthy
       openbao-init:
         condition: service_completed_successfully
     environment:
@@ -359,6 +367,53 @@ services:
       - bootstrap-secrets:/run/bms:ro
     command: ["python", "-m", "app.bootstrap"]
     restart: "no"
+
+  # Tìm kiếm toàn văn (ADR #36): chỉ mục Meilisearch bản Community (MIT, image không có hậu tố -enterprise).
+  # Chỉ mạng nội bộ; giao diện tìm qua Action search_documents. Khóa chủ trong tệp cấu hình do openbao-init ghi.
+  meilisearch:
+    logging: *logging
+    image: getmeili/meilisearch:v1.54.3
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    command: ["/bin/meilisearch", "--config-file-path", "/etc/meilisearch/config.toml"]
+    volumes:
+      - meilisearch-data:/meili_data
+      - meilisearch-config:/etc/meilisearch:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7700/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  # Trích chữ từ tệp đính kèm (PDF, DOCX, XLSX) cho chỉ mục tìm kiếm. Chỉ search-sync gọi, không mở cổng.
+  tika:
+    logging: *logging
+    image: apache/tika:4.1.0-1
+    restart: unless-stopped
+    # Image không có curl: hỏi /version bằng /dev/tcp của bash.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9998 && printf 'GET /version HTTP/1.0\r\n\r\n' >&3 && grep -q Tika <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  # Đồng bộ CSDL → chỉ mục (ADR #36): nghe kênh search_sync, đọc tệp đã kiểm tra, trích chữ bằng Tika.
+  search-sync:
+    logging: *logging
+    <<: *actions-image
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      tika:
+        condition: service_started
+    environment: *actions-env
+    volumes:
+      - search-secrets:/run/bms:ro
+    command: ["python", "-m", "app.search_sync"]
+    restart: unless-stopped
 
   # Cổng API (ADR #34): điểm vào duy nhất từ trình duyệt. APISIX standalone, route trong
   # platform/apisix/apisix.yaml; WAF Coraza (OWASP CRS); token kiểm tại biên (forward-auth → actions).
@@ -433,6 +488,10 @@ services:
         condition: service_started
       seaweedfs:
         condition: service_started
+      meilisearch:
+        condition: service_started
+      tika:
+        condition: service_started
     environment:
       <<: *actions-env
       # Kiểm thử tải tệp lên/xuống từ trong container nên link có chữ ký trỏ vào mạng nội bộ.
@@ -459,3 +518,6 @@ volumes:
   openbao-keys:
   actions-secrets:
   bootstrap-secrets:
+  search-secrets:
+  meilisearch-data:
+  meilisearch-config:
