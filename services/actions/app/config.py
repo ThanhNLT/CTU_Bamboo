@@ -70,6 +70,7 @@ DEV_DEFAULTS = {
     "HASURA_DB_PASSWORD": "hasura-db-dev",
     "KEYCLOAK_DB_PASSWORD": "keycloak-db-dev",
     "FLOWABLE_DB_PASSWORD": "flowable-db-dev",
+    "CDC_DB_PASSWORD": "cdc-db-dev",
     "HASURA_GRAPHQL_ADMIN_SECRET": "dev-admin-secret",
     "ACTIONS_SECRET": "dev-actions-secret",
     "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",

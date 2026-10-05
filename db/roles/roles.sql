@@ -9,14 +9,17 @@
 --   bamboo_hasura    Hasura: thành viên bamboo_app, chủ CSDL metadata hasura_meta
 --   bamboo_actions   dịch vụ actions, flow-sync: thành viên bamboo_app
 --   bamboo_keycloak  chủ CSDL keycloak     bamboo_flowable  chủ CSDL flowable
+--   bamboo_cdc       Debezium (ADR #38): replication logic, chỉ đọc các schema trong publication bms_cdc
 --
--- Không role nào là superuser, tạo được CSDL/role, replication hay bỏ qua RLS. Tài khoản `bms`
--- (superuser, chủ schema nghiệp vụ) chỉ dùng cho migrate và seed.
+-- Không role nào là superuser, tạo được CSDL/role hay bỏ qua RLS; chỉ bamboo_cdc có quyền replication.
+-- Tài khoản `bms` (superuser, chủ schema nghiệp vụ) chỉ dùng cho migrate và seed.
 --
 -- psql -v hasura_password=... -v actions_password=... -v keycloak_password=... -v flowable_password=...
+--      -v cdc_password=...
 
 SELECT format('CREATE ROLE %I', r)
-FROM unnest(ARRAY['bamboo_app', 'bamboo_hasura', 'bamboo_actions', 'bamboo_keycloak', 'bamboo_flowable']) r
+FROM unnest(ARRAY['bamboo_app', 'bamboo_hasura', 'bamboo_actions', 'bamboo_keycloak', 'bamboo_flowable',
+                   'bamboo_cdc']) r
 WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = r)
 \gexec
 
@@ -29,6 +32,8 @@ ALTER ROLE bamboo_keycloak LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATI
     PASSWORD :'keycloak_password';
 ALTER ROLE bamboo_flowable LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS
     PASSWORD :'flowable_password';
+ALTER ROLE bamboo_cdc LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE REPLICATION NOBYPASSRLS
+    PASSWORD :'cdc_password';
 
 GRANT bamboo_app TO bamboo_hasura, bamboo_actions;
 

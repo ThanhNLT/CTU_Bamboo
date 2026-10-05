@@ -197,7 +197,7 @@ Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](.
 
 ### 4.9. CDC và hiệu năng
 
-**CDC (migration 011).** PostgreSQL chạy `wal_level=logical`. Publication `bms_cdc` gồm mọi bảng (kể cả bảng tạo sau) trong `core, mdm, wf, proc, ic, mfg, hr, collab`; không gồm `audit` và `public`. Bảng tổ chức đặt `REPLICA IDENTITY FULL` để Lakehouse có ảnh trước khi sửa. Role `bms_cdc` (REPLICATION, chỉ đọc) dành cho Debezium, cấp mật khẩu khi triển khai từ OpenBao. `bms_hospital` không có publication ([ADR #22](#adr-22)).
+**CDC (migration 012, [ADR #38](#adr-38)).** PostgreSQL chạy `wal_level=logical`. Publication `bms_cdc` gồm mọi bảng (kể cả bảng tạo sau) trong `core, mdm, wf, proc, ic, collab` và bảng nhịp tim `cdc.heartbeat`; không gồm `audit`, `search`, `public`. Bảng giữ replica identity mặc định (khóa chính): sự kiện sửa có ảnh sau, không có ảnh trước. Role `bamboo_cdc` (REPLICATION, chỉ đọc, mật khẩu `CDC_DB_PASSWORD`) dành cho Debezium. `bms_hospital` không có publication ([ADR #22](#adr-22)). Kafka và Debezium: [Dịch vụ nền tảng mục 7](06-dich-vu-nen-tang.md).
 
 **Bảng quyền tính sẵn (migration 012, [ADR #21](#adr-21)).**
 
@@ -253,7 +253,7 @@ Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](.
 - [x] Realm Keycloak cho tài khoản demo (`platform/keycloak/realm/`). Còn: bật MFA (OTP) cho tài khoản quản trị, client `apisix` khi dựng gateway.
 - [x] Hasura Actions: `start_process`, `complete_task` (Flowable, gọi `wf.resolve_pr_approvers`), `get_upload_url`, `confirm_upload`, `get_download_url`, `delete_attachment` (xem [Dịch vụ nền tảng](06-dich-vu-nen-tang.md)).
 - [ ] (Tùy chọn, để trình diễn) Sinh bảng DMN chỉ-đọc từ `wf.approval_rule`; quyết định hạn mức vẫn ở CSDL ([ADR #17](#adr-17), [ADR #27](#adr-27)).
-- [x] Chuẩn bị CDC phía CSDL: publication, replica identity, role (migration 011). Còn: connector Debezium (Tuần 3).
+- [x] CDC: publication, role, Debezium Server → Kafka (migration 012, [ADR #38](#adr-38)). Còn: Kafka → Iceberg (Tuần 3).
 - [x] Nhật ký kiểm toán chuỗi hash theo tenant, đối soát qua Action `verify_audit_chain` (migration 007, [ADR #33](#adr-33)).
 - [x] Bình luận, thông báo bằng trigger (migration 008). Còn: dịch vụ realtime (Centrifugo) nghe kênh `bms_notification`.
 - [ ] Dịch vụ đồng bộ `audit.log` sang immudb (cột `sealed_at`).
