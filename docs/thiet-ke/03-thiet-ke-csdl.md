@@ -253,7 +253,7 @@ Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](.
 - [x] Realm Keycloak cho tài khoản demo (`platform/keycloak/realm/`). Còn: bật MFA (OTP) cho tài khoản quản trị, client `apisix` khi dựng gateway.
 - [x] Hasura Actions: `start_process`, `complete_task` (Flowable, gọi `wf.resolve_pr_approvers`), `get_upload_url`, `confirm_upload`, `get_download_url`, `delete_attachment` (xem [Dịch vụ nền tảng](06-dich-vu-nen-tang.md)).
 - [ ] (Tùy chọn, để trình diễn) Sinh bảng DMN chỉ-đọc từ `wf.approval_rule`; quyết định hạn mức vẫn ở CSDL ([ADR #17](#adr-17), [ADR #27](#adr-27)).
-- [x] CDC: publication, role, Debezium Server → Kafka (migration 012, [ADR #38](#adr-38)). Kafka → Iceberg bronze: [ADR #39](#adr-39). Còn: tầng silver, Trino.
+- [x] CDC: publication, role, Debezium Server → Kafka (migration 012, [ADR #38](#adr-38)). Kafka → Iceberg bronze: [ADR #39](#adr-39); tầng silver (view Trino): [ADR #40](#adr-40).
 - [x] Nhật ký kiểm toán chuỗi hash theo tenant, đối soát qua Action `verify_audit_chain` (migration 007, [ADR #33](#adr-33)).
 - [x] Bình luận, thông báo bằng trigger (migration 008). Còn: dịch vụ realtime (Centrifugo) nghe kênh `bms_notification`.
 - [ ] Dịch vụ đồng bộ `audit.log` sang immudb (cột `sealed_at`).

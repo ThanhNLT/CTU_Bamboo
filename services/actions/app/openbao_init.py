@@ -9,8 +9,8 @@
 2. Mỗi lần: unseal nếu đang sealed, chờ raft bầu leader.
 3. Cấu hình: KV v2 `secret/`, transit `transit/` + khóa `pii`, AppRole, policy đặc quyền tối thiểu.
 4. Đồng bộ secret hạ tầng từ biến môi trường; khóa S3 do OpenBao sinh một lần và là nguồn duy nhất.
-5. Ghi s3.json cho SeaweedFS, tệp cấu hình Meilisearch (khóa chủ do OpenBao sinh) và file AppRole
-   (role-id + secret-id) cho từng dịch vụ.
+5. Ghi s3.json cho SeaweedFS, tệp cấu hình Meilisearch (khóa chủ do OpenBao sinh), catalog Iceberg
+   của Trino và file AppRole (role-id + secret-id) cho từng dịch vụ.
 Với BAMBOO_ENV=production: từ chối chạy nếu còn mật khẩu/secret mặc định của môi trường dev, nên
 không dịch vụ nào khởi động được với cấu hình dev.
 
@@ -206,9 +206,32 @@ def _write_if_changed(path: pathlib.Path, text: str, mode: int) -> bool:
     return True
 
 
+def trino_catalog(root: Bao, db_url: str, s3_endpoint: str, bucket: str) -> str:
+    """Catalog Iceberg của Trino (ADR #40): cùng JDBC catalog (CSDL lakehouse) và bucket với lakehouse-sink."""
+    db = root.read("bms/lakehouse")
+    s3 = root.read("bms/seaweedfs-lakehouse")
+    return "\n".join([
+        "connector.name=iceberg",
+        "iceberg.catalog.type=jdbc",
+        "iceberg.jdbc-catalog.catalog-name=bms",   # trùng tên catalog của pyiceberg (lakehouse_sink.catalog)
+        "iceberg.jdbc-catalog.driver-class=org.postgresql.Driver",
+        f"iceberg.jdbc-catalog.connection-url={db_url}",
+        f"iceberg.jdbc-catalog.connection-user={db['username']}",
+        f"iceberg.jdbc-catalog.connection-password={db['password']}",
+        f"iceberg.jdbc-catalog.default-warehouse-dir=s3://{bucket}/warehouse",
+        "fs.native-s3.enabled=true",
+        f"s3.endpoint={s3_endpoint}",
+        "s3.region=us-east-1",
+        "s3.path-style-access=true",
+        f"s3.aws-access-key={s3['access_key']}",
+        f"s3.aws-secret-key={s3['secret_key']}",
+    ]) + "\n"
+
+
 def run(addr: str, keys_file: pathlib.Path, approle_outputs: dict[str, pathlib.Path],
         s3_config_path: pathlib.Path | None, approle_uid: int | None = None,
-        meili_config_path: pathlib.Path | None = None) -> None:
+        meili_config_path: pathlib.Path | None = None, trino_catalog_path: pathlib.Path | None = None,
+        trino_uid: int | None = None) -> None:
     wait_reachable(addr)
     root = Bao(addr, init_and_unseal(addr, keys_file))
     configure(root)
@@ -222,6 +245,15 @@ def run(addr: str, keys_file: pathlib.Path, approle_outputs: dict[str, pathlib.P
         if _write_if_changed(meili_config_path, search.config_toml(root.read("bms/meilisearch-admin")["master_key"]),
                              0o600):
             log.info("đã ghi cấu hình Meilisearch %s", meili_config_path)
+    if trino_catalog_path:
+        env = os.environ.get
+        text = trino_catalog(root, env("TRINO_CATALOG_DB_URL", "jdbc:postgresql://db:5432/lakehouse"),
+                             env("S3_ENDPOINT", "http://seaweedfs:8333"), env("S3_LAKEHOUSE_BUCKET", "bms-lakehouse"))
+        if _write_if_changed(trino_catalog_path, text, 0o600):
+            log.info("đã ghi catalog Trino %s", trino_catalog_path)
+        # Trino chạy bằng uid 1000 trong image: tệp chứa mật khẩu chỉ người dùng đó đọc được.
+        if trino_uid is not None and trino_catalog_path.stat().st_uid != trino_uid:
+            os.chown(trino_catalog_path, trino_uid, trino_uid)
     for role, path in approle_outputs.items():
         if role not in POLICIES:
             raise ValueError(f"Không có AppRole {role}")
@@ -235,13 +267,17 @@ def main() -> int:
     env = os.environ.get
     s3_path = env("S3_CONFIG_PATH")
     meili_path = env("MEILI_CONFIG_PATH")
+    trino_path = env("TRINO_CATALOG_PATH")
+    trino_uid = env("TRINO_UID")
     uid = env("APPROLE_UID")
     run(env("BAO_ADDR", "http://openbao:8200"),
         pathlib.Path(env("BAO_KEYS_FILE", "/openbao/keys/init.json")),
         parse_outputs(env("APPROLE_OUTPUTS", "")),
         pathlib.Path(s3_path) if s3_path else None,
         int(uid) if uid else None,
-        pathlib.Path(meili_path) if meili_path else None)
+        pathlib.Path(meili_path) if meili_path else None,
+        pathlib.Path(trino_path) if trino_path else None,
+        int(trino_uid) if trino_uid else None)
     return 0
 
 

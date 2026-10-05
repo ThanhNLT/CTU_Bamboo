@@ -273,6 +273,9 @@ services:
       S3_CONFIG_PATH: /etc/bms/s3.json
       # Khóa chủ Meilisearch do OpenBao sinh, ghi vào tệp cấu hình (ADR #36).
       MEILI_CONFIG_PATH: /etc/meilisearch/config.toml
+      # Catalog Iceberg của Trino (mật khẩu CSDL lakehouse, khóa S3), thuộc uid 1000 của image Trino (ADR #40).
+      TRINO_CATALOG_PATH: /etc/trino/bms-catalog/lakehouse.properties
+      TRINO_UID: "1000"
     command: ["python", "-m", "app.openbao_init"]
     # Ghi vào các volume secret (sở hữu bởi root).
     user: "0"
@@ -284,6 +287,7 @@ services:
       - lakehouse-secrets:/run/bms-lakehouse
       - seaweedfs-config:/etc/bms
       - meilisearch-config:/etc/meilisearch
+      - trino-catalog:/etc/trino/bms-catalog
     restart: "no"
 
   # Lưu trữ đối tượng S3 (ADR #2, #26). Không cho truy cập ẩn danh; CORS cho ứng dụng Refine.
@@ -544,6 +548,44 @@ services:
     command: ["python", "-m", "app.lakehouse_sink"]
     restart: unless-stopped
 
+  # Truy vấn Lakehouse (ADR #40): Trino một node, catalog `lakehouse` là catalog Iceberg mà lakehouse-sink ghi.
+  # Không xác thực, chỉ dành cho máy dev (127.0.0.1:8085, giao diện web) và dịch vụ nội bộ.
+  trino:
+    logging: *logging
+    build:
+      context: ./platform/trino
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      openbao-init:
+        condition: service_completed_successfully
+      seaweedfs:
+        condition: service_started
+    volumes:
+      - trino-catalog:/etc/trino/bms-catalog:ro
+    ports:
+      - "127.0.0.1:8085:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/lib/trino/bin/health-check"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  # Tạo bảng bronze còn thiếu và view silver (platform/trino/silver.sql, sinh bằng app.lakehouse_silver) rồi thoát.
+  trino-init:
+    logging: *logging
+    build:
+      context: ./platform/trino
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    depends_on:
+      trino:
+        condition: service_healthy
+    command: ["trino", "--server", "http://trino:8080", "--user", "trino-init", "--file", "/etc/trino/bms/silver.sql"]
+    restart: "no"
+
   # Cổng API (ADR #34): điểm vào duy nhất từ trình duyệt. APISIX standalone, route trong
   # platform/apisix/apisix.yaml; WAF Coraza (OWASP CRS); token kiểm tại biên (forward-auth → actions).
   gateway:
@@ -625,6 +667,10 @@ services:
         condition: service_started
       debezium:
         condition: service_started
+      lakehouse-sink:
+        condition: service_started
+      trino-init:
+        condition: service_completed_successfully
     environment:
       <<: *actions-env
       # Kiểm thử tải tệp lên/xuống từ trong container nên link có chữ ký trỏ vào mạng nội bộ.
@@ -657,3 +703,4 @@ volumes:
   kafka-data:
   debezium-data:
   lakehouse-secrets:
+  trino-catalog:
