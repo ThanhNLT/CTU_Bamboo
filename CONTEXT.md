@@ -100,6 +100,18 @@ _Tránh dùng_: chi tiết, line item
 Đối tác bán hàng cho doanh nghiệp. **Nhà cung cấp nội bộ** trỏ tới một công ty trong cùng tenant, dùng cho giao dịch nội bộ.
 _Tránh dùng_: vendor, đối tác (khi chỉ người bán)
 
+**Đơn hàng nội bộ** (`ic.ic_order`):
+Chứng từ một công ty trong tập đoàn mua của công ty khác, số `IC-…`. Tự sinh khi đề nghị mua từ nhà cung cấp nội bộ được duyệt; bên bán xác nhận kèm lô xuất hoặc từ chối, người đặt hủy được khi còn chờ.
+_Tránh dùng_: đơn bán nội bộ, giao dịch liên công ty, intercompany
+
+**Đơn mua** (`proc.purchase_order`):
+Chứng từ của bên mua gửi nhà cung cấp, số `PO-…`, sinh từ đề nghị đã duyệt (hiện chỉ khi đơn hàng nội bộ được xác nhận).
+_Tránh dùng_: PO (chỉ dùng làm tiền tố số chứng từ), đơn đặt hàng
+
+**Lô** (`mfg.lot`):
+Một mẻ sản xuất của một mặt hàng ở một đơn vị sản xuất, có số lượng và trạng thái (đang xuất được, bị giữ, hủy). Dòng hàng của đơn hàng nội bộ ghi lô xuất để truy xuất.
+_Tránh dùng_: batch, mẻ (khi nói chứng từ)
+
 **Vật tư** (`mdm.item`):
 Mặt hàng trong danh mục dùng chung của tenant (mã, tên, đơn vị tính, nhóm hàng, giá tham khảo). **Nhóm hàng** là danh mục `ITEM_CATEGORY`; quy tắc hạn mức có thể chỉ áp cho một nhóm hàng.
 _Tránh dùng_: sản phẩm, hàng hóa (khi nói danh mục)
