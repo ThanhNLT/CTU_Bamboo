@@ -28,7 +28,7 @@ log = logging.getLogger("lakehouse_sink")
 
 NAMESPACE = "bronze"
 # Topic dữ liệu nghiệp vụ; bỏ topic nhịp tim (cdc.heartbeat, __debezium-heartbeat.*).
-TOPIC_PATTERN = re.compile(r"^bms\.(core|mdm|wf|proc|ic|collab)\.[a-z0-9_]+$")
+TOPIC_PATTERN = re.compile(r"^bms\.(core|mdm|wf|proc|ic|mfg|collab)\.[a-z0-9_]+$")
 OFFSETS_PROPERTY = "kafka.offsets"
 MAX_BATCH = 5000          # dòng mỗi lần ghi một bảng
 FLUSH_SECONDS = 30.0      # ghi dù chưa đủ lô sau khoảng này
