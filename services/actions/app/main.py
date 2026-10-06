@@ -20,7 +20,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
-from . import attachments, auth, config, forms, hr, search
+from . import attachments, audit, auth, config, forms, hr, pii_guard, search
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
@@ -110,21 +110,6 @@ def process_state(conn: psycopg.Connection, session: dict, request_id: str, flow
             "completed_activity_ids": completed, "active_activity_ids": active, "source": "database"}
 
 
-def verify_audit_chain(conn: psycopg.Connection, session: dict) -> dict:
-    tenant = session.get("x-hasura-tenant-id")
-    person = session_identity(session, tenant)
-    if not conn.execute("SELECT 1 FROM audit.v_reader WHERE tenant_id = %s AND person_id = %s",
-                        (tenant, person)).fetchone():
-        raise ActionError("Cần quyền audit.read để đối soát nhật ký", "forbidden", 403)
-    problems = conn.execute("SELECT seq, log_id, problem FROM audit.verify_chain(%s)", (tenant,)).fetchall()
-    checked = conn.execute("SELECT count(*) FROM audit.log WHERE tenant_id = %s", (tenant,)).fetchone()[0]
-    head = conn.execute("SELECT seq, encode(hash, 'hex') FROM audit.chain_head WHERE tenant_id = %s",
-                        (tenant,)).fetchone()
-    return {"tenant_id": tenant, "ok": not problems, "checked": checked,
-            "head_seq": head[0] if head else 0, "head_hash": head[1] if head else None,
-            "problems": [{"seq": p[0], "log_id": p[1], "problem": p[2]} for p in problems]}
-
-
 HANDLERS = {
     "my_tenants": lambda conn, session, args, _ctx: auth.my_tenants(conn, session),
     "submit_purchase_request": lambda conn, session, args, _ctx: submit_purchase_request(
@@ -134,7 +119,6 @@ HANDLERS = {
     "cancel_purchase_request": lambda conn, session, args, _ctx: cancel_purchase_request(
         conn, session, args["request_id"], args["reason"]),
     "process_state": lambda conn, session, args, ctx: process_state(conn, session, args["request_id"], ctx.flowable),
-    "verify_audit_chain": lambda conn, session, args, _ctx: verify_audit_chain(conn, session),
     "get_upload_url": attachments.get_upload_url,
     "confirm_upload": attachments.confirm_upload,
     "get_download_url": attachments.get_download_url,
@@ -142,6 +126,8 @@ HANDLERS = {
     "search_documents": search.search_documents,
     "get_purchase_request_pdf": forms.get_purchase_request_pdf,
     **hr.HANDLERS,
+    **audit.HANDLERS,
+    "check_pii": pii_guard.check_pii,
 }
 
 
@@ -184,6 +170,7 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.pool = pool or ConnectionPool(settings.database_url, min_size=1, max_size=10, open=True)
+        pii_guard.warm_up()
         yield
         if pool is None:
             app.state.pool.close()

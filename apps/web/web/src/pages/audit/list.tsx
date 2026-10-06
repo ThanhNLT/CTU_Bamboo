@@ -3,19 +3,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Nhật ký kiểm toán nối chuỗi hash theo tenant và đối soát chuỗi (ADR #18, #33). Cần quyền audit.read.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { List, useTable } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
-import { Alert, App, Button, Select, Space, Table, Tag, Typography } from "antd";
+import { Alert, App, Button, Select, Space, Spin, Table, Tag, Typography } from "antd";
 import { SafetyCertificateOutlined } from "@ant-design/icons";
 import gql from "graphql-tag";
 import { request } from "../../api/client";
+import { PiiNotice } from "../../components/pii/PiiNotice";
 import { formatDate } from "../../utils/format";
 
 const AUDIT = gql`
   query Audit($limit: Int, $offset: Int, $order_by: [audit_log_order_by!], $where: audit_log_bool_exp) {
     audit_log(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id seq table_name row_id op actor_role changed_cols created_at hash old_data new_data
+      id seq table_name row_id op actor_role changed_cols created_at hash
       actor { full_name }
     }
     audit_log_aggregate(where: $where) { aggregate { count } }
@@ -24,12 +25,36 @@ const AUDIT = gql`
 
 type Row = BaseRecord & {
   seq: number; table_name: string; row_id: string; op: string; actor_role: string; changed_cols: string[] | null;
-  created_at: string; hash: string; old_data: unknown; new_data: unknown; actor: { full_name: string } | null;
+  created_at: string; hash: string; actor: { full_name: string } | null;
 };
+type Detail = { log_id: number; old_data: unknown; new_data: unknown; masked: string[] };
 type Verify = { ok: boolean; checked: number; head_seq: number; head_hash: string | null; problems: { seq: number | null; problem: string }[] };
 
+// Dữ liệu trước/sau chỉ lấy qua Action, đã che dữ liệu cá nhân (Hasura không trả bản gốc, ADR #43).
+const DetailView = ({ id }: { id: number }) => {
+  const [detail, setDetail] = useState<Detail | null>();
+  const [error, setError] = useState<string>();
+  useEffect(() => {
+    request<{ audit_log_detail: Detail[] }>(
+      `query AuditDetail($ids: [Int!]!) { audit_log_detail(log_ids: $ids) { log_id old_data new_data masked } }`, { ids: [id] })
+      .then((r) => setDetail(r.audit_log_detail[0] ?? null))
+      .catch((e: Error) => setError(e.message));
+  }, [id]);
+  if (error) return <Alert type="error" showIcon message={error} />;
+  if (detail === undefined) return <Spin size="small" />;
+  if (detail === null) return <Typography.Text type="secondary">Không còn dữ liệu</Typography.Text>;
+  return (
+    <>
+      <PiiNotice labels={detail.masked} />
+      <pre style={{ fontSize: 12, maxHeight: 320, overflow: "auto" }}>
+        {JSON.stringify({ old: detail.old_data, new: detail.new_data }, null, 2)}
+      </pre>
+    </>
+  );
+};
+
 const OP_COLOR: Record<string, string> = { INSERT: "green", UPDATE: "blue", DELETE: "red" };
-const TABLES = ["proc.purchase_request", "proc.purchase_request_item", "core.attachment", "collab.comment", "core.assignment",
+const TABLES = ["proc.purchase_request", "hr.onboarding_request", "proc.purchase_request_item", "core.attachment", "collab.comment", "core.assignment",
   "core.role_grant", "core.delegation", "wf.approval_rule", "core.person", "core.position", "core.org_unit"];
 
 export const AuditLogList = () => {
@@ -71,10 +96,7 @@ export const AuditLogList = () => {
                 onChange={(t?: string) => setFilters(t ? [{ field: "table_name", operator: "eq", value: t }] : [], "replace")} />
       </Space>
       <Table {...tableProps} rowKey="id" size="small"
-             expandable={{ expandedRowRender: (r) => (
-               <pre style={{ fontSize: 12, maxHeight: 320, overflow: "auto" }}>
-                 {JSON.stringify({ old: r.old_data, new: r.new_data }, null, 2)}
-               </pre>) }}>
+             expandable={{ expandedRowRender: (r) => <DetailView id={Number(r.id)} /> }}>
         <Table.Column dataIndex="seq" title="#" sorter />
         <Table.Column dataIndex="created_at" title="Thời điểm" render={formatDate} />
         <Table.Column dataIndex="table_name" title="Bảng" />

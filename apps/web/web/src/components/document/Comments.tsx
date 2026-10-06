@@ -5,17 +5,19 @@
 import type { ReactElement } from "react";
 import { useState } from "react";
 import { App, Avatar, Button, Flex, Input, List, Popconfirm, Space, Typography } from "antd";
+import { EyeInvisibleOutlined } from "@ant-design/icons";
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
 import type { DocumentComments } from "./types";
 
 type Comment = DocumentComments["comments"][number];
+type PiiCheck = { masked_text: string; entities: { label: string }[] };
 type Props = { doc: DocumentComments; entityType: string; me: string; onChange: () => void };
 
 const initials = (name?: string) => (name ?? "?").split(" ").slice(-1)[0]?.[0] ?? "?";
 
 export const Comments = ({ doc, entityType, me, onChange }: Props) => {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const [busy, setBusy] = useState(false);
@@ -34,13 +36,52 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
     }
   };
 
-  const send = async () => {
-    if (!body.trim()) return;
+  const post = async (text: string) => {
     const ok = await run(
       `mutation Comment($o: collab_comment_insert_input!) { insert_collab_comment_one(object: $o) { id } }`,
-      { o: { entity_type: entityType, entity_id: doc.id, body: body.trim(), parent_id: replyTo?.id ?? null } },
+      { o: { entity_type: entityType, entity_id: doc.id, body: text, parent_id: replyTo?.id ?? null } },
     );
     if (ok) { setBody(""); setReplyTo(null); }
+  };
+
+  // Mọi người xem được chứng từ đều đọc được trao đổi: có số CCCD, điện thoại... thì hỏi trước (ADR #43).
+  // Không kiểm tra được (dịch vụ lỗi) thì vẫn gửi, không chặn trao đổi.
+  const send = async () => {
+    const text = body.trim();
+    if (!text) return;
+    let check: PiiCheck | null = null;
+    try {
+      check = (await request<{ check_pii: PiiCheck }>(
+        `query CheckPii($t: String!) { check_pii(text: $t) { masked_text entities { label } } }`, { t: text })).check_pii;
+    } catch {
+      check = null;
+    }
+    if (!check?.entities.length) {
+      await post(text);
+      return;
+    }
+    const labels = [...new Set(check.entities.map((e) => e.label))].join(", ");
+    const masked = check.masked_text;
+    const dialog = modal.confirm({
+      title: "Nội dung có dữ liệu cá nhân",
+      icon: <EyeInvisibleOutlined />,
+      width: 520,
+      content: (
+        <>
+          <Typography.Paragraph>
+            Phát hiện: <b>{labels}</b>. Mọi người xem được chứng từ đều đọc được trao đổi này.
+          </Typography.Paragraph>
+          <Typography.Paragraph type="secondary" style={{ whiteSpace: "pre-wrap" }}>Bản đã che: {masked}</Typography.Paragraph>
+        </>
+      ),
+      footer: (
+        <Space style={{ marginTop: 16, width: "100%", justifyContent: "flex-end" }} wrap>
+          <Button onClick={() => dialog.destroy()}>Sửa lại</Button>
+          <Button danger onClick={() => { dialog.destroy(); void post(text); }}>Vẫn gửi nguyên văn</Button>
+          <Button type="primary" onClick={() => { dialog.destroy(); void post(masked); }}>Gửi bản đã che</Button>
+        </Space>
+      ),
+    });
   };
 
   const remove = (c: Comment) => run(
