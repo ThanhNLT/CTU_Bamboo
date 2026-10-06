@@ -57,6 +57,8 @@ HIDDEN_COLUMNS = {
     # Bản mã dữ liệu nhạy cảm chỉ Action đọc (ADR #41); giao diện thấy bản che.
     ("hr", "onboarding_request"): {"national_id_enc", "bank_account_enc", "address_enc", "initial_password_enc",
                                    "account_attempts"},
+    # Dữ liệu trước/sau có thể chứa dữ liệu cá nhân: chỉ đọc bản đã che qua Action audit_log_detail (ADR #43).
+    ("audit", "log"): {"old_data", "new_data"},
 }
 
 # Bộ lọc xem riêng cho một số bảng (mặc định: cùng tenant).
@@ -345,6 +347,10 @@ def build(conn: psycopg.Connection) -> dict:
                     "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho bpmn-js)"),
             _action("verify_audit_chain", "query", [], "AuditChainResult!", [ROLE, ADMIN_ROLE],
                     "Đối soát chuỗi hash nhật ký kiểm toán của tenant (cần quyền audit.read)", timeout=60),
+            _action("audit_log_detail", "query", [("log_ids", "[Int!]!")], "[AuditLogDetail!]!", [ROLE, ADMIN_ROLE],
+                    "Dữ liệu trước/sau của dòng nhật ký kiểm toán, đã che dữ liệu cá nhân (cần audit.read, ADR #43)"),
+            _action("check_pii", "query", [("text", "String!")], "PiiCheck!", [ROLE, ADMIN_ROLE],
+                    "Phát hiện và che dữ liệu cá nhân trong văn bản trước khi gửi (Presidio, ADR #43)", timeout=10),
             _action("get_upload_url", "mutation",
                     [("entity_type", "String!"), ("entity_id", "uuid!"), ("file_name", "String!"),
                      ("content_type", "String!"), ("size_bytes", "Int!")],
@@ -455,6 +461,18 @@ def build(conn: psycopg.Connection) -> dict:
                 "fields": [{"name": "request_id", "type": "uuid!"}, {"name": "national_id", "type": "String"},
                            {"name": "bank_account", "type": "String"}, {"name": "address", "type": "String"},
                            {"name": "username", "type": "String"}, {"name": "initial_password", "type": "String"}],
+            }, {
+                "name": "AuditLogDetail",
+                "fields": [{"name": "log_id", "type": "Int!"}, {"name": "table_name", "type": "String!"},
+                           {"name": "old_data", "type": "jsonb"}, {"name": "new_data", "type": "jsonb"},
+                           {"name": "masked", "type": "[String!]!"}],
+            }, {
+                "name": "PiiEntity",
+                "fields": [{"name": "entity", "type": "String!"}, {"name": "label", "type": "String!"},
+                           {"name": "start", "type": "Int!"}, {"name": "end", "type": "Int!"}],
+            }, {
+                "name": "PiiCheck",
+                "fields": [{"name": "masked_text", "type": "String!"}, {"name": "entities", "type": "[PiiEntity!]!"}],
             }, {
                 "name": "AuditChainProblem",
                 "fields": [{"name": "seq", "type": "Int"}, {"name": "log_id", "type": "Int"},

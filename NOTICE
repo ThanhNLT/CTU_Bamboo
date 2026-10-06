@@ -47,6 +47,16 @@ fsspec, zstandard                                           BSD-3-Clause
 psycopg, psycopg-binary, psycopg-pool                       LGPL-3.0-only (dùng như thư viện, không sửa)
 PyJWT, cryptography, cffi, pycparser                        MIT / Apache-2.0 OR BSD-3-Clause / MIT-0 / BSD-3-Clause
 boto3, botocore, s3transfer, jmespath, python-dateutil, six, urllib3   Apache-2.0 / MIT
+Presidio (presidio-analyzer, presidio-anonymizer)           MIT
+spaCy, thinc, catalogue, confection, srsly, wasabi, weasel, cymem, preshed, murmurhash, spacy-legacy, spacy-loggers  MIT
+typer, cloudpathlib, smart-open, filelock, setuptools       MIT
+shellingham                                                 ISC
+wrapt                                                       BSD-2-Clause
+blis, tldextract                                            BSD-3-Clause
+numpy                                                       BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0
+tqdm                                                        MPL-2.0 AND MIT (dùng như thư viện, không sửa)
+phonenumbers, requests-file                                 Apache-2.0
+regex                                                       Apache-2.0 AND CNRI-Python
 Faker (chỉ service seed)                                    MIT
 pytest, PyYAML (chỉ kiểm thử)                               MIT
 

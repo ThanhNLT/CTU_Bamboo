@@ -118,6 +118,10 @@ _Tránh dùng_: nhân viên mới (trước khi duyệt), người
 Số CCCD, số tài khoản ngân hàng, địa chỉ của ứng viên; chỉ phòng nhân sự xem được bản đầy đủ, mỗi lần xem đều được ghi lại. Những người khác xem được đề nghị chỉ thấy **bản che** (ví dụ `•••••••••789`).
 _Tránh dùng_: PII (trong giao diện), thông tin bí mật
 
+**Bản che** (che dữ liệu cá nhân):
+Giá trị đã thay phần lớn ký tự để người đọc vẫn đối chiếu được mà không đọc được toàn bộ: `•••••••••789`, `0912 *** 678`, `n***@…`. Nhật ký kiểm toán chỉ hiện bản che; ô trao đổi đề nghị gửi bản che khi phát hiện số CCCD, điện thoại, tài khoản.
+_Tránh dùng_: mask, ẩn (khi giá trị vẫn hiện một phần)
+
 ## Kiểm toán và cộng tác
 
 **Nhật ký kiểm toán** (`audit.log`):
