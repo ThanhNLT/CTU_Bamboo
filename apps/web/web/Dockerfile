@@ -15,6 +15,9 @@ ARG VITE_HASURA_URL=http://localhost:8081/v1/graphql
 ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
     VITE_KEYCLOAK_CLIENT=$VITE_KEYCLOAK_CLIENT VITE_HASURA_URL=$VITE_HASURA_URL
 RUN npm run build
+# Nén sẵn mức cao nhất (nginx gzip_static gửi thẳng tệp .gz): không nén lại 2 MB JavaScript ở mỗi lượt tải.
+RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \
+      -size +1k -exec sh -c 'gzip -9 -c "$1" > "$1.gz"' _ {} \;
 
 # nginx nhánh stable, chạy không cần root.
 FROM nginxinc/nginx-unprivileged:1.30-alpine
