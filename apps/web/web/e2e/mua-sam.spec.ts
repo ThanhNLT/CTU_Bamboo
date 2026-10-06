@@ -19,7 +19,11 @@ async function login(page: Page, username: string) {
 }
 
 async function logout(page: Page) {
+  // Chờ Keycloak xóa phiên SSO: nút đăng nhập có thể hiện trước khi trình duyệt gọi endpoint đăng xuất; điều hướng
+  // sớm sẽ cắt ngang, phiên cũ còn nên check-sso đăng nhập lại người cũ và không còn trang đăng nhập.
+  const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
   await page.locator("aside").getByText("Đăng xuất").click();
+  await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
