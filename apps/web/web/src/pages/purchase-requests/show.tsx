@@ -6,23 +6,19 @@ import { useCallback, useEffect, useState } from "react";
 import { Show } from "@refinedev/antd";
 import { useGo, useParsed } from "@refinedev/core";
 import {
-  Alert, App, Button, Card, Col, Descriptions, Input, Modal, Row, Space, Spin, Steps, Table, Tabs, Tag, Timeline, Typography,
+  Alert, App, Button, Card, Col, Descriptions, Input, Modal, Row, Space, Spin, Table, Tabs, Tag, Typography,
 } from "antd";
 import { ApartmentOutlined, AuditOutlined, EditOutlined, PrinterOutlined, SendOutlined, StopOutlined } from "@ant-design/icons";
 import { request } from "../../api/client";
 import { useSession } from "../../auth/session";
 import { ActModal } from "../../components/approval/ActModal";
-import {
-  ESCALATION_REASON, formatDate, formatDay, formatMoney, HISTORY_EVENT, STEP_STATUS,
-} from "../../utils/format";
+import { formatDate, formatDay, formatMoney } from "../../utils/format";
 import { StatusTag } from "../../components/StatusTag";
-import { Attachments } from "./attachments";
-import { Comments } from "./comments";
+import { ApprovalPanel } from "../../components/approval/ApprovalPanel";
+import { Attachments } from "../../components/document/Attachments";
+import { Comments } from "../../components/document/Comments";
 import { CANCEL_PR, MY_TASK_FOR, PR_DETAIL, PR_PDF, SUBMIT_PR } from "./queries";
 import type { PurchaseRequest } from "./types";
-
-const stepState = (s: string): "wait" | "process" | "finish" | "error" =>
-  s === "ACTIVE" ? "process" : s === "APPROVED" ? "finish" : s === "REJECTED" || s === "RETURNED" ? "error" : "wait";
 
 export const PurchaseRequestShow = () => {
   const { id } = useParsed();
@@ -57,7 +53,6 @@ export const PurchaseRequestShow = () => {
   const mine = pr.requester_id === tenant.person_id;
   const editable = mine && ["DRAFT", "RETURNED"].includes(pr.status);
   const cancellable = mine && ["DRAFT", "PENDING", "RETURNED"].includes(pr.status);
-  const round = pr.approval_steps.filter((s) => s.round === pr.approval_round);
   const returnedNote = pr.status === "RETURNED"
     ? pr.approval_steps.find((s) => s.round === pr.approval_round && s.status === "RETURNED")?.note : null;
 
@@ -149,47 +144,15 @@ export const PurchaseRequestShow = () => {
           <Card style={{ marginTop: 16 }} size="small">
             <Tabs items={[
               { key: "files", label: `Tệp đính kèm (${pr.attachments.length})`,
-                children: <Attachments pr={pr} me={tenant.person_id} canUpload onChange={load} /> },
+                children: <Attachments doc={pr} entityType="proc.purchase_request" me={tenant.person_id} canUpload onChange={load} /> },
               { key: "comments", label: `Trao đổi (${pr.comments.filter((c) => !c.deleted_at).length})`,
-                children: <Comments pr={pr} me={tenant.person_id} onChange={load} /> },
+                children: <Comments doc={pr} entityType="proc.purchase_request" me={tenant.person_id} onChange={load} /> },
             ]} />
           </Card>
         </Col>
         <Col xs={24} xl={9}>
-          <Card size="small" title={pr.approval_round ? `Chuỗi duyệt (lần gửi ${pr.approval_round})` : "Chuỗi duyệt"}>
-            {round.length === 0 ? <Typography.Text type="secondary">Chưa gửi duyệt. Chuỗi duyệt được chốt theo hạn mức lúc gửi.</Typography.Text> : (
-              <Steps direction="vertical" size="small" items={round.map((s) => {
-                const open = s.tasks[0];
-                return {
-                  status: stepState(s.status),
-                  title: `${s.position?.name ?? ""} – ${s.position?.org_unit.name ?? ""}`,
-                  description: (
-                    <Space direction="vertical" size={0}>
-                      <span>{STEP_STATUS[s.status] ?? s.status}{s.acted_by_person ? `: ${s.acted_by_person.full_name}` : ""}
-                        {s.on_behalf_of_person ? ` (duyệt thay ${s.on_behalf_of_person.full_name})` : ""}</span>
-                      {open?.escalated && <Tag color="orange">Đẩy lên cấp trên: {ESCALATION_REASON[open.escalation_reason ?? ""]}</Tag>}
-                      {open && !open.assignee_id && <Tag color="red">Chờ có người giữ vị trí</Tag>}
-                      {s.note && <Typography.Text type="secondary" italic>“{s.note}”</Typography.Text>}
-                      {s.acted_at && <Typography.Text type="secondary">{formatDate(s.acted_at)}</Typography.Text>}
-                    </Space>
-                  ),
-                };
-              })} />
-            )}
-          </Card>
-          <Card size="small" title="Lịch sử" style={{ marginTop: 16 }}>
-            <Timeline items={pr.approval_history.map((h) => ({
-              children: (
-                <>
-                  <b>{HISTORY_EVENT[h.event] ?? h.event}</b>{h.person ? ` – ${h.person.full_name}` : ""}
-                  {h.on_behalf_of_person ? ` (thay ${h.on_behalf_of_person.full_name})` : ""}
-                  {typeof h.detail?.note === "string" && <div><i>“{h.detail.note}”</i></div>}
-                  {typeof h.detail?.reason === "string" && <div><i>{ESCALATION_REASON[h.detail.reason] ?? h.detail.reason}</i></div>}
-                  <div><Typography.Text type="secondary">{formatDate(h.created_at)}</Typography.Text></div>
-                </>
-              ),
-            }))} />
-          </Card>
+          <ApprovalPanel round={pr.approval_round} steps={pr.approval_steps} history={pr.approval_history}
+                         emptyHint="Chưa gửi duyệt. Chuỗi duyệt được chốt theo hạn mức lúc gửi." />
         </Col>
       </Row>
       <ActModal taskId={acting ? task?.task_id ?? null : null} viaDelegation={task?.via_delegation} title={`Xử lý ${pr.doc_no}`}

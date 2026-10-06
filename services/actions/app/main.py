@@ -10,6 +10,7 @@ nguyên cho giao diện.
 """
 
 import logging
+import os
 import pathlib
 from contextlib import asynccontextmanager
 
@@ -19,13 +20,16 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
-from . import attachments, auth, config, forms, search
+from . import attachments, auth, config, forms, hr, search
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
+from .pii import PiiCipher
 from .storage import Storage
 
 DECISIONS = {"APPROVE", "REJECT", "RETURN"}
+# Bảng của từng loại chứng từ được duyệt (trạng thái trả về sau khi xử lý việc duyệt).
+ENTITY_TABLES = {"proc.purchase_request": "proc.purchase_request", "hr.onboarding_request": "hr.onboarding_request"}
 BPMN = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
 log = logging.getLogger("actions")
 
@@ -63,8 +67,8 @@ def act_on_task(conn: psycopg.Connection, session: dict, task_id: str, decision:
     person = session_identity(session, row[0] if row else None)
     bind_session(conn, session)
     conn.execute("SELECT wf.act(%s, %s, %s, %s)", (task_id, person, decision, note))
-    entity_id = row[2]
-    status = conn.execute("SELECT status FROM proc.purchase_request WHERE id = %s", (entity_id,)).fetchone()[0]
+    entity_type, entity_id = row[1], row[2]
+    status = conn.execute(f"SELECT status FROM {ENTITY_TABLES[entity_type]} WHERE id = %s", (entity_id,)).fetchone()[0]
     return {"request_id": str(entity_id), "status": status}
 
 
@@ -137,6 +141,7 @@ HANDLERS = {
     "delete_attachment": attachments.delete_attachment,
     "search_documents": search.search_documents,
     "get_purchase_request_pdf": forms.get_purchase_request_pdf,
+    **hr.HANDLERS,
 }
 
 
@@ -159,6 +164,12 @@ def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | No
         raise ActionError("Kho lưu trữ tệp tạm thời không truy cập được", "storage-unavailable", 503) from exc
 
 
+def _pii_cipher() -> PiiCipher | None:
+    """Khóa transit `pii` đọc bằng AppRole của dịch vụ; ngoài compose (không có OpenBao) thì không mã hóa được."""
+    addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
+    return PiiCipher(addr, approle) if addr and approle else None
+
+
 def create_app(settings: config.Settings | None = None, pool: ConnectionPool | None = None,
                verifier: auth.KeycloakVerifier | None = None, ctx: Context | None = None) -> FastAPI:
     settings = settings or config.load()
@@ -166,7 +177,7 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
         flowable=FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password, timeout=5.0),
         storage=Storage(settings), clamav_host=settings.clamav_host, clamav_port=settings.clamav_port,
         search=search.Meili(settings.meili_url, settings.meili_search_key, timeout=5.0),
-        search_index=settings.meili_index, gotenberg_url=settings.gotenberg_url)
+        search_index=settings.meili_index, gotenberg_url=settings.gotenberg_url, pii=_pii_cipher())
     verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
                                                  set(settings.keycloak_clients))
 

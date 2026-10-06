@@ -18,13 +18,16 @@ CSDL là nguồn sự thật. Mỗi lần gửi duyệt (entity, round) có mộ
 
 import json
 import logging
+import os
 import time
 
 import psycopg
 from psycopg.rows import dict_row
 
-from . import config
+from . import config, hr_account
 from .flowable import FlowableClient
+from .keycloak_sync import PROVISIONER_ID
+from .pii import PiiCipher
 
 PROCESS_KEY = "purchaseRequestApproval"
 MAX_ATTEMPTS = 20
@@ -140,12 +143,25 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
     return len(rows)
 
 
+def _account_service(settings: config.Settings):
+    """Tạo tài khoản nhân viên mới (ADR #41): cần secret client bms-provisioner và khóa transit pii."""
+    addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
+    if not settings.keycloak_provisioner_secret or not addr or not approle:
+        log.warning("chưa cấu hình client %s hoặc OpenBao: không tạo tài khoản nhân viên mới", PROVISIONER_ID)
+        return None
+    users = hr_account.KeycloakUsers(settings.keycloak_url, PROVISIONER_ID, settings.keycloak_provisioner_secret)
+    return users, PiiCipher(addr, approle)
+
+
 def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_seconds: float = 60.0) -> None:
-    """Nghe kênh wf_flow_sync; định kỳ chạy wf.refresh_all() cho bổ nhiệm hết hạn theo lịch."""
+    """Nghe kênh wf_flow_sync và hr_account; định kỳ chạy wf.refresh_all() cho bổ nhiệm hết hạn theo lịch."""
     flowable = FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password)
     listen = psycopg.connect(settings.database_url, autocommit=True)
     listen.execute("LISTEN wf_flow_sync")
+    listen.execute("LISTEN hr_account")
     work = psycopg.connect(settings.database_url, row_factory=dict_row)
+    accounts = _account_service(settings)
+    account_conn = psycopg.connect(settings.database_url) if accounts else None
     last_refresh = 0.0
     log.info("flow-sync đang chạy")
     while True:
@@ -155,6 +171,12 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
             last_refresh = time.monotonic()
         while run_once(work, flowable):
             pass
+        if accounts:
+            try:
+                hr_account.run_once(account_conn, *accounts)
+            except Exception as exc:  # noqa: BLE001 - lỗi CSDL tạm thời: thử lại ở vòng sau
+                account_conn.rollback()
+                log.warning("tạo tài khoản nhân viên lỗi: %s", exc)
         for _ in listen.notifies(timeout=idle_seconds, stop_after=1):
             pass
 

@@ -20,8 +20,10 @@ import psycopg
 
 from . import config
 
-SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "collab", "audit")
-HIDDEN = {("wf", "flow_sync"), ("wf", "v_flow_state"), ("core", "doc_sequence"), ("audit", "chain_head")}
+SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "collab", "audit", "hr")
+# hr.private_access: chỉ xem qua nhật ký kiểm toán (audit.log), không mở cho giao diện.
+HIDDEN = {("wf", "flow_sync"), ("wf", "v_flow_state"), ("core", "doc_sequence"), ("audit", "chain_head"),
+          ("hr", "private_access")}
 ROLE = "user"
 ADMIN_ROLE = "platform_admin"   # realm role Keycloak, bắt buộc OTP (ADR #32)
 ACCOUNT_ROLE = "account"        # đã đăng nhập, chưa chọn tenant: chỉ gọi my_tenants
@@ -40,10 +42,22 @@ CAN_READ = {
     ("wf", "task"): ("wf", "task_can_read"),
     ("collab", "comment"): ("collab", "comment_can_read"),
     ("core", "attachment"): ("core", "attachment_can_read"),
+    ("hr", "onboarding_request"): ("hr", "onboarding_request_can_read"),
+}
+
+# Computed field thêm (tên → hàm), cùng tham số phiên Hasura.
+EXTRA_COMPUTED = {
+    ("hr", "onboarding_request"): [("can_read_private", ("hr", "onboarding_request_can_read_private"),
+                                    "Người gọi được xem bản rõ CCCD, số tài khoản, địa chỉ không")],
 }
 
 # Cột nội bộ không trả cho giao diện.
-HIDDEN_COLUMNS = {("core", "attachment"): {"storage_key"}}
+HIDDEN_COLUMNS = {
+    ("core", "attachment"): {"storage_key"},
+    # Bản mã dữ liệu nhạy cảm chỉ Action đọc (ADR #41); giao diện thấy bản che.
+    ("hr", "onboarding_request"): {"national_id_enc", "bank_account_enc", "address_enc", "initial_password_enc",
+                                   "account_attempts"},
+}
 
 # Bộ lọc xem riêng cho một số bảng (mặc định: cùng tenant).
 SELECT_FILTER = {
@@ -76,10 +90,22 @@ MANUAL_RELATIONSHIPS = [
     ("object", ("audit", "log"), "actor", ("core", "person"), {"actor_id": "id"}),
     ("array", ("proc", "purchase_request"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
     ("array", ("audit", "log"), "readers", ("audit", "v_reader"), {"tenant_id": "tenant_id"}),
+    # Đề nghị tiếp nhận nhân sự (ADR #41): cùng các bảng đa hình như đề nghị mua sắm.
+    ("object", ("wf", "approval_step"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
+    ("object", ("wf", "approval_history"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
+    ("array", ("hr", "onboarding_request"), "approval_steps", ("wf", "approval_step"), {"id": "entity_id"}),
+    ("array", ("hr", "onboarding_request"), "approval_history", ("wf", "approval_history"), {"id": "entity_id"}),
+    ("object", ("wf", "v_inbox"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
+    ("object", ("collab", "comment"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
+    ("array", ("hr", "onboarding_request"), "comments", ("collab", "comment"), {"id": "entity_id"}),
+    ("object", ("collab", "notification"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
+    ("array", ("hr", "onboarding_request"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
 ]
 
 PR_EDITABLE = ["title", "description", "category_code", "total_amount", "needed_by", "partner_id", "ic_order_id"]
 ITEM_EDITABLE = ["item_id", "line_no", "description", "uom", "quantity", "unit_price", "note"]
+OB_EDITABLE = ["full_name", "gender", "date_of_birth", "work_email", "phone", "education", "major",
+               "target_position_id", "start_date", "contract_type", "salary", "note", "bank_name", "username"]
 MDM_EDITABLE = {
     ("mdm", "partner"): ["code", "name", "tax_code", "address", "email", "phone", "internal_unit_id", "is_active"],
     ("mdm", "item"): ["code", "name", "uom", "category_code", "ref_price", "is_active"],
@@ -198,6 +224,13 @@ def build(conn: psycopg.Connection) -> dict:
                 "definition": {"function": {"schema": fs, "name": fn}, "session_argument": "hasura_session"},
                 "comment": "Người gọi có được xem chứng từ không",
             }]
+    for key, fields in EXTRA_COMPUTED.items():
+        for name, (fs, fn), comment in fields:
+            entries[key].setdefault("computed_fields", []).append({
+                "name": name,
+                "definition": {"function": {"schema": fs, "name": fn}, "session_argument": "hasura_session"},
+                "comment": comment,
+            })
 
     for key, entry in entries.items():
         if key in ADMIN_ONLY:
@@ -217,7 +250,7 @@ def build(conn: psycopg.Connection) -> dict:
             perm["filter"] = {"_and": [TENANT, {"can_read": {"_eq": True}}]}
             if "deleted_at" in columns[key] and key != ("collab", "comment"):
                 perm["filter"]["_and"].append({"deleted_at": {"_is_null": True}})
-            perm["computed_fields"] = ["can_read"]
+            perm["computed_fields"] = [f["name"] for f in entry["computed_fields"]]
         # platform_admin xem như người dùng thường, cộng thêm các bảng phân quyền.
         entry["select_permissions"] = [{"role": ROLE, "permission": perm}, {"role": ADMIN_ROLE, "permission": perm}]
 
@@ -255,6 +288,20 @@ def build(conn: psycopg.Connection) -> dict:
     comment["update_permissions"] = [{"role": r, "permission": {
         "filter": {"_and": [TENANT, {"author_id": {"_eq": ME}}, {"deleted_at": {"_is_null": True}}]},
         "check": {}, "columns": ["body", "deleted_at"],
+    }} for r in (ROLE, ADMIN_ROLE)]
+
+    # Đề nghị tiếp nhận: người lập sửa khi còn nháp hoặc bị trả về; dữ liệu nhạy cảm chỉ ghi qua Action.
+    ob = entries[("hr", "onboarding_request")]
+    own_ob = {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_in": ["DRAFT", "RETURNED"]}}]}
+    ob["insert_permissions"] = [{"role": r, "permission": {
+        "check": {}, "set": {"tenant_id": "X-Hasura-Tenant-Id", "requester_id": ME},
+        "columns": ["requester_position_id", *OB_EDITABLE],
+    }} for r in (ROLE, ADMIN_ROLE)]
+    ob["update_permissions"] = [{"role": r, "permission": {
+        "filter": own_ob, "check": {"status": {"_in": ["DRAFT", "RETURNED"]}}, "columns": OB_EDITABLE,
+    }} for r in (ROLE, ADMIN_ROLE)]
+    ob["delete_permissions"] = [{"role": r, "permission": {
+        "filter": {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_eq": "DRAFT"}}]},
     }} for r in (ROLE, ADMIN_ROLE)]
 
     # Dữ liệu chủ: đội nền tảng nhập (người dùng thường chỉ xem).
@@ -318,6 +365,22 @@ def build(conn: psycopg.Connection) -> dict:
                     [ROLE, ADMIN_ROLE],
                     "Phiếu đề nghị mua sắm dạng PDF: link tải về có chữ ký, chỉ người xem được chứng từ (ADR #37)",
                     timeout=60),
+            _action("save_onboarding_private", "mutation",
+                    [("request_id", "uuid!"), ("national_id", "String"), ("bank_account", "String"),
+                     ("bank_name", "String"), ("address", "String")],
+                    "OnboardingActionResult!", [ROLE, ADMIN_ROLE],
+                    "Ghi CCCD, số tài khoản, địa chỉ của hồ sơ tiếp nhận (mã hóa bằng OpenBao, lưu kèm bản che)"),
+            _action("reveal_onboarding_private", "mutation", [("request_id", "uuid!")], "OnboardingPrivate!",
+                    [ROLE, ADMIN_ROLE],
+                    "Xem bản rõ dữ liệu nhạy cảm (cần hr.onboarding.private.read; mỗi lần xem ghi nhật ký)"),
+            _action("submit_onboarding_request", "mutation", [("request_id", "uuid!")], "OnboardingActionResult!",
+                    [ROLE, ADMIN_ROLE], "Gửi duyệt đề nghị tiếp nhận nhân sự (người lập)"),
+            _action("cancel_onboarding_request", "mutation", [("request_id", "uuid!"), ("reason", "String!")],
+                    "OnboardingActionResult!", [ROLE, ADMIN_ROLE],
+                    "Người lập hủy đề nghị tiếp nhận chưa duyệt xong"),
+            _action("retry_onboarding_account", "mutation", [("request_id", "uuid!"), ("username", "String")],
+                    "OnboardingActionResult!", [ROLE, ADMIN_ROLE],
+                    "Tạo lại tài khoản đăng nhập khi lần trước lỗi (có thể đổi tên đăng nhập)"),
         ],
         "custom_types": {
             "enums": [{"name": "ApprovalDecision",
@@ -378,6 +441,20 @@ def build(conn: psycopg.Connection) -> dict:
                            {"name": "file_name", "type": "String!"}, {"name": "check_code", "type": "String!"},
                            {"name": "status", "type": "String!"}, {"name": "cached", "type": "Boolean!"},
                            {"name": "expires_in", "type": "Int!"}],
+            }, {
+                "name": "OnboardingActionResult",
+                "fields": [{"name": "request_id", "type": "uuid!"}, {"name": "status", "type": "String!"},
+                           {"name": "account_status", "type": "String!"}],
+                "relationships": [{
+                    "name": "onboarding_request", "type": "object", "source": "bms",
+                    "remote_table": {"schema": "hr", "name": "onboarding_request"},
+                    "field_mapping": {"request_id": "id"},
+                }],
+            }, {
+                "name": "OnboardingPrivate",
+                "fields": [{"name": "request_id", "type": "uuid!"}, {"name": "national_id", "type": "String"},
+                           {"name": "bank_account", "type": "String"}, {"name": "address", "type": "String"},
+                           {"name": "username", "type": "String"}, {"name": "initial_password", "type": "String"}],
             }, {
                 "name": "AuditChainProblem",
                 "fields": [{"name": "seq", "type": "Int"}, {"name": "log_id", "type": "Int"},

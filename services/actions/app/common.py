@@ -14,6 +14,7 @@ from .flowable import FlowableClient
 from .storage import Storage
 
 if TYPE_CHECKING:
+    from .pii import PiiCipher
     from .search import Meili
 
 
@@ -27,6 +28,7 @@ class Context:
     search: "Meili | None" = None       # khóa chỉ được tìm (ADR #36)
     search_index: str = "documents"
     gotenberg_url: str = ""           # in phiếu PDF (ADR #37)
+    pii: "PiiCipher | None" = None    # mã hóa dữ liệu cá nhân nhạy cảm (ADR #41)
 
 
 class ActionError(Exception):

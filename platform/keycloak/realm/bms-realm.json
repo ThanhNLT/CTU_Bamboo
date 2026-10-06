@@ -439,6 +439,86 @@
       "requiredActions": [
         "CONFIGURE_TOTP"
       ]
+    },
+    {
+      "id": "187fc98e-f731-574a-8d86-714b4bd095b3",
+      "username": "ns.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Trang",
+      "lastName": "Hồ Thị Thu",
+      "email": "ns.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "14e42abf-9a39-5568-b8c1-4b810566c574",
+      "username": "ns.chip",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Phát",
+      "lastName": "Châu Văn",
+      "email": "ns.chip@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "ea6d00fa-b455-5ae5-9a24-b0691c7a77b8",
+      "username": "ns.giadung",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ngân",
+      "lastName": "Lâm Thị Kim",
+      "email": "ns.giadung@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "cdb65543-2505-5054-9d00-f1ebd8ba8868",
+      "username": "ns.benhvien",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Toàn",
+      "lastName": "Quách Văn",
+      "email": "ns.benhvien@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
     }
   ]
 }

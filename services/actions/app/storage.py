@@ -25,7 +25,7 @@ from . import config
 MAX_BYTES = 25 * 1024 * 1024
 UPLOAD_TTL = 900
 DOWNLOAD_TTL = 300
-ENTITY_TYPES = {"proc.purchase_request"}
+ENTITY_TYPES = {"proc.purchase_request", "hr.onboarding_request"}
 
 _ZIP = (b"PK\x03\x04",)
 # Loại tệp cho phép → chữ ký đầu tệp hợp lệ (None: văn bản, không kiểm tra).

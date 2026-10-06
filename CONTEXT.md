@@ -104,6 +104,20 @@ _Tránh dùng_: vendor, đối tác (khi chỉ người bán)
 Mặt hàng trong danh mục dùng chung của tenant (mã, tên, đơn vị tính, nhóm hàng, giá tham khảo). **Nhóm hàng** là danh mục `ITEM_CATEGORY`; quy tắc hạn mức có thể chỉ áp cho một nhóm hàng.
 _Tránh dùng_: sản phẩm, hàng hóa (khi nói danh mục)
 
+## Nhân sự
+
+**Đề nghị tiếp nhận nhân sự** (`hr.onboarding_request`):
+Chứng từ phòng nhân sự lập để xin nhận một ứng viên vào một vị trí còn trống, kèm ngày vào làm, loại hợp đồng, lương đề xuất; số chứng từ dạng `TN-2026-000001`. Thứ được duyệt là quyết định bổ nhiệm, không phải việc nhập dữ liệu. Chuỗi duyệt tính từ vị trí được bổ nhiệm (quản lý trực tiếp của vị trí rồi giám đốc công ty), không từ tư cách lập. Duyệt xong thì ứng viên thành một người có bổ nhiệm giữ chính từ ngày vào làm.
+_Tránh dùng_: hồ sơ nhân viên (khi nói chứng từ xin duyệt), duyệt hồ sơ, onboarding
+
+**Ứng viên**:
+Cá nhân được đề nghị tiếp nhận, chưa phải người của tenant cho tới khi đề nghị được duyệt.
+_Tránh dùng_: nhân viên mới (trước khi duyệt), người
+
+**Dữ liệu cá nhân nhạy cảm**:
+Số CCCD, số tài khoản ngân hàng, địa chỉ của ứng viên; chỉ phòng nhân sự xem được bản đầy đủ, mỗi lần xem đều được ghi lại. Những người khác xem được đề nghị chỉ thấy **bản che** (ví dụ `•••••••••789`).
+_Tránh dùng_: PII (trong giao diện), thông tin bí mật
+
 ## Kiểm toán và cộng tác
 
 **Nhật ký kiểm toán** (`audit.log`):
@@ -119,5 +133,5 @@ Trao đổi gắn với một chứng từ, trả lời theo luồng, nhắc tê
 _Tránh dùng_: chat, ghi chú duyệt (ghi chú duyệt nằm ở bước duyệt)
 
 **Thông báo** (`collab.notification`):
-Tin báo cho đúng một người, sinh tự động khi được giao việc duyệt, khi đề nghị của mình có kết quả, khi có bình luận hoặc được nhắc tên. Người gây ra sự kiện không tự nhận thông báo.
+Tin báo cho đúng một người, sinh tự động khi được giao việc duyệt, khi chứng từ của mình có kết quả, khi có bình luận hoặc được nhắc tên. Người gây ra sự kiện không tự nhận thông báo.
 _Tránh dùng_: alert, tin nhắn

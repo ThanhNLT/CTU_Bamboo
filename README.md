@@ -86,6 +86,7 @@ Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến
 | Tên đăng nhập | Họ tên, vị trí | Nên thử |
 |---|---|---|
 | `gd.chip` | Hoàng Minh Đức, Giám đốc | Đang đi công tác, đã ủy quyền cho phó giám đốc |
+| `ns.chip` | Châu Văn Phát, Chuyên viên nhân sự | Lập hồ sơ tiếp nhận cho Chip X (không lập được cho công ty khác) |
 | `pgd.chip` | Vũ Thị Lan, Phó giám đốc | Hộp việc có đề nghị 90 triệu gắn nhãn **Duyệt thay (ủy quyền)** |
 | `qd.phongsach.chip` | Đặng Văn Long, Quản đốc phòng sạch | Hộp việc có đề nghị máy đếm hạt bụi 35 triệu |
 | `kd.chip` | Bùi Thị Ngọc, Chuyên viên kinh doanh B2B | Lập đề nghị dưới tư cách nhân viên |
@@ -95,8 +96,9 @@ Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến
 | Tên đăng nhập | Họ tên, vị trí | Nên thử |
 |---|---|---|
 | `nv.muahang.dienthoai` | Phan Văn Nam, Chuyên viên mua hàng | Lập đề nghị kèm dòng hàng, đính kèm báo giá, gửi duyệt; xem đề nghị **Văn phòng phẩm quý IV** bị trả về |
-| `tp.muahang.dienthoai` | Đỗ Thị Hương, Trưởng phòng mua hàng | Duyệt đề nghị dưới 50 triệu của phòng |
-| `gd.dienthoai` | Ngô Thanh Sơn, Giám đốc | Đã duyệt bước 1 của đề nghị 650 triệu |
+| `tp.muahang.dienthoai` | Đỗ Thị Hương, Trưởng phòng mua hàng | Duyệt đề nghị dưới 50 triệu của phòng; bước 1 của đề nghị tiếp nhận người vào phòng (chỉ thấy CCCD đã che) |
+| `gd.dienthoai` | Ngô Thanh Sơn, Giám đốc | Đã duyệt bước 1 của đề nghị 650 triệu; bước 2 của đề nghị tiếp nhận nhân sự Điện thoại X |
+| `ns.dienthoai` | Hồ Thị Thu Trang, Chuyên viên nhân sự | **Tiếp nhận nhân sự**: lập hồ sơ ứng viên vào ghế trống (ví dụ Chuyên viên – Phòng Mua hàng), CCCD được mã hóa, **Xem đầy đủ** ghi nhật ký; duyệt xong xem mật khẩu tạm để bàn giao |
 
 **Công ty Gia dụng X**
 
@@ -104,6 +106,7 @@ Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến
 |---|---|---|
 | `gd.giadung` | Lý Thị Thảo, Giám đốc | Hộp việc có đề nghị bộ dụng cụ sửa chữa 120 triệu |
 | `gd.baohanh.giadung` | Trịnh Văn Hải, Giám đốc trung tâm bảo hành | Người quản lý hợp đồng: duyệt đề nghị 15 triệu do người làm hợp đồng lập |
+| `ns.giadung` | Lâm Thị Kim Ngân, Chuyên viên nhân sự | Lập hồ sơ tiếp nhận cho Gia dụng X |
 
 **Bệnh viện X** (tenant riêng, cách ly dữ liệu với Tập đoàn X)
 
@@ -112,6 +115,7 @@ Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến
 | `gd.benhvien` | Võ Thị Bích, Giám đốc bệnh viện | Bước 2 của đề nghị máy siêu âm 4D (thiết bị y tế luôn duyệt 2 cấp) |
 | `bs.cdha.benhvien` | Lưu Thị Yến, Bác sĩ chẩn đoán hình ảnh | Người lập đề nghị máy siêu âm 4D |
 | `tk.duoc.benhvien` | Dương Văn Khoa, Trưởng khoa Dược | Người dùng của tenant bệnh viện, không thấy dữ liệu tập đoàn |
+| `ns.benhvien` | Quách Văn Toàn, Chuyên viên phòng Tổ chức cán bộ | Lập hồ sơ tiếp nhận cho bệnh viện (ví dụ Bác sĩ – Khoa Nội) |
 
 **Tài khoản đặc biệt**
 
