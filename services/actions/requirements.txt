@@ -4,6 +4,9 @@
 
 fastapi
 uvicorn
+# Vòng lặp sự kiện và bộ phân tích HTTP viết bằng C cho uvicorn (tự dùng khi có cài).
+uvloop
+httptools
 psycopg[binary]
 psycopg-pool
 httpx
