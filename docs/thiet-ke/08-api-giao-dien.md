@@ -37,6 +37,10 @@ Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong
 | Danh mục chọn trong form | `mdm_partner`, `mdm_item`, `core_catalog_item(where: {catalog: {_eq: "ITEM_CATEGORY"}})`, tư cách lập: `core_assignment` của mình |
 | `/i/search?q=&kind=` (tìm kiếm toàn văn) | Action `search_documents(query, kind, limit, offset)` → `[SearchHit]`: `kind` (`purchase_request`/`attachment`), `entity_id`, `attachment_id`, `file_name`, `matched_field`, `snippet` (HTML an toàn, chữ khớp trong `<mark>`), quan hệ `purchase_request`, `attachment`. Gõ không dấu được; chỉ trả chứng từ người gọi xem được ([ADR #36](#adr-36)). Kết quả có độ trễ đồng bộ vài giây sau khi sửa |
 | Nút **In phiếu** trên chi tiết đề nghị | Query `get_purchase_request_pdf(request_id)` → `url` (link tải PDF có chữ ký 5 phút), `file_name` (`<số chứng từ>.pdf`), `check_code`, `status`, `cached` ([ADR #37](#adr-37)). Link trả `Content-Disposition: attachment`: điều hướng tới `url` là tải tệp về, trang hiện tại giữ nguyên (mở tab mới sẽ để lại tab trống) |
+| `/h/onboarding` danh sách, chi tiết (tiếp nhận nhân sự, [ADR #41](#adr-41)) | `hr_onboarding_request` (+ `target_position`, `requester`, `person`, `approval_steps`, `approval_history`, `comments`, `attachments`), chỉ dòng người gọi xem được (`can_read`). Dữ liệu nhạy cảm chỉ có bản che `national_id_masked`, `bank_account_masked`, `address_masked`; cột bản mã không mở. `can_read_private`: người gọi có được xem bản đầy đủ không |
+| `/h/onboarding/create`, `/edit/:id` | `insert_hr_onboarding_request_one`, `update_…_by_pk` (người lập, khi nháp hoặc bị trả về); CCCD, số tài khoản, địa chỉ ghi bằng Action `save_onboarding_private(request_id, national_id, bank_account, bank_name, address)` (bỏ trường: giữ nguyên; chuỗi rỗng: xóa, trừ CCCD); gửi duyệt `submit_onboarding_request`; hủy `cancel_onboarding_request(request_id, reason)`. Vị trí gợi ý: `core_position` + `assignments` (còn trống từ ngày vào làm) trong phạm vi `core_v_permission_grant` có `hr.onboarding.create` |
+| Nút **Xem đầy đủ** trên hồ sơ tiếp nhận | Mutation `reveal_onboarding_private(request_id)` → `national_id`, `bank_account`, `address`, `username`, `initial_password` (mật khẩu tạm sau khi tạo tài khoản). Cần `hr.onboarding.private.read`; mỗi lần gọi ghi một dòng nhật ký kiểm toán |
+| Trạng thái tài khoản nhân viên mới | Cột `account_status` (`NONE`, `PENDING`, `CREATED`, `FAILED`), `account_error`; tạo lại bằng `retry_onboarding_account(request_id, username)` |
 | `/i/chat`, `/i/ocr`, `/d/*` | Chưa có |
 
 ## 3. Lưu ý khi dùng
@@ -44,8 +48,10 @@ Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong
 - **Tổng tiền sau khi tạo kèm dòng hàng:** phản hồi của `insert_proc_purchase_request_one` lồng `purchase_request_items` chụp dòng cha trước khi chèn dòng hàng nên `total_amount` còn là 0; đọc lại bằng `proc_purchase_request_by_pk` (Refine tự refetch sau create).
 - Có dòng hàng thì `total_amount` luôn bằng tổng các dòng; sửa tay bị ghi đè. `doc_no` do CSDL sinh, không gửi lên.
 - Đề nghị đang chờ duyệt hoặc đã xong thì update/delete trả về `null`/`affected_rows: 0` (không khớp quyền) hoặc lỗi "không sửa được dòng hàng".
-- **Lỗi nghiệp vụ** trả về `errors[0].message` tiếng Việt, dùng thẳng được trên giao diện; `extensions.code`: `not-found`, `forbidden`, `note-required`, `rejected`, `unauthorized`, `constraint-violation`, `query-required`, `search-unavailable`, `pdf-unavailable`.
-- Trạng thái đề nghị: `DRAFT`, `PENDING`, `RETURNED`, `APPROVED`, `REJECTED`, `CANCELLED`. Loại thông báo: `TASK_ASSIGNED`, `REQUEST_APPROVED`, `REQUEST_REJECTED`, `REQUEST_RETURNED`, `REQUEST_CANCELLED`, `COMMENT`, `MENTION`.
+- **Lỗi nghiệp vụ** trả về `errors[0].message` tiếng Việt, dùng thẳng được trên giao diện; `extensions.code`: `not-found`, `forbidden`, `note-required`, `rejected`, `unauthorized`, `constraint-violation`, `query-required`, `search-unavailable`, `pdf-unavailable`, `pii-unavailable` (két mã hóa không truy cập được).
+- **Hộp việc nhiều loại chứng từ:** `wf_v_inbox` có `entity_type`; quan hệ `purchase_request` hoặc `onboarding_request` (cái còn lại là `null`). Thông báo cũng có `entity_type` để mở đúng trang. `act_on_task` trả `request_id` là id của chứng từ, loại nào cũng vậy.
+- **Tiếp nhận nhân sự:** duyệt xong CSDL tạo người và bổ nhiệm ngay trong giao dịch duyệt; tài khoản Keycloak tạo ở nền vài giây sau (`account_status` từ `PENDING` sang `CREATED`), nên tải lại hồ sơ cho tới khi có kết quả.
+- Trạng thái đề nghị (cả mua sắm và tiếp nhận nhân sự): `DRAFT`, `PENDING`, `RETURNED`, `APPROVED`, `REJECTED`, `CANCELLED`. Loại thông báo: `TASK_ASSIGNED`, `REQUEST_APPROVED`, `REQUEST_REJECTED`, `REQUEST_RETURNED`, `REQUEST_CANCELLED`, `COMMENT`, `MENTION`.
 
 ## 4. Ví dụ
 

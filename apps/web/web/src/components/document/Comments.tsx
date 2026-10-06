@@ -7,14 +7,14 @@ import { useState } from "react";
 import { App, Avatar, Button, Flex, Input, List, Popconfirm, Space, Typography } from "antd";
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
-import type { PurchaseRequest } from "./types";
+import type { DocumentComments } from "./types";
 
-type Comment = PurchaseRequest["comments"][number];
-type Props = { pr: PurchaseRequest; me: string; onChange: () => void };
+type Comment = DocumentComments["comments"][number];
+type Props = { doc: DocumentComments; entityType: string; me: string; onChange: () => void };
 
 const initials = (name?: string) => (name ?? "?").split(" ").slice(-1)[0]?.[0] ?? "?";
 
-export const Comments = ({ pr, me, onChange }: Props) => {
+export const Comments = ({ doc, entityType, me, onChange }: Props) => {
   const { message } = App.useApp();
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
@@ -38,7 +38,7 @@ export const Comments = ({ pr, me, onChange }: Props) => {
     if (!body.trim()) return;
     const ok = await run(
       `mutation Comment($o: collab_comment_insert_input!) { insert_collab_comment_one(object: $o) { id } }`,
-      { o: { entity_type: "proc.purchase_request", entity_id: pr.id, body: body.trim(), parent_id: replyTo?.id ?? null } },
+      { o: { entity_type: entityType, entity_id: doc.id, body: body.trim(), parent_id: replyTo?.id ?? null } },
     );
     if (ok) { setBody(""); setReplyTo(null); }
   };
@@ -48,8 +48,8 @@ export const Comments = ({ pr, me, onChange }: Props) => {
     `mutation Del($id: uuid!, $at: timestamptz!) { update_collab_comment_by_pk(pk_columns: {id: $id}, _set: {deleted_at: $at}) { id } }`,
     { id: c.id, at: new Date().toISOString() });
 
-  const roots = pr.comments.filter((c) => !c.parent_id);
-  const replies = (id: string) => pr.comments.filter((c) => c.parent_id === id);
+  const roots = doc.comments.filter((c) => !c.parent_id);
+  const replies = (id: string) => doc.comments.filter((c) => c.parent_id === id);
 
   const render = (c: Comment, depth = 0): ReactElement => (
     <div key={c.id} style={{ marginLeft: depth * 40 }}>

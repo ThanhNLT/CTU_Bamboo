@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Job khởi tạo chạy mỗi lần `docker compose up`: tạo bucket S3, deploy BPMN, nạp metadata Hasura,
-tạo index và khóa API Meilisearch."""
+tạo index và khóa API Meilisearch, đồng bộ client Keycloak (bms-web, bms-provisioner) và tài khoản demo."""
 
 import hashlib
 import json
 import logging
+import os
 import pathlib
 import sys
 import time
@@ -76,6 +77,10 @@ def main() -> int:
         settings.keycloak_url, settings.keycloak_admin_user, settings.keycloak_admin_password,
         settings.web_origin))
     log.info("client %s chấp nhận %s", keycloak_sync.CLIENT_ID, settings.web_origin)
+    keycloak_sync.ensure_provisioner_client(settings.keycloak_url, settings.keycloak_admin_user,
+                                            settings.keycloak_admin_password, settings.keycloak_provisioner_secret)
+    keycloak_sync.ensure_demo_users(settings.keycloak_url, settings.keycloak_admin_user,
+                                    settings.keycloak_admin_password, os.environ.get("DEMO_PASSWORD", ""))
     return 0
 
 

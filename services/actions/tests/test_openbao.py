@@ -71,6 +71,21 @@ def test_dac_quyen_toi_thieu(roles):
     assert denied(lambda: bootstrap.encrypt("x")), "bootstrap không dùng được khóa pii"
 
 
+def test_dac_quyen_tao_tai_khoan(roles):
+    """ADR #41: secret client bms-provisioner sinh một lần; bootstrap đọc để đặt cho client, actions/flow-sync đọc
+    để tạo tài khoản nhân viên mới; search-sync và lakehouse-sink không đọc được."""
+    root = Bao(ADDR, json.loads(KEYS.read_text())["root_token"])
+    secret = root.read("bms/keycloak-provisioner")["client_secret"]
+    assert len(secret) >= 32
+    for role in ("actions", "bootstrap"):
+        assert Bao.from_approle_file(ADDR, roles[role]).read("bms/keycloak-provisioner")["client_secret"] == secret
+    for role in ("search", "lakehouse"):
+        client = Bao.from_approle_file(ADDR, roles[role])
+        assert denied(lambda c=client: c.read("bms/keycloak-provisioner")), f"{role} không được đọc"
+    openbao_init.run(ADDR, KEYS, {}, None)
+    assert root.read("bms/keycloak-provisioner")["client_secret"] == secret, "chạy lại không sinh secret mới"
+
+
 def test_dac_quyen_tim_kiem(roles):
     """ADR #36: khóa chủ Meilisearch chỉ bootstrap đọc; actions chỉ có khóa tìm; search-sync có khóa ghi
     chỉ mục và khóa S3 chỉ đọc."""

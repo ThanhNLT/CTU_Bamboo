@@ -40,17 +40,19 @@ path "secret/data/bms/flowable"  { capabilities = ["read"] }
 path "secret/data/bms/seaweedfs" { capabilities = ["read"] }
 path "secret/data/bms/actions"   { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-search" { capabilities = ["read"] }
+path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
 """,
     # Job bootstrap: tạo bucket (khóa S3 admin), deploy BPMN, nạp metadata Hasura, tạo index và khóa API
-    # Meilisearch (khóa chủ).
+    # Meilisearch (khóa chủ), đặt secret cho client Keycloak bms-provisioner.
     "bootstrap": """
 path "secret/data/bms/seaweedfs-admin" { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-admin" { capabilities = ["read"] }
 path "secret/data/bms/flowable"        { capabilities = ["read"] }
 path "secret/data/bms/hasura"          { capabilities = ["read"] }
 path "secret/data/bms/keycloak"        { capabilities = ["read"] }
+path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 """,
     # Dịch vụ search-sync (ADR #36): đọc CSDL, đọc tệp đã kiểm tra, ghi chỉ mục tìm kiếm.
     "search": """
@@ -154,6 +156,10 @@ def sync_secrets(root: Bao) -> None:
         if root.read(path) is None:
             root.write(path, {"access_key": access_key, "secret_key": secrets.token_urlsafe(32)})
             log.info("đã sinh khóa S3 secret/%s", path)
+    # Client Keycloak tạo tài khoản nhân viên mới (ADR #41): bootstrap đặt secret này cho client.
+    if root.read("bms/keycloak-provisioner") is None:
+        root.write("bms/keycloak-provisioner", {"client_secret": secrets.token_urlsafe(32)})
+        log.info("đã sinh secret client bms-provisioner")
     # Meilisearch: khóa chủ sinh một lần; hai khóa API suy ra từ khóa chủ và uid cố định (ADR #36).
     admin = root.read("bms/meilisearch-admin")
     if admin is None:

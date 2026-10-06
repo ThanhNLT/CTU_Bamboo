@@ -180,6 +180,34 @@ DEMO_USERS = [
     _u("admin", "Kiều Anh Quân", Seat("TDX", "TDX_CDS.S1"), roles=("platform_admin",)),
 ]
 
+# Chuyên viên nhân sự (ADR #41): ngồi ở phòng nhân sự tạo trong HR_UNITS nên nạp sau cây tổ chức.
+HR_DEMO_USERS = [
+    _u("ns.dienthoai", "Hồ Thị Thu Trang", Seat("TDX", "DT_NS.S1")),
+    _u("ns.chip", "Châu Văn Phát", Seat("TDX", "CHIP_NS.S1")),
+    _u("ns.giadung", "Lâm Thị Kim Ngân", Seat("TDX", "GD_NS.S1")),
+    _u("ns.benhvien", "Quách Văn Toàn", Seat("BVX", "BVX_TCCB.S1")),
+]
+
+
+# Phòng nhân sự từng công ty và ghế tuyển mới (ADR #41). Tách khỏi TREES để bản đã cài bổ sung được mà không
+# đổi tên giả của các ghế có sẵn: (tenant, mã, tên, đơn vị cha, loại, chức danh trưởng, số ghế, chức danh ghế).
+HR_UNITS = [
+    ("TDX", "CHIP_NS", "Phòng Nhân sự", "CHIP", "PHONG", "Trưởng phòng nhân sự", 2, "Chuyên viên nhân sự"),
+    ("TDX", "DT_NS", "Phòng Nhân sự", "DT", "PHONG", "Trưởng phòng nhân sự", 2, "Chuyên viên nhân sự"),
+    ("TDX", "GD_NS", "Phòng Nhân sự", "GD", "PHONG", "Trưởng phòng nhân sự", 2, "Chuyên viên nhân sự"),
+    ("BVX", "BVX_TCCB", "Phòng Tổ chức cán bộ", "BVX", "PHONG", "Trưởng phòng", 2, "Chuyên viên tổ chức"),
+]
+# Phạm vi lập hồ sơ của phòng nhân sự: cả công ty (Khối Nhân sự công ty mẹ: cả tập đoàn).
+HR_SCOPE = {"CHIP_NS": "CHIP", "DT_NS": "DT", "GD_NS": "GD", "TDX_NS": "TDX", "BVX_TCCB": "BVX"}
+# Ghế còn trống để demo tuyển mới: (tenant, khóa ghế, đơn vị, chức danh).
+OPEN_SEATS = [
+    ("TDX", "DT_RD_PM.S4", "DT_RD_PM", "Kỹ sư phần mềm"),
+    ("TDX", "DT_MH.S4", "DT_MH", "Chuyên viên"),
+    ("TDX", "CHIP_RD_TK.S5", "CHIP_RD_TK", "Kỹ sư thiết kế"),
+    ("TDX", "GD_NM.S4", "GD_NM", "Kỹ thuật viên"),
+    ("BVX", "BVX_NOI.S4", "BVX_NOI", "Bác sĩ"),
+]
+
 
 def walk(unit: Unit, parent: Unit | None = None):
     """Duyệt cây theo thứ tự cha trước con: (đơn vị, đơn vị cha)."""

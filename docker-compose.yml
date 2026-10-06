@@ -376,6 +376,8 @@ services:
       # ở lần chạy đầu; đổi WEB_ORIGIN hoặc nâng cấp từ 0.1.0 vẫn đăng nhập được, không mất dữ liệu).
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
+      # Tài khoản demo mới (ví dụ chuyên viên nhân sự) thêm vào realm đã có, cùng mật khẩu với lần import đầu.
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
     volumes:
       - bootstrap-secrets:/run/bms:ro
     command: ["python", "-m", "app.bootstrap"]
