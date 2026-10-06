@@ -232,6 +232,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "ic_order",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "array_relationships": [
@@ -482,6 +496,20 @@
                   "remote_table": {
                     "schema": "hr",
                     "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ic_order",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order"
                   },
                   "column_mapping": {
                     "entity_id": "id"
@@ -1165,6 +1193,36 @@
               }
             },
             {
+              "name": "lots",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mfg",
+                    "name": "lot"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_orders",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "purchase_requests",
               "using": {
                 "manual_configuration": {
@@ -1434,7 +1492,7 @@
               }
             },
             {
-              "name": "ic_orders",
+              "name": "ic_orders_by_created_by_person",
               "using": {
                 "manual_configuration": {
                   "remote_table": {
@@ -1444,6 +1502,36 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ic_orders_by_decided_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "decided_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_orders",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "buyer_id"
                   }
                 }
               }
@@ -2852,6 +2940,21 @@
               }
             },
             {
+              "name": "decided_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "decided_by": "id"
+                  }
+                }
+              }
+            },
+            {
               "name": "tenant",
               "using": {
                 "manual_configuration": {
@@ -2883,6 +2986,36 @@
           ],
           "array_relationships": [
             {
+              "name": "ic_order_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "order_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_orders",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "ic_order_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "purchase_requests",
               "using": {
                 "manual_configuration": {
@@ -2896,6 +3029,44 @@
                   }
                 }
               }
+            },
+            {
+              "name": "comments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "ic",
+                  "name": "ic_order_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            },
+            {
+              "name": "can_confirm",
+              "definition": {
+                "function": {
+                  "schema": "ic",
+                  "name": "ic_order_can_confirm"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi xác nhận / từ chối được đơn hàng nội bộ đang chờ không"
             }
           ],
           "select_permissions": [
@@ -2904,11 +3075,24 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
                 },
-                "allow_aggregations": true
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "can_confirm"
+                ]
               }
             },
             {
@@ -2916,19 +3100,32 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
                 },
-                "allow_aggregations": true
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "can_confirm"
+                ]
               }
             }
           ]
         },
         {
           "table": {
-            "schema": "mdm",
-            "name": "item"
+            "schema": "ic",
+            "name": "ic_order_item"
           },
           "object_relationships": [
             {
@@ -2944,9 +3141,153 @@
                   }
                 }
               }
+            },
+            {
+              "name": "item",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mdm",
+                    "name": "item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "item_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "lot",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mfg",
+                    "name": "lot"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "lot_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "order",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "order_id": "id"
+                  }
+                }
+              }
             }
           ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "order": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "order": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "mdm",
+            "name": "item"
+          },
           "array_relationships": [
+            {
+              "name": "ic_order_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "item_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "lots",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mfg",
+                    "name": "lot"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "item_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_order_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "item_id"
+                  }
+                }
+              }
+            },
             {
               "name": "purchase_request_items",
               "using": {
@@ -2958,6 +3299,22 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "item_id"
+                  }
+                }
+              }
+            }
+          ],
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
                   }
                 }
               }
@@ -3068,6 +3425,21 @@
           ],
           "array_relationships": [
             {
+              "name": "purchase_orders",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "partner_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "purchase_requests",
               "using": {
                 "manual_configuration": {
@@ -3156,9 +3528,499 @@
         },
         {
           "table": {
+            "schema": "mfg",
+            "name": "lot"
+          },
+          "array_relationships": [
+            {
+              "name": "ic_order_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "lot_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_order_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "lot_id"
+                  }
+                }
+              }
+            }
+          ],
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "item",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mdm",
+                    "name": "item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "item_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "proc",
+            "name": "purchase_order"
+          },
+          "object_relationships": [
+            {
+              "name": "buyer",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "buyer_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ic_order",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "ic",
+                    "name": "ic_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "ic_order_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "partner",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mdm",
+                    "name": "partner"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "partner_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "request_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "purchase_order_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "order_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "proc",
+                  "name": "purchase_order_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "proc",
+            "name": "purchase_order_item"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "item",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mdm",
+                    "name": "item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "item_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "lot",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "mfg",
+                    "name": "lot"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "lot_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "order",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "order_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "order": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "order": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
             "schema": "proc",
             "name": "purchase_request"
           },
+          "array_relationships": [
+            {
+              "name": "purchase_orders",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_order"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "request_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_request_items",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "request_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "comments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "attachments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
           "object_relationships": [
             {
               "name": "tenant",
@@ -3250,79 +4112,6 @@
               }
             }
           ],
-          "array_relationships": [
-            {
-              "name": "purchase_request_items",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "proc",
-                    "name": "purchase_request_item"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "request_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "approval_steps",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_step"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "approval_history",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_history"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "comments",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "collab",
-                    "name": "comment"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "attachments",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "attachment"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            }
-          ],
           "computed_fields": [
             {
               "name": "can_read",
@@ -3402,8 +4191,7 @@
                   "category_code",
                   "total_amount",
                   "needed_by",
-                  "partner_id",
-                  "ic_order_id"
+                  "partner_id"
                 ]
               }
             }
@@ -3448,8 +4236,7 @@
                   "category_code",
                   "total_amount",
                   "needed_by",
-                  "partner_id",
-                  "ic_order_id"
+                  "partner_id"
                 ]
               }
             }
@@ -5036,6 +5823,111 @@
       "comment": "Người lập hủy đề nghị tiếp nhận chưa duyệt xong"
     },
     {
+      "name": "confirm_ic_order",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/confirm_ic_order",
+        "arguments": [
+          {
+            "name": "order_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "lots",
+            "type": "[IcOrderLot!]"
+          }
+        ],
+        "output_type": "IcOrderActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Bên bán xác nhận đơn hàng nội bộ kèm lô xuất từng dòng; sinh đơn mua cho bên mua (ADR #42)"
+    },
+    {
+      "name": "reject_ic_order",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/reject_ic_order",
+        "arguments": [
+          {
+            "name": "order_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "IcOrderActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Bên bán từ chối đơn hàng nội bộ (ghi lý do)"
+    },
+    {
+      "name": "cancel_ic_order",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_ic_order",
+        "arguments": [
+          {
+            "name": "order_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "IcOrderActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người đặt hủy đơn hàng nội bộ còn chờ xác nhận"
+    },
+    {
       "name": "retry_onboarding_account",
       "definition": {
         "kind": "synchronous",
@@ -5072,6 +5964,21 @@
     }
   ],
   "custom_types": {
+    "input_objects": [
+      {
+        "name": "IcOrderLot",
+        "fields": [
+          {
+            "name": "line_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "lot_id",
+            "type": "uuid!"
+          }
+        ]
+      }
+    ],
     "enums": [
       {
         "name": "ApprovalDecision",
@@ -5399,6 +6306,49 @@
             },
             "field_mapping": {
               "request_id": "id"
+            }
+          }
+        ]
+      },
+      {
+        "name": "IcOrderActionResult",
+        "fields": [
+          {
+            "name": "order_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "purchase_order_id",
+            "type": "uuid"
+          }
+        ],
+        "relationships": [
+          {
+            "name": "ic_order",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "ic",
+              "name": "ic_order"
+            },
+            "field_mapping": {
+              "order_id": "id"
+            }
+          },
+          {
+            "name": "purchase_order",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "proc",
+              "name": "purchase_order"
+            },
+            "field_mapping": {
+              "purchase_order_id": "id"
             }
           }
         ]

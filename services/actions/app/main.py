@@ -20,7 +20,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
-from . import attachments, auth, config, forms, hr, search
+from . import attachments, auth, config, forms, hr, ic, search
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
@@ -142,6 +142,7 @@ HANDLERS = {
     "search_documents": search.search_documents,
     "get_purchase_request_pdf": forms.get_purchase_request_pdf,
     **hr.HANDLERS,
+    **ic.HANDLERS,
 }
 
 
