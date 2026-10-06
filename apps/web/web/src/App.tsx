@@ -11,7 +11,7 @@ import routerProvider, {
 } from "@refinedev/react-router";
 import { App as AntdApp, ConfigProvider, Spin } from "antd";
 import viVN from "antd/locale/vi_VN";
-import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined, UserAddOutlined } from "@ant-design/icons";
+import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined, SwapOutlined, UserAddOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import { lazy, Suspense } from "react";
@@ -21,6 +21,7 @@ import { TenantGate } from "./auth/session";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
+import { IcOrderList, IcOrderShow } from "./pages/ic-orders";
 import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
 import { OnboardingCreate, OnboardingEdit, OnboardingList, OnboardingShow } from "./pages/onboarding";
@@ -68,6 +69,12 @@ function App() {
                     meta: { label: "Đề nghị mua sắm", icon: <FileTextOutlined /> },
                   },
                   {
+                    name: "ic_ic_order",
+                    list: "/p/ic-orders",
+                    show: "/p/ic-orders/show/:id",
+                    meta: { label: "Đơn hàng nội bộ", icon: <SwapOutlined /> },
+                  },
+                  {
                     name: "hr_onboarding_request",
                     list: "/h/onboarding",
                     create: "/h/onboarding/create",
@@ -100,6 +107,10 @@ function App() {
                       <Route path="create" element={<PurchaseRequestCreate />} />
                       <Route path="edit/:id" element={<PurchaseRequestEdit />} />
                       <Route path="show/:id" element={<PurchaseRequestShow />} />
+                    </Route>
+                    <Route path="/p/ic-orders">
+                      <Route index element={<IcOrderList />} />
+                      <Route path="show/:id" element={<IcOrderShow />} />
                     </Route>
                     <Route path="/h/onboarding">
                       <Route index element={<OnboardingList />} />

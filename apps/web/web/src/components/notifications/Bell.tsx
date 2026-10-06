@@ -27,6 +27,7 @@ type Note = {
 // Loại chứng từ → resource Refine của trang chi tiết.
 const RESOURCE: Record<string, string> = {
   "proc.purchase_request": "proc_purchase_request", "hr.onboarding_request": "hr_onboarding_request",
+  "ic.ic_order": "ic_ic_order",
 };
 
 export const NotificationBell = () => {
