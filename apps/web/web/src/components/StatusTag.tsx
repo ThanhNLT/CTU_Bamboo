@@ -15,12 +15,14 @@ const STYLE: Record<string, { color: string; icon: ReactElement }> = {
   PENDING: { color: "processing", icon: <ClockCircleOutlined /> },
   RETURNED: { color: "warning", icon: <RollbackOutlined /> },
   APPROVED: { color: "success", icon: <CheckCircleOutlined /> },
+  CONFIRMED: { color: "success", icon: <CheckCircleOutlined /> },
+  SETTLED: { color: "success", icon: <CheckCircleOutlined /> },
   REJECTED: { color: "error", icon: <CloseCircleOutlined /> },
   CANCELLED: { color: "default", icon: <StopOutlined /> },
 };
 
-export const StatusTag = ({ status }: { status: string }) => {
+export const StatusTag = ({ status, labels = PR_STATUS_LABEL }: { status: string; labels?: Record<string, string> }) => {
   const s = STYLE[status];
-  return <Tag color={s?.color} icon={s?.icon}>{PR_STATUS_LABEL[status] ?? status}</Tag>;
+  return <Tag color={s?.color} icon={s?.icon}>{labels[status] ?? status}</Tag>;
 };
 

@@ -13,6 +13,7 @@ import { request } from "../../api/client";
 import { useSession } from "../../auth/session";
 import { ActModal } from "../../components/approval/ActModal";
 import { formatDate, formatDay, formatMoney } from "../../utils/format";
+import { IC_STATUS_LABEL } from "../../utils/status";
 import { StatusTag } from "../../components/StatusTag";
 import { ApprovalPanel } from "../../components/approval/ApprovalPanel";
 import { Attachments } from "../../components/document/Attachments";
@@ -118,7 +119,20 @@ export const PurchaseRequestShow = () => {
             <Descriptions.Item label="Người lập">{pr.requester?.full_name}</Descriptions.Item>
             <Descriptions.Item label="Tư cách lập">{pr.requester_position?.name} – {pr.org_unit?.name}</Descriptions.Item>
             <Descriptions.Item label="Tổng tiền"><Typography.Text strong>{formatMoney(pr.total_amount)}</Typography.Text></Descriptions.Item>
-            <Descriptions.Item label="Nhà cung cấp">{pr.partner ? `${pr.partner.code} – ${pr.partner.name}` : "—"}</Descriptions.Item>
+            <Descriptions.Item label="Nhà cung cấp">
+              {pr.partner ? `${pr.partner.code} – ${pr.partner.name}` : "—"}
+              {pr.partner?.internal_unit_id && <Tag style={{ marginLeft: 8 }}>Nội bộ</Tag>}
+            </Descriptions.Item>
+            {pr.ic_order && (
+              <Descriptions.Item label="Đơn hàng nội bộ">
+                <Space>
+                  <Typography.Link onClick={() => go({ to: { resource: "ic_ic_order", action: "show", id: pr.ic_order!.id } })}>
+                    {pr.ic_order.doc_no}
+                  </Typography.Link>
+                  <StatusTag status={pr.ic_order.status} labels={IC_STATUS_LABEL} />
+                </Space>
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="Ngày cần hàng">{formatDay(pr.needed_by)}</Descriptions.Item>
             <Descriptions.Item label="Nhóm hàng">{pr.category_code ?? "—"}</Descriptions.Item>
             <Descriptions.Item label="Ngày lập">{formatDate(pr.created_at)}</Descriptions.Item>

@@ -41,6 +41,9 @@ Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong
 | `/h/onboarding/create`, `/edit/:id` | `insert_hr_onboarding_request_one`, `update_…_by_pk` (người lập, khi nháp hoặc bị trả về); CCCD, số tài khoản, địa chỉ ghi bằng Action `save_onboarding_private(request_id, national_id, bank_account, bank_name, address)` (bỏ trường: giữ nguyên; chuỗi rỗng: xóa, trừ CCCD); gửi duyệt `submit_onboarding_request`; hủy `cancel_onboarding_request(request_id, reason)`. Vị trí gợi ý: `core_position` + `assignments` (còn trống từ ngày vào làm) trong phạm vi `core_v_permission_grant` có `hr.onboarding.create` |
 | Nút **Xem đầy đủ** trên hồ sơ tiếp nhận | Mutation `reveal_onboarding_private(request_id)` → `national_id`, `bank_account`, `address`, `username`, `initial_password` (mật khẩu tạm sau khi tạo tài khoản). Cần `hr.onboarding.private.read`; mỗi lần gọi ghi một dòng nhật ký kiểm toán |
 | Trạng thái tài khoản nhân viên mới | Cột `account_status` (`NONE`, `PENDING`, `CREATED`, `FAILED`), `account_error`; tạo lại bằng `retry_onboarding_account(request_id, username)` |
+| `/p/ic-orders` danh sách, chi tiết (đơn hàng nội bộ, [ADR #42](#adr-42)) | `ic_ic_order` (+ `seller_unit`, `buyer_unit`, `created_by_person`, `ic_order_items` { `lot` }, `purchase_requests`, `purchase_orders`, `comments`), computed field `can_confirm`; lọc "Chờ tôi xác nhận": `where: {can_confirm: {_eq: true}}`. Lô chọn được: `mfg_lot(where: {item_id: {_in: …}, status: {_eq: "RELEASED"}, org_unit: {path: {_descendant: <path công ty bán>}}})` |
+| Nút **Xác nhận và xuất lô**, **Từ chối**, **Hủy đơn** | Mutation `confirm_ic_order(order_id, lots: [{line_id, lot_id}])` → `status`, `purchase_order_id`; `reject_ic_order(order_id, reason)`, `cancel_ic_order(order_id, reason)` |
+| Đơn hàng nội bộ trên chi tiết đề nghị | `proc_purchase_request.ic_order` { `doc_no` `status` }; nhà cung cấp nội bộ: `partner.internal_unit_id` |
 | `/i/chat`, `/i/ocr`, `/d/*` | Chưa có |
 
 ## 3. Lưu ý khi dùng
