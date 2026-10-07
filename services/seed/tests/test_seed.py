@@ -88,7 +88,7 @@ def test_dong_hang_va_so_chung_tu(conn):
                         WHERE r.total_amount <> (SELECT sum(amount) FROM proc.purchase_request_item i
                                                  WHERE i.request_id = r.id)""") == 0
     assert one(conn, "SELECT total_amount FROM proc.purchase_request WHERE title = 'Linh kiện thay thế cho lô điện thoại bị ảnh hưởng'") == 650_000_000
-    assert one(conn, "SELECT count(DISTINCT (tenant_id, doc_no)) FROM proc.purchase_request WHERE doc_no ~ '^PR-'") == 10
+    assert one(conn, "SELECT count(DISTINCT (tenant_id, doc_no)) FROM proc.purchase_request WHERE doc_no ~ '^PR-'") == 11
     assert one(conn, "SELECT count(*) FROM mdm.partner WHERE internal_unit_id IS NOT NULL") == 3
 
 
@@ -137,6 +137,26 @@ def test_nhan_su(conn):
     assert chain == ["Trưởng phòng", "Giám đốc"]
 
 
+def test_don_hang_noi_bo(conn):
+    """Kinh doanh Chip X xác nhận đơn bán ra từ Chip X; đơn demo đã giao lô PMIC cho Điện thoại X (ADR #42)."""
+    kd = account_id("kd.chip")
+    assert one(conn, "SELECT core.has_permission(%s, 'ic.order.confirm', %s)", kd, uid("TDX", "unit", "CHIP"))
+    assert not one(conn, "SELECT core.has_permission(%s, 'ic.order.confirm', %s)", kd, uid("TDX", "unit", "DT"))
+    assert one(conn, "SELECT core.has_permission(%s, 'ic.order.read', %s)",
+               account_id("gd.chip"), uid("TDX", "unit", "CHIP"))
+    row = conn.execute("""SELECT o.status, o.decided_by, po.doc_no, poi.lot_id
+                          FROM proc.purchase_request r JOIN ic.ic_order o ON o.id = r.ic_order_id
+                          JOIN proc.purchase_order po ON po.ic_order_id = o.id
+                          JOIN proc.purchase_order_item poi ON poi.order_id = po.id
+                          WHERE r.title = 'PMIC cho lô lắp ráp tháng 10'""").fetchone()
+    assert row[:2] == ("CONFIRMED", kd)
+    assert row[2].startswith("PO-")
+    assert row[3] == uid("TDX", "lot", "PMIC-2609-A")
+    # Đề nghị nội bộ 650 triệu còn chờ TGĐ: chưa có đơn hàng nội bộ.
+    assert one(conn, """SELECT ic_order_id FROM proc.purchase_request
+                        WHERE title = 'Linh kiện thay thế cho lô điện thoại bị ảnh hưởng'""") is None
+
+
 def test_bo_sung_ban_da_cai(conn):
     """Bản đã cài trước khi có nhân sự: chạy seed lại thì bổ sung phòng nhân sự, không đổi dữ liệu cũ."""
     with conn.transaction():
@@ -144,9 +164,16 @@ def test_bo_sung_ban_da_cai(conn):
         conn.execute("DELETE FROM core.role_permission WHERE permission_code LIKE 'hr.%'")
         conn.execute("DELETE FROM core.role WHERE code = 'NHAN_SU'")
         conn.execute("DELETE FROM wf.approval_rule WHERE process_code = 'ONBOARDING'")
+        conn.execute("DELETE FROM core.role_grant WHERE role_id IN (SELECT id FROM core.role WHERE code = 'BAN_HANG_NOI_BO')")
+        conn.execute("DELETE FROM core.role_permission WHERE permission_code LIKE 'ic.%'")
+        conn.execute("DELETE FROM core.role WHERE code = 'BAN_HANG_NOI_BO'")
+        orders = one(conn, "SELECT count(*) FROM ic.ic_order")
         before = one(conn, "SELECT count(*) FROM core.person")
         assert seed.seed(conn) is False
         assert one(conn, "SELECT count(*) FROM core.person") == before
         assert one(conn, "SELECT count(*) FROM wf.approval_rule WHERE process_code = 'ONBOARDING'") >= 4
         assert one(conn, "SELECT core.has_permission(%s, 'hr.onboarding.create', %s)",
                    account_id("ns.chip"), uid("TDX", "unit", "CHIP_PS"))
+        assert one(conn, "SELECT core.has_permission(%s, 'ic.order.confirm', %s)",
+                   account_id("kd.chip"), uid("TDX", "unit", "CHIP"))
+        assert one(conn, "SELECT count(*) FROM ic.ic_order") == orders, "không tạo lại đơn demo"

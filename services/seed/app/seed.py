@@ -8,6 +8,7 @@
 đúng bước của chuỗi duyệt; flow-sync tự tạo tiến trình Flowable tương ứng.
 """
 
+import json
 import logging
 import os
 import sys
@@ -83,6 +84,19 @@ PURCHASE_REQUESTS = [
     ("BVX", "BVX_CDHA.S1", "Máy siêu âm 4D", "TBYT", "NCC_YTE",
      [("TBYT-SIEUAM", 1, 200_000_000)], []),                           # thiết bị y tế: 2 cấp
 ]
+
+# Đơn hàng nội bộ (ADR #42). Lô của Chip X: (mã lô, vật tư, đơn vị sản xuất, số lượng, ngày sản xuất, trạng thái).
+LOTS = [
+    ("PMIC-2609-A", "LK-PMIC", "CHIP_PX", 200_000, "2026-09-12", "RELEASED"),
+    ("PMIC-2609-B", "LK-PMIC", "CHIP_PX", 150_000, "2026-09-19", "RELEASED"),
+    ("SOC-2609-A", "LK-SOC-MAU", "CHIP_PS", 2_000, "2026-09-15", "RELEASED"),
+]
+# Khối kinh doanh xác nhận đơn hàng nội bộ bán ra từ công ty mình: đơn vị → công ty.
+SALES_SCOPE = {"CHIP_KD": "CHIP", "DT_KD": "DT", "GD_PP": "GD"}
+# Đơn đã giao xong: Điện thoại X mua PMIC của Chip X (lô PMIC-2609-A), trưởng phòng mua hàng duyệt, kinh doanh
+# Chip X xác nhận. Bước 3 kịch bản demo truy xuất lô chip đã giao cho điện thoại từ đây.
+IC_DEMO = ("TDX", "DT_MH.S2", "PMIC cho lô lắp ráp tháng 10", "NB_CHIP", [("LK-PMIC", 1_500, 12_000)],
+           "DT_MH.HEAD", "CHIP_KD.S1", "PMIC-2609-A")
 
 # Bình luận mẫu: (tiêu đề đề nghị, ghế người viết, nội dung).
 COMMENTS = [
@@ -395,6 +409,65 @@ class Seeder:
                        tid, step, uid(tenant, "UNIT_TYPE", unit_type) if unit_type else None,
                        uid(tenant, "unit", scope) if scope else None, START)
 
+    # --- Đơn hàng nội bộ (ADR #42): chạy cả ở bản đã cài, bỏ qua phần đã có -------
+
+    def _holder(self, tenant: str, seat: str):
+        return self.x("SELECT person_id FROM core.position_holder(%s)", uid(tenant, "position", seat)).fetchone()[0]
+
+    def ic_demo(self):
+        """Lô của Chip X, vai trò BAN_HANG_NOI_BO cho khối kinh doanh từng công ty, một đơn nội bộ đã xác nhận."""
+        tdx = self.tenant_id("TDX")
+        for lot_no, item, unit, quantity, produced, status in LOTS:
+            self.x("""INSERT INTO mfg.lot (tenant_id, id, lot_no, item_id, org_unit_id, quantity, uom, produced_on, status)
+                      SELECT %s, %s, %s, i.id, %s, %s, i.uom, %s, %s FROM mdm.item i WHERE i.id = %s
+                      ON CONFLICT DO NOTHING""",
+                   tdx, uid("TDX", "lot", lot_no), lot_no, uid("TDX", "unit", unit), quantity, produced, status,
+                   uid("TDX", "item", item))
+
+        for t in TENANTS:
+            tid = self.tenant_id(t.code)
+            role = uid(t.code, "role", "BAN_HANG_NOI_BO")
+            if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
+                self.x("""INSERT INTO core.role (tenant_id, id, code, name)
+                          VALUES (%s, %s, 'BAN_HANG_NOI_BO', 'Bán hàng nội bộ')""", tid, role)
+            for perm in ("ic.order.read", "ic.order.confirm"):
+                self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)
+                          ON CONFLICT DO NOTHING""", tid, role, perm)
+            # Quản lý xem đơn bán ra từ cây đơn vị mình (giám đốc công ty bán).
+            self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                      SELECT tenant_id, id, 'ic.order.read' FROM core.role WHERE id = %s
+                      ON CONFLICT DO NOTHING""", uid(t.code, "role", "QUAN_LY"))
+            for unit, scope in SALES_SCOPE.items():
+                unit_id = uid(t.code, "unit", unit)
+                if not self.x("SELECT 1 FROM core.org_unit WHERE id = %s AND tenant_id = %s", unit_id, tid).fetchone():
+                    continue
+                if not self.x("SELECT 1 FROM core.role_grant WHERE role_id = %s AND org_unit_id = %s", role,
+                              unit_id).fetchone():
+                    self.x("""INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope, scope_unit_id, valid_period)
+                              VALUES (%s, %s, %s, 'SUBTREE', %s, tstzrange(%s, NULL))""",
+                           tid, role, unit_id, uid(t.code, "unit", scope), START)
+
+        tenant, seat, title, partner, lines, approver, confirmer, lot_no = IC_DEMO
+        if self.x("SELECT 1 FROM proc.purchase_request WHERE tenant_id = %s AND title = %s", tdx, title).fetchone():
+            return
+        requester = self._holder(tenant, seat)
+        pr_id = self.x("""INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id, partner_id)
+                          VALUES (%s, %s, %s, %s, %s) RETURNING id""",
+                       tdx, title, requester, uid(tenant, "position", seat), uid(tenant, "partner", partner)).fetchone()[0]
+        for item, quantity, price in lines:
+            self.x("""INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
+                      VALUES (%s, %s, %s, %s)""", pr_id, uid(tenant, "item", item), quantity, price)
+        self.x("SELECT proc.submit_purchase_request(%s, %s)", pr_id, requester)
+        task = self.x("""SELECT t.id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
+                         WHERE s.entity_id = %s AND t.status = 'OPEN'""", pr_id).fetchone()[0]
+        self.x("SELECT wf.act(%s, %s, 'APPROVE')", task, self._holder(tenant, approver))
+        order_id, lot_lines = self.x("""SELECT o.id, jsonb_object_agg(i.id, %s::text)
+                                        FROM proc.purchase_request r JOIN ic.ic_order o ON o.id = r.ic_order_id
+                                        JOIN ic.ic_order_item i ON i.order_id = o.id
+                                        WHERE r.id = %s GROUP BY o.id""",
+                                     str(uid("TDX", "lot", lot_no)), pr_id).fetchone()
+        self.x("SELECT ic.confirm_order(%s, %s, %s)", order_id, self._holder(tenant, confirmer), json.dumps(lot_lines))
+
     def run(self):
         for t in TENANTS:
             self.x("INSERT INTO core.tenant (id, code, name) VALUES (%s, %s, %s)", self.tenant_id(t.code), t.code, t.name)
@@ -415,15 +488,18 @@ class Seeder:
         self.delegation()
         self.purchase_requests()
         self.hr_demo()
+        self.ic_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
-    """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự)."""
+    """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự, đơn
+    hàng nội bộ)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
             seeder.x("SET CONSTRAINTS ALL IMMEDIATE")
             seeder.hr_demo()
+            seeder.ic_demo()
         return False
     with conn.transaction():
         Seeder(conn).run()

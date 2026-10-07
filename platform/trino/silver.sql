@@ -602,11 +602,51 @@ SELECT
     CAST(json_extract_scalar(after, '$["total_amount"]') AS decimal(18, 2)) AS "total_amount",
     json_extract_scalar(after, '$["status"]') AS "status",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    json_extract_scalar(after, '$["doc_no"]') AS "doc_no",
+    CAST(json_extract_scalar(after, '$["decided_by"]') AS uuid) AS "decided_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["decided_at"]')) AS timestamp(6) with time zone) AS "decided_at",
+    json_extract_scalar(after, '$["decision_note"]') AS "decision_note",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
     SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
     FROM lakehouse.bronze.ic_ic_order
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+-- ic.ic_order_item (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.ic_ic_order_item (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.ic_ic_order_item COMMENT 'Trạng thái hiện tại của ic.ic_order_item, dựng từ bronze.ic_ic_order_item' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["order_id"]') AS uuid) AS "order_id",
+    CAST(json_extract_scalar(after, '$["line_no"]') AS integer) AS "line_no",
+    CAST(json_extract_scalar(after, '$["item_id"]') AS uuid) AS "item_id",
+    json_extract_scalar(after, '$["description"]') AS "description",
+    json_extract_scalar(after, '$["uom"]') AS "uom",
+    CAST(json_extract_scalar(after, '$["quantity"]') AS decimal(18, 3)) AS "quantity",
+    CAST(json_extract_scalar(after, '$["unit_price"]') AS decimal(18, 2)) AS "unit_price",
+    CAST(json_extract_scalar(after, '$["lot_id"]') AS uuid) AS "lot_id",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.ic_ic_order_item
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
@@ -679,6 +719,115 @@ SELECT
 FROM (
     SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
     FROM lakehouse.bronze.mdm_partner
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+-- mfg.lot (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.mfg_lot (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.mfg_lot COMMENT 'Trạng thái hiện tại của mfg.lot, dựng từ bronze.mfg_lot' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    json_extract_scalar(after, '$["lot_no"]') AS "lot_no",
+    CAST(json_extract_scalar(after, '$["item_id"]') AS uuid) AS "item_id",
+    CAST(json_extract_scalar(after, '$["org_unit_id"]') AS uuid) AS "org_unit_id",
+    CAST(json_extract_scalar(after, '$["quantity"]') AS decimal(18, 3)) AS "quantity",
+    json_extract_scalar(after, '$["uom"]') AS "uom",
+    date_add('day', CAST(json_extract_scalar(after, '$["produced_on"]') AS integer), DATE '1970-01-01') AS "produced_on",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    json_extract_scalar(after, '$["note"]') AS "note",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.mfg_lot
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+-- proc.purchase_order (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_purchase_order (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.proc_purchase_order COMMENT 'Trạng thái hiện tại của proc.purchase_order, dựng từ bronze.proc_purchase_order' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    json_extract_scalar(after, '$["doc_no"]') AS "doc_no",
+    CAST(json_extract_scalar(after, '$["request_id"]') AS uuid) AS "request_id",
+    CAST(json_extract_scalar(after, '$["ic_order_id"]') AS uuid) AS "ic_order_id",
+    CAST(json_extract_scalar(after, '$["partner_id"]') AS uuid) AS "partner_id",
+    CAST(json_extract_scalar(after, '$["org_unit_id"]') AS uuid) AS "org_unit_id",
+    CAST(json_extract_scalar(after, '$["buyer_id"]') AS uuid) AS "buyer_id",
+    CAST(json_extract_scalar(after, '$["total_amount"]') AS decimal(18, 2)) AS "total_amount",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.proc_purchase_order
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+-- proc.purchase_order_item (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_purchase_order_item (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.proc_purchase_order_item COMMENT 'Trạng thái hiện tại của proc.purchase_order_item, dựng từ bronze.proc_purchase_order_item' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["order_id"]') AS uuid) AS "order_id",
+    CAST(json_extract_scalar(after, '$["line_no"]') AS integer) AS "line_no",
+    CAST(json_extract_scalar(after, '$["item_id"]') AS uuid) AS "item_id",
+    json_extract_scalar(after, '$["description"]') AS "description",
+    json_extract_scalar(after, '$["uom"]') AS "uom",
+    CAST(json_extract_scalar(after, '$["quantity"]') AS decimal(18, 3)) AS "quantity",
+    CAST(json_extract_scalar(after, '$["unit_price"]') AS decimal(18, 2)) AS "unit_price",
+    CAST(json_extract_scalar(after, '$["lot_id"]') AS uuid) AS "lot_id",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.proc_purchase_order_item
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
