@@ -18,6 +18,7 @@ import psycopg
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 from psycopg_pool import ConnectionPool
 
 from . import attachments, auth, config, forms, hr, search
@@ -233,7 +234,9 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
             return JSONResponse({"message": "Sai mã bí mật actions", "extensions": {"code": "unauthorized"}}, 401)
         payload = await request.json()
         try:
-            result = run_action(app.state.pool, name, payload, ctx)
+            # Action gọi CSDL, Flowable, S3, Gotenberg bằng thư viện đồng bộ: chạy ở threadpool để một
+            # Action chậm (in phiếu PDF) không chặn event loop, tức chặn cả auth webhook của mọi request khác.
+            result = await run_in_threadpool(run_action, app.state.pool, name, payload, ctx)
         except ActionError as exc:
             return JSONResponse({"message": exc.message, "extensions": {"code": exc.code}}, exc.status)
         return result

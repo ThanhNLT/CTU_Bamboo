@@ -17,6 +17,8 @@ ARG REQUIREMENTS=requirements.txt
 COPY ${APP_DIR}/requirements*.txt ./
 RUN pip install --no-cache-dir -r ${REQUIREMENTS} -c /repo/constraints.txt
 COPY ${APP_DIR}/app ./app
+# Biên dịch sẵn bytecode (PYTHONDONTWRITEBYTECODE chặn ghi lúc chạy): container khởi động không phải dịch lại.
+RUN python -m compileall -q app
 COPY platform /repo/platform
 # Chạy bằng người dùng không đặc quyền. Job openbao-init (ghi volume secret) và kiểm thử
 # (cài gói) chạy bằng root, khai báo trong docker-compose.yml.

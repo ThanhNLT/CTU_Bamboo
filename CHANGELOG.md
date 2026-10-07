@@ -16,6 +16,13 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - Lakehouse bronze (ADR #39): dịch vụ `lakehouse-sink` ghi mọi thay đổi từ Kafka vào bảng Iceberg `bronze.<schema>_<bảng>` (lịch sử đầy đủ, kể cả dòng đã sửa, xóa ở CSDL nghiệp vụ) trên bucket `bms-lakehouse`, phân vùng theo ngày; catalog JDBC ở CSDL `lakehouse`. Ghi đúng một lần nhờ lưu vị trí Kafka trong snapshot Iceberg. Image mới `bamboo-lakehouse`.
 - Tầng silver và Trino (ADR #40): view `lakehouse.silver.<schema>_<bảng>` trả trạng thái hiện tại của từng bảng nghiệp vụ với kiểu cột như PostgreSQL, sinh từ CSDL (`make trino-sql`, `platform/trino/silver.sql`); Trino một node đọc cùng catalog Iceberg, giao diện web ở `127.0.0.1:8085`. Image mới `bamboo-trino`.
 
+### Hiệu năng
+- Dịch vụ `actions` chạy mỗi Action ở threadpool thay vì trên event loop. Trước đây một Action chậm (in phiếu PDF, gọi Flowable, S3) chặn mọi request khác của tiến trình, kể cả auth webhook mà Hasura gọi ở **mọi** request GraphQL. uvicorn dùng `uvloop` và `httptools`, không ghi access log (Hasura và cổng API đã ghi).
+- Ghim heap của các JVM. Container không giới hạn bộ nhớ nên Keycloak mặc định lấy heap ban đầu bằng 50% RAM **của cả máy**; Tika, Debezium lấy tối đa 1/4. Nay: Keycloak 128–768 MB, Tika 512 MB, Debezium 384 MB, chỉnh được qua `KEYCLOAK_HEAP`, `TIKA_JAVA_OPTS`, `DEBEZIUM_JAVA_OPTS` (docs/van-hanh/trien-khai.md mục 8).
+- PostgreSQL tắt JIT (`jit=off`): câu SQL lớn Hasura sinh ra không mất hàng trăm ms biên dịch JIT.
+- Giao diện: JavaScript, CSS nén gzip mức 9 sẵn lúc build, nginx gửi thẳng tệp `.gz` (`gzip_static`) thay vì nén lại 2 MB mỗi lượt tải.
+- Image Python biên dịch sẵn bytecode của mã dịch vụ.
+
 ## [0.3.0] - 2026-10-05
 
 Tìm kiếm toàn văn, mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, đăng nhập được sau khi nâng cấp. Gồm cả các sửa lỗi ghi ở mục 0.2.1 trước đây (chưa từng phát hành riêng).
