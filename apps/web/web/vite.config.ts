@@ -4,6 +4,8 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+// Tailwind v4: sinh class tiện ích từ src/styles/tailwind.css.
+import tailwindcss from "@tailwindcss/vite";
 
 // Thư viện gom vào một chunk `vendor`, tách khỏi mã ứng dụng: đổi mã ứng dụng không làm trình duyệt
 // tải lại thư viện. Không chia nhỏ vendor theo gói: React, antd, Refine tham chiếu lẫn nhau, chia
@@ -12,7 +14,7 @@ import react from "@vitejs/plugin-react";
 const BPMN = /node_modules\/(@bpmn-io\/diagram-js-ui|bpmn-js|bpmn-moddle|clsx|diagram-js|diagram-js-direct-editing|didi|domify|htm|ids|inherits-browser|min-dash|min-dom|moddle|moddle-xml|object-refs|path-intersection|preact|saxen|tiny-svg)\//;
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   build: {
     chunkSizeWarningLimit: 2500,
     rollupOptions: {
