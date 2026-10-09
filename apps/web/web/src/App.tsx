@@ -4,8 +4,9 @@
 
 import { Authenticated, Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { ErrorComponent, ThemedLayout, ThemedSider, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
-import "@refinedev/antd/dist/reset.css";
+import { ErrorComponent, useNotificationProvider } from "@refinedev/antd";
+// Reset của AntD được nạp trong tailwind.css (layer base) để không đè class Tailwind.
+import "./styles/tailwind.css";
 import routerProvider, {
   CatchAllNavigate, DocumentTitleHandler, NavigateToResource, UnsavedChangesNotifier,
 } from "@refinedev/react-router";
@@ -18,9 +19,12 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import { useKeycloak } from "@react-keycloak/web";
 import { TenantGate } from "./auth/session";
-import { Header } from "./components/header";
+import { BambooLayout } from "./components/layout";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
+import { DashboardPage } from "./pages/dashboard";
+import { DocumentDrivePage } from "./pages/document-drive";
+import { KnowledgeLibraryPage } from "./pages/knowledge-library";
 import { IcOrderList, IcOrderShow } from "./pages/ic-orders";
 import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
@@ -38,8 +42,6 @@ dayjs.locale("vi");
 
 // bpmn-js nặng: chỉ tải khi mở sơ đồ quy trình.
 const ProcessDiagram = lazy(() => import("./pages/process/diagram"));
-
-const Title = ({ collapsed }: { collapsed: boolean }) => <ThemedTitle collapsed={collapsed} text="Bamboo DX-OS" />;
 
 function App() {
   const { initialized } = useKeycloak();
@@ -60,6 +62,9 @@ function App() {
                 notificationProvider={useNotificationProvider}
                 routerProvider={routerProvider}
                 resources={[
+                  { name: "dashboard", list: "/", meta: { label: "Trang chủ" } },
+                  { name: "drive", list: "/h/drive", meta: { label: "Ổ đĩa tài liệu" } },
+                  { name: "library", list: "/h/library", meta: { label: "Thư viện tri thức" } },
                   {
                     name: "proc_purchase_request",
                     list: "/p/documents",
@@ -94,14 +99,16 @@ function App() {
                     element={
                       <Authenticated key="authenticated-inner" fallback={<CatchAllNavigate to="/login" />}>
                         <TenantGate>
-                          <ThemedLayout Header={Header} Title={Title} Sider={(props) => <ThemedSider {...props} fixed />}>
+                          <BambooLayout>
                             <Outlet />
-                          </ThemedLayout>
+                          </BambooLayout>
                         </TenantGate>
                       </Authenticated>
                     }
                   >
-                    <Route index element={<NavigateToResource resource="proc_purchase_request" />} />
+                    <Route index element={<DashboardPage />} />
+                    <Route path="/h/drive" element={<DocumentDrivePage />} />
+                    <Route path="/h/library" element={<KnowledgeLibraryPage />} />
                     <Route path="/p/documents">
                       <Route index element={<PurchaseRequestList />} />
                       <Route path="create" element={<PurchaseRequestCreate />} />
