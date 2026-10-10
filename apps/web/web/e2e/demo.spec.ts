@@ -27,7 +27,7 @@ async function login(_old: Page | null, username: string, pick?: RegExp): Promis
   await page.locator("#kc-login").click();
   if (pick) await page.getByRole("button", { name: pick }).click();
   if (!pick && username === "kiemnhiem") return page;
-  await expect(page.locator("header .ant-tag").first()).toBeVisible();
+  await expect(page.locator("header").getByRole("button", { name: /^Đơn vị:/ })).toBeVisible();
   return page;
 }
 
@@ -52,7 +52,7 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   await expect(page.locator("tr.ant-table-row").first()).toBeVisible();
   await page.waitForTimeout(1000);
   await shot(page, "04-hop-viec");
-  await page.locator("header .ant-badge").click();
+  await page.locator("header").getByRole("button", { name: /thông báo chưa đọc$/ }).click();
   await page.waitForTimeout(800);
   await shot(page, "05-thong-bao");
   await page.keyboard.press("Escape");

@@ -22,7 +22,9 @@ async function logout(page: Page) {
   // Chờ Keycloak xóa phiên SSO: nút đăng nhập có thể hiện trước khi trình duyệt gọi endpoint đăng xuất; điều hướng
   // sớm sẽ cắt ngang, phiên cũ còn nên check-sso đăng nhập lại người cũ và không còn trang đăng nhập.
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
-  await page.locator("aside").getByText("Đăng xuất").click();
+  // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
+  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
@@ -65,7 +67,7 @@ test("lập đề nghị, đính kèm, gửi duyệt và duyệt", async ({ page
 
   // Trưởng phòng Mua hàng: có thông báo, duyệt trong hộp việc.
   await login(page, "tp.muahang.dienthoai");
-  await expect(page.locator("header .ant-badge-count")).toBeVisible();
+  await expect(page.locator("header").getByRole("button", { name: /^[1-9]\d* thông báo chưa đọc$/ })).toBeVisible();
   await page.goto("/p/inbox");
   const task = page.locator("tr", { hasText: TITLE });
   await task.getByRole("button", { name: "Xử lý" }).click();

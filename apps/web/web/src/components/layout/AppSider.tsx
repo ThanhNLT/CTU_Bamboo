@@ -8,6 +8,7 @@ import { Link, useLocation } from "react-router";
 import { cn } from "../../utils/cn";
 import { BambooLogo } from "./BambooLogo";
 import { findActive, NAV_GROUPS, type NavItem } from "./nav";
+import { NavGate } from "./NavGate";
 
 type SiderProps = { collapsed?: boolean; onNavigate?: () => void };
 
@@ -71,7 +72,8 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label="Điều hướng chính">
         {NAV_GROUPS.map((group) => (
-          <div key={group.code} className="mt-4 first:mt-1">
+          <NavGate key={group.code} access={group.access}>
+          <div className="mt-4 first:mt-1">
             <div
               className={cn(
                 "mb-1 flex h-6 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted",
@@ -85,12 +87,15 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
             </div>
             <ul className="m-0 list-none space-y-0.5 p-0">
               {group.items.map((item) => (
-                <li key={item.key}>
-                  <SiderItem item={item} active={item.key === activeKey} collapsed={collapsed} onNavigate={onNavigate} />
-                </li>
+                <NavGate key={item.key} access={item.access}>
+                  <li>
+                    <SiderItem item={item} active={item.key === activeKey} collapsed={collapsed} onNavigate={onNavigate} />
+                  </li>
+                </NavGate>
               ))}
             </ul>
           </div>
+          </NavGate>
         ))}
       </nav>
 

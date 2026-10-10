@@ -23,7 +23,7 @@ export const MOCK_TASKS: InboxTask[] = [
     id: "t-00109", code: "HS-SEMI-2026-00109", title: "Đề xuất thay bộ lọc HEPA phòng sạch CR-01", level: 1,
     assignee: MOCK_ME, dueAt: "2026-10-07T06:00:00+07:00", sla: { level: "overdue", label: "quá hạn 3 giờ" },
     attachments: [pdf("de-xuat-hepa-CR01.pdf", 3, "b71c09e2d4a6f8135e7c9a0b2d4f6e81a3c5e7092b4d6f8a1c3e5b7d9f0a24d1"), pdf("bao-gia-hepa.pdf", 2)],
-    info: { submitter: "Nguyễn Văn Tùng", unit: "Tổ bảo trì CR", device: { label: "CR-01 · bản sao số", to: "/d/twin" }, phone: "0903 *** 214", dataTier: "Nóng" },
+    info: { submitter: "Nguyễn Văn Tùng", unit: "Tổ bảo trì CR", device: { label: "CR-01 · bản sao số", to: "/d/twin?entity=CR-01" }, phone: "0903 *** 214", dataTier: "Nóng" },
     ai: {
       bullets: ["Chênh áp qua bộ lọc tăng 38% trong 30 ngày.", "Bộ lọc hiện tại đã dùng 14 tháng (khuyến nghị 12).", "Báo giá nằm trong hạn mức duyệt cấp 1."],
       citation: CLEANROOM_RULE,
@@ -34,7 +34,7 @@ export const MOCK_TASKS: InboxTask[] = [
     id: "t-00125", code: "HS-SEMI-2026-00125", title: "Báo cáo sự cố phòng sạch CR-02", level: 1,
     assignee: MOCK_ME, dueAt: "2026-10-07T12:20:00+07:00", sla: { level: "urgent", label: "còn 3 giờ 20 phút" },
     attachments: [pdf("bao-cao-su-co-CR02.pdf", 4), png("nhat-ky-cam-bien.png")],
-    info: { submitter: "Trần Minh Quân", unit: "Tổ vận hành CR", device: { label: "CR-02 · bản sao số", to: "/d/twin" }, phone: "0912 *** 678", dataTier: "Nóng" },
+    info: { submitter: "Trần Minh Quân", unit: "Tổ vận hành CR", device: { label: "CR-02 · bản sao số", to: "/d/twin?entity=CR-02" }, phone: "0912 *** 678", dataTier: "Nóng" },
     ai: {
       bullets: ["Hạt bụi vượt ngưỡng ISO 5 trong 18 phút.", "Nguyên nhân sơ bộ: chênh áp giảm khi mở khóa khí.", "Thiếu biên bản theo Điều 12 [1]."],
       citation: CLEANROOM_RULE,
