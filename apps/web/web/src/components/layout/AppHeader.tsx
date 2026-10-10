@@ -13,6 +13,7 @@ import { useSession } from "../../auth/useSession";
 import { cn } from "../../utils/cn";
 import { NotificationBell } from "../notifications/Bell";
 import { EXTRA_PAGES, findActive, NAV_GROUPS } from "./nav";
+import { NavGate } from "./NavGate";
 import { iconButtonClass, pillButtonClass } from "./styles";
 
 type HeaderProps = {
@@ -108,15 +109,16 @@ const AppLauncher = () => {
   const content = (
     <div className="w-[320px] space-y-3 p-1">
       <div className="grid grid-cols-3 gap-1">
-        {NAV_GROUPS.flatMap((g) => g.items).map(({ key, label, to, icon: Icon }) => (
+        {NAV_GROUPS.flatMap((g) => g.items.map((i) => ({ ...i, access: i.access ?? g.access }))).map(({ key, label, to, icon: Icon, access }) => (
+          <NavGate key={key} access={access}>
           <Link
-            key={key}
             to={to}
             className="flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[11.5px] leading-tight text-body hover:bg-bamboo-50 hover:text-ink"
           >
             <Icon className="h-5 w-5 text-bamboo-700" strokeWidth={1.75} aria-hidden />
             {label}
           </Link>
+          </NavGate>
         ))}
       </div>
       <div className="border-t border-line pt-2">

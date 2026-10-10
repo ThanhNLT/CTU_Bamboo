@@ -21,7 +21,9 @@ async function login(page: Page, username: string) {
 async function logout(page: Page) {
   // Chờ Keycloak xóa phiên SSO trước khi đăng nhập tài khoản khác (check-sso sẽ đăng nhập lại người cũ).
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
-  await page.locator("aside").getByText("Đăng xuất").click();
+  // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
+  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
@@ -59,7 +61,7 @@ test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơ
 
   // Kinh doanh Chip X: có thông báo, đơn trong mục "Chờ tôi xác nhận", chọn lô rồi xác nhận.
   await login(page, "kd.chip");
-  await expect(page.locator("header .ant-badge-count")).toBeVisible();
+  await expect(page.locator("header").getByRole("button", { name: /^[1-9]\d* thông báo chưa đọc$/ })).toBeVisible();
   await page.locator("aside").getByText("Đơn hàng nội bộ").click();
   await page.getByText("Chờ tôi xác nhận").click();
   await page.locator("tr", { hasText: docNo }).getByRole("button").click();

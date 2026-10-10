@@ -26,6 +26,7 @@ import { DashboardPage } from "./pages/dashboard";
 import { DocumentDrivePage } from "./pages/document-drive";
 import { KnowledgeLibraryPage } from "./pages/knowledge-library";
 import { DataServicesPage } from "./pages/data-services";
+import { DigitalTwinPage } from "./pages/digital-twin";
 import { MapPage } from "./pages/map";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { ProcessDesignPage } from "./pages/process-design";
@@ -77,6 +78,7 @@ function App() {
                   { name: "operations", list: "/d/ops", meta: { label: "Trung tâm điều hành" } },
                   { name: "map", list: "/d/map", meta: { label: "Bản đồ" } },
                   { name: "data_services", list: "/d/services", meta: { label: "Dịch vụ dữ liệu" } },
+                  { name: "digital_twin", list: "/d/twin", meta: { label: "Bản sao số" } },
                   {
                     name: "proc_purchase_request",
                     list: "/p/documents",
@@ -127,6 +129,7 @@ function App() {
                     <Route path="/d/ops" element={<OperationsCenterPage />} />
                     <Route path="/d/map" element={<MapPage />} />
                     <Route path="/d/services" element={<DataServicesPage />} />
+                    <Route path="/d/twin" element={<DigitalTwinPage />} />
                     <Route path="/p/documents">
                       <Route index element={<PurchaseRequestList />} />
                       <Route path="create" element={<PurchaseRequestCreate />} />
