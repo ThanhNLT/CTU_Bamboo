@@ -20,7 +20,7 @@ const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
     <div className="mt-1 text-[22px] font-semibold leading-tight tabular-nums text-ink">{kpi.value}</div>
     <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-muted">
       {kpi.noteMarker === "dot" ? (
-        <Dot tone={kpi.noteTone} className="h-2 w-2" />
+        <Dot tone={kpi.noteTone} size="md" />
       ) : (
         <span className={cn("text-[10px]", NOTE_TEXT[kpi.noteTone])} aria-hidden>
           {kpi.noteMarker === "down" ? "▼" : "▲"}

@@ -51,7 +51,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
     <section
       aria-live="polite"
       aria-label="Tiến trình tải lên"
-      className="fixed inset-x-4 bottom-4 z-30 rounded-2xl border border-line bg-white shadow-float sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[300px]"
+      className="fixed bottom-4 left-4 right-4 z-30 rounded-2xl border border-line bg-white shadow-float sm:bottom-6 sm:left-auto sm:right-6 sm:w-[300px]"
     >
       <header className="flex items-center justify-between gap-2 px-4 py-3">
         <h2 className="text-[13.5px] font-semibold text-ink">{title}</h2>

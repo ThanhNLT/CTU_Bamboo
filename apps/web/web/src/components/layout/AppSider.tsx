@@ -20,12 +20,12 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.label : undefined}
       className={cn(
-        "group relative flex h-9 items-center gap-3 rounded-[10px] px-2.5 text-[13.5px] transition-colors",
+        "group relative flex h-9 items-center gap-3 rounded-[10px] text-[13.5px] transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
         active
           ? "bg-white font-semibold text-ink shadow-card"
           : "text-body hover:bg-white/60 hover:text-ink",
-        collapsed && "justify-center px-0",
+        collapsed ? "justify-center" : "px-2.5",
       )}
     >
       <Icon
@@ -57,7 +57,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
       <Link
         to="/"
         onClick={onNavigate}
-        className={cn("flex h-16 shrink-0 items-center gap-2.5 px-5", collapsed && "justify-center px-0")}
+        className={cn("flex h-16 shrink-0 items-center gap-2.5", collapsed ? "justify-center" : "px-5")}
         aria-label="Bamboo — Trang chủ"
       >
         <BambooLogo className="h-8 w-8 shrink-0" />
@@ -74,8 +74,8 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
           <div key={group.code} className="mt-4 first:mt-1">
             <div
               className={cn(
-                "mb-1 flex h-6 items-center gap-2 px-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted",
-                collapsed && "justify-center px-0",
+                "mb-1 flex h-6 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted",
+                collapsed ? "justify-center" : "px-2.5",
               )}
             >
               <span className="w-[18px] text-center text-[10.5px] text-muted/80" aria-hidden={!collapsed}>
@@ -94,12 +94,12 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         ))}
       </nav>
 
-      <div className={cn("shrink-0 space-y-2 border-t border-line/70 px-3 py-3", collapsed && "px-2")}>
+      <div className={cn("shrink-0 space-y-2 border-t border-line/70 py-3", collapsed ? "px-2" : "px-3")}>
         <a
           href="#design-system"
           className={cn(
-            "flex h-8 items-center gap-3 rounded-[10px] px-2.5 text-[13px] text-body hover:bg-white/60 hover:text-ink",
-            collapsed && "justify-center px-0",
+            "flex h-8 items-center gap-3 rounded-[10px] text-[13px] text-body hover:bg-white/60 hover:text-ink",
+            collapsed ? "justify-center" : "px-2.5",
           )}
           title="Bamboo Design System"
         >
@@ -107,7 +107,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
           {!collapsed && <span>Bamboo Design System</span>}
         </a>
         <div
-          className={cn("flex items-center gap-2 px-2.5 text-[11.5px] text-muted", collapsed && "justify-center px-0")}
+          className={cn("flex items-center gap-2 text-[11.5px] text-muted", collapsed ? "justify-center" : "px-2.5")}
           title="Kết nối trực tiếp · Phiên đã xác thực MFA"
         >
           <span className="h-2 w-2 shrink-0 rounded-full bg-bamboo-500 shadow-[0_0_0_3px_rgb(63_145_80/0.15)]" />

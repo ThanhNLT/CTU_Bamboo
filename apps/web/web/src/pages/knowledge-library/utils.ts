@@ -2,12 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { fold } from "../../utils/text";
 import { CATEGORY_SHORT } from "./mock";
 import type { CategoryFilter, LibraryDoc, ScopeFilter } from "./types";
-
-/** Bỏ dấu tiếng Việt để tìm "phong sach" vẫn ra "phòng sạch". */
-export const fold = (s: string) =>
-  s.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 
 /** "Quy chế · Công ty Chip & Linh kiện · v3 · hiệu lực 01/09/2026" */
 export const docMeta = (d: LibraryDoc) =>

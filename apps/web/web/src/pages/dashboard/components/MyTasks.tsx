@@ -40,7 +40,7 @@ const Code = ({ children }: { children: string }) => (
 const TaskRow = ({ task }: { task: TaskItem }) => (
   <li>
     <Link
-      to="/p/inbox"
+      to={`/p/tasks?code=${task.code}`}
       className="-mx-2 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-0.5 rounded-lg px-2 py-2.5 transition-colors hover:bg-canvas sm:grid-cols-[150px_minmax(0,1fr)_auto]"
     >
       <Code>{task.code}</Code>
@@ -73,7 +73,7 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
           </div>
           <div className="space-y-2">
             {items.map((t) => (
-              <Link key={t.code} to="/p/inbox" className="block rounded-lg border border-line bg-white p-2.5 shadow-card hover:border-bamboo-200">
+              <Link key={t.code} to={`/p/tasks?code=${t.code}`} className="block rounded-lg border border-line bg-white p-2.5 shadow-card hover:border-bamboo-200">
                 <Code>{t.code}</Code>
                 <div className="mt-1 text-[13px] font-medium leading-snug text-ink">{t.title}</div>
                 <div className="mt-2"><DueTag task={t} /></div>
@@ -114,13 +114,13 @@ export const MyTasks = ({ tasks, total, listLimit = 4 }: { tasks: TaskItem[]; to
           onChange={(v) => setView(v as View)}
         />
       }
-      bodyClassName="pt-1"
+      bodyClassName="px-5 pb-5 pt-1"
     >
       {view === "list" && <ListView tasks={tasks.slice(0, listLimit)} />}
       {view === "kanban" && <KanbanView tasks={tasks} />}
       {view === "calendar" && <CalendarView tasks={tasks} />}
       <div className="mt-3">
-        <PanelLink to="/p/inbox">Mở Hộp việc ({total})</PanelLink>
+        <PanelLink to="/p/tasks">Mở Hộp việc ({total})</PanelLink>
       </div>
     </Panel>
   );

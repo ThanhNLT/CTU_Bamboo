@@ -8,3 +8,4 @@ export {
   primaryButtonClass, secondaryButtonClass, smallPrimaryButtonClass, smallSecondaryButtonClass,
 } from "./buttons";
 export { bambooTableTheme } from "./tableTheme";
+export { SearchInput } from "./SearchInput";

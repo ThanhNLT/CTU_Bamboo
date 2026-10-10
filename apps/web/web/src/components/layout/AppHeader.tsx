@@ -9,7 +9,7 @@ import {
   Check, ChevronDown, ChevronLeft, ChevronRight, LayoutGrid, LogOut, Menu, Search, Sparkles,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { cn } from "../../utils/cn";
 import { NotificationBell } from "../notifications/Bell";
 import { EXTRA_PAGES, findActive, NAV_GROUPS } from "./nav";
@@ -183,7 +183,7 @@ export const AppHeader = ({ collapsed, onCollapsedChange, onOpenMobileNav }: Hea
 
       <div className="flex shrink-0 items-center gap-1.5">
         <CompanySwitcher />
-        <button type="button" className={cn(pillButtonClass, "hidden sm:inline-flex")} onClick={() => navigate("/i/assistant")}>
+        <button type="button" className={cn(pillButtonClass, "max-sm:hidden")} onClick={() => navigate("/i/assistant")}>
           <Sparkles className="h-4 w-4 text-bamboo-600" strokeWidth={1.75} aria-hidden />
           Trợ lý
         </button>

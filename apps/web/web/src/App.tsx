@@ -25,7 +25,13 @@ import { AuditLogList } from "./pages/audit/list";
 import { DashboardPage } from "./pages/dashboard";
 import { DocumentDrivePage } from "./pages/document-drive";
 import { KnowledgeLibraryPage } from "./pages/knowledge-library";
+import { DataServicesPage } from "./pages/data-services";
+import { MapPage } from "./pages/map";
+import { OperationsCenterPage } from "./pages/operations-center";
+import { ProcessDesignPage } from "./pages/process-design";
+import { RecordsPage } from "./pages/records";
 import { IcOrderList, IcOrderShow } from "./pages/ic-orders";
+import { InboxPage } from "./pages/inbox";
 import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
 import { OnboardingCreate, OnboardingEdit, OnboardingList, OnboardingShow } from "./pages/onboarding";
@@ -65,6 +71,12 @@ function App() {
                   { name: "dashboard", list: "/", meta: { label: "Trang chủ" } },
                   { name: "drive", list: "/h/drive", meta: { label: "Ổ đĩa tài liệu" } },
                   { name: "library", list: "/h/library", meta: { label: "Thư viện tri thức" } },
+                  { name: "records", list: "/p/records", meta: { label: "Hồ sơ" } },
+                  { name: "tasks", list: "/p/tasks", meta: { label: "Hộp việc" } },
+                  { name: "process_design", list: "/p/process", meta: { label: "Thiết kế quy trình" } },
+                  { name: "operations", list: "/d/ops", meta: { label: "Trung tâm điều hành" } },
+                  { name: "map", list: "/d/map", meta: { label: "Bản đồ" } },
+                  { name: "data_services", list: "/d/services", meta: { label: "Dịch vụ dữ liệu" } },
                   {
                     name: "proc_purchase_request",
                     list: "/p/documents",
@@ -109,6 +121,12 @@ function App() {
                     <Route index element={<DashboardPage />} />
                     <Route path="/h/drive" element={<DocumentDrivePage />} />
                     <Route path="/h/library" element={<KnowledgeLibraryPage />} />
+                    <Route path="/p/records" element={<RecordsPage />} />
+                    <Route path="/p/tasks" element={<InboxPage />} />
+                    <Route path="/p/process" element={<ProcessDesignPage />} />
+                    <Route path="/d/ops" element={<OperationsCenterPage />} />
+                    <Route path="/d/map" element={<MapPage />} />
+                    <Route path="/d/services" element={<DataServicesPage />} />
                     <Route path="/p/documents">
                       <Route index element={<PurchaseRequestList />} />
                       <Route path="create" element={<PurchaseRequestCreate />} />

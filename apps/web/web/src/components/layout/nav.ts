@@ -34,9 +34,9 @@ export const NAV_GROUPS: NavGroup[] = [
     code: "P",
     label: "Quy trình số",
     items: [
-      { key: "documents", label: "Hồ sơ", to: "/p/documents", icon: FileText },
+      { key: "records", label: "Hồ sơ", to: "/p/records", icon: FileText },
       // Dữ liệu minh họa; nối với wf_v_inbox_aggregate khi có API đếm.
-      { key: "inbox", label: "Hộp việc", to: "/p/inbox", icon: Inbox, badge: 5 },
+      { key: "inbox", label: "Hộp việc", to: "/p/tasks", icon: Inbox, badge: 5 },
       { key: "process", label: "Thiết kế quy trình", to: "/p/process", icon: Route },
     ],
   },
@@ -66,6 +66,8 @@ export const NAV_GROUPS: NavGroup[] = [
 
 // Trang đã có nhưng không nằm trên menu thiết kế: vẫn cần breadcrumb và lối vào (bảng Ứng dụng ở header).
 export const EXTRA_PAGES: Array<{ group: string; label: string; to: string }> = [
+  { group: "Quy trình số", label: "Đề nghị mua sắm", to: "/p/documents" },
+  { group: "Quy trình số", label: "Hộp việc duyệt (dữ liệu thật)", to: "/p/inbox" },
   { group: "Quy trình số", label: "Đơn hàng nội bộ", to: "/p/ic-orders" },
   { group: "Con người số", label: "Tiếp nhận nhân sự", to: "/h/onboarding" },
   { group: "Quản trị", label: "Kiểm toán", to: "/admin/audit-logs" },
