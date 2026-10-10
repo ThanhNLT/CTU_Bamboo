@@ -8,7 +8,7 @@ import { useGo, useParsed } from "@refinedev/core";
 import { Alert, Spin } from "antd";
 import dayjs from "dayjs";
 import { request } from "../../api/client";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { PurchaseRequestForm, type PrFormValues } from "./form";
 import { PR_DETAIL } from "./queries";
 import type { PurchaseRequest } from "./types";

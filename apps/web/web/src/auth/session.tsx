@@ -4,32 +4,11 @@
 
 // Phiên làm việc: tenant đang chọn và người dùng trong tenant đó (ADR #30). Sau khi đăng nhập,
 // gọi my_tenants (role `account`, chưa gửi tenant); một tenant thì chọn luôn, nhiều tenant thì hỏi.
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert, Button, Card, Flex, List, Spin, Typography } from "antd";
 import { BankOutlined, MedicineBoxOutlined } from "@ant-design/icons";
 import { getTenant, request, setTenant } from "../api/client";
-
-export type AccountTenant = {
-  tenant_id: string;
-  tenant_code: string;
-  tenant_name: string;
-  person_id: string;
-  full_name: string;
-};
-
-type Session = {
-  tenant: AccountTenant;
-  tenants: AccountTenant[];
-  switchTenant: (tenantId: string) => void;
-};
-
-const SessionContext = createContext<Session | null>(null);
-
-export const useSession = (): Session => {
-  const session = useContext(SessionContext);
-  if (!session) throw new Error("useSession phải nằm trong <TenantGate>");
-  return session;
-};
+import { SessionContext, type AccountTenant } from "./useSession";
 
 const MY_TENANTS = `query MyTenants { my_tenants { tenant_id tenant_code tenant_name person_id full_name } }`;
 

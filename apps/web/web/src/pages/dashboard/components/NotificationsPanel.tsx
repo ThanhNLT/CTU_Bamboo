@@ -17,7 +17,7 @@ export const NotificationsPanel = ({ items, limit = 3 }: { items: NotificationIt
     <Panel
       title="Thông báo"
       extra={<PanelLink onClick={unread > 0 ? markAllRead : undefined}>Đọc hết</PanelLink>}
-      bodyClassName="pt-1"
+      bodyClassName="px-5 pb-5 pt-1"
     >
       <ul className="m-0 list-none space-y-4 p-0">
         {list.slice(0, limit).map((n) => (

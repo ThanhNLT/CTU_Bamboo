@@ -10,7 +10,7 @@ import {
 } from "antd";
 import { CheckOutlined, CloseOutlined, StopOutlined } from "@ant-design/icons";
 import { request } from "../../api/client";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { StatusTag } from "../../components/StatusTag";
 import { Comments } from "../../components/document/Comments";
 import type { Comment } from "../../components/document/types";

@@ -7,7 +7,7 @@ import { Dot, smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../.
 import { cn } from "../../../utils/cn";
 import { CATEGORY_SHORT } from "../mock";
 import type { LibraryDoc } from "../types";
-import { indexTone } from "./IndexStatus";
+import { indexTone } from "./indexState";
 
 const MetaItem = ({ label, value }: { label: string; value: string }) => (
   <div className="min-w-0 truncate text-[12px] text-muted">
@@ -34,7 +34,7 @@ const AssistantBox = ({ doc, onAsk, onReindex }: { doc: LibraryDoc; onAsk: () =>
   return (
     <div className={cn("flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center", box)} role="status">
       <div className="flex min-w-0 flex-1 items-start gap-2 text-[12.5px] text-body">
-        <Dot tone={indexTone(index)} className="mt-[5px] h-2 w-2" />
+        <Dot tone={indexTone(index)} size="md" className="mt-[5px]" />
         <span className="min-w-0">{text}</span>
       </div>
       {index.status === "failed" ? (

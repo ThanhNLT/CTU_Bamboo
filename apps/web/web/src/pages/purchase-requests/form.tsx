@@ -7,7 +7,7 @@ import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Sp
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { request } from "../../api/client";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { formatMoney } from "../../utils/format";
 import { FORM_OPTIONS, INSERT_PR, SUBMIT_PR, UPDATE_PR } from "./queries";
 

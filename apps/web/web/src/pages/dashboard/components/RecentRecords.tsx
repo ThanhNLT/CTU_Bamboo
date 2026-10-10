@@ -27,7 +27,7 @@ const StatusCell = ({ status }: { status: RecordStatus }) => {
   const s = STATUS[status];
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] text-body">
-      {s.locked ? <Lock className="h-3 w-3 text-muted" strokeWidth={2} aria-hidden /> : <Dot tone={s.tone} className="h-2 w-2" />}
+      {s.locked ? <Lock className="h-3 w-3 text-muted" strokeWidth={2} aria-hidden /> : <Dot tone={s.tone} size="md" />}
       {s.label}
     </span>
   );
@@ -63,7 +63,7 @@ const columns: TableColumnsType<RecentRecord> = [
 export const RecentRecords = ({ records }: { records: RecentRecord[] }) => {
   const navigate = useNavigate();
   return (
-    <Panel title="Hồ sơ gần đây" extra={<PanelLink to="/p/documents">Xem tất cả</PanelLink>} bodyClassName="px-3 pb-3">
+    <Panel title="Hồ sơ gần đây" extra={<PanelLink to="/p/records">Xem tất cả</PanelLink>} bodyClassName="px-3 pb-3">
       <ConfigProvider theme={bambooTableTheme}>
         <Table<RecentRecord>
           size="small"
@@ -72,7 +72,7 @@ export const RecentRecords = ({ records }: { records: RecentRecord[] }) => {
           dataSource={records}
           pagination={false}
           scroll={{ x: 680 }}
-          onRow={() => ({ onClick: () => navigate("/p/documents"), style: { cursor: "pointer" } })}
+          onRow={() => ({ onClick: () => navigate("/p/records"), style: { cursor: "pointer" } })}
         />
       </ConfigProvider>
     </Panel>

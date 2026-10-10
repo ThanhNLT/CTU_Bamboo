@@ -15,9 +15,9 @@ export const MOCK_USER: DashboardUser = {
 };
 
 export const MOCK_SUMMARY: SummaryStat[] = [
-  { key: "waiting", label: "Việc chờ tôi", value: 5, hint: "2 việc đến hạn hôm nay", to: "/p/inbox" },
-  { key: "processing", label: "Hồ sơ của tôi đang xử lý", value: 3, hint: "1 hồ sơ chờ duyệt cấp 2", to: "/p/documents" },
-  { key: "sla", label: "Quá hạn SLA", value: 1, hint: "Nguy cấp · HS-SEMI-2026-00109", tone: "danger", to: "/p/inbox" },
+  { key: "waiting", label: "Việc chờ tôi", value: 5, hint: "2 việc đến hạn hôm nay", to: "/p/tasks" },
+  { key: "processing", label: "Hồ sơ của tôi đang xử lý", value: 3, hint: "1 hồ sơ chờ duyệt cấp 2", to: "/p/records" },
+  { key: "sla", label: "Quá hạn SLA", value: 1, hint: "Nguy cấp · HS-SEMI-2026-00109", tone: "danger", to: "/p/tasks?code=HS-SEMI-2026-00109" },
   { key: "unread", label: "Thông báo chưa đọc", value: 4, hint: "Mới nhất 5 phút trước" },
 ];
 

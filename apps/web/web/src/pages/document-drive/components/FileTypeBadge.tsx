@@ -21,8 +21,8 @@ export const FileTypeBadge = ({ name, size = "sm" }: { name: string; size?: "sm"
     <span
       aria-hidden
       className={cn(
-        "grid shrink-0 place-items-center rounded-md border font-bold tracking-tight",
-        size === "sm" ? "h-7 w-7 text-[8px]" : "h-11 w-11 rounded-xl text-[10.5px]",
+        "grid shrink-0 place-items-center border font-bold tracking-tight",
+        size === "sm" ? "h-7 w-7 rounded-md text-[8px]" : "h-11 w-11 rounded-xl text-[10.5px]",
         kind?.className ?? "border-line bg-canvas text-muted",
       )}
     >

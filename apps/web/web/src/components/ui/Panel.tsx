@@ -24,7 +24,8 @@ export const Panel = ({
         {extra}
       </header>
     )}
-    <div className={cn("px-5 pb-5", bodyClassName)}>{children}</div>
+    {/* bodyClassName THAY padding mặc định (không gộp) để không có hai class padding cùng lúc. */}
+    <div className={bodyClassName ?? "px-5 pb-5"}>{children}</div>
   </section>
 );
 
@@ -39,6 +40,10 @@ export const PanelLink = ({ to, onClick, children }: { to?: string; onClick?: ()
   );
 };
 
-export const Dot = ({ tone, className }: { tone: Tone; className?: string }) => (
-  <span className={cn("inline-block h-1.5 w-1.5 shrink-0 rounded-full", TONE_DOT[tone], className)} aria-hidden />
+/** Chấm trạng thái. `size`: sm = 6px (mặc định), md = 8px. Không đè kích thước qua className. */
+export const Dot = ({ tone, size = "sm", className }: { tone: Tone; size?: "sm" | "md"; className?: string }) => (
+  <span
+    className={cn("inline-block shrink-0 rounded-full", size === "md" ? "h-2 w-2" : "h-1.5 w-1.5", TONE_DOT[tone], className)}
+    aria-hidden
+  />
 );

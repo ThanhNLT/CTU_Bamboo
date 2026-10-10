@@ -4,16 +4,11 @@
 
 import {
   type PropsWithChildren,
-  createContext,
   useEffect,
   useState,
 } from "react";
 import { ConfigProvider, theme } from "antd";
-
-type ColorModeContextType = {
-  mode: string;
-  setMode: (mode: string) => void;
-};
+import { ColorModeContext } from "./context";
 
 // Trùng với bộ màu trong src/styles/tailwind.css để AntD và Tailwind cùng một hệ màu.
 const BAMBOO_TOKENS = {
@@ -29,10 +24,6 @@ const BAMBOO_TOKENS = {
   borderRadius: 10,
   fontFamily: '"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 };
-
-export const ColorModeContext = createContext<ColorModeContextType>(
-  {} as ColorModeContextType
-);
 
 export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({
   children,

@@ -2,16 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Dot, type Tone } from "../../../components/ui";
+import { Dot } from "../../../components/ui";
 import type { IndexState } from "../types";
-
-const VIEW: Record<IndexState["status"], { label: string; tone: Tone; text: string }> = {
-  indexed: { label: "Đã nạp", tone: "success", text: "text-body" },
-  indexing: { label: "Đang nạp", tone: "warning", text: "text-amber-700" },
-  failed: { label: "Lỗi nạp", tone: "danger", text: "text-red-700" },
-};
-
-export const indexTone = (s: IndexState) => VIEW[s.status].tone;
+import { VIEW } from "./indexState";
 
 /** Nhãn ngắn trạng thái nạp vào Trợ lý: chấm màu + chữ. */
 export const IndexStatus = ({ state }: { state: IndexState }) => {
