@@ -114,3 +114,16 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 | `actions`, `flow-sync` | không mở | Không | Hasura Actions, auth webhook, kiểm token cho cổng, đồng bộ Flowable |
 
 Số liệu Prometheus của cổng: `gateway:9091/apisix/prometheus/metrics`, chỉ trong mạng nội bộ compose.
+
+## 8. Bộ nhớ của các dịch vụ Java
+
+Container không đặt giới hạn bộ nhớ, nên nếu để mặc định, JVM tự lấy heap theo tỉ lệ RAM của **cả máy chủ** (Keycloak lấy sẵn 50% từ lúc khởi động). Vì vậy compose ghim heap cho từng dịch vụ. Máy nhiều người dùng hơn thì tăng trong `.env`:
+
+| Dịch vụ | Biến | Mặc định |
+|---|---|---|
+| `keycloak` | `KEYCLOAK_HEAP` | `-Xms128m -Xmx768m` |
+| `tika` | `TIKA_JAVA_OPTS` | `-Xmx512m` |
+| `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m` |
+| `kafka` | (cố định trong compose) | `-Xmx512m -Xms256m` |
+| `trino` | `platform/trino/jvm.config` | `-Xmx1G` |
+| `flowable` | (image tự đặt) | `-Xmx512M` |

@@ -7,7 +7,7 @@ import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Sp
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { request } from "../../api/client";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { formatMoney } from "../../utils/format";
 import { FORM_OPTIONS, INSERT_PR, SUBMIT_PR, UPDATE_PR } from "./queries";
 
@@ -18,7 +18,7 @@ export type PrFormValues = {
 };
 type Options = {
   core_assignment: { position_id: string; assignment_type: string; position: { name: string; org_unit: { name: string } } }[];
-  mdm_partner: { id: string; code: string; name: string }[];
+  mdm_partner: { id: string; code: string; name: string; internal_unit_id: string | null }[];
   mdm_item: { id: string; code: string; name: string; uom: string; category_code: string | null; ref_price: number | null }[];
   core_catalog_item: { code: string; name: string }[];
 };
@@ -119,7 +119,9 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
         <Col xs={24} md={8}>
           <Form.Item name="partner_id" label="Nhà cung cấp đề xuất">
             <Select allowClear showSearch optionFilterProp="label"
-                    options={options?.mdm_partner.map((p) => ({ value: p.id, label: `${p.code} – ${p.name}` }))} />
+                    options={options?.mdm_partner.map((p) => ({
+                      value: p.id, label: `${p.code} – ${p.name}${p.internal_unit_id ? " (nội bộ)" : ""}`,
+                    }))} />
           </Form.Item>
         </Col>
         <Col xs={24} md={8}>

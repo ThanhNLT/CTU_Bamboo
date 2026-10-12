@@ -5,20 +5,30 @@
 // Ẩn menu/nút theo quyền thật của người dùng trong tenant (core_v_permission_grant chỉ trả quyền
 // của chính người gọi). Đây chỉ là lớp giao diện: quyền thật kiểm tra ở Hasura và CSDL (ADR #6).
 import type { AccessControlProvider } from "@refinedev/core";
-import { request } from "../api/client";
+import { getTenant, request } from "../api/client";
 
-let cached: Promise<Set<string>> | null = null;
+// Bộ nhớ đệm quyền theo TỪNG tenant. Chưa chọn tenant (ngay sau đăng nhập, TenantGate còn đang tải) thì
+// không gọi máy chủ và KHÔNG lưu đệm: nếu lưu một tập rỗng lúc đó, menu có phân quyền (Kiểm toán, Tiếp nhận
+// nhân sự) sẽ bị ẩn mãi tới khi tải lại trang — chính là lỗi kiểm thử e2e chập chờn trước đây.
+let cache: { tenant: string; promise: Promise<Set<string>> } | null = null;
 
 export const myPermissions = (): Promise<Set<string>> => {
-  cached ??= request<{ core_v_permission_grant: { permission_code: string }[] }>(
-    `query MyPermissions { core_v_permission_grant(distinct_on: permission_code) { permission_code } }`,
-  )
-    .then((r) => new Set(r.core_v_permission_grant.map((g) => g.permission_code)))
-    .catch(() => {
-      cached = null;
-      return new Set<string>();
-    });
-  return cached;
+  const tenant = getTenant();
+  if (!tenant) return Promise.resolve(new Set<string>());
+  if (cache?.tenant !== tenant) {
+    const entry: { tenant: string; promise: Promise<Set<string>> } = { tenant, promise: Promise.resolve(new Set<string>()) };
+    entry.promise = request<{ core_v_permission_grant: { permission_code: string }[] }>(
+      `query MyPermissions { core_v_permission_grant(distinct_on: permission_code) { permission_code } }`,
+    )
+      .then((r) => new Set(r.core_v_permission_grant.map((g) => g.permission_code)))
+      .catch(() => {
+        // Lỗi mạng / máy chủ: bỏ đệm để lần hỏi sau gọi lại.
+        if (cache === entry) cache = null;
+        return new Set<string>();
+      });
+    cache = entry;
+  }
+  return cache.promise;
 };
 
 const RULES: Record<string, Partial<Record<string, string>>> = {

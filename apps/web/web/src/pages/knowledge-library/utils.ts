@@ -1,0 +1,26 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import { fold } from "../../utils/text";
+import { CATEGORY_SHORT } from "./mock";
+import type { CategoryFilter, LibraryDoc, ScopeFilter } from "./types";
+
+/** "Quy chế · Công ty Chip & Linh kiện · v3 · hiệu lực 01/09/2026" */
+export const docMeta = (d: LibraryDoc) =>
+  [CATEGORY_SHORT[d.category], d.issuer, d.version != null ? `v${d.version}` : null, d.note]
+    .filter(Boolean)
+    .join(" · ");
+
+export const filterDocs = (
+  docs: LibraryDoc[],
+  { query, scope, category }: { query: string; scope: ScopeFilter; category: CategoryFilter },
+) => {
+  const q = fold(query.trim());
+  return docs.filter(
+    (d) =>
+      (scope === "all" || d.scope === scope) &&
+      (category === "all" || d.category === category) &&
+      (!q || fold(`${d.title} ${docMeta(d)} ${d.toc.join(" ")}`).includes(q)),
+  );
+};

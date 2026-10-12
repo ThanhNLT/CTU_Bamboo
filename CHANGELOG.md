@@ -6,9 +6,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 **Nâng cấp:** container `db` khởi động lại một lần với `wal_level=logical`. Triển khai thật đặt thêm `CDC_DB_PASSWORD`, `LAKEHOUSE_DB_PASSWORD`. Cần thêm khoảng 2,3 GB RAM cho Kafka, Debezium, lakehouse-sink và Trino.
 
+**Nâng cấp (đơn hàng nội bộ):** chạy lại như thường. Migration `014` thêm schema `mfg` (lô) vào publication CDC; `seed` bổ sung lô của Chip X, vai trò `BAN_HANG_NOI_BO` cho khối kinh doanh và một đơn nội bộ đã giao vào dữ liệu demo có sẵn. Bản chạy từ mã nguồn: `docker compose up -d --build` để Debezium đọc thêm schema `mfg`.
+
 **Nâng cấp (tiếp nhận nhân sự):** chạy lại như thường (`docker compose up -d`). Migration `013` tạo schema `hr`; `seed` bổ sung phòng nhân sự, vai trò `NHAN_SU`, quy tắc duyệt `ONBOARDING` và ghế tuyển mới vào dữ liệu demo có sẵn; `openbao-init` sinh secret cho client Keycloak `bms-provisioner`, `bootstrap` tạo client đó và thêm các tài khoản demo nhân sự còn thiếu vào realm (cần `DEMO_PASSWORD` như lần cài đầu).
 
 ### Thêm
+- Đơn hàng nội bộ (ADR #42): đề nghị mua sắm chọn nhà cung cấp nội bộ (ví dụ Điện thoại X mua PMIC của Chip X) duyệt xong tự sinh **đơn hàng nội bộ** `IC-…`; khối kinh doanh bên bán nhận thông báo, chọn **lô xuất** cho từng dòng rồi xác nhận (kiểm tra lô của công ty bán, đúng mặt hàng, không bị giữ, còn đủ số lượng) hoặc từ chối kèm lý do; người đặt hủy được khi đơn còn chờ. Xác nhận xong tự sinh **đơn mua** `PO-…` cho bên mua, dòng hàng mang lô nhận về. Giao diện `/p/ic-orders` (lọc "Chờ tôi xác nhận"), đề nghị hiện đơn nội bộ kèm trạng thái, nhà cung cấp nội bộ đánh dấu "(nội bộ)". Lô (`mfg.lot`) vào CDC và Lakehouse (view `silver.mfg_lot`).
 - Che dữ liệu cá nhân bằng Microsoft Presidio (ADR #43): nhận diện số CCCD, CMND, số điện thoại, số tài khoản, email, số thẻ trong văn bản tiếng Việt (không cần mô hình NER). **Nhật ký kiểm toán** chỉ hiện dữ liệu trước/sau đã che (Hasura không còn trả bản gốc; Action `audit_log_detail`), kèm nhãn "Đã che: …". **Ô trao đổi** cảnh báo trước khi gửi nội dung có dữ liệu cá nhân, cho chọn gửi bản đã che hoặc nguyên văn (Action `check_pii`).
 - Phiếu đề nghị mua sắm dạng PDF (ADR #37): query `get_purchase_request_pdf` trả link tải phiếu khổ A4 gồm thông tin đề nghị, dòng hàng, tổng tiền bằng chữ, chuỗi phê duyệt, chữ chìm trạng thái khi chưa duyệt, chân trang có số chứng từ, mã kiểm tra và số trang. Chỉ người xem được chứng từ mới in được; cùng nội dung thì dùng lại tệp đã in. Dịch vụ mới `gotenberg` (bản Chromium, chỉ mạng nội bộ, chặn mọi truy cập mạng khi in).
 - Giao diện nối nốt các Action còn thiếu: trang **Tìm kiếm** `/i/search` (gõ tới đâu tìm tới đó, lọc đề nghị/tệp đính kèm, đoạn trích tô chữ khớp, tải tệp khớp, từ khóa giữ trên URL); nút **In phiếu** trên chi tiết đề nghị tải PDF `<số chứng từ>.pdf`; trang **Sơ đồ quy trình** `/p/process/:id` vẽ BPMN bằng bpmn-js, tô bước đang chạy và bước đã qua, kèm danh sách bước duyệt. bpmn-js tách chunk riêng, chỉ tải khi mở sơ đồ.
@@ -16,6 +19,13 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - CDC (ADR #38): Debezium Server đọc WAL logic của CSDL `bms` và ghi mọi thay đổi của các schema nghiệp vụ vào Kafka (KRaft một node), topic `bms.<schema>.<bảng>` dạng JSON; lần đầu chụp ảnh toàn bộ. Migration 012: publication `bms_cdc` theo schema (bảng mới tự vào), không gồm nhật ký kiểm toán và hàng đợi tìm kiếm; role `bamboo_cdc` chỉ đọc có quyền replication; nhịp tim 10 giây để replication slot không giữ WAL, giới hạn 1 GB WAL cho slot.
 - Lakehouse bronze (ADR #39): dịch vụ `lakehouse-sink` ghi mọi thay đổi từ Kafka vào bảng Iceberg `bronze.<schema>_<bảng>` (lịch sử đầy đủ, kể cả dòng đã sửa, xóa ở CSDL nghiệp vụ) trên bucket `bms-lakehouse`, phân vùng theo ngày; catalog JDBC ở CSDL `lakehouse`. Ghi đúng một lần nhờ lưu vị trí Kafka trong snapshot Iceberg. Image mới `bamboo-lakehouse`.
 - Tầng silver và Trino (ADR #40): view `lakehouse.silver.<schema>_<bảng>` trả trạng thái hiện tại của từng bảng nghiệp vụ với kiểu cột như PostgreSQL, sinh từ CSDL (`make trino-sql`, `platform/trino/silver.sql`); Trino một node đọc cùng catalog Iceberg, giao diện web ở `127.0.0.1:8085`. Image mới `bamboo-trino`.
+
+### Hiệu năng
+- Dịch vụ `actions` chạy mỗi Action ở threadpool thay vì trên event loop. Trước đây một Action chậm (in phiếu PDF, gọi Flowable, S3) chặn mọi request khác của tiến trình, kể cả auth webhook mà Hasura gọi ở **mọi** request GraphQL. uvicorn dùng `uvloop` và `httptools`, không ghi access log (Hasura và cổng API đã ghi).
+- Ghim heap của các JVM. Container không giới hạn bộ nhớ nên Keycloak mặc định lấy heap ban đầu bằng 50% RAM **của cả máy**; Tika, Debezium lấy tối đa 1/4. Nay: Keycloak 128–768 MB, Tika 512 MB, Debezium 384 MB, chỉnh được qua `KEYCLOAK_HEAP`, `TIKA_JAVA_OPTS`, `DEBEZIUM_JAVA_OPTS` (docs/van-hanh/trien-khai.md mục 8).
+- PostgreSQL tắt JIT (`jit=off`): câu SQL lớn Hasura sinh ra không mất hàng trăm ms biên dịch JIT.
+- Giao diện: JavaScript, CSS nén gzip mức 9 sẵn lúc build, nginx gửi thẳng tệp `.gz` (`gzip_static`) thay vì nén lại 2 MB mỗi lượt tải.
+- Image Python biên dịch sẵn bytecode của mã dịch vụ.
 
 ## [0.3.0] - 2026-10-05
 

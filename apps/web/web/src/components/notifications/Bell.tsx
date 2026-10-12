@@ -4,11 +4,12 @@
 
 // Thông báo của chính người dùng (collab.notification sinh bằng trigger, ADR #20), tự cập nhật.
 import { useGo, useInvalidate, useList } from "@refinedev/core";
-import { Badge, Button, Empty, List, Popover, Typography } from "antd";
-import { BellOutlined } from "@ant-design/icons";
+import { Button, Empty, List, Popover, Typography } from "antd";
+import { Bell } from "lucide-react";
 import gql from "graphql-tag";
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
+import { iconButtonClass } from "../layout/styles";
 
 const NOTIFICATIONS = gql`
   query Notifications($limit: Int, $offset: Int, $order_by: [collab_notification_order_by!], $where: collab_notification_bool_exp) {
@@ -27,6 +28,7 @@ type Note = {
 // Loại chứng từ → resource Refine của trang chi tiết.
 const RESOURCE: Record<string, string> = {
   "proc.purchase_request": "proc_purchase_request", "hr.onboarding_request": "hr_onboarding_request",
+  "ic.ic_order": "ic_ic_order",
 };
 
 export const NotificationBell = () => {
@@ -71,9 +73,12 @@ export const NotificationBell = () => {
     <Popover trigger="click" placement="bottomRight" title={
       <span>Thông báo {unread > 0 && <Button size="small" type="link" onClick={() => markRead()}>Đánh dấu đã đọc tất cả</Button>}</span>}
       content={content}>
-      <Badge count={unread} size="small">
-        <Button type="text" icon={<BellOutlined />} aria-label={`${unread} thông báo chưa đọc`} />
-      </Badge>
+      <button type="button" className={iconButtonClass} aria-label={`${unread} thông báo chưa đọc`}>
+        <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
+        {unread > 0 && (
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" aria-hidden />
+        )}
+      </button>
     </Popover>
   );
 };

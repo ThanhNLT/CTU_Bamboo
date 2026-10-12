@@ -313,7 +313,7 @@ make test-actions T=tests/test_cdc.py   # nhịp tim đi hết CSDL → Debezium
 ## 8. Lakehouse bronze – Kafka → Iceberg (ADR #39)
 
 ```text
-Kafka bms.<schema>.<bảng>  (core, mdm, wf, proc, ic, collab; bỏ nhịp tim)
+Kafka bms.<schema>.<bảng>  (core, mdm, wf, proc, ic, mfg, collab; bỏ nhịp tim)
    └─► lakehouse-sink: lô ≤ 5.000 dòng hoặc 30 giây ─► append bronze.<schema>_<bảng>
           snapshot summary "kafka.offsets" = vị trí tiếp theo của từng partition (khởi động lại đọc tiếp từ đây)
 Catalog: PostgreSQL CSDL lakehouse (bảng iceberg_tables, iceberg_namespace_properties – JDBC catalog)

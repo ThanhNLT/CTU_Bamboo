@@ -90,8 +90,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
     # WAL logic cho CDC (ADR #38). Slot của Debezium giữ WAL tối đa 1 GB khi Debezium dừng lâu; vượt mức
     # thì slot bị vô hiệu (Debezium chụp ảnh lại) thay vì làm đầy đĩa của CSDL.
+    # jit=off: câu GraphQL của Hasura là một câu SQL lớn, ước lượng chi phí cao dễ kích hoạt JIT; biên dịch JIT
+    # tốn hàng trăm ms CPU cho truy vấn chỉ chạy vài ms (khuyến nghị của Hasura cho tải OLTP).
     command: ["postgres", "-c", "wal_level=logical", "-c", "max_wal_senders=10", "-c", "max_replication_slots=10",
-              "-c", "max_slot_wal_keep_size=1GB"]
+              "-c", "max_slot_wal_keep_size=1GB", "-c", "jit=off"]
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -171,6 +173,9 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
+      # Mặc định trong container Keycloak lấy heap ban đầu 50%, tối đa 70% RAM (container không giới hạn bộ nhớ
+      # thì là RAM của cả máy). Một realm vài chục người dùng chỉ cần vài trăm MB.
+      JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms128m -Xmx768m}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
@@ -332,7 +337,9 @@ services:
     environment: *actions-env
     volumes:
       - actions-secrets:/run/bms:ro
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    # Không ghi access log: mỗi request GraphQL gọi /auth/gateway và /auth/hasura (hai dòng log mỗi request);
+    # Hasura (http-log, webhook-log) và cổng API đã ghi nhật ký truy cập.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
@@ -406,6 +413,10 @@ services:
   tika:
     logging: *logging
     image: apache/tika:4.1.0-1
+    # JVM mặc định lấy tối đa 1/4 RAM máy cho cả tiến trình chính và tiến trình con Tika tự fork (biến
+    # JAVA_TOOL_OPTIONS áp cho cả hai). Tệp đính kèm giới hạn kích thước nên 512 MB đủ.
+    environment:
+      JAVA_TOOL_OPTIONS: ${TIKA_JAVA_OPTS:--Xmx512m}
     restart: unless-stopped
     # Image không có curl: hỏi /version bằng /dev/tcp của bash.
     healthcheck:
@@ -506,7 +517,7 @@ services:
       DEBEZIUM_SOURCE_PUBLICATION_NAME: bms_cdc
       DEBEZIUM_SOURCE_PUBLICATION_AUTOCREATE_MODE: disabled
       DEBEZIUM_SOURCE_SLOT_NAME: bms_debezium
-      DEBEZIUM_SOURCE_SCHEMA_INCLUDE_LIST: core,mdm,wf,proc,ic,collab,cdc
+      DEBEZIUM_SOURCE_SCHEMA_INCLUDE_LIST: core,mdm,wf,proc,ic,mfg,collab,cdc
       DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
       DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
       DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string
@@ -515,6 +526,8 @@ services:
       DEBEZIUM_FORMAT_VALUE: json
       DEBEZIUM_FORMAT_KEY_SCHEMAS_ENABLE: "false"
       DEBEZIUM_FORMAT_VALUE_SCHEMAS_ENABLE: "false"
+      # Heap cố định thay vì 1/4 RAM máy: một connector, lô nhỏ.
+      JAVA_OPTS: ${DEBEZIUM_JAVA_OPTS:--Xms64m -Xmx384m}
     volumes:
       - debezium-data:/debezium/data
     restart: unless-stopped

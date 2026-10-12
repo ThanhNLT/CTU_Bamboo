@@ -151,12 +151,18 @@ Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](.
 
 ### 4.4. Giao dịch nội bộ
 
+Migration 014, [ADR #42](#adr-42).
+
 - Mỗi công ty con có một `mdm.partner` với `internal_unit_id` trỏ về chính công ty đó.
-- Khi `ic.ic_order` chuyển sang `CONFIRMED`, trigger tự sinh `proc.purchase_order` cho bên mua (nhà cung cấp là đối tác nội bộ của bên bán).
-- `ic.settle(tenant, unit_a, unit_b, 'YYYY-MM')` đối trừ công nợ hai chiều, tạo `ic.settlement` và chuyển các đơn sang `SETTLED`. Báo cáo hợp nhất loại trừ các giao dịch này.
+- Đề nghị mua sắm chọn nhà cung cấp nội bộ: gửi duyệt bị chặn khi mua của chính công ty mình hoặc chưa có dòng hàng (`proc.purchase_request_internal_check`). Duyệt xong, `wf.set_entity_status` gọi `ic.create_from_request`: sinh `ic.ic_order` (`PENDING`, số `IC-…`) và `ic.ic_order_item`, gắn `ic_order_id` vào đề nghị.
+- `ic.confirm_order(order, actor, {dòng: lô})`: người có `ic.order.confirm` trên công ty bán xác nhận; lô phải của công ty bán (`core.company_of`), đúng mặt hàng, `RELEASED`, tổng số lượng đã xuất (đơn đã xác nhận) không vượt số lượng lô; mặt hàng bên bán có lô thì bắt buộc chọn lô. Xác nhận xong `proc.issue_purchase_order` sinh `proc.purchase_order` (`PO-…`) và dòng hàng mang lô.
+- `ic.reject_order` (bên bán), `ic.cancel_order` (người đặt): chỉ khi `PENDING`, bắt buộc lý do. Thông báo: đơn mới và đơn bị hủy báo người xác nhận được (`ic.confirmers`), xác nhận / từ chối báo người đặt.
+- Quyền xem: `ic.can_read` (người đặt, người xem được đề nghị nguồn, bên bán có `ic.order.read` hoặc `ic.order.confirm`); đơn mua: người xem được đề nghị nguồn.
+- Còn phải làm: `ic.settle(tenant, unit_a, unit_b, 'YYYY-MM')` đối trừ công nợ hai chiều, tạo `ic.settlement` và chuyển các đơn sang `SETTLED`. Báo cáo hợp nhất loại trừ các giao dịch này.
 
 ### 4.5. Truy xuất lô
 
+- Đã có (migration 014): `mfg.lot` (số lô, mặt hàng, đơn vị sản xuất, số lượng, ngày sản xuất, trạng thái `RELEASED` / `ON_HOLD` / `SCRAPPED`); lô xuất ghi ở `ic.ic_order_item.lot_id`, lô nhận về ở `proc.purchase_order_item.lot_id`. Các mục dưới đây chưa làm.
 - `mfg.lot_genealogy`: lô cha được dùng để tạo lô con (wafer → chip → điện thoại).
 - `mfg.trace_forward(lot)`, `mfg.trace_backward(lot)`, `mfg.affected_serials(lot)`: từ một lô wafer lỗi tìm ra các serial điện thoại đã bán.
 - `mfg.flag_lots_for_incident(incident)`: gắn cờ nghi lỗi cho các lô đang ở địa điểm xảy ra sự cố.
@@ -197,7 +203,7 @@ Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](.
 
 ### 4.9. CDC và hiệu năng
 
-**CDC (migration 012, [ADR #38](#adr-38)).** PostgreSQL chạy `wal_level=logical`. Publication `bms_cdc` gồm mọi bảng (kể cả bảng tạo sau) trong `core, mdm, wf, proc, ic, collab` và bảng nhịp tim `cdc.heartbeat`; không gồm `audit`, `search`, `public`. Bảng giữ replica identity mặc định (khóa chính): sự kiện sửa có ảnh sau, không có ảnh trước. Role `bamboo_cdc` (REPLICATION, chỉ đọc, mật khẩu `CDC_DB_PASSWORD`) dành cho Debezium. `bms_hospital` không có publication ([ADR #22](#adr-22)). Kafka và Debezium: [Dịch vụ nền tảng mục 7](06-dich-vu-nen-tang.md).
+**CDC (migration 012, [ADR #38](#adr-38)).** PostgreSQL chạy `wal_level=logical`. Publication `bms_cdc` gồm mọi bảng (kể cả bảng tạo sau) trong `core, mdm, wf, proc, ic, mfg, collab` (`mfg` thêm ở migration 014) và bảng nhịp tim `cdc.heartbeat`; không gồm `audit`, `search`, `public`. Bảng giữ replica identity mặc định (khóa chính): sự kiện sửa có ảnh sau, không có ảnh trước. Role `bamboo_cdc` (REPLICATION, chỉ đọc, mật khẩu `CDC_DB_PASSWORD`) dành cho Debezium. `bms_hospital` không có publication ([ADR #22](#adr-22)). Kafka và Debezium: [Dịch vụ nền tảng mục 7](06-dich-vu-nen-tang.md).
 
 **Bảng quyền tính sẵn (migration 012, [ADR #21](#adr-21)).**
 

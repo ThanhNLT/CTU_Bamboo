@@ -1,0 +1,42 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import { Check } from "lucide-react";
+import type { ReactNode } from "react";
+import { cn } from "../../../utils/cn";
+import type { Dataset } from "../types";
+
+const Tag = ({ className, children }: { className: string; children: ReactNode }) => (
+  <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium", className)}>
+    {children}
+  </span>
+);
+
+const TIER_LABEL = { hot: "Nóng", warm: "Ấm", cold: "Lạnh · bất biến" } as const;
+
+/** Nhãn của một tập dữ liệu: chất lượng (lỗi kiểm tra / đã kiểm định) · PII · tầng lưu trữ. */
+export const DatasetTags = ({ dataset }: { dataset: Dataset }) => {
+  const failed = dataset.checks.filter((c) => !c.passed).length;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {failed > 0 ? (
+        <Tag className="bg-amber-50 text-amber-800">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+          {failed} kiểm tra lỗi
+        </Tag>
+      ) : dataset.certified ? (
+        <Tag className="bg-bamboo-50 text-bamboo-700">
+          <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+          Đã kiểm định
+        </Tag>
+      ) : null}
+      {dataset.pii === "none" && <Tag className="bg-black/[0.045] text-body">Không PII</Tag>}
+      {dataset.pii === "masked" && (
+        <Tag className="bg-red-50 text-red-700">PII đã che{dataset.piiNote ? ` · ${dataset.piiNote}` : ""}</Tag>
+      )}
+      {dataset.pii === "raw" && <Tag className="bg-red-100 text-red-800">Có PII · cần quyền đặc biệt</Tag>}
+      <Tag className="bg-black/[0.045] text-body">{TIER_LABEL[dataset.tier]}</Tag>
+    </div>
+  );
+};

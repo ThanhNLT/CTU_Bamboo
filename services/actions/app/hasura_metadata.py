@@ -20,7 +20,7 @@ import psycopg
 
 from . import config
 
-SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "collab", "audit", "hr")
+SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr")
 # hr.private_access: chỉ xem qua nhật ký kiểm toán (audit.log), không mở cho giao diện.
 HIDDEN = {("wf", "flow_sync"), ("wf", "v_flow_state"), ("core", "doc_sequence"), ("audit", "chain_head"),
           ("hr", "private_access")}
@@ -43,12 +43,16 @@ CAN_READ = {
     ("collab", "comment"): ("collab", "comment_can_read"),
     ("core", "attachment"): ("core", "attachment_can_read"),
     ("hr", "onboarding_request"): ("hr", "onboarding_request_can_read"),
+    ("ic", "ic_order"): ("ic", "ic_order_can_read"),
+    ("proc", "purchase_order"): ("proc", "purchase_order_can_read"),
 }
 
 # Computed field thêm (tên → hàm), cùng tham số phiên Hasura.
 EXTRA_COMPUTED = {
     ("hr", "onboarding_request"): [("can_read_private", ("hr", "onboarding_request_can_read_private"),
                                     "Người gọi được xem bản rõ CCCD, số tài khoản, địa chỉ không")],
+    ("ic", "ic_order"): [("can_confirm", ("ic", "ic_order_can_confirm"),
+                          "Người gọi xác nhận / từ chối được đơn hàng nội bộ đang chờ không")],
 }
 
 # Cột nội bộ không trả cho giao diện.
@@ -75,6 +79,8 @@ SELECT_FILTER = {
     ("audit", "log"): {"_and": [TENANT, {"readers": {"person_id": {"_eq": ME}}}]},
     ("audit", "v_reader"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("proc", "purchase_request_item"): {"_and": [TENANT, {"request": {"can_read": {"_eq": True}}}]},
+    ("ic", "ic_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
+    ("proc", "purchase_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
 }
 
 # Quan hệ không có khóa ngoại (chứng từ được duyệt là đa hình: entity_type + entity_id).
@@ -102,9 +108,14 @@ MANUAL_RELATIONSHIPS = [
     ("array", ("hr", "onboarding_request"), "comments", ("collab", "comment"), {"id": "entity_id"}),
     ("object", ("collab", "notification"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
     ("array", ("hr", "onboarding_request"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
+    # Đơn hàng nội bộ (ADR #42): bình luận, thông báo.
+    ("object", ("collab", "comment"), "ic_order", ("ic", "ic_order"), {"entity_id": "id"}),
+    ("array", ("ic", "ic_order"), "comments", ("collab", "comment"), {"id": "entity_id"}),
+    ("object", ("collab", "notification"), "ic_order", ("ic", "ic_order"), {"entity_id": "id"}),
 ]
 
-PR_EDITABLE = ["title", "description", "category_code", "total_amount", "needed_by", "partner_id", "ic_order_id"]
+# ic_order_id do CSDL gắn khi đề nghị mua nội bộ được duyệt (ADR #42), người lập không sửa.
+PR_EDITABLE = ["title", "description", "category_code", "total_amount", "needed_by", "partner_id"]
 ITEM_EDITABLE = ["item_id", "line_no", "description", "uom", "quantity", "unit_price", "note"]
 OB_EDITABLE = ["full_name", "gender", "date_of_birth", "work_email", "phone", "education", "major",
                "target_position_id", "start_date", "contract_type", "salary", "note", "bank_name", "username"]
@@ -384,11 +395,20 @@ def build(conn: psycopg.Connection) -> dict:
             _action("cancel_onboarding_request", "mutation", [("request_id", "uuid!"), ("reason", "String!")],
                     "OnboardingActionResult!", [ROLE, ADMIN_ROLE],
                     "Người lập hủy đề nghị tiếp nhận chưa duyệt xong"),
+            _action("confirm_ic_order", "mutation", [("order_id", "uuid!"), ("lots", "[IcOrderLot!]")],
+                    "IcOrderActionResult!", [ROLE, ADMIN_ROLE],
+                    "Bên bán xác nhận đơn hàng nội bộ kèm lô xuất từng dòng; sinh đơn mua cho bên mua (ADR #42)"),
+            _action("reject_ic_order", "mutation", [("order_id", "uuid!"), ("reason", "String!")],
+                    "IcOrderActionResult!", [ROLE, ADMIN_ROLE], "Bên bán từ chối đơn hàng nội bộ (ghi lý do)"),
+            _action("cancel_ic_order", "mutation", [("order_id", "uuid!"), ("reason", "String!")],
+                    "IcOrderActionResult!", [ROLE, ADMIN_ROLE], "Người đặt hủy đơn hàng nội bộ còn chờ xác nhận"),
             _action("retry_onboarding_account", "mutation", [("request_id", "uuid!"), ("username", "String")],
                     "OnboardingActionResult!", [ROLE, ADMIN_ROLE],
                     "Tạo lại tài khoản đăng nhập khi lần trước lỗi (có thể đổi tên đăng nhập)"),
         ],
         "custom_types": {
+            "input_objects": [{"name": "IcOrderLot",
+                               "fields": [{"name": "line_id", "type": "uuid!"}, {"name": "lot_id", "type": "uuid!"}]}],
             "enums": [{"name": "ApprovalDecision",
                        "values": [{"value": "APPROVE"}, {"value": "REJECT"}, {"value": "RETURN"}]},
                       {"name": "SearchKind",
@@ -455,6 +475,18 @@ def build(conn: psycopg.Connection) -> dict:
                     "name": "onboarding_request", "type": "object", "source": "bms",
                     "remote_table": {"schema": "hr", "name": "onboarding_request"},
                     "field_mapping": {"request_id": "id"},
+                }],
+            }, {
+                "name": "IcOrderActionResult",
+                "fields": [{"name": "order_id", "type": "uuid!"}, {"name": "status", "type": "String!"},
+                           {"name": "purchase_order_id", "type": "uuid"}],
+                "relationships": [{
+                    "name": "ic_order", "type": "object", "source": "bms",
+                    "remote_table": {"schema": "ic", "name": "ic_order"}, "field_mapping": {"order_id": "id"},
+                }, {
+                    "name": "purchase_order", "type": "object", "source": "bms",
+                    "remote_table": {"schema": "proc", "name": "purchase_order"},
+                    "field_mapping": {"purchase_order_id": "id"},
                 }],
             }, {
                 "name": "OnboardingPrivate",

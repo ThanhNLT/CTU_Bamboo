@@ -7,7 +7,7 @@ import { Edit } from "@refinedev/antd";
 import { useGo, useParsed } from "@refinedev/core";
 import { Alert, Spin } from "antd";
 import { request } from "../../api/client";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { OnboardingForm } from "./form";
 import { OB_DETAIL } from "./queries";
 import type { Onboarding } from "./types";

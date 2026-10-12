@@ -9,7 +9,7 @@ import { Alert, App, Button, Card, Col, DatePicker, Form, Input, InputNumber, Ro
 import { LockOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { request } from "../../api/client";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { OB_INSERT, OB_OPTIONS, OB_SAVE_PRIVATE, OB_SUBMIT, OB_UPDATE } from "./queries";
 import { CONTRACT_TYPE, GENDER, type Onboarding } from "./types";
 import { suggestUsername } from "./username";

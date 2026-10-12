@@ -4,37 +4,40 @@
 
 import {
   type PropsWithChildren,
-  createContext,
   useEffect,
   useState,
 } from "react";
 import { ConfigProvider, theme } from "antd";
-import { RefineThemes } from "@refinedev/antd";
+import { ColorModeContext } from "./context";
 
-type ColorModeContextType = {
-  mode: string;
-  setMode: (mode: string) => void;
+// Trùng với bộ màu trong src/styles/tailwind.css để AntD và Tailwind cùng một hệ màu.
+const BAMBOO_TOKENS = {
+  colorPrimary: "#2f7a3e",
+  colorInfo: "#2f7a3e",
+  colorSuccess: "#3f9150",
+  colorLink: "#276533",
+  colorText: "#1b231e",
+  colorTextSecondary: "#6b7670",
+  colorBorder: "#e4e9e5",
+  colorBorderSecondary: "#eef1ee",
+  colorBgLayout: "#f5f7f5",
+  borderRadius: 10,
+  fontFamily: '"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 };
-
-export const ColorModeContext = createContext<ColorModeContextType>(
-  {} as ColorModeContextType
-);
 
 export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
-  const colorModeFromLocalStorage = localStorage.getItem("colorMode");
-  const isSystemPreferenceDark = window?.matchMedia(
-    "(prefers-color-scheme: dark)"
-  ).matches;
-
-  const systemPreference = isSystemPreferenceDark ? "dark" : "light";
-  const [mode, setMode] = useState(
-    colorModeFromLocalStorage || systemPreference
-  );
+  // Bộ giao diện Bamboo hiện chỉ thiết kế nền sáng (xanh tre trên nền trắng), nên mặc định "light"
+  // thay vì theo hệ điều hành. Giữ context để sau này bật lại chế độ tối.
+  const [mode, setMode] = useState("light");
 
   useEffect(() => {
-    window.localStorage.setItem("colorMode", mode);
+    try {
+      window.localStorage.setItem("colorMode", mode);
+    } catch {
+      /* bộ nhớ trình duyệt bị chặn */
+    }
   }, [mode]);
 
   const setColorMode = () => {
@@ -55,10 +58,12 @@ export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({
       }}
     >
       <ConfigProvider
-        // you can change the theme colors here. example: ...RefineThemes.Magenta,
         theme={{
-          ...RefineThemes.Blue,
           algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm,
+          token: BAMBOO_TOKENS,
+          components: {
+            Segmented: { trackBg: "#eef1ee", itemSelectedBg: "#ffffff", itemColor: "#6b7670" },
+          },
         }}
       >
         {children}
