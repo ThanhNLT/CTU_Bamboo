@@ -39,11 +39,12 @@ test("tìm thấy đề nghị vừa gửi, in phiếu, xem sơ đồ quy trình
   await expect(async () => {
     await page.getByLabel("Tìm kiếm").fill("");
     await page.getByLabel("Tìm kiếm").fill(`${WORD.toLowerCase()} o cung`);
-    await expect(page.locator(".ant-list-item", { hasText: TITLE })).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByRole("listitem").filter({ hasText: TITLE })).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 60_000 });
-  await expect(page.locator(".ant-list-item mark").first()).toBeVisible();
+  // Chữ khớp được tô sáng bằng <mark>.
+  await expect(page.getByRole("listitem").filter({ hasText: TITLE }).locator("mark").first()).toBeVisible();
   await expect(page).toHaveURL(/q=/);
-  await page.locator(".ant-list-item", { hasText: TITLE }).getByRole("link").first().click();
+  await page.getByRole("listitem").filter({ hasText: TITLE }).getByRole("link").first().click();
   await expect(page).toHaveURL(detail);
 
   // In phiếu: tải về PDF đặt tên theo số chứng từ, trang chi tiết giữ nguyên.

@@ -27,6 +27,11 @@ import { DocumentDrivePage } from "./pages/document-drive";
 import { KnowledgeLibraryPage } from "./pages/knowledge-library";
 import { DataServicesPage } from "./pages/data-services";
 import { DigitalTwinPage } from "./pages/digital-twin";
+import { DataLineagePage } from "./pages/data-lineage";
+import { LedgerPage } from "./pages/ledger";
+import { AiAssistantPage } from "./pages/ai-assistant";
+import { OcrInputPage } from "./pages/ocr-input";
+import { AiAgentsPage } from "./pages/ai-agents";
 import { MapPage } from "./pages/map";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { ProcessDesignPage } from "./pages/process-design";
@@ -79,6 +84,11 @@ function App() {
                   { name: "map", list: "/d/map", meta: { label: "Bản đồ" } },
                   { name: "data_services", list: "/d/services", meta: { label: "Dịch vụ dữ liệu" } },
                   { name: "digital_twin", list: "/d/twin", meta: { label: "Bản sao số" } },
+                  { name: "data_lineage", list: "/d/lineage", meta: { label: "Phả hệ dữ liệu" } },
+                  { name: "ledger", list: "/d/ledger", meta: { label: "Sổ cái" } },
+                  { name: "assistant", list: "/i/assistant", meta: { label: "Trợ lý đa năng" } },
+                  { name: "ocr", list: "/i/ocr", meta: { label: "Nhập liệu OCR" } },
+                  { name: "agents", list: "/i/agents", meta: { label: "Tác tử AI" } },
                   {
                     name: "proc_purchase_request",
                     list: "/p/documents",
@@ -130,6 +140,11 @@ function App() {
                     <Route path="/d/map" element={<MapPage />} />
                     <Route path="/d/services" element={<DataServicesPage />} />
                     <Route path="/d/twin" element={<DigitalTwinPage />} />
+                    <Route path="/d/lineage" element={<DataLineagePage />} />
+                    <Route path="/d/ledger" element={<LedgerPage />} />
+                    <Route path="/i/assistant" element={<AiAssistantPage />} />
+                    <Route path="/i/ocr" element={<OcrInputPage />} />
+                    <Route path="/i/agents" element={<AiAgentsPage />} />
                     <Route path="/p/documents">
                       <Route index element={<PurchaseRequestList />} />
                       <Route path="create" element={<PurchaseRequestCreate />} />

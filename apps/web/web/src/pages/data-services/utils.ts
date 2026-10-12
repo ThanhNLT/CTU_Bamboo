@@ -31,20 +31,4 @@ export const sampleRows = (d: Dataset, count = 5) => {
   return Array.from({ length: count }, (_, i) => Object.fromEntries(d.columns.map((c, j) => [c.name, value(c, i, j)])));
 };
 
-/** Ghi vào bộ nhớ tạm; trình duyệt cũ / không phải HTTPS thì dùng cách dự phòng. */
-export const copyText = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand("copy");
-    ta.remove();
-    return ok;
-  }
-};
+export { copyText } from "../../utils/clipboard";

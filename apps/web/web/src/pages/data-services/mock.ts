@@ -52,11 +52,12 @@ export const MOCK_DATASETS: Dataset[] = [
     checks: [
       { name: "Không trùng khóa (day, tenant_id, document_type)", passed: true, detail: "0 dòng trùng" },
       { name: "approved ≤ submitted", passed: true, detail: "48.210 / 48.210 dòng đạt" },
-      { name: "Độ tươi ≤ 30 phút", passed: false, detail: "Lần làm mới gần nhất trễ 42 phút (job wf_daily_rollup)" },
+      { name: "Độ tươi ≤ 30 phút", passed: true, detail: "Trễ 5 phút" },
+      { name: "approved_at không rỗng (đầu vào từ raw.approvals)", passed: false, detail: "37 dòng rỗng · lần chạy 06:15 (dbt build approval_daily)" },
       { name: "Không giá trị rỗng ở cột khóa", passed: true, detail: "0 dòng rỗng" },
     ],
-    upstream: ["wf.task_history", "proc.purchase_request", "hr.onboarding_request"],
-    downstream: ["KPI “Duyệt đúng hạn”", "Trung tâm điều hành · Hồ sơ được duyệt mỗi ngày", "Metabase · Hồ sơ duyệt theo tháng"],
+    upstream: ["iceberg.raw.approvals", "iceberg.dim.tenant"],
+    downstream: ["KPI “Duyệt đúng hạn”", "Metabase · Duyệt hồ sơ", "Trợ lý · query_metric"],
     graphql: `query {
   approval_daily(where: { day: { _gte: "2026-10-01" } }) {
     day  tenant_id  approved_on_time

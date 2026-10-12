@@ -105,7 +105,7 @@ const Lineage = ({ dataset }: { dataset: Dataset }) => (
       <ArrowRight className="mx-auto h-4 w-4 shrink-0 rotate-90 text-muted md:rotate-0" aria-hidden />
       <LineageColumn title="Nơi dùng" items={dataset.downstream} />
     </div>
-    <Link to="/d/lineage" className="mt-3 inline-block text-[12.5px] font-semibold text-bamboo-700 underline-offset-2 hover:underline">
+    <Link to={`/d/lineage?asset=${encodeURIComponent(dataset.table)}`} className="mt-3 inline-block text-[12.5px] font-semibold text-bamboo-700 underline-offset-2 hover:underline">
       Mở Phả hệ dữ liệu
     </Link>
   </div>
