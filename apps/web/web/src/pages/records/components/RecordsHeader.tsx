@@ -16,7 +16,7 @@ export const RecordsHeader = ({
     <div className="min-w-0">
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Hồ sơ</h1>
       <p className="mt-1 text-[13px] text-muted">
-        Toàn bộ hồ sơ e-Office của {company} · cập nhật trực tiếp
+        Chứng từ bạn được xem trong {company} · cập nhật trực tiếp
       </p>
     </div>
     <div className="flex shrink-0 items-center gap-2.5">

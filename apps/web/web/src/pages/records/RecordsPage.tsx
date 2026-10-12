@@ -3,40 +3,47 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Hồ sơ (Quy trình số): master–detail. Trái ~65% bảng hồ sơ (thân bảng cuộn riêng, có phân trang),
-// phải ~35% chi tiết hồ sơ đang chọn (cuộn riêng). Dữ liệu minh họa ở ./mock — đếm tab, lọc, phân trang
-// đều tính từ dữ liệu nên đổi sang API chỉ cần thay nguồn dữ liệu.
+// phải ~35% chi tiết hồ sơ đang chọn (cuộn riêng). Dữ liệu thật: mọi chứng từ người dùng được xem
+// (api/documents, tự cập nhật); đếm tab, lọc, phân trang tính ở giao diện.
 import { useGo } from "@refinedev/core";
-import { App } from "antd";
+import { Alert } from "antd";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { useDocuments } from "../../api/documents";
+import { useSession } from "../../auth/useSession";
+import { formatAgo } from "../../utils/format";
+import { useInboxTasks } from "../inbox/useInboxTasks";
 import { RecordDetailPanel } from "./components/RecordDetailPanel";
 import { RecordsFilterBar } from "./components/RecordsFilterBar";
 import { RecordsHeader } from "./components/RecordsHeader";
 import { RecordsTable } from "./components/RecordsTable";
-import { COMPANY, MOCK_INCOMING, MOCK_ME, MOCK_NOW, MOCK_RECORDS } from "./mock";
-import type { EofficeRecord, RecordFilters } from "./types";
-import { countByTab, filterExceptTab, matchesTab } from "./utils";
+import type { RecordFilters } from "./types";
+import { countByTab, filterExceptTab, matchesTab, toRecord } from "./utils";
 
 const PAGE_SIZE = 20;
-const CTX = { me: MOCK_ME, now: MOCK_NOW };
+// Mỗi loại chứng từ lấy tối đa chừng này bản mới nhất; lọc/đếm trên phần đã tải.
+const FETCH_LIMIT = 500;
 
 const INITIAL_FILTERS: RecordFilters = { tab: "all", query: "", type: "all", range: "30d", mineOnly: false };
 
 export const RecordsPage = () => {
   const go = useGo();
   const navigate = useNavigate();
-  const { message } = App.useApp();
+  const { tenant } = useSession();
+  const docs = useDocuments({ limit: FETCH_LIMIT });
+  const inbox = useInboxTasks({ team: false });
 
-  const [records, setRecords] = useState<EofficeRecord[]>(MOCK_RECORDS);
-  const [incoming, setIncoming] = useState<EofficeRecord[]>(MOCK_INCOMING);
+  const records = useMemo(() => docs.documents.map(toRecord), [docs.documents]);
+  const myTasks = useMemo(() => new Set(inbox.mine.map((t) => t.code)), [inbox.mine]);
+
   const [filters, setFilters] = useState<RecordFilters>(INITIAL_FILTERS);
   const [page, setPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<string | undefined>(MOCK_RECORDS[0]?.id);
+  const [selectedId, setSelectedId] = useState<string | undefined>();
 
   const { tab, query, type, range, mineOnly } = filters;
   const base = useMemo(
-    () => filterExceptTab(records, { query, type, range, mineOnly }, CTX),
-    [records, query, type, range, mineOnly],
+    () => filterExceptTab(records, { query, type, range, mineOnly }, { me: tenant.person_id, now: Date.now(), myTasks }),
+    [records, query, type, range, mineOnly, tenant.person_id, myTasks],
   );
   const counts = useMemo(() => countByTab(base), [base]);
   const filtered = useMemo(() => base.filter((r) => matchesTab(r.status, tab)), [base, tab]);
@@ -52,26 +59,15 @@ export const RecordsPage = () => {
     setPage(1);
   };
 
-  // Áp các cập nhật "đến sau": thay hồ sơ đã có, thêm hồ sơ mới lên đầu.
-  const refresh = () => {
-    setRecords((prev) => {
-      const byId = new Map(incoming.map((r) => [r.id, r]));
-      const replaced = prev.map((r) => byId.get(r.id) ?? r);
-      const added = incoming.filter((r) => !prev.some((p) => p.id === r.id));
-      return [...added, ...replaced];
-    });
-    message.success(`Đã cập nhật ${incoming.length} hồ sơ.`);
-    setIncoming([]);
-    setPage(1);
-  };
-
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <RecordsHeader
-        company={COMPANY}
+        company={tenant.tenant_name}
         onOcr={() => navigate("/i/ocr")}
         onCreate={() => go({ to: { resource: "proc_purchase_request", action: "create" } })}
       />
+
+      {docs.error && <Alert type="error" showIcon message="Không tải được hồ sơ" description={docs.error} />}
 
       <RecordsFilterBar filters={filters} counts={counts} onChange={updateFilters} />
 
@@ -85,14 +81,14 @@ export const RecordsPage = () => {
           page={safePage}
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
-          pendingUpdates={incoming.length}
-          onRefresh={refresh}
+          formatUpdated={formatAgo}
+          loading={docs.loading}
         />
         <RecordDetailPanel
           record={selected}
-          me={MOCK_ME}
+          canReview={selected ? myTasks.has(selected.code) : false}
           onReview={(r) => navigate(`/p/tasks?code=${encodeURIComponent(r.code)}`)}
-          onOpen={(r) => message.info(`Trang chi tiết ${r.code} sẽ có khi nối API e-Office.`)}
+          onOpen={(r) => navigate(r.to)}
           onAsk={(r) => navigate(`/i/assistant?record=${encodeURIComponent(r.code)}`)}
         />
       </div>

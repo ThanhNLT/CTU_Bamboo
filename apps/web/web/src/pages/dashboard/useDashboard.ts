@@ -6,16 +6,14 @@
 // KPI đã ghim chưa có nguồn (Trung tâm điều hành/IOC chưa nối) nên vẫn lấy từ ./mock.
 import { useInvalidate, useList } from "@refinedev/core";
 import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import gql from "graphql-tag";
 import { useMemo } from "react";
 import { request } from "../../api/client";
 import { DOC_KIND_LABEL, useDocuments, type DocSummary } from "../../api/documents";
 import { useSession } from "../../auth/useSession";
+import { formatAgo as ago } from "../../utils/format";
 import { useInboxTasks } from "../inbox/useInboxTasks";
 import type { DashboardUser, NotificationItem, RecentRecord, SummaryStat, TaskItem, Tone } from "./types";
-
-dayjs.extend(relativeTime);
 
 const NOTIFICATIONS = gql`
   query HomeNotifications($limit: Int, $offset: Int, $order_by: [collab_notification_order_by!], $where: collab_notification_bool_exp) {
@@ -50,14 +48,6 @@ const DETAIL: Record<string, string> = {
 const NOTE_TONE: Record<string, Tone> = {
   REQUEST_APPROVED: "success", IC_ORDER_CONFIRMED: "success", REQUEST_RETURNED: "warning", REQUEST_REJECTED: "danger",
   IC_ORDER_REJECTED: "danger", TASK_ASSIGNED: "warning", IC_ORDER_NEW: "warning",
-};
-
-/** "5 phút trước" trong 1 ngày, sau đó "Hôm qua", rồi ngày tháng. */
-export const ago = (iso: string, now = dayjs()) => {
-  const t = dayjs(iso);
-  if (now.diff(t, "hour") < 24) return t.from(now);
-  if (now.startOf("day").diff(t.startOf("day"), "day") === 1) return "Hôm qua";
-  return t.format("DD/MM/YYYY");
 };
 
 const recordTone = (d: DocSummary): { tone: Tone; locked?: boolean } => {

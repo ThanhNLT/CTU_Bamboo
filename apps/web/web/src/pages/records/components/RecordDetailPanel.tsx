@@ -2,12 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FileSearch, ShieldCheck, ShieldOff, Sparkles } from "lucide-react";
+import { FileSearch, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
+import { DOC_KIND_LABEL } from "../../../api/documents";
 import { smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
+import { formatDate } from "../../../utils/format";
 import type { EofficeRecord } from "../types";
-import { buildWorkflow, currentAssignee, shortHash } from "../utils";
+import { buildWorkflow } from "../utils";
 import { RecordStatusBadge } from "./RecordStatusBadge";
 import { VerticalTimeline } from "./VerticalTimeline";
 
@@ -15,12 +17,13 @@ const SectionTitle = ({ children }: { children: ReactNode }) => (
   <h3 className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h3>
 );
 
-/** Cột phải: thông tin hồ sơ đang chọn — quy trình, phiên bản, niêm phong sổ cái, hành động. */
+/** Cột phải: thông tin chứng từ đang chọn — thông tin chung, quy trình duyệt, hành động. */
 export const RecordDetailPanel = ({
-  record, me, onReview, onOpen, onAsk, className,
+  record, canReview, onReview, onOpen, onAsk, className,
 }: {
   record?: EofficeRecord;
-  me: string;
+  /** Việc duyệt bước hiện tại đang nằm trong Hộp việc của người dùng. */
+  canReview: boolean;
   onReview: (r: EofficeRecord) => void;
   onOpen: (r: EofficeRecord) => void;
   onAsk: (r: EofficeRecord) => void;
@@ -35,8 +38,13 @@ export const RecordDetailPanel = ({
     );
   }
 
-  // Chỉ người đang giữ bước duyệt hiện tại mới "Mở để duyệt"; người khác chỉ xem.
-  const canReview = (record.status === "pending_l1" || record.status === "pending_l2") && currentAssignee(record) === me;
+  const info: Array<[string, ReactNode]> = [
+    ["Loại", DOC_KIND_LABEL[record.type]],
+    ["Người lập", record.submitter],
+    ["Đơn vị", record.unit],
+    ["Số tiền", <span className="tabular-nums">{record.amount}</span>],
+    ["Cập nhật", formatDate(record.updatedAt)],
+  ];
 
   return (
     <aside
@@ -47,44 +55,25 @@ export const RecordDetailPanel = ({
       <header>
         <div className="font-mono text-[11.5px] tracking-tight text-muted">{record.code}</div>
         <h2 className="mt-1 text-[17px] font-semibold leading-snug text-ink">{record.title}</h2>
-        <div className="mt-2"><RecordStatusBadge status={record.status} pill /></div>
+        <div className="mt-2"><RecordStatusBadge status={record.status} label={record.statusLabel} pill /></div>
       </header>
+
+      <section className="mt-5">
+        <SectionTitle>Thông tin</SectionTitle>
+        <dl className="m-0 grid grid-cols-[84px_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-[12.5px]">
+          {info.map(([k, v]) => (
+            <div key={k} className="contents">
+              <dt className="text-muted">{k}</dt>
+              <dd className="m-0 min-w-0 truncate text-ink">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <section className="mt-5">
         <SectionTitle>Quy trình</SectionTitle>
         <VerticalTimeline steps={buildWorkflow(record)} />
       </section>
-
-      <section className="mt-5">
-        <SectionTitle>Phiên bản</SectionTitle>
-        <ul className="m-0 list-none space-y-1.5 p-0">
-          {record.versions.map((v) => (
-            <li key={v.version} className="flex items-baseline justify-between gap-3 text-[12.5px]">
-              <span className="min-w-0 truncate text-body">
-                <b className="font-semibold text-ink">v{v.version}</b> · {v.note}
-              </span>
-              <span className="shrink-0 text-[11.5px] tabular-nums text-muted">{v.at}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-line bg-canvas px-3 py-2.5">
-        {record.ledgerHash ? (
-          <>
-            <ShieldCheck className="mt-px h-4 w-4 shrink-0 text-bamboo-600" strokeWidth={1.75} aria-hidden />
-            <div className="min-w-0">
-              <div className="text-[12px] font-medium text-ink">Đã niêm phong sổ cái</div>
-              <div className="mt-0.5 font-mono text-[11px] text-muted" title={record.ledgerHash}>{shortHash(record.ledgerHash)}</div>
-            </div>
-          </>
-        ) : (
-          <>
-            <ShieldOff className="mt-px h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} aria-hidden />
-            <div className="text-[12px] text-muted">Chưa niêm phong · bản nháp chưa nộp</div>
-          </>
-        )}
-      </div>
 
       <footer className="mt-5 flex flex-wrap gap-2">
         {canReview ? (
