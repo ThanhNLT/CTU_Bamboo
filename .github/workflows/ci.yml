@@ -57,6 +57,13 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+      # Runner ubuntu-latest chỉ còn vài GB trống; cả hệ thống (image, Playwright, dữ liệu SeaweedFS) làm đĩa đầy 100%
+      # và SeaweedFS ngừng cấp volume (ghi S3 lỗi InternalError). Bỏ bộ công cụ cài sẵn không dùng tới.
+      - name: Giải phóng đĩa runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+                      /usr/local/share/powershell /usr/share/swift /usr/local/julia* /opt/microsoft
+          df -h /
       - name: Một lệnh dựng toàn bộ hệ thống
         run: time docker compose up -d
       - name: Chờ sẵn sàng
