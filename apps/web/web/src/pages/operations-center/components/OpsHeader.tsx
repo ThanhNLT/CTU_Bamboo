@@ -9,12 +9,9 @@ export const OpsHeader = ({ presenting, onTogglePresent }: { presenting: boolean
   <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Trung tâm điều hành</h1>
-      <p className="mt-1 text-[13px] text-muted">Tập đoàn đang vận hành thế nào hôm nay?</p>
+      <p className="mt-1 text-[13px] text-muted">Tập đoàn đang vận hành thế nào hôm nay? · trong phạm vi bạn được xem</p>
     </div>
     <div className="flex shrink-0 items-center gap-2.5">
-      <span className="inline-flex h-7 items-center rounded-full bg-black/[0.045] px-3 text-[11.5px] font-medium text-body">
-        Dữ liệu minh họa
-      </span>
       <button type="button" onClick={onTogglePresent} className={secondaryButtonClass} aria-pressed={presenting}>
         {presenting ? <MonitorOff className="h-4 w-4" aria-hidden /> : <Monitor className="h-4 w-4" aria-hidden />}
         {presenting ? "Thoát trình chiếu" : "Trình chiếu"}
