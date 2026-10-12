@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Authenticated, Refine } from "@refinedev/core";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
+import { RefineKbarProvider } from "@refinedev/kbar";
 import { ErrorComponent, useNotificationProvider } from "@refinedev/antd";
 // Reset của AntD được nạp trong tailwind.css (layer base) để không đè class Tailwind.
 import "./styles/tailwind.css";
@@ -171,7 +171,6 @@ function App() {
                     <Route path="/login" element={<Login />} />
                   </Route>
                 </Routes>
-                <RefineKbar />
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler handler={({ resource }) => `${resource?.meta?.label ?? "Bamboo"} | Bamboo DX-OS`} />
               </Refine>
