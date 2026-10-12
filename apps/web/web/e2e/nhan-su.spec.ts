@@ -21,7 +21,13 @@ async function login(page: Page, username: string, password = PASSWORD) {
 }
 
 async function logout(page: Page) {
-  await page.locator("aside").getByText("Đăng xuất").click();
+  // Chờ Keycloak xóa phiên SSO: nút đăng nhập có thể hiện trước khi trình duyệt gọi endpoint đăng xuất; điều hướng
+  // sớm sẽ cắt ngang, phiên cũ còn nên check-sso đăng nhập lại người cũ và không còn trang đăng nhập.
+  const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
+  // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
+  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
+  await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
@@ -96,5 +102,6 @@ test("lập hồ sơ tiếp nhận, duyệt hai cấp, tạo tài khoản, nhân
   await page.locator("#password-new").fill(`${PASSWORD}-${STAMP}`);
   await page.locator("#password-confirm").fill(`${PASSWORD}-${STAMP}`);
   await page.locator("input[type=submit], button[type=submit]").first().click();
-  await expect(page.locator("header").getByText(NAME)).toBeVisible();
+  // Header hiện chữ viết tắt trong avatar; tên đầy đủ nằm ở nhãn của nút tài khoản.
+  await expect(page.locator("header").getByRole("button", { name: `Tài khoản: ${NAME}` })).toBeVisible();
 });

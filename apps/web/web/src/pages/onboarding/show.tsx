@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { AuditOutlined, EditOutlined, EyeOutlined, LockOutlined, RedoOutlined, SendOutlined, StopOutlined } from "@ant-design/icons";
 import { request } from "../../api/client";
-import { useSession } from "../../auth/session";
+import { useSession } from "../../auth/useSession";
 import { ActModal } from "../../components/approval/ActModal";
 import { ApprovalPanel } from "../../components/approval/ApprovalPanel";
 import { Attachments } from "../../components/document/Attachments";

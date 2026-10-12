@@ -3,24 +3,41 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Authenticated, Refine } from "@refinedev/core";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { ErrorComponent, ThemedLayout, ThemedSider, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
-import "@refinedev/antd/dist/reset.css";
+import { RefineKbarProvider } from "@refinedev/kbar";
+import { ErrorComponent, useNotificationProvider } from "@refinedev/antd";
+// Reset của AntD được nạp trong tailwind.css (layer base) để không đè class Tailwind.
+import "./styles/tailwind.css";
 import routerProvider, {
   CatchAllNavigate, DocumentTitleHandler, NavigateToResource, UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 import { App as AntdApp, ConfigProvider, Spin } from "antd";
 import viVN from "antd/locale/vi_VN";
-import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined, UserAddOutlined } from "@ant-design/icons";
+import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined, SwapOutlined, UserAddOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import { useKeycloak } from "@react-keycloak/web";
 import { TenantGate } from "./auth/session";
-import { Header } from "./components/header";
+import { BambooLayout } from "./components/layout";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
+import { DashboardPage } from "./pages/dashboard";
+import { DocumentDrivePage } from "./pages/document-drive";
+import { KnowledgeLibraryPage } from "./pages/knowledge-library";
+import { DataServicesPage } from "./pages/data-services";
+import { DigitalTwinPage } from "./pages/digital-twin";
+import { DataLineagePage } from "./pages/data-lineage";
+import { LedgerPage } from "./pages/ledger";
+import { AiAssistantPage } from "./pages/ai-assistant";
+import { OcrInputPage } from "./pages/ocr-input";
+import { AiAgentsPage } from "./pages/ai-agents";
+import { MapPage } from "./pages/map";
+import { OperationsCenterPage } from "./pages/operations-center";
+import { ProcessDesignPage } from "./pages/process-design";
+import { RecordsPage } from "./pages/records";
+import { IcOrderList, IcOrderShow } from "./pages/ic-orders";
+import { InboxPage } from "./pages/inbox";
 import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
 import { OnboardingCreate, OnboardingEdit, OnboardingList, OnboardingShow } from "./pages/onboarding";
@@ -37,8 +54,6 @@ dayjs.locale("vi");
 
 // bpmn-js nặng: chỉ tải khi mở sơ đồ quy trình.
 const ProcessDiagram = lazy(() => import("./pages/process/diagram"));
-
-const Title = ({ collapsed }: { collapsed: boolean }) => <ThemedTitle collapsed={collapsed} text="Bamboo DX-OS" />;
 
 function App() {
   const { initialized } = useKeycloak();
@@ -59,6 +74,21 @@ function App() {
                 notificationProvider={useNotificationProvider}
                 routerProvider={routerProvider}
                 resources={[
+                  { name: "dashboard", list: "/", meta: { label: "Trang chủ" } },
+                  { name: "drive", list: "/h/drive", meta: { label: "Ổ đĩa tài liệu" } },
+                  { name: "library", list: "/h/library", meta: { label: "Thư viện tri thức" } },
+                  { name: "records", list: "/p/records", meta: { label: "Hồ sơ" } },
+                  { name: "tasks", list: "/p/tasks", meta: { label: "Hộp việc" } },
+                  { name: "process_design", list: "/p/process", meta: { label: "Thiết kế quy trình" } },
+                  { name: "operations", list: "/d/ops", meta: { label: "Trung tâm điều hành" } },
+                  { name: "map", list: "/d/map", meta: { label: "Bản đồ" } },
+                  { name: "data_services", list: "/d/services", meta: { label: "Dịch vụ dữ liệu" } },
+                  { name: "digital_twin", list: "/d/twin", meta: { label: "Bản sao số" } },
+                  { name: "data_lineage", list: "/d/lineage", meta: { label: "Phả hệ dữ liệu" } },
+                  { name: "ledger", list: "/d/ledger", meta: { label: "Sổ cái" } },
+                  { name: "assistant", list: "/i/assistant", meta: { label: "Trợ lý đa năng" } },
+                  { name: "ocr", list: "/i/ocr", meta: { label: "Nhập liệu OCR" } },
+                  { name: "agents", list: "/i/agents", meta: { label: "Tác tử AI" } },
                   {
                     name: "proc_purchase_request",
                     list: "/p/documents",
@@ -66,6 +96,12 @@ function App() {
                     edit: "/p/documents/edit/:id",
                     show: "/p/documents/show/:id",
                     meta: { label: "Đề nghị mua sắm", icon: <FileTextOutlined /> },
+                  },
+                  {
+                    name: "ic_ic_order",
+                    list: "/p/ic-orders",
+                    show: "/p/ic-orders/show/:id",
+                    meta: { label: "Đơn hàng nội bộ", icon: <SwapOutlined /> },
                   },
                   {
                     name: "hr_onboarding_request",
@@ -87,19 +123,37 @@ function App() {
                     element={
                       <Authenticated key="authenticated-inner" fallback={<CatchAllNavigate to="/login" />}>
                         <TenantGate>
-                          <ThemedLayout Header={Header} Title={Title} Sider={(props) => <ThemedSider {...props} fixed />}>
+                          <BambooLayout>
                             <Outlet />
-                          </ThemedLayout>
+                          </BambooLayout>
                         </TenantGate>
                       </Authenticated>
                     }
                   >
-                    <Route index element={<NavigateToResource resource="proc_purchase_request" />} />
+                    <Route index element={<DashboardPage />} />
+                    <Route path="/h/drive" element={<DocumentDrivePage />} />
+                    <Route path="/h/library" element={<KnowledgeLibraryPage />} />
+                    <Route path="/p/records" element={<RecordsPage />} />
+                    <Route path="/p/tasks" element={<InboxPage />} />
+                    <Route path="/p/process" element={<ProcessDesignPage />} />
+                    <Route path="/d/ops" element={<OperationsCenterPage />} />
+                    <Route path="/d/map" element={<MapPage />} />
+                    <Route path="/d/services" element={<DataServicesPage />} />
+                    <Route path="/d/twin" element={<DigitalTwinPage />} />
+                    <Route path="/d/lineage" element={<DataLineagePage />} />
+                    <Route path="/d/ledger" element={<LedgerPage />} />
+                    <Route path="/i/assistant" element={<AiAssistantPage />} />
+                    <Route path="/i/ocr" element={<OcrInputPage />} />
+                    <Route path="/i/agents" element={<AiAgentsPage />} />
                     <Route path="/p/documents">
                       <Route index element={<PurchaseRequestList />} />
                       <Route path="create" element={<PurchaseRequestCreate />} />
                       <Route path="edit/:id" element={<PurchaseRequestEdit />} />
                       <Route path="show/:id" element={<PurchaseRequestShow />} />
+                    </Route>
+                    <Route path="/p/ic-orders">
+                      <Route index element={<IcOrderList />} />
+                      <Route path="show/:id" element={<IcOrderShow />} />
                     </Route>
                     <Route path="/h/onboarding">
                       <Route index element={<OnboardingList />} />
@@ -117,7 +171,6 @@ function App() {
                     <Route path="/login" element={<Login />} />
                   </Route>
                 </Routes>
-                <RefineKbar />
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler handler={({ resource }) => `${resource?.meta?.label ?? "Bamboo"} | Bamboo DX-OS`} />
               </Refine>

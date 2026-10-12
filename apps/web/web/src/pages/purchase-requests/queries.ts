@@ -24,7 +24,8 @@ export const PR_DETAIL = `
       requester { full_name }
       requester_position { name }
       org_unit { name }
-      partner { code name }
+      partner { code name internal_unit_id }
+      ic_order { id doc_no status }
       purchase_request_items(order_by: {line_no: asc}) { id line_no item_id description uom quantity unit_price amount note item { code } }
       approval_steps(order_by: [{round: desc}, {step_order: asc}]) {
         id round step_order status acted_at note
@@ -51,7 +52,7 @@ export const FORM_OPTIONS = `
     core_assignment(where: {person_id: {_eq: $person}, assignment_type: {_in: ["PRIMARY", "CONCURRENT", "ACTING", "CONTRACT"]}}) {
       position_id assignment_type valid_period position { name org_unit { name } }
     }
-    mdm_partner(where: {is_active: {_eq: true}}, order_by: {name: asc}) { id code name }
+    mdm_partner(where: {is_active: {_eq: true}}, order_by: {name: asc}) { id code name internal_unit_id }
     mdm_item(where: {is_active: {_eq: true}}, order_by: {code: asc}) { id code name uom category_code ref_price }
     core_catalog_item(where: {catalog: {_eq: "ITEM_CATEGORY"}}, order_by: {name: asc}) { code name }
   }
