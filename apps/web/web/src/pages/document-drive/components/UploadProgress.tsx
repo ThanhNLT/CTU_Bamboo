@@ -11,7 +11,7 @@ const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
   uploading: (i) => `${i.progress}%`,
   scanning: () => "Đang quét mã độc…",
   clean: () => "Sạch · đã lưu",
-  blocked: () => "Bị chặn · mã độc",
+  blocked: () => "Bị chặn",
 };
 
 const ProgressBar = ({ item }: { item: UploadItem }) => {
@@ -93,6 +93,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
                   {STATUS_TEXT[item.status](item)}
                 </span>
               </div>
+              {item.error && <p className="-mt-1 mb-1.5 text-[11.5px] text-red-700">{item.error}</p>}
               <ProgressBar item={item} />
             </li>
           ))}

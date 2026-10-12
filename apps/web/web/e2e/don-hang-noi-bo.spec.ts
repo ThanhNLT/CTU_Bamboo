@@ -62,7 +62,7 @@ test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơ
   // Kinh doanh Chip X: có thông báo, đơn trong mục "Chờ tôi xác nhận", chọn lô rồi xác nhận.
   await login(page, "kd.chip");
   await expect(page.locator("header").getByRole("button", { name: /^[1-9]\d* thông báo chưa đọc$/ })).toBeVisible();
-  await page.locator("aside").getByText("Đơn hàng nội bộ").click();
+  await page.getByRole("navigation", { name: "Điều hướng chính" }).getByText("Đơn hàng nội bộ").click();
   await page.getByText("Chờ tôi xác nhận").click();
   await page.locator("tr", { hasText: docNo }).getByRole("button").click();
   await expect(page.getByText("Công ty Điện thoại X").first()).toBeVisible();

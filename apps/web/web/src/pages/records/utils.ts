@@ -3,18 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { Tone } from "../../components/ui";
+import type { DocSummary } from "../../api/documents";
+import { formatDate } from "../../utils/format";
 import { fold } from "../../utils/text";
 import type {
-  EofficeRecord, RecordFilters, RecordStatus, StatusTab, TimeRange, WorkflowStep,
+  EofficeRecord, RecordFilters, RecordStatus, StatusTab, StepState, TimeRange, WorkflowStep,
 } from "./types";
 
-export const STATUS_VIEW: Record<RecordStatus, { label: string; tone: Tone; locked?: boolean }> = {
-  draft: { label: "Nháp", tone: "neutral" },
-  pending_l1: { label: "Chờ duyệt cấp 1", tone: "warning" },
-  pending_l2: { label: "Chờ duyệt cấp 2", tone: "warning" },
-  returned: { label: "Trả lại bổ sung", tone: "danger" },
-  approved: { label: "Đã duyệt", tone: "success" },
-  archived: { label: "Lưu trữ", tone: "neutral", locked: true },
+export const STATUS_VIEW: Record<RecordStatus, { tone: Tone; locked?: boolean }> = {
+  draft: { tone: "neutral" },
+  pending: { tone: "warning" },
+  returned: { tone: "danger" },
+  approved: { tone: "success" },
+  closed: { tone: "neutral", locked: true },
 };
 
 export const STATUS_TABS: Array<{ key: StatusTab; label: string }> = [
@@ -23,7 +24,7 @@ export const STATUS_TABS: Array<{ key: StatusTab; label: string }> = [
   { key: "reviewing", label: "Đang duyệt" },
   { key: "returned", label: "Trả lại" },
   { key: "approved", label: "Đã duyệt" },
-  { key: "archived", label: "Lưu trữ" },
+  { key: "closed", label: "Đã đóng" },
 ];
 
 export const TIME_OPTIONS: Array<{ label: string; value: TimeRange }> = [
@@ -35,28 +36,39 @@ export const TIME_OPTIONS: Array<{ label: string; value: TimeRange }> = [
 
 const RANGE_DAYS: Record<TimeRange, number> = { "7d": 7, "30d": 30, "90d": 90, all: Infinity };
 
+const STATUS_OF: Record<string, RecordStatus> = {
+  DRAFT: "draft", PENDING: "pending", RETURNED: "returned", APPROVED: "approved", CONFIRMED: "approved",
+  SETTLED: "approved", REJECTED: "closed", CANCELLED: "closed",
+};
+
+/** Chứng từ thật → dòng của trang Hồ sơ. Đang chờ duyệt thì ghi rõ cấp đang xử lý. */
+export const toRecord = (d: DocSummary): EofficeRecord => {
+  const status = STATUS_OF[d.status] ?? "draft";
+  const active = d.steps.find((s) => s.status === "ACTIVE");
+  return {
+    id: d.id, code: d.code, title: d.title, type: d.kind, status,
+    statusLabel: status === "pending" && active ? `Chờ duyệt cấp ${active.order}` : d.statusLabel,
+    submitter: d.requester, submitterId: d.requesterId, unit: d.unit, amount: d.amount,
+    createdAt: d.createdAt, updatedAt: d.updatedAt, steps: d.steps, to: d.to,
+  };
+};
+
 export const matchesTab = (status: RecordStatus, tab: StatusTab) =>
-  tab === "all" ||
-  (tab === "reviewing" ? status === "pending_l1" || status === "pending_l2" : status === tab);
+  tab === "all" || (tab === "reviewing" ? status === "pending" : status === tab);
 
-/** Người phải xử lý bước hiện tại (nếu có). */
-export const currentAssignee = (r: EofficeRecord) =>
-  r.status === "pending_l1" ? r.approverL1 : r.status === "pending_l2" ? r.approverL2
-    : r.status === "returned" || r.status === "draft" ? r.submitter : undefined;
-
-/** Lọc mọi điều kiện TRỪ tab trạng thái — để đếm số trên từng tab. */
+/** Lọc mọi điều kiện TRỪ tab trạng thái — để đếm số trên từng tab. "Của tôi" = tôi lập hoặc đang chờ tôi duyệt. */
 export const filterExceptTab = (
   records: EofficeRecord[],
   { query, type, range, mineOnly }: Omit<RecordFilters, "tab">,
-  ctx: { me: string; now: string },
+  ctx: { me: string; now: number; myTasks: Set<string> },
 ) => {
   const q = fold(query.trim());
-  const since = Date.parse(ctx.now) - RANGE_DAYS[range] * 86_400_000;
+  const since = ctx.now - RANGE_DAYS[range] * 86_400_000;
   return records.filter(
     (r) =>
       (type === "all" || r.type === type) &&
-      (range === "all" || Date.parse(r.activityAt ?? r.updatedAt) >= since) &&
-      (!mineOnly || r.submitter === ctx.me || currentAssignee(r) === ctx.me) &&
+      (range === "all" || Date.parse(r.updatedAt) >= since) &&
+      (!mineOnly || r.submitterId === ctx.me || ctx.myTasks.has(r.code)) &&
       (!q || fold(`${r.code} ${r.title} ${r.submitter}`).includes(q)),
   );
 };
@@ -66,38 +78,40 @@ export const countByTab = (records: EofficeRecord[]) =>
     STATUS_TABS.map(({ key }) => [key, records.filter((r) => matchesTab(r.status, key)).length]),
   ) as Record<StatusTab, number>;
 
-/** Dựng các bước quy trình từ trạng thái hồ sơ: Nộp → Duyệt cấp 1 → Duyệt cấp 2 → Phiếu kết quả. */
-export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
-  const submitted = r.status !== "draft";
-  const l1Done = r.status === "pending_l2" || r.status === "approved" || r.status === "archived";
-  const l2Done = r.status === "approved" || r.status === "archived";
-  return [
-    {
-      key: "submit",
-      label: submitted ? "Nộp" : "Nộp · đang soạn",
-      state: submitted ? "done" : "current",
-      meta: submitted ? `${r.submittedLabel ?? ""} · ${r.submitter}` : r.submitter,
-    },
-    {
-      key: "l1",
-      label:
-        r.status === "pending_l1" ? "Duyệt cấp 1 · đang xử lý"
-          : r.status === "returned" ? "Duyệt cấp 1 · trả lại bổ sung" : "Duyệt cấp 1",
-      state: l1Done ? "done" : r.status === "pending_l1" ? "current" : r.status === "returned" ? "returned" : "pending",
-      meta: r.status === "pending_l1" || r.status === "returned" || l1Done ? r.approverL1 : undefined,
-    },
-    {
-      key: "l2",
-      label: r.status === "pending_l2" ? "Duyệt cấp 2 · đang xử lý" : "Duyệt cấp 2",
-      state: l2Done ? "done" : r.status === "pending_l2" ? "current" : "pending",
-      meta: r.status === "pending_l2" || l2Done ? r.approverL2 : undefined,
-    },
-    { key: "result", label: "Phiếu kết quả", state: l2Done ? "done" : "pending" },
-  ];
+const STEP_STATE: Record<string, StepState> = {
+  APPROVED: "done", ACTIVE: "current", RETURNED: "returned", REJECTED: "returned", WAITING: "pending", CANCELLED: "pending",
+};
+const STEP_SUFFIX: Record<string, string> = {
+  ACTIVE: " · đang xử lý", RETURNED: " · trả lại bổ sung", REJECTED: " · từ chối", CANCELLED: " · đã hủy",
 };
 
-/** "3f9a7d0e5b14c21e" → "3f9a…c21e" */
-export const shortHash = (h: string) => (h.length > 10 ? `${h.slice(0, 4)}…${h.slice(-4)}` : h);
+/** Nộp → các bước duyệt của lần gửi hiện tại (đơn nội bộ: bên bán xác nhận) → Kết quả. */
+export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
+  const submitted = r.status !== "draft";
+  const submit: WorkflowStep = {
+    key: "submit",
+    label: submitted ? "Nộp" : "Nộp · đang soạn",
+    state: submitted ? "done" : "current",
+    meta: submitted ? `${formatDate(r.createdAt)} · ${r.submitter}` : r.submitter,
+  };
+  const middle: WorkflowStep[] = r.type === "ic_order"
+    ? [{
+        key: "confirm",
+        label: r.status === "pending" ? "Bên bán xác nhận · đang chờ" : "Bên bán xác nhận",
+        state: r.status === "approved" ? "done" : r.status === "pending" ? "current" : r.status === "closed" ? "returned" : "pending",
+      }]
+    : r.steps.map((s) => ({
+        key: `l${s.order}`,
+        label: `Duyệt cấp ${s.order}${STEP_SUFFIX[s.status] ?? ""}`,
+        state: STEP_STATE[s.status] ?? "pending",
+        meta: [s.actedBy ?? s.position, s.actedAt && formatDate(s.actedAt)].filter(Boolean).join(" · "),
+      }));
+  return [
+    submit,
+    ...middle,
+    { key: "result", label: r.status === "closed" ? "Kết quả · đã đóng" : "Kết quả", state: r.status === "approved" ? "done" : "pending" },
+  ];
+};
 
 /** Danh sách nút trang gọn: 1 2 3 … 7 (null = dấu …). */
 export const pageList = (current: number, total: number): Array<number | null> => {

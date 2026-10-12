@@ -8,20 +8,17 @@ import type { TaskInfo } from "../types";
 
 /** Khối "Thông tin": cặp nhãn – giá trị. Thiết bị là liên kết sang Bản sao số. */
 export const InfoWidget = ({ info }: { info: TaskInfo }) => {
+  // Chỉ hiện dòng có dữ liệu (thiết bị, điện thoại, tầng dữ liệu chưa có ở mọi loại chứng từ).
   const rows: Array<[string, ReactNode]> = [
     ["Người nộp", info.submitter],
     ["Đơn vị", info.unit],
-    [
-      "Thiết bị",
-      info.device ? (
-        <Link to={info.device.to} className="text-bamboo-700 hover:underline underline-offset-2">{info.device.label}</Link>
-      ) : (
-        <span className="text-muted">—</span>
-      ),
-    ],
-    ["Điện thoại", <span className="tabular-nums">{info.phone}</span>],
-    ["Dữ liệu", info.dataTier],
   ];
+  if (info.amount) rows.push(["Số tiền", <span className="tabular-nums">{info.amount}</span>]);
+  if (info.device) {
+    rows.push(["Thiết bị", <Link to={info.device.to} className="text-bamboo-700 hover:underline underline-offset-2">{info.device.label}</Link>]);
+  }
+  if (info.phone) rows.push(["Điện thoại", <span className="tabular-nums">{info.phone}</span>]);
+  if (info.dataTier) rows.push(["Dữ liệu", info.dataTier]);
   return (
     <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-labelledby="inbox-info">
       <h3 id="inbox-info" className="text-[14px] font-semibold text-ink">Thông tin</h3>

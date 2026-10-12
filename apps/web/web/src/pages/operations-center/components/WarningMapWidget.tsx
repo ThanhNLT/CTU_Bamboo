@@ -8,8 +8,8 @@
 import { Link } from "react-router";
 import { useState } from "react";
 import { cn } from "../../../utils/cn";
-import { COMPANIES, COMPANY } from "../mock";
-import type { CompanyKey, Site, SiteStatus } from "../types";
+import { SAMPLE_COMPANIES as COMPANIES, SAMPLE_COMPANY as COMPANY } from "../sample";
+import type { SampleCompanyKey, Site, SiteStatus } from "../types";
 import { ChartWidget } from "./ChartWidget";
 
 const STATUS: Record<SiteStatus, { label: string; bg: string; text: string }> = {
@@ -19,7 +19,7 @@ const STATUS: Record<SiteStatus, { label: string; bg: string; text: string }> = 
 };
 
 /** Hình đại diện công ty, tô theo mức cảnh báo. */
-export const SiteShape = ({ company, colorClass, size = 12 }: { company: CompanyKey; colorClass: string; size?: number }) => {
+export const SiteShape = ({ company, colorClass, size = 12 }: { company: SampleCompanyKey; colorClass: string; size?: number }) => {
   const s = { width: size, height: size };
   switch (company) {
     case "phone":
@@ -82,7 +82,7 @@ export const WarningMapWidget = ({
   sites, highlight,
 }: {
   sites: Site[];
-  highlight?: CompanyKey;
+  highlight?: SampleCompanyKey;
 }) => {
   // Mặc định mở điểm nguy cấp nhất để người xem thấy ngay.
   const [selectedId, setSelectedId] = useState<string | undefined>(() => sites.find((s) => s.status === "critical")?.id);
@@ -90,7 +90,12 @@ export const WarningMapWidget = ({
   return (
     <ChartWidget
       title="Cơ sở và cảnh báo"
-      meta={<Link to="/d/map" className="font-semibold text-bamboo-700 hover:underline underline-offset-2">Mở bản đồ</Link>}
+      meta={
+        <span className="inline-flex items-center gap-2">
+          <span className="rounded-full bg-black/[0.045] px-2 py-0.5 text-[11px] font-medium text-muted">Minh họa</span>
+          <Link to="/d/map" className="font-semibold text-bamboo-700 hover:underline underline-offset-2">Mở bản đồ</Link>
+        </span>
+      }
       footer={
         <ul className="m-0 flex w-full list-none flex-wrap items-center gap-x-4 gap-y-1.5 p-0 text-[11.5px] text-body" aria-label="Chú giải">
           {COMPANIES.map((c) => (

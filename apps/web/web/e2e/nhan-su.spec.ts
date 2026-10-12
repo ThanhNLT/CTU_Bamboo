@@ -46,7 +46,7 @@ test("lập hồ sơ tiếp nhận, duyệt hai cấp, tạo tài khoản, nhân
   // Chuyên viên nhân sự Điện thoại X lập hồ sơ.
   await login(page, "ns.dienthoai");
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
-  await page.locator("aside").getByText("Tiếp nhận nhân sự").click();
+  await page.getByRole("navigation", { name: "Điều hướng chính" }).getByText("Tiếp nhận nhân sự").click();
   await page.getByRole("button", { name: /Lập hồ sơ tiếp nhận/ }).click();
   await page.getByLabel("Họ và tên").fill(NAME);
   await expect(page.getByLabel(/Tên đăng nhập/)).toHaveValue(/tran/);
