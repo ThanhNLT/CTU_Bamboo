@@ -34,7 +34,7 @@ test("tìm thấy đề nghị vừa gửi, in phiếu, xem sơ đồ quy trình
   const detail = page.url();
 
   // Tìm kiếm: gõ không dấu, chữ thường; chỉ mục đồng bộ sau vài giây nên thử lại tới khi có.
-  await page.locator("aside").getByText("Tìm kiếm").click();
+  await page.getByRole("navigation", { name: "Điều hướng chính" }).getByText("Tìm kiếm").click();
   await expect(page).toHaveURL(/\/i\/search/);
   await expect(async () => {
     await page.getByLabel("Tìm kiếm").fill("");

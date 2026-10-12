@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Hộp việc (/p/tasks) và Trang chủ dùng dữ liệu thật: đề nghị vừa gửi hiện trong việc của người duyệt,
-// trả lại bắt buộc ý kiến, duyệt xong thì việc biến mất.
+// Hộp việc (/p/tasks), Trang chủ và Hồ sơ dùng dữ liệu thật: đề nghị vừa gửi hiện trong việc của người duyệt,
+// trả lại bắt buộc ý kiến, duyệt xong thì việc biến mất và hồ sơ chuyển sang Đã duyệt.
 import { expect, test, type Page } from "@playwright/test";
 
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
@@ -58,5 +58,13 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
   await page.getByRole("dialog").getByRole("button", { name: "Duyệt" }).click();
   await expect(page.getByText(/^Đã duyệt PR-/)).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(TITLE) })).toHaveCount(0);
+
+  // Hồ sơ: chứng từ đã duyệt, quy trình ghi người duyệt cấp 1.
+  await page.goto("/p/records");
+  await page.getByPlaceholder("Mã, tiêu đề, người nộp").fill(TITLE);
+  const detail2 = page.getByRole("complementary", { name: /^Chi tiết PR-/ });
+  await expect(detail2.getByRole("heading", { name: TITLE })).toBeVisible();
+  await expect(detail2.getByText("Đã duyệt")).toBeVisible();
+  await expect(detail2.getByRole("listitem").filter({ hasText: /^Duyệt cấp 1.*đã xong.*Đỗ Thị Hương/ })).toBeVisible();
   await logout(page);
 });

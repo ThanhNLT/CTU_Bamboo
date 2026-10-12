@@ -5,13 +5,13 @@
 import { Checkbox, Select } from "antd";
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
-import { TYPE_LABEL } from "../mock";
+import { DOC_KIND_LABEL } from "../../../api/documents";
 import type { RecordFilters, RecordType, StatusTab, TimeRange } from "../types";
 import { STATUS_TABS, TIME_OPTIONS } from "../utils";
 
 const TYPE_OPTIONS: Array<{ label: string; value: RecordType | "all" }> = [
   { label: "Tất cả loại hồ sơ", value: "all" },
-  ...(Object.entries(TYPE_LABEL) as Array<[RecordType, string]>).map(([value, label]) => ({ value, label })),
+  ...(Object.entries(DOC_KIND_LABEL) as Array<[RecordType, string]>).map(([value, label]) => ({ value, label })),
 ];
 
 /** Tab trạng thái dạng viên thuốc, kèm số đếm. */

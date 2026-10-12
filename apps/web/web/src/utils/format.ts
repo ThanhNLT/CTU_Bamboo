@@ -3,10 +3,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 export const formatMoney = (value?: number | string | null) => (value == null ? "—" : money.format(Number(value)));
 export const formatDate = (value?: string | null) => (value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "—");
+/** "5 phút trước" trong 1 ngày, sau đó "Hôm qua", rồi ngày tháng. */
+export const formatAgo = (iso: string, now = dayjs()) => {
+  const t = dayjs(iso);
+  if (now.diff(t, "hour") < 24) return t.from(now);
+  if (now.startOf("day").diff(t.startOf("day"), "day") === 1) return "Hôm qua";
+  return t.format("DD/MM/YYYY");
+};
 export const formatDay = (value?: string | null) => (value ? dayjs(value).format("DD/MM/YYYY") : "—");
 
 export const STEP_STATUS: Record<string, string> = {

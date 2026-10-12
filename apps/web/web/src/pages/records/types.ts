@@ -2,22 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export type RecordStatus = "draft" | "pending_l1" | "pending_l2" | "returned" | "approved" | "archived";
+import type { DocKind, DocStep } from "../../api/documents";
 
-/** Tab trạng thái ở đầu trang ("Đang duyệt" gộp chờ duyệt cấp 1 và cấp 2). */
-export type StatusTab = "all" | "draft" | "reviewing" | "returned" | "approved" | "archived";
+/** Trạng thái hiển thị, gộp từ trạng thái gốc của từng loại chứng từ. */
+export type RecordStatus = "draft" | "pending" | "returned" | "approved" | "closed";
 
-export type RecordType = "incident" | "release" | "calibration" | "purchase" | "operation";
+/** Tab trạng thái ở đầu trang. "Đã đóng" = từ chối hoặc hủy. */
+export type StatusTab = "all" | "draft" | "reviewing" | "returned" | "approved" | "closed";
+
+export type RecordType = DocKind;
 
 export type TimeRange = "7d" | "30d" | "90d" | "all";
-
-export type Sla =
-  | { kind: "remaining"; label: string }
-  | { kind: "overdue"; label: string }
-  | { kind: "ontime" }
-  | { kind: "none" };
-
-export type RecordVersion = { version: number; note: string; at: string };
 
 export type EofficeRecord = {
   id: string;
@@ -25,20 +20,19 @@ export type EofficeRecord = {
   title: string;
   type: RecordType;
   status: RecordStatus;
+  /** Nhãn trạng thái ("Chờ duyệt cấp 2", "Chờ xác nhận"...). */
+  statusLabel: string;
   submitter: string;
-  /** Thời điểm nộp hiển thị trong quy trình ("06/10 07:12"). */
-  submittedLabel?: string;
-  approverL1: string;
-  approverL2: string;
-  sla: Sla;
-  /** ISO 8601, dùng để lọc thời gian. */
+  submitterId?: string;
+  unit: string;
+  amount: string;
+  /** ISO 8601 — lúc lập. */
+  createdAt: string;
+  /** ISO 8601, dùng để lọc thời gian và sắp xếp. */
   updatedAt: string;
-  updatedLabel: string;
-  /** Lần hoạt động gần nhất (ISO), nếu khác updatedAt — ví dụ thời điểm đưa vào lưu trữ. Bộ lọc "Thời gian" dùng trường này. */
-  activityAt?: string;
-  versions: RecordVersion[];
-  /** Mã băm niêm phong sổ cái (không có với bản nháp). */
-  ledgerHash?: string;
+  steps: DocStep[];
+  /** Trang chi tiết. */
+  to: string;
 };
 
 export type StepState = "done" | "current" | "returned" | "pending";
