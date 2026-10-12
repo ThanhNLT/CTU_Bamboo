@@ -44,13 +44,15 @@ test("cảnh báo khi trao đổi có số điện thoại, nhật ký kiểm to
   await expect(dialog.getByText("Nội dung có dữ liệu cá nhân").last()).toBeVisible();
   await expect(dialog.getByText("Số điện thoại")).toBeVisible();
   await dialog.getByRole("button", { name: "Gửi bản đã che" }).click();
-  await expect(page.getByText(`Nhà cung cấp mới: chị Lan 0912 *** ${STAMP.slice(3)}`)).toBeVisible();
+  await expect(dialog).toHaveCount(0);
+  // Khớp chính xác: hộp thoại đang đóng vẫn chứa "Bản đã che: …".
+  await expect(page.getByText(`Nhà cung cấp mới: chị Lan 0912 *** ${STAMP.slice(3)}`, { exact: true })).toBeVisible();
 
   // Vẫn gửi nguyên văn: trao đổi giữ số, nhật ký kiểm toán thì không.
   await box.fill(`Gọi lại giúp em số ${PHONE}`);
   await page.getByRole("button", { name: "Gửi", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Vẫn gửi nguyên văn" }).click();
-  await expect(page.getByText(`Gọi lại giúp em số ${PHONE}`)).toBeVisible();
+  await expect(page.getByText(`Gọi lại giúp em số ${PHONE}`, { exact: true })).toBeVisible();
   await logout(page);
 
   // Giám đốc tài chính (quyền audit.read) xem nhật ký: dữ liệu trước/sau đã che.
