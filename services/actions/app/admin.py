@@ -669,6 +669,7 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
                     row_id = handler(a, row)
                 if kind == "person" and row.get("username"):
                     created.append({"row": line, "person_id": row_id, "username": str(row["username"]).strip(),
+                                    "full_name": str(row.get("full_name") or "").strip(),
                                     "email": str(row.get("email") or "").strip() or None})
             except ActionError as exc:
                 errors.append({"row": line, "message": exc.message})
