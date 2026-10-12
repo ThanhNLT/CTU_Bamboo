@@ -549,7 +549,8 @@ def build(conn: psycopg.Connection) -> dict:
             }, {
                 "name": "AdminImportCreated",
                 "fields": [{"name": "row", "type": "Int!"}, {"name": "person_id", "type": "uuid!"},
-                           {"name": "username", "type": "String!"}, {"name": "email", "type": "String"}],
+                           {"name": "full_name", "type": "String!"}, {"name": "username", "type": "String!"},
+                           {"name": "email", "type": "String"}],
             }, {
                 "name": "AdminImportResult",
                 "fields": [{"name": "kind", "type": "AdminEntity!"}, {"name": "total", "type": "Int!"},
