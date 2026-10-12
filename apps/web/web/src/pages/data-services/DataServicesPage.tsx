@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Dịch vụ dữ liệu (Dữ liệu số): danh mục DaaS dạng master–detail. Trái ~40% danh sách thẻ, phải ~60% chi tiết;
-// trên màn hình lớn hai cột cao bằng nhau và cuộn độc lập. Dữ liệu minh họa ở ./mock.
+// trên màn hình lớn hai cột cao bằng nhau và cuộn độc lập. Mở thẳng một tập: ?dataset=<id>. Dữ liệu minh họa ở ./mock.
 import { App } from "antd";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { primaryButtonClass } from "../../components/ui";
 import { DataFilterBar } from "./components/DataFilterBar";
 import { DatasetDetailPanel } from "./components/DatasetDetailPanel";
@@ -19,7 +20,11 @@ export const DataServicesPage = () => {
   const { message } = App.useApp();
   const [query, setQuery] = useState("");
   const [domain, setDomain] = useState<DomainFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | undefined>(MOCK_DATASETS[0]?.id);
+  const [params] = useSearchParams();
+  // ?dataset=ds-approval-daily (vd. từ Phả hệ dữ liệu) → chọn sẵn tập đó.
+  const [selectedId, setSelectedId] = useState<string | undefined>(
+    () => MOCK_DATASETS.find((d) => d.id === params.get("dataset"))?.id ?? MOCK_DATASETS[0]?.id,
+  );
   const [requesting, setRequesting] = useState(false);
 
   const visible = useMemo(() => filterDatasets(MOCK_DATASETS, query, domain), [query, domain]);
