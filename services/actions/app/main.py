@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from psycopg_pool import ConnectionPool
 
-from . import attachments, audit, auth, config, forms, hr, ic, pii_guard, search
+from . import admin, attachments, audit, auth, config, forms, hr, hr_account, ic, pii_guard, search
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
@@ -130,6 +130,7 @@ HANDLERS = {
     **ic.HANDLERS,
     **audit.HANDLERS,
     "check_pii": pii_guard.check_pii,
+    **admin.HANDLERS,
 }
 
 
@@ -152,6 +153,13 @@ def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | No
         raise ActionError("Kho lưu trữ tệp tạm thời không truy cập được", "storage-unavailable", 503) from exc
 
 
+def _keycloak_users(settings: config.Settings) -> hr_account.KeycloakUsers | None:
+    """Tạo tài khoản khi quản trị thêm người (ADR #44): cần secret client bms-provisioner."""
+    if not settings.keycloak_provisioner_secret:
+        return None
+    return hr_account.KeycloakUsers(settings.keycloak_url, "bms-provisioner", settings.keycloak_provisioner_secret)
+
+
 def _pii_cipher() -> PiiCipher | None:
     """Khóa transit `pii` đọc bằng AppRole của dịch vụ; ngoài compose (không có OpenBao) thì không mã hóa được."""
     addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
@@ -165,7 +173,8 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
         flowable=FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password, timeout=5.0),
         storage=Storage(settings), clamav_host=settings.clamav_host, clamav_port=settings.clamav_port,
         search=search.Meili(settings.meili_url, settings.meili_search_key, timeout=5.0),
-        search_index=settings.meili_index, gotenberg_url=settings.gotenberg_url, pii=_pii_cipher())
+        search_index=settings.meili_index, gotenberg_url=settings.gotenberg_url, pii=_pii_cipher(),
+        users=_keycloak_users(settings))
     verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
                                                  set(settings.keycloak_clients))
 

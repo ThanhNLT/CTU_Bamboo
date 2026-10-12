@@ -76,11 +76,14 @@ class KeycloakUsers:
         resp.raise_for_status()
         return next((u for u in resp.json() if u["username"] == username), None)
 
-    def create(self, request_id: str, username: str, full_name: str, email: str | None, password: str) -> str:
-        """Tạo tài khoản, trả về id (`sub`). Đã có tài khoản do chính hồ sơ này tạo thì dùng lại."""
+    def create(self, request_id: str, username: str, full_name: str, email: str | None, password: str,
+               attribute: str = ATTRIBUTE) -> str:
+        """Tạo tài khoản, trả về id (`sub`). Đã có tài khoản do chính hồ sơ này tạo thì dùng lại.
+
+        `attribute` đánh dấu nguồn tạo: hồ sơ tiếp nhận (mặc định) hoặc người do quản trị thêm (ADR #44)."""
         first, last = split_name(full_name)
         body = {"username": username, "enabled": True, "firstName": first, "lastName": last,
-                "attributes": {ATTRIBUTE: [request_id]},
+                "attributes": {attribute: [request_id]},
                 "credentials": [{"type": "password", "value": password, "temporary": True}],
                 "requiredActions": ["UPDATE_PASSWORD"]}
         if email:
@@ -91,7 +94,7 @@ class KeycloakUsers:
         if resp.status_code != 409:
             resp.raise_for_status()
         existing = self.find(username)
-        if existing is None or existing.get("attributes", {}).get(ATTRIBUTE) != [request_id]:
+        if existing is None or existing.get("attributes", {}).get(attribute) != [request_id]:
             raise AccountConflict("Tên đăng nhập hoặc email đã thuộc một tài khoản khác")
         self.http.put(f"/users/{existing['id']}/reset-password", headers=self._headers(),
                       json={"type": "password", "value": password, "temporary": True}).raise_for_status()

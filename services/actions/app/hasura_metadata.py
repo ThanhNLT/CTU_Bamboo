@@ -30,9 +30,15 @@ ACCOUNT_ROLE = "account"        # đã đăng nhập, chưa chọn tenant: chỉ
 ME = "X-Hasura-User-Id"
 TENANT = {"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}
 
-# Bảng chỉ dành cho quản trị (chưa mở cho role user).
-ADMIN_ONLY = {("core", "role"), ("core", "role_permission"), ("core", "role_grant"),
-              ("core", "team"), ("core", "team_member"), ("core", "tenant_relation")}
+# Bảng chỉ dành cho quản trị nền tảng (chưa mở cho role user).
+ADMIN_ONLY = {("core", "tenant_relation")}
+
+# Người có quyền quản trị trong tenant (core.v_admin, ADR #44) xem được vai trò, cấp quyền, nhóm.
+IS_ADMIN = {"_exists": {"_table": {"schema": "core", "name": "v_admin"},
+                        "_where": {"_and": [{"person_id": {"_eq": ME}},
+                                            {"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}]}}}
+ADMIN_READ = {("core", "role"), ("core", "role_permission"), ("core", "role_grant"),
+              ("core", "team"), ("core", "team_member")}
 
 # Computed field can_read: bảng -> hàm (schema, name).
 CAN_READ = {
@@ -78,6 +84,8 @@ SELECT_FILTER = {
     # Nhật ký: người có quyền audit.read trong tenant (audit.v_reader).
     ("audit", "log"): {"_and": [TENANT, {"readers": {"person_id": {"_eq": ME}}}]},
     ("audit", "v_reader"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    ("core", "v_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    **{key: {"_and": [TENANT, IS_ADMIN]} for key in ADMIN_READ},
     ("proc", "purchase_request_item"): {"_and": [TENANT, {"request": {"can_read": {"_eq": True}}}]},
     ("ic", "ic_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
     ("proc", "purchase_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
@@ -405,14 +413,37 @@ def build(conn: psycopg.Connection) -> dict:
             _action("retry_onboarding_account", "mutation", [("request_id", "uuid!"), ("username", "String")],
                     "OnboardingActionResult!", [ROLE, ADMIN_ROLE],
                     "Tạo lại tài khoản đăng nhập khi lần trước lỗi (có thể đổi tên đăng nhập)"),
+            _action("admin_save", "mutation", [("entity", "AdminEntity!"), ("data", "jsonb!")],
+                    "AdminSaveResult!", [ROLE, ADMIN_ROLE],
+                    "Thêm / sửa đơn vị, vị trí, người, bổ nhiệm, vai trò, cấp quyền, danh mục, dữ liệu chủ (ADR #44)"),
+            _action("admin_close", "mutation", [("entity", "AdminEntity!"), ("id", "uuid!"), ("end_date", "date")],
+                    "AdminSaveResult!", [ROLE, ADMIN_ROLE],
+                    "Ngừng đơn vị / vị trí, kết thúc bổ nhiệm, thu hồi cấp quyền (hết ngày end_date hoặc ngay)"),
+            _action("create_person_accounts", "mutation", [("accounts", "[AdminAccountInput!]!")],
+                    "[AdminAccountResult!]!", [ROLE, ADMIN_ROLE],
+                    "Tạo hoặc liên kết tài khoản đăng nhập cho người; mật khẩu tạm chỉ trả về một lần", timeout=60),
+            _action("admin_import", "mutation",
+                    [("kind", "AdminEntity!"), ("file_name", "String!"), ("content_base64", "String!"),
+                     ("dry_run", "Boolean!")],
+                    "AdminImportResult!", [ROLE, ADMIN_ROLE],
+                    "Nhập hàng loạt từ CSV/XLSX: xem trước lỗi từng dòng; chỉ ghi khi mọi dòng hợp lệ", timeout=120),
+            _action("admin_import_template", "query", [("kind", "AdminEntity!")], "AdminTemplate!",
+                    [ROLE, ADMIN_ROLE], "Tệp mẫu XLSX để nhập hàng loạt"),
         ],
         "custom_types": {
             "input_objects": [{"name": "IcOrderLot",
-                               "fields": [{"name": "line_id", "type": "uuid!"}, {"name": "lot_id", "type": "uuid!"}]}],
+                               "fields": [{"name": "line_id", "type": "uuid!"}, {"name": "lot_id", "type": "uuid!"}]},
+                              {"name": "AdminAccountInput",
+                               "fields": [{"name": "person_id", "type": "uuid!"}, {"name": "username", "type": "String!"},
+                                          {"name": "email", "type": "String"},
+                                          {"name": "link_existing", "type": "Boolean"}]}],
             "enums": [{"name": "ApprovalDecision",
                        "values": [{"value": "APPROVE"}, {"value": "REJECT"}, {"value": "RETURN"}]},
                       {"name": "SearchKind",
-                       "values": [{"value": "purchase_request"}, {"value": "attachment"}]}],
+                       "values": [{"value": "purchase_request"}, {"value": "attachment"}]},
+                      {"name": "AdminEntity",
+                       "values": [{"value": v} for v in ("org_unit", "position", "person", "assignment", "role",
+                                                         "role_grant", "catalog_item", "partner", "item")]}],
             "objects": [{
                 "name": "AccountTenant",
                 "fields": [{"name": "tenant_id", "type": "uuid!"}, {"name": "tenant_code", "type": "String!"},
@@ -505,6 +536,30 @@ def build(conn: psycopg.Connection) -> dict:
             }, {
                 "name": "PiiCheck",
                 "fields": [{"name": "masked_text", "type": "String!"}, {"name": "entities", "type": "[PiiEntity!]!"}],
+            }, {
+                "name": "AdminSaveResult",
+                "fields": [{"name": "entity", "type": "AdminEntity!"}, {"name": "id", "type": "uuid!"}],
+            }, {
+                "name": "AdminAccountResult",
+                "fields": [{"name": "person_id", "type": "uuid!"}, {"name": "username", "type": "String!"},
+                           {"name": "temporary_password", "type": "String"}, {"name": "error", "type": "String"}],
+            }, {
+                "name": "AdminImportError",
+                "fields": [{"name": "row", "type": "Int!"}, {"name": "message", "type": "String!"}],
+            }, {
+                "name": "AdminImportCreated",
+                "fields": [{"name": "row", "type": "Int!"}, {"name": "person_id", "type": "uuid!"},
+                           {"name": "username", "type": "String!"}, {"name": "email", "type": "String"}],
+            }, {
+                "name": "AdminImportResult",
+                "fields": [{"name": "kind", "type": "AdminEntity!"}, {"name": "total", "type": "Int!"},
+                           {"name": "valid", "type": "Int!"}, {"name": "applied", "type": "Boolean!"},
+                           {"name": "dry_run", "type": "Boolean!"},
+                           {"name": "errors", "type": "[AdminImportError!]!"},
+                           {"name": "created", "type": "[AdminImportCreated!]!"}],
+            }, {
+                "name": "AdminTemplate",
+                "fields": [{"name": "file_name", "type": "String!"}, {"name": "content_base64", "type": "String!"}],
             }, {
                 "name": "AuditChainProblem",
                 "fields": [{"name": "seq", "type": "Int"}, {"name": "log_id", "type": "Int"},
