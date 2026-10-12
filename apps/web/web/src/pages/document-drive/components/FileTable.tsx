@@ -19,7 +19,7 @@ const columns: TableColumnsType<DriveFile> = [
     render: (name: string, f) => (
       <span className="flex min-w-0 items-center gap-2.5">
         <FileTypeBadge name={name} />
-        <span className={cn("truncate", f.scan === "blocked" ? "text-muted" : "text-ink")} title={name}>{name}</span>
+        <span className={cn("truncate", f.scan === "clean" ? "text-ink" : "text-muted")} title={name}>{name}</span>
       </span>
     ),
   },
@@ -35,10 +35,17 @@ const columns: TableColumnsType<DriveFile> = [
   { title: "Kiểm dịch", dataIndex: "scan", width: 160, render: (v: DriveFile["scan"]) => <ScanStatus result={v} /> },
 ];
 
-const FileCardGrid = ({ files }: { files: DriveFile[] }) => (
+const FileCardGrid = ({ files, onOpen }: { files: DriveFile[]; onOpen: (f: DriveFile) => void }) => (
   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
     {files.map((f) => (
-      <div key={f.id} className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 hover:border-bamboo-200 hover:bg-bamboo-50/30">
+      <button
+        type="button"
+        key={f.id}
+        onClick={() => onOpen(f)}
+        disabled={f.scan !== "clean"}
+        title={f.scan === "clean" ? `Tải ${f.name}` : undefined}
+        className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 text-left hover:border-bamboo-200 hover:bg-bamboo-50/30 disabled:cursor-not-allowed"
+      >
         <div className="flex items-start justify-between gap-2">
           <FileTypeBadge name={f.name} size="lg" />
           <ScanStatus result={f.scan} />
@@ -49,13 +56,20 @@ const FileCardGrid = ({ files }: { files: DriveFile[] }) => (
             {f.owner} · {f.updatedLabel} · {formatBytes(f.bytes)}
           </div>
         </div>
-      </div>
+      </button>
     ))}
   </div>
 );
 
-/** Khối "Tệp": bảng (Danh sách) hoặc thẻ (Lưới), kèm tổng số tệp và dung lượng. */
-export const FileTable = ({ files, view }: { files: DriveFile[]; view: DriveView }) => {
+/** Khối "Tệp": bảng (Danh sách) hoặc thẻ (Lưới), kèm tổng số tệp và dung lượng. Bấm tệp sạch để tải về. */
+export const FileTable = ({
+  files, view, onOpen, emptyText,
+}: {
+  files: DriveFile[];
+  view: DriveView;
+  onOpen: (f: DriveFile) => void;
+  emptyText: string;
+}) => {
   const total = files.reduce((sum, f) => sum + (f.bytes ?? 0), 0);
   return (
     <Panel
@@ -72,11 +86,13 @@ export const FileTable = ({ files, view }: { files: DriveFile[]; view: DriveView
             dataSource={files}
             pagination={false}
             scroll={{ x: 720 }}
-            rowClassName={(f) => (f.scan === "blocked" ? "cursor-not-allowed" : "cursor-pointer")}
+            rowClassName={(f) => (f.scan === "clean" ? "cursor-pointer" : "cursor-not-allowed")}
+            onRow={(f) => ({ onClick: () => f.scan === "clean" && onOpen(f) })}
+            locale={{ emptyText }}
           />
         </ConfigProvider>
       ) : (
-        <FileCardGrid files={files} />
+        files.length ? <FileCardGrid files={files} onOpen={onOpen} /> : <p className="py-6 text-center text-[13px] text-muted">{emptyText}</p>
       )}
     </Panel>
   );
