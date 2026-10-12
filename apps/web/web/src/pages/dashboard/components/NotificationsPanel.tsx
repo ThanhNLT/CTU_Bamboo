@@ -2,27 +2,38 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from "react";
+import { useNavigate } from "react-router";
 import { cn } from "../../../utils/cn";
 import type { NotificationItem } from "../types";
 import { Panel, PanelLink, TONE_DOT } from "../../../components/ui";
 
-export const NotificationsPanel = ({ items, limit = 3 }: { items: NotificationItem[]; limit?: number }) => {
-  const [list, setList] = useState(items);
-  const unread = list.filter((n) => !n.read).length;
-  const markAllRead = () => setList((prev) => prev.map((n) => ({ ...n, read: true })));
-  const markRead = (id: string) => setList((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+/** Thông báo mới nhất; bấm vào thì đánh dấu đã đọc và mở chứng từ liên quan. */
+export const NotificationsPanel = ({
+  items, unread, onRead, limit = 3,
+}: {
+  items: NotificationItem[];
+  unread: number;
+  /** Không truyền `ids` = đọc hết. */
+  onRead: (ids?: string[]) => Promise<void>;
+  limit?: number;
+}) => {
+  const navigate = useNavigate();
+  const open = async (n: NotificationItem) => {
+    if (!n.read) await onRead([n.id]);
+    if (n.to) navigate(n.to);
+  };
 
   return (
     <Panel
       title="Thông báo"
-      extra={<PanelLink onClick={unread > 0 ? markAllRead : undefined}>Đọc hết</PanelLink>}
+      extra={<PanelLink onClick={unread > 0 ? () => void onRead() : undefined}>Đọc hết</PanelLink>}
       bodyClassName="px-5 pb-5 pt-1"
     >
+      {items.length === 0 && <p className="py-4 text-center text-[13px] text-muted">Chưa có thông báo.</p>}
       <ul className="m-0 list-none space-y-4 p-0">
-        {list.slice(0, limit).map((n) => (
+        {items.slice(0, limit).map((n) => (
           <li key={n.id}>
-            <button type="button" onClick={() => markRead(n.id)} className="group flex w-full gap-2.5 text-left">
+            <button type="button" onClick={() => void open(n)} className="group flex w-full gap-2.5 text-left">
               {/* Chưa đọc: chấm đặc theo mức độ · Đã đọc: vòng rỗng */}
               <span
                 className={cn(

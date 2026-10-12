@@ -49,8 +49,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Quy trình số",
     items: [
       { key: "records", label: "Hồ sơ", to: "/p/records", icon: FileText },
-      // Dữ liệu minh họa; nối với wf_v_inbox_aggregate khi có API đếm.
-      { key: "inbox", label: "Hộp việc", to: "/p/tasks", icon: Inbox, badge: 5 },
+      // Số việc chờ lấy từ wf_v_inbox (AppSider → useInboxCount).
+      { key: "inbox", label: "Hộp việc", to: "/p/tasks", icon: Inbox },
       { key: "process", label: "Thiết kế quy trình", to: "/p/process", icon: Route },
       { key: "purchase", label: "Đề nghị mua sắm", to: "/p/documents", icon: ShoppingCart },
       { key: "ic-orders", label: "Đơn hàng nội bộ", to: "/p/ic-orders", icon: ArrowLeftRight },

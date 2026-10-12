@@ -4,23 +4,10 @@
 
 import { RefreshCw, SearchX } from "lucide-react";
 import { cn } from "../../../utils/cn";
-import type { EofficeRecord, Sla } from "../types";
+import { DOC_KIND_LABEL } from "../../../api/documents";
+import type { EofficeRecord } from "../types";
 import { Pagination } from "./Pagination";
 import { RecordStatusBadge } from "./RecordStatusBadge";
-
-const SlaCell = ({ sla }: { sla: Sla }) => {
-  if (sla.kind === "overdue") {
-    return (
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-red-50 px-2 py-0.5 text-[11.5px] font-medium text-red-700">
-        <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
-        {sla.label}
-      </span>
-    );
-  }
-  if (sla.kind === "remaining") return <span className="whitespace-nowrap text-ink">{sla.label}</span>;
-  if (sla.kind === "ontime") return <span className="text-muted">Đúng hạn</span>;
-  return <span className="text-muted" aria-label="Chưa áp dụng">—</span>;
-};
 
 const TH = "px-3 pb-2 pt-1 text-left text-[12px] font-medium text-muted";
 
@@ -29,7 +16,7 @@ const TH = "px-3 pb-2 pt-1 text-left text-[12px] font-medium text-muted";
  * Mũi tên lên/xuống trên một dòng chuyển hồ sơ đang chọn.
  */
 export const RecordsTable = ({
-  rows, total, selectedId, onSelect, page, pageSize, onPageChange, pendingUpdates, onRefresh, className,
+  rows, total, selectedId, onSelect, page, pageSize, onPageChange, formatUpdated, loading, className,
 }: {
   rows: EofficeRecord[];
   total: number;
@@ -38,8 +25,9 @@ export const RecordsTable = ({
   page: number;
   pageSize: number;
   onPageChange: (p: number) => void;
-  pendingUpdates: number;
-  onRefresh: () => void;
+  /** ISO → "10 phút trước". */
+  formatUpdated: (iso: string) => string;
+  loading?: boolean;
   className?: string;
 }) => {
   const focusRow = (index: number) => {
@@ -58,15 +46,10 @@ export const RecordsTable = ({
         <h2 className="text-[15px] font-semibold text-ink">
           <span className="tabular-nums">{total}</span> hồ sơ
         </h2>
-        {pendingUpdates > 0 && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-bamboo-100 bg-bamboo-50 px-3 text-[11.5px] font-medium text-bamboo-700 transition-colors hover:bg-bamboo-100"
-          >
-            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-            Có {pendingUpdates} cập nhật mới · Làm mới
-          </button>
+        {loading && (
+          <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted">
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden /> Đang tải
+          </span>
         )}
       </header>
 
@@ -83,7 +66,7 @@ export const RecordsTable = ({
               <tr>
                 <th scope="col" className={TH}>Hồ sơ</th>
                 <th scope="col" className={cn(TH, "w-[160px]")}>Trạng thái</th>
-                <th scope="col" className={cn(TH, "w-[150px]")}>Hạn SLA</th>
+                <th scope="col" className={cn(TH, "w-[150px] text-right")}>Số tiền</th>
                 <th scope="col" className={cn(TH, "w-[110px]")}>Cập nhật</th>
               </tr>
             </thead>
@@ -118,12 +101,12 @@ export const RecordsTable = ({
                     <td className={cn(td, "rounded-l-xl")}>
                       <div className="truncate font-semibold text-ink">{r.title}</div>
                       <div className="mt-0.5 truncate text-[11.5px] text-muted">
-                        <span className="font-mono tracking-tight">{r.code}</span> · {r.submitter}
+                        <span className="font-mono tracking-tight">{r.code}</span> · {DOC_KIND_LABEL[r.type]} · {r.submitter}
                       </div>
                     </td>
-                    <td className={td}><RecordStatusBadge status={r.status} /></td>
-                    <td className={td}><SlaCell sla={r.sla} /></td>
-                    <td className={cn(td, "rounded-r-xl whitespace-nowrap text-muted")}>{r.updatedLabel}</td>
+                    <td className={td}><RecordStatusBadge status={r.status} label={r.statusLabel} /></td>
+                    <td className={cn(td, "whitespace-nowrap text-right tabular-nums text-ink")}>{r.amount}</td>
+                    <td className={cn(td, "rounded-r-xl whitespace-nowrap text-muted")}>{formatUpdated(r.updatedAt)}</td>
                   </tr>
                 );
               })}

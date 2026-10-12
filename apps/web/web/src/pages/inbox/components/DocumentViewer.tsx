@@ -2,8 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ChevronLeft, ChevronRight, ImageIcon, Minus, Plus, ShieldAlert, ShieldCheck } from "lucide-react";
+import { App } from "antd";
+import {
+  ChevronLeft, ChevronRight, Download, FileIcon, ImageIcon, Loader2, Minus, Plus, ShieldAlert, ShieldCheck,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { request } from "../../../api/client";
 import { cn } from "../../../utils/cn";
 import type { Attachment, DocPreview } from "../types";
 
@@ -41,9 +45,11 @@ const PaperPage = ({ preview, page }: { preview: DocPreview; page: number }) => 
   </div>
 );
 
-const ImagePreview = ({ name }: { name: string }) => (
+const ImagePreview = ({ name, kind }: { name: string; kind: Attachment["kind"] }) => (
   <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-lg bg-linear-to-br from-bamboo-50 to-canvas text-muted">
-    <ImageIcon className="h-8 w-8" strokeWidth={1.25} aria-hidden />
+    {kind === "image"
+      ? <ImageIcon className="h-8 w-8" strokeWidth={1.25} aria-hidden />
+      : <FileIcon className="h-8 w-8" strokeWidth={1.25} aria-hidden />}
     <span className="text-[11px]">{name}</span>
   </div>
 );
@@ -52,12 +58,31 @@ const toolBtn =
   "grid h-7 w-7 place-items-center rounded-full text-body transition-colors hover:bg-canvas disabled:cursor-default disabled:opacity-40 " +
   "focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
-/** Tệp đính kèm (dạng tab) + kết quả kiểm dịch + vùng xem trước có thanh zoom/trang nổi. */
+/** Xin đường dẫn tải có thời hạn (máy chủ kiểm quyền xem và trạng thái kiểm dịch) rồi mở ở tab mới. */
+const useDownload = () => {
+  const { message } = App.useApp();
+  return async (attachmentId: string) => {
+    try {
+      const { get_download_url } = await request<{ get_download_url: { url: string } }>(
+        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`, { a: attachmentId });
+      window.open(get_download_url.url, "_blank", "noopener");
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
+};
+
+/**
+ * Tệp đính kèm (dạng tab) + kết quả kiểm dịch + vùng xem trước có thanh zoom/trang nổi.
+ * Trang đầu dựng từ thông tin chứng từ (máy chủ chưa dựng ảnh trang); nội dung thật mở bằng nút Tải tệp.
+ * Chứng từ không có tệp thì chỉ hiện trang đầu.
+ */
 export const DocumentViewer = ({ attachments, preview, className }: {
   attachments: Attachment[];
   preview: DocPreview;
   className?: string;
 }) => {
+  const download = useDownload();
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState(100);
   const [page, setPage] = useState(1);
@@ -77,7 +102,7 @@ export const DocumentViewer = ({ attachments, preview, className }: {
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Tệp đính kèm">
         {attachments.map((a, i) => (
           <button
-            key={a.name}
+            key={a.id}
             type="button"
             role="tab"
             aria-selected={i === active}
@@ -96,28 +121,52 @@ export const DocumentViewer = ({ attachments, preview, className }: {
         ))}
       </div>
 
+      {attachments.length === 0 && <p className="m-0 text-[12px] text-muted">Chứng từ không có tệp đính kèm.</p>}
+
       {file && (
         <div className="mt-3 flex items-center gap-1.5 text-[12px] text-muted">
           {file.scan === "clean" ? (
             <ShieldCheck className="h-4 w-4 text-bamboo-600" strokeWidth={1.75} aria-hidden />
+          ) : file.scan === "pending" ? (
+            <Loader2 className="h-4 w-4 animate-spin text-amber-600" strokeWidth={1.75} aria-hidden />
           ) : (
             <ShieldAlert className="h-4 w-4 text-red-600" strokeWidth={1.75} aria-hidden />
           )}
-          <span>
-            {file.scan === "clean" ? "Sạch (ClamAV)" : "Bị chặn · mã độc"} · SHA-256{" "}
-            <span className="font-mono text-[11px]" title={file.sha256}>{shortHash(file.sha256)}</span>
+          <span className="min-w-0 flex-1 truncate">
+            {file.scan === "clean" ? "Sạch (ClamAV)" : file.scan === "pending" ? "Đang kiểm dịch" : "Bị chặn · mã độc"}
+            {file.sha256 && (
+              <>
+                {" "}· SHA-256{" "}
+                <span className="font-mono text-[11px]" title={file.sha256}>{shortHash(file.sha256)}</span>
+              </>
+            )}
           </span>
+          {file.scan === "clean" && (
+            <button
+              type="button"
+              onClick={() => void download(file.id)}
+              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-black/[0.045] px-3 text-[12px] font-medium text-ink hover:bg-black/[0.07] focus-visible:outline-2 focus-visible:outline-bamboo-500"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden /> Tải tệp
+            </button>
+          )}
         </div>
       )}
 
       <div className="relative mt-3 min-h-[420px] flex-1 overflow-hidden rounded-3xl bg-[#eef1ee]">
         <div className="absolute inset-0 overflow-auto px-6 pb-20 pt-6">
-          {file?.scan === "clean" ? (
+          {!file || file.scan === "clean" ? (
             <div
               className="mx-auto rounded-md bg-white p-6 shadow-[0_6px_24px_-6px_rgb(16_24_20/0.18)] transition-[width] duration-200"
               style={{ width: `${(340 * zoom) / 100}px`, maxWidth: zoom <= 100 ? "100%" : undefined }}
             >
-              {file.kind === "pdf" ? <PaperPage preview={preview} page={page} /> : <ImagePreview name={file.name} />}
+              {!file || file.kind === "pdf"
+                ? <PaperPage preview={preview} page={page} />
+                : <ImagePreview name={file.name} kind={file.kind} />}
+            </div>
+          ) : file.scan === "pending" ? (
+            <div className="flex h-full items-center justify-center text-[13px] text-muted">
+              Tệp đang được kiểm dịch, chưa xem được.
             </div>
           ) : (
             <div className="flex h-full items-center justify-center text-[13px] text-red-700">
@@ -126,7 +175,7 @@ export const DocumentViewer = ({ attachments, preview, className }: {
           )}
         </div>
 
-        {file?.scan === "clean" && (
+        {(!file || file.scan === "clean") && (
           <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-line bg-white px-1.5 py-1 shadow-float">
             <button type="button" className={toolBtn} onClick={() => setZoom(ZOOM_STEPS[z - 1])} disabled={z <= 0} aria-label="Thu nhỏ">
               <Minus className="h-3.5 w-3.5" />
@@ -140,9 +189,9 @@ export const DocumentViewer = ({ attachments, preview, className }: {
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
             <span className="whitespace-nowrap text-[12px] tabular-nums text-ink">
-              Trang {page} / {file.pages}
+              Trang {page} / {file?.pages ?? 1}
             </span>
-            <button type="button" className={toolBtn} onClick={() => setPage((p) => p + 1)} disabled={page >= file.pages} aria-label="Trang sau">
+            <button type="button" className={toolBtn} onClick={() => setPage((p) => p + 1)} disabled={page >= (file?.pages ?? 1)} aria-label="Trang sau">
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>

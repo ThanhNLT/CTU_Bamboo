@@ -23,6 +23,8 @@ export type DueLevel = "overdue" | "urgent" | "ok";
 
 export type TaskItem = {
   code: string;
+  /** Trang mở khi bấm (Hộp việc chọn sẵn việc này). */
+  to: string;
   title: string;
   dueLabel: string;
   dueLevel: DueLevel;
@@ -30,22 +32,24 @@ export type TaskItem = {
   dueDay: string;
 };
 
-export type RecordStatus = "pending_l1" | "returned" | "draft" | "approved" | "archived";
-
-/** Tầng lưu trữ dữ liệu của hồ sơ. */
-export type DataTier = "hot" | "warm" | "cold";
-
 export type RecentRecord = {
   code: string;
   title: string;
-  status: RecordStatus;
+  /** Loại chứng từ ("Đề nghị mua sắm", ...). */
+  kind: string;
+  statusLabel: string;
+  tone: Tone;
+  /** Đã kết thúc (từ chối / hủy): hiện ổ khóa thay cho chấm màu. */
+  locked?: boolean;
   updatedAt: string;
-  tier: DataTier;
+  to: string;
 };
 
 export type NotificationItem = {
   id: string;
   title: string;
+  /** Trang chứng từ liên quan (nếu có). */
+  to?: string;
   time: string;
   source?: string;
   tone: Tone;

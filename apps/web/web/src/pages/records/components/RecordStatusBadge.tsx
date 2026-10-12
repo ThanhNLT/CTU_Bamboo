@@ -15,8 +15,8 @@ const PILL: Record<string, string> = {
   neutral: "bg-canvas text-body",
 };
 
-/** Trạng thái hồ sơ: chấm màu (hoặc ổ khóa khi lưu trữ) + chữ. `pill` dùng ở khung chi tiết. */
-export const RecordStatusBadge = ({ status, pill = false }: { status: RecordStatus; pill?: boolean }) => {
+/** Trạng thái hồ sơ: chấm màu (hoặc ổ khóa khi đã đóng) + chữ. `pill` dùng ở khung chi tiết. */
+export const RecordStatusBadge = ({ status, label, pill = false }: { status: RecordStatus; label: string; pill?: boolean }) => {
   const v = STATUS_VIEW[status];
   return (
     <span
@@ -30,7 +30,7 @@ export const RecordStatusBadge = ({ status, pill = false }: { status: RecordStat
       ) : (
         <Dot tone={v.tone} size="md" />
       )}
-      {v.label}
+      {label}
     </span>
   );
 };

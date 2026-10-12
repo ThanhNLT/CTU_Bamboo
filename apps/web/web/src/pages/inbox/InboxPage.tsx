@@ -4,10 +4,14 @@
 
 // Hộp việc (Quy trình số): trái ~30% danh sách việc theo hạn SLA; phải ~70% gồm đầu việc, trình xem tệp
 // (~65%) và cột widget (~35%: Thông tin, Gợi ý của trợ lý, Ý kiến & thao tác). Phím J/K chuyển việc.
-// ?code=HS-... trên URL chọn sẵn một việc (liên kết từ Trang chủ, trang Hồ sơ). Dữ liệu minh họa ở ./mock.
-import { App } from "antd";
+// ?code=PR-... trên URL chọn sẵn một việc (liên kết từ Trang chủ, trang Hồ sơ). Dữ liệu thật: ./useInboxTasks;
+// quyết định gọi Action act_on_task (như ActModal).
+import { App, Spin } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
+import { request } from "../../api/client";
+import { useSession } from "../../auth/useSession";
+import { ACT_ON_TASK } from "../purchase-requests/queries";
 import { ActionWidget } from "./components/ActionWidget";
 import { AiSuggestionWidget } from "./components/AiSuggestionWidget";
 import { DocumentViewer } from "./components/DocumentViewer";
@@ -15,13 +19,13 @@ import { InboxHeader } from "./components/InboxHeader";
 import { InfoWidget } from "./components/InfoWidget";
 import { TaskDetailHeader } from "./components/TaskDetailHeader";
 import { TaskSidebar } from "./components/TaskSidebar";
-import { MOCK_INITIAL_CODE, MOCK_ME, MOCK_TASKS } from "./mock";
 import type { Decision, InboxScope, InboxTask } from "./types";
+import { SLA_HOURS, useInboxTasks } from "./useInboxTasks";
 
-const DECISION_TEXT: Record<Decision, { verb: string; done: string }> = {
-  approve: { verb: "Duyệt", done: "Đã duyệt" },
-  return: { verb: "Trả lại", done: "Đã trả lại" },
-  reject: { verb: "Từ chối", done: "Đã từ chối" },
+const DECISION_TEXT: Record<Decision, { verb: string; done: string; api: "APPROVE" | "RETURN" | "REJECT" }> = {
+  approve: { verb: "Duyệt", done: "Đã duyệt", api: "APPROVE" },
+  return: { verb: "Trả lại", done: "Đã trả lại", api: "RETURN" },
+  reject: { verb: "Từ chối", done: "Đã từ chối", api: "REJECT" },
 };
 
 const isTyping = (el: EventTarget | null) =>
@@ -30,15 +34,19 @@ const isTyping = (el: EventTarget | null) =>
 export const InboxPage = () => {
   const { message, modal } = App.useApp();
   const [params, setParams] = useSearchParams();
-  const [tasks, setTasks] = useState<InboxTask[]>(MOCK_TASKS);
+  const { tenant } = useSession();
+  const inbox = useInboxTasks();
   const [scope, setScope] = useState<InboxScope>("mine");
+  // Việc vừa quyết định: ẩn ngay, không chờ subscription cập nhật danh sách.
+  const [done, setDone] = useState<Set<string>>(() => new Set());
 
-  const sorted = useMemo(() => [...tasks].sort((a, b) => a.dueAt.localeCompare(b.dueAt)), [tasks]);
-  const mine = useMemo(() => sorted.filter((t) => t.assignee === MOCK_ME), [sorted]);
+  const byDue = (a: InboxTask, b: InboxTask) => a.dueAt.localeCompare(b.dueAt);
+  const mine = useMemo(() => inbox.mine.filter((t) => !done.has(t.taskId)).sort(byDue), [inbox.mine, done]);
+  const sorted = useMemo(() => inbox.team.filter((t) => !done.has(t.taskId)).sort(byDue), [inbox.team, done]);
   const list = scope === "mine" ? mine : sorted;
 
   // Việc đang chọn nằm trên URL (?code=) để chia sẻ/quay lại được; mặc định là việc gấp nhất.
-  const code = params.get("code") ?? MOCK_INITIAL_CODE;
+  const code = params.get("code");
   const index = Math.max(0, list.findIndex((t) => t.code === code));
   const selected = list[index];
 
@@ -83,28 +91,42 @@ export const InboxPage = () => {
         <div className="space-y-1.5 text-[13px]">
           <p className="font-medium text-ink">{task.title}</p>
           {comment && <p className="text-body">Ý kiến: “{comment}”</p>}
+          {task.viaDelegation && <p className="text-body">Bạn đang <b>duyệt thay {task.assignee}</b> theo ủy quyền; lịch sử sẽ ghi rõ.</p>}
           <p className="text-muted">Quyết định được ghi nhật ký kiểm toán và không hoàn tác từ trang này.</p>
         </div>
       ),
       okText: t.verb,
       cancelText: "Hủy",
       okButtonProps: decision === "reject" ? { danger: true } : undefined,
-      onOk: () => {
+      onOk: async () => {
+        try {
+          await request(ACT_ON_TASK, { task: task.taskId, decision: t.api, note: comment || null });
+        } catch (e) {
+          message.error((e as Error).message);
+          return;
+        }
         // Chuyển sang việc kế tiếp (hoặc việc trước nếu đang ở cuối) rồi bỏ việc đã xử lý khỏi danh sách.
         select(list[index + 1] ?? list[index - 1]);
-        setTasks((prev) => prev.filter((x) => x.id !== task.id));
+        setDone((prev) => new Set(prev).add(task.taskId));
         message.success(`${t.done} ${task.code}.`);
       },
     });
   };
 
-  const readOnly = selected && selected.assignee !== MOCK_ME
+  const readOnly = selected && !selected.actionable
     ? `Việc của ${selected.assignee} — bạn chỉ xem, không quyết định thay.`
     : undefined;
 
+  if (inbox.loading && inbox.team.length === 0) {
+    return <div className="flex justify-center py-24"><Spin /></div>;
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
-      <InboxHeader mineCount={mine.length} teamCount={sorted.length} scope={scope} onScopeChange={setScope} />
+      <InboxHeader
+        mineCount={mine.length} teamCount={sorted.length} scope={scope} onScopeChange={setScope}
+        slaHours={SLA_HOURS} error={inbox.error}
+      />
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(240px,3fr)_minmax(0,7fr)]">
         <TaskSidebar
@@ -112,7 +134,7 @@ export const InboxPage = () => {
           tasks={list}
           selectedId={selected?.id}
           onSelect={(id) => select(list.find((t) => t.id === id))}
-          me={MOCK_ME}
+          me={tenant.full_name}
         />
 
         {selected ? (
@@ -123,6 +145,7 @@ export const InboxPage = () => {
               onNext={goNext}
               hasPrev={index > 0}
               hasNext={index < list.length - 1}
+              to={selected.to}
             />
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,65fr)_minmax(260px,35fr)]">
               <DocumentViewer
@@ -143,7 +166,7 @@ export const InboxPage = () => {
           </div>
         ) : (
           <div className="rounded-2xl border border-line bg-white px-6 py-16 text-center text-[13px] text-muted shadow-card">
-            Không còn việc nào. Hết việc rồi!
+            {scope === "mine" ? "Không còn việc nào chờ bạn. Hết việc rồi!" : "Nhóm không còn việc nào đang chờ."}
           </div>
         )}
       </div>

@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { useList } from "@refinedev/core";
 import { Tooltip } from "antd";
+import gql from "graphql-tag";
 import { Globe } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn } from "../../utils/cn";
@@ -11,6 +13,21 @@ import { findActive, NAV_GROUPS, type NavItem } from "./nav";
 import { NavGate } from "./NavGate";
 
 type SiderProps = { collapsed?: boolean; onNavigate?: () => void };
+
+const INBOX_COUNT = gql`
+  query InboxCount($limit: Int, $offset: Int, $order_by: [wf_v_inbox_order_by!], $where: wf_v_inbox_bool_exp) {
+    wf_v_inbox(limit: $limit, offset: $offset, order_by: $order_by, where: $where) { task_id }
+    wf_v_inbox_aggregate(where: $where) { aggregate { count } }
+  }
+`;
+
+/** Số việc chờ người dùng (kể cả việc nhận qua ủy quyền), tự cập nhật. */
+const useInboxCount = () => {
+  const { result } = useList({
+    resource: "wf_v_inbox", pagination: { pageSize: 1 }, meta: { gqlQuery: INBOX_COUNT }, liveMode: "auto",
+  });
+  return result.total ?? 0;
+};
 
 const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; active: boolean } & SiderProps) => {
   const Icon = item.icon;
@@ -52,6 +69,8 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
 export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   const { pathname } = useLocation();
   const activeKey = findActive(pathname)?.key;
+  const inboxCount = useInboxCount();
+  const badgeOf = (item: NavItem) => (item.key === "inbox" ? inboxCount : item.badge);
 
   return (
     <div className="flex h-full flex-col">
@@ -89,7 +108,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
               {group.items.map((item) => (
                 <NavGate key={item.key} access={item.access}>
                   <li>
-                    <SiderItem item={item} active={item.key === activeKey} collapsed={collapsed} onNavigate={onNavigate} />
+                    <SiderItem item={{ ...item, badge: badgeOf(item) }} active={item.key === activeKey} collapsed={collapsed} onNavigate={onNavigate} />
                   </li>
                 </NavGate>
               ))}
