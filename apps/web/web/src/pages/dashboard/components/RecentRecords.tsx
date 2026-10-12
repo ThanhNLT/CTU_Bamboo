@@ -5,40 +5,20 @@
 import { ConfigProvider, Table, type TableColumnsType } from "antd";
 import { Lock } from "lucide-react";
 import { useNavigate } from "react-router";
-import type { DataTier, RecentRecord, RecordStatus, Tone } from "../types";
+import type { RecentRecord } from "../types";
 import { bambooTableTheme, Dot, Panel, PanelLink } from "../../../components/ui";
 
 // Trạng thái luôn có chữ kèm dấu hiệu (chấm/biểu tượng), không truyền nghĩa chỉ bằng màu (UI-10).
-const STATUS: Record<RecordStatus, { label: string; tone: Tone; locked?: boolean }> = {
-  pending_l1: { label: "Chờ duyệt cấp 1", tone: "warning" },
-  returned: { label: "Trả lại bổ sung", tone: "danger" },
-  draft: { label: "Nháp", tone: "neutral" },
-  approved: { label: "Đã duyệt", tone: "success" },
-  archived: { label: "Lưu trữ", tone: "neutral", locked: true },
-};
+const StatusCell = ({ r }: { r: RecentRecord }) => (
+  <span className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] text-body">
+    {r.locked ? <Lock className="h-3 w-3 text-muted" strokeWidth={2} aria-hidden /> : <Dot tone={r.tone} size="md" />}
+    {r.statusLabel}
+  </span>
+);
 
-const TIER: Record<DataTier, { label: string; hint: string }> = {
-  hot: { label: "Nóng", hint: "Dữ liệu nóng: truy cập thường xuyên" },
-  warm: { label: "Ấm", hint: "Dữ liệu ấm: truy cập thỉnh thoảng" },
-  cold: { label: "Lạnh", hint: "Dữ liệu lạnh: đã lưu trữ dài hạn" },
-};
-
-const StatusCell = ({ status }: { status: RecordStatus }) => {
-  const s = STATUS[status];
-  return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] text-body">
-      {s.locked ? <Lock className="h-3 w-3 text-muted" strokeWidth={2} aria-hidden /> : <Dot tone={s.tone} size="md" />}
-      {s.label}
-    </span>
-  );
-};
-
-const TierTag = ({ tier }: { tier: DataTier }) => (
-  <span
-    title={TIER[tier].hint}
-    className="inline-flex rounded-full border border-line bg-white px-2.5 py-0.5 text-[11.5px] font-medium text-body"
-  >
-    {TIER[tier].label}
+const KindTag = ({ kind }: { kind: string }) => (
+  <span className="inline-flex whitespace-nowrap rounded-full border border-line bg-white px-2.5 py-0.5 text-[11.5px] font-medium text-body">
+    {kind}
   </span>
 );
 
@@ -55,9 +35,9 @@ const columns: TableColumnsType<RecentRecord> = [
     ellipsis: true,
     render: (v: string) => <span className="font-medium text-ink">{v}</span>,
   },
-  { title: "Trạng thái", dataIndex: "status", width: 160, render: (v: RecordStatus) => <StatusCell status={v} /> },
-  { title: "Cập nhật", dataIndex: "updatedAt", width: 120, render: (v: string) => <span className="text-body">{v}</span> },
-  { title: "Dữ liệu", dataIndex: "tier", width: 84, render: (v: DataTier) => <TierTag tier={v} /> },
+  { title: "Trạng thái", key: "status", width: 150, render: (_: unknown, r: RecentRecord) => <StatusCell r={r} /> },
+  { title: "Cập nhật", dataIndex: "updatedAt", width: 140, render: (v: string) => <span className="text-body">{v}</span> },
+  { title: "Loại", dataIndex: "kind", width: 150, render: (v: string) => <KindTag kind={v} /> },
 ];
 
 export const RecentRecords = ({ records }: { records: RecentRecord[] }) => {
@@ -72,7 +52,8 @@ export const RecentRecords = ({ records }: { records: RecentRecord[] }) => {
           dataSource={records}
           pagination={false}
           scroll={{ x: 680 }}
-          onRow={() => ({ onClick: () => navigate("/p/records"), style: { cursor: "pointer" } })}
+          onRow={(r) => ({ onClick: () => navigate(r.to), style: { cursor: "pointer" } })}
+          locale={{ emptyText: "Bạn chưa lập chứng từ nào." }}
         />
       </ConfigProvider>
     </Panel>
