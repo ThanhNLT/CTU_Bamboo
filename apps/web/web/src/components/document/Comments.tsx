@@ -36,12 +36,17 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
     }
   };
 
+  // Xóa ô nhập ngay khi gửi (khôi phục nếu lỗi): xóa sau khi mutation trả về sẽ xóa luôn chữ người dùng vừa gõ
+  // tiếp, vì bình luận có thể hiện ra trước qua subscription.
   const post = async (text: string) => {
+    const draft = { body, replyTo };
+    setBody("");
+    setReplyTo(null);
     const ok = await run(
       `mutation Comment($o: collab_comment_insert_input!) { insert_collab_comment_one(object: $o) { id } }`,
-      { o: { entity_type: entityType, entity_id: doc.id, body: text, parent_id: replyTo?.id ?? null } },
+      { o: { entity_type: entityType, entity_id: doc.id, body: text, parent_id: draft.replyTo?.id ?? null } },
     );
-    if (ok) { setBody(""); setReplyTo(null); }
+    if (!ok) { setBody(draft.body); setReplyTo(draft.replyTo); }
   };
 
   // Mọi người xem được chứng từ đều đọc được trao đổi: có số CCCD, điện thoại... thì hỏi trước (ADR #43).
@@ -123,7 +128,9 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
       <Flex gap={8} style={{ marginTop: 8 }}>
         <Input.TextArea value={body} onChange={(e) => setBody(e.target.value)} rows={2} maxLength={4000}
                         placeholder="Trao đổi với người lập, người duyệt..." />
-        <Button type="primary" onClick={send} loading={busy} disabled={!body.trim()}>Gửi</Button>
+        {/* Trễ 200 ms: gửi nhanh thì không nháy biểu tượng; bật/tắt loading quá nhanh làm hiệu ứng của antd kẹt lại
+            biểu tượng ẩn, trình đọc màn hình đọc thành "loading Gửi". */}
+        <Button type="primary" onClick={send} loading={busy ? { delay: 200 } : false} disabled={!body.trim()}>Gửi</Button>
       </Flex>
     </>
   );
