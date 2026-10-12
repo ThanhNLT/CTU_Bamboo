@@ -14,6 +14,7 @@ from .flowable import FlowableClient
 from .storage import Storage
 
 if TYPE_CHECKING:
+    from .hr_account import KeycloakUsers
     from .pii import PiiCipher
     from .search import Meili
 
@@ -29,6 +30,7 @@ class Context:
     search_index: str = "documents"
     gotenberg_url: str = ""           # in phiếu PDF (ADR #37)
     pii: "PiiCipher | None" = None    # mã hóa dữ liệu cá nhân nhạy cảm (ADR #41)
+    users: "KeycloakUsers | None" = None  # tạo tài khoản đăng nhập khi quản trị thêm người (ADR #44)
 
 
 class ActionError(Exception):
