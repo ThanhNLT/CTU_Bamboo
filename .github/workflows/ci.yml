@@ -89,7 +89,12 @@ jobs:
           path: apps/web/web/playwright-report
       - name: Tài nguyên sử dụng
         if: always()
-        run: docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'
+        run: |
+          docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'
+          df -h / /var/lib/docker 2>/dev/null || df -h /
+          docker system df
+          # Trạng thái volume của SeaweedFS (hết chỗ cấp volume làm ghi S3 lỗi InternalError).
+          docker compose exec -T seaweedfs wget -qO- http://localhost:9333/dir/status || true
       - name: Nhật ký khi lỗi
         if: failure()
         run: docker compose --profile test logs --tail 200
