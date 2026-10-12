@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Khung ứng dụng Bamboo: menu trái + header + vùng nội dung. Thay cho ThemedLayout của @refinedev/antd.
+import { RefineKbar } from "@refinedev/kbar";
 import { Drawer } from "antd";
 import { useEffect, useState, type PropsWithChildren } from "react";
 import { useLocation } from "react-router";
@@ -54,6 +55,9 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
         <AppHeader collapsed={collapsed} onCollapsedChange={setCollapsed} onOpenMobileNav={() => setMobileOpen(true)} />
         <main className="min-w-0 flex-1 px-4 py-5 md:px-6 md:py-6">{children}</main>
       </div>
+
+      {/* Bảng lệnh ⌘K đặt trong layout (đã qua TenantGate) để chỉ kiểm tra quyền khi đã có tenant. */}
+      <RefineKbar />
     </div>
   );
 };
