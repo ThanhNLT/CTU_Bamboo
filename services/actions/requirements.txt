@@ -13,3 +13,6 @@ httpx
 pyjwt[crypto]
 boto3
 jinja2
+# Che dữ liệu cá nhân (ADR #43): chỉ bộ nhận diện theo mẫu, không tải mô hình spaCy.
+presidio-analyzer
+presidio-anonymizer

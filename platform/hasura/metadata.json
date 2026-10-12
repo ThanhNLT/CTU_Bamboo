@@ -60,7 +60,21 @@
             {
               "role": "user",
               "permission": {
-                "columns": "*",
+                "columns": [
+                  "actor_id",
+                  "actor_role",
+                  "changed_cols",
+                  "created_at",
+                  "hash",
+                  "id",
+                  "op",
+                  "prev_hash",
+                  "row_id",
+                  "sealed_at",
+                  "seq",
+                  "table_name",
+                  "tenant_id"
+                ],
                 "filter": {
                   "_and": [
                     {
@@ -83,7 +97,21 @@
             {
               "role": "platform_admin",
               "permission": {
-                "columns": "*",
+                "columns": [
+                  "actor_id",
+                  "actor_role",
+                  "changed_cols",
+                  "created_at",
+                  "hash",
+                  "id",
+                  "op",
+                  "prev_hash",
+                  "row_id",
+                  "sealed_at",
+                  "seq",
+                  "table_name",
+                  "tenant_id"
+                ],
                 "filter": {
                   "_and": [
                     {
@@ -5465,6 +5493,68 @@
       "comment": "Đối soát chuỗi hash nhật ký kiểm toán của tenant (cần quyền audit.read)"
     },
     {
+      "name": "audit_log_detail",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/audit_log_detail",
+        "arguments": [
+          {
+            "name": "log_ids",
+            "type": "[Int!]!"
+          }
+        ],
+        "output_type": "[AuditLogDetail!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Dữ liệu trước/sau của dòng nhật ký kiểm toán, đã che dữ liệu cá nhân (cần audit.read, ADR #43)"
+    },
+    {
+      "name": "check_pii",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/check_pii",
+        "arguments": [
+          {
+            "name": "text",
+            "type": "String!"
+          }
+        ],
+        "output_type": "PiiCheck!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Phát hiện và che dữ liệu cá nhân trong văn bản trước khi gửi (Presidio, ADR #43)"
+    },
+    {
       "name": "get_upload_url",
       "definition": {
         "kind": "synchronous",
@@ -6379,6 +6469,65 @@
           {
             "name": "initial_password",
             "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "AuditLogDetail",
+        "fields": [
+          {
+            "name": "log_id",
+            "type": "Int!"
+          },
+          {
+            "name": "table_name",
+            "type": "String!"
+          },
+          {
+            "name": "old_data",
+            "type": "jsonb"
+          },
+          {
+            "name": "new_data",
+            "type": "jsonb"
+          },
+          {
+            "name": "masked",
+            "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "PiiEntity",
+        "fields": [
+          {
+            "name": "entity",
+            "type": "String!"
+          },
+          {
+            "name": "label",
+            "type": "String!"
+          },
+          {
+            "name": "start",
+            "type": "Int!"
+          },
+          {
+            "name": "end",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "PiiCheck",
+        "fields": [
+          {
+            "name": "masked_text",
+            "type": "String!"
+          },
+          {
+            "name": "entities",
+            "type": "[PiiEntity!]!"
           }
         ]
       },

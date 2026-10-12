@@ -399,3 +399,28 @@ ALTER TABLE lakehouse.bronze.proc_purchase_request EXECUTE optimize;
 make trino-sql                                  # sinh lại silver.sql sau migration và áp dụng
 make test-actions T=tests/test_lakehouse_silver.py   # kiểu cột, tệp SQL khớp CSDL, silver khớp CSDL nguồn qua cả đường CDC
 ```
+
+## 10. Che dữ liệu cá nhân – Microsoft Presidio (ADR #43)
+
+Thư viện trong tiến trình `actions` (`services/actions/app/pii_guard.py`), không thêm container. Presidio chỉ chạy bộ nhận diện theo mẫu: spaCy `blank("xx")` tách từ, không tải mô hình NER (mô hình tiếng Anh không nhận ra tên người Việt, mô hình lớn tốn khoảng 500 MB). Nạp lười ở luồng nền lúc khởi động (khoảng 2 giây, thêm khoảng 100 MB bộ nhớ); mỗi lần phân tích vài mili giây.
+
+| Loại | Nhận diện | Bản che |
+|---|---|---|
+| `VN_CCCD` | 12 chữ số bắt đầu bằng 0, cho phép tách nhóm 3 | `•••••••••789` |
+| `VN_CMND` | 9 chữ số, chỉ khi có từ khóa "CMND", "chứng minh" đứng trước | `••••••789` |
+| `VN_PHONE` | Di động `0[35789]x` + 7 số, cố định `02x` + 8 số, cả dạng `+84`; tách bằng khoảng trắng, chấm, gạch | `0912 *** 678` |
+| `VN_BANK_ACCOUNT` | 6–20 chữ số sau "STK", "số tài khoản", "tài khoản ngân hàng" | `••••••••••456` |
+| `EMAIL_ADDRESS` | Địa chỉ email | `n***@dienthoai.vn` |
+| `CREDIT_CARD` | Bộ nhận diện của Presidio (kiểm tra Luhn) | `••••••••••••1111` |
+
+Không che nhầm số tiền (`12.000.000`, `1500000000`), số chứng từ (`PR-2026-000001`), ngày, mã lô; 12 chữ số bắt đầu bằng 0 luôn coi là CCCD (che thừa an toàn hơn sót).
+
+Dùng ở:
+
+- **Nhật ký kiểm toán**: Hasura không trả `old_data`, `new_data` của `audit_log`; giao diện lấy qua Action `audit_log_detail(log_ids)` (cần `audit.read`), đã che bằng Presidio cộng theo tên cột (`*_enc` → `[bản mã]`, `date_of_birth` → chỉ giữ năm, `phone`, `work_email` luôn che). Trả kèm `masked`: các loại đã che, giao diện hiện nhãn "Đã che: …".
+- **Ô trao đổi trên chứng từ**: trước khi gửi, giao diện gọi `check_pii(text)`; có dữ liệu cá nhân thì hỏi gửi bản đã che, sửa lại hay vẫn gửi nguyên văn.
+
+```bash
+make test-actions T=tests/test_pii_guard.py     # nhận diện, che, không che nhầm (không cần dịch vụ)
+make test-actions T=tests/test_che_pii.py       # Action và Hasura: nhật ký chỉ trả bản che
+```

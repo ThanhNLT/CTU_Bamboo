@@ -48,6 +48,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [40](#adr-40) | 05/10/2026 | Tầng silver là view Trino sinh từ kiểu cột PostgreSQL; Trino một node trên cùng catalog |
 | [41](#adr-41) | 05/10/2026 | Tiếp nhận nhân sự: duyệt quyết định bổ nhiệm, chuỗi duyệt tính từ vị trí, dữ liệu nhạy cảm mã hóa bằng OpenBao |
 | [42](#adr-42) | 06/10/2026 | Đơn hàng nội bộ: bên mua đặt qua đề nghị mua sắm, bên bán xác nhận kèm lô xuất, tự sinh đơn mua |
+| [43](#adr-43) | 06/10/2026 | Che dữ liệu cá nhân bằng Presidio trong tiến trình actions: chỉ bộ nhận diện theo mẫu cho Việt Nam; nhật ký kiểm toán chỉ trả bản che |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -394,6 +395,15 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Trong tập đoàn, nhu cầu mua phát sinh ở bên mua và phải qua hạn mức chi tiêu của bên mua; dùng lại đề nghị mua sắm nghĩa là dùng lại toàn bộ chuỗi duyệt, hộp việc, phiếu PDF, tìm kiếm. Bên bán chỉ cần quyết định có giao được không và giao lô nào. Ghi lô ở bước xác nhận là chỗ duy nhất biết chắc lô nào đi sang công ty nào: từ lô wafer lỗi truy xuôi tới đơn mua của công ty điện thoại (bước 3 kịch bản demo). Sinh chứng từ trong cùng giao dịch với việc duyệt / xác nhận nên không có trạng thái nửa vời
 - **Đã loại:** Bên bán lập đơn bán rồi bên mua lập đề nghị gắn vào (hai luồng duyệt, demo dài; hàm `wf.conflict_persons` và đơn `DRAFT` vẫn giữ cho trường hợp này); một chứng từ duyệt bởi cả hai bên (trộn hạn mức của hai pháp nhân trong một chuỗi); dòng hàng nhiều lô (để sau, khi cần tách số lượng); trừ tồn kho theo lô (chưa có kho; chỉ chặn xuất quá số lượng lô)
 - **Giới hạn hiện tại:** Chưa đối trừ công nợ (`SETTLED`, `ic.settle`), chưa nhận hàng / hóa đơn trên đơn mua, chưa phả hệ lô (wafer → chip → điện thoại); đơn mua chỉ sinh từ đơn hàng nội bộ
+
+(adr-43)=
+## ADR #43: Che dữ liệu cá nhân bằng Presidio trong tiến trình actions: chỉ bộ nhận diện theo mẫu cho Việt Nam; nhật ký kiểm toán chỉ trả bản che
+
+- **Ngày:** 06/10/2026
+- **Quyết định:** Microsoft Presidio (`presidio-analyzer`, `presidio-anonymizer`) chạy như thư viện trong tiến trình `actions` (`app/pii_guard.py`), nạp lười ở luồng nền. Không dùng mô hình NER: spaCy `blank("xx")` chỉ tách từ; bộ nhận diện riêng cho CCCD, CMND và số tài khoản (hai loại sau chỉ khi có từ khóa đứng trước), số điện thoại Việt Nam, email, cộng bộ nhận diện số thẻ (Luhn) của Presidio. Che từng phần (`0912 *** 678`, `•••••••••789`, `n***@…`) để người đọc vẫn đối chiếu được. Áp dụng: (1) nhật ký kiểm toán: Hasura không trả `old_data`/`new_data`, Action `audit_log_detail` (cần `audit.read`) trả bản che bằng Presidio cộng quy tắc theo tên cột (bản mã, ngày sinh, điện thoại, email); (2) ô trao đổi: Action `check_pii` trước khi gửi, người dùng chọn gửi bản đã che, sửa lại hoặc vẫn gửi nguyên văn
+- **Lý do:** Người có `audit.read` (kiểm soát tài chính, pháp chế) đọc thay đổi của mọi bảng trong tenant, kể cả hồ sơ ứng viên: họ cần biết ai sửa gì, khi nào, không cần số điện thoại, ngày sinh của người khác (Nghị định 13/2023/NĐ-CP: xử lý dữ liệu cá nhân trong phạm vi cần thiết). Chuỗi hash vẫn đối soát trên dữ liệu gốc trong CSDL nên che lúc đọc không làm mất tính toàn vẹn. Trao đổi trên chứng từ đến mọi người xem được chứng từ; cảnh báo lúc gõ rẻ hơn gỡ sau. Không có mô hình NER tiếng Việt dùng được ngay; mô hình tiếng Anh nhận nhầm, nặng khoảng 500 MB; mẫu cho số định danh, điện thoại Việt Nam chính xác hơn và chạy vài mili giây. Thư viện trong `actions` thay vì container riêng (image chính thức của Presidio kèm mô hình tiếng Anh, hơn 1 GB): một tiến trình ít bộ nhớ hơn, không thêm đường mạng
+- **Đã loại:** Image `presidio-analyzer` chính thức (mô hình tiếng Anh, nặng); che lúc ghi vào `audit.log` (mất dữ liệu gốc để điều tra, phá ý nghĩa nhật ký); che bình luận tự động không hỏi (số điện thoại nhà cung cấp là thông tin công việc hợp lệ); nhận diện họ tên bằng danh sách người trong tenant (tên trong nhật ký, trao đổi là thông tin công việc; để dành cho Lakehouse / BI)
+- **Giới hạn hiện tại:** Chưa che địa chỉ, họ tên trong văn bản tự do; chưa áp cho tầng silver / mart BI (yêu cầu BI-05) và chỉ mục tìm kiếm; image `actions` (và `lakehouse`, dùng chung `requirements.txt`) lớn thêm khoảng 250 MB
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
