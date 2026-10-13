@@ -157,7 +157,17 @@ MANUAL_RELATIONSHIPS = [
 ]
 
 # ic_order_id do CSDL gắn khi đề nghị mua nội bộ được duyệt (ADR #42), người lập không sửa.
-PR_EDITABLE = ["title", "description", "category_code", "total_amount", "needed_by", "partner_id"]
+PR_EDITABLE = [
+    "title",
+    "description",
+    "category_code",
+    "total_amount",
+    "needed_by",
+    "partner_id",
+    # Nhà cung cấp chưa có trong danh mục (migration 018).
+    "proposed_partner_name",
+    "proposed_partner_tax_code",
+]
 ITEM_EDITABLE = ["item_id", "line_no", "description", "uom", "quantity", "unit_price", "note"]
 OB_EDITABLE = [
     "full_name",
@@ -781,6 +791,30 @@ def build(conn: psycopg.Connection) -> dict:
                 timeout=120,
             ),
             _action(
+                "adopt_proposed_partner",
+                "mutation",
+                [("request_id", "uuid!"), ("code", "String")],
+                "AdminSaveResult!",
+                [ROLE, ADMIN_ROLE],
+                "Thêm nhà cung cấp người lập đề nghị gõ tự do vào danh mục (cần mdm.manage)",
+            ),
+            _action(
+                "proposed_partners",
+                "query",
+                [],
+                "[ProposedPartner!]!",
+                [ROLE, ADMIN_ROLE],
+                "Nhà cung cấp gõ tự do trên đề nghị, chờ thêm vào danh mục (cần mdm.manage)",
+            ),
+            _action(
+                "drive_usage",
+                "query",
+                [],
+                "DriveUsage!",
+                [ROLE, ADMIN_ROLE],
+                "Dung lượng tệp của tenant: đã dùng, hạn mức, còn lại, theo loại tệp",
+            ),
+            _action(
                 "admin_import_template",
                 "query",
                 [("kind", "AdminEntity!")],
@@ -825,6 +859,7 @@ def build(conn: psycopg.Connection) -> dict:
                             "catalog_item",
                             "partner",
                             "item",
+                            "storage_quota",
                         )
                     ],
                 },
@@ -885,6 +920,36 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "scan_result", "type": "String"},
                     ],
                     "relationships": [_attachment_rel()],
+                },
+                {
+                    "name": "ProposedPartner",
+                    "fields": [
+                        {"name": "request_id", "type": "uuid!"},
+                        {"name": "doc_no", "type": "String!"},
+                        {"name": "title", "type": "String!"},
+                        {"name": "status", "type": "String!"},
+                        {"name": "name", "type": "String!"},
+                        {"name": "tax_code", "type": "String"},
+                        {"name": "requester", "type": "String!"},
+                        {"name": "created_on", "type": "String!"},
+                    ],
+                },
+                {
+                    "name": "DriveUsageType",
+                    "fields": [
+                        {"name": "content_type", "type": "String!"},
+                        {"name": "bytes", "type": "bigint!"},
+                        {"name": "files", "type": "Int!"},
+                    ],
+                },
+                {
+                    "name": "DriveUsage",
+                    "fields": [
+                        {"name": "quota_bytes", "type": "bigint!"},
+                        {"name": "used_bytes", "type": "bigint!"},
+                        {"name": "available_bytes", "type": "bigint!"},
+                        {"name": "by_type", "type": "[DriveUsageType!]!"},
+                    ],
                 },
                 {
                     "name": "AttachmentDownload",

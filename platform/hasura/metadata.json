@@ -4589,7 +4589,9 @@
                   "category_code",
                   "total_amount",
                   "needed_by",
-                  "partner_id"
+                  "partner_id",
+                  "proposed_partner_name",
+                  "proposed_partner_tax_code"
                 ]
               }
             }
@@ -4634,7 +4636,9 @@
                   "category_code",
                   "total_amount",
                   "needed_by",
-                  "partner_id"
+                  "partner_id",
+                  "proposed_partner_name",
+                  "proposed_partner_tax_code"
                 ]
               }
             }
@@ -6764,6 +6768,93 @@
       "comment": "Nhập hàng loạt từ CSV/XLSX: xem trước lỗi từng dòng; chỉ ghi khi mọi dòng hợp lệ"
     },
     {
+      "name": "adopt_proposed_partner",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/adopt_proposed_partner",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "code",
+            "type": "String"
+          }
+        ],
+        "output_type": "AdminSaveResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thêm nhà cung cấp người lập đề nghị gõ tự do vào danh mục (cần mdm.manage)"
+    },
+    {
+      "name": "proposed_partners",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/proposed_partners",
+        "arguments": [],
+        "output_type": "[ProposedPartner!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Nhà cung cấp gõ tự do trên đề nghị, chờ thêm vào danh mục (cần mdm.manage)"
+    },
+    {
+      "name": "drive_usage",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/drive_usage",
+        "arguments": [],
+        "output_type": "DriveUsage!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Dung lượng tệp của tenant: đã dùng, hạn mức, còn lại, theo loại tệp"
+    },
+    {
       "name": "admin_import_template",
       "definition": {
         "kind": "synchronous",
@@ -6887,6 +6978,9 @@
           },
           {
             "value": "item"
+          },
+          {
+            "value": "storage_quota"
           }
         ]
       }
@@ -7048,6 +7142,81 @@
             "field_mapping": {
               "attachment_id": "id"
             }
+          }
+        ]
+      },
+      {
+        "name": "ProposedPartner",
+        "fields": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "doc_no",
+            "type": "String!"
+          },
+          {
+            "name": "title",
+            "type": "String!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "tax_code",
+            "type": "String"
+          },
+          {
+            "name": "requester",
+            "type": "String!"
+          },
+          {
+            "name": "created_on",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "DriveUsageType",
+        "fields": [
+          {
+            "name": "content_type",
+            "type": "String!"
+          },
+          {
+            "name": "bytes",
+            "type": "bigint!"
+          },
+          {
+            "name": "files",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "DriveUsage",
+        "fields": [
+          {
+            "name": "quota_bytes",
+            "type": "bigint!"
+          },
+          {
+            "name": "used_bytes",
+            "type": "bigint!"
+          },
+          {
+            "name": "available_bytes",
+            "type": "bigint!"
+          },
+          {
+            "name": "by_type",
+            "type": "[DriveUsageType!]!"
           }
         ]
       },

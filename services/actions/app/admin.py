@@ -597,6 +597,19 @@ def _end(a: Admin, table: str, row_id, end: date | None) -> None:
     )
 
 
+def save_storage_quota(a: Admin, data: dict) -> str:
+    """Hạn mức dung lượng tệp của tenant (GB), cần core.org.manage ở đơn vị gốc."""
+    a.require(ORG)
+    try:
+        gb = float(str(data.get("quota_gb") or "").replace(",", "."))
+    except ValueError as exc:
+        raise ActionError("Hạn mức phải là số GB") from exc
+    if not 0.1 <= gb <= 100_000:
+        raise ActionError("Hạn mức từ 0,1 GB tới 100.000 GB")
+    a.conn.execute("UPDATE core.tenant SET storage_quota_bytes = %s WHERE id = %s", (int(gb * 1024**3), a.tenant))
+    return str(a.tenant)
+
+
 SAVE: dict[str, Callable[[Admin, dict], str]] = {
     "org_unit": save_org_unit,
     "position": save_position,
@@ -607,6 +620,7 @@ SAVE: dict[str, Callable[[Admin, dict], str]] = {
     "catalog_item": save_catalog_item,
     "partner": save_partner,
     "item": save_item,
+    "storage_quota": save_storage_quota,
 }
 CLOSE: dict[str, Callable[[Admin, object, date | None], str]] = {
     "org_unit": close_org_unit,
@@ -632,6 +646,36 @@ def admin_close(conn: psycopg.Connection, session: dict, args: dict, _ctx: Conte
         raise ActionError(f"Không ngừng được loại dữ liệu {entity}")
     end = _date(args.get("end_date"), "Ngày kết thúc")
     return {"entity": entity, "id": CLOSE[entity](Admin(conn, session), args["id"], end)}
+
+
+def adopt_proposed_partner(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    """Thêm nhà cung cấp người lập đề nghị gõ tự do vào danh mục (cần mdm.manage, migration 018)."""
+    a = Admin(conn, session)
+    a.one(
+        "SELECT 1 FROM proc.purchase_request WHERE id = %s AND tenant_id = %s",
+        (args["request_id"], a.tenant),
+        "Không tìm thấy đề nghị",
+    )
+    partner = conn.execute(
+        "SELECT mdm.adopt_proposed_partner(%s, %s, %s)", (args["request_id"], a.person, args.get("code") or "")
+    ).fetchone()[0]
+    return {"entity": "partner", "id": str(partner)}
+
+
+def proposed_partners(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> list[dict]:
+    """Nhà cung cấp người lập đề nghị gõ tự do, chờ thêm vào danh mục (cần mdm.manage)."""
+    a = Admin(conn, session)
+    a.require(MDM)
+    rows = conn.execute(
+        """SELECT r.id, r.doc_no, r.title, r.status, r.proposed_partner_name, r.proposed_partner_tax_code,
+                  p.full_name, to_char(r.created_at AT TIME ZONE %s, 'DD/MM/YYYY')
+           FROM proc.purchase_request r JOIN core.person p ON p.id = r.requester_id
+           WHERE r.tenant_id = %s AND r.proposed_partner_name IS NOT NULL
+           ORDER BY r.created_at DESC LIMIT 200""",
+        (TZ, a.tenant),
+    ).fetchall()
+    keys = ("request_id", "doc_no", "title", "status", "name", "tax_code", "requester", "created_on")
+    return [{**dict(zip(keys, r, strict=True)), "request_id": str(r[0])} for r in rows]
 
 
 # ===== Tài khoản đăng nhập =====
@@ -909,17 +953,24 @@ def admin_import_template(conn: psycopg.Connection, session: dict, args: dict, _
     from openpyxl import Workbook  # openpyxl
     from openpyxl.styles import Font, PatternFill  # openpyxl
 
+    # Trang "Dữ liệu" (trang đầu, được nhập) chỉ có tiêu đề; dòng ví dụ ở trang "Ví dụ" để không bị nhập nhầm.
     wb = Workbook()
-    ws = wb.active
-    ws.title = "Dữ liệu"
-    ws.append([title + (" *" if required else "") for _, title, required, _ in COLUMNS[kind]])
-    ws.append([example for *_, example in COLUMNS[kind]])
-    for cell in ws[1]:
-        cell.font = Font(bold=True, color="FFFFFF")
-        cell.fill = PatternFill("solid", fgColor="2F7A3E")
-    for i, (_, title, *_rest) in enumerate(COLUMNS[kind], start=1):
-        ws.column_dimensions[ws.cell(1, i).column_letter].width = max(14, min(42, len(title) + 4))
-    ws.freeze_panes = "A2"
+    data = wb.active
+    data.title = "Dữ liệu"
+    example = wb.create_sheet("Ví dụ")
+    header = [title + (" *" if required else "") for _, title, required, _ in COLUMNS[kind]]
+    data.append(header)
+    example.append(header)
+    example.append([value for *_, value in COLUMNS[kind]])
+    example.append([])
+    example.append(["Cột có dấu * là bắt buộc. Điền dữ liệu ở trang “Dữ liệu”; trang này không được nhập."])
+    for ws in (data, example):
+        for cell in ws[1]:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill("solid", fgColor="2F7A3E")
+        for i, (_, title, *_rest) in enumerate(COLUMNS[kind], start=1):
+            ws.column_dimensions[ws.cell(1, i).column_letter].width = max(14, min(42, len(title) + 4))
+        ws.freeze_panes = "A2"
     out = io.BytesIO()
     wb.save(out)
     return {"file_name": f"mau-{TITLES[kind]}.xlsx", "content_base64": base64.b64encode(out.getvalue()).decode()}
@@ -931,4 +982,6 @@ HANDLERS = {
     "create_person_accounts": create_person_accounts,
     "admin_import": admin_import,
     "admin_import_template": admin_import_template,
+    "adopt_proposed_partner": adopt_proposed_partner,
+    "proposed_partners": proposed_partners,
 }
