@@ -319,6 +319,11 @@ services:
       - seaweedfs-data:/data
       - seaweedfs-config:/etc/bms:ro
     # Không mở cổng ra ngoài: trình duyệt tải tệp qua cổng API (/bms-quarantine, /bms-documents).
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:8333:8333"     # S3 (yêu cầu khóa hoặc link có chữ ký)
+      - "127.0.0.1:9333:9333"     # giao diện master (trạng thái volume)
+      - "127.0.0.1:8888:8888"     # giao diện filer
     restart: unless-stopped
     # Healthcheck còn nạp lại định danh S3 (SIGHUP cho weed, PID 1) khi openbao-init ghi s3.json mới,
     # ví dụ khi nâng cấp thêm định danh: không phải khởi động lại SeaweedFS.
@@ -333,6 +338,9 @@ services:
     logging: *logging
     profiles: [scan]
     image: clamav/clamav:1.4
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:3310:3310"
 
   # Hasura Actions bọc hàm CSDL.
   actions:
@@ -349,6 +357,9 @@ services:
     # Không ghi access log: mỗi request GraphQL gọi /auth/gateway và /auth/hasura (hai dòng log mỗi request);
     # Hasura (http-log, webhook-log) và cổng API đã ghi nhật ký truy cập.
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:8090:8000"     # Hasura Actions, webhook (chỉ để xem /healthz, /docs khi dev)
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
@@ -411,6 +422,9 @@ services:
     volumes:
       - meilisearch-data:/meili_data
       - meilisearch-config:/etc/meilisearch:ro
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:7700:7700"     # cần khóa API
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7700/health"]
@@ -426,6 +440,9 @@ services:
     # JAVA_TOOL_OPTIONS áp cho cả hai). Tệp đính kèm giới hạn kích thước nên 512 MB đủ.
     environment:
       JAVA_TOOL_OPTIONS: ${TIKA_JAVA_OPTS:--Xmx512m}
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:9998:9998"
     restart: unless-stopped
     # Image không có curl: hỏi /version bằng /dev/tcp của bash.
     healthcheck:
@@ -443,6 +460,9 @@ services:
     image: gotenberg/gotenberg:8.37.0-chromium
     command: ["gotenberg", "--chromium-auto-start", "--chromium-disable-javascript", "--chromium-deny-private-ips",
               "--chromium-deny-public-ips", "--api-disable-download-from", "--webhook-disable", "--api-timeout=60s"]
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:3000:3000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/health"]
@@ -478,11 +498,12 @@ services:
       CLUSTER_ID: b5T4hzPsQrOmfv9Kr38lIg
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: SASL_PLAINTEXT://:9092,CONTROLLER://localhost:9093,LOCAL://localhost:9094
-      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092,LOCAL://localhost:9094
+      # HOST: cùng SCRAM + ACL, quảng bá localhost:19092 để công cụ trên máy dev kết nối được (cổng publish bên dưới).
+      KAFKA_LISTENERS: SASL_PLAINTEXT://:9092,HOST://:19092,CONTROLLER://localhost:9093,LOCAL://localhost:9094
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092,HOST://localhost:19092,LOCAL://localhost:9094
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: LOCAL
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,LOCAL:PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,LOCAL:PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT,HOST:SASL_PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_SASL_ENABLED_MECHANISMS: SCRAM-SHA-512
       KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
@@ -501,6 +522,9 @@ services:
       LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
     volumes:
       - kafka-data:/var/lib/kafka/data
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:19092:19092"   # listener HOST (SASL), cho công cụ trên máy dev
     restart: unless-stopped
     healthcheck:
       # Sẵn sàng khi start.sh đã đặt xong tài khoản và ACL.
@@ -557,6 +581,9 @@ services:
       JAVA_OPTS: ${DEBEZIUM_JAVA_OPTS:--Xms64m -Xmx384m}
     volumes:
       - debezium-data:/debezium/data
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:8083:8080"     # /q/health
     restart: unless-stopped
     # Hỏi /q/health bằng /dev/tcp của bash (không phụ thuộc curl trong image); Quarkus trả 503 khi có kiểm tra DOWN.
     healthcheck:
@@ -673,6 +700,9 @@ services:
       BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}
       BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8000/graphql}
     # Không mở cổng ra ngoài: phục vụ qua cổng API (cổng 5173 để trống cho `npm run dev`).
+    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
+    ports:
+      - "127.0.0.1:8088:8080"     # ứng dụng web trực tiếp, không qua cổng API (dev)
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
