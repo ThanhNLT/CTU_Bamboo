@@ -57,6 +57,13 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+      # Runner ubuntu-latest chỉ còn vài GB trống; cả hệ thống (image, Playwright, dữ liệu SeaweedFS) làm đĩa đầy 100%
+      # và SeaweedFS ngừng cấp volume (ghi S3 lỗi InternalError). Bỏ bộ công cụ cài sẵn không dùng tới.
+      - name: Giải phóng đĩa runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+                      /usr/local/share/powershell /usr/share/swift /usr/local/julia* /opt/microsoft
+          df -h /
       - name: Một lệnh dựng toàn bộ hệ thống
         run: time docker compose up -d
       - name: Chờ sẵn sàng
@@ -89,7 +96,12 @@ jobs:
           path: apps/web/web/playwright-report
       - name: Tài nguyên sử dụng
         if: always()
-        run: docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'
+        run: |
+          docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'
+          df -h / /var/lib/docker 2>/dev/null || df -h /
+          docker system df
+          # Trạng thái volume của SeaweedFS (hết chỗ cấp volume làm ghi S3 lỗi InternalError).
+          docker compose exec -T seaweedfs wget -qO- http://localhost:9333/dir/status || true
       - name: Nhật ký khi lỗi
         if: failure()
         run: docker compose --profile test logs --tail 200
