@@ -21,6 +21,7 @@ Biến môi trường (mặc định khớp `make test-actions` trong docker com
 import json
 import os
 import pathlib
+import ssl
 import threading
 import time
 import uuid
@@ -196,6 +197,22 @@ def root_settings() -> config.Settings:
     if addr and keys.exists():
         return config.with_openbao(config._from_env(), Bao(addr, json.loads(keys.read_text())["root_token"]))
     return SETTINGS
+
+
+def trino_admin_password() -> str:
+    """Mật khẩu bms-admin của Trino (ADR #45): đọc từ OpenBao bằng root token, chạy native thì TRINO_ADMIN_PASSWORD."""
+    keys = pathlib.Path(os.environ.get("BAO_KEYS_FILE", "/openbao/keys/init.json"))
+    addr = os.environ.get("BAO_ADDR")
+    if addr and keys.exists():
+        creds = Bao(addr, json.loads(keys.read_text())["root_token"]).read("bms/trino-admin")
+        if creds:
+            return creds["password"]
+    return os.environ.get("TRINO_ADMIN_PASSWORD", "")
+
+
+def trino_reachable(settings: config.Settings) -> bool:
+    verify = ssl.create_default_context(cafile=settings.trino_ca_file) if settings.trino_ca_file else True
+    return _reachable(settings.trino_url + "/v1/info", verify=verify)
 
 
 @pytest.fixture(scope="session")

@@ -2,26 +2,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tầng silver và Trino (ADR #40): kiểu cột suy từ PostgreSQL, tệp SQL sinh sẵn khớp CSDL, và đường đầy đủ
-CSDL → Debezium → Kafka → lakehouse-sink → Iceberg → Trino cho đúng trạng thái hiện tại.
+"""Tầng silver và Trino (ADR #40): kiểu cột suy từ PostgreSQL, tệp SQL và quyền Trino sinh sẵn khớp CSDL, và
+đường đầy đủ CSDL → Debezium → Kafka → lakehouse-sink → Iceberg → Trino cho đúng trạng thái hiện tại.
 
-Biến môi trường: TRINO_URL (mặc định http://trino:8080); CDC_SOURCE_DATABASE_URL là CSDL Debezium đọc
-(mặc định CSDL `bms` cùng máy chủ với TEST_DATABASE_URL). Kiểm thử chỉ đọc, không ghi CSDL nguồn.
+Biến môi trường: TRINO_URL, TRINO_CA_FILE (cấu hình actions); đăng nhập bms-admin (conftest.trino_admin_password).
+CDC_SOURCE_DATABASE_URL là CSDL Debezium đọc (mặc định CSDL `bms` cùng máy chủ với TEST_DATABASE_URL). Kiểm thử chỉ
+đọc, không ghi CSDL nguồn.
 """
 
+import json
 import os
 import time
 from decimal import Decimal
 from urllib.parse import urlparse, urlunparse
 
-import httpx
 import psycopg
 import pytest
 
 from app import lakehouse_silver as silver
-from conftest import ROOT, TEST_DB_URL, _missing, _reachable
+from app.trino import Trino
+from conftest import ROOT, TEST_DB_URL, _missing, root_settings, trino_admin_password, trino_reachable
 
-TRINO_URL = os.environ.get("TRINO_URL", "http://trino:8080")
 SOURCE_URL = os.environ.get("CDC_SOURCE_DATABASE_URL") or urlunparse(urlparse(TEST_DB_URL)._replace(path="/bms"))
 
 
@@ -55,31 +56,32 @@ def test_tep_sql_khop_csdl(database):
     assert "lakehouse.silver.proc_purchase_request" in expected and "audit_" not in expected
 
 
-class Trino:
-    """Client REST tối giản của Trino (POST /v1/statement, theo nextUri)."""
+def test_quyen_trino_khop_csdl(database):
+    """platform/trino/rules.json sinh cùng silver.sql (ADR #45): view có tenant_id được row filter, bảng không có
+    cột tenant (danh mục quyền chung, quan hệ tenant) không có quy tắc nên người dùng tenant không đọc được."""
+    with psycopg.connect(database) as conn:
+        expected = silver.build_rules(conn)
+    committed = (ROOT / "platform/trino/rules.json").read_text(encoding="utf-8")
+    assert committed == expected, "chạy lại: python -m app.lakehouse_silver (make trino-sql)"
+    tables = {t["table"]: t for t in json.loads(expected)["tables"] if "table" in t}
+    assert tables["proc_purchase_request"]["filter"] == f'"tenant_id" = {silver.TENANT_OF_USER}'
+    assert tables["core_tenant"]["filter"] == f'"id" = {silver.TENANT_OF_USER}'
+    assert "core_permission" not in tables and "core_tenant_relation" not in tables
 
-    def __init__(self, url: str):
-        self.http = httpx.Client(base_url=url, timeout=60, headers={"X-Trino-User": "kiem-thu"})
 
-    def query(self, sql: str) -> list[list]:
-        resp = self.http.post("/v1/statement", content=sql).json()
-        rows = []
-        while True:
-            if "error" in resp:
-                raise AssertionError(resp["error"].get("message"))
-            rows += resp.get("data", [])
-            if "nextUri" not in resp:
-                return rows
-            resp = self.http.get(resp["nextUri"]).json()
+class AdminTrino(Trino):
+    def rows(self, sql: str) -> list[list]:
+        return self.query(sql)[1]
 
 
 @pytest.fixture(scope="module")
-def trino() -> Trino:
-    if not _reachable(TRINO_URL + "/v1/info"):
+def trino() -> AdminTrino:
+    settings = root_settings()
+    if not trino_reachable(settings):
         _missing("Trino")
-    client = Trino(TRINO_URL)
+    client = AdminTrino(settings.trino_url, silver.ADMIN_USER, trino_admin_password(), settings.trino_ca_file)
     deadline = time.monotonic() + 120
-    while not client.query("SELECT count(*) FROM lakehouse.information_schema.tables WHERE table_schema = 'silver'")[0][0]:
+    while not client.rows("SELECT count(*) FROM lakehouse.information_schema.tables WHERE table_schema = 'silver'")[0][0]:
         if time.monotonic() > deadline:
             _missing("view silver (trino-init)")
         time.sleep(3)
@@ -87,7 +89,7 @@ def trino() -> Trino:
 
 
 def test_view_silver_co_kieu(trino):
-    columns = dict(trino.query("SELECT column_name, data_type FROM lakehouse.information_schema.columns "
+    columns = dict(trino.rows("SELECT column_name, data_type FROM lakehouse.information_schema.columns "
                                "WHERE table_schema = 'silver' AND table_name = 'proc_purchase_request'"))
     assert columns["id"] == "uuid" and columns["total_amount"] == "decimal(18,2)"
     assert columns["needed_by"] == "date" and columns["created_at"] == "timestamp(6) with time zone"
@@ -107,7 +109,7 @@ def test_silver_khop_csdl_nguon(trino):
         pytest.skip("CSDL nguồn chưa có đề nghị")
     deadline = time.monotonic() + 120
     while True:
-        lake = {r[0]: (r[1], Decimal(r[2]), r[3]) for r in trino.query(
+        lake = {r[0]: (r[1], Decimal(r[2]), r[3]) for r in trino.rows(
             "SELECT CAST(id AS varchar), title, CAST(total_amount AS varchar), status "
             "FROM lakehouse.silver.proc_purchase_request")}
         missing = {k: v for k, v in source.items() if lake.get(k) != v}
