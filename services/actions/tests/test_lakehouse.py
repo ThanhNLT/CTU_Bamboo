@@ -10,8 +10,6 @@ lakehouse) từ các topic CDC thật; khóa S3 lakehouse đọc từ OpenBao b�
 
 import datetime as dt
 import json
-import os
-import pathlib
 import uuid
 from urllib.parse import urlparse, urlunparse
 
@@ -19,8 +17,7 @@ import psycopg
 import pytest
 
 from app import config, lakehouse_sink as ls
-from app.openbao import Bao
-from conftest import TEST_DB_URL, _missing, _reachable
+from conftest import TEST_DB_URL, _missing, _reachable, root_settings
 
 pytest.importorskip("pyiceberg")
 kafka = pytest.importorskip("kafka")
@@ -55,11 +52,7 @@ def test_su_kien_thanh_dong_bronze():
 @pytest.fixture(scope="module")
 def lake_settings() -> config.Settings:
     """Cấu hình ghi vào catalog kiểm thử; cần Kafka có topic CDC, SeaweedFS có bucket lakehouse."""
-    settings = config.load()
-    keys = pathlib.Path(os.environ.get("BAO_KEYS_FILE", "/openbao/keys/init.json"))
-    if os.environ.get("BAO_ADDR") and keys.exists():
-        settings = config.with_openbao(config._from_env(), Bao(os.environ["BAO_ADDR"],
-                                                               json.loads(keys.read_text())["root_token"]))
+    settings = root_settings()
     admin = urlparse(TEST_DB_URL)
     with psycopg.connect(urlunparse(admin._replace(path="/postgres")), autocommit=True) as conn:
         conn.execute("DROP DATABASE IF EXISTS lakehouse_test WITH (FORCE)")
@@ -67,7 +60,7 @@ def lake_settings() -> config.Settings:
     url = urlunparse(admin._replace(scheme="postgresql+psycopg", path="/lakehouse_test"))
     settings = config.Settings(**{**settings.__dict__, "lakehouse_catalog_url": url})
     try:
-        consumer = kafka.KafkaConsumer(bootstrap_servers=settings.kafka_bootstrap, request_timeout_ms=10000)
+        consumer = kafka.KafkaConsumer(**config.kafka_options(settings), request_timeout_ms=10000)
         topics = consumer.topics()
         consumer.close()
     except kafka.errors.KafkaError:

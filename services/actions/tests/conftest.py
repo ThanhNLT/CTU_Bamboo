@@ -188,16 +188,21 @@ def gotenberg(database) -> str:
     return SETTINGS.gotenberg_url
 
 
-@pytest.fixture(scope="session")
-def search_settings(database) -> config.Settings:
-    """Cấu hình tìm kiếm cho kiểm thử: khóa chủ, khóa ghi chỉ mục, khóa S3 chỉ đọc lấy từ OpenBao bằng root token
-    (container kiểm thử chỉ có AppRole actions) hoặc từ MEILI_MASTER_KEY khi chạy native. Index kiểm thử tạo lại."""
-    settings = SETTINGS
+def root_settings() -> config.Settings:
+    """Cấu hình với mọi secret đọc từ OpenBao bằng root token (container kiểm thử chỉ có AppRole actions, không đọc
+    được secret của dịch vụ khác); chạy native không có OpenBao thì giữ giá trị env."""
     keys = pathlib.Path(os.environ.get("BAO_KEYS_FILE", "/openbao/keys/init.json"))
     addr = os.environ.get("BAO_ADDR")
     if addr and keys.exists():
-        settings = config.with_openbao(config._from_env(), Bao(addr, json.loads(keys.read_text())["root_token"]))
-    settings = config.Settings(**{**settings.__dict__, "database_url": TEST_APP_DB_URL,
+        return config.with_openbao(config._from_env(), Bao(addr, json.loads(keys.read_text())["root_token"]))
+    return SETTINGS
+
+
+@pytest.fixture(scope="session")
+def search_settings(database) -> config.Settings:
+    """Cấu hình tìm kiếm cho kiểm thử: khóa chủ, khóa ghi chỉ mục, khóa S3 chỉ đọc lấy từ OpenBao (root_settings)
+    hoặc từ MEILI_MASTER_KEY khi chạy native. Index kiểm thử tạo lại."""
+    settings = config.Settings(**{**root_settings().__dict__, "database_url": TEST_APP_DB_URL,
                                   "meili_index": MEILI_TEST_INDEX})
     if not settings.meili_master_key or not _reachable(settings.meili_url + "/health"):
         _missing("Meilisearch")
