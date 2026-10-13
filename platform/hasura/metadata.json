@@ -1983,13 +1983,77 @@
           ],
           "select_permissions": [
             {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -2109,13 +2173,77 @@
           ],
           "select_permissions": [
             {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -2160,13 +2288,77 @@
           ],
           "select_permissions": [
             {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -2228,13 +2420,77 @@
           ],
           "select_permissions": [
             {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -2280,13 +2536,77 @@
           ],
           "select_permissions": [
             {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -2357,6 +2677,56 @@
                     "parent_tenant_id": "id"
                   }
                 }
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "v_admin"
+          },
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
               }
             }
           ]
@@ -6051,6 +6421,185 @@
         }
       ],
       "comment": "Tạo lại tài khoản đăng nhập khi lần trước lỗi (có thể đổi tên đăng nhập)"
+    },
+    {
+      "name": "admin_save",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/admin_save",
+        "arguments": [
+          {
+            "name": "entity",
+            "type": "AdminEntity!"
+          },
+          {
+            "name": "data",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "AdminSaveResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thêm / sửa đơn vị, vị trí, người, bổ nhiệm, vai trò, cấp quyền, danh mục, dữ liệu chủ (ADR #44)"
+    },
+    {
+      "name": "admin_close",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/admin_close",
+        "arguments": [
+          {
+            "name": "entity",
+            "type": "AdminEntity!"
+          },
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "end_date",
+            "type": "date"
+          }
+        ],
+        "output_type": "AdminSaveResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Ngừng đơn vị / vị trí, kết thúc bổ nhiệm, thu hồi cấp quyền (hết ngày end_date hoặc ngay)"
+    },
+    {
+      "name": "create_person_accounts",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/create_person_accounts",
+        "arguments": [
+          {
+            "name": "accounts",
+            "type": "[AdminAccountInput!]!"
+          }
+        ],
+        "output_type": "[AdminAccountResult!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tạo hoặc liên kết tài khoản đăng nhập cho người; mật khẩu tạm chỉ trả về một lần"
+    },
+    {
+      "name": "admin_import",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/admin_import",
+        "arguments": [
+          {
+            "name": "kind",
+            "type": "AdminEntity!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "content_base64",
+            "type": "String!"
+          },
+          {
+            "name": "dry_run",
+            "type": "Boolean!"
+          }
+        ],
+        "output_type": "AdminImportResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 120
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Nhập hàng loạt từ CSV/XLSX: xem trước lỗi từng dòng; chỉ ghi khi mọi dòng hợp lệ"
+    },
+    {
+      "name": "admin_import_template",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/admin_import_template",
+        "arguments": [
+          {
+            "name": "kind",
+            "type": "AdminEntity!"
+          }
+        ],
+        "output_type": "AdminTemplate!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tệp mẫu XLSX để nhập hàng loạt"
     }
   ],
   "custom_types": {
@@ -6065,6 +6614,27 @@
           {
             "name": "lot_id",
             "type": "uuid!"
+          }
+        ]
+      },
+      {
+        "name": "AdminAccountInput",
+        "fields": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "email",
+            "type": "String"
+          },
+          {
+            "name": "link_existing",
+            "type": "Boolean"
           }
         ]
       }
@@ -6092,6 +6662,38 @@
           },
           {
             "value": "attachment"
+          }
+        ]
+      },
+      {
+        "name": "AdminEntity",
+        "values": [
+          {
+            "value": "org_unit"
+          },
+          {
+            "value": "position"
+          },
+          {
+            "value": "person"
+          },
+          {
+            "value": "assignment"
+          },
+          {
+            "value": "role"
+          },
+          {
+            "value": "role_grant"
+          },
+          {
+            "value": "catalog_item"
+          },
+          {
+            "value": "partner"
+          },
+          {
+            "value": "item"
           }
         ]
       }
@@ -6528,6 +7130,124 @@
           {
             "name": "entities",
             "type": "[PiiEntity!]!"
+          }
+        ]
+      },
+      {
+        "name": "AdminSaveResult",
+        "fields": [
+          {
+            "name": "entity",
+            "type": "AdminEntity!"
+          },
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ]
+      },
+      {
+        "name": "AdminAccountResult",
+        "fields": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "temporary_password",
+            "type": "String"
+          },
+          {
+            "name": "error",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "AdminImportError",
+        "fields": [
+          {
+            "name": "row",
+            "type": "Int!"
+          },
+          {
+            "name": "message",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "AdminImportCreated",
+        "fields": [
+          {
+            "name": "row",
+            "type": "Int!"
+          },
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "full_name",
+            "type": "String!"
+          },
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "email",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "AdminImportResult",
+        "fields": [
+          {
+            "name": "kind",
+            "type": "AdminEntity!"
+          },
+          {
+            "name": "total",
+            "type": "Int!"
+          },
+          {
+            "name": "valid",
+            "type": "Int!"
+          },
+          {
+            "name": "applied",
+            "type": "Boolean!"
+          },
+          {
+            "name": "dry_run",
+            "type": "Boolean!"
+          },
+          {
+            "name": "errors",
+            "type": "[AdminImportError!]!"
+          },
+          {
+            "name": "created",
+            "type": "[AdminImportCreated!]!"
+          }
+        ]
+      },
+      {
+        "name": "AdminTemplate",
+        "fields": [
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "content_base64",
+            "type": "String!"
           }
         ]
       },

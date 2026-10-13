@@ -22,6 +22,7 @@ import { TenantGate } from "./auth/session";
 import { BambooLayout } from "./components/layout";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
+import { CatalogPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
 import { DashboardPage } from "./pages/dashboard";
 import { DocumentDrivePage } from "./pages/document-drive";
 import { KnowledgeLibraryPage } from "./pages/knowledge-library";
@@ -114,6 +115,10 @@ function App() {
                   { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
                   { name: "search", list: "/i/search", meta: { label: "Tìm kiếm", icon: <SearchOutlined /> } },
                   { name: "audit_log", list: "/admin/audit-logs", meta: { label: "Kiểm toán", icon: <AuditOutlined /> } },
+                  { name: "admin_org", list: "/admin/org", meta: { label: "Cơ cấu tổ chức" } },
+                  { name: "admin_people", list: "/admin/people", meta: { label: "Người dùng" } },
+                  { name: "admin_roles", list: "/admin/roles", meta: { label: "Vai trò & phân quyền" } },
+                  { name: "admin_catalog", list: "/admin/catalog", meta: { label: "Danh mục & dữ liệu chủ" } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
                 options={{ syncWithLocation: true, warnWhenUnsavedChanges: true, liveMode: "auto", disableTelemetry: true }}
@@ -165,6 +170,10 @@ function App() {
                     <Route path="/p/process/:id" element={<Suspense fallback={<Spin />}><ProcessDiagram /></Suspense>} />
                     <Route path="/i/search" element={<SearchPage />} />
                     <Route path="/admin/audit-logs" element={<AuditLogList />} />
+                    <Route path="/admin/org" element={<OrgPage />} />
+                    <Route path="/admin/people" element={<PeoplePage />} />
+                    <Route path="/admin/roles" element={<RolesPage />} />
+                    <Route path="/admin/catalog" element={<CatalogPage />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                   <Route element={<Authenticated key="authenticated-outer" fallback={<Outlet />}><NavigateToResource /></Authenticated>}>
