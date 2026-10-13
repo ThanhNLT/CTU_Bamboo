@@ -6,14 +6,16 @@
 import { useState } from "react"; // React
 
 // ===== Module nội bộ =====
-import type { SealLogRow } from "../types";
+import type { Seal } from "../types";
 
 // ===== Hằng số =====
 const DEFAULT_ROWS = 5;
 
 // ===== Component =====
-const ResultTag = ({ result }: { result: SealLogRow["result"] }) =>
-  result === "match" ? (
+const ResultTag = ({ result }: { result: Seal["lastResult"] }) =>
+  result == null ? (
+    <span className="text-[12.5px] text-muted">Chưa đối soát</span>
+  ) : result === "match" ? (
     <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink">
       <span className="h-1.5 w-1.5 rounded-full bg-bamboo-500" aria-hidden />
       Khớp
@@ -25,8 +27,8 @@ const ResultTag = ({ result }: { result: SealLogRow["result"] }) =>
     </span>
   );
 
-/** Niêm phong gần đây. Bấm mã hồ sơ để đối soát lại ngay. */
-export const RecentSealsWidget = ({ rows, onPick }: { rows: SealLogRow[]; onPick: (row: SealLogRow) => void }) => {
+/** Niêm phong gần đây (tệp mới nhận). Bấm mã hồ sơ để đối soát lại ngay. */
+export const RecentSealsWidget = ({ rows, onPick }: { rows: Seal[]; onPick: (row: Seal) => void }) => {
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? rows : rows.slice(0, DEFAULT_ROWS);
 
@@ -46,6 +48,11 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: SealLogRow[]; onPick
         )}
       </div>
 
+      {rows.length === 0 && (
+        <p className="py-6 text-center text-[13px] text-muted">
+          Chưa có tệp nào được niêm phong trong các chứng từ bạn được xem.
+        </p>
+      )}
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[400px] border-collapse whitespace-nowrap text-[12.5px]">
           <thead>
@@ -57,7 +64,7 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: SealLogRow[]; onPick
                 Phiên bản
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Thời điểm
+                Niêm phong lúc
               </th>
               <th scope="col" className="border-b border-line py-2 pl-3 font-medium">
                 Kết quả
@@ -66,7 +73,7 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: SealLogRow[]; onPick
           </thead>
           <tbody>
             {visible.map((r) => (
-              <tr key={`${r.code}#${r.version}`}>
+              <tr key={r.attachmentId}>
                 <td className="border-b border-line/70 py-2.5 pr-3">
                   <button
                     type="button"
@@ -78,9 +85,9 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: SealLogRow[]; onPick
                   </button>
                 </td>
                 <td className="border-b border-line/70 px-3 py-2.5 text-body">v{r.version}</td>
-                <td className="border-b border-line/70 px-3 py-2.5 tabular-nums text-body">{r.time}</td>
+                <td className="border-b border-line/70 px-3 py-2.5 tabular-nums text-body">{r.sealedAt}</td>
                 <td className="border-b border-line/70 py-2.5 pl-3">
-                  <ResultTag result={r.result} />
+                  <ResultTag result={r.lastResult} />
                 </td>
               </tr>
             ))}

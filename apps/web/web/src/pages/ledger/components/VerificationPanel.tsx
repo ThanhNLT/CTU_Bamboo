@@ -21,17 +21,7 @@ const MODES: Array<{ key: VerifyMode; label: string }> = [
 
 // ===== Component =====
 /** Vùng kéo-thả tệp. Bấm (hoặc Enter/Space khi đang focus) để mở hộp chọn tệp. */
-const Dropzone = ({
-  disabled,
-  tall,
-  onFile,
-  onSampleDownload,
-}: {
-  disabled: boolean;
-  tall: boolean;
-  onFile: (f: File) => void;
-  onSampleDownload: () => void;
-}) => {
+const Dropzone = ({ disabled, tall, onFile }: { disabled: boolean; tall: boolean; onFile: (f: File) => void }) => {
   const [over, setOver] = useState(false);
   const onDrop = (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
@@ -74,14 +64,7 @@ const Dropzone = ({
       </label>
       {tall && (
         <p className="mt-2 text-center text-[12px] text-muted">
-          Chưa có tệp để thử?{" "}
-          <button
-            type="button"
-            onClick={onSampleDownload}
-            className="font-semibold text-bamboo-700 underline-offset-2 hover:underline"
-          >
-            Tải tệp mẫu HS-SEMI-2026-00125 v3
-          </button>
+          Chỉ gửi mã SHA-256 lên máy chủ để tìm bản niêm phong có cùng mã.
         </p>
       )}
     </div>
@@ -97,7 +80,6 @@ export const VerificationPanel = ({
   result,
   onVerifyCode,
   onVerifyFile,
-  onSampleDownload,
   onCopy,
   onCertificate,
 }: {
@@ -110,7 +92,6 @@ export const VerificationPanel = ({
   result?: VerifyResult;
   onVerifyCode: () => void;
   onVerifyFile: (f: File) => void;
-  onSampleDownload: () => void;
   onCopy: () => void;
   onCertificate: () => void;
 }) => {
@@ -126,7 +107,9 @@ export const VerificationPanel = ({
     >
       <header>
         <h2 className="text-[15px] font-semibold text-ink">Đối soát hồ sơ</h2>
-        <p className="mt-0.5 text-[12.5px] text-muted">So khớp tệp hoặc mã hồ sơ với bản niêm phong trên sổ cái</p>
+        <p className="mt-0.5 text-[12.5px] text-muted">
+          So khớp tệp hoặc số chứng từ với bản niêm phong trong chuỗi hash kiểm toán
+        </p>
       </header>
 
       <div
@@ -171,7 +154,7 @@ export const VerificationPanel = ({
             <input
               value={code}
               onChange={(e) => onCodeChange(e.target.value)}
-              placeholder="HS-SEMI-2026-00123"
+              placeholder="PR-2026-000012"
               spellCheck={false}
               autoComplete="off"
               className="h-10 w-full rounded-xl border border-transparent bg-canvas pl-10 pr-3 font-mono text-[13px] text-ink outline-none transition-colors placeholder:text-muted focus:border-bamboo-400 focus:bg-white focus:ring-3 focus:ring-bamboo-100"
@@ -191,13 +174,12 @@ export const VerificationPanel = ({
           setMode("file");
           onVerifyFile(f);
         }}
-        onSampleDownload={onSampleDownload}
       />
 
       {hashing && (
         <p className="flex items-center gap-2 text-[12.5px] text-body" role="status">
           <LoaderCircle className="h-4 w-4 text-bamboo-600 motion-safe:animate-spin" aria-hidden />
-          Đang băm <b className="font-semibold">{hashing.name}</b> ({formatBytes(hashing.size)}) và tra sổ cái…
+          Đang băm <b className="font-semibold">{hashing.name}</b> ({formatBytes(hashing.size)}) và tra bản niêm phong…
         </p>
       )}
 

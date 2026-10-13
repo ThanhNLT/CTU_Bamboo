@@ -36,6 +36,7 @@ from . import (
     hr_account,
     ic,
     lakehouse_query,
+    ledger,
     pii_guard,
     search,
     trino,
@@ -168,6 +169,7 @@ HANDLERS = {
     "check_pii": pii_guard.check_pii,
     **admin.HANDLERS,
     **lakehouse_query.HANDLERS,
+    **ledger.HANDLERS,
 }
 
 

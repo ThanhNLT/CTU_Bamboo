@@ -4,7 +4,7 @@
 
 // Hộp việc (Quy trình số): trái ~30% danh sách việc theo hạn SLA; phải ~70% gồm đầu việc, trình xem tệp
 // (~65%) và cột widget (~35%: Thông tin, Gợi ý của trợ lý, Ý kiến & thao tác). Phím J/K chuyển việc.
-// ?code=PR-... trên URL chọn sẵn một việc (liên kết từ Trang chủ, trang Hồ sơ). Dữ liệu thật: ./useInboxTasks;
+// ?doc=PR-... trên URL chọn sẵn một việc (liên kết từ Trang chủ, trang Hồ sơ). Dữ liệu thật: ./useInboxTasks;
 // quyết định gọi Action act_on_task (như ActModal).
 
 // ===== Thư viện =====
@@ -52,8 +52,8 @@ export const InboxPage = () => {
   const sorted = useMemo(() => inbox.team.filter((t) => !done.has(t.taskId)).sort(byDue), [inbox.team, done]);
   const list = scope === "mine" ? mine : sorted;
 
-  // Việc đang chọn nằm trên URL (?code=) để chia sẻ/quay lại được; mặc định là việc gấp nhất.
-  const code = params.get("code");
+  // Việc đang chọn nằm trên URL (?doc=; không dùng ?code= vì trùng tham số OAuth keycloak-js đọc) để chia sẻ/quay lại được; mặc định là việc gấp nhất.
+  const code = params.get("doc");
   const index = Math.max(
     0,
     list.findIndex((t) => t.code === code),
@@ -66,7 +66,7 @@ export const InboxPage = () => {
       setParams(
         (p) => {
           const next = new URLSearchParams(p);
-          next.set("code", t.code);
+          next.set("doc", t.code);
           return next;
         },
         { replace: true },

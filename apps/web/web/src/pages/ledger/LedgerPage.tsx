@@ -2,20 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Sổ cái (Dữ liệu số): niêm phong bất biến trên Hyperledger Fabric. Tab "Đối soát" so mã hồ sơ hoặc tệp
-// (băm SHA-256 ngay trong trình duyệt) với bản niêm phong; tab "Phòng đọc ảo" mở hồ sơ lưu trữ ở chế độ chỉ đọc.
-// Mở thẳng một hồ sơ: /d/ledger?code=HS-SEMI-2026-00087. Dữ liệu minh họa ở ./mock.
+// Sổ cái (Dữ liệu số, ADR #46): bản niêm phong của mỗi tệp đính kèm là SHA-256 ghi lúc tệp được nhận, nằm trong
+// chuỗi hash của nhật ký kiểm toán. Tab "Đối soát" so số chứng từ (máy chủ đọc lại tệp trong kho) hoặc tệp (băm
+// SHA-256 ngay trong trình duyệt) với bản niêm phong; tab "Phòng đọc ảo" mở tệp của chứng từ đã kết thúc ở chế độ
+// chỉ đọc. Mở thẳng một hồ sơ: /d/ledger?doc=PR-2026-000012.
 
 // ===== Thư viện =====
 import { App } from "antd"; // Ant Design
-import { Download } from "lucide-react"; // Lucide React
-import { useRef, useState } from "react"; // React
+import { Download, Link2 } from "lucide-react"; // Lucide React
+import { useCallback, useEffect, useRef, useState } from "react"; // React
 import { useSearchParams } from "react-router"; // React Router
 
 // ===== Module nội bộ =====
-import { useSession } from "../../auth/useSession";
+import { request } from "../../api/client";
 import { secondaryButtonClass } from "../../components/ui";
 import { copyText } from "../../utils/clipboard";
+import { fetchArchive, fetchOverview, openArchive, verify } from "./api";
 import { LedgerStats, type LedgerStat } from "./components/LedgerStats";
 import { LedgerTabs } from "./components/LedgerTabs";
 import { ReadingRoomPanel } from "./components/ReadingRoomPanel";
@@ -23,17 +25,7 @@ import { ReadOnlyViewerModal } from "./components/ReadOnlyViewerModal";
 import { RecentSealsWidget } from "./components/RecentSealsWidget";
 import { VerificationPanel } from "./components/VerificationPanel";
 import { VirtualReadingRoomWidget } from "./components/VirtualReadingRoomWidget";
-import {
-  ACCESS_LOGS,
-  ARCHIVE_DOCS,
-  DEFAULT_CODE,
-  FEATURED_ARCHIVE_IDS,
-  RECENT_SEALS,
-  SAMPLE_FILE,
-  SEALS,
-  STATS,
-} from "./mock";
-import type { AccessLog, ArchiveDoc, LedgerTab, SealLogRow, VerifyResult } from "./types";
+import type { AccessLog, ArchiveDoc, ArchiveView, LedgerOverview, LedgerTab, VerifyResult } from "./types";
 import {
   MAX_FILE_BYTES,
   certificateHtml,
@@ -43,84 +35,97 @@ import {
   formatStamp,
   reconciliationCsv,
   sha256Hex,
-  verifyByCode,
-  verifyByHash,
 } from "./utils";
 
 // ===== Hằng số =====
-/** Độ trễ giả lập một lần truy vấn sổ cái (để thấy trạng thái "Đang đối soát…"). */
-const QUERY_DELAY_MS = 500;
-const FEATURED = ARCHIVE_DOCS.filter((d) => FEATURED_ARCHIVE_IDS.includes(d.id));
+/** Số hồ sơ lưu trữ hiện trong thẻ "Phòng đọc ảo" ở tab Đối soát. */
+const FEATURED = 3;
 
 // ===== Component =====
 export const LedgerPage = () => {
   const { message } = App.useApp();
-  const { tenant } = useSession();
   const [params] = useSearchParams();
 
   const [tab, setTab] = useState<LedgerTab>("verify");
-  const [code, setCode] = useState(() => params.get("code") ?? DEFAULT_CODE);
-  // Mở trang là có sẵn kết quả của mã mặc định (như thiết kế).
-  const [result, setResult] = useState<VerifyResult | undefined>(() =>
-    verifyByCode(SEALS, params.get("code") ?? DEFAULT_CODE, formatStamp(new Date())),
-  );
+  const [code, setCode] = useState(() => params.get("doc") ?? "");
+  const [result, setResult] = useState<VerifyResult>();
   const [busy, setBusy] = useState(false);
   const [hashing, setHashing] = useState<{ name: string; size: number }>();
-  const [log, setLog] = useState<SealLogRow[]>(RECENT_SEALS);
-  const [session, setSession] = useState({ verified: 0, matched: 0, mismatched: 0 });
-  const [viewing, setViewing] = useState<{ doc: ArchiveDoc; at: string }>();
-  const [accessLogs, setAccessLogs] = useState<AccessLog[]>(ACCESS_LOGS);
+  const [overview, setOverview] = useState<LedgerOverview>();
+  const [archive, setArchive] = useState<{ docs: ArchiveDoc[]; access: AccessLog[] }>({ docs: [], access: [] });
+  const [viewing, setViewing] = useState<ArchiveView>();
   const runId = useRef(0);
 
-  /** Ghi kết quả: cập nhật số liệu hôm nay và cột "Kết quả" của dòng tương ứng. */
-  const record = (r: VerifyResult) => {
-    setResult(r);
-    setSession((s) => ({
-      verified: s.verified + 1,
-      matched: s.matched + (r.kind === "match" ? 1 : 0),
-      mismatched: s.mismatched + (r.kind === "mismatch" ? 1 : 0),
-    }));
-    if (r.kind !== "not_found") {
-      const time = r.checkedAt.slice(-5);
-      const key = `${r.seal.code}#${r.seal.version}`;
-      setLog((rows) => {
-        const row: SealLogRow = {
-          code: r.seal.code,
-          version: r.seal.version,
-          time,
-          result: r.kind === "match" ? "match" : "mismatch",
-        };
-        const exists = rows.some((x) => `${x.code}#${x.version}` === key);
-        return exists ? rows.map((x) => (`${x.code}#${x.version}` === key ? { ...x, result: row.result } : x)) : rows;
-      });
-    }
-  };
+  const loadOverview = useCallback(
+    () =>
+      fetchOverview()
+        .then(setOverview)
+        .catch((e: Error) => message.error(`Không tải được số liệu sổ cái: ${e.message}`)),
+    [message],
+  );
+  const loadArchive = useCallback(
+    () =>
+      fetchArchive()
+        .then(setArchive)
+        .catch((e: Error) => message.error(`Không tải được hồ sơ lưu trữ: ${e.message}`)),
+    [message],
+  );
 
-  const verifyCode = (input = code) => {
-    const id = ++runId.current;
-    setBusy(true);
-    window.setTimeout(() => {
-      if (id !== runId.current) return;
-      setBusy(false);
-      record(verifyByCode(SEALS, input, formatStamp(new Date())));
-    }, QUERY_DELAY_MS);
-  };
+  /** Gửi một lần đối soát; kết quả của lần bấm cũ hơn bị bỏ qua. */
+  const run = useCallback(
+    async (input: Parameters<typeof verify>[0]) => {
+      const id = ++runId.current;
+      try {
+        const r = await verify(input);
+        if (id !== runId.current) return;
+        setResult(r);
+        void loadOverview();
+      } catch (e) {
+        if (id === runId.current) message.error((e as Error).message);
+      }
+    },
+    [loadOverview, message],
+  );
+
+  const verifyCode = useCallback(
+    async (input: string) => {
+      setBusy(true);
+      try {
+        await run({ code: input.trim() });
+      } finally {
+        setBusy(false);
+      }
+    },
+    [run],
+  );
+
+  useEffect(() => {
+    void loadOverview();
+    void loadArchive();
+    // Mở từ liên kết ?doc=...: đối soát ngay (không dùng ?code=: trùng tham số OAuth mà keycloak-js đọc).
+    const initial = params.get("doc");
+    if (initial) void verifyCode(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi mở trang
+  }, []);
 
   const verifyFile = async (file: File) => {
     if (file.size > MAX_FILE_BYTES) {
-      message.error("Tệp lớn hơn 200 MB — hãy đối soát theo mã hồ sơ.");
+      message.error("Tệp lớn hơn 200 MB — hãy đối soát theo số chứng từ.");
       return;
     }
-    const id = ++runId.current;
     setHashing({ name: file.name, size: file.size });
+    let hash: string;
     try {
-      const hash = await sha256Hex(file);
-      if (id !== runId.current) return;
-      record(verifyByHash(SEALS, hash, file.name, formatStamp(new Date())));
+      hash = await sha256Hex(file);
     } catch {
-      if (id === runId.current) message.error("Không đọc được tệp. Thử lại hoặc chọn tệp khác.");
+      message.error("Không đọc được tệp. Thử lại hoặc chọn tệp khác.");
+      setHashing(undefined);
+      return;
+    }
+    try {
+      await run({ sha256: hash, fileName: file.name });
     } finally {
-      if (id === runId.current) setHashing(undefined);
+      setHashing(undefined);
     }
   };
 
@@ -144,44 +149,63 @@ export const LedgerPage = () => {
     message.info("Trong hộp thoại In, chọn “Lưu dưới dạng PDF”.");
   };
 
-  const exportReport = () => {
-    const day = formatStamp(new Date()).slice(0, 10).split("/").reverse().join("-");
-    downloadText(reconciliationCsv(SEALS, log), `doi-soat-so-cai-${day}.csv`, "text/csv;charset=utf-8");
-    message.success(`Đã xuất báo cáo đối soát (${SEALS.length} bản niêm phong).`);
+  const exportReport = async () => {
+    try {
+      const all = await fetchOverview(100);
+      const day = formatStamp(new Date()).slice(0, 10).split("/").reverse().join("-");
+      downloadText(reconciliationCsv(all.recent), `doi-soat-so-cai-${day}.csv`, "text/csv;charset=utf-8");
+      message.success(`Đã xuất báo cáo đối soát (${all.recent.length} bản niêm phong mới nhất).`);
+    } catch (e) {
+      message.error((e as Error).message);
+    }
   };
 
-  const openDoc = (doc: ArchiveDoc) => {
-    const at = formatStamp(new Date());
-    setViewing({ doc, at });
-    setAccessLogs((l) => [{ id: `al-${Date.now()}`, docTitle: doc.title, viewer: tenant.full_name, at }, ...l]);
+  /** Người có quyền audit.read: đối soát cả chuỗi hash kiểm toán của tenant. */
+  const verifyChain = async () => {
+    try {
+      const r = await request<{ verify_audit_chain: { ok: boolean; checked: number; problems: unknown[] } }>(
+        `query { verify_audit_chain { ok checked problems { seq problem } } }`,
+      );
+      const v = r.verify_audit_chain;
+      if (v.ok) message.success(`Chuỗi hash kiểm toán nguyên vẹn (${formatInt(v.checked)} dòng).`);
+      else message.error(`Chuỗi hash có ${v.problems.length} chỗ không khớp — xem trang Kiểm toán.`);
+    } catch (e) {
+      message.error((e as Error).message);
+    }
   };
 
+  const openDoc = async (doc: ArchiveDoc) => {
+    try {
+      setViewing(await openArchive(doc.id));
+      void loadArchive();
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
+
+  const o = overview;
   const stats: LedgerStat[] = [
     {
       key: "sealed",
       label: "Đã niêm phong",
-      value: STATS.sealed,
-      note: `+${formatInt(STATS.sealedThisWeek)} tuần này`,
+      value: o?.sealed ?? 0,
+      note: `+${formatInt(o?.sealedThisWeek ?? 0)} trong 7 ngày`,
     },
     {
       key: "today",
-      label: "Xác minh hôm nay",
-      value: STATS.verifiedToday + session.verified,
+      label: "Đối soát hôm nay",
+      value: o?.checkedToday ?? 0,
       tone: "success",
-      note:
-        `${formatInt(STATS.matchedToday + session.matched)} khớp · ${STATS.pendingToday} đang chờ` +
-        (session.verified - session.matched - session.mismatched > 0
-          ? ` · ${session.verified - session.matched - session.mismatched} chưa niêm phong`
-          : ""),
+      note: `${formatInt(o?.matchedToday ?? 0)} khớp · ${formatInt(o?.mismatchedToday ?? 0)} không khớp`,
     },
     {
       key: "mismatch",
       label: "Không khớp · 30 ngày",
-      value: STATS.mismatch30d,
+      value: o?.mismatch30d ?? 0,
       tone: "warning",
-      note: "Đã xử lý, có biên bản",
+      note: "Lần đối soát thấy tệp khác bản niêm phong",
     },
-    { key: "archived", label: "Hồ sơ lưu trữ", value: STATS.archived, note: "Lạnh · chỉ đọc" },
+    { key: "archived", label: "Hồ sơ lưu trữ", value: o?.archived ?? 0, note: "Chứng từ đã kết thúc · chỉ đọc" },
   ];
 
   return (
@@ -190,13 +214,21 @@ export const LedgerPage = () => {
         <div className="min-w-0">
           <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Sổ cái</h1>
           <p className="mt-1 text-[13px] text-muted">
-            Niêm phong bất biến trên Hyperledger Fabric · đối soát toàn vẹn và phòng đọc ảo cho hồ sơ lưu trữ
+            Niêm phong SHA-256 trong chuỗi hash kiểm toán · đối soát toàn vẹn và phòng đọc ảo cho hồ sơ lưu trữ
           </p>
         </div>
-        <button type="button" onClick={exportReport} className={secondaryButtonClass}>
-          <Download className="h-4 w-4" aria-hidden />
-          Xuất báo cáo đối soát
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {o?.chainReader && (
+            <button type="button" onClick={() => void verifyChain()} className={secondaryButtonClass}>
+              <Link2 className="h-4 w-4" aria-hidden />
+              Kiểm tra toàn chuỗi hash
+            </button>
+          )}
+          <button type="button" onClick={() => void exportReport()} className={secondaryButtonClass}>
+            <Download className="h-4 w-4" aria-hidden />
+            Xuất báo cáo đối soát
+          </button>
+        </div>
       </div>
 
       <LedgerStats items={stats} />
@@ -211,34 +243,37 @@ export const LedgerPage = () => {
             busy={busy}
             hashing={hashing}
             result={result}
-            onVerifyCode={() => verifyCode()}
+            onVerifyCode={() => void verifyCode(code)}
             onVerifyFile={(f) => void verifyFile(f)}
-            onSampleDownload={() => downloadText(SAMPLE_FILE.content, SAMPLE_FILE.name, "text/plain;charset=utf-8")}
             onCopy={() => void copyEvidence()}
             onCertificate={openCertificate}
           />
           <div className="flex min-w-0 flex-col gap-4">
             <RecentSealsWidget
-              rows={log}
+              rows={o?.recent ?? []}
               onPick={(r) => {
                 const input = `${r.code} v${r.version}`;
                 setCode(input);
-                verifyCode(input);
+                void verifyCode(input);
               }}
             />
-            <VirtualReadingRoomWidget docs={FEATURED} onOpen={openDoc} onShowAll={() => setTab("reading")} />
+            <VirtualReadingRoomWidget
+              docs={archive.docs.slice(0, FEATURED)}
+              onOpen={(d) => void openDoc(d)}
+              onShowAll={() => setTab("reading")}
+            />
           </div>
         </div>
       ) : (
-        <ReadingRoomPanel docs={ARCHIVE_DOCS} totalArchived={STATS.archived} logs={accessLogs} onOpen={openDoc} />
+        <ReadingRoomPanel
+          docs={archive.docs}
+          totalArchived={o?.archived ?? archive.docs.length}
+          logs={archive.access}
+          onOpen={(d) => void openDoc(d)}
+        />
       )}
 
-      <ReadOnlyViewerModal
-        doc={viewing?.doc}
-        viewer={tenant.full_name}
-        openedAt={viewing?.at ?? ""}
-        onClose={() => setViewing(undefined)}
-      />
+      <ReadOnlyViewerModal view={viewing} onClose={() => setViewing(undefined)} />
     </div>
   );
 };
