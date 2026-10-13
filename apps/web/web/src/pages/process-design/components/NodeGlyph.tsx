@@ -11,14 +11,34 @@ export const NodeGlyph = ({ type, className }: { type: NodeType; className?: str
   const box = cn("grid h-4 w-4 shrink-0 place-items-center", className);
   switch (type) {
     case "start":
-      return <span className={box}><span className="h-3.5 w-3.5 rounded-full border-[1.5px] border-bamboo-600" /></span>;
+      return (
+        <span className={box}>
+          <span className="h-3.5 w-3.5 rounded-full border-[1.5px] border-bamboo-600" />
+        </span>
+      );
     case "userTask":
-      return <span className={box}><span className="h-3.5 w-3.5 rounded-[3px] border-[1.5px] border-ink" /></span>;
+      return (
+        <span className={box}>
+          <span className="h-3.5 w-3.5 rounded-[3px] border-[1.5px] border-ink" />
+        </span>
+      );
     case "serviceTask":
-      return <span className={box}><Settings className="h-3.5 w-3.5 text-ink" strokeWidth={2} /></span>;
+      return (
+        <span className={box}>
+          <Settings className="h-3.5 w-3.5 text-ink" strokeWidth={2} />
+        </span>
+      );
     case "gateway":
-      return <span className={box}><span className="h-2.5 w-2.5 rotate-45 border-[1.5px] border-amber-500" /></span>;
+      return (
+        <span className={box}>
+          <span className="h-2.5 w-2.5 rotate-45 border-[1.5px] border-amber-500" />
+        </span>
+      );
     case "end":
-      return <span className={box}><span className="h-3.5 w-3.5 rounded-full border-[3px] border-ink" /></span>;
+      return (
+        <span className={box}>
+          <span className="h-3.5 w-3.5 rounded-full border-[3px] border-ink" />
+        </span>
+      );
   }
 };

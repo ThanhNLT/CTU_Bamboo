@@ -8,7 +8,12 @@ import type { DomainFilter } from "../types";
 
 /** Ô tìm tập dữ liệu/cột + chip lĩnh vực (kèm số tập dữ liệu của tenant trong lĩnh vực đó). */
 export const DataFilterBar = ({
-  query, onQueryChange, domain, onDomainChange, domains, total,
+  query,
+  onQueryChange,
+  domain,
+  onDomainChange,
+  domains,
+  total,
 }: {
   query: string;
   onQueryChange: (q: string) => void;
@@ -37,7 +42,9 @@ export const DataFilterBar = ({
             className={cn(
               "h-7 rounded-full px-3 text-[12px] font-medium transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
-              active ? "bg-bamboo-100 text-bamboo-800" : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
+              active
+                ? "bg-bamboo-100 text-bamboo-800"
+                : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
             )}
           >
             {d.key === "all" ? "Tất cả" : d.key} · <span className="tabular-nums">{d.count}</span>

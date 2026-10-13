@@ -44,11 +44,24 @@ const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
 /** `sample`: số minh họa (chưa nối nguồn KPI) — gắn nhãn để người xem không nhầm với số thật. */
 export const PinnedKpis = ({ kpis, sample }: { kpis: PinnedKpi[]; sample?: boolean }) => (
   <Panel
-    title={sample ? <>KPI đã ghim <span className="ml-1 whitespace-nowrap rounded-full bg-black/[0.045] px-2 py-0.5 text-[11px] font-medium text-muted">Minh họa</span></> : "KPI đã ghim"}
+    title={
+      sample ? (
+        <>
+          KPI đã ghim{" "}
+          <span className="ml-1 whitespace-nowrap rounded-full bg-black/[0.045] px-2 py-0.5 text-[11px] font-medium text-muted">
+            Minh họa
+          </span>
+        </>
+      ) : (
+        "KPI đã ghim"
+      )
+    }
     extra={<PanelLink to="/d/ops">Điều hành</PanelLink>}
   >
     <div className="divide-y divide-line">
-      {kpis.map((k) => <KpiBlock key={k.key} kpi={k} />)}
+      {kpis.map((k) => (
+        <KpiBlock key={k.key} kpi={k} />
+      ))}
     </div>
   </Panel>
 );

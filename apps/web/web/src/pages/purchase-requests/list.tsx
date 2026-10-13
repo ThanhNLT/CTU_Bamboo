@@ -11,8 +11,13 @@ import { formatDate, formatMoney } from "../../utils/format";
 import { PR_STATUS_LABEL } from "../../utils/status";
 
 type Row = BaseRecord & {
-  doc_no: string; title: string; status: string; total_amount: number; created_at: string;
-  requester?: { full_name: string }; org_unit?: { name: string };
+  doc_no: string;
+  title: string;
+  status: string;
+  total_amount: number;
+  created_at: string;
+  requester?: { full_name: string };
+  org_unit?: { name: string };
 };
 
 const STATUS_FILTERS = ["ALL", "DRAFT", "PENDING", "RETURNED", "APPROVED", "REJECTED", "CANCELLED"];
@@ -36,14 +41,39 @@ export const PurchaseRequestList = () => {
           options={STATUS_FILTERS.map((s) => ({ value: s, label: s === "ALL" ? "Tất cả" : PR_STATUS_LABEL[s] }))}
           onChange={(v) => setFilters(v === "ALL" ? [] : [{ field: "status", operator: "eq", value: v }], "replace")}
         />
-        <Input.Search placeholder="Tìm theo số hoặc tiêu đề" allowClear style={{ width: 280 }}
-          onSearch={(q) => setFilters(q ? [{ operator: "or", value: [
-            { field: "doc_no", operator: "contains", value: q },
-            { field: "title", operator: "contains", value: q },
-          ] }] : [], "replace")} />
+        <Input.Search
+          placeholder="Tìm theo số hoặc tiêu đề"
+          allowClear
+          style={{ width: 280 }}
+          onSearch={(q) =>
+            setFilters(
+              q
+                ? [
+                    {
+                      operator: "or",
+                      value: [
+                        { field: "doc_no", operator: "contains", value: q },
+                        { field: "title", operator: "contains", value: q },
+                      ],
+                    },
+                  ]
+                : [],
+              "replace",
+            )
+          }
+        />
       </Space>
       <Table {...tableProps} rowKey="id">
-        <Table.Column dataIndex="doc_no" title="Số" sorter render={(v: string) => <Typography.Text code style={{ whiteSpace: "nowrap" }}>{v}</Typography.Text>} />
+        <Table.Column
+          dataIndex="doc_no"
+          title="Số"
+          sorter
+          render={(v: string) => (
+            <Typography.Text code style={{ whiteSpace: "nowrap" }}>
+              {v}
+            </Typography.Text>
+          )}
+        />
         <Table.Column dataIndex="title" title="Tiêu đề" />
         <Table.Column dataIndex={["requester", "full_name"]} title="Người lập" />
         <Table.Column dataIndex={["org_unit", "name"]} title="Đơn vị" responsive={["lg"]} />

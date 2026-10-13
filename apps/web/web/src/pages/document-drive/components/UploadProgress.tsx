@@ -23,8 +23,7 @@ const ProgressBar = ({ item }: { item: UploadItem }) => {
       </div>
     );
   }
-  const fill =
-    item.status === "blocked" ? "bg-red-500" : item.status === "clean" ? "bg-bamboo-500" : "bg-bamboo-600";
+  const fill = item.status === "blocked" ? "bg-red-500" : item.status === "clean" ? "bg-bamboo-500" : "bg-bamboo-600";
   return (
     <div
       className="h-1.5 overflow-hidden rounded-full bg-gray-200/80"
@@ -34,7 +33,10 @@ const ProgressBar = ({ item }: { item: UploadItem }) => {
       aria-valuenow={item.progress}
       aria-label={item.name}
     >
-      <div className={cn("h-full rounded-full transition-[width] duration-500", fill)} style={{ width: `${item.progress}%` }} />
+      <div
+        className={cn("h-full rounded-full transition-[width] duration-500", fill)}
+        style={{ width: `${item.progress}%` }}
+      />
     </div>
   );
 };
@@ -83,7 +85,9 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
           {items.map((item) => (
             <li key={item.id}>
               <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">
-                <span className="min-w-0 truncate text-ink" title={item.name}>{item.name}</span>
+                <span className="min-w-0 truncate text-ink" title={item.name}>
+                  {item.name}
+                </span>
                 <span
                   className={cn(
                     "shrink-0 tabular-nums",

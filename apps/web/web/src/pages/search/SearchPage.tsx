@@ -16,7 +16,14 @@ import { SearchBar } from "./components/SearchBar";
 import { SearchFilters } from "./components/SearchFilters";
 import { SearchResultList } from "./components/SearchResultList";
 import {
-  applyFilters, defaultCompanies, detectConcepts, facetCounts, highlightTerms, permittedCompanies, searchIndex, sortResults,
+  applyFilters,
+  defaultCompanies,
+  detectConcepts,
+  facetCounts,
+  highlightTerms,
+  permittedCompanies,
+  searchIndex,
+  sortResults,
 } from "./engine";
 import { DEFAULT_QUERY, DEFAULT_TYPES, EXAMPLE_QUERIES } from "./mock";
 import type { Company, ResultType, SearchMode, SortKey, TimeRange } from "./types";
@@ -109,7 +116,9 @@ export const SearchPage = () => {
   const download = async (attachmentId: string) => {
     try {
       const { get_download_url } = await request<{ get_download_url: { url: string } }>(
-        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`, { a: attachmentId });
+        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`,
+        { a: attachmentId },
+      );
       window.open(get_download_url.url, "_blank", "noopener");
     } catch (e) {
       message.error((e as Error).message);

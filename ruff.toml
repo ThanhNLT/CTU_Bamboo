@@ -7,7 +7,7 @@
 #   uvx ruff check --select I .  thứ tự import (thư viện chuẩn / bên ngoài / nội bộ)
 line-length = 120
 target-version = "py313"
-extend-exclude = []
+extend-exclude = ["*.md"]
 
 [lint.isort]
 known-first-party = ["app", "conftest"]

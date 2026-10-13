@@ -6,7 +6,15 @@ import { Eye, Lock } from "lucide-react";
 import type { ArchiveDoc } from "../types";
 
 /** Một hồ sơ lưu trữ: ổ khóa, tên, năm · số trang, nút "Mở chỉ đọc". */
-export const ArchiveDocRow = ({ doc, detailed, onOpen }: { doc: ArchiveDoc; detailed?: boolean; onOpen: () => void }) => (
+export const ArchiveDocRow = ({
+  doc,
+  detailed,
+  onOpen,
+}: {
+  doc: ArchiveDoc;
+  detailed?: boolean;
+  onOpen: () => void;
+}) => (
   <div className="flex items-center gap-3 py-3">
     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-canvas text-muted" aria-hidden>
       <Lock className="h-4 w-4" />

@@ -6,7 +6,15 @@ import { useLogout } from "@refinedev/core";
 import { useKBar } from "@refinedev/kbar";
 import { Dropdown, Popover, type MenuProps } from "antd";
 import {
-  Check, ChevronDown, ChevronLeft, ChevronRight, LayoutGrid, LogOut, Menu, Search, Sparkles,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  LogOut,
+  Menu,
+  Search,
+  Sparkles,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useSession } from "../../auth/useSession";
@@ -26,7 +34,13 @@ const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(naviga
 
 /** "Nguyễn Ngọc Anh" → "NA" (hai chữ cuối, theo cách gọi tên tiếng Việt). */
 const initials = (name: string) =>
-  name.trim().split(/\s+/).slice(-2).map((w) => w[0]).join("").toUpperCase();
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 
 /** Hai nút ‹ › dạng viên thuốc: thu gọn / mở rộng menu trái. */
 const SiderToggle = ({ collapsed, onCollapsedChange }: Pick<HeaderProps, "collapsed" | "onCollapsedChange">) => (
@@ -88,14 +102,19 @@ const CompanySwitcher = () => {
   const items: MenuProps["items"] = tenants.map((t) => ({
     key: t.tenant_id,
     label: t.tenant_name,
-    icon: t.tenant_id === tenant.tenant_id ? <Check className="h-3.5 w-3.5" /> : <span className="inline-block w-3.5" />,
+    icon:
+      t.tenant_id === tenant.tenant_id ? <Check className="h-3.5 w-3.5" /> : <span className="inline-block w-3.5" />,
     onClick: () => t.tenant_id !== tenant.tenant_id && switchTenant(t.tenant_id),
   }));
 
   // Tenant hiện tại luôn hiển thị (UI-04).
   return (
     <Dropdown menu={{ items, selectedKeys: [tenant.tenant_id] }} trigger={["click"]} placement="bottomRight">
-      <button type="button" className={cn(pillButtonClass, "max-w-[240px]")} aria-label={`Đơn vị: ${tenant.tenant_name}`}>
+      <button
+        type="button"
+        className={cn(pillButtonClass, "max-w-[240px]")}
+        aria-label={`Đơn vị: ${tenant.tenant_name}`}
+      >
         <span className="h-2 w-2 shrink-0 rounded-full bg-orange-500" aria-hidden />
         <span className="hidden truncate sm:inline">{tenant.tenant_name}</span>
         {tenants.length > 1 && <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />}
@@ -109,21 +128,27 @@ const AppLauncher = () => {
   const content = (
     <div className="w-[320px] space-y-3 p-1">
       <div className="grid grid-cols-3 gap-1">
-        {NAV_GROUPS.flatMap((g) => g.items.map((i) => ({ ...i, access: i.access ?? g.access }))).map(({ key, label, to, icon: Icon, access }) => (
-          <NavGate key={key} access={access}>
-          <Link
-            to={to}
-            className="flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[11.5px] leading-tight text-body hover:bg-bamboo-50 hover:text-ink"
-          >
-            <Icon className="h-5 w-5 text-bamboo-700" strokeWidth={1.75} aria-hidden />
-            {label}
-          </Link>
-          </NavGate>
-        ))}
+        {NAV_GROUPS.flatMap((g) => g.items.map((i) => ({ ...i, access: i.access ?? g.access }))).map(
+          ({ key, label, to, icon: Icon, access }) => (
+            <NavGate key={key} access={access}>
+              <Link
+                to={to}
+                className="flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[11.5px] leading-tight text-body hover:bg-bamboo-50 hover:text-ink"
+              >
+                <Icon className="h-5 w-5 text-bamboo-700" strokeWidth={1.75} aria-hidden />
+                {label}
+              </Link>
+            </NavGate>
+          ),
+        )}
       </div>
       <div className="border-t border-line pt-2">
         {EXTRA_PAGES.map((p) => (
-          <Link key={p.to} to={p.to} className="block rounded-lg px-2 py-1.5 text-[13px] text-body hover:bg-bamboo-50 hover:text-ink">
+          <Link
+            key={p.to}
+            to={p.to}
+            className="block rounded-lg px-2 py-1.5 text-[13px] text-body hover:bg-bamboo-50 hover:text-ink"
+          >
             {p.label} <span className="text-muted">· {p.group}</span>
           </Link>
         ))}

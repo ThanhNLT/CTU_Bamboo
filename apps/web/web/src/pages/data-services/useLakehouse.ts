@@ -63,7 +63,12 @@ const toDataset = (d: RawDataset): Dataset => {
     certified: false,
     pii: "masked",
     tier: "hot",
-    columns: d.columns.map((c) => ({ name: c.name, type: c.type, description: COLUMN_NOTE[c.name] ?? "", pii: PII_COLUMN.test(c.name) })),
+    columns: d.columns.map((c) => ({
+      name: c.name,
+      type: c.type,
+      description: COLUMN_NOTE[c.name] ?? "",
+      pii: PII_COLUMN.test(c.name),
+    })),
     checks: [],
     upstream: [`PostgreSQL · bms.${source}`, `Kafka · bms.${source}`, `Iceberg · lakehouse.bronze.${d.name}`],
     downstream: ["Dịch vụ dữ liệu (trang này)"],
@@ -102,9 +107,12 @@ export const useLakehousePreview = (name?: string) => {
     setPreview(undefined);
     setError(undefined);
     request<{ lakehouse_preview: { total_rows: number; rows: Array<Record<string, unknown>>; masked: string[] } }>(
-      PREVIEW, { dataset: name },
+      PREVIEW,
+      { dataset: name },
     )
-      .then(({ lakehouse_preview: p }) => alive && setPreview({ totalRows: p.total_rows, rows: p.rows, masked: p.masked }))
+      .then(
+        ({ lakehouse_preview: p }) => alive && setPreview({ totalRows: p.total_rows, rows: p.rows, masked: p.masked }),
+      )
       .catch((e: Error) => alive && setError(e.message));
     return () => {
       alive = false;

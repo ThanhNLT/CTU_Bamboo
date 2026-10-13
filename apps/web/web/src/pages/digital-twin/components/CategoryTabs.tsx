@@ -8,13 +8,19 @@ import { CATEGORY_TABS } from "../utils";
 
 /** Tab phân loại thực thể dạng viên thuốc, kèm số lượng. */
 export const CategoryTabs = ({
-  value, counts, onChange,
+  value,
+  counts,
+  onChange,
 }: {
   value: CategoryFilter;
   counts: Record<CategoryFilter, number>;
   onChange: (c: CategoryFilter) => void;
 }) => (
-  <div role="tablist" aria-label="Loại thực thể" className="inline-flex max-w-full flex-wrap gap-0.5 self-start rounded-full bg-black/[0.045] p-1">
+  <div
+    role="tablist"
+    aria-label="Loại thực thể"
+    className="inline-flex max-w-full flex-wrap gap-0.5 self-start rounded-full bg-black/[0.045] p-1"
+  >
     {CATEGORY_TABS.map(({ key, label }) => {
       const active = key === value;
       return (

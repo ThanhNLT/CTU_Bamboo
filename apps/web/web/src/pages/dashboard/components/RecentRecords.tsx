@@ -36,7 +36,12 @@ const columns: TableColumnsType<RecentRecord> = [
     render: (v: string) => <span className="font-medium text-ink">{v}</span>,
   },
   { title: "Trạng thái", key: "status", width: 150, render: (_: unknown, r: RecentRecord) => <StatusCell r={r} /> },
-  { title: "Cập nhật", dataIndex: "updatedAt", width: 140, render: (v: string) => <span className="text-body">{v}</span> },
+  {
+    title: "Cập nhật",
+    dataIndex: "updatedAt",
+    width: 140,
+    render: (v: string) => <span className="text-body">{v}</span>,
+  },
   { title: "Loại", dataIndex: "kind", width: 150, render: (v: string) => <KindTag kind={v} /> },
 ];
 

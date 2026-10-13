@@ -7,7 +7,11 @@ import { cn } from "../../utils/cn";
 
 /** Ô tìm kiếm Bamboo: kính lúp bên trái, nút xóa khi có chữ. Cao 40px, bo 12px. */
 export const SearchInput = ({
-  value, onChange, placeholder, label, className,
+  value,
+  onChange,
+  placeholder,
+  label,
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;

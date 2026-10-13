@@ -15,7 +15,9 @@ const base =
  * `onDecide` chỉ được gọi khi hợp lệ; hộp xác nhận do trang cha mở.
  */
 export const ActionWidget = ({
-  taskKey, disabledReason, onDecide,
+  taskKey,
+  disabledReason,
+  onDecide,
 }: {
   /** Đổi việc thì xóa ý kiến đang gõ. */
   taskKey: string;
@@ -46,8 +48,12 @@ export const ActionWidget = ({
 
   return (
     <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-labelledby={`${id}-title`}>
-      <h3 id={`${id}-title`} className="text-[14px] font-semibold text-ink">Ý kiến</h3>
-      <label htmlFor={`${id}-comment`} className="sr-only">Ý kiến của bạn</label>
+      <h3 id={`${id}-title`} className="text-[14px] font-semibold text-ink">
+        Ý kiến
+      </h3>
+      <label htmlFor={`${id}-comment`} className="sr-only">
+        Ý kiến của bạn
+      </label>
       <textarea
         id={`${id}-comment`}
         value={comment}
@@ -67,14 +73,21 @@ export const ActionWidget = ({
           error ? "border-red-300 focus:ring-red-100" : "border-line focus:border-bamboo-400 focus:ring-bamboo-100",
         )}
       />
-      {error && <p id={`${id}-error`} className="mt-1.5 text-[12px] text-red-600">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="mt-1.5 text-[12px] text-red-600">
+          {error}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-col gap-2">
         <button
           type="button"
           disabled={disabled}
           onClick={() => decide("approve")}
-          className={cn(base, "w-full bg-bamboo-600 font-semibold text-white shadow-[0_1px_2px_rgb(31_81_42/0.25)] hover:bg-bamboo-700 focus-visible:outline-bamboo-500")}
+          className={cn(
+            base,
+            "w-full bg-bamboo-600 font-semibold text-white shadow-[0_1px_2px_rgb(31_81_42/0.25)] hover:bg-bamboo-700 focus-visible:outline-bamboo-500",
+          )}
         >
           Duyệt
         </button>
@@ -83,7 +96,10 @@ export const ActionWidget = ({
             type="button"
             disabled={disabled}
             onClick={() => decide("return")}
-            className={cn(base, "border border-line bg-canvas font-medium text-ink hover:bg-gray-200/60 focus-visible:outline-bamboo-500")}
+            className={cn(
+              base,
+              "border border-line bg-canvas font-medium text-ink hover:bg-gray-200/60 focus-visible:outline-bamboo-500",
+            )}
           >
             Trả lại
           </button>
@@ -91,7 +107,10 @@ export const ActionWidget = ({
             type="button"
             disabled={disabled}
             onClick={() => decide("reject")}
-            className={cn(base, "border border-red-300 bg-white font-medium text-red-600 hover:bg-red-50 focus-visible:outline-red-500")}
+            className={cn(
+              base,
+              "border border-red-300 bg-white font-medium text-red-600 hover:bg-red-50 focus-visible:outline-red-500",
+            )}
           >
             Từ chối
           </button>

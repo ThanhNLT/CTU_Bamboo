@@ -7,7 +7,9 @@ import type { DriveNavItem, DriveSection } from "../types";
 
 /** Menu vùng lưu trữ (Của tôi, Phòng, Dùng chung...) ở cột trái của Ổ đĩa. */
 export const DriveSidebar = ({
-  items, active, onChange,
+  items,
+  active,
+  onChange,
 }: {
   items: DriveNavItem[];
   active: DriveSection;

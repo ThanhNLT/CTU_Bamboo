@@ -59,7 +59,8 @@ export const DigitalTwinPage = () => {
   // Thực thể đang chọn bị lọc mất thì chọn thực thể đầu tiên còn hiển thị.
   const selected = visible.find((e) => e.id === selectedId) ?? visible[0];
   const chartMetric = selected
-    ? ((chartPick?.entityId === selected.id && selected.metrics.find((m) => m.key === chartPick.key)) || defaultMetric(selected.metrics))
+    ? (chartPick?.entityId === selected.id && selected.metrics.find((m) => m.key === chartPick.key)) ||
+      defaultMetric(selected.metrics)
     : undefined;
 
   const createIncident = () => {
@@ -87,7 +88,10 @@ export const DigitalTwinPage = () => {
         />
 
         {selected && chartMetric ? (
-          <section aria-label={`Chi tiết ${selected.name}`} className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pr-1">
+          <section
+            aria-label={`Chi tiết ${selected.name}`}
+            className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pr-1"
+          >
             <EntityHeader
               entity={selected}
               incidentCode={incidents[selected.id]}
@@ -95,7 +99,11 @@ export const DigitalTwinPage = () => {
               onCreateIncident={createIncident}
             />
 
-            <div role="group" aria-label="Chỉ số cảm biến — bấm một chỉ số để xem biểu đồ" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div
+              role="group"
+              aria-label="Chỉ số cảm biến — bấm một chỉ số để xem biểu đồ"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+            >
               {selected.metrics.map((m) => (
                 <MetricCard
                   key={m.key}

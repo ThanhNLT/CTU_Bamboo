@@ -16,13 +16,19 @@ const TYPE_OPTIONS: Array<{ label: string; value: RecordType | "all" }> = [
 
 /** Tab trạng thái dạng viên thuốc, kèm số đếm. */
 const StatusTabs = ({
-  value, counts, onChange,
+  value,
+  counts,
+  onChange,
 }: {
   value: StatusTab;
   counts: Record<StatusTab, number>;
   onChange: (t: StatusTab) => void;
 }) => (
-  <div role="tablist" aria-label="Trạng thái hồ sơ" className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1">
+  <div
+    role="tablist"
+    aria-label="Trạng thái hồ sơ"
+    className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+  >
     {STATUS_TABS.map(({ key, label }) => {
       const active = key === value;
       return (
@@ -46,7 +52,9 @@ const StatusTabs = ({
 );
 
 export const RecordsFilterBar = ({
-  filters, counts, onChange,
+  filters,
+  counts,
+  onChange,
 }: {
   filters: RecordFilters;
   counts: Record<StatusTab, number>;

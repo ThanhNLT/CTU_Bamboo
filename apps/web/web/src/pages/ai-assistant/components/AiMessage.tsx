@@ -60,7 +60,13 @@ const iconBtn =
 
 /** Câu trả lời của trợ lý: văn bản có trích nguồn, biểu đồ, các bước, nguồn, đề xuất tác vụ, phản hồi. */
 export const AiMessage = ({
-  msg, feedback, createdCode, onFeedback, onCopy, onEditDraft, onConfirmDraft,
+  msg,
+  feedback,
+  createdCode,
+  onFeedback,
+  onCopy,
+  onEditDraft,
+  onConfirmDraft,
 }: {
   msg: AiMsg;
   feedback?: "up" | "down";
@@ -94,10 +100,22 @@ export const AiMessage = ({
         <AiActionCard action={msg.action} createdCode={createdCode} onEdit={onEditDraft} onConfirm={onConfirmDraft} />
       )}
       <div className="flex items-center gap-1">
-        <button type="button" onClick={() => onFeedback("up")} aria-pressed={feedback === "up"} aria-label="Câu trả lời hữu ích" className={cn(iconBtn, feedback === "up" ? "text-bamboo-700" : idle)}>
+        <button
+          type="button"
+          onClick={() => onFeedback("up")}
+          aria-pressed={feedback === "up"}
+          aria-label="Câu trả lời hữu ích"
+          className={cn(iconBtn, feedback === "up" ? "text-bamboo-700" : idle)}
+        >
           <ThumbsUp className="h-3.5 w-3.5" aria-hidden />
         </button>
-        <button type="button" onClick={() => onFeedback("down")} aria-pressed={feedback === "down"} aria-label="Câu trả lời chưa tốt" className={cn(iconBtn, feedback === "down" ? "text-red-600" : idle)}>
+        <button
+          type="button"
+          onClick={() => onFeedback("down")}
+          aria-pressed={feedback === "down"}
+          aria-label="Câu trả lời chưa tốt"
+          className={cn(iconBtn, feedback === "down" ? "text-red-600" : idle)}
+        >
           <ThumbsDown className="h-3.5 w-3.5" aria-hidden />
         </button>
         <button type="button" onClick={onCopy} aria-label="Sao chép câu trả lời" className={cn(iconBtn, idle)}>

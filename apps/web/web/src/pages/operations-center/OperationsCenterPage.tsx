@@ -84,23 +84,41 @@ export const OperationsCenterPage = () => {
         </div>
       ) : (
         <>
-          {ops.error && <Alert type="error" showIcon message="Không tải được một phần số liệu" description={ops.error} />}
+          {ops.error && (
+            <Alert type="error" showIcon message="Không tải được một phần số liệu" description={ops.error} />
+          )}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-            {ops.kpis.map((k) => <KpiCard key={k.key} kpi={k} />)}
+            {ops.kpis.map((k) => (
+              <KpiCard key={k.key} kpi={k} />
+            ))}
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <DailyApprovalsChart
-              data={ops.daily} companies={ops.companies} company={ops.company} meta={meta} rangeLabel={ops.rangeLabel}
-              highlight={highlight} onHighlight={setHighlight}
+              data={ops.daily}
+              companies={ops.companies}
+              company={ops.company}
+              meta={meta}
+              rangeLabel={ops.rangeLabel}
+              highlight={highlight}
+              onHighlight={setHighlight}
             />
-            <PendingByCompanyChart rows={ops.pending} company={ops.company} meta={meta} highlight={highlight} onHighlight={setHighlight} />
+            <PendingByCompanyChart
+              rows={ops.pending}
+              company={ops.company}
+              meta={meta}
+              highlight={highlight}
+              onHighlight={setHighlight}
+            />
             <WarningMapWidget sites={sites} />
             <MonthlyApprovalsChart data={ops.monthly} year={dayjs().year()} meta={meta} />
           </div>
 
           <OverdueTable
-            rows={ops.overdue} company={ops.company} highlight={highlight} onHighlight={setHighlight}
+            rows={ops.overdue}
+            company={ops.company}
+            highlight={highlight}
+            onHighlight={setHighlight}
             definition={`5 hồ sơ có bước duyệt đang mở lâu hơn hạn ${SLA_HOURS} giờ nhất. Nguồn: wf.task đang mở, trong phạm vi bạn được xem.`}
           />
         </>

@@ -56,7 +56,13 @@ const ValidationBox = ({ issues, onFocusNode }: { issues: Issue[]; onFocusNode: 
 
 /** Cột phải: thuộc tính phần tử đang chọn + kết quả kiểm tra toàn quy trình. */
 export const PropertiesPanel = ({
-  node, model, issues, onChange, onEdgeChange, onDelete, onFocusNode,
+  node,
+  model,
+  issues,
+  onChange,
+  onEdgeChange,
+  onDelete,
+  onFocusNode,
 }: {
   node?: BpmnNode;
   model: ProcessModel;
@@ -67,7 +73,10 @@ export const PropertiesPanel = ({
   onDelete: () => void;
   onFocusNode: (id: string) => void;
 }) => (
-  <aside aria-label="Thuộc tính" className="flex min-w-0 flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card">
+  <aside
+    aria-label="Thuộc tính"
+    className="flex min-w-0 flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card"
+  >
     {!node ? (
       <div className="flex flex-col items-center gap-2 py-8 text-center">
         <MousePointerClick className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
@@ -152,30 +161,36 @@ export const PropertiesPanel = ({
             <fieldset>
               <legend className="mb-1.5 text-[11.5px] text-muted">Các nhánh ra</legend>
               <ul className="m-0 list-none space-y-2 p-0">
-                {model.edges.filter((e) => e.from === node.id).map((e) => {
-                  const target = model.nodes.find((n) => n.id === e.to);
-                  return (
-                    <li key={e.id} className="rounded-lg bg-canvas px-2.5 py-2">
-                      <div className="text-[12.5px] text-ink">
-                        <b className="font-semibold">{e.label ?? "(không tên)"}</b> → {target?.name ?? e.to}
-                      </div>
-                      <Checkbox
-                        className="mt-1"
-                        checked={e.notifySubmitter ?? false}
-                        onChange={(ev) => onEdgeChange(e.id, { notifySubmitter: ev.target.checked })}
-                      >
-                        <span className="text-[12px]">Gửi thông báo cho người nộp</span>
-                      </Checkbox>
-                    </li>
-                  );
-                })}
+                {model.edges
+                  .filter((e) => e.from === node.id)
+                  .map((e) => {
+                    const target = model.nodes.find((n) => n.id === e.to);
+                    return (
+                      <li key={e.id} className="rounded-lg bg-canvas px-2.5 py-2">
+                        <div className="text-[12.5px] text-ink">
+                          <b className="font-semibold">{e.label ?? "(không tên)"}</b> → {target?.name ?? e.to}
+                        </div>
+                        <Checkbox
+                          className="mt-1"
+                          checked={e.notifySubmitter ?? false}
+                          onChange={(ev) => onEdgeChange(e.id, { notifySubmitter: ev.target.checked })}
+                        >
+                          <span className="text-[12px]">Gửi thông báo cho người nộp</span>
+                        </Checkbox>
+                      </li>
+                    );
+                  })}
               </ul>
             </fieldset>
           )}
         </div>
 
         {node.type !== "start" && (
-          <button type="button" onClick={onDelete} className="inline-flex h-8 items-center gap-1.5 self-start rounded-full border border-red-200 bg-white px-3 text-[12.5px] font-medium text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500">
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex h-8 items-center gap-1.5 self-start rounded-full border border-red-200 bg-white px-3 text-[12.5px] font-medium text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+          >
             <Trash2 className="h-3.5 w-3.5" aria-hidden />
             Xóa phần tử
           </button>

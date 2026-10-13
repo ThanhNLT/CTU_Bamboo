@@ -7,7 +7,8 @@ import type { LineageNode, QualityCheck } from "../types";
 
 /** Banner đỏ cho kiểm tra chất lượng thất bại. Có nhiều lỗi thì hiện lỗi đầu + số lỗi còn lại. */
 export const QualityAlertBanner = ({
-  failures, onView,
+  failures,
+  onView,
 }: {
   failures: Array<{ node: LineageNode; check: QualityCheck; impacted: number }>;
   onView: (nodeId: string) => void;
@@ -16,7 +17,10 @@ export const QualityAlertBanner = ({
   if (!first) return null;
   const more = failures.length - 1;
   return (
-    <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      role="alert"
+      className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+    >
       <p className="flex min-w-0 items-start gap-2.5 text-[13px] text-body">
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
         <span>

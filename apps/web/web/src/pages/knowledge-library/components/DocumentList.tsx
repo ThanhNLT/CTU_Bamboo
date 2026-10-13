@@ -10,7 +10,10 @@ import { IndexStatus } from "./IndexStatus";
 
 /** Cột trái: danh sách tài liệu, cuộn độc lập. Mũi tên lên/xuống chuyển tài liệu đang chọn. */
 export const DocumentList = ({
-  docs, selectedId, onSelect, className,
+  docs,
+  selectedId,
+  onSelect,
+  className,
 }: {
   docs: LibraryDoc[];
   selectedId?: string;

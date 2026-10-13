@@ -9,7 +9,10 @@ import type { ProcessDef } from "../types";
 
 /** Tiêu đề + Kiểm tra / Tải tệp BPMN / Chạy thử sandbox + thanh cảnh báo bản nháp. */
 export const ProcessHeader = ({
-  process, onValidate, onDownload, onSandbox,
+  process,
+  onValidate,
+  onDownload,
+  onSandbox,
 }: {
   process: ProcessDef;
   onValidate: () => void;
@@ -25,17 +28,27 @@ export const ProcessHeader = ({
         </p>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-        <button type="button" onClick={onValidate} className={secondaryButtonClass}>Kiểm tra</button>
-        <button type="button" onClick={onDownload} className={secondaryButtonClass}>Tải tệp BPMN</button>
-        <button type="button" onClick={onSandbox} className={primaryButtonClass}>Chạy thử sandbox</button>
+        <button type="button" onClick={onValidate} className={secondaryButtonClass}>
+          Kiểm tra
+        </button>
+        <button type="button" onClick={onDownload} className={secondaryButtonClass}>
+          Tải tệp BPMN
+        </button>
+        <button type="button" onClick={onSandbox} className={primaryButtonClass}>
+          Chạy thử sandbox
+        </button>
       </div>
     </div>
 
-    <div role="note" className="flex items-start gap-2.5 rounded-xl border border-amber-200/70 bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-900">
+    <div
+      role="note"
+      className="flex items-start gap-2.5 rounded-xl border border-amber-200/70 bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-900"
+    >
       <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-600" strokeWidth={2} aria-hidden />
       <p>
         <b className="font-semibold">Bản nháp – chưa vào Git.</b> Áp dụng chính thức bằng cách tải tệp và commit vào{" "}
-        <code className="rounded bg-amber-100/80 px-1 font-mono text-[11.5px]">{PROCESSES_PATH}</code>; CI sẽ triển khai.
+        <code className="rounded bg-amber-100/80 px-1 font-mono text-[11.5px]">{PROCESSES_PATH}</code>; CI sẽ triển
+        khai.
       </p>
     </div>
   </div>

@@ -23,10 +23,15 @@ export const SecurityEventsList = ({ events, limit }: { events: GuardEvent[]; li
         const blocked = e.action === "blocked";
         return (
           <li key={e.id} className="flex items-start gap-2.5">
-            <ShieldAlert className={cn("mt-0.5 h-4 w-4 shrink-0", blocked ? "text-red-600" : "text-yellow-600")} aria-hidden />
+            <ShieldAlert
+              className={cn("mt-0.5 h-4 w-4 shrink-0", blocked ? "text-red-600" : "text-yellow-600")}
+              aria-hidden
+            />
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-medium text-ink">{e.title}</span>
-              <span className="block text-[11.5px] text-muted">{e.at} · {e.source}</span>
+              <span className="block text-[11.5px] text-muted">
+                {e.at} · {e.source}
+              </span>
             </span>
             <span
               className={cn(

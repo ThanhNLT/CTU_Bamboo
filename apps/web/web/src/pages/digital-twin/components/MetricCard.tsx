@@ -24,7 +24,9 @@ const VALUE_CLASS: Record<MetricStatus, string> = {
 
 /** Thẻ một chỉ số cảm biến. Bấm để vẽ chỉ số này ở biểu đồ bên dưới. */
 export const MetricCard = ({
-  metric, selected, onSelect,
+  metric,
+  selected,
+  onSelect,
 }: {
   metric: Metric;
   selected: boolean;
@@ -48,7 +50,12 @@ export const MetricCard = ({
         {selected && <Activity className="h-3.5 w-3.5 shrink-0 text-bamboo-600" aria-label="Đang xem biểu đồ" />}
       </span>
       <span className="mt-2 flex items-baseline gap-1.5">
-        <span className={cn("text-[26px] font-semibold leading-none tracking-[-0.01em] tabular-nums", VALUE_CLASS[metric.status])}>
+        <span
+          className={cn(
+            "text-[26px] font-semibold leading-none tracking-[-0.01em] tabular-nums",
+            VALUE_CLASS[metric.status],
+          )}
+        >
           {formatNumber(metric.value, metric.decimals)}
         </span>
         <span className="text-[13px] text-muted">{metric.unit}</span>

@@ -6,12 +6,23 @@
 export type TipProps = {
   active?: boolean;
   label?: string | number;
-  payload?: Array<{ name?: string | number; value?: number | string | null; color?: string; stroke?: string; fill?: string; dataKey?: string | number }>;
+  payload?: Array<{
+    name?: string | number;
+    value?: number | string | null;
+    color?: string;
+    stroke?: string;
+    fill?: string;
+    dataKey?: string | number;
+  }>;
 };
 
 /** Hộp gợi ý khi rê chuột: nhãn trục X + từng chuỗi (chấm màu, tên, giá trị). Chữ luôn màu mực, không màu chuỗi. */
 export const ChartTooltip = ({
-  active, label, payload, nameOf, unit,
+  active,
+  label,
+  payload,
+  nameOf,
+  unit,
 }: TipProps & { nameOf?: (key: string) => string; unit?: string }) => {
   if (!active || !payload?.length) return null;
   const rows = payload.filter((p) => p.value != null);

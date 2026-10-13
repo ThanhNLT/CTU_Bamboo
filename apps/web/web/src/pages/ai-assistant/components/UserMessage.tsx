@@ -13,7 +13,10 @@ export const UserMessage = ({ msg }: { msg: UserMsg }) => (
       {msg.files?.length ? (
         <ul className="m-0 mt-1.5 flex list-none flex-wrap gap-1.5 p-0">
           {msg.files.map((f) => (
-            <li key={f} className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11.5px] text-body">
+            <li
+              key={f}
+              className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11.5px] text-body"
+            >
               <Paperclip className="h-3 w-3" aria-hidden />
               {f}
             </li>

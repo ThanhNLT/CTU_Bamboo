@@ -34,7 +34,8 @@
   --color-body: #36413a;
   --color-muted: #6b7670;
 
-  --font-sans: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans:
+    "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
   --shadow-card: 0 1px 2px rgb(16 24 20 / 0.04), 0 1px 1px rgb(16 24 20 / 0.02);

@@ -21,14 +21,24 @@ const DOT_CLASS: Record<NodeStatus, string> = {
 };
 
 const SectionTitle = ({ children, id }: { children: string; id?: string }) => (
-  <h3 id={id} className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h3>
+  <h3 id={id} className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+    {children}
+  </h3>
 );
 
 const fullWidth = "w-full justify-center";
 
 /** Cột phải: chi tiết nút đang chọn — kiểm tra chất lượng (Soda), tác động phía sau, thao tác. */
 export const NodeQualityPanel = ({
-  node, status, causes, impacts, statuses, notified, onNotify, onSelect, className,
+  node,
+  status,
+  causes,
+  impacts,
+  statuses,
+  notified,
+  onNotify,
+  onSelect,
+  className,
 }: {
   node: LineageNode;
   status: NodeStatus;
@@ -46,10 +56,18 @@ export const NodeQualityPanel = ({
   const tag = status === "failed" ? `${failed} kiểm tra lỗi` : STATUS_LABEL[status];
 
   return (
-    <aside aria-label={`Chi tiết ${node.fqn}`} className={cn("flex flex-col rounded-2xl border border-line bg-white p-5 shadow-card", className)}>
+    <aside
+      aria-label={`Chi tiết ${node.fqn}`}
+      className={cn("flex flex-col rounded-2xl border border-line bg-white p-5 shadow-card", className)}
+    >
       <div className="break-all font-mono text-[11.5px] text-muted">{node.fqn}</div>
       <h2 className="mt-1 text-[18px] font-semibold leading-snug tracking-[-0.01em] text-ink">{node.title}</h2>
-      <span className={cn("mt-2 inline-flex h-6 items-center gap-1.5 self-start rounded-full px-2.5 text-[12px] font-medium", TAG_CLASS[status])}>
+      <span
+        className={cn(
+          "mt-2 inline-flex h-6 items-center gap-1.5 self-start rounded-full px-2.5 text-[12px] font-medium",
+          TAG_CLASS[status],
+        )}
+      >
         <span className={cn("h-1.5 w-1.5 rounded-full", DOT_CLASS[status])} aria-hidden />
         {tag}
       </span>
@@ -71,7 +89,11 @@ export const NodeQualityPanel = ({
           {causes.map((c, i) => (
             <span key={c.id}>
               {i > 0 && ", "}
-              <button type="button" onClick={() => onSelect(c.id)} className="font-mono font-semibold underline-offset-2 hover:underline">
+              <button
+                type="button"
+                onClick={() => onSelect(c.id)}
+                className="font-mono font-semibold underline-offset-2 hover:underline"
+              >
                 {c.fqn}
               </button>
             </span>
@@ -122,10 +144,17 @@ export const NodeQualityPanel = ({
                   >
                     <span className={cn("mt-[7px] h-2 w-2 shrink-0 rounded-full", DOT_CLASS[s])} aria-hidden />
                     <span className="min-w-0">
-                      <span className={cn("block truncate text-[13px] font-semibold text-ink group-hover:text-bamboo-700", n.mono && "font-mono")}>
+                      <span
+                        className={cn(
+                          "block truncate text-[13px] font-semibold text-ink group-hover:text-bamboo-700",
+                          n.mono && "font-mono",
+                        )}
+                      >
                         {n.name}
                       </span>
-                      <span className="block truncate text-[11.5px] text-muted">{n.usedBy ?? `${n.tech} · ${n.fqn}`}</span>
+                      <span className="block truncate text-[11.5px] text-muted">
+                        {n.usedBy ?? `${n.tech} · ${n.fqn}`}
+                      </span>
                     </span>
                   </button>
                 </li>
@@ -141,7 +170,10 @@ export const NodeQualityPanel = ({
           {notified ? "Đã báo chủ sở hữu" : "Báo chủ sở hữu"}
         </button>
         {node.datasetId ? (
-          <Link to={`/d/services?dataset=${encodeURIComponent(node.datasetId)}`} className={cn(secondaryButtonClass, fullWidth)}>
+          <Link
+            to={`/d/services?dataset=${encodeURIComponent(node.datasetId)}`}
+            className={cn(secondaryButtonClass, fullWidth)}
+          >
             Mở tập dữ liệu
           </Link>
         ) : node.appLink ? (
@@ -149,7 +181,12 @@ export const NodeQualityPanel = ({
             Mở trong ứng dụng
           </Link>
         ) : (
-          <a href={openMetadataUrl(node.fqn)} target="_blank" rel="noopener noreferrer" className={cn(secondaryButtonClass, fullWidth)}>
+          <a
+            href={openMetadataUrl(node.fqn)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(secondaryButtonClass, fullWidth)}
+          >
             <ExternalLink className="h-4 w-4" aria-hidden />
             Xem trong OpenMetadata
           </a>

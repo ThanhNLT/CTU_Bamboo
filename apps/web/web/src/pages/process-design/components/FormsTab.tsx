@@ -18,10 +18,18 @@ export const FormsTab = ({ model }: { model: ProcessModel }) => (
           </p>
           <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
             {f.fields.map((fd) => (
-              <li key={fd.label} className="flex items-center justify-between gap-3 rounded-lg bg-canvas px-2.5 py-1.5 text-[12.5px]">
+              <li
+                key={fd.label}
+                className="flex items-center justify-between gap-3 rounded-lg bg-canvas px-2.5 py-1.5 text-[12.5px]"
+              >
                 <span className="truncate text-ink">
                   {fd.label}
-                  {fd.required && <span className="text-red-600" aria-label="bắt buộc"> *</span>}
+                  {fd.required && (
+                    <span className="text-red-600" aria-label="bắt buộc">
+                      {" "}
+                      *
+                    </span>
+                  )}
                 </span>
                 <span className="shrink-0 text-[11px] text-muted">{fd.type}</span>
               </li>

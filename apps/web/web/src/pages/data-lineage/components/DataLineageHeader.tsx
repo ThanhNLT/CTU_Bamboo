@@ -5,7 +5,13 @@
 import { ExternalLink, TriangleAlert } from "lucide-react";
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
-export const DataLineageHeader = ({ openMetadataHref, onReport }: { openMetadataHref: string; onReport: () => void }) => (
+export const DataLineageHeader = ({
+  openMetadataHref,
+  onReport,
+}: {
+  openMetadataHref: string;
+  onReport: () => void;
+}) => (
   <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Phả hệ dữ liệu</h1>

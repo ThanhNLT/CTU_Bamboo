@@ -9,7 +9,12 @@ const num = new Intl.NumberFormat("vi-VN");
 export const formatInt = (n: number) => num.format(n);
 
 const stampFmt = new Intl.DateTimeFormat("vi-VN", {
-  day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
   timeZone: "Asia/Ho_Chi_Minh",
 });
 /** "12/10/2026 09:01" theo giờ Việt Nam. */
@@ -19,7 +24,8 @@ export const formatStamp = (d: Date) => {
 };
 
 /** "9c1e4b…d0277ab" */
-export const shortHash = (h: string, head = 6, tail = 7) => (h.length > head + tail + 1 ? `${h.slice(0, head)}…${h.slice(-tail)}` : h);
+export const shortHash = (h: string, head = 6, tail = 7) =>
+  h.length > head + tail + 1 ? `${h.slice(0, head)}…${h.slice(-tail)}` : h;
 
 export const CODE_PATTERN = /^(HS-[A-Z]+-\d{4}-\d{5})(?:\s*(?:·|@|,)?\s*v(\d+))?$/i;
 
@@ -64,7 +70,11 @@ export const sha256Hex = async (data: Blob) => {
 export const MAX_FILE_BYTES = 200 * 1024 * 1024;
 
 export const formatBytes = (n: number) =>
-  n < 1024 ? `${n} B` : n < 1024 ** 2 ? `${(n / 1024).toFixed(1).replace(".", ",")} KB` : `${(n / 1024 ** 2).toFixed(1).replace(".", ",")} MB`;
+  n < 1024
+    ? `${n} B`
+    : n < 1024 ** 2
+      ? `${(n / 1024).toFixed(1).replace(".", ",")} KB`
+      : `${(n / 1024 ** 2).toFixed(1).replace(".", ",")} MB`;
 
 const VIA_LABEL: Record<VerifyVia, string> = { code: "theo mã hồ sơ", file: "theo tệp tải lên" };
 const KIND_LABEL: Record<VerifyResult["kind"], string> = {
@@ -94,7 +104,8 @@ export const evidenceText = (r: VerifyResult) => {
   return lines.join("\n");
 };
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
+const esc = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
 
 /** Trang chứng nhận để in / "Lưu dưới dạng PDF" từ hộp thoại In của trình duyệt. */
 export const certificateHtml = (r: Exclude<VerifyResult, { kind: "not_found" }>) => {
@@ -132,10 +143,30 @@ ${s.resolution ? `<p style="margin-top:16px">${esc(s.resolution)}</p>` : ""}
 export const reconciliationCsv = (seals: Seal[], log: SealLogRow[]) => {
   const last = new Map(log.map((r) => [`${r.code}#${r.version}`, r.result]));
   const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-  const header = ["Mã hồ sơ", "Phiên bản", "Tiêu đề", "Niêm phong lúc", "Kênh", "Khối", "Giao dịch", "SHA-256", "Kết quả đối soát gần nhất"];
+  const header = [
+    "Mã hồ sơ",
+    "Phiên bản",
+    "Tiêu đề",
+    "Niêm phong lúc",
+    "Kênh",
+    "Khối",
+    "Giao dịch",
+    "SHA-256",
+    "Kết quả đối soát gần nhất",
+  ];
   const rows = seals.map((s) => {
     const r = last.get(`${s.code}#${s.version}`) ?? ((s.storedSha256 ?? s.sha256) === s.sha256 ? "match" : "mismatch");
-    return [s.code, s.version, s.title, s.sealedAt, s.channel, s.block, s.txId, s.sha256, r === "match" ? "Khớp" : "Không khớp"];
+    return [
+      s.code,
+      s.version,
+      s.title,
+      s.sealedAt,
+      s.channel,
+      s.block,
+      s.txId,
+      s.sha256,
+      r === "match" ? "Khớp" : "Không khớp",
+    ];
   });
   return "﻿" + [header, ...rows].map((r) => r.map(cell).join(",")).join("\r\n");
 };

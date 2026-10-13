@@ -28,10 +28,16 @@ const Meta = ({ label, value }: { label: string; value: string }) => (
 );
 
 const SampleTable = ({ dataset, preview, error }: { dataset: Dataset; preview?: DatasetPreview; error?: string }) => {
-  if (error) return <p role="alert" className="text-[12.5px] text-red-700">Không tải được dữ liệu mẫu: {error}</p>;
+  if (error)
+    return (
+      <p role="alert" className="text-[12.5px] text-red-700">
+        Không tải được dữ liệu mẫu: {error}
+      </p>
+    );
   if (!preview) return <p className="text-[12.5px] text-muted">Đang tải dữ liệu mẫu…</p>;
   const rows = preview.rows;
-  if (rows.length === 0) return <p className="text-[12.5px] text-muted">Tập dữ liệu chưa có dòng nào của công ty này.</p>;
+  if (rows.length === 0)
+    return <p className="text-[12.5px] text-muted">Tập dữ liệu chưa có dòng nào của công ty này.</p>;
   return (
     <div>
       <p className="mb-2.5 text-[12px] text-muted">
@@ -43,7 +49,13 @@ const SampleTable = ({ dataset, preview, error }: { dataset: Dataset; preview?: 
           <thead className="bg-canvas">
             <tr>
               {dataset.columns.map((c) => (
-                <th key={c.name} scope="col" className="whitespace-nowrap px-3 py-2 text-left font-mono font-medium text-muted">{c.name}</th>
+                <th
+                  key={c.name}
+                  scope="col"
+                  className="whitespace-nowrap px-3 py-2 text-left font-mono font-medium text-muted"
+                >
+                  {c.name}
+                </th>
               ))}
             </tr>
           </thead>
@@ -51,7 +63,13 @@ const SampleTable = ({ dataset, preview, error }: { dataset: Dataset; preview?: 
             {rows.map((r, i) => (
               <tr key={i} className="border-t border-line/70">
                 {dataset.columns.map((c) => (
-                  <td key={c.name} className="max-w-[320px] truncate whitespace-nowrap px-3 py-2 font-mono tabular-nums text-ink" title={cellText(r[c.name])}>{cellText(r[c.name])}</td>
+                  <td
+                    key={c.name}
+                    className="max-w-[320px] truncate whitespace-nowrap px-3 py-2 font-mono tabular-nums text-ink"
+                    title={cellText(r[c.name])}
+                  >
+                    {cellText(r[c.name])}
+                  </td>
                 ))}
               </tr>
             ))}
@@ -70,12 +88,18 @@ const QualityList = ({ dataset }: { dataset: Dataset }) => {
   return (
     <div>
       <p className="mb-2.5 text-[12.5px] text-body">
-        <b className="font-semibold text-ink">{dataset.checks.length - failed}/{dataset.checks.length}</b> kiểm tra đạt
+        <b className="font-semibold text-ink">
+          {dataset.checks.length - failed}/{dataset.checks.length}
+        </b>{" "}
+        kiểm tra đạt
         {failed > 0 && <span className="text-amber-800"> · {failed} lỗi cần xử lý</span>}
       </p>
       <ul className="m-0 list-none space-y-2 p-0">
         {dataset.checks.map((c) => (
-          <li key={c.name} className={cn("flex items-start gap-2.5 rounded-xl px-3 py-2.5", c.passed ? "bg-canvas" : "bg-amber-50")}>
+          <li
+            key={c.name}
+            className={cn("flex items-start gap-2.5 rounded-xl px-3 py-2.5", c.passed ? "bg-canvas" : "bg-amber-50")}
+          >
             {c.passed ? (
               <CheckCircle2 className="mt-px h-4 w-4 shrink-0 text-bamboo-600" aria-label="Đạt" />
             ) : (
@@ -97,7 +121,13 @@ const LineageColumn = ({ title, items }: { title: string; items: string[] }) => 
     <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{title}</div>
     <ul className="m-0 list-none space-y-1.5 p-0">
       {items.map((s) => (
-        <li key={s} className="truncate rounded-lg border border-line bg-white px-2.5 py-1.5 font-mono text-[11.5px] text-ink" title={s}>{s}</li>
+        <li
+          key={s}
+          className="truncate rounded-lg border border-line bg-white px-2.5 py-1.5 font-mono text-[11.5px] text-ink"
+          title={s}
+        >
+          {s}
+        </li>
       ))}
     </ul>
   </div>
@@ -115,7 +145,10 @@ const Lineage = ({ dataset }: { dataset: Dataset }) => (
       <ArrowRight className="mx-auto h-4 w-4 shrink-0 rotate-90 text-muted md:rotate-0" aria-hidden />
       <LineageColumn title="Nơi dùng" items={dataset.downstream} />
     </div>
-    <Link to={`/d/lineage?asset=${encodeURIComponent(dataset.table)}`} className="mt-3 inline-block text-[12.5px] font-semibold text-bamboo-700 underline-offset-2 hover:underline">
+    <Link
+      to={`/d/lineage?asset=${encodeURIComponent(dataset.table)}`}
+      className="mt-3 inline-block text-[12.5px] font-semibold text-bamboo-700 underline-offset-2 hover:underline"
+    >
       Mở Phả hệ dữ liệu
     </Link>
   </div>
@@ -128,14 +161,25 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
 
   if (!dataset) {
     return (
-      <div className={cn("flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-white text-[13px] text-muted shadow-card", className)}>
+      <div
+        className={cn(
+          "flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-white text-[13px] text-muted shadow-card",
+          className,
+        )}
+      >
         Chọn một tập dữ liệu để xem chi tiết.
       </div>
     );
   }
 
   return (
-    <article aria-live="polite" className={cn("min-h-0 overflow-y-auto rounded-2xl border border-line bg-white p-5 shadow-card sm:p-6", className)}>
+    <article
+      aria-live="polite"
+      className={cn(
+        "min-h-0 overflow-y-auto rounded-2xl border border-line bg-white p-5 shadow-card sm:p-6",
+        className,
+      )}
+    >
       <header>
         <div className="font-mono text-[11.5px] text-muted">{dataset.table}</div>
         <h2 className="mt-1 text-[20px] font-semibold leading-snug tracking-[-0.01em] text-ink">{dataset.title}</h2>
@@ -148,7 +192,11 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
         <Meta label="Truy cập" value={dataset.access} />
       </dl>
 
-      <div role="tablist" aria-label="Nội dung tập dữ liệu" className="mt-5 inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1">
+      <div
+        role="tablist"
+        aria-label="Nội dung tập dữ liệu"
+        className="mt-5 inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+      >
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -180,7 +228,8 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
             <CodeSnippet title="GraphQL (Hasura)" code={dataset.graphql} language="graphql" />
             <CodeSnippet title="SQL (Trino)" code={dataset.sql} language="sql" />
             <p className="text-[12px] text-muted">
-              Truy vấn chạy bằng quyền của bạn; dữ liệu tự lọc theo công ty (tenant_id). Cần thêm quyền? Bấm “Yêu cầu quyền truy cập”.
+              Truy vấn chạy bằng quyền của bạn; dữ liệu tự lọc theo công ty (tenant_id). Cần thêm quyền? Bấm “Yêu cầu
+              quyền truy cập”.
             </p>
           </div>
         )}

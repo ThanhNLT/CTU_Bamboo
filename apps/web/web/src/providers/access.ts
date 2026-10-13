@@ -16,7 +16,10 @@ export const myPermissions = (): Promise<Set<string>> => {
   const tenant = getTenant();
   if (!tenant) return Promise.resolve(new Set<string>());
   if (cache?.tenant !== tenant) {
-    const entry: { tenant: string; promise: Promise<Set<string>> } = { tenant, promise: Promise.resolve(new Set<string>()) };
+    const entry: { tenant: string; promise: Promise<Set<string>> } = {
+      tenant,
+      promise: Promise.resolve(new Set<string>()),
+    };
     entry.promise = request<{ core_v_permission_grant: { permission_code: string }[] }>(
       `query MyPermissions { core_v_permission_grant(distinct_on: permission_code) { permission_code } }`,
     )
@@ -50,7 +53,9 @@ export const accessControlProvider: AccessControlProvider = {
     if (!needed) return { can: true };
     const perms = await myPermissions();
     const anyOf = Array.isArray(needed) ? needed : [needed];
-    return anyOf.some((p) => perms.has(p)) ? { can: true } : { can: false, reason: `Cần quyền ${anyOf.join(" hoặc ")}` };
+    return anyOf.some((p) => perms.has(p))
+      ? { can: true }
+      : { can: false, reason: `Cần quyền ${anyOf.join(" hoặc ")}` };
   },
   options: { buttons: { enableAccessControl: true, hideIfUnauthorized: true } },
 };

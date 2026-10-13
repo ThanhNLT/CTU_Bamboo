@@ -12,22 +12,45 @@ import { formatDate } from "../../utils/format";
 import { iconButtonClass } from "../layout/styles";
 
 const NOTIFICATIONS = gql`
-  query Notifications($limit: Int, $offset: Int, $order_by: [collab_notification_order_by!], $where: collab_notification_bool_exp) {
+  query Notifications(
+    $limit: Int
+    $offset: Int
+    $order_by: [collab_notification_order_by!]
+    $where: collab_notification_bool_exp
+  ) {
     collab_notification(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id kind title body created_at read_at entity_type entity_id
+      id
+      kind
+      title
+      body
+      created_at
+      read_at
+      entity_type
+      entity_id
     }
-    collab_notification_aggregate(where: $where) { aggregate { count } }
+    collab_notification_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 type Note = {
-  id: string; kind: string; title: string; body: string | null; created_at: string; read_at: string | null;
-  entity_type: string | null; entity_id: string | null;
+  id: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  created_at: string;
+  read_at: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
 };
 
 // Loại chứng từ → resource Refine của trang chi tiết.
 const RESOURCE: Record<string, string> = {
-  "proc.purchase_request": "proc_purchase_request", "hr.onboarding_request": "hr_onboarding_request",
+  "proc.purchase_request": "proc_purchase_request",
+  "hr.onboarding_request": "hr_onboarding_request",
   "ic.ic_order": "ic_ic_order",
 };
 
@@ -45,8 +68,9 @@ export const NotificationBell = () => {
   const unread = result.total ?? 0;
 
   const markRead = async (ids?: string[]) => {
-    await request(`mutation Read($ids: _uuid) { collab_mark_notifications_read(args: {ids: $ids}) { id } }`,
-                  { ids: ids ? `{${ids.join(",")}}` : null });
+    await request(`mutation Read($ids: _uuid) { collab_mark_notifications_read(args: {ids: $ids}) { id } }`, {
+      ids: ids ? `{${ids.join(",")}}` : null,
+    });
     invalidate({ resource: "collab_notification", invalidates: ["list"] });
   };
 
@@ -58,21 +82,50 @@ export const NotificationBell = () => {
 
   const content = (
     <div style={{ width: 360, maxHeight: 420, overflow: "auto" }}>
-      {result.data.length === 0 ? <Empty description="Không có thông báo mới" /> : (
-        <List size="small" dataSource={result.data} renderItem={(n) => (
-          <List.Item style={{ cursor: "pointer" }} onClick={() => open(n)}>
-            <List.Item.Meta title={n.title} description={
-              <>{n.body && <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>{n.body}</Typography.Paragraph>}
-                <Typography.Text type="secondary">{formatDate(n.created_at)}</Typography.Text></>} />
-          </List.Item>)} />
+      {result.data.length === 0 ? (
+        <Empty description="Không có thông báo mới" />
+      ) : (
+        <List
+          size="small"
+          dataSource={result.data}
+          renderItem={(n) => (
+            <List.Item style={{ cursor: "pointer" }} onClick={() => open(n)}>
+              <List.Item.Meta
+                title={n.title}
+                description={
+                  <>
+                    {n.body && (
+                      <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>
+                        {n.body}
+                      </Typography.Paragraph>
+                    )}
+                    <Typography.Text type="secondary">{formatDate(n.created_at)}</Typography.Text>
+                  </>
+                }
+              />
+            </List.Item>
+          )}
+        />
       )}
     </div>
   );
 
   return (
-    <Popover trigger="click" placement="bottomRight" title={
-      <span>Thông báo {unread > 0 && <Button size="small" type="link" onClick={() => markRead()}>Đánh dấu đã đọc tất cả</Button>}</span>}
-      content={content}>
+    <Popover
+      trigger="click"
+      placement="bottomRight"
+      title={
+        <span>
+          Thông báo{" "}
+          {unread > 0 && (
+            <Button size="small" type="link" onClick={() => markRead()}>
+              Đánh dấu đã đọc tất cả
+            </Button>
+          )}
+        </span>
+      }
+      content={content}
+    >
       <button type="button" className={iconButtonClass} aria-label={`${unread} thông báo chưa đọc`}>
         <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
         {unread > 0 && (

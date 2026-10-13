@@ -18,7 +18,10 @@ const TAG_CLASS: Record<EntityStatus, string> = {
 
 /** Thẻ đầu cột phải: loại + URN NGSI-LD, tên, trạng thái và hai thao tác chính. */
 export const EntityHeader = ({
-  entity, incidentCode, onAsk, onCreateIncident,
+  entity,
+  incidentCode,
+  onAsk,
+  onCreateIncident,
 }: {
   entity: TwinEntity;
   /** Mã hồ sơ sự cố đã tạo cho thực thể này (nếu có). */
@@ -36,7 +39,12 @@ export const EntityHeader = ({
         <h2 className="mt-1 text-[20px] font-semibold leading-snug tracking-[-0.01em] text-ink">
           {entity.name} · {entity.site}
         </h2>
-        <span className={cn("mt-2.5 inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium", TAG_CLASS[entity.status])}>
+        <span
+          className={cn(
+            "mt-2.5 inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium",
+            TAG_CLASS[entity.status],
+          )}
+        >
           <Dot tone={status.tone} />
           {status.label} · {entity.grade}
         </span>

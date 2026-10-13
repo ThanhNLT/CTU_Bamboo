@@ -10,7 +10,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useSession } from "../../../auth/useSession";
 import {
-  bambooTableTheme, Dot, Panel, primaryButtonClass, secondaryButtonClass, smallPrimaryButtonClass, smallSecondaryButtonClass,
+  bambooTableTheme,
+  Dot,
+  Panel,
+  primaryButtonClass,
+  secondaryButtonClass,
+  smallPrimaryButtonClass,
+  smallSecondaryButtonClass,
 } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { AdminHeader, NoAccess } from "../shared/AdminHeader";
@@ -35,17 +41,37 @@ const ROLES = `
   }
 `;
 
-type Grant = { id: string; scope: string; scope_unit_id: string | null; position_id: string | null; org_unit_id: string | null; person_id: string | null; valid_period: string };
-type Role = { id: string; code: string; name: string; role_permissions: { permission_code: string }[]; role_grants: Grant[] };
+type Grant = {
+  id: string;
+  scope: string;
+  scope_unit_id: string | null;
+  position_id: string | null;
+  org_unit_id: string | null;
+  person_id: string | null;
+  valid_period: string;
+};
+type Role = {
+  id: string;
+  code: string;
+  name: string;
+  role_permissions: { permission_code: string }[];
+  role_grants: Grant[];
+};
 type Data = { core_role: Role[]; core_permission: { code: string; description: string }[] };
 
 /** Nhóm quyền theo tiền tố mã. */
 const MODULE: Record<string, string> = {
-  core: "Tổ chức & phân quyền", proc: "Mua sắm", hr: "Nhân sự", wf: "Phê duyệt", ic: "Đơn hàng nội bộ",
-  mdm: "Dữ liệu chủ", audit: "Kiểm toán",
+  core: "Tổ chức & phân quyền",
+  proc: "Mua sắm",
+  hr: "Nhân sự",
+  wf: "Phê duyệt",
+  ic: "Đơn hàng nội bộ",
+  mdm: "Dữ liệu chủ",
+  audit: "Kiểm toán",
 };
 
-type Dialog = { kind: "role"; edit: boolean } | { kind: "grant" } | { kind: "revoke"; grant: Grant } | { kind: "import" };
+type Dialog =
+  { kind: "role"; edit: boolean } | { kind: "grant" } | { kind: "revoke"; grant: Grant } | { kind: "import" };
 
 export const RolesPage = () => {
   const { message } = App.useApp();
@@ -73,14 +99,23 @@ export const RolesPage = () => {
     return [...map.entries()];
   }, [q.data]);
 
-  if (!perms || (q.loading && !q.data)) return <div className="flex justify-center py-24"><Spin /></div>;
+  if (!perms || (q.loading && !q.data))
+    return (
+      <div className="flex justify-center py-24">
+        <Spin />
+      </div>
+    );
   if (!perms.has(PERM)) return <NoAccess permission={PERM} />;
 
-  const select = (id: string) => setParams((p) => {
-    const next = new URLSearchParams(p);
-    next.set("role", id);
-    return next;
-  }, { replace: true });
+  const select = (id: string) =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        next.set("role", id);
+        return next;
+      },
+      { replace: true },
+    );
   const close = () => setDialog(undefined);
   const reload = () => void q.reload();
   const dirty = role && (draft.size !== current.size || [...draft].some((c) => !current.has(c)));
@@ -102,9 +137,14 @@ export const RolesPage = () => {
   const target = (g: Grant) => {
     if (g.position_id) {
       const p = org.positions.find((x) => x.id === g.position_id);
-      return { kind: "Vị trí", name: p?.name ?? "—", sub: `${org.unitPath(p?.org_unit_id)}${p?.holder ? ` · ${p.holder.person.full_name}` : " · ghế trống"}` };
+      return {
+        kind: "Vị trí",
+        name: p?.name ?? "—",
+        sub: `${org.unitPath(p?.org_unit_id)}${p?.holder ? ` · ${p.holder.person.full_name}` : " · ghế trống"}`,
+      };
     }
-    if (g.org_unit_id) return { kind: "Đơn vị", name: org.unitById.get(g.org_unit_id)?.name ?? "—", sub: "Mọi vị trí trong đơn vị" };
+    if (g.org_unit_id)
+      return { kind: "Đơn vị", name: org.unitById.get(g.org_unit_id)?.name ?? "—", sub: "Mọi vị trí trong đơn vị" };
     const person = org.people.find((x) => x.id === g.person_id);
     return { kind: "Người", name: person?.full_name ?? "—", sub: "Ngoại lệ ngoài cây tổ chức" };
   };
@@ -117,35 +157,50 @@ export const RolesPage = () => {
       <AdminHeader
         title="Vai trò & phân quyền"
         subtitle={<>Vai trò là gói quyền; cấp vai trò cho vị trí trong {tenant.tenant_name}, phạm vi theo cây đơn vị</>}
-        actions={(
+        actions={
           <>
             <button type="button" className={secondaryButtonClass} onClick={() => setDialog({ kind: "import" })}>
               <FileSpreadsheet className="h-4 w-4 text-body" strokeWidth={1.75} aria-hidden /> Nhập cấp quyền
             </button>
-            <button type="button" className={primaryButtonClass} onClick={() => setDialog({ kind: "role", edit: false })}>
+            <button
+              type="button"
+              className={primaryButtonClass}
+              onClick={() => setDialog({ kind: "role", edit: false })}
+            >
               <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Thêm vai trò
             </button>
           </>
-        )}
+        }
       />
       {q.error && <Alert type="error" showIcon message="Không tải được vai trò" description={q.error} />}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(240px,1fr)_minmax(0,2.4fr)]">
-        <nav aria-label="Vai trò" className="rounded-2xl border border-line bg-white p-2 shadow-card lg:sticky lg:top-[84px] lg:self-start">
+        <nav
+          aria-label="Vai trò"
+          className="rounded-2xl border border-line bg-white p-2 shadow-card lg:sticky lg:top-[84px] lg:self-start"
+        >
           <ul className="m-0 list-none space-y-0.5 p-0">
             {roles.map((r) => {
               const on = r.id === role?.id;
               const active = r.role_grants.filter((g) => parsePeriod(g.valid_period).active).length;
               return (
                 <li key={r.id}>
-                  <button type="button" onClick={() => select(r.id)} aria-current={on ? "true" : undefined}
-                          className={cn("block w-full rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-bamboo-500",
-                                        on ? "bg-bamboo-50" : "hover:bg-canvas")}>
+                  <button
+                    type="button"
+                    onClick={() => select(r.id)}
+                    aria-current={on ? "true" : undefined}
+                    className={cn(
+                      "block w-full rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-bamboo-500",
+                      on ? "bg-bamboo-50" : "hover:bg-canvas",
+                    )}
+                  >
                     <span className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
-                      <KeyRound className={cn("h-3.5 w-3.5", on ? "text-bamboo-700" : "text-muted")} aria-hidden /> {r.name}
+                      <KeyRound className={cn("h-3.5 w-3.5", on ? "text-bamboo-700" : "text-muted")} aria-hidden />{" "}
+                      {r.name}
                     </span>
                     <span className="mt-0.5 block text-[11.5px] text-muted">
-                      <span className="font-mono">{r.code}</span> · {r.role_permissions.length} quyền · {active} nơi được cấp
+                      <span className="font-mono">{r.code}</span> · {r.role_permissions.length} quyền · {active} nơi
+                      được cấp
                     </span>
                   </button>
                 </li>
@@ -158,31 +213,51 @@ export const RolesPage = () => {
         {role && (
           <div className="flex min-w-0 flex-col gap-4">
             <Panel
-              title={<span className="flex flex-col"><span>{role.name}</span><span className="font-mono text-[11.5px] font-normal text-muted">{role.code}</span></span>}
-              extra={(
+              title={
+                <span className="flex flex-col">
+                  <span>{role.name}</span>
+                  <span className="font-mono text-[11.5px] font-normal text-muted">{role.code}</span>
+                </span>
+              }
+              extra={
                 <span className="flex gap-2">
-                  <button type="button" className={smallSecondaryButtonClass} onClick={() => setDialog({ kind: "role", edit: true })}>Đổi tên</button>
-                  <button type="button" className={smallPrimaryButtonClass} disabled={!dirty || saving} onClick={() => void savePermissions()}>
+                  <button
+                    type="button"
+                    className={smallSecondaryButtonClass}
+                    onClick={() => setDialog({ kind: "role", edit: true })}
+                  >
+                    Đổi tên
+                  </button>
+                  <button
+                    type="button"
+                    className={smallPrimaryButtonClass}
+                    disabled={!dirty || saving}
+                    onClick={() => void savePermissions()}
+                  >
                     <Save className="h-3.5 w-3.5" aria-hidden /> {saving ? "Đang lưu…" : "Lưu bộ quyền"}
                   </button>
                 </span>
-              )}
+              }
             >
               <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-line pt-4 md:grid-cols-2">
                 {groups.map(([m, list]) => (
                   <fieldset key={m} className="min-w-0">
-                    <legend className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{MODULE[m] ?? m}</legend>
+                    <legend className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                      {MODULE[m] ?? m}
+                    </legend>
                     <ul className="m-0 list-none space-y-1.5 p-0">
                       {list.map((p) => (
                         <li key={p.code}>
                           <Checkbox
                             checked={draft.has(p.code)}
-                            onChange={(e) => setDraft((d) => {
-                              const next = new Set(d);
-                              if (e.target.checked) next.add(p.code);
-                              else next.delete(p.code);
-                              return next;
-                            })}
+                            onChange={(e) =>
+                              setDraft((d) => {
+                                const next = new Set(d);
+                                if (e.target.checked) next.add(p.code);
+                                else next.delete(p.code);
+                                return next;
+                              })
+                            }
                           >
                             <span className="text-[13px] text-ink">{p.description}</span>
                             <span className="ml-1.5 font-mono text-[11px] text-muted">{p.code}</span>
@@ -197,17 +272,26 @@ export const RolesPage = () => {
             </Panel>
 
             <Panel
-              title={<>Được cấp cho <span className="ml-1 text-[12.5px] font-normal tabular-nums text-muted">{grants.length}</span></>}
-              extra={(
+              title={
+                <>
+                  Được cấp cho{" "}
+                  <span className="ml-1 text-[12.5px] font-normal tabular-nums text-muted">{grants.length}</span>
+                </>
+              }
+              extra={
                 <span className="flex items-center gap-3">
                   <Checkbox checked={showEnded} onChange={(e) => setShowEnded(e.target.checked)}>
                     <span className="text-[12px] text-muted">Hiện đã thu hồi</span>
                   </Checkbox>
-                  <button type="button" className={smallPrimaryButtonClass} onClick={() => setDialog({ kind: "grant" })}>
+                  <button
+                    type="button"
+                    className={smallPrimaryButtonClass}
+                    onClick={() => setDialog({ kind: "grant" })}
+                  >
                     <ShieldPlus className="h-3.5 w-3.5" aria-hidden /> Cấp vai trò
                   </button>
                 </span>
-              )}
+              }
               bodyClassName="px-3 pb-3"
             >
               <ConfigProvider theme={bambooTableTheme}>
@@ -225,7 +309,9 @@ export const RolesPage = () => {
                         const t = target(g);
                         return (
                           <span className="flex flex-col">
-                            <span className="text-ink"><span className="text-muted">{t.kind}:</span> {t.name}</span>
+                            <span className="text-ink">
+                              <span className="text-muted">{t.kind}:</span> {t.name}
+                            </span>
                             <span className="text-[11.5px] text-muted">{t.sub}</span>
                           </span>
                         );
@@ -237,7 +323,11 @@ export const RolesPage = () => {
                       render: (_, g) => (
                         <span className="text-body">
                           {SCOPE_LABEL[g.scope]}
-                          {g.scope_unit_id && <span className="block text-[11.5px] text-muted">tại {org.unitById.get(g.scope_unit_id)?.name}</span>}
+                          {g.scope_unit_id && (
+                            <span className="block text-[11.5px] text-muted">
+                              tại {org.unitById.get(g.scope_unit_id)?.name}
+                            </span>
+                          )}
                         </span>
                       ),
                     },
@@ -254,9 +344,16 @@ export const RolesPage = () => {
                       title: "",
                       width: 100,
                       align: "right",
-                      render: (_, g: Grant & { period: Period }) => !g.period.ended && (
-                        <button type="button" className={smallSecondaryButtonClass} onClick={() => setDialog({ kind: "revoke", grant: g })}>Thu hồi</button>
-                      ),
+                      render: (_, g: Grant & { period: Period }) =>
+                        !g.period.ended && (
+                          <button
+                            type="button"
+                            className={smallSecondaryButtonClass}
+                            onClick={() => setDialog({ kind: "revoke", grant: g })}
+                          >
+                            Thu hồi
+                          </button>
+                        ),
                     },
                   ]}
                 />
@@ -282,10 +379,18 @@ export const RolesPage = () => {
       >
         {() => (
           <>
-            <Form.Item name="code" label="Mã vai trò" rules={[{ required: true, pattern: /^[A-Z0-9_]+$/, message: "Chữ IN HOA không dấu, số, gạch dưới" }]}>
+            <Form.Item
+              name="code"
+              label="Mã vai trò"
+              rules={[{ required: true, pattern: /^[A-Z0-9_]+$/, message: "Chữ IN HOA không dấu, số, gạch dưới" }]}
+            >
               <Input className="font-mono" placeholder="KE_TOAN_TRUONG" />
             </Form.Item>
-            <Form.Item name="name" label="Tên vai trò" rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}>
+            <Form.Item
+              name="name"
+              label="Tên vai trò"
+              rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}
+            >
               <Input placeholder="Kế toán trưởng" />
             </Form.Item>
           </>
@@ -323,7 +428,9 @@ export const RolesPage = () => {
           }
         }}
       />
-      {dialog?.kind === "import" && <ImportModal open kind="role_grant" label="cấp quyền" onClose={close} onDone={reload} />}
+      {dialog?.kind === "import" && (
+        <ImportModal open kind="role_grant" label="cấp quyền" onClose={close} onDone={reload} />
+      )}
     </div>
   );
 };

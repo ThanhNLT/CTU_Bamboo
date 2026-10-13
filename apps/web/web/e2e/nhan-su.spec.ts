@@ -25,7 +25,10 @@ async function logout(page: Page) {
   // sớm sẽ cắt ngang, phiên cũ còn nên check-sso đăng nhập lại người cũ và không còn trang đăng nhập.
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
   // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
-  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page
+    .locator("header")
+    .getByRole("button", { name: /^Tài khoản:/ })
+    .click();
   await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();

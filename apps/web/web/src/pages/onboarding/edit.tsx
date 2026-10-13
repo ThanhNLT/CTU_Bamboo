@@ -33,8 +33,10 @@ export const OnboardingEdit = () => {
   }
   return (
     <Edit title={`Sửa ${record.doc_no}`} footerButtons={() => null} headerButtons={() => null}>
-      <OnboardingForm record={record}
-        onSaved={(savedId) => go({ to: { resource: "hr_onboarding_request", action: "show", id: savedId } })} />
+      <OnboardingForm
+        record={record}
+        onSaved={(savedId) => go({ to: { resource: "hr_onboarding_request", action: "show", id: savedId } })}
+      />
     </Edit>
   );
 };

@@ -29,9 +29,12 @@ export const METRIC_TONE: Record<MetricStatus, Tone> = {
 
 /** Số kiểu Việt Nam: 3.120 · 21,4 · 0,42. `decimals` cố định số chữ số thập phân; bỏ trống thì tối đa 2. */
 export const formatNumber = (n: number, decimals?: number) =>
-  new Intl.NumberFormat("vi-VN", decimals == null
-    ? { maximumFractionDigits: 2 }
-    : { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n);
+  new Intl.NumberFormat(
+    "vi-VN",
+    decimals == null
+      ? { maximumFractionDigits: 2 }
+      : { minimumFractionDigits: decimals, maximumFractionDigits: decimals },
+  ).format(n);
 
 // Giờ Việt Nam (UTC+7, không có giờ mùa hè) tính trực tiếp, để nhãn trục giống nhau trên mọi máy/trình duyệt.
 const VN_OFFSET = 7 * 3_600_000;

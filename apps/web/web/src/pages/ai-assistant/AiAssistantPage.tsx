@@ -25,7 +25,13 @@ import type { ActionProposal, AiMsg, AssistantMode, ChatSession, Message, Reply 
 let seq = 0;
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
-const newSession = (context?: string): ChatSession => ({ id: uid("s"), title: "Phiên mới", group: "today", context, messages: [] });
+const newSession = (context?: string): ChatSession => ({
+  id: uid("s"),
+  title: "Phiên mới",
+  group: "today",
+  context,
+  messages: [],
+});
 
 /** Phiên ban đầu: có ngữ cảnh từ URL thì mở phiên mới gắn ngữ cảnh đó, không thì mở phiên "OEE tuần này giảm". */
 const initialState = (params: URLSearchParams) => {
@@ -185,7 +191,9 @@ export const AiAssistantPage = () => {
           mode={mode}
           onModeChange={setMode}
           onClearContext={() => patchSession(active.id, (s) => ({ ...s, context: undefined }))}
-          thinking={pending?.sessionId === active.id ? { key: pending.key, steps: pending.reply.steps ?? [] } : undefined}
+          thinking={
+            pending?.sessionId === active.id ? { key: pending.key, steps: pending.reply.steps ?? [] } : undefined
+          }
           suggestions={suggestionsFor(active.context)}
           onSuggestion={(s) => send(s)}
           input={

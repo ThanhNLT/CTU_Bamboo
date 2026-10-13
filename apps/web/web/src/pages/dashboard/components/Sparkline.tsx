@@ -10,7 +10,10 @@ const PAD = 4;
 
 /** Biểu đồ đường mini bằng SVG thuần, có thể kèm đường ngưỡng nét đứt. */
 export const Sparkline = ({
-  data, threshold, label, className,
+  data,
+  threshold,
+  label,
+  className,
 }: {
   data: number[];
   threshold?: number;
@@ -36,13 +39,24 @@ export const Sparkline = ({
     >
       {threshold != null && (
         <line
-          x1={0} x2={W} y1={y(threshold)} y2={y(threshold)}
-          className="stroke-muted/60" strokeWidth={1} strokeDasharray="4 4" vectorEffect="non-scaling-stroke"
+          x1={0}
+          x2={W}
+          y1={y(threshold)}
+          y2={y(threshold)}
+          className="stroke-muted/60"
+          strokeWidth={1}
+          strokeDasharray="4 4"
+          vectorEffect="non-scaling-stroke"
         />
       )}
       <path
-        d={path} fill="none" className="stroke-bamboo-600"
-        strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
+        d={path}
+        fill="none"
+        className="stroke-bamboo-600"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

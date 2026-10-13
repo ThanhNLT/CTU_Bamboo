@@ -10,7 +10,11 @@ import { SLA_TONE } from "./slaStyle";
 
 /** Cột trái: các việc chờ, sắp theo hạn SLA. Chấm màu: đỏ quá hạn · vàng sắp đến hạn · xanh còn thời gian. */
 export const TaskSidebar = ({
-  tasks, selectedId, onSelect, me, className,
+  tasks,
+  selectedId,
+  onSelect,
+  me,
+  className,
 }: {
   tasks: InboxTask[];
   selectedId?: string;
@@ -18,7 +22,10 @@ export const TaskSidebar = ({
   me: string;
   className?: string;
 }) => (
-  <nav aria-label="Danh sách việc" className={cn("min-h-0 overflow-y-auto rounded-2xl border border-line bg-white p-2 shadow-card", className)}>
+  <nav
+    aria-label="Danh sách việc"
+    className={cn("min-h-0 overflow-y-auto rounded-2xl border border-line bg-white p-2 shadow-card", className)}
+  >
     {tasks.length === 0 ? (
       <div className="flex flex-col items-center gap-2 px-4 py-14 text-center">
         <Inbox className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />

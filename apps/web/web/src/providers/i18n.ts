@@ -21,7 +21,7 @@ const VI: Record<string, string> = {
   "actions.show": "Chi tiết",
   "pages.error.404": "Không tìm thấy trang này.",
   "pages.error.backHome": "Về trang chủ",
-  "warnWhenUnsavedChanges": "Có thay đổi chưa lưu. Rời trang?",
+  warnWhenUnsavedChanges: "Có thay đổi chưa lưu. Rời trang?",
   "notifications.success": "Thành công",
   "notifications.error": "Lỗi (mã {{statusCode}})",
   "dashboard.title": "Tổng quan",

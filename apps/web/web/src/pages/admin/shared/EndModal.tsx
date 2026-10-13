@@ -12,7 +12,12 @@ import { useState } from "react";
  * ngày chọn trước. Không xóa — lịch sử vẫn còn cho chuỗi duyệt và nhật ký kiểm toán.
  */
 export const EndModal = ({
-  open, title, description, okText, onCancel, onConfirm,
+  open,
+  title,
+  description,
+  okText,
+  onCancel,
+  onConfirm,
 }: {
   open: boolean;
   title: string;
@@ -50,11 +55,21 @@ export const EndModal = ({
         <Radio value="date">
           <span className="inline-flex flex-wrap items-center gap-2">
             Hết ngày
-            <DatePicker size="small" format="DD/MM/YYYY" value={date} onChange={(d) => { setDate(d); setMode("date"); }} />
+            <DatePicker
+              size="small"
+              format="DD/MM/YYYY"
+              value={date}
+              onChange={(d) => {
+                setDate(d);
+                setMode("date");
+              }}
+            />
           </span>
         </Radio>
       </Radio.Group>
-      <p className="mt-3 text-[12px] text-muted">Không xóa dữ liệu: lịch sử vẫn giữ cho chuỗi duyệt và nhật ký kiểm toán.</p>
+      <p className="mt-3 text-[12px] text-muted">
+        Không xóa dữ liệu: lịch sử vẫn giữ cho chuỗi duyệt và nhật ký kiểm toán.
+      </p>
     </Modal>
   );
 };

@@ -51,12 +51,18 @@ const MapPopup = ({ site, below, onClose }: { site: MapSite; below: boolean; onC
   >
     <div className="flex items-start justify-between gap-2">
       <h3 className="text-[13.5px] font-semibold leading-snug text-ink">{site.name}</h3>
-      <button type="button" onClick={onClose} aria-label="Đóng"
-              className="-mr-1 -mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Đóng"
+        className="-mr-1 -mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink"
+      >
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
-    <div className="mt-1.5"><StatusTag site={site} /></div>
+    <div className="mt-1.5">
+      <StatusTag site={site} />
+    </div>
     <dl className="m-0 mt-3 grid grid-cols-2 gap-3">
       <div>
         <dt className="text-[11.5px] text-muted">Thiết bị</dt>
@@ -68,8 +74,13 @@ const MapPopup = ({ site, below, onClose }: { site: MapSite; below: boolean; onC
       </div>
     </dl>
     <div className="mt-3 flex items-center gap-2">
-      <Link to={`/d/twin?site=${site.id}`} className={smallPrimaryButtonClass}>Bản sao số</Link>
-      <Link to="/p/records" className="inline-flex h-8 items-center rounded-full px-2.5 text-[12.5px] font-semibold text-ink hover:bg-canvas">
+      <Link to={`/d/twin?site=${site.id}`} className={smallPrimaryButtonClass}>
+        Bản sao số
+      </Link>
+      <Link
+        to="/p/records"
+        className="inline-flex h-8 items-center rounded-full px-2.5 text-[12.5px] font-semibold text-ink hover:bg-canvas"
+      >
         Hồ sơ liên quan
       </Link>
     </div>
@@ -78,7 +89,9 @@ const MapPopup = ({ site, below, onClose }: { site: MapSite; below: boolean; onC
       aria-hidden
       className={cn(
         "absolute left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white",
-        below ? "bottom-full translate-y-1.5 border-l border-t border-line" : "top-full -translate-y-1.5 border-b border-r border-line",
+        below
+          ? "bottom-full translate-y-1.5 border-l border-t border-line"
+          : "top-full -translate-y-1.5 border-b border-r border-line",
       )}
     />
   </div>
@@ -89,7 +102,11 @@ const MapPopup = ({ site, below, onClose }: { site: MapSite; below: boolean; onC
  * giữ nguyên kích thước khi phóng to. Cụm (cluster) hiện số, tách thành từng điểm khi zoom ≥ 1,75.
  */
 export const SiteMarker = ({
-  site, zoom, open, onToggle, onClose,
+  site,
+  zoom,
+  open,
+  onToggle,
+  onClose,
 }: {
   site: MapSite;
   zoom: number;
@@ -105,18 +122,18 @@ export const SiteMarker = ({
       className={cn("absolute", open ? "z-30" : "z-10")}
       style={{ left: `${site.x}%`, top: `${site.y}%`, transform: `translate(-50%, -50%) scale(${1 / zoom})` }}
     >
-      {expanded && site.cluster ? (
-        site.cluster.map((p) => (
-          <span
-            key={p.name}
-            title={p.name}
-            className="absolute"
-            style={{ left: `${p.dx * 6 * zoom}px`, top: `${p.dy * 6 * zoom}px`, transform: "translate(-50%, -50%)" }}
-          >
-            <CompanyShape company={site.company} size={10} />
-          </span>
-        ))
-      ) : null}
+      {expanded && site.cluster
+        ? site.cluster.map((p) => (
+            <span
+              key={p.name}
+              title={p.name}
+              className="absolute"
+              style={{ left: `${p.dx * 6 * zoom}px`, top: `${p.dy * 6 * zoom}px`, transform: "translate(-50%, -50%)" }}
+            >
+              <CompanyShape company={site.company} size={10} />
+            </span>
+          ))
+        : null}
 
       <button
         type="button"
@@ -145,7 +162,9 @@ export const SiteMarker = ({
             {site.cluster.length}
           </span>
         ) : (
-          <span className="relative"><CompanyShape company={site.company} size={site.company === "chip" ? 18 : 15} /></span>
+          <span className="relative">
+            <CompanyShape company={site.company} size={site.company === "chip" ? 18 : 15} />
+          </span>
         )}
       </button>
 

@@ -10,12 +10,23 @@ import { Download, FileSpreadsheet, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { smallSecondaryButtonClass } from "../../../components/ui";
 import { AccountsResult } from "./AccountsResult";
-import { createAccounts, downloadTemplate, importFile, type AccountResult, type ImportKind, type ImportResult } from "./api";
+import {
+  createAccounts,
+  downloadTemplate,
+  importFile,
+  type AccountResult,
+  type ImportKind,
+  type ImportResult,
+} from "./api";
 
 const ACCEPT = ".xlsx,.csv";
 
 export const ImportModal = ({
-  open, kind, label, onClose, onDone,
+  open,
+  kind,
+  label,
+  onClose,
+  onDone,
 }: {
   open: boolean;
   kind: ImportKind;
@@ -69,7 +80,11 @@ export const ImportModal = ({
       onDone();
       if (r.created.length) {
         setNames(Object.fromEntries(r.created.map((c) => [c.person_id, c.full_name])));
-        setAccounts(await createAccounts(r.created.map((c) => ({ person_id: c.person_id, username: c.username, email: c.email }))));
+        setAccounts(
+          await createAccounts(
+            r.created.map((c) => ({ person_id: c.person_id, username: c.username, email: c.email })),
+          ),
+        );
       }
       close();
     } catch (e) {
@@ -108,8 +123,11 @@ export const ImportModal = ({
             Dùng tệp mẫu (cột có dấu * là bắt buộc; dòng 2 là ví dụ, xóa trước khi nhập). Nhận .xlsx hoặc .csv UTF-8,
             tối đa 2 MB / 5000 dòng. Mã đã có thì cập nhật, chưa có thì thêm mới.
           </p>
-          <button type="button" className={smallSecondaryButtonClass}
-                  onClick={() => void downloadTemplate(kind).catch((e: Error) => message.error(e.message))}>
+          <button
+            type="button"
+            className={smallSecondaryButtonClass}
+            onClick={() => void downloadTemplate(kind).catch((e: Error) => message.error(e.message))}
+          >
             <Download className="h-3.5 w-3.5" aria-hidden /> Tải tệp mẫu
           </button>
         </div>
@@ -138,11 +156,11 @@ export const ImportModal = ({
                   showIcon
                   message={`${preview.errors.length} / ${preview.total} dòng có lỗi — sửa tệp rồi chọn lại.`}
                   description="Chỉ ghi khi mọi dòng hợp lệ, để không nhập dở dang."
-                  action={(
+                  action={
                     <button type="button" className={smallSecondaryButtonClass} onClick={reset}>
                       <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Chọn tệp khác
                     </button>
-                  )}
+                  }
                 />
                 <Table
                   className="mt-3"
@@ -151,7 +169,12 @@ export const ImportModal = ({
                   dataSource={preview.errors}
                   pagination={preview.errors.length > 8 ? { pageSize: 8, size: "small" } : false}
                   columns={[
-                    { title: "Dòng", dataIndex: "row", width: 70, render: (v: number) => <span className="tabular-nums">{v}</span> },
+                    {
+                      title: "Dòng",
+                      dataIndex: "row",
+                      width: 70,
+                      render: (v: number) => <span className="tabular-nums">{v}</span>,
+                    },
                     { title: "Lỗi", dataIndex: "message" },
                   ]}
                 />
