@@ -7,8 +7,9 @@
 // Các phân hệ nghiệp vụ đang chạy dữ liệu thật (mua sắm, đơn nội bộ, nhân sự, kiểm toán) nằm cùng nhóm,
 // ẩn theo quyền như menu cũ (accessControlProvider) — bộ kiểm thử e2e dựa vào các mục này.
 import {
-  ArrowLeftRight, Bot, Cpu, Database, FileText, FolderClosed, Gauge, GitFork, House, Inbox, LibraryBig, Lock,
-  Map as MapIcon, Route, ScanText, Search, ShieldCheck, ShoppingCart, Sparkles, UserPlus, type LucideIcon,
+  ArrowLeftRight, Bot, Cpu, Database, FileText, FolderClosed, Gauge, GitFork, House, Inbox, KeyRound, LibraryBig,
+  ListTree, Lock, Map as MapIcon, Network, Route, ScanText, Search, ShieldCheck, ShoppingCart, Sparkles, UserPlus,
+  Users, type LucideIcon,
 } from "lucide-react";
 
 export type NavItem = {
@@ -81,8 +82,12 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     code: "Q",
     label: "Quản trị",
-    access: { resource: "audit_log", action: "list" },
+    access: { resource: "admin_area", action: "list" },
     items: [
+      { key: "admin-org", label: "Cơ cấu tổ chức", to: "/admin/org", icon: Network, access: { resource: "admin_org", action: "list" } },
+      { key: "admin-people", label: "Người dùng", to: "/admin/people", icon: Users, access: { resource: "admin_people", action: "list" } },
+      { key: "admin-roles", label: "Vai trò & phân quyền", to: "/admin/roles", icon: KeyRound, access: { resource: "admin_roles", action: "list" } },
+      { key: "admin-catalog", label: "Danh mục & dữ liệu chủ", to: "/admin/catalog", icon: ListTree, access: { resource: "admin_catalog", action: "list" } },
       {
         key: "audit", label: "Kiểm toán", to: "/admin/audit-logs", icon: ShieldCheck,
         access: { resource: "audit_log", action: "list" },

@@ -31,8 +31,15 @@ export const myPermissions = (): Promise<Set<string>> => {
   return cache.promise;
 };
 
-const RULES: Record<string, Partial<Record<string, string>>> = {
+// Một quyền, hoặc danh sách = có MỘT trong các quyền là đủ.
+const RULES: Record<string, Partial<Record<string, string | string[]>>> = {
   audit_log: { list: "audit.read" },
+  // Quản trị dữ liệu tenant (ADR #44).
+  admin_area: { list: ["core.org.manage", "core.permission.manage", "mdm.manage", "audit.read"] },
+  admin_org: { list: "core.org.manage" },
+  admin_people: { list: "core.org.manage" },
+  admin_roles: { list: "core.permission.manage" },
+  admin_catalog: { list: ["core.org.manage", "mdm.manage"] },
   proc_purchase_request: { create: "proc.purchase_request.create" },
   hr_onboarding_request: { list: "hr.onboarding.read", create: "hr.onboarding.create" },
 };
@@ -42,7 +49,8 @@ export const accessControlProvider: AccessControlProvider = {
     const needed = resource ? RULES[resource]?.[action] : undefined;
     if (!needed) return { can: true };
     const perms = await myPermissions();
-    return perms.has(needed) ? { can: true } : { can: false, reason: `Cần quyền ${needed}` };
+    const anyOf = Array.isArray(needed) ? needed : [needed];
+    return anyOf.some((p) => perms.has(p)) ? { can: true } : { can: false, reason: `Cần quyền ${anyOf.join(" hoặc ")}` };
   },
   options: { buttons: { enableAccessControl: true, hideIfUnauthorized: true } },
 };

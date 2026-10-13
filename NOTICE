@@ -41,6 +41,7 @@ FastAPI, Pydantic, Starlette, Uvicorn, AnyIO, h11           MIT / BSD-3-Clause
 uvloop (kèm libuv), httptools (kèm llhttp)                 MIT OR Apache-2.0 / MIT
 httpx, httpcore, idna, certifi                              BSD-3-Clause / MPL-2.0 (certifi)
 Jinja2, MarkupSafe                                          BSD-3-Clause
+openpyxl, et-xmlfile (đọc/ghi tệp nhập hàng loạt)          MIT
 kafka-python                                                Apache-2.0
 pyiceberg, pyarrow, requests, tenacity (image lakehouse)    Apache-2.0
 SQLAlchemy, cachetools, mmh3, pyparsing, pyroaring, rich, strictyaml, markdown-it-py, mdurl, charset-normalizer  MIT
