@@ -145,7 +145,7 @@ class Sink:
         self.settings = settings
         self.catalog = cat or catalog(settings)
         self.consumer = consumer or kafka.KafkaConsumer(
-            bootstrap_servers=settings.kafka_bootstrap, enable_auto_commit=False, group_id=None,
+            **config.kafka_options(settings), enable_auto_commit=False, group_id=None,
             auto_offset_reset="earliest", max_poll_records=MAX_BATCH, consumer_timeout_ms=1000)
         self.tables: dict[str, object] = {}
         self.assigned: set = set()

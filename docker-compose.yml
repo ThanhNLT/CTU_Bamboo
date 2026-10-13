@@ -52,6 +52,8 @@ x-bao-sync-env: &bao-sync-env
   FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
   CDC_DB_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
   LAKEHOUSE_DB_PASSWORD: ${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}
+  DEBEZIUM_KAFKA_PASSWORD: ${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}
+  LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
   KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
   KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
   FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
@@ -456,20 +458,29 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
-  # Trục sự kiện (ADR #2, #38): Kafka KRaft một node, chỉ mạng nội bộ, không xác thực (chưa có dịch vụ nào
-  # ngoài Debezium ghi vào; SASL/ACL khi mở cho ứng dụng Tầng 3). Giữ sự kiện 7 ngày.
+  # Trục sự kiện (ADR #2, #38, #45): Kafka KRaft một node, chỉ mạng nội bộ, giữ sự kiện 7 ngày. Dịch vụ khác chỉ
+  # tới được listener SASL_PLAINTEXT :9092 (SCRAM-SHA-512, mỗi dịch vụ một tài khoản, ACL theo tiền tố topic, không
+  # có ACL thì từ chối). Controller và listener LOCAL chỉ nghe localhost trong container: start.sh của image dùng
+  # LOCAL (ANONYMOUS là super user) để đặt mật khẩu SCRAM và ACL mỗi lần khởi động.
   kafka:
     logging: *logging
-    image: apache/kafka:4.3.1
+    build:
+      context: ./platform/kafka
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-kafka:${BAMBOO_TAG:-dev}
     environment:
       CLUSTER_ID: b5T4hzPsQrOmfv9Kr38lIg
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: SASL_PLAINTEXT://:9092,CONTROLLER://localhost:9093,LOCAL://localhost:9094
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092,LOCAL://localhost:9094
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LOCAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,LOCAL:PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_SASL_ENABLED_MECHANISMS: SCRAM-SHA-512
+      KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "false"
+      KAFKA_SUPER_USERS: User:ANONYMOUS
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       KAFKA_NUM_PARTITIONS: 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -478,11 +489,15 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_HEAP_OPTS: -Xmx512m -Xms256m
+      # Không có tiền tố KAFKA_ để image không chép vào server.properties.
+      DEBEZIUM_KAFKA_PASSWORD: ${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}
+      LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
     volumes:
       - kafka-data:/var/lib/kafka/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      # Sẵn sàng khi start.sh đã đặt xong tài khoản và ACL.
+      test: ["CMD-SHELL", "test -f /tmp/bamboo-kafka-ready && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9094 > /dev/null 2>&1"]
       interval: 10s
       timeout: 15s
       retries: 30
@@ -502,6 +517,11 @@ services:
     environment:
       DEBEZIUM_SINK_TYPE: kafka
       DEBEZIUM_SINK_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      DEBEZIUM_SINK_KAFKA_PRODUCER_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      DEBEZIUM_SINK_KAFKA_PRODUCER_SASL_MECHANISM: SCRAM-SHA-512
+      DEBEZIUM_SINK_KAFKA_PRODUCER_SASL_JAAS_CONFIG: >-
+        org.apache.kafka.common.security.scram.ScramLoginModule required
+        username="debezium" password="${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}";
       DEBEZIUM_SINK_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
       DEBEZIUM_SINK_KAFKA_PRODUCER_VALUE_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
       DEBEZIUM_SOURCE_CONNECTOR_CLASS: io.debezium.connector.postgresql.PostgresConnector

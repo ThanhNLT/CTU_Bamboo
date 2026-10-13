@@ -60,10 +60,11 @@ path "secret/data/bms/postgres"            { capabilities = ["read"] }
 path "secret/data/bms/seaweedfs-search"    { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-indexer" { capabilities = ["read"] }
 """,
-    # Dịch vụ lakehouse-sink (ADR #39): CSDL catalog Iceberg, bucket lakehouse.
+    # Dịch vụ lakehouse-sink (ADR #39): CSDL catalog Iceberg, bucket lakehouse, tài khoản Kafka chỉ đọc (ADR #45).
     "lakehouse": """
 path "secret/data/bms/lakehouse"           { capabilities = ["read"] }
 path "secret/data/bms/seaweedfs-lakehouse" { capabilities = ["read"] }
+path "secret/data/bms/kafka-lakehouse"     { capabilities = ["read"] }
 """,
 }
 
@@ -82,6 +83,9 @@ def env_secrets() -> dict[str, dict]:
         "bms/actions": {"secret": env("ACTIONS_SECRET", "dev-actions-secret")},
         "bms/lakehouse": {"username": "bamboo_lakehouse",
                           "password": env("LAKEHOUSE_DB_PASSWORD", "lakehouse-db-dev")},
+        # Kafka (ADR #45): broker đặt cùng mật khẩu này cho tài khoản SCRAM `lakehouse` lúc khởi động.
+        "bms/kafka-lakehouse": {"username": "lakehouse",
+                                "password": env("LAKEHOUSE_KAFKA_PASSWORD", "lakehouse-kafka-dev")},
     }
 
 
