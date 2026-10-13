@@ -10,34 +10,40 @@ Mật khẩu không nằm trong file: Keycloak thay `${DEMO_PASSWORD}` bằng bi
 lúc import. Tài khoản mang realm role platform_admin bắt buộc cài OTP ở lần đăng nhập đầu.
 """
 
+# ===== Thư viện chuẩn =====
 import argparse
 import json
 import pathlib
 
+# ===== Module nội bộ =====
 from .demo import DEMO_USERS, HR_DEMO_USERS
 
+# ===== Hằng số & cấu hình =====
 # Địa chỉ ứng dụng qua cổng API, đọc từ biến WEB_ORIGIN lúc Keycloak import realm (mặc định stack
 # docker compose); thêm cổng 5173 cho `npm run dev`.
 WEB_ORIGIN = "${WEB_ORIGIN:http://localhost:8000}"
 DEV_ORIGIN = "http://localhost:5173"
 
 
+# ===== Hàm =====
 def build() -> dict:
     users = []
     for user in [*DEMO_USERS, *HR_DEMO_USERS]:
         last, _, first = user.full_name.rpartition(" ")
-        users.append({
-            "id": str(user.id),
-            "username": user.username,
-            "enabled": True,
-            "emailVerified": True,
-            "firstName": first,
-            "lastName": last,
-            "email": f"{user.username}@demo.bamboo.local",
-            "credentials": [{"type": "password", "value": "${DEMO_PASSWORD}", "temporary": False}],
-            "realmRoles": ["default-roles-bms", *user.realm_roles],
-            "requiredActions": ["CONFIGURE_TOTP"] if "platform_admin" in user.realm_roles else [],
-        })
+        users.append(
+            {
+                "id": str(user.id),
+                "username": user.username,
+                "enabled": True,
+                "emailVerified": True,
+                "firstName": first,
+                "lastName": last,
+                "email": f"{user.username}@demo.bamboo.local",
+                "credentials": [{"type": "password", "value": "${DEMO_PASSWORD}", "temporary": False}],
+                "realmRoles": ["default-roles-bms", *user.realm_roles],
+                "requiredActions": ["CONFIGURE_TOTP"] if "platform_admin" in user.realm_roles else [],
+            }
+        )
     return {
         "realm": "bms",
         "enabled": True,
@@ -57,9 +63,11 @@ def build() -> dict:
         "otpPolicyAlgorithm": "HmacSHA1",
         "otpPolicyDigits": 6,
         "otpPolicyPeriod": 30,
-        "roles": {"realm": [
-            {"name": "platform_admin", "description": "Quản trị kỹ thuật nền tảng (bắt buộc OTP)"},
-        ]},
+        "roles": {
+            "realm": [
+                {"name": "platform_admin", "description": "Quản trị kỹ thuật nền tảng (bắt buộc OTP)"},
+            ]
+        },
         "clients": [
             {
                 "clientId": "bms-web",
@@ -69,8 +77,10 @@ def build() -> dict:
                 "directAccessGrantsEnabled": False,
                 "redirectUris": [f"{WEB_ORIGIN}/*", f"{DEV_ORIGIN}/*"],
                 "webOrigins": [WEB_ORIGIN, DEV_ORIGIN],
-                "attributes": {"pkce.code.challenge.method": "S256",
-                               "post.logout.redirect.uris": f"{WEB_ORIGIN}/*##{DEV_ORIGIN}/*"},
+                "attributes": {
+                    "pkce.code.challenge.method": "S256",
+                    "post.logout.redirect.uris": f"{WEB_ORIGIN}/*##{DEV_ORIGIN}/*",
+                },
             },
             {
                 "clientId": "bms-e2e",
@@ -94,5 +104,6 @@ def main() -> None:
     print(f"đã ghi {out}: {len(DEMO_USERS) + len(HR_DEMO_USERS)} tài khoản")
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

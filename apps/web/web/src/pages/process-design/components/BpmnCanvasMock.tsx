@@ -4,12 +4,17 @@
 
 // Canvas BPMN giả lập: phần tử là <div> định vị tuyệt đối theo tọa độ tâm; đường nối vẽ bằng một lớp SVG
 // bên dưới (đường gấp khúc + mũi tên). Không dùng bpmn-js — khi cần chỉnh sửa thật, thay component này.
-import { Minus, Plus, Redo2, Settings, Undo2 } from "lucide-react";
-import { useRef, type DragEvent, type KeyboardEvent } from "react";
+
+// ===== Thư viện =====
+import { Minus, Plus, Redo2, Settings, Undo2 } from "lucide-react"; // Lucide React
+import { useRef, type DragEvent, type KeyboardEvent } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { DND_MIME, WORLD } from "../mock";
 import type { BpmnNode, NodeType, ProcessModel } from "../types";
 
+// ===== Hằng số =====
 const ZOOMS = [50, 75, 100, 125, 150];
 
 const TASK_W = 200;
@@ -19,8 +24,10 @@ const GW = 34;
 
 const ring = "ring-4 ring-bamboo-100";
 
+// ===== Component =====
 const NodeView = ({ node, selected, onSelect }: { node: BpmnNode; selected: boolean; onSelect: () => void }) => {
-  const common = "absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
+  const common =
+    "absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
   const style = { left: node.x, top: node.y };
   const onKey = (e: KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -42,7 +49,9 @@ const NodeView = ({ node, selected, onSelect }: { node: BpmnNode; selected: bool
           selected ? cn("border-2 border-bamboo-600", ring) : "border-[1.5px] border-ink/80 hover:border-bamboo-500",
         )}
       >
-        {node.type === "serviceTask" && <Settings className="h-4 w-4 shrink-0 text-ink" strokeWidth={1.75} aria-hidden />}
+        {node.type === "serviceTask" && (
+          <Settings className="h-4 w-4 shrink-0 text-ink" strokeWidth={1.75} aria-hidden />
+        )}
         <div className="min-w-0">
           <div className="truncate text-[12.5px] font-semibold text-ink">{node.name || "(chưa đặt tên)"}</div>
           {node.type === "userTask" && (
@@ -82,7 +91,13 @@ const NodeView = ({ node, selected, onSelect }: { node: BpmnNode; selected: bool
         {...a11y}
         aria-label={`${isEnd ? "Sự kiện kết thúc" : "Sự kiện bắt đầu"}: ${node.name}`}
         style={{ width: EVENT_D, height: EVENT_D }}
-        className={cn(common, "left-0 top-0 rounded-full bg-white", isEnd ? "border-[3px]" : "border-2", color, selected && ring)}
+        className={cn(
+          common,
+          "left-0 top-0 rounded-full bg-white",
+          isEnd ? "border-[3px]" : "border-2",
+          color,
+          selected && ring,
+        )}
       />
       <span
         className={cn(
@@ -97,7 +112,17 @@ const NodeView = ({ node, selected, onSelect }: { node: BpmnNode; selected: bool
 };
 
 export const BpmnCanvasMock = ({
-  title, model, selectedId, onSelect, onDropNode, zoom, onZoomChange, onUndo, onRedo, canUndo, canRedo,
+  title,
+  model,
+  selectedId,
+  onSelect,
+  onDropNode,
+  zoom,
+  onZoomChange,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }: {
   title: string;
   model: ProcessModel;
@@ -121,7 +146,11 @@ export const BpmnCanvasMock = ({
     if (!type || !rect) return;
     e.preventDefault();
     const clamp = (v: number, max: number) => Math.min(max - 20, Math.max(20, v));
-    onDropNode(type, clamp((e.clientX - rect.left) / scale, WORLD.width), clamp((e.clientY - rect.top) / scale, WORLD.height));
+    onDropNode(
+      type,
+      clamp((e.clientX - rect.left) / scale, WORLD.width),
+      clamp((e.clientY - rect.top) / scale, WORLD.height),
+    );
   };
 
   const tool =
@@ -129,16 +158,39 @@ export const BpmnCanvasMock = ({
     "focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
   return (
-    <section aria-label="Sơ đồ quy trình" className="flex min-h-0 min-w-0 flex-col rounded-2xl border border-line bg-white p-4 shadow-card">
+    <section
+      aria-label="Sơ đồ quy trình"
+      className="flex min-h-0 min-w-0 flex-col rounded-2xl border border-line bg-white p-4 shadow-card"
+    >
       <header className="flex items-center justify-between gap-3">
         <h2 className="truncate text-[12.5px] text-muted">{title}</h2>
         <div className="flex items-center gap-0.5 rounded-full border border-line bg-white px-1 py-0.5 shadow-card">
-          <button type="button" className={tool} onClick={onUndo} disabled={!canUndo} aria-label="Hoàn tác"><Undo2 className="h-3.5 w-3.5" /></button>
-          <button type="button" className={tool} onClick={onRedo} disabled={!canRedo} aria-label="Làm lại"><Redo2 className="h-3.5 w-3.5" /></button>
+          <button type="button" className={tool} onClick={onUndo} disabled={!canUndo} aria-label="Hoàn tác">
+            <Undo2 className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" className={tool} onClick={onRedo} disabled={!canRedo} aria-label="Làm lại">
+            <Redo2 className="h-3.5 w-3.5" />
+          </button>
           <span className="mx-1 h-4 w-px bg-line" aria-hidden />
-          <button type="button" className={tool} onClick={() => onZoomChange(ZOOMS[z - 1])} disabled={z <= 0} aria-label="Thu nhỏ"><Minus className="h-3.5 w-3.5" /></button>
+          <button
+            type="button"
+            className={tool}
+            onClick={() => onZoomChange(ZOOMS[z - 1])}
+            disabled={z <= 0}
+            aria-label="Thu nhỏ"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
           <span className="w-10 text-center text-[11.5px] tabular-nums text-ink">{zoom}%</span>
-          <button type="button" className={tool} onClick={() => onZoomChange(ZOOMS[z + 1])} disabled={z >= ZOOMS.length - 1} aria-label="Phóng to"><Plus className="h-3.5 w-3.5" /></button>
+          <button
+            type="button"
+            className={tool}
+            onClick={() => onZoomChange(ZOOMS[z + 1])}
+            disabled={z >= ZOOMS.length - 1}
+            aria-label="Phóng to"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
         </div>
       </header>
 
@@ -163,7 +215,15 @@ export const BpmnCanvasMock = ({
           >
             <svg width={WORLD.width} height={WORLD.height} className="pointer-events-none absolute inset-0" aria-hidden>
               <defs>
-                <marker id="bpmn-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <marker
+                  id="bpmn-arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
                   <path d="M0,0 L10,5 L0,10 z" fill="#36413a" />
                 </marker>
               </defs>
@@ -178,7 +238,9 @@ export const BpmnCanvasMock = ({
                     markerEnd="url(#bpmn-arrow)"
                   />
                   {e.label && e.labelAt && (
-                    <text x={e.labelAt[0]} y={e.labelAt[1]} fontSize={11} fill="#36413a" textAnchor="middle">{e.label}</text>
+                    <text x={e.labelAt[0]} y={e.labelAt[1]} fontSize={11} fill="#36413a" textAnchor="middle">
+                      {e.label}
+                    </text>
                   )}
                 </g>
               ))}

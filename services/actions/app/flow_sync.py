@@ -16,24 +16,29 @@ CSDL là nguồn sự thật. Mỗi lần gửi duyệt (entity, round) có mộ
       ACTIVE              → đặt người nhận theo việc duyệt đang mở, dừng
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import logging
 import os
 import time
 
-import psycopg
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from . import config, hr_account
 from .flowable import FlowableClient
 from .keycloak_sync import PROVISIONER_ID
 from .pii import PiiCipher
 
+# ===== Hằng số & cấu hình =====
 PROCESS_KEY = "purchaseRequestApproval"
 MAX_ATTEMPTS = 20
 log = logging.getLogger("flow_sync")
 
 
+# ===== Hàm =====
 def business_key(entity_id, round_no) -> str:
     return f"{entity_id}:{round_no}"
 
@@ -47,8 +52,14 @@ def _steps(conn: psycopg.Connection, entity_type: str, entity_id, round_no: int)
     ).fetchall()
 
 
-def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: str, entity_id, round_no: int,
-              process_id: str | None) -> tuple[str | None, bool]:
+def reconcile(
+    conn: psycopg.Connection,
+    flowable: FlowableClient,
+    entity_type: str,
+    entity_id,
+    round_no: int,
+    process_id: str | None,
+) -> tuple[str | None, bool]:
     """Đưa tiến trình Flowable về đúng trạng thái CSDL. Trả về (process_id, đã kết thúc)."""
     steps = _steps(conn, entity_type, entity_id, round_no)
     if not steps:
@@ -61,14 +72,18 @@ def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: s
         elif steps[0]["step_status"] == "CANCELLED":
             return None, True
         else:
-            process_id = flowable.start_process(PROCESS_KEY, business_key(entity_id, round_no), {
-                "entityType": entity_type,
-                "entityId": str(entity_id),
-                "round": round_no,
-                "stepCount": len(steps),
-                "stepIndex": 0,
-                "positions": json.dumps([str(s["position_id"]) for s in steps]),
-            })
+            process_id = flowable.start_process(
+                PROCESS_KEY,
+                business_key(entity_id, round_no),
+                {
+                    "entityType": entity_type,
+                    "entityId": str(entity_id),
+                    "round": round_no,
+                    "stepCount": len(steps),
+                    "stepIndex": 0,
+                    "positions": json.dumps([str(s["position_id"]) for s in steps]),
+                },
+            )
 
     for _ in range(len(steps) + 1):
         if not flowable.process_running(process_id):
@@ -81,20 +96,26 @@ def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: s
         step = steps[index]
         status = step["step_status"]
         if status == "APPROVED":
-            flowable.complete(task["id"], {
-                "decision": "APPROVE",
-                "stepIndex": index + 1,
-                "actedBy": str(step["acted_by"]),
-                "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
-                "note": step["note"] or "",
-            })
+            flowable.complete(
+                task["id"],
+                {
+                    "decision": "APPROVE",
+                    "stepIndex": index + 1,
+                    "actedBy": str(step["acted_by"]),
+                    "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
+                    "note": step["note"] or "",
+                },
+            )
         elif status in ("REJECTED", "RETURNED"):
-            flowable.complete(task["id"], {
-                "decision": "REJECT" if status == "REJECTED" else "RETURN",
-                "actedBy": str(step["acted_by"]),
-                "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
-                "note": step["note"] or "",
-            })
+            flowable.complete(
+                task["id"],
+                {
+                    "decision": "REJECT" if status == "REJECTED" else "RETURN",
+                    "actedBy": str(step["acted_by"]),
+                    "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
+                    "note": step["note"] or "",
+                },
+            )
         elif status == "CANCELLED":
             flowable.delete_process(process_id, "Chứng từ bị hủy trong CSDL")
             return process_id, True
@@ -109,7 +130,11 @@ def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: s
 
 
 def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50) -> int:
-    """Đối chiếu các lần gửi duyệt đang được đánh dấu. Trả về số dòng đã xử lý."""
+    """Đối chiếu các lần gửi duyệt đang được đánh dấu. Trả về số dòng đối chiếu thành công.
+
+    Dòng lỗi không được đếm: vòng `while run_once(...)` dừng lại và chờ thông báo mới hoặc `idle_seconds`
+    rồi mới thử lại, thay vì thử liên tục hết MAX_ATTEMPTS lần trong vài giây khi Flowable tạm thời không
+    truy cập được (hết lượt thử thì dòng bị bỏ dở tới lần đánh dấu sau)."""
     rows = conn.execute(
         """SELECT entity_type, entity_id, round, process_instance_id, updated_at
            FROM wf.flow_sync WHERE dirty AND attempts < %s
@@ -117,6 +142,7 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
         (MAX_ATTEMPTS, limit),
     ).fetchall()
     conn.commit()
+    done = 0
     for row in rows:
         key = (row["entity_type"], row["entity_id"], row["round"])
         try:
@@ -131,6 +157,7 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
                 (process_id, finished, row["updated_at"], *key),
             )
             conn.commit()
+            done += 1
         except Exception as exc:  # noqa: BLE001 - ghi lỗi, thử lại ở lần sau
             conn.rollback()
             log.warning("flow-sync %s lỗi: %s", key, exc)
@@ -140,7 +167,7 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
                 (str(exc)[:1000], *key),
             )
             conn.commit()
-    return len(rows)
+    return done
 
 
 def _account_service(settings: config.Settings):
@@ -181,6 +208,7 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
             pass
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)

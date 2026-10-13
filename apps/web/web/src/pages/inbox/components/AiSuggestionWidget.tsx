@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Sparkles } from "lucide-react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { Sparkles } from "lucide-react"; // Lucide React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import type { AiSuggestion } from "../types";
 
+// ===== Component =====
 /** Gợi ý của Trợ lý: tóm tắt + trích dẫn nguồn. Luôn nhắc rằng quyết định thuộc về người duyệt. */
 export const AiSuggestionWidget = ({ suggestion }: { suggestion?: AiSuggestion }) => (
   <section className="rounded-2xl border border-bamboo-100 bg-bamboo-50/60 p-4" aria-labelledby="inbox-ai">
@@ -16,10 +20,15 @@ export const AiSuggestionWidget = ({ suggestion }: { suggestion?: AiSuggestion }
     {suggestion ? (
       <>
         <ul className="m-0 mt-2.5 list-disc space-y-1 pl-4 text-[12.5px] leading-relaxed text-body marker:text-bamboo-500">
-          {suggestion.bullets.map((b) => <li key={b}>{b}</li>)}
+          {suggestion.bullets.map((b) => (
+            <li key={b}>{b}</li>
+          ))}
         </ul>
         {suggestion.citation && (
-          <Link to={suggestion.citation.to} className="mt-2.5 inline-block text-[12px] text-bamboo-700 hover:underline underline-offset-2">
+          <Link
+            to={suggestion.citation.to}
+            className="mt-2.5 inline-block text-[12px] text-bamboo-700 hover:underline underline-offset-2"
+          >
             {suggestion.citation.label}
           </Link>
         )}

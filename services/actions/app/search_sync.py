@@ -17,25 +17,34 @@ Lỗi (Meilisearch, Tika, S3 chưa sẵn sàng) thì thử lại với thời gi
 Chỉ mục trống (volume mới) thì đánh dấu lại toàn bộ.
 """
 
+# ===== Thư viện chuẩn =====
 import logging
 import time
 
-import psycopg
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from . import config, search, storage
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("search_sync")
 MAX_BACKOFF = 300
 
 
+# ===== Hàm =====
 def purchase_request_doc(conn: psycopg.Connection, entity_id) -> dict | None:
     row = conn.execute("SELECT search.purchase_request_doc(%s) AS doc", (entity_id,)).fetchone()
     doc = row["doc"] if row else None
     if doc is None:
         return None
-    return {**doc, "id": search.doc_id("proc.purchase_request", entity_id), "kind": "purchase_request",
-            "total_amount": float(doc["total_amount"])}
+    return {
+        **doc,
+        "id": search.doc_id("proc.purchase_request", entity_id),
+        "kind": "purchase_request",
+        "total_amount": float(doc["total_amount"]),
+    }
 
 
 def attachment_doc(conn: psycopg.Connection, settings: config.Settings, entity_id) -> dict | None:
@@ -43,7 +52,8 @@ def attachment_doc(conn: psycopg.Connection, settings: config.Settings, entity_i
         """SELECT tenant_id, entity_type, entity_id, file_name, content_type, storage_key,
                   extract(epoch FROM created_at)::bigint AS created_at
            FROM core.attachment WHERE id = %s AND status = 'CLEAN' AND deleted_at IS NULL""",
-        (entity_id,)).fetchone()
+        (entity_id,),
+    ).fetchone()
     if att is None:
         return None
     content = ""
@@ -53,14 +63,22 @@ def attachment_doc(conn: psycopg.Connection, settings: config.Settings, entity_i
             log.warning("tệp %s không còn trong bucket tài liệu", entity_id)
         else:
             content = search.extract_text(settings.tika_url, data, att["content_type"])
-    return {"id": search.doc_id("core.attachment", entity_id), "kind": "attachment",
-            "tenant_id": str(att["tenant_id"]), "entity_type": att["entity_type"], "entity_id": str(att["entity_id"]),
-            "attachment_id": str(entity_id), "file_name": att["file_name"], "content": content,
-            "created_at": att["created_at"]}
+    return {
+        "id": search.doc_id("core.attachment", entity_id),
+        "kind": "attachment",
+        "tenant_id": str(att["tenant_id"]),
+        "entity_type": att["entity_type"],
+        "entity_id": str(att["entity_id"]),
+        "attachment_id": str(entity_id),
+        "file_name": att["file_name"],
+        "content": content,
+        "created_at": att["created_at"],
+    }
 
 
-def sync_one(conn: psycopg.Connection, meili: search.Meili, settings: config.Settings,
-             entity_type: str, entity_id) -> bool:
+def sync_one(
+    conn: psycopg.Connection, meili: search.Meili, settings: config.Settings, entity_type: str, entity_id
+) -> bool:
     """Đưa một tài liệu trong chỉ mục về đúng trạng thái CSDL. Trả về True nếu tài liệu còn."""
     if entity_type == "proc.purchase_request":
         doc = purchase_request_doc(conn, entity_id)
@@ -82,7 +100,8 @@ def run_once(conn: psycopg.Connection, meili: search.Meili, settings: config.Set
         """SELECT entity_type, entity_id, attempts, updated_at FROM search.pending
            WHERE dirty AND next_attempt_at <= now()
            ORDER BY next_attempt_at, updated_at LIMIT %s""",
-        (limit,)).fetchall()
+        (limit,),
+    ).fetchall()
     conn.commit()
     for row in rows:
         key = (row["entity_type"], row["entity_id"])
@@ -93,7 +112,8 @@ def run_once(conn: psycopg.Connection, meili: search.Meili, settings: config.Set
                 """UPDATE search.pending
                    SET dirty = (updated_at <> %s), attempts = 0, last_error = NULL, indexed_at = now()
                    WHERE entity_type = %s AND entity_id = %s""",
-                (row["updated_at"], *key))
+                (row["updated_at"], *key),
+            )
             conn.commit()
         except Exception as exc:  # noqa: BLE001 - ghi lỗi, thử lại sau
             conn.rollback()
@@ -103,7 +123,8 @@ def run_once(conn: psycopg.Connection, meili: search.Meili, settings: config.Set
                 """UPDATE search.pending
                    SET attempts = attempts + 1, last_error = %s, next_attempt_at = now() + make_interval(secs => %s)
                    WHERE entity_type = %s AND entity_id = %s AND updated_at = %s""",
-                (str(exc)[:1000], delay, *key, row["updated_at"]))
+                (str(exc)[:1000], delay, *key, row["updated_at"]),
+            )
             conn.commit()
     return len(rows)
 
@@ -141,6 +162,7 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0) -> None:
             pass
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)

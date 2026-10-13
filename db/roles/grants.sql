@@ -10,6 +10,10 @@
 -- Nhật ký kiểm toán chỉ được đọc: trigger audit.log_change chạy bằng quyền chủ sở hữu
 -- (SECURITY DEFINER, migration 010), nên ứng dụng không tự ghi, sửa hay xóa được chuỗi hash.
 
+-- ---------------------------------------------------------------------------
+-- Cấp quyền cho bamboo_app
+-- ---------------------------------------------------------------------------
+
 DO $$
 DECLARE
     s text;

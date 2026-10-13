@@ -5,10 +5,14 @@
 // Dịch vụ dữ liệu (ADR #45): CDO (vai trò Phân tích dữ liệu) xem danh mục tập dữ liệu Lakehouse thật và dữ liệu mẫu
 // của Tập đoàn X qua Trino (row filter theo tenant, đã che dữ liệu cá nhân); nhân viên không có quyền thì bị chặn.
 // Chỉ đọc, chạy lại được trên cùng CSDL.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -18,6 +22,7 @@ async function login(page: Page, username: string) {
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("CDO xem tập dữ liệu Lakehouse và dữ liệu mẫu đã che", async ({ page }) => {
   await login(page, "cdo");
   await page.goto("/d/services");
@@ -28,7 +33,10 @@ test("CDO xem tập dữ liệu Lakehouse và dữ liệu mẫu đã che", async
   // Bảng không thuộc tenant nào (danh mục quyền chung) không có trong danh mục của người dùng tenant.
   await expect(list.getByText("lakehouse.silver.core_permission")).toHaveCount(0);
 
-  await page.getByRole("group", { name: "Lĩnh vực" }).getByRole("button", { name: /^Mua sắm/ }).click();
+  await page
+    .getByRole("group", { name: "Lĩnh vực" })
+    .getByRole("button", { name: /^Mua sắm/ })
+    .click();
   await list.getByRole("button", { name: /^Đề nghị mua sắm/ }).click();
   const detail = page.locator("article");
   await expect(detail.getByRole("heading", { name: "Đề nghị mua sắm" })).toBeVisible();

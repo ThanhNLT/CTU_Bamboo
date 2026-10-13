@@ -5,9 +5,13 @@
 // Trung tâm điều hành (Dữ liệu số): 5 KPI · 4 khối biểu đồ (2×2) · bảng quá hạn SLA.
 // Tô sáng chéo: bấm thanh/chú giải/dòng của một công ty → cả trang làm nổi công ty đó; Esc để bỏ.
 // Dữ liệu thật qua ./useOpsData (trong phạm vi tenant và quyền xem); riêng bản đồ cảnh báo thiết bị còn minh họa (./sample).
-import { Alert } from "antd";
-import dayjs from "dayjs";
-import { useEffect, useMemo, useRef, useState } from "react";
+
+// ===== Thư viện =====
+import { Alert } from "antd"; // Ant Design
+import dayjs from "dayjs"; // Day.js
+import { useEffect, useMemo, useRef, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { DailyApprovalsChart } from "./components/DailyApprovalsChart";
 import { DashboardFilterBar } from "./components/DashboardFilterBar";
 import { KpiCard } from "./components/KpiCard";
@@ -21,8 +25,10 @@ import type { CompanyKey, DashTab, Period } from "./types";
 import { useOpsData } from "./useOpsData";
 import { SLA_HOURS } from "../inbox/useInboxTasks";
 
+// ===== Hằng số =====
 const PROVINCES = [...new Set(SITES.map((s) => s.province))];
 
+// ===== Component =====
 export const OperationsCenterPage = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<DashTab>("overview");
@@ -84,23 +90,41 @@ export const OperationsCenterPage = () => {
         </div>
       ) : (
         <>
-          {ops.error && <Alert type="error" showIcon message="Không tải được một phần số liệu" description={ops.error} />}
+          {ops.error && (
+            <Alert type="error" showIcon message="Không tải được một phần số liệu" description={ops.error} />
+          )}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-            {ops.kpis.map((k) => <KpiCard key={k.key} kpi={k} />)}
+            {ops.kpis.map((k) => (
+              <KpiCard key={k.key} kpi={k} />
+            ))}
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <DailyApprovalsChart
-              data={ops.daily} companies={ops.companies} company={ops.company} meta={meta} rangeLabel={ops.rangeLabel}
-              highlight={highlight} onHighlight={setHighlight}
+              data={ops.daily}
+              companies={ops.companies}
+              company={ops.company}
+              meta={meta}
+              rangeLabel={ops.rangeLabel}
+              highlight={highlight}
+              onHighlight={setHighlight}
             />
-            <PendingByCompanyChart rows={ops.pending} company={ops.company} meta={meta} highlight={highlight} onHighlight={setHighlight} />
+            <PendingByCompanyChart
+              rows={ops.pending}
+              company={ops.company}
+              meta={meta}
+              highlight={highlight}
+              onHighlight={setHighlight}
+            />
             <WarningMapWidget sites={sites} />
             <MonthlyApprovalsChart data={ops.monthly} year={dayjs().year()} meta={meta} />
           </div>
 
           <OverdueTable
-            rows={ops.overdue} company={ops.company} highlight={highlight} onHighlight={setHighlight}
+            rows={ops.overdue}
+            company={ops.company}
+            highlight={highlight}
+            onHighlight={setHighlight}
             definition={`5 hồ sơ có bước duyệt đang mở lâu hơn hạn ${SLA_HOURS} giờ nhất. Nguồn: wf.task đang mở, trong phạm vi bạn được xem.`}
           />
         </>

@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useEffect, useState } from "react";
+// ===== Thư viện =====
+import { useEffect, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import type { ToolStep } from "../types";
 import { AiAvatar } from "./AiMessage";
 
+// ===== Component =====
 /** Trợ lý đang xử lý: lần lượt hiện công cụ đang gọi. */
 export const ThinkingMessage = ({ steps }: { steps: ToolStep[] }) => {
   const [i, setI] = useState(0);
@@ -26,7 +30,11 @@ export const ThinkingMessage = ({ steps }: { steps: ToolStep[] }) => {
       <div className="flex items-center gap-2 pt-1 text-[13px] text-muted">
         <span className="flex gap-1" aria-hidden>
           {[0, 1, 2].map((d) => (
-            <span key={d} className="h-1.5 w-1.5 rounded-full bg-bamboo-500 motion-safe:animate-bounce" style={{ animationDelay: `${d * 120}ms` }} />
+            <span
+              key={d}
+              className="h-1.5 w-1.5 rounded-full bg-bamboo-500 motion-safe:animate-bounce"
+              style={{ animationDelay: `${d * 120}ms` }}
+            />
           ))}
         </span>
         {step ? (

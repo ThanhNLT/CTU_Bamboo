@@ -2,17 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Segmented } from "antd";
+// ===== Thư viện =====
+import { Segmented } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { CATEGORY_LABEL, CATEGORY_TOTALS, SCOPE_OPTIONS } from "../mock";
 import type { CategoryFilter, DocCategory, ScopeFilter } from "../types";
 
+// ===== Hằng số =====
 const CATEGORIES: CategoryFilter[] = ["all", ...(Object.keys(CATEGORY_LABEL) as DocCategory[])];
 
+// ===== Component =====
 /** Ô tìm kiếm + phạm vi (Tất cả / Tập đoàn / Công ty của tôi) + chip loại tài liệu. */
 export const FilterSection = ({
-  query, onQueryChange, scope, onScopeChange, category, onCategoryChange,
+  query,
+  onQueryChange,
+  scope,
+  onScopeChange,
+  category,
+  onCategoryChange,
 }: {
   query: string;
   onQueryChange: (q: string) => void;
@@ -50,7 +60,9 @@ export const FilterSection = ({
             className={cn(
               "h-7 rounded-full px-3 text-[12px] font-medium transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
-              active ? "bg-bamboo-100 text-bamboo-800" : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
+              active
+                ? "bg-bamboo-100 text-bamboo-800"
+                : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
             )}
           >
             {c === "all" ? "Tất cả" : CATEGORY_LABEL[c]} · <span className="tabular-nums">{CATEGORY_TOTALS[c]}</span>

@@ -2,17 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useEffect, useState } from "react";
-import { Edit } from "@refinedev/antd";
-import { useGo, useParsed } from "@refinedev/core";
-import { Alert, Spin } from "antd";
-import dayjs from "dayjs";
+// ===== Thư viện =====
+import { useEffect, useState } from "react"; // React
+import { Edit } from "@refinedev/antd"; // Refine Ant Design
+import { useGo, useParsed } from "@refinedev/core"; // Refine
+import { Alert, Spin } from "antd"; // Ant Design
+import dayjs from "dayjs"; // Day.js
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { PurchaseRequestForm, type PrFormValues } from "./form";
 import { PR_DETAIL } from "./queries";
 import type { PurchaseRequest } from "./types";
 
+// ===== Component =====
 export const PurchaseRequestEdit = () => {
   const { id } = useParsed();
   const go = useGo();
@@ -34,19 +38,36 @@ export const PurchaseRequestEdit = () => {
   }
 
   const initial: Partial<PrFormValues> = {
-    title: pr.title, description: pr.description ?? undefined, requester_position_id: pr.requester_position_id,
-    category_code: pr.category_code, partner_id: pr.partner_id, needed_by: pr.needed_by ? dayjs(pr.needed_by) : null,
+    title: pr.title,
+    description: pr.description ?? undefined,
+    requester_position_id: pr.requester_position_id,
+    category_code: pr.category_code,
+    partner_id: pr.partner_id,
+    needed_by: pr.needed_by ? dayjs(pr.needed_by) : null,
     items: pr.purchase_request_items.map((i) => ({
-      item_id: i.item_id, description: i.description, uom: i.uom, quantity: Number(i.quantity),
-      unit_price: Number(i.unit_price), note: i.note ?? undefined,
+      item_id: i.item_id,
+      description: i.description,
+      uom: i.uom,
+      quantity: Number(i.quantity),
+      unit_price: Number(i.unit_price),
+      note: i.note ?? undefined,
     })),
   };
   return (
     <Edit title={`Sửa ${pr.doc_no}`} footerButtons={() => null} headerButtons={() => null}>
-      {pr.status === "RETURNED" && <Alert style={{ marginBottom: 16 }} type="warning" showIcon
-        message="Đề nghị bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại (chuỗi duyệt tính lại theo hạn mức hiện hành)." />}
-      <PurchaseRequestForm id={pr.id} initial={initial}
-        onSaved={(savedId) => go({ to: { resource: "proc_purchase_request", action: "show", id: savedId } })} />
+      {pr.status === "RETURNED" && (
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="warning"
+          showIcon
+          message="Đề nghị bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại (chuỗi duyệt tính lại theo hạn mức hiện hành)."
+        />
+      )}
+      <PurchaseRequestForm
+        id={pr.id}
+        initial={initial}
+        onSaved={(savedId) => go({ to: { resource: "proc_purchase_request", action: "show", id: savedId } })}
+      />
     </Edit>
   );
 };

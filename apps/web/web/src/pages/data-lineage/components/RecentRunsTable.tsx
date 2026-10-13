@@ -2,12 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from "react";
+// ===== Thư viện =====
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { RunResult, RunRow } from "../types";
 
+// ===== Hằng số =====
 const DEFAULT_ROWS = 3;
 
+// ===== Component =====
 const ResultBadge = ({ result }: { result: RunResult }) => {
   if (result === "check_failed") {
     return (
@@ -33,7 +38,9 @@ const ResultBadge = ({ result }: { result: RunResult }) => {
 
 /** Lần chạy pipeline gần đây. Bấm tên tác vụ để chọn tài sản tương ứng trên sơ đồ. */
 export const RecentRunsTable = ({
-  runs, selectedNodeId, onSelectNode,
+  runs,
+  selectedNodeId,
+  onSelectNode,
 }: {
   runs: RunRow[];
   selectedNodeId: string;
@@ -62,17 +69,28 @@ export const RecentRunsTable = ({
         <table className="w-full min-w-[520px] border-separate border-spacing-0 text-[12.5px]">
           <thead>
             <tr className="text-left text-[11.5px] text-muted">
-              <th scope="col" className="border-b border-line py-2 pr-3 font-medium">Tác vụ</th>
-              <th scope="col" className="border-b border-line px-3 py-2 font-medium">Bắt đầu</th>
-              <th scope="col" className="border-b border-line px-3 py-2 font-medium">Thời lượng</th>
-              <th scope="col" className="border-b border-line py-2 pl-3 font-medium">Kết quả</th>
+              <th scope="col" className="border-b border-line py-2 pr-3 font-medium">
+                Tác vụ
+              </th>
+              <th scope="col" className="border-b border-line px-3 py-2 font-medium">
+                Bắt đầu
+              </th>
+              <th scope="col" className="border-b border-line px-3 py-2 font-medium">
+                Thời lượng
+              </th>
+              <th scope="col" className="border-b border-line py-2 pl-3 font-medium">
+                Kết quả
+              </th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => {
               const bad = r.result === "check_failed" || r.result === "failed";
               return (
-                <tr key={r.id} className={cn(bad ? "bg-red-50/70" : r.nodeId === selectedNodeId ? "bg-bamboo-50/60" : "")}>
+                <tr
+                  key={r.id}
+                  className={cn(bad ? "bg-red-50/70" : r.nodeId === selectedNodeId ? "bg-bamboo-50/60" : "")}
+                >
                   <td className="rounded-l-lg border-b border-line/70 py-2.5 pl-2 pr-3">
                     <button
                       type="button"
@@ -84,7 +102,9 @@ export const RecentRunsTable = ({
                   </td>
                   <td className="border-b border-line/70 px-3 py-2.5 tabular-nums text-body">{r.start}</td>
                   <td className="border-b border-line/70 px-3 py-2.5 tabular-nums text-body">{r.duration}</td>
-                  <td className="rounded-r-lg border-b border-line/70 py-2.5 pl-3 pr-2"><ResultBadge result={r.result} /></td>
+                  <td className="rounded-r-lg border-b border-line/70 py-2.5 pl-3 pr-2">
+                    <ResultBadge result={r.result} />
+                  </td>
                 </tr>
               );
             })}

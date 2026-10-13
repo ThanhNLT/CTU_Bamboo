@@ -5,10 +5,15 @@
 // Tập dữ liệu THẬT của Lakehouse (tầng silver qua Trino, ADR #45): Action lakehouse_datasets, lakehouse_preview.
 // Máy chủ chỉ trả view của tenant đang chọn, row filter của Trino giữ dữ liệu trong đúng tenant; giá trị đã che
 // dữ liệu cá nhân. Cần quyền data.lakehouse.read (vai trò Phân tích dữ liệu).
-import { useEffect, useState } from "react";
+
+// ===== Thư viện =====
+import { useEffect, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { Dataset, DatasetPreview } from "./types";
 
+// ===== Truy vấn GraphQL =====
 const DATASETS = `
   query LakehouseDatasets {
     lakehouse_datasets { name label domain columns { name type } }
@@ -21,8 +26,10 @@ const PREVIEW = `
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type RawDataset = { name: string; label: string; domain: string; columns: Array<{ name: string; type: string }> };
 
+// ===== Hằng số =====
 /** Mô tả các cột chung; cột riêng của từng bảng để trống. */
 const COLUMN_NOTE: Record<string, string> = {
   id: "Khóa chính",
@@ -42,6 +49,7 @@ const COLUMN_NOTE: Record<string, string> = {
 /** Cột máy chủ che theo tên (như nhật ký kiểm toán); cột khác vẫn được Presidio che theo nội dung. */
 const PII_COLUMN = /(^|_)(email|phone|date_of_birth)$|_enc$/;
 
+// ===== Hàm tiện ích =====
 const usage = (name: string) => ({
   graphql: `query {\n  lakehouse_preview(dataset: "${name}") {\n    total_rows\n    rows\n    masked\n  }\n}`,
   sql: `-- Trino, người dùng của tenant: row filter tự thêm tenant_id = <tenant của bạn>\nSELECT *\nFROM lakehouse.silver.${name}\nORDER BY _changed_at DESC\nLIMIT 100;`,
@@ -63,7 +71,12 @@ const toDataset = (d: RawDataset): Dataset => {
     certified: false,
     pii: "masked",
     tier: "hot",
-    columns: d.columns.map((c) => ({ name: c.name, type: c.type, description: COLUMN_NOTE[c.name] ?? "", pii: PII_COLUMN.test(c.name) })),
+    columns: d.columns.map((c) => ({
+      name: c.name,
+      type: c.type,
+      description: COLUMN_NOTE[c.name] ?? "",
+      pii: PII_COLUMN.test(c.name),
+    })),
     checks: [],
     upstream: [`PostgreSQL · bms.${source}`, `Kafka · bms.${source}`, `Iceberg · lakehouse.bronze.${d.name}`],
     downstream: ["Dịch vụ dữ liệu (trang này)"],
@@ -71,8 +84,10 @@ const toDataset = (d: RawDataset): Dataset => {
   };
 };
 
+// ===== Kiểu dữ liệu =====
 type Status = { statusCode?: number; message: string };
 
+// ===== Hook =====
 export const useLakehouseDatasets = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,9 +117,12 @@ export const useLakehousePreview = (name?: string) => {
     setPreview(undefined);
     setError(undefined);
     request<{ lakehouse_preview: { total_rows: number; rows: Array<Record<string, unknown>>; masked: string[] } }>(
-      PREVIEW, { dataset: name },
+      PREVIEW,
+      { dataset: name },
     )
-      .then(({ lakehouse_preview: p }) => alive && setPreview({ totalRows: p.total_rows, rows: p.rows, masked: p.masked }))
+      .then(
+        ({ lakehouse_preview: p }) => alive && setPreview({ totalRows: p.total_rows, rows: p.rows, masked: p.masked }),
+      )
       .catch((e: Error) => alive && setError(e.message));
     return () => {
       alive = false;

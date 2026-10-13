@@ -2,14 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { AuthProvider } from "@refinedev/core";
+// ===== Thư viện =====
+import type { AuthProvider } from "@refinedev/core"; // Refine
+
+// ===== Module nội bộ =====
 import { setTenant, setToken } from "../api/client";
 import { keycloak } from "../auth/keycloak";
 
+// ===== Hằng số =====
 export const authProvider: AuthProvider = {
   login: async () => {
+    // Chỉ nhận đường dẫn nội bộ ("/p/tasks"): "@evil.com" hay "//evil.com" ghép sau origin sẽ thành địa chỉ ngoài.
     const to = new URLSearchParams(window.location.search).get("to");
-    await keycloak.login({ redirectUri: to ? `${window.location.origin}${to}` : window.location.origin });
+    const path = to && /^\/(?![/\\])/.test(to) ? to : "";
+    await keycloak.login({ redirectUri: `${window.location.origin}${path}` });
     return { success: true };
   },
   logout: async () => {

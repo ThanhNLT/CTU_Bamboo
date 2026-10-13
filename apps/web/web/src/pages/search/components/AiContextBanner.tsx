@@ -2,12 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Sparkles } from "lucide-react";
+// ===== Thư viện =====
+import { Sparkles } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import type { Concept, SearchMode } from "../types";
 
+// ===== Component =====
 /** Banner "Đã hiểu là…": cho người dùng thấy câu hỏi được hiểu thế nào, kèm lối tắt hỏi trợ lý. */
 export const AiContextBanner = ({
-  query, mode, concepts, onAsk,
+  query,
+  mode,
+  concepts,
+  onAsk,
 }: {
   query: string;
   mode: SearchMode;
@@ -29,11 +36,15 @@ export const AiContextBanner = ({
               </span>
             ))}
             {" · gồm cả "}
-            {concepts.flatMap((c) => c.synonyms).map((s) => `“${s}”`).join(", ")}
+            {concepts
+              .flatMap((c) => c.synonyms)
+              .map((s) => `“${s}”`)
+              .join(", ")}
           </span>
         ) : mode === "keyword" ? (
           <span>
-            Tìm chính xác theo từ khóa <b className="font-semibold text-ink">“{query}”</b> · chuyển sang “Kết hợp” để tìm cả cách nói khác
+            Tìm chính xác theo từ khóa <b className="font-semibold text-ink">“{query}”</b> · chuyển sang “Kết hợp” để
+            tìm cả cách nói khác
           </span>
         ) : (
           <span>

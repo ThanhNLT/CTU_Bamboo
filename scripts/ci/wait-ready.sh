@@ -4,7 +4,12 @@
 #
 # Chờ `docker compose up -d` xong: job khởi tạo thoát mã 0, dịch vụ chạy lâu "healthy".
 #   scripts/ci/wait-ready.sh [số giây tối đa, mặc định 900]
+# Công cụ: Docker Compose
+
+# ===== Thiết lập =====
 set -euo pipefail
+
+# ===== Tham số =====
 TIMEOUT="${1:-900}"
 JOBS=(migrate seed openbao-init bootstrap)
 SERVICES=(db keycloak flowable hasura openbao seaweedfs actions web gateway)
@@ -12,27 +17,34 @@ deadline=$((SECONDS + TIMEOUT))
 # Theo tên project: chạy được cả khi hệ thống dựng từ compose.release.yml hay oci:// (không cần tệp compose ở đây).
 DC=(docker compose -p "${COMPOSE_PROJECT_NAME:-bamboo}")
 
+# ===== Hàm =====
 # Dấu | phân cách cột: Health rỗng (dịch vụ không có healthcheck) không làm lệch cột sau.
 state() { "${DC[@]}" ps -a --format '{{.Service}}|{{.State}}|{{.Health}}|{{.ExitCode}}' | awk -F'|' -v s="$1" '$1 == s'; }
 
+# ===== Vòng chờ =====
 while :; do
     pending=()
     for job in "${JOBS[@]}"; do
-        IFS='|' read -r _ st _ code <<<"$(state "$job")"
+        IFS='|' read -r _ st _ code <<< "$(state "$job")"
         if [[ "$st" == exited && "$code" != 0 ]]; then
-            echo "Job $job thoát với mã $code"; "${DC[@]}" logs "$job" | tail -50; exit 1
+            echo "Job $job thoát với mã $code"
+            "${DC[@]}" logs "$job" | tail -50
+            exit 1
         fi
         [[ "$st" == exited ]] || pending+=("$job")
     done
     for svc in "${SERVICES[@]}"; do
-        IFS='|' read -r _ st health _ <<<"$(state "$svc")"
+        IFS='|' read -r _ st health _ <<< "$(state "$svc")"
         [[ "$st" == running && "$health" == healthy ]] || pending+=("$svc($st/$health)")
     done
     if [[ ${#pending[@]} -eq 0 ]]; then
-        echo "Hệ thống sẵn sàng sau ${SECONDS}s"; "${DC[@]}" ps; exit 0
+        echo "Hệ thống sẵn sàng sau ${SECONDS}s"
+        "${DC[@]}" ps
+        exit 0
     fi
-    if (( SECONDS > deadline )); then
-        echo "Quá ${TIMEOUT}s, còn chờ: ${pending[*]}"; "${DC[@]}" ps -a
+    if ((SECONDS > deadline)); then
+        echo "Quá ${TIMEOUT}s, còn chờ: ${pending[*]}"
+        "${DC[@]}" ps -a
         for s in "${pending[@]}"; do "${DC[@]}" logs "${s%%(*}" | tail -40; done
         exit 1
     fi

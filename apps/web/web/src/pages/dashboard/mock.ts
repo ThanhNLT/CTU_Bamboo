@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // KPI minh họa cho Trang chủ (chưa có nguồn số liệu KPI). Phần còn lại của trang dùng dữ liệu thật (./useDashboard).
+
+// ===== Module nội bộ =====
 import type { PinnedKpi } from "./types";
 
+// ===== Hằng số =====
 export const MOCK_KPIS: PinnedKpi[] = [
   {
     key: "on-time",

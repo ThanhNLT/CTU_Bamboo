@@ -4,11 +4,15 @@
 
 // Gọi các Action quản trị (ADR #44). Máy chủ kiểm quyền và luật nghiệp vụ; lỗi trả về là câu tiếng Việt
 // hiện thẳng cho người dùng.
+
+// ===== Module nội bộ =====
 import { request } from "../../../api/client";
 
+// ===== Kiểu dữ liệu =====
 export type AdminEntity =
-  | "org_unit" | "position" | "person" | "assignment" | "role" | "role_grant" | "catalog_item" | "partner" | "item";
+  "org_unit" | "position" | "person" | "assignment" | "role" | "role_grant" | "catalog_item" | "partner" | "item";
 
+// ===== Hàm tiện ích =====
 export const adminSave = async (entity: AdminEntity, data: Record<string, unknown>): Promise<string> => {
   const r = await request<{ admin_save: { id: string } }>(
     `mutation AdminSave($e: AdminEntity!, $d: jsonb!) { admin_save(entity: $e, data: $d) { id } }`,
@@ -26,7 +30,12 @@ export const adminClose = async (entity: AdminEntity, id: string, endDate?: stri
 };
 
 export type AccountInput = { person_id: string; username: string; email?: string | null; link_existing?: boolean };
-export type AccountResult = { person_id: string; username: string; temporary_password: string | null; error: string | null };
+export type AccountResult = {
+  person_id: string;
+  username: string;
+  temporary_password: string | null;
+  error: string | null;
+};
 
 export const createAccounts = async (accounts: AccountInput[]): Promise<AccountResult[]> => {
   const r = await request<{ create_person_accounts: AccountResult[] }>(
@@ -39,7 +48,10 @@ export const createAccounts = async (accounts: AccountInput[]): Promise<AccountR
 
 export type ImportKind = Exclude<AdminEntity, "assignment" | "role">;
 export type ImportResult = {
-  total: number; valid: number; applied: boolean; dry_run: boolean;
+  total: number;
+  valid: number;
+  applied: boolean;
+  dry_run: boolean;
   errors: { row: number; message: string }[];
   created: { row: number; person_id: string; full_name: string; username: string; email: string | null }[];
 };
@@ -73,15 +85,21 @@ const saveBlob = (blob: Blob, fileName: string) => {
 
 export const downloadTemplate = async (kind: ImportKind) => {
   const r = await request<{ admin_import_template: { file_name: string; content_base64: string } }>(
-    `query Template($k: AdminEntity!) { admin_import_template(kind: $k) { file_name content_base64 } }`, { k: kind });
+    `query Template($k: AdminEntity!) { admin_import_template(kind: $k) { file_name content_base64 } }`,
+    { k: kind },
+  );
   const bytes = Uint8Array.from(atob(r.admin_import_template.content_base64), (c) => c.charCodeAt(0));
-  saveBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-           r.admin_import_template.file_name);
+  saveBlob(
+    new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    r.admin_import_template.file_name,
+  );
 };
 
 /** CSV UTF-8 có BOM để Excel đọc đúng tiếng Việt. */
 export const downloadCsv = (fileName: string, rows: string[][]) => {
   const cell = (v: string) => (/[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
-  saveBlob(new Blob(["﻿" + rows.map((r) => r.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-           fileName);
+  saveBlob(
+    new Blob(["﻿" + rows.map((r) => r.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    fileName,
+  );
 };

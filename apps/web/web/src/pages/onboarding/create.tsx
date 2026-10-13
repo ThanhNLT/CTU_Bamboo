@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Create } from "@refinedev/antd";
-import { useGo } from "@refinedev/core";
+// ===== Thư viện =====
+import { Create } from "@refinedev/antd"; // Refine Ant Design
+import { useGo } from "@refinedev/core"; // Refine
+
+// ===== Module nội bộ =====
 import { OnboardingForm } from "./form";
 
+// ===== Component =====
 export const OnboardingCreate = () => {
   const go = useGo();
   return (

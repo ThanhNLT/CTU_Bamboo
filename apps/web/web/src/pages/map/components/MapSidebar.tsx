@@ -2,21 +2,28 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox } from "antd";
+// ===== Thư viện =====
+import { Checkbox } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { LAYERS, layerCount } from "../mock";
 import type { LayerKey, MapSite, SiteAlert } from "../types";
 
+// ===== Component =====
 /** Lớp bản đồ: bật/tắt từng nhóm điểm, kèm số điểm. */
 export const LayerFilterCard = ({
-  layers, onToggle,
+  layers,
+  onToggle,
 }: {
   layers: Record<LayerKey, boolean>;
   onToggle: (key: LayerKey, on: boolean) => void;
 }) => (
   <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-labelledby="layers-title">
-    <h2 id="layers-title" className="text-[14px] font-semibold text-ink">Lớp bản đồ</h2>
+    <h2 id="layers-title" className="text-[14px] font-semibold text-ink">
+      Lớp bản đồ
+    </h2>
     <ul className="m-0 mt-3 list-none space-y-2.5 p-0">
       {LAYERS.map((l) => {
         const count = l.key === "boundary" ? null : layerCount(l.key);
@@ -79,7 +86,10 @@ export const AlertsCard = ({ sites, onFocus }: { sites: MapSite[]; onFocus: (sit
 
 /** Cột phải: lớp bản đồ + cảnh báo đang mở. */
 export const MapSidebar = ({
-  layers, onToggleLayer, sites, onFocusSite,
+  layers,
+  onToggleLayer,
+  sites,
+  onFocusSite,
 }: {
   layers: Record<LayerKey, boolean>;
   onToggleLayer: (key: LayerKey, on: boolean) => void;

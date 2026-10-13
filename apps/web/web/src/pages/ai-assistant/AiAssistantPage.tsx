@@ -5,10 +5,14 @@
 // Trợ lý đa năng (Trí tuệ số): trái ~25% lịch sử phiên, phải ~75% khung chat (cuộn trong khung, ô nhập cố định ở đáy).
 // Trang khác mở trợ lý kèm ngữ cảnh: ?record=HS-… · ?entity=urn:ngsi-ld:… · ?source=library → tạo phiên mới gắn ngữ cảnh.
 // Câu trả lời đến từ bộ trả lời mẫu ./assistant (thay bằng API trợ lý nội bộ khi tích hợp).
-import { App } from "antd";
-import { History, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { History, Plus } from "lucide-react"; // Lucide React
+import { useEffect, useRef, useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../components/ui";
 import { cn } from "../../utils/cn";
 import { copyText } from "../../utils/clipboard";
@@ -22,10 +26,19 @@ import { UserMessage } from "./components/UserMessage";
 import { NEXT_DRAFT_CODE, SESSIONS } from "./mock";
 import type { ActionProposal, AiMsg, AssistantMode, ChatSession, Message, Reply } from "./types";
 
+// ===== Trạng thái module =====
 let seq = 0;
+
+// ===== Hàm tiện ích =====
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
-const newSession = (context?: string): ChatSession => ({ id: uid("s"), title: "Phiên mới", group: "today", context, messages: [] });
+const newSession = (context?: string): ChatSession => ({
+  id: uid("s"),
+  title: "Phiên mới",
+  group: "today",
+  context,
+  messages: [],
+});
 
 /** Phiên ban đầu: có ngữ cảnh từ URL thì mở phiên mới gắn ngữ cảnh đó, không thì mở phiên "OEE tuần này giảm". */
 const initialState = (params: URLSearchParams) => {
@@ -38,6 +51,7 @@ const initialState = (params: URLSearchParams) => {
 /** Mã nháp kế tiếp: HS-MOB-2026-00320, 00321… */
 const draftCode = (n: number) => NEXT_DRAFT_CODE.replace(/\d{5}$/, (d) => String(Number(d) + n).padStart(5, "0"));
 
+// ===== Component =====
 export const AiAssistantPage = () => {
   const { message } = App.useApp();
   const [params] = useSearchParams();
@@ -185,7 +199,9 @@ export const AiAssistantPage = () => {
           mode={mode}
           onModeChange={setMode}
           onClearContext={() => patchSession(active.id, (s) => ({ ...s, context: undefined }))}
-          thinking={pending?.sessionId === active.id ? { key: pending.key, steps: pending.reply.steps ?? [] } : undefined}
+          thinking={
+            pending?.sessionId === active.id ? { key: pending.key, steps: pending.reply.steps ?? [] } : undefined
+          }
           suggestions={suggestionsFor(active.context)}
           onSuggestion={(s) => send(s)}
           input={

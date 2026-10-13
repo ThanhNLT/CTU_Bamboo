@@ -18,6 +18,10 @@
 -- psql -v hasura_password=... -v actions_password=... -v keycloak_password=... -v flowable_password=...
 --      -v cdc_password=... -v lakehouse_password=...
 
+-- ---------------------------------------------------------------------------
+-- Tạo role và thuộc tính đăng nhập
+-- ---------------------------------------------------------------------------
+
 SELECT format('CREATE ROLE %I', r)
 FROM unnest(ARRAY['bamboo_app', 'bamboo_hasura', 'bamboo_actions', 'bamboo_keycloak', 'bamboo_flowable',
                    'bamboo_cdc', 'bamboo_lakehouse']) r
@@ -37,6 +41,10 @@ ALTER ROLE bamboo_cdc LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE REPLICATION NOBY
     PASSWORD :'cdc_password';
 ALTER ROLE bamboo_lakehouse LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS
     PASSWORD :'lakehouse_password';
+
+-- ---------------------------------------------------------------------------
+-- Nhóm và quyền kết nối
+-- ---------------------------------------------------------------------------
 
 GRANT bamboo_app TO bamboo_hasura, bamboo_actions;
 

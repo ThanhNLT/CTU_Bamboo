@@ -4,14 +4,21 @@
 
 // Bộ trả lời MẪU (thay cho API trợ lý chạy Qwen3 nội bộ): khớp từ khóa → câu trả lời dựng sẵn từ dữ liệu mẫu.
 // Không hiểu câu hỏi thì nói thật là bản demo, không bịa. Khi nối API thật chỉ cần thay `replyTo`.
+
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import {
-  DEFAULT_SUGGESTIONS, LIB_CLEANROOM_TEXT, OEE_CHART, OEE_STEPS, SRC_CLEANROOM_RULE, SRC_INCIDENT, SRC_OEE_DEF,
+  DEFAULT_SUGGESTIONS,
+  LIB_CLEANROOM_TEXT,
+  OEE_CHART,
+  OEE_STEPS,
+  SRC_CLEANROOM_RULE,
+  SRC_INCIDENT,
+  SRC_OEE_DEF,
 } from "./mock";
 import type { AssistantMode, Citation, Reply } from "./types";
 
-// ---------- Văn bản có đánh dấu ----------
-
+// ===== Văn bản có đánh dấu =====
 export type RichPart = { type: "text"; value: string } | { type: "bold"; value: string } | { type: "cite"; id: number };
 
 /** Tách "**đậm**" và "[1]" thành các phần để hiển thị. */
@@ -27,15 +34,17 @@ export const parseRich = (text: string): RichPart[] =>
 
 /** Bản thuần văn bản (để sao chép): bỏ dấu **, giữ [n] và liệt kê nguồn ở cuối. */
 export const plainText = (text: string, sources: Citation[] = []) =>
-  [text.replace(/\*\*/g, ""), ...(sources.length ? ["", "Nguồn:", ...sources.map((s) => `[${s.id}] ${s.label}`)] : [])].join("\n");
+  [
+    text.replace(/\*\*/g, ""),
+    ...(sources.length ? ["", "Nguồn:", ...sources.map((s) => `[${s.id}] ${s.label}`)] : []),
+  ].join("\n");
 
 export const totalMs = (r: Reply) => (r.steps ?? []).reduce((a, s) => a + s.ms, 0);
 
 /** "1,9 giây" */
 export const formatSeconds = (ms: number) => `${(ms / 1000).toFixed(1).replace(".", ",")} giây`;
 
-// ---------- Ngữ cảnh từ URL (các trang khác mở trợ lý kèm tham số) ----------
-
+// ===== Ngữ cảnh từ URL (các trang khác mở trợ lý kèm tham số) =====
 /** ?record=HS-… · ?entity=urn:ngsi-ld:CleanRoom:semicon:CR-02 · ?source=library · ?context=… */
 export const contextFromParams = (p: URLSearchParams) => {
   const record = p.get("record");
@@ -51,19 +60,22 @@ export const suggestionsFor = (context?: string) => {
   if (c.includes("cr-02") || c.includes("ban sao so")) {
     return ["Vì sao CR-02 vượt ngưỡng?", "Chênh áp CR-02 hiện thế nào?", "Ai đang xử lý sự cố CR-02?"];
   }
-  if (c.includes("thu vien")) return ["Quy chế phòng sạch khi vượt ngưỡng", "Xử lý tràn đổ hóa chất thế nào?", "Tài liệu nào sắp hết hiệu lực?"];
+  if (c.includes("thu vien"))
+    return ["Quy chế phòng sạch khi vượt ngưỡng", "Xử lý tràn đổ hóa chất thế nào?", "Tài liệu nào sắp hết hiệu lực?"];
   if (c.startsWith("ho so")) return ["Tóm tắt hồ sơ này", "Hồ sơ này đang chờ ai duyệt?", "Đối soát hồ sơ trên sổ cái"];
   return DEFAULT_SUGGESTIONS;
 };
 
 /** Tên phiên từ câu hỏi đầu tiên. */
 export const titleFrom = (text: string) => {
-  const t = text.trim().replace(/\s+/g, " ").replace(/[?.!]+$/, "");
+  const t = text
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[?.!]+$/, "");
   return t.length > 40 ? `${t.slice(0, 38)}…` : t;
 };
 
-// ---------- Bộ trả lời mẫu ----------
-
+// ===== Bộ trả lời mẫu =====
 const has = (q: string, ...words: string[]) => words.some((w) => q.includes(w));
 
 const OEE_REPLY: Reply = {
@@ -76,10 +88,7 @@ const OEE_REPLY: Reply = {
   sources: [SRC_INCIDENT, SRC_OEE_DEF],
 };
 
-export const replyTo = (
-  question: string,
-  opts: { mode: AssistantMode; context?: string; files?: string[] },
-): Reply => {
+export const replyTo = (question: string, opts: { mode: AssistantMode; context?: string; files?: string[] }): Reply => {
   const q = fold(question);
   const ctx = fold(opts.context ?? "");
 

@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Sparkles } from "lucide-react";
+// ===== Thư viện =====
+import { Sparkles } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
+// ===== Component =====
 export const LibraryHeader = ({ onSuggest, onAskLibrary }: { onSuggest: () => void; onAskLibrary: () => void }) => (
   <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">

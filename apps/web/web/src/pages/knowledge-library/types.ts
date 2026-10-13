@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 export type DocCategory = "regulation" | "sop" | "guide" | "faq";
 
 /** Phạm vi ban hành: cấp tập đoàn hay công ty con. */

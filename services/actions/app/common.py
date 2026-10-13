@@ -4,15 +4,19 @@
 
 """Phần dùng chung của các Hasura Action: lỗi trả về giao diện, người gọi từ phiên Hasura."""
 
+# ===== Thư viện chuẩn =====
 import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import psycopg
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from .flowable import FlowableClient
 from .storage import Storage
 
+# ===== Import chỉ dùng cho kiểu =====
 if TYPE_CHECKING:
     from .hr_account import KeycloakUsers
     from .pii import PiiCipher
@@ -20,21 +24,24 @@ if TYPE_CHECKING:
     from .trino import Trino
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass
 class Context:
     """Dịch vụ ngoài mà Action cần (khởi tạo một lần trong create_app)."""
+
     flowable: FlowableClient | None = None
     storage: Storage | None = None
     clamav_host: str = ""
     clamav_port: int = 3310
-    search: "Meili | None" = None       # khóa chỉ được tìm (ADR #36)
+    search: "Meili | None" = None  # khóa chỉ được tìm (ADR #36)
     search_index: str = "documents"
-    gotenberg_url: str = ""           # in phiếu PDF (ADR #37)
-    pii: "PiiCipher | None" = None    # mã hóa dữ liệu cá nhân nhạy cảm (ADR #41)
+    gotenberg_url: str = ""  # in phiếu PDF (ADR #37)
+    pii: "PiiCipher | None" = None  # mã hóa dữ liệu cá nhân nhạy cảm (ADR #41)
     users: "KeycloakUsers | None" = None  # tạo tài khoản đăng nhập khi quản trị thêm người (ADR #44)
     lakehouse: "Trino | None" = None  # truy vấn tầng silver qua Trino (ADR #45)
 
 
+# ===== Lỗi (exception) =====
 class ActionError(Exception):
     def __init__(self, message: str, code: str = "bad-request", status: int = 400):
         super().__init__(message)
@@ -43,6 +50,7 @@ class ActionError(Exception):
         self.status = status
 
 
+# ===== Hàm =====
 def session_identity(session: dict, tenant_id) -> str:
     """Trả về person.id của người gọi; chặn khi chứng từ thuộc tenant khác phiên."""
     person = session.get("x-hasura-user-id")

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hàm tiện ích =====
 /** Ghi vào bộ nhớ tạm; trình duyệt cũ / không phải HTTPS thì dùng cách dự phòng. */
 export const copyText = async (text: string) => {
   try {

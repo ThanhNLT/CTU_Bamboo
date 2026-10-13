@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ThemeConfig } from "antd";
+// ===== Thư viện =====
+import type { ThemeConfig } from "antd"; // Ant Design
 
+// ===== Hằng số =====
 /** Bảng AntD kiểu Bamboo: tiêu đề trong suốt chữ xám, đường kẻ mảnh, hàng thoáng. Dùng với <ConfigProvider theme>. */
 export const bambooTableTheme: ThemeConfig = {
   components: {

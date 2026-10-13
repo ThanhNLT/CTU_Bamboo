@@ -2,20 +2,45 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { ApprovalHistory, ApprovalStep, Attachment, Comment } from "../../components/document/types";
 
+// ===== Kiểu dữ liệu =====
 type Person = { full_name: string } | null;
 
 export type Onboarding = {
-  id: string; doc_no: string; status: string; approval_round: number; created_at: string; updated_at: string;
-  requester_id: string; requester_position_id: string;
-  full_name: string; gender: string | null; date_of_birth: string | null; work_email: string | null; phone: string | null;
-  education: string | null; major: string | null;
-  target_position_id: string; start_date: string; contract_type: string; salary: number | null; note: string | null;
-  bank_name: string | null; username: string | null;
-  national_id_masked: string | null; bank_account_masked: string | null; address_masked: string | null;
-  account_status: string; account_error: string | null; person_id: string | null; can_read_private: boolean;
-  requester: Person; requester_position: { name: string } | null; org_unit: { name: string } | null;
+  id: string;
+  doc_no: string;
+  status: string;
+  approval_round: number;
+  created_at: string;
+  updated_at: string;
+  requester_id: string;
+  requester_position_id: string;
+  full_name: string;
+  gender: string | null;
+  date_of_birth: string | null;
+  work_email: string | null;
+  phone: string | null;
+  education: string | null;
+  major: string | null;
+  target_position_id: string;
+  start_date: string;
+  contract_type: string;
+  salary: number | null;
+  note: string | null;
+  bank_name: string | null;
+  username: string | null;
+  national_id_masked: string | null;
+  bank_account_masked: string | null;
+  address_masked: string | null;
+  account_status: string;
+  account_error: string | null;
+  person_id: string | null;
+  can_read_private: boolean;
+  requester: Person;
+  requester_position: { name: string } | null;
+  org_unit: { name: string } | null;
   target_position: { name: string; org_unit: { name: string } } | null;
   person: { employee_code: string | null } | null;
   approval_steps: ApprovalStep[];
@@ -25,13 +50,19 @@ export type Onboarding = {
 };
 
 export type OnboardingPrivate = {
-  national_id: string | null; bank_account: string | null; address: string | null;
-  username: string | null; initial_password: string | null;
+  national_id: string | null;
+  bank_account: string | null;
+  address: string | null;
+  username: string | null;
+  initial_password: string | null;
 };
 
+// ===== Hằng số =====
 export const GENDER: Record<string, string> = { MALE: "Nam", FEMALE: "Nữ", OTHER: "Khác" };
 export const CONTRACT_TYPE: Record<string, string> = {
-  PROBATION: "Thử việc", FIXED_TERM: "Hợp đồng xác định thời hạn", INDEFINITE: "Hợp đồng không xác định thời hạn",
+  PROBATION: "Thử việc",
+  FIXED_TERM: "Hợp đồng xác định thời hạn",
+  INDEFINITE: "Hợp đồng không xác định thời hạn",
 };
 export const ACCOUNT_STATUS: Record<string, { label: string; color: string }> = {
   NONE: { label: "Không tạo tài khoản", color: "default" },

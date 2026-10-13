@@ -4,11 +4,15 @@
 
 // Đơn hàng nội bộ (ADR #42): Điện thoại X đặt PMIC của Chip X qua đề nghị mua sắm; trưởng phòng mua hàng duyệt thì
 // sinh đơn hàng nội bộ; kinh doanh Chip X chọn lô xuất và xác nhận; bên mua thấy đơn mua và lô nhận về.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E PMIC nội bộ ${Date.now()}`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -22,12 +26,16 @@ async function logout(page: Page) {
   // Chờ Keycloak xóa phiên SSO trước khi đăng nhập tài khoản khác (check-sso sẽ đăng nhập lại người cũ).
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
   // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
-  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page
+    .locator("header")
+    .getByRole("button", { name: /^Tài khoản:/ })
+    .click();
   await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơn mua", async ({ page }) => {
   test.setTimeout(180_000);
 

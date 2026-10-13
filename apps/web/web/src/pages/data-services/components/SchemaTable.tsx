@@ -2,20 +2,31 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { EyeOff } from "lucide-react";
+// ===== Thư viện =====
+import { EyeOff } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import type { ColumnDef } from "../types";
 
+// ===== Hằng số =====
 const TH = "pb-2 pr-3 text-left text-[12px] font-medium text-muted";
 
+// ===== Component =====
 /** Lược đồ: tên cột (mono), kiểu (mono xám), mô tả. Cột PII có biểu tượng che. */
 export const SchemaTable = ({ columns }: { columns: ColumnDef[] }) => (
   <div className="overflow-x-auto">
     <table className="w-full min-w-[440px] text-[12.5px]">
       <thead>
         <tr className="border-b border-line">
-          <th scope="col" className={TH}>Cột</th>
-          <th scope="col" className={TH}>Kiểu</th>
-          <th scope="col" className={TH}>Mô tả</th>
+          <th scope="col" className={TH}>
+            Cột
+          </th>
+          <th scope="col" className={TH}>
+            Kiểu
+          </th>
+          <th scope="col" className={TH}>
+            Mô tả
+          </th>
         </tr>
       </thead>
       <tbody>

@@ -8,15 +8,20 @@ Mọi kiểm tra nghiệp vụ (quyền ic.order.confirm, người đặt, lô c
 ic.confirm_order / ic.reject_order / ic.cancel_order; ở đây chỉ chặn đơn khác tenant hoặc không xem được.
 """
 
+# ===== Thư viện chuẩn =====
 import json
 
-import psycopg
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
+# ===== Hằng số & cấu hình =====
 ENTITY = "ic.ic_order"
 
 
+# ===== Hàm =====
 def _order(conn: psycopg.Connection, session: dict, order_id: str) -> str:
     row = conn.execute("SELECT tenant_id FROM ic.ic_order WHERE id = %s", (order_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -27,10 +32,14 @@ def _order(conn: psycopg.Connection, session: dict, order_id: str) -> str:
 
 def _result(conn: psycopg.Connection, order_id: str, purchase_order_id=None) -> dict:
     status = conn.execute("SELECT status FROM ic.ic_order WHERE id = %s", (order_id,)).fetchone()[0]
-    return {"order_id": order_id, "status": status,
-            "purchase_order_id": str(purchase_order_id) if purchase_order_id else None}
+    return {
+        "order_id": order_id,
+        "status": status,
+        "purchase_order_id": str(purchase_order_id) if purchase_order_id else None,
+    }
 
 
+# ===== Hasura Action =====
 def confirm_ic_order(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
     order_id = args["order_id"]
     person = _order(conn, session, order_id)
@@ -39,8 +48,7 @@ def confirm_ic_order(conn: psycopg.Connection, session: dict, args: dict, _ctx: 
         if entry["line_id"] in lots:
             raise ActionError("Mỗi dòng hàng chỉ chọn một lô", "rejected")
         lots[entry["line_id"]] = entry["lot_id"]
-    po = conn.execute("SELECT ic.confirm_order(%s, %s, %s::jsonb)",
-                      (order_id, person, json.dumps(lots))).fetchone()[0]
+    po = conn.execute("SELECT ic.confirm_order(%s, %s, %s::jsonb)", (order_id, person, json.dumps(lots))).fetchone()[0]
     return _result(conn, order_id, po)
 
 
@@ -58,6 +66,7 @@ def cancel_ic_order(conn: psycopg.Connection, session: dict, args: dict, _ctx: C
     return _result(conn, order_id)
 
 
+# ===== Đăng ký Action =====
 HANDLERS = {
     "confirm_ic_order": confirm_ic_order,
     "reject_ic_order": reject_ic_order,

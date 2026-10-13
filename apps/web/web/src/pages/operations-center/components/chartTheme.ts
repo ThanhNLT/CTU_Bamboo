@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hằng số =====
 // Thông số chung cho mọi biểu đồ Recharts trên trang: trục và lưới lùi về sau, chữ màu mực.
 export const AXIS_TICK = { fill: "#6b7670", fontSize: 11 };
 export const GRID_STROKE = "#eef1ee";

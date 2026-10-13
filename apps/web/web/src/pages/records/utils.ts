@@ -2,14 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { Tone } from "../../components/ui";
 import type { DocSummary } from "../../api/documents";
 import { formatDate } from "../../utils/format";
 import { fold } from "../../utils/text";
 import type {
-  EofficeRecord, RecordFilters, RecordStatus, StatusTab, StepState, TimeRange, WorkflowStep,
+  EofficeRecord,
+  RecordFilters,
+  RecordStatus,
+  StatusTab,
+  StepState,
+  TimeRange,
+  WorkflowStep,
 } from "./types";
 
+// ===== Hằng số =====
 export const STATUS_VIEW: Record<RecordStatus, { tone: Tone; locked?: boolean }> = {
   draft: { tone: "neutral" },
   pending: { tone: "warning" },
@@ -37,19 +45,36 @@ export const TIME_OPTIONS: Array<{ label: string; value: TimeRange }> = [
 const RANGE_DAYS: Record<TimeRange, number> = { "7d": 7, "30d": 30, "90d": 90, all: Infinity };
 
 const STATUS_OF: Record<string, RecordStatus> = {
-  DRAFT: "draft", PENDING: "pending", RETURNED: "returned", APPROVED: "approved", CONFIRMED: "approved",
-  SETTLED: "approved", REJECTED: "closed", CANCELLED: "closed",
+  DRAFT: "draft",
+  PENDING: "pending",
+  RETURNED: "returned",
+  APPROVED: "approved",
+  CONFIRMED: "approved",
+  SETTLED: "approved",
+  REJECTED: "closed",
+  CANCELLED: "closed",
 };
 
+// ===== Hàm tiện ích =====
 /** Chứng từ thật → dòng của trang Hồ sơ. Đang chờ duyệt thì ghi rõ cấp đang xử lý. */
 export const toRecord = (d: DocSummary): EofficeRecord => {
   const status = STATUS_OF[d.status] ?? "draft";
   const active = d.steps.find((s) => s.status === "ACTIVE");
   return {
-    id: d.id, code: d.code, title: d.title, type: d.kind, status,
+    id: d.id,
+    code: d.code,
+    title: d.title,
+    type: d.kind,
+    status,
     statusLabel: status === "pending" && active ? `Chờ duyệt cấp ${active.order}` : d.statusLabel,
-    submitter: d.requester, submitterId: d.requesterId, unit: d.unit, amount: d.amount,
-    createdAt: d.createdAt, updatedAt: d.updatedAt, steps: d.steps, to: d.to,
+    submitter: d.requester,
+    submitterId: d.requesterId,
+    unit: d.unit,
+    amount: d.amount,
+    createdAt: d.createdAt,
+    updatedAt: d.updatedAt,
+    steps: d.steps,
+    to: d.to,
   };
 };
 
@@ -78,13 +103,23 @@ export const countByTab = (records: EofficeRecord[]) =>
     STATUS_TABS.map(({ key }) => [key, records.filter((r) => matchesTab(r.status, key)).length]),
   ) as Record<StatusTab, number>;
 
+// ===== Hằng số =====
 const STEP_STATE: Record<string, StepState> = {
-  APPROVED: "done", ACTIVE: "current", RETURNED: "returned", REJECTED: "returned", WAITING: "pending", CANCELLED: "pending",
+  APPROVED: "done",
+  ACTIVE: "current",
+  RETURNED: "returned",
+  REJECTED: "returned",
+  WAITING: "pending",
+  CANCELLED: "pending",
 };
 const STEP_SUFFIX: Record<string, string> = {
-  ACTIVE: " · đang xử lý", RETURNED: " · trả lại bổ sung", REJECTED: " · từ chối", CANCELLED: " · đã hủy",
+  ACTIVE: " · đang xử lý",
+  RETURNED: " · trả lại bổ sung",
+  REJECTED: " · từ chối",
+  CANCELLED: " · đã hủy",
 };
 
+// ===== Hàm tiện ích =====
 /** Nộp → các bước duyệt của lần gửi hiện tại (đơn nội bộ: bên bán xác nhận) → Kết quả. */
 export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
   const submitted = r.status !== "draft";
@@ -94,22 +129,36 @@ export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
     state: submitted ? "done" : "current",
     meta: submitted ? `${formatDate(r.createdAt)} · ${r.submitter}` : r.submitter,
   };
-  const middle: WorkflowStep[] = r.type === "ic_order"
-    ? [{
-        key: "confirm",
-        label: r.status === "pending" ? "Bên bán xác nhận · đang chờ" : "Bên bán xác nhận",
-        state: r.status === "approved" ? "done" : r.status === "pending" ? "current" : r.status === "closed" ? "returned" : "pending",
-      }]
-    : r.steps.map((s) => ({
-        key: `l${s.order}`,
-        label: `Duyệt cấp ${s.order}${STEP_SUFFIX[s.status] ?? ""}`,
-        state: STEP_STATE[s.status] ?? "pending",
-        meta: [s.actedBy ?? s.position, s.actedAt && formatDate(s.actedAt)].filter(Boolean).join(" · "),
-      }));
+  const middle: WorkflowStep[] =
+    r.type === "ic_order"
+      ? [
+          {
+            key: "confirm",
+            label: r.status === "pending" ? "Bên bán xác nhận · đang chờ" : "Bên bán xác nhận",
+            state:
+              r.status === "approved"
+                ? "done"
+                : r.status === "pending"
+                  ? "current"
+                  : r.status === "closed"
+                    ? "returned"
+                    : "pending",
+          },
+        ]
+      : r.steps.map((s) => ({
+          key: `l${s.order}`,
+          label: `Duyệt cấp ${s.order}${STEP_SUFFIX[s.status] ?? ""}`,
+          state: STEP_STATE[s.status] ?? "pending",
+          meta: [s.actedBy ?? s.position, s.actedAt && formatDate(s.actedAt)].filter(Boolean).join(" · "),
+        }));
   return [
     submit,
     ...middle,
-    { key: "result", label: r.status === "closed" ? "Kết quả · đã đóng" : "Kết quả", state: r.status === "approved" ? "done" : "pending" },
+    {
+      key: "result",
+      label: r.status === "closed" ? "Kết quả · đã đóng" : "Kết quả",
+      state: r.status === "approved" ? "done" : "pending",
+    },
   ];
 };
 

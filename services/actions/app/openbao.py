@@ -4,31 +4,36 @@
 
 """Client tối thiểu cho OpenBao (ADR #25): KV v2 ở `secret/`, transit ở `transit/`, đăng nhập AppRole.
 
-    bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")
-    bao.read("bms/flowable")          # {"username": ..., "password": ...}
-    bao.encrypt("079123456789")       # "vault:v1:..."
+bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")
+bao.read("bms/flowable")          # {"username": ..., "password": ...}
+bao.encrypt("079123456789")       # "vault:v1:..."
 """
 
+# ===== Thư viện chuẩn =====
 import base64
 import json
 import pathlib
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
 
+# ===== Lỗi (exception) =====
 class BaoError(RuntimeError):
     def __init__(self, status: int, message: str):
         super().__init__(f"OpenBao {status}: {message}")
         self.status = status
 
 
+# ===== Lớp =====
 class Bao:
     def __init__(self, addr: str, token: str | None = None, timeout: float = 10.0):
         self.http = httpx.Client(base_url=addr.rstrip("/") + "/v1/", timeout=timeout)
         self.token = token
 
-    def request(self, method: str, path: str, body: dict | None = None, ok404: bool = False,
-                timeout: float | None = None) -> dict | None:
+    def request(
+        self, method: str, path: str, body: dict | None = None, ok404: bool = False, timeout: float | None = None
+    ) -> dict | None:
         headers = {"X-Vault-Token": self.token} if self.token else {}
         extra = {"timeout": timeout} if timeout else {}
         resp = self.http.request(method, path, json=body, headers=headers, **extra)
@@ -54,7 +59,7 @@ class Bao:
         creds = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
         return cls.login_approle(addr, creds["role_id"], creds["secret_id"])
 
-    # --- KV v2 ----------------------------------------------------------------
+    # ===== KV v2 =====
 
     def read(self, path: str) -> dict | None:
         """Secret mới nhất ở secret/<path>; None nếu chưa có."""
@@ -64,7 +69,7 @@ class Bao:
     def write(self, path: str, values: dict) -> None:
         self.request("POST", f"secret/data/{path}", {"data": values})
 
-    # --- Transit --------------------------------------------------------------
+    # ===== Transit =====
 
     def encrypt(self, plaintext: str, key: str = "pii") -> str:
         b64 = base64.b64encode(plaintext.encode("utf-8")).decode()

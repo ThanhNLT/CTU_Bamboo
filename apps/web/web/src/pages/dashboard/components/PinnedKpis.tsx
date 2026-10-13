@@ -2,11 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { PinnedKpi, Tone } from "../types";
 import { Dot, Panel, PanelLink } from "../../../components/ui";
 import { Sparkline } from "./Sparkline";
 
+// ===== Hằng số =====
 const NOTE_TEXT: Record<Tone, string> = {
   success: "text-bamboo-700",
   warning: "text-amber-700",
@@ -14,6 +16,7 @@ const NOTE_TEXT: Record<Tone, string> = {
   neutral: "text-muted",
 };
 
+// ===== Component =====
 const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
   <div className="py-4 first:pt-1 last:pb-0">
     <div className="text-[12px] text-muted">{kpi.label}</div>
@@ -44,11 +47,24 @@ const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
 /** `sample`: số minh họa (chưa nối nguồn KPI) — gắn nhãn để người xem không nhầm với số thật. */
 export const PinnedKpis = ({ kpis, sample }: { kpis: PinnedKpi[]; sample?: boolean }) => (
   <Panel
-    title={sample ? <>KPI đã ghim <span className="ml-1 whitespace-nowrap rounded-full bg-black/[0.045] px-2 py-0.5 text-[11px] font-medium text-muted">Minh họa</span></> : "KPI đã ghim"}
+    title={
+      sample ? (
+        <>
+          KPI đã ghim{" "}
+          <span className="ml-1 whitespace-nowrap rounded-full bg-black/[0.045] px-2 py-0.5 text-[11px] font-medium text-muted">
+            Minh họa
+          </span>
+        </>
+      ) : (
+        "KPI đã ghim"
+      )
+    }
     extra={<PanelLink to="/d/ops">Điều hành</PanelLink>}
   >
     <div className="divide-y divide-line">
-      {kpis.map((k) => <KpiBlock key={k.key} kpi={k} />)}
+      {kpis.map((k) => (
+        <KpiBlock key={k.key} kpi={k} />
+      ))}
     </div>
   </Panel>
 );

@@ -2,13 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DatabaseZap } from "lucide-react";
+// ===== Thư viện =====
+import { DatabaseZap } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Dataset } from "../types";
 import { DatasetTags } from "./DatasetTags";
 
+// ===== Component =====
 export const DatasetCard = ({
-  dataset, selected, onSelect, onKeyNav,
+  dataset,
+  selected,
+  onSelect,
+  onKeyNav,
 }: {
   dataset: Dataset;
   selected: boolean;
@@ -29,7 +36,9 @@ export const DatasetCard = ({
     className={cn(
       "block w-full rounded-2xl border bg-white p-4 text-left transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
-      selected ? "border-bamboo-500 shadow-[0_0_0_3px_var(--color-bamboo-100)]" : "border-line shadow-card hover:border-bamboo-200",
+      selected
+        ? "border-bamboo-500 shadow-[0_0_0_3px_var(--color-bamboo-100)]"
+        : "border-line shadow-card hover:border-bamboo-200",
     )}
   >
     <span className="flex items-start justify-between gap-3">
@@ -38,13 +47,18 @@ export const DatasetCard = ({
     </span>
     <span className="mt-1 block font-mono text-[11.5px] text-muted">{dataset.table}</span>
     {selected && <span className="mt-2 block text-[12.5px] leading-relaxed text-body">{dataset.description}</span>}
-    <span className="mt-2.5 block"><DatasetTags dataset={dataset} /></span>
+    <span className="mt-2.5 block">
+      <DatasetTags dataset={dataset} />
+    </span>
   </button>
 );
 
 /** Cột trái: danh sách thẻ tập dữ liệu, cuộn độc lập. Mũi tên lên/xuống để chuyển. */
 export const DatasetList = ({
-  datasets, selectedId, onSelect, className,
+  datasets,
+  selectedId,
+  onSelect,
+  className,
 }: {
   datasets: Dataset[];
   selectedId?: string;
@@ -60,7 +74,12 @@ export const DatasetList = ({
 
   if (datasets.length === 0) {
     return (
-      <div className={cn("flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center", className)}>
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center",
+          className,
+        )}
+      >
         <DatabaseZap className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
         <p className="text-[13px] font-medium text-ink">Không có tập dữ liệu phù hợp</p>
         <p className="text-[12px] text-muted">Thử tìm theo tên cột, ví dụ “tenant_id”.</p>
@@ -69,10 +88,18 @@ export const DatasetList = ({
   }
 
   return (
-    <ul className={cn("m-0 min-h-0 list-none space-y-3 overflow-y-auto p-0.5 pr-1", className)} aria-label="Tập dữ liệu">
+    <ul
+      className={cn("m-0 min-h-0 list-none space-y-3 overflow-y-auto p-0.5 pr-1", className)}
+      aria-label="Tập dữ liệu"
+    >
       {datasets.map((d, i) => (
         <li key={d.id}>
-          <DatasetCard dataset={d} selected={d.id === selectedId} onSelect={() => onSelect(d.id)} onKeyNav={(delta) => move(i, delta)} />
+          <DatasetCard
+            dataset={d}
+            selected={d.id === selectedId}
+            onSelect={() => onSelect(d.id)}
+            onKeyNav={(delta) => move(i, delta)}
+          />
         </li>
       ))}
     </ul>

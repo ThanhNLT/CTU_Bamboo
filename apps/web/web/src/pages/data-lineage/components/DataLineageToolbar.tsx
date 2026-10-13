@@ -2,14 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, Select } from "antd";
+// ===== Thư viện =====
+import { Checkbox, Select } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 
+// ===== Hằng số =====
 const DEPTH_OPTIONS = [1, 2, 3, 4, 5].map((d) => ({ value: d, label: `Độ sâu: ${d}` }));
 
+// ===== Component =====
 /** Tìm nút (Enter = chọn kết quả đầu), độ sâu phả hệ, bật/tắt phả hệ mức cột. */
 export const DataLineageToolbar = ({
-  query, onQueryChange, onSubmitQuery, matchCount, depth, onDepthChange, columnMode, onColumnModeChange,
+  query,
+  onQueryChange,
+  onSubmitQuery,
+  matchCount,
+  depth,
+  onDepthChange,
+  columnMode,
+  onColumnModeChange,
 }: {
   query: string;
   onQueryChange: (q: string) => void;
@@ -29,7 +41,12 @@ export const DataLineageToolbar = ({
         onSubmitQuery();
       }}
     >
-      <SearchInput value={query} onChange={onQueryChange} placeholder="Tìm bảng, cột, báo cáo" label="Tìm bảng, cột, báo cáo trong sơ đồ" />
+      <SearchInput
+        value={query}
+        onChange={onQueryChange}
+        placeholder="Tìm bảng, cột, báo cáo"
+        label="Tìm bảng, cột, báo cáo trong sơ đồ"
+      />
     </form>
     <Select<number>
       value={depth}

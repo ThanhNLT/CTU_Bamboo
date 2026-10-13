@@ -4,8 +4,11 @@
 
 // Dữ liệu minh họa cho trang Bản đồ. Nền bản đồ là hình vẽ SVG giả lập; khi nối thật, thay bằng lớp WMS/WMTS
 // của GeoServer nội bộ (chạy được khi không có Internet) và lấy cơ sở/cảnh báo từ Bản sao số.
+
+// ===== Module nội bộ =====
 import type { CompanyKey, LayerKey, MapSite } from "./types";
 
+// ===== Hằng số =====
 /** Màu nhận diện công ty — trùng Trung tâm điều hành; luôn đi kèm hình dạng riêng (vuông/thoi/tròn/chữ thập). */
 export const COMPANY_STYLE: Record<CompanyKey, { name: string; color: string }> = {
   phone: { name: "Điện thoại", color: "#2a78d6" },
@@ -23,7 +26,11 @@ export const LAYERS: Array<{ key: LayerKey; label: string }> = [
 ];
 
 export const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
-  phone: true, chip: true, warehouse: true, hospital: true, boundary: false,
+  phone: true,
+  chip: true,
+  warehouse: true,
+  hospital: true,
+  boundary: false,
 };
 
 // 12 kho & cửa hàng Gia dụng: hiện thành một cụm "12", tách ra khi phóng to.
@@ -35,32 +42,72 @@ const STORES = Array.from({ length: 12 }, (_, i) => {
 
 export const MOCK_SITES: MapSite[] = [
   {
-    id: "chip-bn", layer: "chip", company: "chip", name: "Nhà máy chip Bắc Ninh", address: "KCN Yên Phong, Bắc Ninh",
-    x: 45, y: 42, devices: 14, openRecords: 6,
+    id: "chip-bn",
+    layer: "chip",
+    company: "chip",
+    name: "Nhà máy chip Bắc Ninh",
+    address: "KCN Yên Phong, Bắc Ninh",
+    x: 45,
+    y: 42,
+    devices: 14,
+    openRecords: 6,
     alerts: [{ code: "CR-02", text: "hạt bụi vượt ngưỡng", status: "critical", age: "18 phút" }],
   },
   {
-    id: "phone-bg", layer: "phone", company: "phone", name: "Nhà máy điện thoại Bắc Giang", address: "KCN Quang Châu, Bắc Giang",
-    x: 23, y: 30, devices: 22, openRecords: 9,
+    id: "phone-bg",
+    layer: "phone",
+    company: "phone",
+    name: "Nhà máy điện thoại Bắc Giang",
+    address: "KCN Quang Châu, Bắc Giang",
+    x: 23,
+    y: 30,
+    devices: 22,
+    openRecords: 9,
     alerts: [{ code: "SMT-02", text: "dừng máy", status: "warning", age: "42 phút" }],
   },
   {
-    id: "phone-tn", layer: "phone", company: "phone", name: "Nhà máy điện thoại Thái Nguyên", address: "KCN Yên Bình, Thái Nguyên",
-    x: 31, y: 63, devices: 31, openRecords: 4, alerts: [],
+    id: "phone-tn",
+    layer: "phone",
+    company: "phone",
+    name: "Nhà máy điện thoại Thái Nguyên",
+    address: "KCN Yên Bình, Thái Nguyên",
+    x: 31,
+    y: 63,
+    devices: 31,
+    openRecords: 4,
+    alerts: [],
   },
   {
-    id: "stores", layer: "warehouse", company: "appliance", name: "Kho & cửa hàng Gia dụng", address: "Hà Nội và vùng lân cận",
-    x: 64, y: 70, devices: 48, openRecords: 7, alerts: [], cluster: STORES,
+    id: "stores",
+    layer: "warehouse",
+    company: "appliance",
+    name: "Kho & cửa hàng Gia dụng",
+    address: "Hà Nội và vùng lân cận",
+    x: 64,
+    y: 70,
+    devices: 48,
+    openRecords: 7,
+    alerts: [],
+    cluster: STORES,
   },
   {
-    id: "hospital-hd", layer: "hospital", company: "hospital", name: "Bệnh viện Hà Đông", address: "Hà Đông, Hà Nội",
-    x: 87, y: 24, devices: 120, openRecords: 11,
+    id: "hospital-hd",
+    layer: "hospital",
+    company: "hospital",
+    name: "Bệnh viện Hà Đông",
+    address: "Hà Đông, Hà Nội",
+    x: 87,
+    y: 24,
+    devices: 120,
+    openRecords: 11,
     alerts: [{ code: "MD-ICU-07", text: "pin yếu", status: "warning", age: "1 giờ" }],
   },
 ];
 
+// ===== Hàm tiện ích =====
 /** Số điểm theo lớp (cụm tính theo số điểm bên trong). */
 export const layerCount = (layer: LayerKey) =>
   MOCK_SITES.filter((s) => s.layer === layer).reduce((n, s) => n + (s.cluster?.length ?? 1), 0);
 
+// ===== Hằng số =====
 export const ATTRIBUTION = "© OpenStreetMap contributors · GeoServer";

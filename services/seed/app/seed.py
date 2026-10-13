@@ -8,24 +8,45 @@
 đúng bước của chuỗi duyệt; flow-sync tự tạo tiến trình Flowable tương ứng.
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import logging
 import os
 import sys
 
-import psycopg
-from faker import Faker
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from faker import Faker  # Faker
 
-from .demo import (CONTRACT_SEATS, DEMO_USERS, HR_DEMO_USERS, HR_SCOPE, HR_UNITS, OPEN_SEATS, TENANTS, TREES,
-                   UNIT_TYPES, VACANT, uid, walk)
+# ===== Module nội bộ =====
+from .demo import (
+    CONTRACT_SEATS,
+    DEMO_USERS,
+    HR_DEMO_USERS,
+    HR_SCOPE,
+    HR_UNITS,
+    OPEN_SEATS,
+    TENANTS,
+    TREES,
+    UNIT_TYPES,
+    VACANT,
+    uid,
+    walk,
+)
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
 
 # Nhóm hàng (danh mục ITEM_CATEGORY, khớp wf.approval_rule.category_code).
 ITEM_CATEGORIES = {
-    "TDX": {"LINH_KIEN": "Linh kiện điện tử", "THIET_BI": "Thiết bị, máy móc", "CNTT": "Thiết bị CNTT",
-            "VAN_PHONG": "Văn phòng phẩm", "DICH_VU": "Dịch vụ"},
+    "TDX": {
+        "LINH_KIEN": "Linh kiện điện tử",
+        "THIET_BI": "Thiết bị, máy móc",
+        "CNTT": "Thiết bị CNTT",
+        "VAN_PHONG": "Văn phòng phẩm",
+        "DICH_VU": "Dịch vụ",
+    },
     "BVX": {"TBYT": "Thiết bị y tế", "VAT_TU_YT": "Vật tư y tế", "VAN_PHONG": "Văn phòng phẩm"},
 }
 
@@ -60,29 +81,96 @@ ITEMS = [
 # (tenant, ghế người lập, tiêu đề, nhóm hàng, nhà cung cấp, dòng hàng: (mã vật tư, số lượng, đơn giá),
 #  các bước đã xử lý: (quyết định, ghế người xử lý, ghi chú))
 PURCHASE_REQUESTS = [
-    ("TDX", "DT_MH.S1", "Linh kiện thay thế cho lô điện thoại bị ảnh hưởng", None, "NB_CHIP",
-     [("LK-PMIC", 50_000, 12_000), ("DV-VC", 1, 50_000_000)],
-     [("APPROVE", "DT.HEAD", None)]),                                   # 650 tr: chờ TGĐ
-    ("TDX", "CHIP_PS.S1", "Máy đếm hạt bụi phòng sạch", None, "NCC_KTA",
-     [("TB-DEMHAT", 1, 35_000_000)], []),                              # chờ quản đốc phòng sạch
-    ("TDX", "CHIP_KD.S2", "Mẫu thử cho khách hàng B2B", None, None,
-     [("LK-SOC-MAU", 300, 300_000)], []),                              # chờ giám đốc Chip X (đang ủy quyền)
-    ("TDX", "GD_KTHT.S1", "Bộ dụng cụ sửa chữa cho đội kỹ thuật", None, "NCC_KTA",
-     [("TB-DUNGCU", 40, 3_000_000)], []),                              # chờ giám đốc Gia dụng X
-    ("TDX", "CHIP_RD_KC.S1", "Bo mạch thử nghiệm cho kiểm chứng", None, None,
-     [("LK-BOMACH", 50, 500_000)], []),                                # trưởng phòng trống: lên giám đốc R&D
-    ("TDX", "GD_BH.HD1", "Thiết bị đo cho tư vấn bảo hành", None, None,
-     [("TB-DONGHO", 5, 3_000_000)], []),                               # người làm hợp đồng lập
-    ("TDX", "TDX_CDS.S2", "Máy chủ cho nền tảng DX-OS", None, "NCC_MCB",
-     [("CNTT-MAYCHU", 2, 150_000_000)], []),                           # công ty mẹ: lên TGĐ
-    ("TDX", "DT_MH.S1", "Văn phòng phẩm quý IV", None, "NCC_VPC",
-     [("VPP-GIAY", 50, 80_000), ("VPP-MUC", 10, 400_000)],
-     [("RETURN", "DT_MH.HEAD", "Tách riêng mực in, bổ sung báo giá thứ hai")]),
-    ("TDX", "CHIP_PS.S2", "Bảo trì hệ thống điều hòa phòng sạch", None, "NCC_DVD",
-     [("DV-HVAC", 1, 45_000_000)],
-     [("APPROVE", "CHIP_PS.HEAD", None)]),                              # đã duyệt
-    ("BVX", "BVX_CDHA.S1", "Máy siêu âm 4D", "TBYT", "NCC_YTE",
-     [("TBYT-SIEUAM", 1, 200_000_000)], []),                           # thiết bị y tế: 2 cấp
+    (
+        "TDX",
+        "DT_MH.S1",
+        "Linh kiện thay thế cho lô điện thoại bị ảnh hưởng",
+        None,
+        "NB_CHIP",
+        [("LK-PMIC", 50_000, 12_000), ("DV-VC", 1, 50_000_000)],
+        [("APPROVE", "DT.HEAD", None)],
+    ),  # 650 tr: chờ TGĐ
+    (
+        "TDX",
+        "CHIP_PS.S1",
+        "Máy đếm hạt bụi phòng sạch",
+        None,
+        "NCC_KTA",
+        [("TB-DEMHAT", 1, 35_000_000)],
+        [],
+    ),  # chờ quản đốc phòng sạch
+    (
+        "TDX",
+        "CHIP_KD.S2",
+        "Mẫu thử cho khách hàng B2B",
+        None,
+        None,
+        [("LK-SOC-MAU", 300, 300_000)],
+        [],
+    ),  # chờ giám đốc Chip X (đang ủy quyền)
+    (
+        "TDX",
+        "GD_KTHT.S1",
+        "Bộ dụng cụ sửa chữa cho đội kỹ thuật",
+        None,
+        "NCC_KTA",
+        [("TB-DUNGCU", 40, 3_000_000)],
+        [],
+    ),  # chờ giám đốc Gia dụng X
+    (
+        "TDX",
+        "CHIP_RD_KC.S1",
+        "Bo mạch thử nghiệm cho kiểm chứng",
+        None,
+        None,
+        [("LK-BOMACH", 50, 500_000)],
+        [],
+    ),  # trưởng phòng trống: lên giám đốc R&D
+    (
+        "TDX",
+        "GD_BH.HD1",
+        "Thiết bị đo cho tư vấn bảo hành",
+        None,
+        None,
+        [("TB-DONGHO", 5, 3_000_000)],
+        [],
+    ),  # người làm hợp đồng lập
+    (
+        "TDX",
+        "TDX_CDS.S2",
+        "Máy chủ cho nền tảng DX-OS",
+        None,
+        "NCC_MCB",
+        [("CNTT-MAYCHU", 2, 150_000_000)],
+        [],
+    ),  # công ty mẹ: lên TGĐ
+    (
+        "TDX",
+        "DT_MH.S1",
+        "Văn phòng phẩm quý IV",
+        None,
+        "NCC_VPC",
+        [("VPP-GIAY", 50, 80_000), ("VPP-MUC", 10, 400_000)],
+        [("RETURN", "DT_MH.HEAD", "Tách riêng mực in, bổ sung báo giá thứ hai")],
+    ),
+    (
+        "TDX",
+        "CHIP_PS.S2",
+        "Bảo trì hệ thống điều hòa phòng sạch",
+        None,
+        "NCC_DVD",
+        [("DV-HVAC", 1, 45_000_000)],
+        [("APPROVE", "CHIP_PS.HEAD", None)],
+    ),  # đã duyệt
+    (
+        "BVX",
+        "BVX_CDHA.S1",
+        "Máy siêu âm 4D",
+        "TBYT",
+        "NCC_YTE",
+        [("TBYT-SIEUAM", 1, 200_000_000)],
+        [],
+    ),  # thiết bị y tế: 2 cấp
 ]
 
 # Đơn hàng nội bộ (ADR #42). Lô của Chip X: (mã lô, vật tư, đơn vị sản xuất, số lượng, ngày sản xuất, trạng thái).
@@ -95,17 +183,33 @@ LOTS = [
 SALES_SCOPE = {"CHIP_KD": "CHIP", "DT_KD": "DT", "GD_PP": "GD"}
 # Đơn đã giao xong: Điện thoại X mua PMIC của Chip X (lô PMIC-2609-A), trưởng phòng mua hàng duyệt, kinh doanh
 # Chip X xác nhận. Bước 3 kịch bản demo truy xuất lô chip đã giao cho điện thoại từ đây.
-IC_DEMO = ("TDX", "DT_MH.S2", "PMIC cho lô lắp ráp tháng 10", "NB_CHIP", [("LK-PMIC", 1_500, 12_000)],
-           "DT_MH.HEAD", "CHIP_KD.S1", "PMIC-2609-A")
+IC_DEMO = (
+    "TDX",
+    "DT_MH.S2",
+    "PMIC cho lô lắp ráp tháng 10",
+    "NB_CHIP",
+    [("LK-PMIC", 1_500, 12_000)],
+    "DT_MH.HEAD",
+    "CHIP_KD.S1",
+    "PMIC-2609-A",
+)
 
 # Bình luận mẫu: (tiêu đề đề nghị, ghế người viết, nội dung).
 COMMENTS = [
-    ("Văn phòng phẩm quý IV", "DT_MH.S1", "Em sẽ tách mực in sang đề nghị riêng và bổ sung báo giá của nhà cung cấp thứ hai."),
-    ("Linh kiện thay thế cho lô điện thoại bị ảnh hưởng", "DT.HEAD",
-     "Đã duyệt cấp công ty. Đề nghị Tổng giám đốc xem xét sớm để kịp thay linh kiện cho lô bị ảnh hưởng."),
+    (
+        "Văn phòng phẩm quý IV",
+        "DT_MH.S1",
+        "Em sẽ tách mực in sang đề nghị riêng và bổ sung báo giá của nhà cung cấp thứ hai.",
+    ),
+    (
+        "Linh kiện thay thế cho lô điện thoại bị ảnh hưởng",
+        "DT.HEAD",
+        "Đã duyệt cấp công ty. Đề nghị Tổng giám đốc xem xét sớm để kịp thay linh kiện cho lô bị ảnh hưởng.",
+    ),
 ]
 
 
+# ===== Lớp =====
 class Seeder:
     def __init__(self, conn: psycopg.Connection, faker_seed: int = 2026):
         self.conn = conn
@@ -113,8 +217,8 @@ class Seeder:
         self.fake.seed_instance(faker_seed)
         self.unit_types: dict[tuple[str, str], object] = {}
         self.titles: dict[tuple[str, str], object] = {}
-        self.positions: dict[tuple[str, str], object] = {}   # (tenant, khóa ghế) -> id
-        self.holders: dict[tuple[str, str], object] = {}     # (tenant, khóa ghế) -> person id
+        self.positions: dict[tuple[str, str], object] = {}  # (tenant, khóa ghế) -> id
+        self.holders: dict[tuple[str, str], object] = {}  # (tenant, khóa ghế) -> person id
         self.codes: dict[str, int] = {}
 
     def x(self, sql: str, *args):
@@ -123,36 +227,62 @@ class Seeder:
     def tenant_id(self, code: str):
         return uid("tenant", code)
 
-    # --- Tổ chức --------------------------------------------------------------
+    # ===== Tổ chức =====
 
     def title(self, tenant: str, name: str):
         key = (tenant, name)
         if key not in self.titles:
             self.titles[key] = uid(tenant, "JOB_TITLE", name)
-            self.x("""INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
+            self.x(
+                """INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
                       VALUES (%s, %s, 'JOB_TITLE', %s, %s)""",
-                   self.tenant_id(tenant), self.titles[key], f"CT{len(self.titles):03d}", name)
+                self.tenant_id(tenant),
+                self.titles[key],
+                f"CT{len(self.titles):03d}",
+                name,
+            )
         return self.titles[key]
 
     def position(self, tenant, key, unit_code, name, head=False, reports_to=None):
         pid = uid(tenant, "position", key)
-        self.x("""INSERT INTO core.position (tenant_id, id, org_unit_id, job_title_id, name, is_head, reports_to_id, valid_period)
+        self.x(
+            """INSERT INTO core.position (tenant_id, id, org_unit_id, job_title_id, name, is_head, reports_to_id, valid_period)
                   VALUES (%s, %s, %s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
-               self.tenant_id(tenant), pid, uid(tenant, "unit", unit_code), self.title(tenant, name),
-               name, head, self.positions.get((tenant, reports_to)) if reports_to else None, START)
+            self.tenant_id(tenant),
+            pid,
+            uid(tenant, "unit", unit_code),
+            self.title(tenant, name),
+            name,
+            head,
+            self.positions.get((tenant, reports_to)) if reports_to else None,
+            START,
+        )
         self.positions[(tenant, key)] = pid
 
     def org(self, tenant: str):
         tid = self.tenant_id(tenant)
         for code, name in UNIT_TYPES.items():
             self.unit_types[(tenant, code)] = uid(tenant, "UNIT_TYPE", code)
-            self.x("INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name) VALUES (%s, %s, 'UNIT_TYPE', %s, %s)",
-                   tid, self.unit_types[(tenant, code)], code, name)
+            self.x(
+                "INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name) VALUES (%s, %s, 'UNIT_TYPE', %s, %s)",
+                tid,
+                self.unit_types[(tenant, code)],
+                code,
+                name,
+            )
         for unit, parent in walk(TREES[tenant]):
-            self.x("""INSERT INTO core.org_unit (tenant_id, id, parent_id, unit_type_id, code, name, is_legal_entity, valid_period)
+            self.x(
+                """INSERT INTO core.org_unit (tenant_id, id, parent_id, unit_type_id, code, name, is_legal_entity, valid_period)
                       VALUES (%s, %s, %s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
-                   tid, uid(tenant, "unit", unit.code), uid(tenant, "unit", parent.code) if parent else None,
-                   self.unit_types[(tenant, unit.type)], unit.code, unit.name, unit.legal, START)
+                tid,
+                uid(tenant, "unit", unit.code),
+                uid(tenant, "unit", parent.code) if parent else None,
+                self.unit_types[(tenant, unit.type)],
+                unit.code,
+                unit.name,
+                unit.legal,
+                START,
+            )
             head = f"{unit.code}.HEAD"
             self.position(tenant, head, unit.code, unit.head, head=True)
             for i, deputy in enumerate(unit.deputies, 1):
@@ -163,14 +293,20 @@ class Seeder:
             if t == tenant:
                 self.position(tenant, key, unit_code, name, reports_to=reports_to)
 
-    # --- Người và bổ nhiệm ----------------------------------------------------
+    # ===== Người và bổ nhiệm =====
 
     def person(self, tenant: str, full_name: str, person_id=None, subject=None):
         self.codes[tenant] = self.codes.get(tenant, 0) + 1
         person_id = person_id or uid(tenant, "person", str(self.codes[tenant]))
-        self.x("""INSERT INTO core.person (tenant_id, id, idp_subject, full_name, employee_code)
+        self.x(
+            """INSERT INTO core.person (tenant_id, id, idp_subject, full_name, employee_code)
                   VALUES (%s, %s, %s, %s, %s)""",
-               self.tenant_id(tenant), person_id, subject, full_name, f"{tenant}-{self.codes[tenant]:04d}")
+            self.tenant_id(tenant),
+            person_id,
+            subject,
+            full_name,
+            f"{tenant}-{self.codes[tenant]:04d}",
+        )
         return person_id
 
     def assign(self, tenant, person_id, seat, kind="PRIMARY"):
@@ -178,9 +314,15 @@ class Seeder:
             period, contract = "tstzrange(now() - interval '3 months', now() + interval '6 months')", "HĐ-2026-017"
         else:
             period, contract = f"tstzrange('{START}', NULL)", None
-        self.x(f"""INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period, contract_no)
+        self.x(
+            f"""INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period, contract_no)
                    VALUES (%s, %s, %s, %s, {period}, %s)""",
-               self.tenant_id(tenant), person_id, self.positions[(tenant, seat)], kind, contract)
+            self.tenant_id(tenant),
+            person_id,
+            self.positions[(tenant, seat)],
+            kind,
+            contract,
+        )
         self.holders.setdefault((tenant, seat), person_id)
 
     def fake_name(self) -> str:
@@ -194,16 +336,18 @@ class Seeder:
                 if seat.tenant not in persons:
                     first = not persons
                     persons[seat.tenant] = self.person(
-                        seat.tenant, user.full_name,
+                        seat.tenant,
+                        user.full_name,
                         person_id=user.id if first else uid(seat.tenant, "person", user.username),
-                        subject=str(user.id))
+                        subject=str(user.id),
+                    )
                 self.assign(seat.tenant, persons[seat.tenant], seat.position, seat.type)
-        for (tenant, seat) in self.positions:
+        for tenant, seat in self.positions:
             if (tenant, seat) in self.holders or (tenant, seat) in VACANT or ".HD" in seat:
                 continue
             self.assign(tenant, self.person(tenant, self.fake_name()), seat)
 
-    # --- Phân quyền, hạn mức, ủy quyền ----------------------------------------
+    # ===== Phân quyền, hạn mức, ủy quyền =====
 
     def roles(self, tenant: str):
         tid = self.tenant_id(tenant)
@@ -217,13 +361,24 @@ class Seeder:
             rid = uid(tenant, "role", code)
             self.x("INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, %s, %s)", tid, rid, code, name)
             for perm in perms:
-                self.x("INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)",
-                       tid, rid, perm)
+                self.x(
+                    "INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)",
+                    tid,
+                    rid,
+                    perm,
+                )
 
         def grant(role, scope, unit=None, position=None):
-            self.x("""INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, position_id, scope, valid_period)
+            self.x(
+                """INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, position_id, scope, valid_period)
                       VALUES (%s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
-                   tid, uid(tenant, "role", role), unit, position, scope, START)
+                tid,
+                uid(tenant, "role", role),
+                unit,
+                position,
+                scope,
+                START,
+            )
 
         for unit, _ in walk(TREES[tenant]):
             grant("NHAN_VIEN", "UNIT", unit=uid(tenant, "unit", unit.code))
@@ -239,97 +394,177 @@ class Seeder:
         rules = []
         tdx, bvx = self.tenant_id("TDX"), self.tenant_id("BVX")
         # Hạn mức chung của Tập đoàn X: < 50 tr quản lý trực tiếp; 50–500 tr giám đốc công ty; >= 500 tr thêm TGĐ.
-        rules += [(tdx, 0, 50e6, 1, None, None, None), (tdx, 50e6, 500e6, 1, "CONG_TY", None, None),
-                  (tdx, 500e6, None, 1, "CONG_TY", None, None), (tdx, 500e6, None, 2, "TAP_DOAN", None, None)]
+        rules += [
+            (tdx, 0, 50e6, 1, None, None, None),
+            (tdx, 50e6, 500e6, 1, "CONG_TY", None, None),
+            (tdx, 500e6, None, 1, "CONG_TY", None, None),
+            (tdx, 500e6, None, 2, "TAP_DOAN", None, None),
+        ]
         # Các khối của công ty mẹ không thuộc công ty con nào: từ 50 tr lên thẳng TGĐ.
         for unit in TREES["TDX"].children:
             if unit.type != "CONG_TY":
                 rules += [(tdx, 0, 50e6, 1, None, unit.code, None), (tdx, 50e6, None, 1, "TAP_DOAN", unit.code, None)]
         # Bệnh viện X: < 50 tr quản lý trực tiếp, từ 50 tr giám đốc bệnh viện; thiết bị y tế luôn duyệt 2 cấp.
-        rules += [(bvx, 0, 50e6, 1, None, None, None), (bvx, 50e6, None, 1, "BENH_VIEN", None, None),
-                  (bvx, 0, None, 1, None, None, "TBYT"), (bvx, 0, None, 2, "BENH_VIEN", None, "TBYT")]
+        rules += [
+            (bvx, 0, 50e6, 1, None, None, None),
+            (bvx, 50e6, None, 1, "BENH_VIEN", None, None),
+            (bvx, 0, None, 1, None, None, "TBYT"),
+            (bvx, 0, None, 2, "BENH_VIEN", None, "TBYT"),
+        ]
         for tid, lo, hi, step, unit_type, scope, category in rules:
             tenant = "TDX" if tid == tdx else "BVX"
-            self.x("""INSERT INTO wf.approval_rule (tenant_id, process_code, min_amount, max_amount, step_order,
+            self.x(
+                """INSERT INTO wf.approval_rule (tenant_id, process_code, min_amount, max_amount, step_order,
                                                     approver_unit_type_id, scope_unit_id, category_code, valid_period)
                       VALUES (%s, 'PURCHASE_REQUEST', %s, %s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
-                   tid, lo, hi, step, self.unit_types[(tenant, unit_type)] if unit_type else None,
-                   uid(tenant, "unit", scope) if scope else None, category, START)
+                tid,
+                lo,
+                hi,
+                step,
+                self.unit_types[(tenant, unit_type)] if unit_type else None,
+                uid(tenant, "unit", scope) if scope else None,
+                category,
+                START,
+            )
 
     def delegation(self):
         # Giám đốc Chip X đi công tác, ủy quyền cho phó giám đốc (duyệt thay).
-        self.x("""INSERT INTO core.delegation (tenant_id, delegator_id, delegate_id, position_id, valid_period, reason)
+        self.x(
+            """INSERT INTO core.delegation (tenant_id, delegator_id, delegate_id, position_id, valid_period, reason)
                   VALUES (%s, %s, %s, %s, tstzrange(now() - interval '1 day', now() + interval '60 days'),
                           'Đi công tác Hàn Quốc')""",
-               self.tenant_id("TDX"), self.holders[("TDX", "CHIP.HEAD")], self.holders[("TDX", "CHIP.DEP1")],
-               self.positions[("TDX", "CHIP.HEAD")])
+            self.tenant_id("TDX"),
+            self.holders[("TDX", "CHIP.HEAD")],
+            self.holders[("TDX", "CHIP.DEP1")],
+            self.positions[("TDX", "CHIP.HEAD")],
+        )
 
     def master_data(self, tenant: str):
         tid = self.tenant_id(tenant)
         for code, name in ITEM_CATEGORIES[tenant].items():
-            self.x("""INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
-                      VALUES (%s, %s, 'ITEM_CATEGORY', %s, %s)""", tid, uid(tenant, "ITEM_CATEGORY", code), code, name)
+            self.x(
+                """INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
+                      VALUES (%s, %s, 'ITEM_CATEGORY', %s, %s)""",
+                tid,
+                uid(tenant, "ITEM_CATEGORY", code),
+                code,
+                name,
+            )
         for t, code, name, unit in PARTNERS:
             if t == tenant:
-                self.x("""INSERT INTO mdm.partner (tenant_id, id, code, name, internal_unit_id)
+                self.x(
+                    """INSERT INTO mdm.partner (tenant_id, id, code, name, internal_unit_id)
                           VALUES (%s, %s, %s, %s, %s)""",
-                       tid, uid(tenant, "partner", code), code, name, uid(tenant, "unit", unit) if unit else None)
+                    tid,
+                    uid(tenant, "partner", code),
+                    code,
+                    name,
+                    uid(tenant, "unit", unit) if unit else None,
+                )
         for t, code, name, uom, category, price in ITEMS:
             if t == tenant:
-                self.x("""INSERT INTO mdm.item (tenant_id, id, code, name, uom, category_code, ref_price)
-                          VALUES (%s, %s, %s, %s, %s, %s, %s)""", tid, uid(tenant, "item", code), code, name, uom,
-                       category, price)
+                self.x(
+                    """INSERT INTO mdm.item (tenant_id, id, code, name, uom, category_code, ref_price)
+                          VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                    tid,
+                    uid(tenant, "item", code),
+                    code,
+                    name,
+                    uom,
+                    category,
+                    price,
+                )
 
     def purchase_requests(self):
         ids = {}
         for tenant, seat, title, category, partner, lines, steps in PURCHASE_REQUESTS:
             requester = self.holders[(tenant, seat)]
-            pr_id = self.x("""INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id,
+            pr_id = self.x(
+                """INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id,
                                                                  category_code, partner_id)
                               VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-                           self.tenant_id(tenant), title, requester, self.positions[(tenant, seat)], category,
-                           uid(tenant, "partner", partner) if partner else None).fetchone()[0]
+                self.tenant_id(tenant),
+                title,
+                requester,
+                self.positions[(tenant, seat)],
+                category,
+                uid(tenant, "partner", partner) if partner else None,
+            ).fetchone()[0]
             for item, quantity, price in lines:
-                self.x("""INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
-                          VALUES (%s, %s, %s, %s)""", pr_id, uid(tenant, "item", item), quantity, price)
+                self.x(
+                    """INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
+                          VALUES (%s, %s, %s, %s)""",
+                    pr_id,
+                    uid(tenant, "item", item),
+                    quantity,
+                    price,
+                )
             self.x("SELECT proc.submit_purchase_request(%s, %s)", pr_id, requester)
             for decision, actor_seat, note in steps:
-                task = self.x("""SELECT t.id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
-                                 WHERE s.entity_id = %s AND t.status = 'OPEN'""", pr_id).fetchone()[0]
+                task = self.x(
+                    """SELECT t.id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
+                                 WHERE s.entity_id = %s AND t.status = 'OPEN'""",
+                    pr_id,
+                ).fetchone()[0]
                 self.x("SELECT wf.act(%s, %s, %s, %s)", task, self.holders[(tenant, actor_seat)], decision, note)
             ids[title] = (tenant, pr_id)
         for title, seat, body in COMMENTS:
             tenant, pr_id = ids[title]
-            self.x("""INSERT INTO collab.comment (tenant_id, entity_type, entity_id, author_id, body)
+            self.x(
+                """INSERT INTO collab.comment (tenant_id, entity_type, entity_id, author_id, body)
                       VALUES (%s, 'proc.purchase_request', %s, %s, %s)""",
-                   self.tenant_id(tenant), pr_id, self.holders[(tenant, seat)], body)
+                self.tenant_id(tenant),
+                pr_id,
+                self.holders[(tenant, seat)],
+                body,
+            )
 
-    # --- Nhân sự (ADR #41): chạy cả ở bản đã cài, bỏ qua phần đã có ---------------
+    # ===== Nhân sự (ADR #41): chạy cả ở bản đã cài, bỏ qua phần đã có =====
 
     def _next_code(self, tenant: str) -> int:
         """Số mã nhân viên tiếp theo dạng <tenant>-NNNN (đọc từ CSDL khi bổ sung vào bản đã cài)."""
         if tenant not in self.codes:
             self.codes[tenant] = self.x(
                 """SELECT coalesce(max(substring(employee_code FROM '-(\\d+)$')::int), 0) FROM core.person
-                   WHERE tenant_id = %s AND employee_code ~ '^[A-Z]+-\\d+$'""", self.tenant_id(tenant)).fetchone()[0]
+                   WHERE tenant_id = %s AND employee_code ~ '^[A-Z]+-\\d+$'""",
+                self.tenant_id(tenant),
+            ).fetchone()[0]
         return self.codes[tenant]
 
     def _seat(self, tenant, key, unit_code, name, head=False):
         pid = uid(tenant, "position", key)
         if not self.x("SELECT 1 FROM core.position WHERE id = %s", pid).fetchone():
-            title = self.x("""SELECT id FROM core.catalog_item WHERE tenant_id = %s AND catalog = 'JOB_TITLE' AND name = %s""",
-                           self.tenant_id(tenant), name).fetchone()
+            title = self.x(
+                """SELECT id FROM core.catalog_item WHERE tenant_id = %s AND catalog = 'JOB_TITLE' AND name = %s""",
+                self.tenant_id(tenant),
+                name,
+            ).fetchone()
             title_id = title[0] if title else uid(tenant, "JOB_TITLE", name)
             if not title:
-                last = self.x("""SELECT coalesce(max(substring(code FROM 3)::int), 0) FROM core.catalog_item
+                last = self.x(
+                    """SELECT coalesce(max(substring(code FROM 3)::int), 0) FROM core.catalog_item
                                  WHERE tenant_id = %s AND catalog = 'JOB_TITLE' AND code ~ '^CT\\d+$'""",
-                              self.tenant_id(tenant)).fetchone()[0]
-                self.x("""INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
-                          VALUES (%s, %s, 'JOB_TITLE', %s, %s)""", self.tenant_id(tenant), title_id,
-                       f"CT{last + 1:03d}", name)
-            self.x("""INSERT INTO core.position (tenant_id, id, org_unit_id, job_title_id, name, is_head, valid_period)
+                    self.tenant_id(tenant),
+                ).fetchone()[0]
+                self.x(
+                    """INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
+                          VALUES (%s, %s, 'JOB_TITLE', %s, %s)""",
+                    self.tenant_id(tenant),
+                    title_id,
+                    f"CT{last + 1:03d}",
+                    name,
+                )
+            self.x(
+                """INSERT INTO core.position (tenant_id, id, org_unit_id, job_title_id, name, is_head, valid_period)
                       VALUES (%s, %s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
-                   self.tenant_id(tenant), pid, uid(tenant, "unit", unit_code), title_id, name, head, START)
+                self.tenant_id(tenant),
+                pid,
+                uid(tenant, "unit", unit_code),
+                title_id,
+                name,
+                head,
+                START,
+            )
         self.positions[(tenant, key)] = pid
         return pid
 
@@ -340,11 +575,23 @@ class Seeder:
         person_id = person_id or uid(tenant, "person", "hr", seat)
         if not self.x("SELECT 1 FROM core.person WHERE id = %s", person_id).fetchone():
             self.codes[tenant] = self._next_code(tenant) + 1
-            self.x("""INSERT INTO core.person (tenant_id, id, idp_subject, full_name, employee_code)
+            self.x(
+                """INSERT INTO core.person (tenant_id, id, idp_subject, full_name, employee_code)
                       VALUES (%s, %s, %s, %s, %s)""",
-                   self.tenant_id(tenant), person_id, subject, full_name, f"{tenant}-{self.codes[tenant]:04d}")
-        self.x("""INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period)
-                  VALUES (%s, %s, %s, 'PRIMARY', tstzrange(%s, NULL))""", self.tenant_id(tenant), person_id, pid, START)
+                self.tenant_id(tenant),
+                person_id,
+                subject,
+                full_name,
+                f"{tenant}-{self.codes[tenant]:04d}",
+            )
+        self.x(
+            """INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period)
+                  VALUES (%s, %s, %s, 'PRIMARY', tstzrange(%s, NULL))""",
+            self.tenant_id(tenant),
+            person_id,
+            pid,
+            START,
+        )
         self.holders.setdefault((tenant, seat), person_id)
 
     def hr_demo(self):
@@ -355,10 +602,17 @@ class Seeder:
         for tenant, code, name, parent, type_, head, staff, staff_title in HR_UNITS:
             tid = self.tenant_id(tenant)
             if not self.x("SELECT 1 FROM core.org_unit WHERE tenant_id = %s AND code = %s", tid, code).fetchone():
-                self.x("""INSERT INTO core.org_unit (tenant_id, id, parent_id, unit_type_id, code, name, valid_period)
+                self.x(
+                    """INSERT INTO core.org_unit (tenant_id, id, parent_id, unit_type_id, code, name, valid_period)
                           VALUES (%s, %s, %s, %s, %s, %s, tstzrange(%s, NULL))""",
-                       tid, uid(tenant, "unit", code), uid(tenant, "unit", parent), uid(tenant, "UNIT_TYPE", type_),
-                       code, name, START)
+                    tid,
+                    uid(tenant, "unit", code),
+                    uid(tenant, "unit", parent),
+                    uid(tenant, "UNIT_TYPE", type_),
+                    code,
+                    name,
+                    START,
+                )
             self._seat(tenant, f"{code}.HEAD", code, head, head=True)
             for i in range(1, staff + 1):
                 self._seat(tenant, f"{code}.S{i}", code, staff_title)
@@ -377,22 +631,39 @@ class Seeder:
             tid = self.tenant_id(t.code)
             role = uid(t.code, "role", "NHAN_SU")
             if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
-                self.x("INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, 'NHAN_SU', 'Nhân sự')", tid, role)
+                self.x(
+                    "INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, 'NHAN_SU', 'Nhân sự')", tid, role
+                )
             for perm in ("hr.onboarding.create", "hr.onboarding.read", "hr.onboarding.private.read"):
-                self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)
-                          ON CONFLICT DO NOTHING""", tid, role, perm)
-            self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                self.x(
+                    """INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)
+                          ON CONFLICT DO NOTHING""",
+                    tid,
+                    role,
+                    perm,
+                )
+            self.x(
+                """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
                       SELECT tenant_id, id, 'hr.onboarding.read' FROM core.role WHERE id = %s
-                      ON CONFLICT DO NOTHING""", uid(t.code, "role", "QUAN_LY"))
+                      ON CONFLICT DO NOTHING""",
+                uid(t.code, "role", "QUAN_LY"),
+            )
             for unit, scope in HR_SCOPE.items():
                 unit_id = uid(t.code, "unit", unit)
                 if not self.x("SELECT 1 FROM core.org_unit WHERE id = %s AND tenant_id = %s", unit_id, tid).fetchone():
                     continue
-                if not self.x("SELECT 1 FROM core.role_grant WHERE role_id = %s AND org_unit_id = %s", role,
-                              unit_id).fetchone():
-                    self.x("""INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope, scope_unit_id, valid_period)
+                if not self.x(
+                    "SELECT 1 FROM core.role_grant WHERE role_id = %s AND org_unit_id = %s", role, unit_id
+                ).fetchone():
+                    self.x(
+                        """INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope, scope_unit_id, valid_period)
                               VALUES (%s, %s, %s, 'SUBTREE', %s, tstzrange(%s, NULL))""",
-                           tid, role, unit_id, uid(t.code, "unit", scope), START)
+                        tid,
+                        role,
+                        unit_id,
+                        uid(t.code, "unit", scope),
+                        START,
+                    )
 
         if not self.x("SELECT 1 FROM wf.approval_rule WHERE process_code = 'ONBOARDING'").fetchone():
             tdx, bvx = self.tenant_id("TDX"), self.tenant_id("BVX")
@@ -403,13 +674,18 @@ class Seeder:
                     rules += [(tdx, 1, None, unit.code), (tdx, 2, "TAP_DOAN", unit.code)]
             for tid, step, unit_type, scope in rules:
                 tenant = "TDX" if tid == tdx else "BVX"
-                self.x("""INSERT INTO wf.approval_rule (tenant_id, process_code, min_amount, step_order,
+                self.x(
+                    """INSERT INTO wf.approval_rule (tenant_id, process_code, min_amount, step_order,
                                                         approver_unit_type_id, scope_unit_id, valid_period)
                           VALUES (%s, 'ONBOARDING', 0, %s, %s, %s, tstzrange(%s, NULL))""",
-                       tid, step, uid(tenant, "UNIT_TYPE", unit_type) if unit_type else None,
-                       uid(tenant, "unit", scope) if scope else None, START)
+                    tid,
+                    step,
+                    uid(tenant, "UNIT_TYPE", unit_type) if unit_type else None,
+                    uid(tenant, "unit", scope) if scope else None,
+                    START,
+                )
 
-    # --- Đơn hàng nội bộ (ADR #42): chạy cả ở bản đã cài, bỏ qua phần đã có -------
+    # ===== Đơn hàng nội bộ (ADR #42): chạy cả ở bản đã cài, bỏ qua phần đã có =====
 
     def _holder(self, tenant: str, seat: str):
         return self.x("SELECT person_id FROM core.position_holder(%s)", uid(tenant, "position", seat)).fetchone()[0]
@@ -418,57 +694,102 @@ class Seeder:
         """Lô của Chip X, vai trò BAN_HANG_NOI_BO cho khối kinh doanh từng công ty, một đơn nội bộ đã xác nhận."""
         tdx = self.tenant_id("TDX")
         for lot_no, item, unit, quantity, produced, status in LOTS:
-            self.x("""INSERT INTO mfg.lot (tenant_id, id, lot_no, item_id, org_unit_id, quantity, uom, produced_on, status)
+            self.x(
+                """INSERT INTO mfg.lot (tenant_id, id, lot_no, item_id, org_unit_id, quantity, uom, produced_on, status)
                       SELECT %s, %s, %s, i.id, %s, %s, i.uom, %s, %s FROM mdm.item i WHERE i.id = %s
                       ON CONFLICT DO NOTHING""",
-                   tdx, uid("TDX", "lot", lot_no), lot_no, uid("TDX", "unit", unit), quantity, produced, status,
-                   uid("TDX", "item", item))
+                tdx,
+                uid("TDX", "lot", lot_no),
+                lot_no,
+                uid("TDX", "unit", unit),
+                quantity,
+                produced,
+                status,
+                uid("TDX", "item", item),
+            )
 
         for t in TENANTS:
             tid = self.tenant_id(t.code)
             role = uid(t.code, "role", "BAN_HANG_NOI_BO")
             if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
-                self.x("""INSERT INTO core.role (tenant_id, id, code, name)
-                          VALUES (%s, %s, 'BAN_HANG_NOI_BO', 'Bán hàng nội bộ')""", tid, role)
+                self.x(
+                    """INSERT INTO core.role (tenant_id, id, code, name)
+                          VALUES (%s, %s, 'BAN_HANG_NOI_BO', 'Bán hàng nội bộ')""",
+                    tid,
+                    role,
+                )
             for perm in ("ic.order.read", "ic.order.confirm"):
-                self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)
-                          ON CONFLICT DO NOTHING""", tid, role, perm)
+                self.x(
+                    """INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)
+                          ON CONFLICT DO NOTHING""",
+                    tid,
+                    role,
+                    perm,
+                )
             # Quản lý xem đơn bán ra từ cây đơn vị mình (giám đốc công ty bán).
-            self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+            self.x(
+                """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
                       SELECT tenant_id, id, 'ic.order.read' FROM core.role WHERE id = %s
-                      ON CONFLICT DO NOTHING""", uid(t.code, "role", "QUAN_LY"))
+                      ON CONFLICT DO NOTHING""",
+                uid(t.code, "role", "QUAN_LY"),
+            )
             for unit, scope in SALES_SCOPE.items():
                 unit_id = uid(t.code, "unit", unit)
                 if not self.x("SELECT 1 FROM core.org_unit WHERE id = %s AND tenant_id = %s", unit_id, tid).fetchone():
                     continue
-                if not self.x("SELECT 1 FROM core.role_grant WHERE role_id = %s AND org_unit_id = %s", role,
-                              unit_id).fetchone():
-                    self.x("""INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope, scope_unit_id, valid_period)
+                if not self.x(
+                    "SELECT 1 FROM core.role_grant WHERE role_id = %s AND org_unit_id = %s", role, unit_id
+                ).fetchone():
+                    self.x(
+                        """INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope, scope_unit_id, valid_period)
                               VALUES (%s, %s, %s, 'SUBTREE', %s, tstzrange(%s, NULL))""",
-                           tid, role, unit_id, uid(t.code, "unit", scope), START)
+                        tid,
+                        role,
+                        unit_id,
+                        uid(t.code, "unit", scope),
+                        START,
+                    )
 
         tenant, seat, title, partner, lines, approver, confirmer, lot_no = IC_DEMO
         if self.x("SELECT 1 FROM proc.purchase_request WHERE tenant_id = %s AND title = %s", tdx, title).fetchone():
             return
         requester = self._holder(tenant, seat)
-        pr_id = self.x("""INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id, partner_id)
+        pr_id = self.x(
+            """INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id, partner_id)
                           VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-                       tdx, title, requester, uid(tenant, "position", seat), uid(tenant, "partner", partner)).fetchone()[0]
+            tdx,
+            title,
+            requester,
+            uid(tenant, "position", seat),
+            uid(tenant, "partner", partner),
+        ).fetchone()[0]
         for item, quantity, price in lines:
-            self.x("""INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
-                      VALUES (%s, %s, %s, %s)""", pr_id, uid(tenant, "item", item), quantity, price)
+            self.x(
+                """INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
+                      VALUES (%s, %s, %s, %s)""",
+                pr_id,
+                uid(tenant, "item", item),
+                quantity,
+                price,
+            )
         self.x("SELECT proc.submit_purchase_request(%s, %s)", pr_id, requester)
-        task = self.x("""SELECT t.id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
-                         WHERE s.entity_id = %s AND t.status = 'OPEN'""", pr_id).fetchone()[0]
+        task = self.x(
+            """SELECT t.id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
+                         WHERE s.entity_id = %s AND t.status = 'OPEN'""",
+            pr_id,
+        ).fetchone()[0]
         self.x("SELECT wf.act(%s, %s, 'APPROVE')", task, self._holder(tenant, approver))
-        order_id, lot_lines = self.x("""SELECT o.id, jsonb_object_agg(i.id, %s::text)
+        order_id, lot_lines = self.x(
+            """SELECT o.id, jsonb_object_agg(i.id, %s::text)
                                         FROM proc.purchase_request r JOIN ic.ic_order o ON o.id = r.ic_order_id
                                         JOIN ic.ic_order_item i ON i.order_id = o.id
                                         WHERE r.id = %s GROUP BY o.id""",
-                                     str(uid("TDX", "lot", lot_no)), pr_id).fetchone()
+            str(uid("TDX", "lot", lot_no)),
+            pr_id,
+        ).fetchone()
         self.x("SELECT ic.confirm_order(%s, %s, %s)", order_id, self._holder(tenant, confirmer), json.dumps(lot_lines))
 
-    # --- Dữ liệu Lakehouse (ADR #45): chạy cả ở bản đã cài, bỏ qua phần đã có -----
+    # ===== Dữ liệu Lakehouse (ADR #45): chạy cả ở bản đã cài, bỏ qua phần đã có =====
 
     def lakehouse_demo(self):
         """Vai trò PHAN_TICH_DU_LIEU (xem tập dữ liệu Lakehouse) cho CDO của Tập đoàn X và Kế hoạch tổng hợp BVX."""
@@ -477,24 +798,44 @@ class Seeder:
             tid = self.tenant_id(t.code)
             role = uid(t.code, "role", "PHAN_TICH_DU_LIEU")
             if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
-                self.x("""INSERT INTO core.role (tenant_id, id, code, name)
-                          VALUES (%s, %s, 'PHAN_TICH_DU_LIEU', 'Phân tích dữ liệu')""", tid, role)
-            self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
-                      VALUES (%s, %s, 'data.lakehouse.read') ON CONFLICT DO NOTHING""", tid, role)
+                self.x(
+                    """INSERT INTO core.role (tenant_id, id, code, name)
+                          VALUES (%s, %s, 'PHAN_TICH_DU_LIEU', 'Phân tích dữ liệu')""",
+                    tid,
+                    role,
+                )
+            self.x(
+                """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                      VALUES (%s, %s, 'data.lakehouse.read') ON CONFLICT DO NOTHING""",
+                tid,
+                role,
+            )
             for seat in analysts.get(t.code, []):
                 position = uid(t.code, "position", seat)
-                if not self.x("SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", role,
-                              position).fetchone():
-                    self.x("""INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope, valid_period)
-                              VALUES (%s, %s, %s, 'TENANT', tstzrange(%s, NULL))""", tid, role, position, START)
+                if not self.x(
+                    "SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", role, position
+                ).fetchone():
+                    self.x(
+                        """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope, valid_period)
+                              VALUES (%s, %s, %s, 'TENANT', tstzrange(%s, NULL))""",
+                        tid,
+                        role,
+                        position,
+                        START,
+                    )
 
     def run(self):
         for t in TENANTS:
-            self.x("INSERT INTO core.tenant (id, code, name) VALUES (%s, %s, %s)", self.tenant_id(t.code), t.code, t.name)
+            self.x(
+                "INSERT INTO core.tenant (id, code, name) VALUES (%s, %s, %s)", self.tenant_id(t.code), t.code, t.name
+            )
         for t in TENANTS:
             if t.parent:
-                self.x("INSERT INTO core.tenant_relation (parent_tenant_id, child_tenant_id) VALUES (%s, %s)",
-                       self.tenant_id(t.parent), self.tenant_id(t.code))
+                self.x(
+                    "INSERT INTO core.tenant_relation (parent_tenant_id, child_tenant_id) VALUES (%s, %s)",
+                    self.tenant_id(t.parent),
+                    self.tenant_id(t.code),
+                )
         for t in TENANTS:
             self.org(t.code)
         self.people()
@@ -539,5 +880,6 @@ def main() -> int:
     return 0
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     sys.exit(main())

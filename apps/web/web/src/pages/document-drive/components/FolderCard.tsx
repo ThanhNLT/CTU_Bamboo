@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Folder, Users } from "lucide-react";
+// ===== Thư viện =====
+import { Folder, Users } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import type { DriveFolder } from "../types";
 import { formatBytes } from "../utils";
 
+// ===== Component =====
 export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (f: DriveFolder) => void }) => (
   <button
     type="button"
@@ -16,7 +20,9 @@ export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (
       <Folder className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
     </span>
     <span className="min-w-0">
-      <span className="block truncate text-[13.5px] font-semibold text-ink" title={folder.name}>{folder.name}</span>
+      <span className="block truncate text-[13.5px] font-semibold text-ink" title={folder.name}>
+        {folder.name}
+      </span>
       <span className="mt-0.5 flex items-center gap-1 text-[11.5px] text-muted">
         {folder.fileCount} tệp · {formatBytes(folder.bytes)}
         {folder.sharedWith ? (
@@ -33,6 +39,8 @@ export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (
 
 export const FolderGrid = ({ folders, onOpen }: { folders: DriveFolder[]; onOpen?: (f: DriveFolder) => void }) => (
   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-    {folders.map((f) => <FolderCard key={f.id} folder={f} onOpen={onOpen} />)}
+    {folders.map((f) => (
+      <FolderCard key={f.id} folder={f} onOpen={onOpen} />
+    ))}
   </div>
 );

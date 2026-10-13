@@ -4,10 +4,15 @@
 
 // Đọc dữ liệu quản trị bằng một truy vấn GraphQL, tải lại sau mỗi lần ghi (không cần subscription: chỉ quản trị
 // viên sửa, và họ thấy ngay kết quả của chính mình).
-import { useCallback, useEffect, useRef, useState } from "react";
+
+// ===== Thư viện =====
+import { useCallback, useEffect, useRef, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { request } from "../../../api/client";
 
-export const useGql = <T,>(query: string, variables?: Record<string, unknown>) => {
+// ===== Hook =====
+export const useGql = <T>(query: string, variables?: Record<string, unknown>) => {
   const [data, setData] = useState<T>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(true);

@@ -7,6 +7,10 @@
 -- Meilisearch. Đối chiếu theo trạng thái nên chạy lại bao nhiêu lần cũng cho cùng kết quả.
 -- Schema `search` không mở qua Hasura.
 
+-- ---------------------------------------------------------------------------
+-- Hàng đợi đồng bộ chỉ mục
+-- ---------------------------------------------------------------------------
+
 CREATE SCHEMA search;
 
 CREATE TABLE search.pending (
@@ -49,6 +53,10 @@ BEGIN
     PERFORM pg_notify('search_sync', 'all');
     RETURN n;
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- Trigger đánh dấu khi dữ liệu đổi
+-- ---------------------------------------------------------------------------
 
 CREATE FUNCTION search.purchase_request_changed() RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -114,6 +122,10 @@ FOR EACH ROW WHEN (OLD.full_name IS DISTINCT FROM NEW.full_name) EXECUTE FUNCTIO
 CREATE TRIGGER search_mark AFTER UPDATE OF name ON core.org_unit
 FOR EACH ROW WHEN (OLD.name IS DISTINCT FROM NEW.name) EXECUTE FUNCTION search.name_changed('org_unit_id');
 
+-- ---------------------------------------------------------------------------
+-- Nội dung tài liệu cho chỉ mục
+-- ---------------------------------------------------------------------------
+
 -- Nội dung một đề nghị để đưa vào chỉ mục (NULL: không còn đề nghị, xóa khỏi chỉ mục).
 CREATE FUNCTION search.purchase_request_doc(p_id uuid) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
@@ -138,6 +150,10 @@ LANGUAGE sql STABLE AS $$
     LEFT JOIN mdm.partner pa ON pa.id = r.partner_id
     WHERE r.id = p_id
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Đánh dấu dữ liệu sẵn có
+-- ---------------------------------------------------------------------------
 
 -- Chứng từ và đề nghị đang có lúc nâng cấp từ bản trước.
 SELECT search.mark_all();

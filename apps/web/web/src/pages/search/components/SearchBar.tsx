@@ -2,20 +2,30 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { LoaderCircle, Search, X } from "lucide-react";
+// ===== Thư viện =====
+import { LoaderCircle, Search, X } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { SearchMode } from "../types";
 
+// ===== Hằng số =====
 const MODES: Array<{ key: SearchMode; label: string; hint: string }> = [
   { key: "keyword", label: "Từ khóa", hint: "Chỉ trả về kết quả chứa đủ các từ đã gõ (không dấu cũng được)" },
   { key: "semantic", label: "Ngữ nghĩa", hint: "Tìm theo ý nghĩa câu hỏi, kể cả cách nói khác" },
   { key: "hybrid", label: "Kết hợp", hint: "Gộp cả hai, xếp theo độ phù hợp" },
 ];
 
+// ===== Component =====
 /** Ô tìm lớn + chọn cách tìm + nút Tìm. Gõ tới đâu tìm tới đó; Enter / nút Tìm để tìm ngay. */
 export const SearchBar = ({
-  value, onChange, onSubmit, mode, onModeChange, loading,
+  value,
+  onChange,
+  onSubmit,
+  mode,
+  onModeChange,
+  loading,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -35,9 +45,15 @@ export const SearchBar = ({
     <label className="relative block min-w-0 flex-1">
       <span className="sr-only">Tìm kiếm</span>
       {loading ? (
-        <LoaderCircle className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-bamboo-600 motion-safe:animate-spin" aria-hidden />
+        <LoaderCircle
+          className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-bamboo-600 motion-safe:animate-spin"
+          aria-hidden
+        />
       ) : (
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
+        <Search
+          className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+          aria-hidden
+        />
       )}
       <input
         type="search"

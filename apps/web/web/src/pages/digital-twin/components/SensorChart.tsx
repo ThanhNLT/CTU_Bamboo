@@ -2,26 +2,39 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useMemo } from "react";
+// ===== Thư viện =====
+import { useMemo } from "react"; // React
 import {
-  CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from "recharts";
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceArea,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"; // Recharts
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
-import {
-  MINUTE, RANGES, aggregationOf, breachSpans, bucketize, minuteSeries, xTicksOf, yAxisOf,
-} from "../signal";
+import { MINUTE, RANGES, aggregationOf, breachSpans, bucketize, minuteSeries, xTicksOf, yAxisOf } from "../signal";
 import type { Metric, Threshold, TimeRange, TwinEntity } from "../types";
 import { formatDay, formatDayTime, formatDuration, formatNumber, formatTime } from "../utils";
 
+// ===== Hằng số =====
 const RED = "#dc2626";
 const RED_TEXT = "#b91c1c";
 const AGG_WORD = { max: "đỉnh", min: "đáy", mean: "trung bình" } as const;
 
+// ===== Kiểu dữ liệu =====
 type TipProps = { active?: boolean; label?: number | string; payload?: Array<{ value?: number | string | null }> };
 
+// ===== Hàm tiện ích =====
 const outside = (v: number, th: Threshold) => (th.max != null && v > th.max) || (th.min != null && v < th.min);
 
+// ===== Component =====
 /** Hộp gợi ý: thời điểm, giá trị (định dạng Việt Nam) và nhắc khi điểm đó nằm ngoài ngưỡng. */
 const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { metric: Metric; range: TimeRange }) => {
   const v = payload?.[0]?.value;
@@ -32,7 +45,12 @@ const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { m
     <div className="rounded-xl border border-line bg-white px-3 py-2 text-[12px] shadow-float">
       <div className="font-semibold text-ink">
         {range === "1h" ? formatTime(label) : formatDayTime(label)}
-        {r.bucket > 1 && <span className="font-normal text-muted"> · {AGG_WORD[agg]} {formatDuration(r.bucket)}</span>}
+        {r.bucket > 1 && (
+          <span className="font-normal text-muted">
+            {" "}
+            · {AGG_WORD[agg]} {formatDuration(r.bucket)}
+          </span>
+        )}
       </div>
       <div className="mt-0.5 flex items-center gap-2">
         <span className="h-2 w-2 rounded-full" style={{ background: BAMBOO_DARK }} aria-hidden />
@@ -46,7 +64,11 @@ const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { m
 };
 
 const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: TimeRange) => void }) => (
-  <div role="group" aria-label="Khoảng thời gian" className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1">
+  <div
+    role="group"
+    aria-label="Khoảng thời gian"
+    className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1"
+  >
     {(Object.keys(RANGES) as TimeRange[]).map((key) => {
       const active = key === value;
       return (
@@ -68,21 +90,31 @@ const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: Time
   </div>
 );
 
+// ===== Hàm tiện ích =====
 /** Nhãn đường ngưỡng: "Ngưỡng ISO 5 · 3.520", "Tối thiểu · 10"... */
 const limitText = (metric: Metric, side: "max" | "min") => {
   const th = metric.threshold;
   const both = th.min != null && th.max != null;
-  const name = side === "max" ? (metric.limitLabel ?? (both ? "Tối đa" : "Ngưỡng")) : both ? "Tối thiểu" : (metric.limitLabel ?? "Tối thiểu");
+  const name =
+    side === "max"
+      ? (metric.limitLabel ?? (both ? "Tối đa" : "Ngưỡng"))
+      : both
+        ? "Tối thiểu"
+        : (metric.limitLabel ?? "Tối thiểu");
   return `${name} · ${formatNumber((side === "max" ? th.max : th.min) ?? 0)}`;
 };
 
+// ===== Component =====
 /**
  * Biểu đồ lịch sử một chỉ số: đường dữ liệu xanh đậm, ngưỡng là đường đứt đỏ (ReferenceLine),
  * các đoạn vượt ngưỡng tô nền đỏ nhạt (ReferenceArea). Đoạn vượt ngưỡng được TÍNH từ dữ liệu từng phút,
  * nên vẫn đúng khi đổi khoảng thời gian hay đổi chỉ số.
  */
 export const SensorChart = ({
-  entity, metric, range, onRangeChange,
+  entity,
+  metric,
+  range,
+  onRangeChange,
 }: {
   entity: TwinEntity;
   metric: Metric;
@@ -166,12 +198,12 @@ export const SensorChart = ({
                 label={
                   a === lastArea
                     ? {
-                      value: `${a.side === "above" ? "Vượt" : "Dưới"} ngưỡng ${formatDuration(a.minutes)}`,
-                      position: "insideTop",
-                      fill: RED_TEXT,
-                      fontSize: 11,
-                      fontWeight: 500,
-                    }
+                        value: `${a.side === "above" ? "Vượt" : "Dưới"} ngưỡng ${formatDuration(a.minutes)}`,
+                        position: "insideTop",
+                        fill: RED_TEXT,
+                        fontSize: 11,
+                        fontWeight: 500,
+                      }
                     : undefined
                 }
               />
@@ -213,7 +245,8 @@ export const SensorChart = ({
       </figure>
 
       <p className="mt-3 text-[11.5px] text-muted">
-        Nguồn: Scorpio Temporal API · thuộc tính <span className="font-mono">{metric.key}</span> của mô hình {entity.type}
+        Nguồn: Scorpio Temporal API · thuộc tính <span className="font-mono">{metric.key}</span> của mô hình{" "}
+        {entity.type}
         {r.bucket > 1 && ` · giá trị ${AGG_WORD[agg]} mỗi ${formatDuration(r.bucket)}`}
         {entity.offlineMinutes ? ` · mất tín hiệu ${entity.offlineMinutes} phút gần nhất` : ""}
       </p>
