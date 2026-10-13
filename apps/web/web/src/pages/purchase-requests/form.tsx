@@ -28,7 +28,9 @@ export type PrFormValues = {
   description?: string;
   requester_position_id: string;
   category_code?: string | null;
+  /** id nhà cung cấp trong danh mục, hoặc NEW_PARTNER + tên gõ tay khi chưa có trong danh mục. */
   partner_id?: string | null;
+  proposed_partner_tax_code?: string | null;
   needed_by?: Dayjs | null;
   items: Item[];
 };
@@ -51,6 +53,8 @@ type Options = {
 };
 
 // ===== Hằng số =====
+/** Tiền tố giá trị của ô Nhà cung cấp khi người lập gõ nhà cung cấp chưa có trong danh mục (migration 018). */
+export const NEW_PARTNER = "new:";
 const ASSIGNMENT: Record<string, string> = {
   PRIMARY: "giữ chính",
   CONCURRENT: "kiêm nhiệm",
@@ -72,6 +76,9 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
   const [form] = Form.useForm<PrFormValues>();
   const [options, setOptions] = useState<Options | null>(null);
   const [busy, setBusy] = useState(false);
+  const [partnerSearch, setPartnerSearch] = useState("");
+  const partnerValue: string | null | undefined = Form.useWatch("partner_id", form);
+  const proposedName = partnerValue?.startsWith(NEW_PARTNER) ? partnerValue.slice(NEW_PARTNER.length) : null;
   const items: Item[] = Form.useWatch("items", form) ?? [];
   const total = items.reduce((s, i) => s + (Number(i?.quantity) || 0) * (Number(i?.unit_price) || 0), 0);
 
@@ -111,7 +118,9 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
       title: v.title.trim(),
       description: v.description?.trim() || null,
       category_code: v.category_code ?? null,
-      partner_id: v.partner_id ?? null,
+      partner_id: proposedName == null ? (v.partner_id ?? null) : null,
+      proposed_partner_name: proposedName,
+      proposed_partner_tax_code: proposedName == null ? null : v.proposed_partner_tax_code?.trim() || null,
       needed_by: v.needed_by ? v.needed_by.format("YYYY-MM-DD") : null,
     };
     const lines = v.items.map((i, n) => ({
@@ -187,21 +196,57 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
           </Form.Item>
         </Col>
         <Col xs={24} md={8}>
-          <Form.Item name="partner_id" label="Nhà cung cấp đề xuất">
+          <Form.Item
+            name="partner_id"
+            label="Nhà cung cấp đề xuất"
+            tooltip="Gõ để tìm trong danh mục; chưa có thì gõ tên rồi chọn dòng “Dùng nhà cung cấp mới”"
+          >
             <Select
               allowClear
               showSearch
               optionFilterProp="label"
-              options={options?.mdm_partner.map((p) => ({
-                value: p.id,
-                label: `${p.code} – ${p.name}${p.internal_unit_id ? " (nội bộ)" : ""}`,
-              }))}
+              placeholder="Gõ tên hoặc mã nhà cung cấp"
+              onSearch={setPartnerSearch}
+              onChange={() => setPartnerSearch("")}
+              options={[
+                ...(options?.mdm_partner.map((p) => ({
+                  value: p.id,
+                  label: `${p.code} – ${p.name}${p.internal_unit_id ? " (nội bộ)" : ""}`,
+                })) ?? []),
+                ...(proposedName && proposedName !== partnerSearch.trim()
+                  ? [{ value: NEW_PARTNER + proposedName, label: `${proposedName} (chưa có trong danh mục)` }]
+                  : []),
+                ...(partnerSearch.trim().length >= 2
+                  ? [
+                      {
+                        value: NEW_PARTNER + partnerSearch.trim(),
+                        label: `＋ Dùng nhà cung cấp mới “${partnerSearch.trim()}”`,
+                      },
+                    ]
+                  : []),
+              ]}
             />
           </Form.Item>
+          {proposedName != null && (
+            <Form.Item
+              name="proposed_partner_tax_code"
+              label="Mã số thuế nhà cung cấp mới"
+              tooltip="Không bắt buộc. Người quản lý dữ liệu chủ dùng để thêm vào danh mục"
+              rules={[{ pattern: /^\d{10}(-\d{3})?$/, message: "Mã số thuế gồm 10 chữ số (chi nhánh: 10 số-3 số)" }]}
+            >
+              <Input placeholder="0101234567" />
+            </Form.Item>
+          )}
         </Col>
         <Col xs={24} md={8}>
           <Form.Item name="category_code" label="Nhóm hàng" tooltip="Một số nhóm hàng có hạn mức duyệt riêng">
-            <Select allowClear options={options?.core_catalog_item.map((c) => ({ value: c.code, label: c.name }))} />
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="Gõ để tìm nhóm hàng"
+              options={options?.core_catalog_item.map((c) => ({ value: c.code, label: c.name }))}
+            />
           </Form.Item>
         </Col>
         <Col xs={24} md={8}>

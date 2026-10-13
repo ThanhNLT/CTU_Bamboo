@@ -79,7 +79,7 @@ test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơ
   await page.getByRole("button", { name: "Xác nhận và xuất lô" }).click();
   await expect(page.getByText(`Đã xác nhận ${docNo}`)).toBeVisible();
   await expect(page.getByText("Đã xác nhận").first()).toBeVisible();
-  await expect(page.getByText("PMIC-2609-A")).toBeVisible();
+  await expect(page.getByText("PMIC-2609-A").first()).toBeVisible();
   await logout(page);
 
   // Người đặt: đơn đã xác nhận, có đơn mua, lô nhận về.
@@ -87,6 +87,6 @@ test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơ
   await page.goto(request);
   await page.getByText(docNo).click();
   await expect(page.getByText(/^PO-\d{4}-\d{6}$/)).toBeVisible();
-  await expect(page.getByText("PMIC-2609-A")).toBeVisible();
+  await expect(page.getByText("PMIC-2609-A").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Hủy đơn" })).toHaveCount(0);
 });

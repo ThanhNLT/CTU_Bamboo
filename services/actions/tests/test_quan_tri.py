@@ -17,7 +17,7 @@ from openpyxl import Workbook, load_workbook  # openpyxl
 
 # ===== Module nội bộ =====
 from app import config, main
-from conftest import SETTINGS, ids
+from conftest import SETTINGS, ids, pr
 
 
 # ===== Fixture kiểm thử =====
@@ -260,7 +260,8 @@ def test_tep_mau_nhap_lai_duoc(client, conn, admin):
     k = admin["k"]
     r = call(client, "admin_import_template", {"kind": "partner"}, admin[k("gd")], admin["TDX"]).json()
     book = load_workbook(io.BytesIO(base64.b64decode(r["content_base64"])))
-    book.active.delete_rows(2)  # bỏ dòng ví dụ
+    assert book.active.max_row == 1, "trang Dữ liệu chỉ có tiêu đề"
+    assert book["Ví dụ"]["A2"].value == "NCC001"
     book.active.append([k("NCC"), "Nhà cung cấp từ tệp mẫu", 101234567])  # mã số thuế gõ dạng số trong Excel
     out = io.BytesIO()
     book.save(out)
@@ -320,3 +321,35 @@ def test_du_lieu_chu(client, conn, admin, entity):
             f"VALUES (test.id('TDX'), %s, 'X'{', %s' if entity == 'item' else ''})",
             (code, "cái") if entity == "item" else (code,),
         )
+
+
+def test_han_muc_dung_luong_quan_tri(client, conn, admin):
+    r = save(client, admin, "storage_quota", {"quota_gb": "20"})
+    assert r.status_code == 200, r.text
+    quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE code = 'TDX'").fetchone()
+    assert quota["storage_quota_bytes"] == 20 * 1024**3
+    assert save(client, admin, "storage_quota", {"quota_gb": "0"}).status_code == 400
+    assert save(client, admin, "storage_quota", {"quota_gb": "5"}, who="nv").status_code == 403
+    conn.execute("UPDATE core.tenant SET storage_quota_bytes = DEFAULT WHERE code = 'TDX'")
+
+
+def test_them_ncc_de_xuat(client, conn, admin):
+    k = admin["k"]
+    pr_id = pr(conn, k("de_xuat"), "c", "P_NV_MH_DT", 1_000_000, submit=False)
+    tax = "0" + str(uuid.uuid4().int)[:9]
+    conn.execute(
+        "UPDATE proc.purchase_request SET proposed_partner_name = 'NCC gõ tay', proposed_partner_tax_code = %s "
+        "WHERE id = %s",
+        (tax, pr_id),
+    )
+    who = admin[k("gd")]
+    r = call(client, "adopt_proposed_partner", {"request_id": pr_id, "code": k("NCC")}, admin[k("nv")], admin["TDX"])
+    assert r.status_code == 400 and "mdm.manage" in r.json()["message"]
+    r = call(client, "adopt_proposed_partner", {"request_id": pr_id, "code": k("NCC")}, who, admin["TDX"])
+    assert r.status_code == 200, r.text
+    row = conn.execute(
+        "SELECT p.code, p.tax_code, r.proposed_partner_name FROM proc.purchase_request r "
+        "JOIN mdm.partner p ON p.id = r.partner_id WHERE r.id = %s",
+        (pr_id,),
+    ).fetchone()
+    assert (row["code"], row["tax_code"], row["proposed_partner_name"]) == (k("NCC"), tax, None)

@@ -13,6 +13,8 @@ import { useMemo, useState } from "react"; // React
 import { Link, useSearchParams } from "react-router"; // React Router
 
 // ===== Module nội bộ =====
+import { UploadTargetModal } from "./components/UploadTargetModal";
+import { useDriveUsage } from "./useDriveUsage";
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { DriveHeader } from "./components/DriveHeader";
@@ -67,19 +69,36 @@ export const DocumentDrivePage = () => {
     }
   };
 
-  const uploadDisabledReason = !drive.folder
-    ? "Mở thư mục của một chứng từ để tải tệp vào"
-    : drive.folderStatus && LOCKED.has(drive.folderStatus)
+  const uploadDisabledReason =
+    drive.folder && drive.folderStatus && LOCKED.has(drive.folderStatus)
       ? "Chứng từ đã có kết quả, không thêm tệp được"
-      : undefined;
+      : !drive.folder && drive.targets.length === 0 && !drive.loading
+        ? "Bạn chưa có chứng từ nào nhận thêm tệp (lập đề nghị trước)"
+        : undefined;
+  const [picking, setPicking] = useState(false);
+  const usage = useDriveUsage();
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 pb-24">
       <DriveHeader
         uploadDisabledReason={uploadDisabledReason}
-        onUpload={(list) =>
-          drive.folder && uploads.enqueue(list, { entityType: drive.folder.entityType, entityId: drive.folder.id })
-        }
+        onPickTarget={drive.folder ? undefined : () => setPicking(true)}
+        onUpload={(list) => {
+          if (!drive.folder) return;
+          uploads.enqueue(list, { entityType: drive.folder.entityType, entityId: drive.folder.id });
+          window.setTimeout(() => void usage.reload(), 4000);
+        }}
+      />
+      <UploadTargetModal
+        open={picking}
+        targets={drive.targets}
+        onCancel={() => setPicking(false)}
+        onUpload={(target, list) => {
+          setPicking(false);
+          openFolder(target.id);
+          uploads.enqueue(list, { entityType: target.entityType, entityId: target.id });
+          window.setTimeout(() => void usage.reload(), 4000);
+        }}
       />
 
       {drive.error && <Alert type="error" showIcon message="Không tải được tệp" description={drive.error} />}
@@ -97,7 +116,7 @@ export const DocumentDrivePage = () => {
               openFolder();
             }}
           />
-          <StorageCard segments={drive.storage} />
+          <StorageCard segments={drive.storage} usage={usage.data} onChanged={() => void usage.reload()} />
         </aside>
 
         <div className="flex min-w-0 flex-col gap-4">

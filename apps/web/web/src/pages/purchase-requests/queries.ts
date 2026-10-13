@@ -42,7 +42,7 @@ export const PR_DETAIL = `
   query PurchaseRequest($id: uuid!) {
     proc_purchase_request_by_pk(id: $id) {
       id doc_no title description status total_amount category_code needed_by approval_round created_at updated_at
-      requester_id requester_position_id partner_id
+      requester_id requester_position_id partner_id proposed_partner_name proposed_partner_tax_code
       requester { full_name }
       requester_position { name }
       org_unit { name }

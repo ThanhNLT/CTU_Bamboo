@@ -12,7 +12,7 @@ import dayjs from "dayjs"; // Day.js
 // ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
-import { PurchaseRequestForm, type PrFormValues } from "./form";
+import { PurchaseRequestForm, type PrFormValues, NEW_PARTNER } from "./form";
 import { PR_DETAIL } from "./queries";
 import type { PurchaseRequest } from "./types";
 
@@ -42,7 +42,8 @@ export const PurchaseRequestEdit = () => {
     description: pr.description ?? undefined,
     requester_position_id: pr.requester_position_id,
     category_code: pr.category_code,
-    partner_id: pr.partner_id,
+    partner_id: pr.partner_id ?? (pr.proposed_partner_name ? NEW_PARTNER + pr.proposed_partner_name : null),
+    proposed_partner_tax_code: pr.proposed_partner_tax_code,
     needed_by: pr.needed_by ? dayjs(pr.needed_by) : null,
     items: pr.purchase_request_items.map((i) => ({
       item_id: i.item_id,
