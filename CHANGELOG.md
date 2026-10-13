@@ -32,6 +32,9 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - Giao diện: JavaScript, CSS nén gzip mức 9 sẵn lúc build, nginx gửi thẳng tệp `.gz` (`gzip_static`) thay vì nén lại 2 MB mỗi lượt tải.
 - Image Python biên dịch sẵn bytecode của mã dịch vụ.
 
+### Sửa
+- Trang đăng nhập thỉnh thoảng báo `403 Forbidden` (cổng API): cookie phiên của Keycloak là chuỗi ngẫu nhiên, đôi khi tình cờ chứa mẫu mà WAF coi là tấn công (tên hàm PHP, giá trị bọc nháy kép), khoảng 1/1500 lượt mở trang đăng nhập. WAF không kiểm các cookie phiên Keycloak nữa (Keycloak tự kiểm chúng); cookie khác, tham số và nội dung vẫn qua OWASP CRS như cũ.
+
 ### Bảo mật
 - Kafka bật xác thực SCRAM-SHA-512 và ACL (ADR #45): mỗi dịch vụ một tài khoản (`debezium` chỉ ghi topic CDC, `lakehouse` chỉ đọc), client không có tài khoản hoặc topic ngoài quyền bị từ chối; controller và listener quản trị chỉ nghe trong container.
 - Trino chỉ nhận đăng nhập qua HTTPS bằng chứng chỉ do CA nội bộ của OpenBao cấp, tài khoản dịch vụ `bms-admin`, `bms-actions` (mật khẩu OpenBao sinh). Quyền theo tenant: actions truy vấn dưới danh nghĩa người dùng của tenant, Trino tự thêm row filter về đúng tenant cho mọi view silver; bronze và bảng không thuộc tenant nào bị chặn. Quyền sinh cùng `silver.sql` từ cấu trúc CSDL (`platform/trino/rules.json`).
