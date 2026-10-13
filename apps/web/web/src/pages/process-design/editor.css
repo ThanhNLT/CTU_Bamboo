@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ===== Trình soạn BPMN (bpmn-js) ===== */
+.bpmn-editor {
+  height: 620px;
+  border-radius: 16px;
+  background: #fff;
+}
+
+/* Chỉ xem (không có quyền wf.process.design): ẩn bảng công cụ và menu ngữ cảnh. */
+.bpmn-editor--readonly .djs-palette,
+.bpmn-editor--readonly .djs-context-pad {
+  display: none;
+}
+
+/* Phần tử đã đi qua trong lần chạy thử gần nhất. */
+.sandbox-visited:not(.djs-connection) .djs-visual > :nth-child(1) {
+  stroke: #2f7a3e !important;
+  fill: #eaf5ec !important;
+}
+.sandbox-visited.djs-connection .djs-visual > path {
+  stroke: #2f7a3e !important;
+}

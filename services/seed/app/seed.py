@@ -12,6 +12,7 @@
 import json
 import logging
 import os
+import pathlib
 import sys
 
 # ===== Thư viện bên ngoài =====
@@ -37,6 +38,8 @@ from .demo import (
 # ===== Hằng số & cấu hình =====
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
+# Quy trình mẫu cho trang Thiết kế quy trình (image Python chép thư mục platform vào /repo/platform).
+BPMN_SAMPLE = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
 
 # Nhóm hàng (danh mục ITEM_CATEGORY, khớp wf.approval_rule.category_code).
 ITEM_CATEGORIES = {
@@ -839,6 +842,50 @@ class Seeder:
             {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]},
         )
 
+    def process_design_demo(self):
+        """Vai trò THIET_KE_QUY_TRINH (wf.process.design) và quy trình mẫu Duyệt đề nghị mua sắm (ADR #47)."""
+        seats = {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]}
+        self.seat_role("THIET_KE_QUY_TRINH", "Thiết kế quy trình", "wf.process.design", seats)
+        if not BPMN_SAMPLE.exists():
+            return
+        xml = BPMN_SAMPLE.read_text(encoding="utf-8")
+        forms = [
+            {
+                "key": "duyet_de_nghi",
+                "name": "Duyệt đề nghị – mặc định",
+                "fields": [
+                    {"label": "Quyết định", "type": "Danh mục", "required": True},
+                    {"label": "Ý kiến", "type": "Đoạn văn", "required": False},
+                ],
+            }
+        ]
+        for t in TENANTS:
+            seat = seats.get(t.code, [None])[0]
+            owner = (
+                self.x(
+                    """SELECT person_id FROM core.assignment
+                       WHERE position_id = %s AND upper_inf(valid_period) LIMIT 1""",
+                    uid(t.code, "position", seat),
+                ).fetchone()
+                if seat
+                else None
+            )
+            if owner is None:
+                continue
+            self.x(
+                """INSERT INTO wf.process_model (tenant_id, id, process_key, name, description, bpmn_xml, forms,
+                                                 created_by, updated_by)
+                   VALUES (%s, %s, 'purchaseRequestApproval', 'Duyệt đề nghị mua sắm',
+                           'Bản phản chiếu luồng duyệt đề nghị mua sắm (ADR #31)', %s, %s::jsonb, %s, %s)
+                   ON CONFLICT (tenant_id, process_key) DO NOTHING""",
+                self.tenant_id(t.code),
+                uid(t.code, "process_model", "purchaseRequestApproval"),
+                xml,
+                json.dumps(forms, ensure_ascii=False),
+                owner[0],
+                owner[0],
+            )
+
     def run(self):
         for t in TENANTS:
             self.x(
@@ -867,11 +914,12 @@ class Seeder:
         self.ic_demo()
         self.lakehouse_demo()
         self.master_data_admin_demo()
+        self.process_design_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
     """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự, đơn
-    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ)."""
+    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ, thiết kế quy trình)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
@@ -880,6 +928,7 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.ic_demo()
             seeder.lakehouse_demo()
             seeder.master_data_admin_demo()
+            seeder.process_design_demo()
         return False
     with conn.transaction():
         Seeder(conn).run()
