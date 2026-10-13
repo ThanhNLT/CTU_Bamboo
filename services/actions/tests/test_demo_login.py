@@ -7,16 +7,20 @@
 Chỉ đọc, không đổi dữ liệu demo. Bật bằng DEMO_STACK=1.
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
 import time
 
-import httpx
-import pytest
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import pytest  # pytest
 
+# ===== Cấu hình kiểm thử =====
 pytestmark = pytest.mark.skipif(os.environ.get("DEMO_STACK") != "1", reason="cần DEMO_STACK=1 (make test-auth)")
 
+# ===== Hằng số & cấu hình =====
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TOKEN_URL = os.environ.get("KEYCLOAK_TOKEN_URL", "http://keycloak:8080/realms/bms/protocol/openid-connect/token")
 GRAPHQL = os.environ.get("HASURA_URL", "http://hasura:8080") + "/v1/graphql"
@@ -24,6 +28,7 @@ PASSWORD = os.environ.get("DEMO_PASSWORD", "demo-password")
 USERS = json.loads((ROOT / "platform/keycloak/realm/bms-realm.json").read_text(encoding="utf-8"))["users"]
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module", autouse=True)
 def keycloak_ready():
     """Keycloak khởi động mất khoảng nửa phút sau `docker compose up`."""
@@ -39,6 +44,7 @@ def keycloak_ready():
         time.sleep(3)
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def login(username: str) -> dict:
     return httpx.post(
         TOKEN_URL, data={"grant_type": "password", "client_id": "bms-e2e", "username": username, "password": PASSWORD}
@@ -52,6 +58,7 @@ def gql(token: str, query: str, tenant: str | None = None) -> dict:
     return httpx.post(GRAPHQL, json={"query": query}, headers=headers).json()
 
 
+# ===== Kiểm thử =====
 @pytest.mark.parametrize("user", [u for u in USERS if not u["requiredActions"]], ids=lambda u: u["username"])
 def test_dang_nhap_va_chon_tenant(user):
     token = login(user["username"])["access_token"]

@@ -4,14 +4,18 @@
 
 """Bootstrap bổ sung WEB_ORIGIN vào client bms-web (nâng cấp không cần import lại realm)."""
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 
-import httpx
-import pytest
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import keycloak_sync
 
+# ===== Hằng số & cấu hình =====
 KEYCLOAK = os.environ.get("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080")
 ADMIN = (os.environ.get("KEYCLOAK_ADMIN", "kcadmin"), os.environ.get("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"))
 
@@ -22,6 +26,7 @@ OLD = {
 }
 
 
+# ===== Kiểm thử =====
 def test_bo_sung_origin_moi_giu_gia_tri_cu():
     changes = keycloak_sync.desired_changes(OLD, "http://localhost:8000/")
     assert changes["redirectUris"] == ["http://localhost:5173/*", "http://localhost:8000/*"]
@@ -44,6 +49,7 @@ def test_web_origins_plus_da_bao_gom():
     assert keycloak_sync.desired_changes(client, "https://bamboo.example.vn") == {}
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def admin():
     try:
@@ -59,6 +65,7 @@ def admin():
     http.close()
 
 
+# ===== Kiểm thử =====
 def test_dong_bo_tren_keycloak_that(admin):
     http, original = admin
     origin = "https://bamboo-sync-test.invalid"
@@ -86,6 +93,7 @@ def test_client_tao_tai_khoan(admin):
             keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, original)
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _check_provisioner(http, secret):
     keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, secret)
     assert keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, secret) is False
@@ -115,6 +123,7 @@ def _check_provisioner(http, secret):
     assert keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, secret + "-2") is True
 
 
+# ===== Kiểm thử =====
 def test_bo_sung_tai_khoan_demo(admin, tmp_path):
     """Realm đã import từ trước: tài khoản demo mới được thêm, giữ id; tài khoản đã có không bị đụng."""
     http, _ = admin

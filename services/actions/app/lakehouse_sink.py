@@ -16,14 +16,17 @@ group, nên dừng giữa lúc ghi Iceberg và lúc lưu offset cũng không sin
     python -m app.lakehouse_sink
 """
 
+# ===== Thư viện chuẩn =====
 import datetime as dt
 import json
 import logging
 import re
 import time
 
+# ===== Module nội bộ =====
 from . import config
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("lakehouse_sink")
 
 NAMESPACE = "bronze"
@@ -35,12 +38,14 @@ FLUSH_SECONDS = 30.0  # ghi dù chưa đủ lô sau khoảng này
 TOPIC_REFRESH_SECONDS = 60.0
 
 
+# ===== Hàm =====
 def table_name(topic: str) -> str:
     """bms.proc.purchase_request → bronze.proc_purchase_request"""
     _, schema, table = topic.split(".", 2)
     return f"{NAMESPACE}.{schema}_{table}"
 
 
+# ===== Hằng số & cấu hình =====
 # Cột bronze và kiểu Trino tương ứng (lakehouse_silver tạo bảng bằng Trino với đúng danh sách này, ADR #40).
 BRONZE_COLUMNS = [
     ("op", "varchar"),
@@ -58,8 +63,9 @@ BRONZE_COLUMNS = [
 ]
 
 
+# ===== Hàm =====
 def arrow_schema():
-    import pyarrow as pa
+    import pyarrow as pa  # PyArrow
 
     ts = pa.timestamp("us", tz="UTC")
     return pa.schema(
@@ -104,7 +110,7 @@ def to_row(partition: int, offset: int, key: bytes | None, value: bytes, now: dt
 
 
 def catalog(settings: config.Settings, warehouse: str = "warehouse"):
-    from pyiceberg.catalog.sql import SqlCatalog
+    from pyiceberg.catalog.sql import SqlCatalog  # PyIceberg
 
     return SqlCatalog(
         "bms",
@@ -122,8 +128,8 @@ def catalog(settings: config.Settings, warehouse: str = "warehouse"):
 
 def ensure_table(cat, name: str):
     """Bảng bronze phân vùng theo ngày thay đổi (identity trên source_date: không cần pyiceberg-core)."""
-    from pyiceberg.exceptions import TableAlreadyExistsError
-    from pyiceberg.transforms import IdentityTransform
+    from pyiceberg.exceptions import TableAlreadyExistsError  # PyIceberg
+    from pyiceberg.transforms import IdentityTransform  # PyIceberg
 
     cat.create_namespace_if_not_exists(NAMESPACE)
     if cat.table_exists(name):
@@ -148,7 +154,7 @@ def committed_offsets(table) -> dict[int, int]:
 
 
 def write_batch(table, rows: list[dict], next_offsets: dict[int, int]) -> None:
-    import pyarrow as pa
+    import pyarrow as pa  # PyArrow
 
     data = pa.Table.from_pylist(rows, schema=arrow_schema())
     table.append(
@@ -156,11 +162,12 @@ def write_batch(table, rows: list[dict], next_offsets: dict[int, int]) -> None:
     )
 
 
+# ===== Lớp =====
 class Sink:
     """Đọc các topic CDC, ghi theo lô vào bảng bronze tương ứng."""
 
     def __init__(self, settings: config.Settings, consumer=None, cat=None):
-        import kafka
+        import kafka  # kafka-python
 
         self.settings = settings
         self.catalog = cat or catalog(settings)
@@ -178,7 +185,7 @@ class Sink:
 
     def refresh_assignment(self) -> None:
         """Gán mọi partition của các topic dữ liệu; topic mới (bảng mới) được nhận ở lần làm mới sau."""
-        import kafka
+        import kafka  # kafka-python
 
         topics = sorted(t for t in self.consumer.topics() if TOPIC_PATTERN.match(t))
         parts = []
@@ -240,6 +247,7 @@ class Sink:
         return count
 
 
+# ===== Hàm =====
 def run_forever(settings: config.Settings) -> None:
     while True:
         try:
@@ -259,6 +267,7 @@ def run_forever(settings: config.Settings) -> None:
             time.sleep(10)
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("kafka").setLevel(logging.WARNING)

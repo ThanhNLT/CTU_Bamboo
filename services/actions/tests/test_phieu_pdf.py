@@ -4,20 +4,25 @@
 
 """Phiếu PDF (ADR #37): số tiền bằng chữ, mẫu HTML escape, Gotenberg in PDF, lưu và tái dùng theo nội dung."""
 
+# ===== Thư viện chuẩn =====
 import threading
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-import httpx
-import pytest
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import forms
 from conftest import SETTINGS, ids, pr
 
+# ===== Hằng số & cấu hình =====
 PDF_QUERY = """query($id: uuid!) { get_purchase_request_pdf(request_id: $id) {
   url file_name check_code status cached expires_in } }"""
 
 
+# ===== Kiểm thử =====
 @pytest.mark.parametrize(
     "amount, words",
     [
@@ -51,6 +56,7 @@ def test_dinh_dang_so():
     assert forms.number(Decimal("0.125"), 3) == "0,125"
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _sample(**over) -> dict:
     pr_ = {
         "id": "x",
@@ -90,6 +96,7 @@ def _sample(**over) -> dict:
     return {**pr_, **over}
 
 
+# ===== Kiểm thử =====
 def test_mau_escape_du_lieu_nguoi_dung():
     html = forms.render_purchase_request(
         _sample(title='<img src="http://evil/x"><script>alert(1)</script>', description="A & B")
@@ -176,6 +183,7 @@ def test_gotenberg_khong_tai_tai_nguyen_ngoai(gotenberg):
         server.shutdown()
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _reachable_tika() -> bool:
     try:
         return httpx.get(SETTINGS.tika_url + "/version", timeout=3).status_code == 200

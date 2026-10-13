@@ -4,16 +4,20 @@
 
 """Hasura Action cho tệp đính kèm (ADR #26). Lưu trữ và quét virus ở `storage.py`."""
 
+# ===== Thư viện chuẩn =====
 import hashlib
 import logging
 import pathlib
 import uuid
 
-import psycopg
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from . import storage
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("attachments")
 
 _COLUMNS = (
@@ -21,6 +25,7 @@ _COLUMNS = (
 )
 
 
+# ===== Hàm =====
 def _clean_name(file_name: str) -> str:
     name = pathlib.PurePosixPath((file_name or "").replace("\\", "/")).name.strip()
     name = "".join(ch for ch in name if ch.isprintable())
@@ -46,6 +51,7 @@ def _require_storage(ctx: Context) -> storage.Storage:
     return ctx.storage
 
 
+# ===== Hasura Action =====
 def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     s3 = _require_storage(ctx)
     entity_type, entity_id = args["entity_type"], args["entity_id"]
@@ -81,6 +87,7 @@ def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     }
 
 
+# ===== Hàm =====
 def _finish(conn, attachment_id: str, status: str, scan_result: str, sha256: str | None = None) -> dict:
     conn.execute(
         """UPDATE core.attachment SET status = %s, scan_result = %s, sha256 = %s, scanned_at = now()
@@ -90,6 +97,7 @@ def _finish(conn, attachment_id: str, status: str, scan_result: str, sha256: str
     return {"attachment_id": attachment_id, "status": status, "scan_result": scan_result}
 
 
+# ===== Hasura Action =====
 def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     """Kiểm tra tệp đã tải lên bucket cách ly; sạch thì chuyển sang bucket chính.
     Tệp sai khai báo hoặc nhiễm mã độc bị xóa ngay (trạng thái REJECTED / INFECTED)."""

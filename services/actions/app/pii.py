@@ -8,11 +8,14 @@ CSDL chỉ giữ bản mã `vault:v1:...` và bản che để hiển thị; khó
 sau 1 giờ nên lỗi 403 thì đăng nhập lại một lần rồi thử lại.
 """
 
+# ===== Thư viện chuẩn =====
 import threading
 
+# ===== Module nội bộ =====
 from .openbao import Bao, BaoError
 
 
+# ===== Lớp =====
 class PiiCipher:
     def __init__(self, addr: str, approle_file: str):
         self.addr = addr
@@ -41,6 +44,7 @@ class PiiCipher:
         return self._call("decrypt", ciphertext)
 
 
+# ===== Hàm =====
 def mask_tail(value: str, keep: int) -> str:
     """Giữ `keep` ký tự cuối (bỏ khoảng trắng), còn lại thay bằng chấm tròn: 079123456789 → •••••••••789."""
     compact = "".join(value.split())

@@ -8,21 +8,26 @@ Kiểm thử tích hợp ghi vào catalog riêng (CSDL lakehouse_test, thư mụ
 lakehouse) từ các topic CDC thật; khóa S3 lakehouse đọc từ OpenBao bằng root token như search_settings.
 """
 
+# ===== Thư viện chuẩn =====
 import datetime as dt
 import json
 import uuid
 from urllib.parse import urlparse, urlunparse
 
-import psycopg
-import pytest
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import config
 from app import lakehouse_sink as ls
 from conftest import TEST_DB_URL, _missing, _reachable, root_settings
 
+# ===== Khởi tạo =====
 pytest.importorskip("pyiceberg")
 kafka = pytest.importorskip("kafka")
 
+# ===== Hằng số & cấu hình =====
 EVENT = {
     "before": None,
     "after": {"tenant_id": "t-1", "id": "pr-1", "title": "Tụ điện", "total_amount": "300000.00"},
@@ -41,6 +46,7 @@ EVENT = {
 }
 
 
+# ===== Kiểm thử =====
 def test_ten_bang_va_topic():
     assert ls.table_name("bms.proc.purchase_request") == "bronze.proc_purchase_request"
     for topic in ("bms.proc.purchase_request", "bms.core.person", "bms.wf.approval_step"):
@@ -71,6 +77,7 @@ def test_su_kien_thanh_dong_bronze():
     )
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def lake_settings() -> config.Settings:
     """Cấu hình ghi vào catalog kiểm thử; cần Kafka có topic CDC, SeaweedFS có bucket lakehouse."""
@@ -94,6 +101,7 @@ def lake_settings() -> config.Settings:
     return settings
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _drain(sink: ls.Sink) -> int:
     total = 0
     while n := sink.run_once(wait_seconds=30, stop_when_idle=True):
@@ -101,6 +109,7 @@ def _drain(sink: ls.Sink) -> int:
     return total
 
 
+# ===== Kiểm thử =====
 def test_ghi_bronze_dung_mot_lan(lake_settings):
     warehouse = f"warehouse-test/{uuid.uuid4().hex[:8]}"
     cat = ls.catalog(lake_settings, warehouse)

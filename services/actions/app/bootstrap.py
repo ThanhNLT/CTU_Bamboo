@@ -5,6 +5,7 @@
 """Job khởi tạo chạy mỗi lần `docker compose up`: tạo bucket S3, deploy BPMN, nạp metadata Hasura,
 tạo index và khóa API Meilisearch, đồng bộ client Keycloak (bms-web, bms-provisioner) và tài khoản demo."""
 
+# ===== Thư viện chuẩn =====
 import hashlib
 import json
 import logging
@@ -13,17 +14,21 @@ import pathlib
 import sys
 import time
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
+# ===== Module nội bộ =====
 from . import config, keycloak_sync, search, storage
 from .flowable import FlowableClient
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("bootstrap")
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 BPMN = ROOT / "platform/flowable/purchase_request.bpmn20.xml"
 METADATA = ROOT / "platform/hasura/metadata.json"
 
 
+# ===== Hàm =====
 def wait_for(name: str, check, timeout: float = 300.0) -> None:
     deadline = time.monotonic() + timeout
     while True:
@@ -101,5 +106,6 @@ def main() -> int:
     return 0
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     sys.exit(main())

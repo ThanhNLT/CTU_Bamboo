@@ -9,19 +9,24 @@ của phiên khác tài khoản đăng nhập (impersonation): actions chỉ đ�
 quyền và row filter của Trino áp theo người dùng đó (platform/trino/rules.json).
 """
 
+# ===== Thư viện chuẩn =====
 import ssl
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
+# ===== Module nội bộ =====
 from . import config
 
 
+# ===== Lỗi (exception) =====
 class TrinoError(Exception):
     def __init__(self, message: str, name: str = ""):
         super().__init__(message)
         self.name = name  # errorName của Trino, ví dụ PERMISSION_DENIED, TABLE_NOT_FOUND
 
 
+# ===== Lớp =====
 class Trino:
     def __init__(self, url: str, user: str, password: str = "", ca_file: str = "", timeout: float = 60):
         verify: ssl.SSLContext | bool = ssl.create_default_context(cafile=ca_file) if ca_file else True
@@ -64,5 +69,6 @@ class Trino:
         self.http.close()
 
 
+# ===== Hàm =====
 def client(settings: config.Settings) -> Trino:
     return Trino(settings.trino_url, settings.trino_user, settings.trino_password, settings.trino_ca_file)

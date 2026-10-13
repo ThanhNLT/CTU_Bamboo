@@ -18,6 +18,7 @@ Biến môi trường (mặc định khớp `make test-actions` trong docker com
   REQUIRE_SERVICES=1  thiếu Hasura/Flowable/SeaweedFS thì báo lỗi thay vì bỏ qua (dùng trong `make test-actions`)
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
@@ -27,16 +28,19 @@ import time
 import uuid
 from urllib.parse import urlparse, urlunparse
 
-import httpx
-import psycopg
-import pytest
-import uvicorn
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
+import pytest  # pytest
+import uvicorn  # Uvicorn
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from app import bootstrap, config, main, search, storage
 from app.flowable import FlowableClient
 from app.openbao import Bao
 
+# ===== Hằng số & cấu hình =====
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_hasura_test")
 TEST_APP_DB_URL = os.environ.get("TEST_APP_DATABASE_URL") or TEST_DB_URL
@@ -45,10 +49,12 @@ MEILI_TEST_INDEX = os.environ.get("MEILI_TEST_INDEX", "documents_test")
 SETTINGS = config.load()
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _admin_url(url: str) -> str:
     return urlunparse(urlparse(url)._replace(path="/postgres"))
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="session")
 def database() -> str:
     """CSDL kiểm thử sạch: migration, hàm tiện ích db/tests/helpers.sql, dữ liệu mẫu Tập đoàn X."""
@@ -81,10 +87,12 @@ def conn(database):
         yield c
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def ids(conn: psycopg.Connection, *keys: str) -> dict[str, str]:
     return {k: str(conn.execute("SELECT test.id(%s) AS id", (k,)).fetchone()["id"]) for k in keys}
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def org(conn):
     """Một công ty con riêng cho từng kiểm thử (dưới Tập đoàn X): giám đốc, trưởng phòng, chuyên viên.
@@ -112,6 +120,7 @@ def org(conn):
     return k
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def pr(conn, key: str, person: str, position: str, amount: int, submit: bool = True) -> str:
     return str(
         conn.execute("SELECT test.pr(%s, %s, %s, %s, %s) AS id", (key, person, position, amount, submit)).fetchone()[
@@ -132,7 +141,7 @@ def open_task(conn, pr_id: str) -> dict | None:
     ).fetchone()
 
 
-# --- Dịch vụ ngoài -------------------------------------------------------------
+# ===== Dịch vụ ngoài =====
 
 WAIT_SECONDS = float(os.environ.get("WAIT_FOR_SERVICES", "180"))
 

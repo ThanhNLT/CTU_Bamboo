@@ -17,18 +17,23 @@ Lỗi (Meilisearch, Tika, S3 chưa sẵn sàng) thì thử lại với thời gi
 Chỉ mục trống (volume mới) thì đánh dấu lại toàn bộ.
 """
 
+# ===== Thư viện chuẩn =====
 import logging
 import time
 
-import psycopg
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from . import config, search, storage
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("search_sync")
 MAX_BACKOFF = 300
 
 
+# ===== Hàm =====
 def purchase_request_doc(conn: psycopg.Connection, entity_id) -> dict | None:
     row = conn.execute("SELECT search.purchase_request_doc(%s) AS doc", (entity_id,)).fetchone()
     doc = row["doc"] if row else None
@@ -157,6 +162,7 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0) -> None:
             pass
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)

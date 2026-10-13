@@ -10,22 +10,27 @@ CDC_SOURCE_DATABASE_URL là CSDL Debezium đọc (mặc định CSDL `bms` cùng
 đọc, không ghi CSDL nguồn.
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 import time
 from decimal import Decimal
 from urllib.parse import urlparse, urlunparse
 
-import psycopg
-import pytest
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import lakehouse_silver as silver
 from app.trino import Trino
 from conftest import ROOT, TEST_DB_URL, _missing, root_settings, trino_admin_password, trino_reachable
 
+# ===== Hằng số & cấu hình =====
 SOURCE_URL = os.environ.get("CDC_SOURCE_DATABASE_URL") or urlunparse(urlparse(TEST_DB_URL)._replace(path="/bms"))
 
 
+# ===== Kiểm thử =====
 @pytest.mark.parametrize(
     "typname, category, typmod, expected_type, fragment",
     [
@@ -72,11 +77,13 @@ def test_quyen_trino_khop_csdl(database):
     assert "core_permission" not in tables and "core_tenant_relation" not in tables
 
 
+# ===== Lớp =====
 class AdminTrino(Trino):
     def rows(self, sql: str) -> list[list]:
         return self.query(sql)[1]
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def trino() -> AdminTrino:
     settings = root_settings()
@@ -93,6 +100,7 @@ def trino() -> AdminTrino:
     return client
 
 
+# ===== Kiểm thử =====
 def test_view_silver_co_kieu(trino):
     columns = dict(
         trino.rows(

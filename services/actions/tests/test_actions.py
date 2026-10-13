@@ -4,13 +4,16 @@
 
 """Hasura Actions gọi thẳng (không qua Hasura): kiểm tra phiên, tenant, lỗi nghiệp vụ."""
 
-import pytest
-from fastapi.testclient import TestClient
+# ===== Thư viện bên ngoài =====
+import pytest  # pytest
+from fastapi.testclient import TestClient  # FastAPI
 
+# ===== Module nội bộ =====
 from app import config, main
 from conftest import SETTINGS, ids, open_task, pr, status
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def client(database):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
@@ -18,6 +21,7 @@ def client(database):
         yield c
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant, secret=SETTINGS.actions_secret):
     payload = {
         "action": {"name": name},
@@ -27,6 +31,7 @@ def call(client, name, args, person, tenant, secret=SETTINGS.actions_secret):
     return client.post(f"/actions/{name}", json=payload, headers={"x-actions-secret": secret})
 
 
+# ===== Kiểm thử =====
 def test_sai_ma_bi_mat(client, conn, org):
     k = org
     i = ids(conn, "TDX", k("nv"))

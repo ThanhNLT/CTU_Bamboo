@@ -8,12 +8,15 @@ Id tenant, đơn vị, vị trí và tài khoản demo cố định bằng uuid5
 khớp nhau mà không gọi API lẫn nhau. Tài khoản demo đặt tên theo vai trò.
 """
 
+# ===== Thư viện chuẩn =====
 import uuid
 from dataclasses import dataclass, field
 
+# ===== Hằng số & cấu hình =====
 DEMO_NS = uuid.UUID("7d3f0a52-1c4b-5e8f-9a6d-2b7c4e1f0a93")
 
 
+# ===== Hàm =====
 def uid(*parts: str) -> uuid.UUID:
     return uuid.uuid5(DEMO_NS, ":".join(parts))
 
@@ -23,6 +26,7 @@ def account_id(username: str) -> uuid.UUID:
     return uid("account", username)
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Tenant:
     code: str
@@ -30,6 +34,7 @@ class Tenant:
     parent: str | None = None
 
 
+# ===== Hằng số & cấu hình =====
 TENANTS = [Tenant("TDX", "Tập đoàn X"), Tenant("BVX", "Bệnh viện X", parent="TDX")]
 
 UNIT_TYPES = {
@@ -50,6 +55,7 @@ UNIT_TYPES = {
 }
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass
 class Unit:
     code: str
@@ -63,10 +69,12 @@ class Unit:
     children: list["Unit"] = field(default_factory=list)
 
 
+# ===== Hàm =====
 def U(code, name, type_, head, staff=2, staff_title="Chuyên viên", legal=False, deputies=(), children=()):
     return Unit(code, name, type_, head, staff, staff_title, legal, list(deputies), list(children))
 
 
+# ===== Hằng số & cấu hình =====
 TREES = {
     "TDX": U(
         "TDX",
@@ -331,6 +339,7 @@ CONTRACT_SEATS = [("TDX", "GD_BH.HD1", "GD_BH", "Kỹ sư tư vấn (hợp đồ
 VACANT = {("TDX", "CHIP_RD_KC.HEAD")}
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Seat:
     tenant: str
@@ -350,10 +359,12 @@ class DemoUser:
         return account_id(self.username)
 
 
+# ===== Hàm =====
 def _u(username, full_name, *seats, roles=()):
     return DemoUser(username, full_name, tuple(seats), tuple(roles))
 
 
+# ===== Hằng số & cấu hình =====
 DEMO_USERS = [
     _u("tgd", "Nguyễn Văn Thành", Seat("TDX", "TDX.HEAD")),
     _u("pho.tgd", "Trần Thị Mai", Seat("TDX", "TDX.DEP1")),
@@ -408,6 +419,7 @@ OPEN_SEATS = [
 ]
 
 
+# ===== Hàm =====
 def walk(unit: Unit, parent: Unit | None = None):
     """Duyệt cây theo thứ tự cha trước con: (đơn vị, đơn vị cha)."""
     yield unit, parent

@@ -4,15 +4,19 @@
 
 """Action chậm không được chặn các request khác của cùng tiến trình: không cần CSDL."""
 
+# ===== Thư viện chuẩn =====
 import asyncio
 import time
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
+# ===== Module nội bộ =====
 from app import auth, common, config, main
 from conftest import SETTINGS
 
 
+# ===== Kiểm thử =====
 def test_slow_action_does_not_block_other_requests(monkeypatch):
     def slow(pool, name, payload, ctx):
         time.sleep(1.0)  # thư viện đồng bộ: CSDL, Flowable, Gotenberg

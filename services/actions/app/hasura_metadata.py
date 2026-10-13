@@ -11,15 +11,19 @@ SQL dùng làm computed field `can_read`. Kết quả ghi vào platform/hasura/m
     python -m app.hasura_metadata [--out đường_dẫn]   # cần DATABASE_URL trỏ tới CSDL đã migrate
 """
 
+# ===== Thư viện chuẩn =====
 import argparse
 import json
 import pathlib
 from collections import defaultdict
 
-import psycopg
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from . import config
 
+# ===== Hằng số & cấu hình =====
 SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr")
 # hr.private_access: chỉ xem qua nhật ký kiểm toán (audit.log), không mở cho giao diện.
 HIDDEN = {
@@ -174,6 +178,7 @@ MDM_EDITABLE = {
 }
 
 
+# ===== Hàm =====
 def _action(
     name: str, kind: str, args: list[tuple[str, str]], output: str, roles: list[str], comment: str, timeout: int = 30
 ) -> dict:
@@ -1071,5 +1076,6 @@ def main() -> None:
     print(f"đã ghi {args.out}: {len(metadata['sources'][0]['tables'])} bảng")
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

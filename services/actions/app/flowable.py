@@ -4,9 +4,11 @@
 
 """Client REST tối thiểu cho Flowable (chỉ dịch vụ actions gọi Flowable)."""
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
 
+# ===== Lớp =====
 class FlowableClient:
     def __init__(self, base_url: str, user: str, password: str, timeout: float = 15.0):
         self.http = httpx.Client(base_url=base_url.rstrip("/") + "/", auth=(user, password), timeout=timeout)
@@ -21,7 +23,7 @@ class FlowableClient:
             )
         return resp
 
-    # --- Triển khai quy trình -------------------------------------------------
+    # ===== Triển khai quy trình =====
 
     def deployments_named(self, name: str) -> list[dict]:
         return self._check(self.http.get("repository/deployments", params={"name": name})).json()["data"]
@@ -32,7 +34,7 @@ class FlowableClient:
         )
         return self._check(resp).json()
 
-    # --- Tiến trình -----------------------------------------------------------
+    # ===== Tiến trình =====
 
     def start_process(self, key: str, business_key: str, variables: dict) -> str:
         body = {
@@ -81,7 +83,7 @@ class FlowableClient:
     def process_definition_xml(self, definition_id: str) -> str:
         return self._check(self.http.get(f"repository/process-definitions/{definition_id}/resourcedata")).text
 
-    # --- User task ------------------------------------------------------------
+    # ===== User task =====
 
     def tasks(self, process_id: str) -> list[dict]:
         return self._check(self.http.get("runtime/tasks", params={"processInstanceId": process_id})).json()["data"]

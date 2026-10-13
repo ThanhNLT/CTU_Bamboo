@@ -8,14 +8,17 @@
 đúng bước của chuỗi duyệt; flow-sync tự tạo tiến trình Flowable tương ứng.
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import logging
 import os
 import sys
 
-import psycopg
-from faker import Faker
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from faker import Faker  # Faker
 
+# ===== Module nội bộ =====
 from .demo import (
     CONTRACT_SEATS,
     DEMO_USERS,
@@ -31,6 +34,7 @@ from .demo import (
     walk,
 )
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
 
@@ -205,6 +209,7 @@ COMMENTS = [
 ]
 
 
+# ===== Lớp =====
 class Seeder:
     def __init__(self, conn: psycopg.Connection, faker_seed: int = 2026):
         self.conn = conn
@@ -222,7 +227,7 @@ class Seeder:
     def tenant_id(self, code: str):
         return uid("tenant", code)
 
-    # --- Tổ chức --------------------------------------------------------------
+    # ===== Tổ chức =====
 
     def title(self, tenant: str, name: str):
         key = (tenant, name)
@@ -288,7 +293,7 @@ class Seeder:
             if t == tenant:
                 self.position(tenant, key, unit_code, name, reports_to=reports_to)
 
-    # --- Người và bổ nhiệm ----------------------------------------------------
+    # ===== Người và bổ nhiệm =====
 
     def person(self, tenant: str, full_name: str, person_id=None, subject=None):
         self.codes[tenant] = self.codes.get(tenant, 0) + 1
@@ -342,7 +347,7 @@ class Seeder:
                 continue
             self.assign(tenant, self.person(tenant, self.fake_name()), seat)
 
-    # --- Phân quyền, hạn mức, ủy quyền ----------------------------------------
+    # ===== Phân quyền, hạn mức, ủy quyền =====
 
     def roles(self, tenant: str):
         tid = self.tenant_id(tenant)
@@ -514,7 +519,7 @@ class Seeder:
                 body,
             )
 
-    # --- Nhân sự (ADR #41): chạy cả ở bản đã cài, bỏ qua phần đã có ---------------
+    # ===== Nhân sự (ADR #41): chạy cả ở bản đã cài, bỏ qua phần đã có =====
 
     def _next_code(self, tenant: str) -> int:
         """Số mã nhân viên tiếp theo dạng <tenant>-NNNN (đọc từ CSDL khi bổ sung vào bản đã cài)."""
@@ -680,7 +685,7 @@ class Seeder:
                     START,
                 )
 
-    # --- Đơn hàng nội bộ (ADR #42): chạy cả ở bản đã cài, bỏ qua phần đã có -------
+    # ===== Đơn hàng nội bộ (ADR #42): chạy cả ở bản đã cài, bỏ qua phần đã có =====
 
     def _holder(self, tenant: str, seat: str):
         return self.x("SELECT person_id FROM core.position_holder(%s)", uid(tenant, "position", seat)).fetchone()[0]
@@ -784,7 +789,7 @@ class Seeder:
         ).fetchone()
         self.x("SELECT ic.confirm_order(%s, %s, %s)", order_id, self._holder(tenant, confirmer), json.dumps(lot_lines))
 
-    # --- Dữ liệu Lakehouse (ADR #45): chạy cả ở bản đã cài, bỏ qua phần đã có -----
+    # ===== Dữ liệu Lakehouse (ADR #45): chạy cả ở bản đã cài, bỏ qua phần đã có =====
 
     def lakehouse_demo(self):
         """Vai trò PHAN_TICH_DU_LIEU (xem tập dữ liệu Lakehouse) cho CDO của Tập đoàn X và Kế hoạch tổng hợp BVX."""
@@ -875,5 +880,6 @@ def main() -> int:
     return 0
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     sys.exit(main())

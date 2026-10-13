@@ -9,16 +9,20 @@ x-bamboo-tenant: <tenant id>         (bỏ trống: role `account`, chỉ gọi 
 x-hasura-role: platform_admin        (tùy chọn; cần realm role platform_admin)
 """
 
+# ===== Thư viện chuẩn =====
 import time
 
-import jwt
-import psycopg
+# ===== Thư viện bên ngoài =====
+import jwt  # PyJWT
+import psycopg  # psycopg
 
 
+# ===== Lỗi (exception) =====
 class AuthError(Exception):
     pass
 
 
+# ===== Lớp =====
 class KeycloakVerifier:
     def __init__(self, jwks_url: str, issuer: str, clients: set[str], jwks_client=None):
         self.jwks = jwks_client or jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=300)
@@ -72,6 +76,7 @@ class MembershipCache:
         return person
 
 
+# ===== Hàm =====
 def session_for(
     conn: psycopg.Connection,
     claims: dict,

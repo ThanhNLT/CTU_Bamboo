@@ -13,13 +13,16 @@ dùng bộ nhận diện có kiểm tra Luhn của Presidio. Che từng phần �
 Presidio và spaCy nặng (khoảng 2 giây, 100 MB khi nạp) nên nạp lười, một lần cho cả tiến trình.
 """
 
+# ===== Thư viện chuẩn =====
 import re
 import threading
 from dataclasses import dataclass
 
+# ===== Module nội bộ =====
 from .common import ActionError
 from .pii import mask_tail
 
+# ===== Hằng số & cấu hình =====
 LANG = "vi"
 LABELS = {
     "VN_CCCD": "Số CCCD",
@@ -42,6 +45,7 @@ CMND = r"(?i)\b(?:cmnd|chứng minh(?: nhân dân| thư)?)\D{0,15}?(?P<pii>(?<!\
 BANK_ACCOUNT = r"(?i)\b(?:stk|số tài khoản|tài khoản(?: ngân hàng)?)\D{0,20}?(?P<pii>(?<!\d)\d(?:[ .-]?\d){5,19}(?!\d))"
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Finding:
     entity: str
@@ -53,6 +57,7 @@ class Finding:
         return LABELS.get(self.entity, self.entity)
 
 
+# ===== Hàm =====
 def mask_value(entity: str, value: str) -> str:
     """Bản che của một giá trị đã nhận diện."""
     digits = re.sub(r"\D", "", value)
@@ -66,6 +71,7 @@ def mask_value(entity: str, value: str) -> str:
     return mask_tail(digits, 4 if entity == "CREDIT_CARD" else 3)
 
 
+# ===== Lớp =====
 class PiiGuard:
     def __init__(self):
         self._lock = threading.Lock()
@@ -77,7 +83,7 @@ class PiiGuard:
         with self._lock:
             if self._analyzer is not None:
                 return
-            import spacy
+            import spacy  # spaCy
             from presidio_analyzer import (
                 AnalyzerEngine,
                 EntityRecognizer,
@@ -85,11 +91,11 @@ class PiiGuard:
                 PatternRecognizer,
                 RecognizerRegistry,
                 RecognizerResult,
-            )
-            from presidio_analyzer.nlp_engine import SpacyNlpEngine
-            from presidio_analyzer.predefined_recognizers import CreditCardRecognizer
-            from presidio_anonymizer import AnonymizerEngine
-            from presidio_anonymizer.entities import OperatorConfig
+            )  # Presidio
+            from presidio_analyzer.nlp_engine import SpacyNlpEngine  # Presidio
+            from presidio_analyzer.predefined_recognizers import CreditCardRecognizer  # Presidio
+            from presidio_anonymizer import AnonymizerEngine  # Presidio
+            from presidio_anonymizer.entities import OperatorConfig  # Presidio
 
             class BlankNlpEngine(SpacyNlpEngine):
                 """Chỉ tách từ: không tải (và không tự tải về) mô hình spaCy nào."""
@@ -171,11 +177,14 @@ class PiiGuard:
         return value, found
 
 
+# ===== Hằng số & cấu hình =====
 MAX_CHECK_CHARS = 10_000
 
+# ===== Khởi tạo =====
 _guard = PiiGuard()
 
 
+# ===== Hàm =====
 def guard() -> PiiGuard:
     return _guard
 

@@ -12,18 +12,22 @@ Phiếu chỉ chứa dữ liệu của chứng từ (không có giờ in), nên 
 gọi Gotenberg. Mã kiểm tra in ở chân trang là 16 ký tự đầu của mã nội dung.
 """
 
+# ===== Thư viện chuẩn =====
 import hashlib
 import pathlib
 from decimal import ROUND_HALF_UP, Decimal
 
-import httpx
-import jinja2
-import psycopg
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import jinja2  # Jinja2
+import psycopg  # psycopg
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from . import storage
 from .common import ActionError, Context, require_read, session_identity
 
+# ===== Hằng số & cấu hình =====
 TEMPLATES = pathlib.Path(__file__).resolve().parent / "templates"
 # Đổi khi sửa mẫu theo cách không làm đổi HTML (ví dụ tùy chọn khổ giấy) để không dùng lại tệp cũ.
 FORM_VERSION = "1"
@@ -38,6 +42,7 @@ A4 = {
     "preferCssPageSize": "false",
 }
 
+# ===== Khởi tạo =====
 _env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(TEMPLATES),
     autoescape=True,
@@ -46,6 +51,7 @@ _env = jinja2.Environment(
     lstrip_blocks=True,
 )
 
+# ===== Hằng số & cấu hình =====
 STATUS_LABELS = {
     "DRAFT": "Bản nháp",
     "PENDING": "Chờ duyệt",
@@ -63,7 +69,7 @@ STEP_LABELS = {
     "CANCELLED": "Đã hủy",
 }
 
-# --- Số tiền bằng chữ -----------------------------------------------------------------
+# ===== Số tiền bằng chữ =====
 
 _DIGITS = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"]
 
@@ -128,7 +134,7 @@ def number(value, decimals: int = 0) -> str:
 
 _env.filters["number"] = number
 
-# --- Dữ liệu ----------------------------------------------------------------------------
+# ===== Dữ liệu =====
 
 
 def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
@@ -189,7 +195,7 @@ def footer(doc_no: str, check_code: str) -> str:
     return _env.get_template("chan_trang.html").render(doc_no=doc_no, check_code=check_code)
 
 
-# --- Gotenberg --------------------------------------------------------------------------
+# ===== Gotenberg =====
 
 
 class PdfUnavailable(Exception):
@@ -213,7 +219,7 @@ def html_to_pdf(gotenberg_url: str, html: str, footer_html: str, timeout: float 
     return resp.content
 
 
-# --- Hasura Action ----------------------------------------------------------------------
+# ===== Hasura Action =====
 
 
 def get_purchase_request_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:

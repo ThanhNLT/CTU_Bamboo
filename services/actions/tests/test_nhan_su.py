@@ -5,20 +5,25 @@
 """Tiếp nhận nhân sự (ADR #41): dữ liệu nhạy cảm chỉ qua Action (mã hóa, bản che, xem có nhật ký), quyền xem
 qua Hasura, duyệt qua act_on_task, tạo tài khoản Keycloak chạy lại an toàn."""
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 
-import httpx
-import psycopg
-import pytest
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import hr_account
 from app.pii import PiiCipher, mask_address, mask_tail
 from conftest import ids, open_task
 
+# ===== Hằng số & cấu hình =====
 TENANT_SQL = "SELECT test.id('TDX') AS id"
 
 
+# ===== Kiểm thử =====
 def test_ban_che():
     assert mask_tail("079 123 456 789", 3) == "•••••••••789"
     assert mask_tail("12", 4) == "••"
@@ -36,6 +41,7 @@ def test_mat_khau_tam():
     assert hr_account.split_name("Nguyễn Văn An") == ("An", "Nguyễn Văn")
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def hr(conn, org):
     """Phòng nhân sự trong công ty kiểm thử, vai trò NHAN_SU, quy tắc duyệt ONBOARDING của tenant."""
@@ -70,6 +76,7 @@ def pii():
     return PiiCipher(addr, approle)
 
 
+# ===== Kiểm thử =====
 def test_ho_so_qua_hasura(hasura, conn, hr, pii):
     k = hr
     p = ids(conn, k("ns"), k("tp"), k("gd"), k("nv"), k("P_NS"), k("P_NV2"))
@@ -200,7 +207,7 @@ def test_ho_so_qua_hasura(hasura, conn, hr, pii):
     assert done["account_status"] == "PENDING" and done["employee_code"].startswith("NV-")
 
 
-# --- Tạo tài khoản: Keycloak giả --------------------------------------------------
+# ===== Tạo tài khoản: Keycloak giả =====
 
 
 class FakeKeycloak:
