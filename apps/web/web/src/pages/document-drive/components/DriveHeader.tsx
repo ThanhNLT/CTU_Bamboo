@@ -11,12 +11,18 @@ import { useRef } from "react"; // React
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
 // ===== Component =====
-/** Tiêu đề trang + nút "Tải lên" (mở hộp chọn tệp). Tệp luôn thuộc một chứng từ: chỉ tải được khi đang mở thư mục. */
+/**
+ * Tiêu đề trang + nút "Tải lên". Tệp luôn thuộc một chứng từ: đang mở thư mục thì mở thẳng hộp chọn tệp,
+ * ở thư mục gốc thì `onPickTarget` hỏi chứng từ trước.
+ */
 export const DriveHeader = ({
   onUpload,
+  onPickTarget,
   uploadDisabledReason,
 }: {
   onUpload: (files: FileList) => void;
+  /** Có giá trị: chưa mở thư mục, bấm "Tải lên" để chọn chứng từ. */
+  onPickTarget?: () => void;
   uploadDisabledReason?: string;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,7 +39,7 @@ export const DriveHeader = ({
         <Tooltip title={uploadDisabledReason}>
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => (onPickTarget ? onPickTarget() : inputRef.current?.click())}
             disabled={Boolean(uploadDisabledReason)}
             className={
               uploadDisabledReason ? `${secondaryButtonClass} cursor-not-allowed opacity-60` : primaryButtonClass

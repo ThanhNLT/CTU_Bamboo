@@ -161,6 +161,7 @@ HANDLERS = {
     "confirm_upload": attachments.confirm_upload,
     "get_download_url": attachments.get_download_url,
     "delete_attachment": attachments.delete_attachment,
+    "drive_usage": attachments.drive_usage,
     "search_documents": search.search_documents,
     "get_purchase_request_pdf": forms.get_purchase_request_pdf,
     **hr.HANDLERS,

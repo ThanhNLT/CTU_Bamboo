@@ -197,7 +197,12 @@ export const PurchaseRequestShow = () => {
               <Typography.Text strong>{formatMoney(pr.total_amount)}</Typography.Text>
             </Descriptions.Item>
             <Descriptions.Item label="Nhà cung cấp">
-              {pr.partner ? `${pr.partner.code} – ${pr.partner.name}` : "—"}
+              {pr.partner
+                ? `${pr.partner.code} – ${pr.partner.name}`
+                : pr.proposed_partner_name
+                  ? `${pr.proposed_partner_name}${pr.proposed_partner_tax_code ? ` · MST ${pr.proposed_partner_tax_code}` : ""}`
+                  : "—"}
+              {pr.proposed_partner_name && <Tag style={{ marginLeft: 8 }}>Chưa có trong danh mục</Tag>}
               {pr.partner?.internal_unit_id && <Tag style={{ marginLeft: 8 }}>Nội bộ</Tag>}
             </Descriptions.Item>
             {pr.ic_order && (

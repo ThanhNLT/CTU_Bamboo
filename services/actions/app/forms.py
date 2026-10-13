@@ -145,7 +145,8 @@ def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
                   to_char(r.needed_by, 'DD/MM/YYYY') AS needed_by,
                   t.name AS tenant_name, u.name AS unit_name, p.full_name AS requester, p.employee_code,
                   pos.name AS position_name, cat.name AS category,
-                  pa.name AS partner_name, pa.tax_code AS partner_tax_code, pa.address AS partner_address,
+                  coalesce(pa.name, r.proposed_partner_name) AS partner_name,
+                  coalesce(pa.tax_code, r.proposed_partner_tax_code) AS partner_tax_code, pa.address AS partner_address,
                   (SELECT le.name FROM core.org_unit le
                    WHERE le.tenant_id = u.tenant_id AND le.is_legal_entity AND le.path @> u.path
                    ORDER BY nlevel(le.path) DESC LIMIT 1) AS company

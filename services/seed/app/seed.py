@@ -789,28 +789,23 @@ class Seeder:
         ).fetchone()
         self.x("SELECT ic.confirm_order(%s, %s, %s)", order_id, self._holder(tenant, confirmer), json.dumps(lot_lines))
 
-    # ===== Dữ liệu Lakehouse (ADR #45): chạy cả ở bản đã cài, bỏ qua phần đã có =====
-
-    def lakehouse_demo(self):
-        """Vai trò PHAN_TICH_DU_LIEU (xem tập dữ liệu Lakehouse) cho CDO của Tập đoàn X và Kế hoạch tổng hợp BVX."""
-        analysts = {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]}
+    def seat_role(self, code: str, name: str, permission: str, seats: dict[str, list[str]]):
+        """Vai trò một quyền gán cho các ghế, phạm vi cả tenant. Chạy lại không trùng."""
         for t in TENANTS:
             tid = self.tenant_id(t.code)
-            role = uid(t.code, "role", "PHAN_TICH_DU_LIEU")
+            role = uid(t.code, "role", code)
             if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
                 self.x(
-                    """INSERT INTO core.role (tenant_id, id, code, name)
-                          VALUES (%s, %s, 'PHAN_TICH_DU_LIEU', 'Phân tích dữ liệu')""",
-                    tid,
-                    role,
+                    "INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, %s, %s)", tid, role, code, name
                 )
             self.x(
                 """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
-                      VALUES (%s, %s, 'data.lakehouse.read') ON CONFLICT DO NOTHING""",
+                      VALUES (%s, %s, %s) ON CONFLICT DO NOTHING""",
                 tid,
                 role,
+                permission,
             )
-            for seat in analysts.get(t.code, []):
+            for seat in seats.get(t.code, []):
                 position = uid(t.code, "position", seat)
                 if not self.x(
                     "SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", role, position
@@ -823,6 +818,26 @@ class Seeder:
                         position,
                         START,
                     )
+
+    # ===== Dữ liệu Lakehouse (ADR #45), dữ liệu chủ: chạy cả ở bản đã cài, bỏ qua phần đã có =====
+
+    def lakehouse_demo(self):
+        """Vai trò PHAN_TICH_DU_LIEU (xem tập dữ liệu Lakehouse) cho CDO của Tập đoàn X và Kế hoạch tổng hợp BVX."""
+        self.seat_role(
+            "PHAN_TICH_DU_LIEU",
+            "Phân tích dữ liệu",
+            "data.lakehouse.read",
+            {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]},
+        )
+
+    def master_data_admin_demo(self):
+        """Vai trò QUAN_LY_DU_LIEU_CHU (danh mục nhà cung cấp, vật tư; thêm nhà cung cấp người lập đề xuất)."""
+        self.seat_role(
+            "QUAN_LY_DU_LIEU_CHU",
+            "Quản lý dữ liệu chủ",
+            "mdm.manage",
+            {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]},
+        )
 
     def run(self):
         for t in TENANTS:
@@ -851,11 +866,12 @@ class Seeder:
         self.hr_demo()
         self.ic_demo()
         self.lakehouse_demo()
+        self.master_data_admin_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
     """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự, đơn
-    hàng nội bộ, vai trò xem Lakehouse)."""
+    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
@@ -863,6 +879,7 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.hr_demo()
             seeder.ic_demo()
             seeder.lakehouse_demo()
+            seeder.master_data_admin_demo()
         return False
     with conn.transaction():
         Seeder(conn).run()

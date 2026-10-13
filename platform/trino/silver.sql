@@ -541,6 +541,7 @@ SELECT
     json_extract_scalar(after, '$["code"]') AS "code",
     json_extract_scalar(after, '$["name"]') AS "name",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(json_extract_scalar(after, '$["storage_quota_bytes"]') AS bigint) AS "storage_quota_bytes",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -865,6 +866,8 @@ SELECT
     json_extract_scalar(after, '$["description"]') AS "description",
     date_add('day', CAST(json_extract_scalar(after, '$["needed_by"]') AS integer), DATE '1970-01-01') AS "needed_by",
     CAST(json_extract_scalar(after, '$["partner_id"]') AS uuid) AS "partner_id",
+    json_extract_scalar(after, '$["proposed_partner_name"]') AS "proposed_partner_name",
+    json_extract_scalar(after, '$["proposed_partner_tax_code"]') AS "proposed_partner_tax_code",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
