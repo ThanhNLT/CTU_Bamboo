@@ -14,10 +14,15 @@ Với mỗi bảng trong publication bms_cdc (ADR #38):
 Kiểu cột đọc từ CSDL đã migrate; kết quả ghi vào platform/trino/silver.sql (commit vào Git), job trino-init
 chạy tệp này mỗi lần khởi động (idempotent).
 
-    DATABASE_URL=... python -m app.lakehouse_silver [--out đường_dẫn]
+Cùng lúc sinh platform/trino/rules.json, quyền truy cập của Trino (ADR #45): `bms-admin` toàn quyền (trino-init);
+`bms-actions` không đọc được gì, chỉ được mượn danh người dùng tenant `t_<tenant_id>`; người dùng tenant chỉ SELECT
+view silver có cột tenant, mỗi view kèm row filter về đúng tenant đó. Bronze và view không có cột tenant bị chặn.
+
+    DATABASE_URL=... python -m app.lakehouse_silver [--out silver.sql] [--rules-out rules.json]
 """
 
 import argparse
+import json
 import pathlib
 
 import psycopg
@@ -25,7 +30,13 @@ import psycopg
 from . import config
 
 OUT = pathlib.Path(__file__).resolve().parents[3] / "platform/trino/silver.sql"
+RULES_OUT = OUT.with_name("rules.json")
 CATALOG = "lakehouse"
+ADMIN_USER = "bms-admin"
+ACTIONS_USER = "bms-actions"
+# Người dùng Trino của một tenant: t_<uuid tenant>; row filter đọc lại uuid từ current_user.
+TENANT_USER = "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+TENANT_OF_USER = "CAST(substr(current_user, 3) AS uuid)"
 
 _COLUMNS = """
 SELECT pt.schemaname, pt.tablename, a.attname, t.typname, t.typcategory, a.atttypmod,
@@ -87,10 +98,43 @@ def _ident(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
 
-def build(conn: psycopg.Connection) -> str:
+def _tables(conn: psycopg.Connection) -> dict[tuple[str, str], list[tuple]]:
     tables: dict[tuple[str, str], list[tuple]] = {}
     for row in conn.execute(_COLUMNS).fetchall():
         tables.setdefault((row[0], row[1]), []).append(row[2:])
+    return tables
+
+
+def tenant_column(schema: str, table: str, columns: set[str]) -> str | None:
+    """Cột xác định tenant của dòng: tenant_id; bảng core.tenant là chính id."""
+    if "tenant_id" in columns:
+        return "tenant_id"
+    return "id" if (schema, table) == ("core", "tenant") else None
+
+
+def build_rules(conn: psycopg.Connection) -> str:
+    tenant_tables = []
+    for (schema, table), cols in _tables(conn).items():
+        column = tenant_column(schema, table, {c[0] for c in cols})
+        if column:
+            tenant_tables.append({"user": TENANT_USER, "catalog": CATALOG, "schema": "silver",
+                                  "table": f"{schema}_{table}", "privileges": ["SELECT"],
+                                  "filter": f"{_ident(column)} = {TENANT_OF_USER}"})
+    rules = {
+        "impersonation": [{"original_user": ACTIONS_USER, "new_user": TENANT_USER}],
+        "catalogs": [{"user": ADMIN_USER, "allow": "all"},
+                     {"user": TENANT_USER, "catalog": CATALOG, "allow": "read-only"}],
+        "schemas": [{"user": ADMIN_USER, "owner": True},
+                    {"user": TENANT_USER, "catalog": CATALOG, "schema": "silver", "owner": False}],
+        "tables": [{"user": ADMIN_USER,
+                    "privileges": ["SELECT", "INSERT", "DELETE", "UPDATE", "OWNERSHIP", "GRANT_SELECT"]},
+                   *tenant_tables],
+    }
+    return json.dumps(rules, ensure_ascii=False, indent=2) + "\n"
+
+
+def build(conn: psycopg.Connection) -> str:
+    tables = _tables(conn)
     bronze_cols = ",\n    ".join(f"{_ident(n)} {t}" for n, t in bronze_ddl())
     # REUSE-IgnoreStart (tiêu đề giấy phép của tệp SQL sinh ra, không phải của tệp này)
     out = [
@@ -127,12 +171,15 @@ def build(conn: psycopg.Connection) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default=str(OUT))
+    parser.add_argument("--rules-out", default=str(RULES_OUT))
     args = parser.parse_args()
     with psycopg.connect(config.load().database_url) as conn:
-        sql = build(conn)
-    pathlib.Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    pathlib.Path(args.out).write_text(sql, encoding="utf-8")
-    print(f"đã ghi {args.out}: {sql.count('CREATE OR REPLACE VIEW')} view silver")
+        sql, rules = build(conn), build_rules(conn)
+    for path, text in ((args.out, sql), (args.rules_out, rules)):
+        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
+        pathlib.Path(path).write_text(text, encoding="utf-8")
+    print(f"đã ghi {args.out}: {sql.count('CREATE OR REPLACE VIEW')} view silver; "
+          f"{args.rules_out}: {rules.count(chr(34) + 'filter' + chr(34))} view theo tenant")
 
 
 if __name__ == "__main__":

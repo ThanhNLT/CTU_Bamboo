@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql realm psql bao-token
+.PHONY: test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
 
@@ -52,6 +52,10 @@ hasura-metadata:
 trino-sql:
 	docker compose run --rm -u 0 -v ./:/repo actions python -m app.lakehouse_silver
 	docker compose up -d --build trino && docker compose run --rm trino-init
+
+# Mật khẩu bms-admin của Trino (ADR #45) cho giao diện web https://127.0.0.1:8085 trên máy dev.
+trino-password:
+	@docker compose exec trino cat /etc/trino/secrets/admin.password
 
 # Sinh lại realm Keycloak từ danh sách tài khoản demo (services/seed/app/demo.py).
 realm:

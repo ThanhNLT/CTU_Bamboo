@@ -368,6 +368,11 @@ def build(conn: psycopg.Connection) -> dict:
                     "Đối soát chuỗi hash nhật ký kiểm toán của tenant (cần quyền audit.read)", timeout=60),
             _action("audit_log_detail", "query", [("log_ids", "[Int!]!")], "[AuditLogDetail!]!", [ROLE, ADMIN_ROLE],
                     "Dữ liệu trước/sau của dòng nhật ký kiểm toán, đã che dữ liệu cá nhân (cần audit.read, ADR #43)"),
+            _action("lakehouse_datasets", "query", [], "[LakehouseDataset!]!", [ROLE, ADMIN_ROLE],
+                    "Tập dữ liệu tầng silver của tenant (cần data.lakehouse.read, ADR #45)", timeout=30),
+            _action("lakehouse_preview", "query", [("dataset", "String!")], "LakehousePreview!", [ROLE, ADMIN_ROLE],
+                    "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)",
+                    timeout=60),
             _action("check_pii", "query", [("text", "String!")], "PiiCheck!", [ROLE, ADMIN_ROLE],
                     "Phát hiện và che dữ liệu cá nhân trong văn bản trước khi gửi (Presidio, ADR #43)", timeout=10),
             _action("get_upload_url", "mutation",
@@ -528,6 +533,19 @@ def build(conn: psycopg.Connection) -> dict:
                 "name": "AuditLogDetail",
                 "fields": [{"name": "log_id", "type": "Int!"}, {"name": "table_name", "type": "String!"},
                            {"name": "old_data", "type": "jsonb"}, {"name": "new_data", "type": "jsonb"},
+                           {"name": "masked", "type": "[String!]!"}],
+            }, {
+                "name": "LakehouseColumn",
+                "fields": [{"name": "name", "type": "String!"}, {"name": "type", "type": "String!"}],
+            }, {
+                "name": "LakehouseDataset",
+                "fields": [{"name": "name", "type": "String!"}, {"name": "label", "type": "String!"},
+                           {"name": "domain", "type": "String!"}, {"name": "columns", "type": "[LakehouseColumn!]!"}],
+            }, {
+                "name": "LakehousePreview",
+                "fields": [{"name": "name", "type": "String!"}, {"name": "label", "type": "String!"},
+                           {"name": "domain", "type": "String!"}, {"name": "columns", "type": "[LakehouseColumn!]!"},
+                           {"name": "total_rows", "type": "Int!"}, {"name": "rows", "type": "[jsonb!]!"},
                            {"name": "masked", "type": "[String!]!"}],
             }, {
                 "name": "PiiEntity",

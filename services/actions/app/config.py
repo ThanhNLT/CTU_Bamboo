@@ -23,6 +23,8 @@ SECRET_FIELDS = {
     "bms/meilisearch-admin": {"master_key": "meili_master_key"},
     "bms/meilisearch-search": {"key": "meili_search_key"},
     "bms/meilisearch-indexer": {"key": "meili_indexer_key"},
+    "bms/kafka-lakehouse": {"username": "kafka_username", "password": "kafka_password"},
+    "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
 }
 
 
@@ -64,10 +66,16 @@ class Settings:
     tika_url: str
     gotenberg_url: str            # in phiếu PDF (ADR #37)
     kafka_bootstrap: str          # CDC (ADR #38)
+    kafka_username: str           # SCRAM (ADR #45); bỏ trống: Kafka không xác thực (chạy native khi dev)
+    kafka_password: str
     lakehouse_catalog_url: str    # catalog Iceberg (SQLAlchemy, CSDL lakehouse; ADR #39)
     s3_lakehouse_bucket: str
     s3_lakehouse_access_key: str  # lakehouse-sink: chỉ đọc/ghi bucket lakehouse
     s3_lakehouse_secret_key: str
+    trino_url: str                # truy vấn Lakehouse (ADR #45): HTTPS, CA nội bộ của OpenBao
+    trino_ca_file: str
+    trino_user: str               # bms-actions: chỉ mượn danh người dùng tenant t_<tenant_id>
+    trino_password: str
 
 
 # Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
@@ -80,6 +88,8 @@ DEV_DEFAULTS = {
     "FLOWABLE_DB_PASSWORD": "flowable-db-dev",
     "CDC_DB_PASSWORD": "cdc-db-dev",
     "LAKEHOUSE_DB_PASSWORD": "lakehouse-db-dev",
+    "DEBEZIUM_KAFKA_PASSWORD": "debezium-kafka-dev",
+    "LAKEHOUSE_KAFKA_PASSWORD": "lakehouse-kafka-dev",
     "HASURA_GRAPHQL_ADMIN_SECRET": "dev-admin-secret",
     "ACTIONS_SECRET": "dev-actions-secret",
     "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",
@@ -124,6 +134,15 @@ def with_openbao(settings: Settings, bao: Bao) -> Settings:
         if creds:
             changes[attr] = _with_credentials(getattr(settings, attr), creds["username"], creds["password"])
     return replace(settings, **changes)
+
+
+def kafka_options(settings: Settings) -> dict:
+    """Tham số kết nối cho kafka-python: SCRAM-SHA-512 khi có tài khoản (ADR #45)."""
+    options = {"bootstrap_servers": settings.kafka_bootstrap}
+    if settings.kafka_password:
+        options.update(security_protocol="SASL_PLAINTEXT", sasl_mechanism="SCRAM-SHA-512",
+                       sasl_plain_username=settings.kafka_username, sasl_plain_password=settings.kafka_password)
+    return options
 
 
 def _with_credentials(url: str, username: str, password: str) -> str:
@@ -189,9 +208,15 @@ def _from_env() -> Settings:
         tika_url=env("TIKA_URL", "http://tika:9998"),
         gotenberg_url=env("GOTENBERG_URL", "http://gotenberg:3000"),
         kafka_bootstrap=env("KAFKA_BOOTSTRAP", "kafka:9092"),
+        kafka_username=env("KAFKA_USERNAME", ""),
+        kafka_password=env("KAFKA_PASSWORD", ""),
         lakehouse_catalog_url=env("LAKEHOUSE_CATALOG_URL",
                                   "postgresql+psycopg://bamboo_lakehouse:lakehouse-db-dev@db:5432/lakehouse"),
         s3_lakehouse_bucket=env("S3_LAKEHOUSE_BUCKET", "bms-lakehouse"),
         s3_lakehouse_access_key=env("S3_LAKEHOUSE_ACCESS_KEY", "bms-lakehouse"),
         s3_lakehouse_secret_key=env("S3_LAKEHOUSE_SECRET_KEY", "bms-lakehouse-dev-secret"),
+        trino_url=env("TRINO_URL", "https://trino:8443"),
+        trino_ca_file=env("TRINO_CA_FILE", ""),
+        trino_user=env("TRINO_USER", "bms-actions"),
+        trino_password=env("TRINO_PASSWORD", ""),
     )
