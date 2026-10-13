@@ -9,6 +9,7 @@ từ session_variables. Lỗi trả về 400 {message, extensions.code} để Ha
 nguyên cho giao diện.
 """
 
+import hmac
 import logging
 import os
 import pathlib
@@ -242,9 +243,14 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
 
     @app.post("/actions/{name}")
     async def action(name: str, request: Request, x_actions_secret: str | None = Header(default=None)):
-        if x_actions_secret != settings.actions_secret:
+        if not hmac.compare_digest((x_actions_secret or "").encode(), settings.actions_secret.encode()):
             return JSONResponse({"message": "Sai mã bí mật actions", "extensions": {"code": "unauthorized"}}, 401)
-        payload = await request.json()
+        try:
+            payload = await request.json()
+        except ValueError:
+            payload = None
+        if not isinstance(payload, dict):
+            return JSONResponse({"message": "Payload không hợp lệ", "extensions": {"code": "bad-request"}}, 400)
         try:
             # Action gọi CSDL, Flowable, S3, Gotenberg bằng thư viện đồng bộ: chạy ở threadpool để một
             # Action chậm (in phiếu PDF) không chặn event loop, tức chặn cả auth webhook của mọi request khác.

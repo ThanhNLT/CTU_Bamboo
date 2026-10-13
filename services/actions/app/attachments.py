@@ -107,8 +107,8 @@ def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     if ctx.clamav_host:
         try:
             verdict, detail = storage.scan(data, ctx.clamav_host, ctx.clamav_port)
-        except OSError as exc:
-            # Không quét được thì giữ tệp ở bucket cách ly (PENDING), người dùng thử lại sau.
+        except (OSError, RuntimeError) as exc:
+            # Không quét được (mất kết nối, clamd trả lời lạ) thì giữ tệp ở bucket cách ly (PENDING), thử lại sau.
             log.warning("ClamAV lỗi: %s", exc)
             raise ActionError("Chưa quét được virus, thử lại sau", "scanner-unavailable", 503) from exc
     else:
