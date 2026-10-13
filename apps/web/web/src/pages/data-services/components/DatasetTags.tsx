@@ -8,7 +8,12 @@ import { cn } from "../../../utils/cn";
 import type { Dataset } from "../types";
 
 const Tag = ({ className, children }: { className: string; children: ReactNode }) => (
-  <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium", className)}>
+  <span
+    className={cn(
+      "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium",
+      className,
+    )}
+  >
     {children}
   </span>
 );

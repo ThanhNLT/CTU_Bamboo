@@ -41,17 +41,20 @@ export const DocumentDrivePage = () => {
   const files = useMemo(() => sortFiles(drive.files, sort), [drive.files, sort]);
   const sectionLabel = DRIVE_NAV.find((n) => n.key === section)?.label ?? "";
 
-  const openFolder = (id?: string) => setParams((p) => {
-    const next = new URLSearchParams(p);
-    if (id) next.set("folder", id);
-    else next.delete("folder");
-    return next;
-  });
+  const openFolder = (id?: string) =>
+    setParams((p) => {
+      const next = new URLSearchParams(p);
+      if (id) next.set("folder", id);
+      else next.delete("folder");
+      return next;
+    });
 
   const download = async (f: DriveFile) => {
     try {
       const { get_download_url } = await request<{ get_download_url: { url: string } }>(
-        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`, { a: f.id });
+        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`,
+        { a: f.id },
+      );
       window.open(get_download_url.url, "_blank", "noopener");
     } catch (e) {
       message.error((e as Error).message);
@@ -60,20 +63,34 @@ export const DocumentDrivePage = () => {
 
   const uploadDisabledReason = !drive.folder
     ? "Mở thư mục của một chứng từ để tải tệp vào"
-    : drive.folderStatus && LOCKED.has(drive.folderStatus) ? "Chứng từ đã có kết quả, không thêm tệp được" : undefined;
+    : drive.folderStatus && LOCKED.has(drive.folderStatus)
+      ? "Chứng từ đã có kết quả, không thêm tệp được"
+      : undefined;
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 pb-24">
       <DriveHeader
         uploadDisabledReason={uploadDisabledReason}
-        onUpload={(list) => drive.folder && uploads.enqueue(list, { entityType: drive.folder.entityType, entityId: drive.folder.id })}
+        onUpload={(list) =>
+          drive.folder && uploads.enqueue(list, { entityType: drive.folder.entityType, entityId: drive.folder.id })
+        }
       />
 
       {drive.error && <Alert type="error" showIcon message="Không tải được tệp" description={drive.error} />}
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:sticky lg:top-[84px] lg:grid-cols-1" aria-label="Ổ đĩa">
-          <DriveSidebar items={DRIVE_NAV} active={section} onChange={(key) => { setSection(key); openFolder(); }} />
+        <aside
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:sticky lg:top-[84px] lg:grid-cols-1"
+          aria-label="Ổ đĩa"
+        >
+          <DriveSidebar
+            items={DRIVE_NAV}
+            active={section}
+            onChange={(key) => {
+              setSection(key);
+              openFolder();
+            }}
+          />
           <StorageCard segments={drive.storage} />
         </aside>
 
@@ -90,7 +107,10 @@ export const DocumentDrivePage = () => {
             <p className="-mt-1 flex flex-wrap items-center gap-x-3 text-[12.5px] text-muted">
               {drive.folderHint}
               {drive.folder.to && (
-                <Link to={drive.folder.to} className="inline-flex items-center gap-1 text-bamboo-700 hover:underline underline-offset-2">
+                <Link
+                  to={drive.folder.to}
+                  className="inline-flex items-center gap-1 text-bamboo-700 hover:underline underline-offset-2"
+                >
                   Mở chứng từ <ExternalLink className="h-3 w-3" aria-hidden />
                 </Link>
               )}

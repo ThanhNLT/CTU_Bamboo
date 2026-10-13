@@ -11,10 +11,21 @@ import { useSession } from "../../auth/useSession";
  * Truyền tenant vào params để kết quả kiểm tra quyền được lưu đệm RIÊNG cho tenant đang chọn: không dùng lại
  * kết quả "không có quyền" của một lần hỏi sớm hơn, lúc tenant chưa được chọn.
  */
-export const NavGate = ({ access, children }: { access?: { resource: string; action: string }; children: ReactNode }) => {
+export const NavGate = ({
+  access,
+  children,
+}: {
+  access?: { resource: string; action: string };
+  children: ReactNode;
+}) => {
   const { tenant } = useSession();
   return access ? (
-    <CanAccess resource={access.resource} action={access.action} params={{ tenantId: tenant.tenant_id }} fallback={null}>
+    <CanAccess
+      resource={access.resource}
+      action={access.action}
+      params={{ tenantId: tenant.tenant_id }}
+      fallback={null}
+    >
       {children}
     </CanAccess>
   ) : (

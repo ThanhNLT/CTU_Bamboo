@@ -9,7 +9,9 @@ import { NodeGlyph } from "./NodeGlyph";
 
 /** Cột trái: danh sách quy trình + bảng thành phần kéo thả. */
 export const SidebarTools = ({
-  processes, activeId, onSelect,
+  processes,
+  activeId,
+  onSelect,
 }: {
   processes: ProcessDef[];
   activeId: string;

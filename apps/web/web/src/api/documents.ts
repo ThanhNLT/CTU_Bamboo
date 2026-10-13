@@ -80,60 +80,140 @@ const OB = gql`
 const IC = gql`
   query DocsIc($limit: Int, $offset: Int, $order_by: [ic_ic_order_order_by!], $where: ic_ic_order_bool_exp) {
     ic_ic_order(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id doc_no status total_amount created_at updated_at created_by
-      created_by_person { full_name } buyer_unit { name } seller_unit { name }
+      id
+      doc_no
+      status
+      total_amount
+      created_at
+      updated_at
+      created_by
+      created_by_person {
+        full_name
+      }
+      buyer_unit {
+        name
+      }
+      seller_unit {
+        name
+      }
     }
-    ic_ic_order_aggregate(where: $where) { aggregate { count } }
+    ic_ic_order_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 type StepRow = {
-  round: number; step_order: number; status: string; acted_at: string | null;
-  position: { name: string } | null; acted_by_person: { full_name: string } | null;
+  round: number;
+  step_order: number;
+  status: string;
+  acted_at: string | null;
+  position: { name: string } | null;
+  acted_by_person: { full_name: string } | null;
 };
 type PrRow = {
-  id: string; doc_no: string; title: string; status: string; total_amount: number; created_at: string;
-  updated_at: string; requester_id: string; requester: { full_name: string } | null; org_unit: { name: string } | null;
-  approval_round: number; approval_steps: StepRow[];
+  id: string;
+  doc_no: string;
+  title: string;
+  status: string;
+  total_amount: number;
+  created_at: string;
+  updated_at: string;
+  requester_id: string;
+  requester: { full_name: string } | null;
+  org_unit: { name: string } | null;
+  approval_round: number;
+  approval_steps: StepRow[];
 };
 type ObRow = {
-  id: string; doc_no: string; full_name: string; status: string; salary: number | null; created_at: string;
-  updated_at: string; requester_id: string; requester: { full_name: string } | null;
-  target_position: { name: string; org_unit: { name: string } } | null; approval_round: number; approval_steps: StepRow[];
+  id: string;
+  doc_no: string;
+  full_name: string;
+  status: string;
+  salary: number | null;
+  created_at: string;
+  updated_at: string;
+  requester_id: string;
+  requester: { full_name: string } | null;
+  target_position: { name: string; org_unit: { name: string } } | null;
+  approval_round: number;
+  approval_steps: StepRow[];
 };
 type IcRow = {
-  id: string; doc_no: string; status: string; total_amount: number; created_at: string; updated_at: string;
-  created_by: string; created_by_person: { full_name: string } | null; buyer_unit: { name: string } | null;
+  id: string;
+  doc_no: string;
+  status: string;
+  total_amount: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  created_by_person: { full_name: string } | null;
+  buyer_unit: { name: string } | null;
   seller_unit: { name: string } | null;
 };
 
 const stepsOf = (round: number, rows: StepRow[]): DocStep[] =>
-  rows.filter((s) => s.round === round).map((s) => ({
-    order: s.step_order, position: s.position?.name ?? "—", status: s.status,
-    actedBy: s.acted_by_person?.full_name, actedAt: s.acted_at ?? undefined,
-  }));
+  rows
+    .filter((s) => s.round === round)
+    .map((s) => ({
+      order: s.step_order,
+      position: s.position?.name ?? "—",
+      status: s.status,
+      actedBy: s.acted_by_person?.full_name,
+      actedAt: s.acted_at ?? undefined,
+    }));
 
 const fromPr = (r: PrRow): DocSummary => ({
-  id: r.id, kind: "purchase_request", code: r.doc_no, title: r.title, status: r.status,
-  statusLabel: PR_STATUS_LABEL[r.status] ?? r.status, requester: r.requester?.full_name ?? "—", requesterId: r.requester_id,
-  unit: r.org_unit?.name ?? "—", amount: formatMoney(r.total_amount), createdAt: r.created_at, updatedAt: r.updated_at,
-  to: `/p/documents/show/${r.id}`, steps: stepsOf(r.approval_round, r.approval_steps),
+  id: r.id,
+  kind: "purchase_request",
+  code: r.doc_no,
+  title: r.title,
+  status: r.status,
+  statusLabel: PR_STATUS_LABEL[r.status] ?? r.status,
+  requester: r.requester?.full_name ?? "—",
+  requesterId: r.requester_id,
+  unit: r.org_unit?.name ?? "—",
+  amount: formatMoney(r.total_amount),
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  to: `/p/documents/show/${r.id}`,
+  steps: stepsOf(r.approval_round, r.approval_steps),
 });
 
 const fromOb = (r: ObRow): DocSummary => ({
-  id: r.id, kind: "onboarding_request", code: r.doc_no, title: `Tiếp nhận ${r.full_name}`, status: r.status,
-  statusLabel: PR_STATUS_LABEL[r.status] ?? r.status, requester: r.requester?.full_name ?? "—", requesterId: r.requester_id,
+  id: r.id,
+  kind: "onboarding_request",
+  code: r.doc_no,
+  title: `Tiếp nhận ${r.full_name}`,
+  status: r.status,
+  statusLabel: PR_STATUS_LABEL[r.status] ?? r.status,
+  requester: r.requester?.full_name ?? "—",
+  requesterId: r.requester_id,
   unit: r.target_position?.org_unit.name ?? "—",
-  amount: r.salary == null ? "—" : `${formatMoney(r.salary)}/tháng`, createdAt: r.created_at, updatedAt: r.updated_at,
-  to: `/h/onboarding/show/${r.id}`, steps: stepsOf(r.approval_round, r.approval_steps),
+  amount: r.salary == null ? "—" : `${formatMoney(r.salary)}/tháng`,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  to: `/h/onboarding/show/${r.id}`,
+  steps: stepsOf(r.approval_round, r.approval_steps),
 });
 
 const fromIc = (r: IcRow): DocSummary => ({
-  id: r.id, kind: "ic_order", code: r.doc_no,
-  title: `Đơn nội bộ ${r.buyer_unit?.name ?? "?"} → ${r.seller_unit?.name ?? "?"}`, status: r.status,
-  statusLabel: IC_STATUS_LABEL[r.status] ?? r.status, requester: r.created_by_person?.full_name ?? "—",
-  requesterId: r.created_by, unit: r.buyer_unit?.name ?? "—", amount: formatMoney(r.total_amount),
-  createdAt: r.created_at, updatedAt: r.updated_at, to: `/p/ic-orders/show/${r.id}`, steps: [],
+  id: r.id,
+  kind: "ic_order",
+  code: r.doc_no,
+  title: `Đơn nội bộ ${r.buyer_unit?.name ?? "?"} → ${r.seller_unit?.name ?? "?"}`,
+  status: r.status,
+  statusLabel: IC_STATUS_LABEL[r.status] ?? r.status,
+  requester: r.created_by_person?.full_name ?? "—",
+  requesterId: r.created_by,
+  unit: r.buyer_unit?.name ?? "—",
+  amount: formatMoney(r.total_amount),
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  to: `/p/ic-orders/show/${r.id}`,
+  steps: [],
 });
 
 type Options = {
@@ -150,16 +230,28 @@ export const useDocuments = ({ mine, limit = 100 }: Options = {}) => {
     pagination: { pageSize: limit },
     liveMode: "auto" as const,
   };
-  const pr = useList<PrRow>({ resource: "proc_purchase_request", filters: by("requester_id"), meta: { gqlQuery: PR }, ...common });
-  const ob = useList<ObRow>({ resource: "hr_onboarding_request", filters: by("requester_id"), meta: { gqlQuery: OB }, ...common });
+  const pr = useList<PrRow>({
+    resource: "proc_purchase_request",
+    filters: by("requester_id"),
+    meta: { gqlQuery: PR },
+    ...common,
+  });
+  const ob = useList<ObRow>({
+    resource: "hr_onboarding_request",
+    filters: by("requester_id"),
+    meta: { gqlQuery: OB },
+    ...common,
+  });
   const ic = useList<IcRow>({ resource: "ic_ic_order", filters: by("created_by"), meta: { gqlQuery: IC }, ...common });
 
   const prRows = pr.result.data;
   const obRows = ob.result.data;
   const icRows = ic.result.data;
   const documents = useMemo(
-    () => [...prRows.map(fromPr), ...obRows.map(fromOb), ...icRows.map(fromIc)]
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    () =>
+      [...prRows.map(fromPr), ...obRows.map(fromOb), ...icRows.map(fromIc)].sort((a, b) =>
+        b.updatedAt.localeCompare(a.updatedAt),
+      ),
     [prRows, obRows, icRows],
   );
 

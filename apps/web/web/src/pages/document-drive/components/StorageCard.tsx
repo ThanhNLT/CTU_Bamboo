@@ -13,10 +13,10 @@ export const StorageCard = ({ segments }: { segments: StorageSegment[] }) => {
   return (
     <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-labelledby="storage-title">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 id="storage-title" className="text-[14px] font-semibold text-ink">Dung lượng</h2>
-        <span className="text-[12px] tabular-nums text-muted">
-          {formatBytes(used)}
-        </span>
+        <h2 id="storage-title" className="text-[14px] font-semibold text-ink">
+          Dung lượng
+        </h2>
+        <span className="text-[12px] tabular-nums text-muted">{formatBytes(used)}</span>
       </div>
 
       <div

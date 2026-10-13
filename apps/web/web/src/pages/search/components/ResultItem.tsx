@@ -22,7 +22,15 @@ const MARK = "rounded-[3px] bg-yellow-100 text-ink";
 /** Văn bản có các cụm khớp được bọc <mark> nền vàng nhạt. */
 const Highlighted = ({ text, terms }: { text: string; terms: string[] }) => (
   <>
-    {highlight(text, terms).map((s, i) => (s.mark ? <mark key={i} className={MARK}>{s.text}</mark> : <span key={i}>{s.text}</span>))}
+    {highlight(text, terms).map((s, i) =>
+      s.mark ? (
+        <mark key={i} className={MARK}>
+          {s.text}
+        </mark>
+      ) : (
+        <span key={i}>{s.text}</span>
+      ),
+    )}
   </>
 );
 
@@ -30,7 +38,9 @@ const fmtScore = (n: number) => n.toLocaleString("vi-VN", { minimumFractionDigit
 
 /** Một kết quả: biểu tượng theo loại, tiêu đề (liên kết), đường dẫn, đoạn trích tô sáng, thẻ độ khớp. */
 export const ResultItem = ({
-  result, terms, onDownload,
+  result,
+  terms,
+  onDownload,
 }: {
   result: SearchResult;
   terms: string[];
@@ -51,7 +61,9 @@ export const ResultItem = ({
               result.mono && "font-mono text-[13px]",
             )}
           >
-            {result.code && <span className="mr-1.5 font-mono text-[12.5px] font-medium text-muted">{result.code}</span>}
+            {result.code && (
+              <span className="mr-1.5 font-mono text-[12.5px] font-medium text-muted">{result.code}</span>
+            )}
             <Highlighted text={result.title} terms={terms} />
           </Link>
           {result.status && <StatusTag status={result.status} />}
@@ -82,7 +94,9 @@ export const ResultItem = ({
             </span>
           )}
           {result.updatedLabel && (
-            <span className="inline-flex h-6 items-center rounded-full bg-black/[0.045] px-2.5 font-medium text-body">{result.updatedLabel}</span>
+            <span className="inline-flex h-6 items-center rounded-full bg-black/[0.045] px-2.5 font-medium text-body">
+              {result.updatedLabel}
+            </span>
           )}
           {result.attachmentId && (
             <button

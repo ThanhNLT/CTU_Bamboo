@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  type PropsWithChildren,
-  useEffect,
-  useState,
-} from "react";
+import { type PropsWithChildren, useEffect, useState } from "react";
 import { ConfigProvider, theme } from "antd";
 import { ColorModeContext } from "./context";
 
@@ -22,12 +18,11 @@ const BAMBOO_TOKENS = {
   colorBorderSecondary: "#eef1ee",
   colorBgLayout: "#f5f7f5",
   borderRadius: 10,
-  fontFamily: '"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  fontFamily:
+    '"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 };
 
-export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({ children }) => {
   // Bộ giao diện Bamboo hiện chỉ thiết kế nền sáng (xanh tre trên nền trắng), nên mặc định "light"
   // thay vì theo hệ điều hành. Giữ context để sau này bật lại chế độ tối.
   const [mode, setMode] = useState("light");

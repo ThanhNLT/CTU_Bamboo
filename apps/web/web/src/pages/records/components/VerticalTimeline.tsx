@@ -54,7 +54,9 @@ export const VerticalTimeline = ({ steps }: { steps: WorkflowStep[] }) => (
               )}
             />
           )}
-          <span className="relative z-[1] mt-px shrink-0"><Marker state={s.state} /></span>
+          <span className="relative z-[1] mt-px shrink-0">
+            <Marker state={s.state} />
+          </span>
           <div className="min-w-0 pb-0.5">
             <div
               className={cn(

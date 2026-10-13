@@ -16,7 +16,13 @@ import { QualityAlertBanner } from "./components/QualityAlertBanner";
 import { RecentRunsTable } from "./components/RecentRunsTable";
 import { ReportIncidentModal } from "./components/ReportIncidentModal";
 import {
-  computeStatuses, failedChecks, failureSummaries, matchesQuery, openMetadataUrl, reach, scopeOf,
+  computeStatuses,
+  failedChecks,
+  failureSummaries,
+  matchesQuery,
+  openMetadataUrl,
+  reach,
+  scopeOf,
 } from "./graph";
 import { DEFAULT_NODE_ID, LINEAGE_EDGES, LINEAGE_NODES, LINEAGE_UPDATED_AT, RECENT_RUNS } from "./mock";
 import type { Direction, LineageNode } from "./types";
@@ -67,9 +73,9 @@ export const DataLineagePage = () => {
     () =>
       status === "affected"
         ? [...reach(LINEAGE_EDGES, node.id, "up").keys()]
-          .map((id) => BY_ID.get(id))
-          .filter(isNode)
-          .filter((n) => STATUSES.get(n.id) === "failed")
+            .map((id) => BY_ID.get(id))
+            .filter(isNode)
+            .filter((n) => STATUSES.get(n.id) === "failed")
         : [],
     [node.id, status],
   );
@@ -155,7 +161,9 @@ export const DataLineagePage = () => {
         onSubmit={(v) => {
           const target = BY_ID.get(v.nodeId);
           setReporting(false);
-          message.success(`Đã tạo sự cố dữ liệu DQ-2026-0118 cho ${target?.fqn ?? v.nodeId} · đã báo ${target?.owner ?? "chủ sở hữu"}.`);
+          message.success(
+            `Đã tạo sự cố dữ liệu DQ-2026-0118 cho ${target?.fqn ?? v.nodeId} · đã báo ${target?.owner ?? "chủ sở hữu"}.`,
+          );
         }}
       />
     </div>

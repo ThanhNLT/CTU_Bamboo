@@ -23,7 +23,16 @@ const PERIODS: Array<{ value: Period; label: string }> = [
 
 /** Một hàng bộ lọc phía trên mọi biểu đồ: tab · Kỳ · Cơ sở; dưới là các bộ lọc đang bật (có nút gỡ). */
 export const DashboardFilterBar = ({
-  tab, onTabChange, period, onPeriodChange, province, provinces, onProvinceChange, highlightLabel, onClearHighlight, onClearAll,
+  tab,
+  onTabChange,
+  period,
+  onPeriodChange,
+  province,
+  provinces,
+  onProvinceChange,
+  highlightLabel,
+  onClearHighlight,
+  onClearAll,
 }: {
   tab: DashTab;
   onTabChange: (t: DashTab) => void;
@@ -40,7 +49,11 @@ export const DashboardFilterBar = ({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label="Bảng điều hành" className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1">
+        <div
+          role="tablist"
+          aria-label="Bảng điều hành"
+          className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+        >
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -61,7 +74,13 @@ export const DashboardFilterBar = ({
         <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2 text-[12.5px] text-muted">
             Kỳ
-            <Select<Period> value={period} onChange={onPeriodChange} options={PERIODS} style={{ width: 130 }} aria-label="Kỳ" />
+            <Select<Period>
+              value={period}
+              onChange={onPeriodChange}
+              options={PERIODS}
+              style={{ width: 130 }}
+              aria-label="Kỳ"
+            />
           </label>
           <label className="flex items-center gap-2 text-[12.5px] text-muted">
             Cơ sở
@@ -81,8 +100,12 @@ export const DashboardFilterBar = ({
           {highlightLabel && (
             <span className="inline-flex h-7 items-center gap-1 rounded-full border border-bamboo-200 bg-bamboo-50 pl-3 pr-1 text-[12px] font-medium text-bamboo-800">
               Đang tô sáng: {highlightLabel}
-              <button type="button" onClick={onClearHighlight} aria-label="Bỏ tô sáng"
-                      className="grid h-5 w-5 place-items-center rounded-full hover:bg-bamboo-100">
+              <button
+                type="button"
+                onClick={onClearHighlight}
+                aria-label="Bỏ tô sáng"
+                className="grid h-5 w-5 place-items-center rounded-full hover:bg-bamboo-100"
+              >
                 <X className="h-3 w-3" />
               </button>
             </span>
@@ -90,13 +113,21 @@ export const DashboardFilterBar = ({
           {province !== "all" && (
             <span className="inline-flex h-7 items-center gap-1 rounded-full border border-line bg-white pl-3 pr-1 text-[12px] font-medium text-ink">
               Cơ sở: {province}
-              <button type="button" onClick={() => onProvinceChange("all")} aria-label="Bỏ lọc cơ sở"
-                      className="grid h-5 w-5 place-items-center rounded-full hover:bg-canvas">
+              <button
+                type="button"
+                onClick={() => onProvinceChange("all")}
+                aria-label="Bỏ lọc cơ sở"
+                className="grid h-5 w-5 place-items-center rounded-full hover:bg-canvas"
+              >
                 <X className="h-3 w-3" />
               </button>
             </span>
           )}
-          <button type="button" onClick={onClearAll} className="px-1 text-[12px] text-muted hover:text-ink hover:underline underline-offset-2">
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="px-1 text-[12px] text-muted hover:text-ink hover:underline underline-offset-2"
+          >
             Xóa tất cả
           </button>
         </div>

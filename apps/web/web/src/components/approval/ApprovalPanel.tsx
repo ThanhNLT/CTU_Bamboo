@@ -18,38 +18,66 @@ export const ApprovalPanel = ({ round, steps, history, emptyHint }: Props) => {
   return (
     <>
       <Card size="small" title={round ? `Chuỗi duyệt (lần gửi ${round})` : "Chuỗi duyệt"}>
-        {current.length === 0 ? <Typography.Text type="secondary">{emptyHint}</Typography.Text> : (
-          <Steps direction="vertical" size="small" items={current.map((s) => {
-            const open = s.tasks[0];
-            return {
-              status: stepState(s.status),
-              title: `${s.position?.name ?? ""} – ${s.position?.org_unit.name ?? ""}`,
-              description: (
-                <Space direction="vertical" size={0}>
-                  <span>{STEP_STATUS[s.status] ?? s.status}{s.acted_by_person ? `: ${s.acted_by_person.full_name}` : ""}
-                    {s.on_behalf_of_person ? ` (duyệt thay ${s.on_behalf_of_person.full_name})` : ""}</span>
-                  {open?.escalated && <Tag color="orange">Đẩy lên cấp trên: {ESCALATION_REASON[open.escalation_reason ?? ""]}</Tag>}
-                  {open && !open.assignee_id && <Tag color="red">Chờ có người giữ vị trí</Tag>}
-                  {s.note && <Typography.Text type="secondary" italic>“{s.note}”</Typography.Text>}
-                  {s.acted_at && <Typography.Text type="secondary">{formatDate(s.acted_at)}</Typography.Text>}
-                </Space>
-              ),
-            };
-          })} />
+        {current.length === 0 ? (
+          <Typography.Text type="secondary">{emptyHint}</Typography.Text>
+        ) : (
+          <Steps
+            direction="vertical"
+            size="small"
+            items={current.map((s) => {
+              const open = s.tasks[0];
+              return {
+                status: stepState(s.status),
+                title: `${s.position?.name ?? ""} – ${s.position?.org_unit.name ?? ""}`,
+                description: (
+                  <Space direction="vertical" size={0}>
+                    <span>
+                      {STEP_STATUS[s.status] ?? s.status}
+                      {s.acted_by_person ? `: ${s.acted_by_person.full_name}` : ""}
+                      {s.on_behalf_of_person ? ` (duyệt thay ${s.on_behalf_of_person.full_name})` : ""}
+                    </span>
+                    {open?.escalated && (
+                      <Tag color="orange">Đẩy lên cấp trên: {ESCALATION_REASON[open.escalation_reason ?? ""]}</Tag>
+                    )}
+                    {open && !open.assignee_id && <Tag color="red">Chờ có người giữ vị trí</Tag>}
+                    {s.note && (
+                      <Typography.Text type="secondary" italic>
+                        “{s.note}”
+                      </Typography.Text>
+                    )}
+                    {s.acted_at && <Typography.Text type="secondary">{formatDate(s.acted_at)}</Typography.Text>}
+                  </Space>
+                ),
+              };
+            })}
+          />
         )}
       </Card>
       <Card size="small" title="Lịch sử" style={{ marginTop: 16 }}>
-        <Timeline items={history.map((h) => ({
-          children: (
-            <>
-              <b>{HISTORY_EVENT[h.event] ?? h.event}</b>{h.person ? ` – ${h.person.full_name}` : ""}
-              {h.on_behalf_of_person ? ` (thay ${h.on_behalf_of_person.full_name})` : ""}
-              {typeof h.detail?.note === "string" && <div><i>“{h.detail.note}”</i></div>}
-              {typeof h.detail?.reason === "string" && <div><i>{ESCALATION_REASON[h.detail.reason] ?? h.detail.reason}</i></div>}
-              <div><Typography.Text type="secondary">{formatDate(h.created_at)}</Typography.Text></div>
-            </>
-          ),
-        }))} />
+        <Timeline
+          items={history.map((h) => ({
+            children: (
+              <>
+                <b>{HISTORY_EVENT[h.event] ?? h.event}</b>
+                {h.person ? ` – ${h.person.full_name}` : ""}
+                {h.on_behalf_of_person ? ` (thay ${h.on_behalf_of_person.full_name})` : ""}
+                {typeof h.detail?.note === "string" && (
+                  <div>
+                    <i>“{h.detail.note}”</i>
+                  </div>
+                )}
+                {typeof h.detail?.reason === "string" && (
+                  <div>
+                    <i>{ESCALATION_REASON[h.detail.reason] ?? h.detail.reason}</i>
+                  </div>
+                )}
+                <div>
+                  <Typography.Text type="secondary">{formatDate(h.created_at)}</Typography.Text>
+                </div>
+              </>
+            ),
+          }))}
+        />
       </Card>
     </>
   );

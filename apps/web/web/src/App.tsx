@@ -8,11 +8,21 @@ import { ErrorComponent, useNotificationProvider } from "@refinedev/antd";
 // Reset của AntD được nạp trong tailwind.css (layer base) để không đè class Tailwind.
 import "./styles/tailwind.css";
 import routerProvider, {
-  CatchAllNavigate, DocumentTitleHandler, NavigateToResource, UnsavedChangesNotifier,
+  CatchAllNavigate,
+  DocumentTitleHandler,
+  NavigateToResource,
+  UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 import { App as AntdApp, ConfigProvider, Spin } from "antd";
 import viVN from "antd/locale/vi_VN";
-import { AuditOutlined, FileTextOutlined, InboxOutlined, SearchOutlined, SwapOutlined, UserAddOutlined } from "@ant-design/icons";
+import {
+  AuditOutlined,
+  FileTextOutlined,
+  InboxOutlined,
+  SearchOutlined,
+  SwapOutlined,
+  UserAddOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import { lazy, Suspense } from "react";
@@ -43,7 +53,10 @@ import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
 import { OnboardingCreate, OnboardingEdit, OnboardingList, OnboardingShow } from "./pages/onboarding";
 import {
-  PurchaseRequestCreate, PurchaseRequestEdit, PurchaseRequestList, PurchaseRequestShow,
+  PurchaseRequestCreate,
+  PurchaseRequestEdit,
+  PurchaseRequestList,
+  PurchaseRequestShow,
 } from "./pages/purchase-requests";
 import { SearchPage } from "./pages/search";
 import { accessControlProvider } from "./providers/access";
@@ -114,14 +127,23 @@ function App() {
                   },
                   { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
                   { name: "search", list: "/i/search", meta: { label: "Tìm kiếm", icon: <SearchOutlined /> } },
-                  { name: "audit_log", list: "/admin/audit-logs", meta: { label: "Kiểm toán", icon: <AuditOutlined /> } },
+                  {
+                    name: "audit_log",
+                    list: "/admin/audit-logs",
+                    meta: { label: "Kiểm toán", icon: <AuditOutlined /> },
+                  },
                   { name: "admin_org", list: "/admin/org", meta: { label: "Cơ cấu tổ chức" } },
                   { name: "admin_people", list: "/admin/people", meta: { label: "Người dùng" } },
                   { name: "admin_roles", list: "/admin/roles", meta: { label: "Vai trò & phân quyền" } },
                   { name: "admin_catalog", list: "/admin/catalog", meta: { label: "Danh mục & dữ liệu chủ" } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
-                options={{ syncWithLocation: true, warnWhenUnsavedChanges: true, liveMode: "auto", disableTelemetry: true }}
+                options={{
+                  syncWithLocation: true,
+                  warnWhenUnsavedChanges: true,
+                  liveMode: "auto",
+                  disableTelemetry: true,
+                }}
               >
                 <Routes>
                   <Route
@@ -167,7 +189,14 @@ function App() {
                       <Route path="show/:id" element={<OnboardingShow />} />
                     </Route>
                     <Route path="/p/inbox" element={<InboxList />} />
-                    <Route path="/p/process/:id" element={<Suspense fallback={<Spin />}><ProcessDiagram /></Suspense>} />
+                    <Route
+                      path="/p/process/:id"
+                      element={
+                        <Suspense fallback={<Spin />}>
+                          <ProcessDiagram />
+                        </Suspense>
+                      }
+                    />
                     <Route path="/i/search" element={<SearchPage />} />
                     <Route path="/admin/audit-logs" element={<AuditLogList />} />
                     <Route path="/admin/org" element={<OrgPage />} />
@@ -176,12 +205,20 @@ function App() {
                     <Route path="/admin/catalog" element={<CatalogPage />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
-                  <Route element={<Authenticated key="authenticated-outer" fallback={<Outlet />}><NavigateToResource /></Authenticated>}>
+                  <Route
+                    element={
+                      <Authenticated key="authenticated-outer" fallback={<Outlet />}>
+                        <NavigateToResource />
+                      </Authenticated>
+                    }
+                  >
                     <Route path="/login" element={<Login />} />
                   </Route>
                 </Routes>
                 <UnsavedChangesNotifier />
-                <DocumentTitleHandler handler={({ resource }) => `${resource?.meta?.label ?? "Bamboo"} | Bamboo DX-OS`} />
+                <DocumentTitleHandler
+                  handler={({ resource }) => `${resource?.meta?.label ?? "Bamboo"} | Bamboo DX-OS`}
+                />
               </Refine>
             </AntdApp>
           </ConfigProvider>

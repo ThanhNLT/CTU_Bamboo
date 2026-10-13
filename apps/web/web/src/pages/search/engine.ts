@@ -9,7 +9,26 @@ import { CONCEPTS, SEARCH_INDEX } from "./mock";
 import type { Company, Concept, ResultType, SearchMode, SearchResult, SortKey, TimeRange } from "./types";
 
 /** Từ quá phổ biến, bỏ khi khớp từ khóa và tô sáng ("máy bị nóng quá" → "nóng"). */
-const STOPWORDS = new Set(["may", "bi", "qua", "cua", "la", "va", "cho", "the", "nao", "sao", "gi", "co", "khong", "nhu", "rat", "bao", "nhieu", "o"]);
+const STOPWORDS = new Set([
+  "may",
+  "bi",
+  "qua",
+  "cua",
+  "la",
+  "va",
+  "cho",
+  "the",
+  "nao",
+  "sao",
+  "gi",
+  "co",
+  "khong",
+  "nhu",
+  "rat",
+  "bao",
+  "nhieu",
+  "o",
+]);
 
 /** Từ có nghĩa trong câu hỏi, đã bỏ dấu. Giữ "-", "_", "." để tìm được mã như HS-SEMI-2026-00125. */
 export const queryTokens = (q: string) =>
@@ -52,11 +71,23 @@ export const searchIndex = (q: string, mode: SearchMode): SearchResult[] => {
     const semantic = sem >= 0.5 ? sem : undefined;
     if (!keyword && semantic == null) return [];
     const score = Math.min(0.99, Math.max(semantic ?? 0, keyword ? 0.6 : 0) + (keyword && semantic != null ? 0.05 : 0));
-    return [{
-      key: `idx:${item.id}`, type: item.type, company: item.company, title: item.title, breadcrumb: item.breadcrumb,
-      snippet: item.snippet, to: item.to, semantic, keyword, score, daysAgo: item.daysAgo,
-      updatedLabel: item.updatedLabel, mono: item.mono,
-    }];
+    return [
+      {
+        key: `idx:${item.id}`,
+        type: item.type,
+        company: item.company,
+        title: item.title,
+        breadcrumb: item.breadcrumb,
+        snippet: item.snippet,
+        to: item.to,
+        semantic,
+        keyword,
+        score,
+        daysAgo: item.daysAgo,
+        updatedLabel: item.updatedLabel,
+        mono: item.mono,
+      },
+    ];
   });
 };
 

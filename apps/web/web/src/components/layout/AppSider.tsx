@@ -16,15 +16,24 @@ type SiderProps = { collapsed?: boolean; onNavigate?: () => void };
 
 const INBOX_COUNT = gql`
   query InboxCount($limit: Int, $offset: Int, $order_by: [wf_v_inbox_order_by!], $where: wf_v_inbox_bool_exp) {
-    wf_v_inbox(limit: $limit, offset: $offset, order_by: $order_by, where: $where) { task_id }
-    wf_v_inbox_aggregate(where: $where) { aggregate { count } }
+    wf_v_inbox(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+      task_id
+    }
+    wf_v_inbox_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 /** Số việc chờ người dùng (kể cả việc nhận qua ủy quyền), tự cập nhật. */
 const useInboxCount = () => {
   const { result } = useList({
-    resource: "wf_v_inbox", pagination: { pageSize: 1 }, meta: { gqlQuery: INBOX_COUNT }, liveMode: "auto",
+    resource: "wf_v_inbox",
+    pagination: { pageSize: 1 },
+    meta: { gqlQuery: INBOX_COUNT },
+    liveMode: "auto",
   });
   return result.total ?? 0;
 };
@@ -40,9 +49,7 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       className={cn(
         "group relative flex h-9 items-center gap-3 rounded-[10px] text-[13.5px] transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-        active
-          ? "bg-white font-semibold text-ink shadow-card"
-          : "text-body hover:bg-white/60 hover:text-ink",
+        active ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:bg-white/60 hover:text-ink",
         collapsed ? "justify-center" : "px-2.5",
       )}
     >
@@ -62,7 +69,13 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       ) : null}
     </Link>
   );
-  return collapsed ? <Tooltip title={item.label} placement="right">{link}</Tooltip> : link;
+  return collapsed ? (
+    <Tooltip title={item.label} placement="right">
+      {link}
+    </Tooltip>
+  ) : (
+    link
+  );
 };
 
 /** Nội dung menu trái: dùng cho thanh cố định (desktop) và Drawer (mobile). */
@@ -92,28 +105,33 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label="Điều hướng chính">
         {NAV_GROUPS.map((group) => (
           <NavGate key={group.code} access={group.access}>
-          <div className="mt-4 first:mt-1">
-            <div
-              className={cn(
-                "mb-1 flex h-6 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted",
-                collapsed ? "justify-center" : "px-2.5",
-              )}
-            >
-              <span className="w-[18px] text-center text-[10.5px] text-muted/80" aria-hidden={!collapsed}>
-                {group.code}
-              </span>
-              {!collapsed && <span className="truncate">{group.label}</span>}
+            <div className="mt-4 first:mt-1">
+              <div
+                className={cn(
+                  "mb-1 flex h-6 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted",
+                  collapsed ? "justify-center" : "px-2.5",
+                )}
+              >
+                <span className="w-[18px] text-center text-[10.5px] text-muted/80" aria-hidden={!collapsed}>
+                  {group.code}
+                </span>
+                {!collapsed && <span className="truncate">{group.label}</span>}
+              </div>
+              <ul className="m-0 list-none space-y-0.5 p-0">
+                {group.items.map((item) => (
+                  <NavGate key={item.key} access={item.access}>
+                    <li>
+                      <SiderItem
+                        item={{ ...item, badge: badgeOf(item) }}
+                        active={item.key === activeKey}
+                        collapsed={collapsed}
+                        onNavigate={onNavigate}
+                      />
+                    </li>
+                  </NavGate>
+                ))}
+              </ul>
             </div>
-            <ul className="m-0 list-none space-y-0.5 p-0">
-              {group.items.map((item) => (
-                <NavGate key={item.key} access={item.access}>
-                  <li>
-                    <SiderItem item={{ ...item, badge: badgeOf(item) }} active={item.key === activeKey} collapsed={collapsed} onNavigate={onNavigate} />
-                  </li>
-                </NavGate>
-              ))}
-            </ul>
-          </div>
           </NavGate>
         ))}
       </nav>

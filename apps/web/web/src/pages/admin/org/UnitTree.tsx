@@ -14,7 +14,12 @@ type Node = { key: string; title: ReactNode; children: Node[]; isLeaf?: boolean 
 
 /** Cột trái: cây đơn vị (công ty có biểu tượng tòa nhà), ô tìm theo tên / mã, tùy chọn hiện đơn vị đã ngừng. */
 export const UnitTree = ({
-  units, selectedId, onSelect, showEnded, onShowEndedChange, className,
+  units,
+  selectedId,
+  onSelect,
+  showEnded,
+  onShowEndedChange,
+  className,
 }: {
   units: Unit[];
   selectedId?: string;
@@ -34,7 +39,8 @@ export const UnitTree = ({
     // Giữ tổ tiên của đơn vị khớp để cây không bị đứt.
     const keep = new Set<string>();
     for (const id of hit) {
-      for (let u = byId.get(id); u && !keep.has(u.id); u = u.parent_id ? byId.get(u.parent_id) : undefined) keep.add(u.id);
+      for (let u = byId.get(id); u && !keep.has(u.id); u = u.parent_id ? byId.get(u.parent_id) : undefined)
+        keep.add(u.id);
     }
     const nodes = new Map<string, Node>();
     for (const u of visible.filter((x) => keep.has(x.id))) {
@@ -44,7 +50,11 @@ export const UnitTree = ({
         children: [],
         title: (
           <span className={cn("inline-flex min-w-0 items-center gap-1.5", u.period.ended && "text-muted line-through")}>
-            <Icon className={cn("h-3.5 w-3.5 shrink-0", u.is_legal_entity ? "text-bamboo-700" : "text-muted")} strokeWidth={1.75} aria-hidden />
+            <Icon
+              className={cn("h-3.5 w-3.5 shrink-0", u.is_legal_entity ? "text-bamboo-700" : "text-muted")}
+              strokeWidth={1.75}
+              aria-hidden
+            />
             <span className={cn("truncate", q && hit.has(u.id) && "font-semibold")}>{u.name}</span>
           </span>
         ),
@@ -64,8 +74,18 @@ export const UnitTree = ({
   }, [units, query, showEnded]);
 
   return (
-    <section aria-label="Cây đơn vị" className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white p-3 shadow-card", className)}>
-      <SearchInput value={query} onChange={(v) => { setQuery(v); setExpanded(undefined); }} placeholder="Tìm đơn vị theo tên, mã" />
+    <section
+      aria-label="Cây đơn vị"
+      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white p-3 shadow-card", className)}
+    >
+      <SearchInput
+        value={query}
+        onChange={(v) => {
+          setQuery(v);
+          setExpanded(undefined);
+        }}
+        placeholder="Tìm đơn vị theo tên, mã"
+      />
       <div className="mt-2 flex items-center justify-between px-1 text-[11.5px] text-muted">
         <span>{query ? `${matches} kết quả` : `${units.filter((u) => !u.period.ended).length} đơn vị`}</span>
         <Checkbox checked={showEnded} onChange={(e) => onShowEndedChange(e.target.checked)}>
@@ -74,15 +94,15 @@ export const UnitTree = ({
       </div>
       <div className="mt-2 min-h-0 flex-1 overflow-auto">
         <ConfigProvider theme={{ components: { Tree: { nodeSelectedBg: "#e1f0e3", nodeHoverBg: "#f0f7f1" } } }}>
-        <Tree
-          blockNode
-          showLine={{ showLeafIcon: false }}
-          treeData={tree}
-          selectedKeys={selectedId ? [selectedId] : []}
-          expandedKeys={expanded ?? defaultExpanded}
-          onExpand={setExpanded}
-          onSelect={(keys) => keys[0] && onSelect(String(keys[0]))}
-        />
+          <Tree
+            blockNode
+            showLine={{ showLeafIcon: false }}
+            treeData={tree}
+            selectedKeys={selectedId ? [selectedId] : []}
+            expandedKeys={expanded ?? defaultExpanded}
+            onExpand={setExpanded}
+            onSelect={(keys) => keys[0] && onSelect(String(keys[0]))}
+          />
         </ConfigProvider>
       </div>
     </section>

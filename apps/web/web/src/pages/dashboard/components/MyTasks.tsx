@@ -26,7 +26,12 @@ const DUE_STYLE: Record<DueLevel, { pill: string; dot: string; column: string }>
 const DueTag = ({ task }: { task: TaskItem }) => {
   const s = DUE_STYLE[task.dueLevel];
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium", s.pill)}>
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium",
+        s.pill,
+      )}
+    >
       <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} aria-hidden />
       {task.dueLabel}
     </span>
@@ -56,7 +61,9 @@ const TaskRow = ({ task }: { task: TaskItem }) => (
 
 const ListView = ({ tasks }: { tasks: TaskItem[] }) => (
   <ul className="m-0 list-none divide-y divide-line p-0">
-    {tasks.map((t) => <TaskRow key={t.code} task={t} />)}
+    {tasks.map((t) => (
+      <TaskRow key={t.code} task={t} />
+    ))}
   </ul>
 );
 
@@ -73,10 +80,16 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
           </div>
           <div className="space-y-2">
             {items.map((t) => (
-              <Link key={t.code} to={t.to} className="block rounded-lg border border-line bg-white p-2.5 shadow-card hover:border-bamboo-200">
+              <Link
+                key={t.code}
+                to={t.to}
+                className="block rounded-lg border border-line bg-white p-2.5 shadow-card hover:border-bamboo-200"
+              >
                 <Code>{t.code}</Code>
                 <div className="mt-1 text-[13px] font-medium leading-snug text-ink">{t.title}</div>
-                <div className="mt-2"><DueTag task={t} /></div>
+                <div className="mt-2">
+                  <DueTag task={t} />
+                </div>
               </Link>
             ))}
             {items.length === 0 && <div className="px-1 py-3 text-center text-[12px] text-muted">Không có việc</div>}
@@ -106,14 +119,7 @@ export const MyTasks = ({ tasks, total, listLimit = 4 }: { tasks: TaskItem[]; to
   return (
     <Panel
       title="Việc của tôi"
-      extra={
-        <Segmented
-          size="small"
-          options={VIEW_OPTIONS}
-          value={view}
-          onChange={(v) => setView(v as View)}
-        />
-      }
+      extra={<Segmented size="small" options={VIEW_OPTIONS} value={view} onChange={(v) => setView(v as View)} />}
       bodyClassName="px-5 pb-5 pt-1"
     >
       {tasks.length === 0 && <p className="py-6 text-center text-[13px] text-muted">Không có việc nào chờ bạn.</p>}

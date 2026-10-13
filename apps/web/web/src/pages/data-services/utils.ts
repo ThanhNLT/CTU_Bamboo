@@ -21,7 +21,9 @@ export const filterDatasets = (list: Dataset[], query: string, domain: DomainFil
 export const domainCounts = (list: Dataset[]) => {
   const counts = new Map<string, number>();
   for (const d of list) counts.set(d.domain, (counts.get(d.domain) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "vi")).map(([key, count]) => ({ key, count }));
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "vi"))
+    .map(([key, count]) => ({ key, count }));
 };
 
 /** Giá trị một ô của bản xem trước: mảng nối bằng dấu phẩy, null để trống. */

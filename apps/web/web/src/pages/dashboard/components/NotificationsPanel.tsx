@@ -9,7 +9,10 @@ import { Panel, PanelLink, TONE_DOT } from "../../../components/ui";
 
 /** Thông báo mới nhất; bấm vào thì đánh dấu đã đọc và mở chứng từ liên quan. */
 export const NotificationsPanel = ({
-  items, unread, onRead, limit = 3,
+  items,
+  unread,
+  onRead,
+  limit = 3,
 }: {
   items: NotificationItem[];
   unread: number;
@@ -43,7 +46,12 @@ export const NotificationsPanel = ({
                 aria-label={n.read ? "Đã đọc" : "Chưa đọc"}
               />
               <span className="min-w-0">
-                <span className={cn("block text-[13px] leading-snug group-hover:underline", n.read ? "text-body" : "font-medium text-ink")}>
+                <span
+                  className={cn(
+                    "block text-[13px] leading-snug group-hover:underline",
+                    n.read ? "text-body" : "font-medium text-ink",
+                  )}
+                >
                   {n.title}
                 </span>
                 <span className="mt-0.5 block text-[11.5px] text-muted">

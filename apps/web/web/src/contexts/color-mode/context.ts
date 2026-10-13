@@ -9,6 +9,4 @@ export type ColorModeContextType = {
   setMode: (mode: string) => void;
 };
 
-export const ColorModeContext = createContext<ColorModeContextType>(
-  {} as ColorModeContextType
-);
+export const ColorModeContext = createContext<ColorModeContextType>({} as ColorModeContextType);

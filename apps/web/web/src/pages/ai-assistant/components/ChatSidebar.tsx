@@ -12,7 +12,12 @@ const GROUPS: SessionGroup[] = ["today", "yesterday", "lastWeek"];
 
 /** Cột trái: tìm và chọn phiên trò chuyện, nhóm theo thời gian. */
 export const ChatSidebar = ({
-  sessions, activeId, query, onQuery, onSelect, className,
+  sessions,
+  activeId,
+  query,
+  onQuery,
+  onSelect,
+  className,
 }: {
   sessions: ChatSession[];
   activeId: string;
@@ -27,10 +32,16 @@ export const ChatSidebar = ({
     : sessions;
 
   return (
-    <aside aria-label="Lịch sử trò chuyện" className={cn("min-h-0 flex-col rounded-2xl border border-line bg-white p-3 shadow-card", className)}>
+    <aside
+      aria-label="Lịch sử trò chuyện"
+      className={cn("min-h-0 flex-col rounded-2xl border border-line bg-white p-3 shadow-card", className)}
+    >
       <label className="relative block">
         <span className="sr-only">Tìm phiên trò chuyện</span>
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+          aria-hidden
+        />
         <input
           id="chat-session-search"
           type="search"
@@ -42,13 +53,17 @@ export const ChatSidebar = ({
       </label>
 
       <nav className="mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
-        {visible.length === 0 && <p className="px-2 py-6 text-center text-[12.5px] text-muted">Không có phiên phù hợp.</p>}
+        {visible.length === 0 && (
+          <p className="px-2 py-6 text-center text-[12.5px] text-muted">Không có phiên phù hợp.</p>
+        )}
         {GROUPS.map((g) => {
           const items = visible.filter((s) => s.group === g);
           if (!items.length) return null;
           return (
             <section key={g} className="mb-3">
-              <h2 className="px-2 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{GROUP_LABEL[g]}</h2>
+              <h2 className="px-2 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                {GROUP_LABEL[g]}
+              </h2>
               <ul className="m-0 list-none space-y-0.5 p-0">
                 {items.map((s) => {
                   const active = s.id === activeId;

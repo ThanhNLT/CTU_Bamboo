@@ -9,7 +9,11 @@ import type { TwinEntity } from "../types";
 import { ENTITY_STATUS } from "../utils";
 
 const EntityCard = ({
-  entity, selected, showKind, onSelect, onKeyNav,
+  entity,
+  selected,
+  showKind,
+  onSelect,
+  onKeyNav,
 }: {
   entity: TwinEntity;
   selected: boolean;
@@ -48,7 +52,13 @@ const EntityCard = ({
 
 /** Cột trái: ô lọc + danh sách thực thể (cuộn độc lập). Mũi tên lên/xuống để chuyển thực thể. */
 export const EntityList = ({
-  entities, selectedId, query, showKind, onQueryChange, onSelect, className,
+  entities,
+  selectedId,
+  query,
+  showKind,
+  onQueryChange,
+  onSelect,
+  className,
 }: {
   entities: TwinEntity[];
   selectedId?: string;
@@ -68,7 +78,12 @@ export const EntityList = ({
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-3", className)}>
-      <SearchInput value={query} onChange={onQueryChange} placeholder="Lọc thực thể" label="Lọc thực thể theo mã, tên, địa điểm" />
+      <SearchInput
+        value={query}
+        onChange={onQueryChange}
+        placeholder="Lọc thực thể"
+        label="Lọc thực thể theo mã, tên, địa điểm"
+      />
 
       {entities.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-white px-6 py-12 text-center">

@@ -12,7 +12,11 @@ const btn =
 
 /** "1–20 trên 128 hồ sơ" + nút trang tròn. */
 export const Pagination = ({
-  page, pageSize, total, onChange, unit = "hồ sơ",
+  page,
+  pageSize,
+  total,
+  onChange,
+  unit = "hồ sơ",
 }: {
   page: number;
   pageSize: number;
@@ -30,27 +34,42 @@ export const Pagination = ({
         {from}–{to} trên {total} {unit}
       </span>
       <div className="flex items-center gap-1">
-        <button type="button" className={cn(btn, "bg-canvas text-body hover:bg-gray-200/70")} disabled={page <= 1}
-                onClick={() => onChange(page - 1)} aria-label="Trang trước">
+        <button
+          type="button"
+          className={cn(btn, "bg-canvas text-body hover:bg-gray-200/70")}
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+          aria-label="Trang trước"
+        >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
         {pageList(page, pages).map((p, i) =>
           p === null ? (
-            <span key={`gap-${i}`} className="px-1 text-[12px] text-muted" aria-hidden>…</span>
+            <span key={`gap-${i}`} className="px-1 text-[12px] text-muted" aria-hidden>
+              …
+            </span>
           ) : (
             <button
               key={p}
               type="button"
               onClick={() => onChange(p)}
               aria-current={p === page ? "page" : undefined}
-              className={cn(btn, p === page ? "bg-bamboo-600 font-semibold text-white" : "bg-canvas text-body hover:bg-gray-200/70")}
+              className={cn(
+                btn,
+                p === page ? "bg-bamboo-600 font-semibold text-white" : "bg-canvas text-body hover:bg-gray-200/70",
+              )}
             >
               {p}
             </button>
           ),
         )}
-        <button type="button" className={cn(btn, "bg-canvas text-body hover:bg-gray-200/70")} disabled={page >= pages}
-                onClick={() => onChange(page + 1)} aria-label="Trang sau">
+        <button
+          type="button"
+          className={cn(btn, "bg-canvas text-body hover:bg-gray-200/70")}
+          disabled={page >= pages}
+          onClick={() => onChange(page + 1)}
+          aria-label="Trang sau"
+        >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>

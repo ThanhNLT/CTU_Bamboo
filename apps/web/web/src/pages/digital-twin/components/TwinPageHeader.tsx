@@ -12,7 +12,10 @@ const LiveBadge = ({ updatedAt }: { updatedAt: number }) => (
       <span className="relative inline-flex h-2 w-2 rounded-full bg-bamboo-500" />
     </span>
     <span>
-      Trực tiếp · cập nhật <time className="tabular-nums" dateTime={new Date(updatedAt).toISOString()}>{formatClock(updatedAt)}</time>
+      Trực tiếp · cập nhật{" "}
+      <time className="tabular-nums" dateTime={new Date(updatedAt).toISOString()}>
+        {formatClock(updatedAt)}
+      </time>
     </span>
   </span>
 );

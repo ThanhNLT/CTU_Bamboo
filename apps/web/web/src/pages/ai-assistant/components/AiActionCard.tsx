@@ -19,7 +19,10 @@ const primary =
  * `createdCode` có giá trị = đã tạo.
  */
 export const AiActionCard = ({
-  action, createdCode, onEdit, onConfirm,
+  action,
+  createdCode,
+  onEdit,
+  onConfirm,
 }: {
   action: ActionProposal;
   createdCode?: string;
@@ -48,14 +51,21 @@ export const AiActionCard = ({
     </dl>
 
     {createdCode ? (
-      <p className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-bamboo-50 px-3 py-2 text-[12.5px] text-bamboo-800" role="status">
+      <p
+        className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-bamboo-50 px-3 py-2 text-[12.5px] text-bamboo-800"
+        role="status"
+      >
         <CheckCircle2 className="h-4 w-4" aria-hidden />
         Đã tạo hồ sơ nháp <b className="font-mono font-semibold">{createdCode}</b>
-        <Link to="/p/records" className="ml-auto font-semibold underline-offset-2 hover:underline">Mở hồ sơ</Link>
+        <Link to="/p/records" className="ml-auto font-semibold underline-offset-2 hover:underline">
+          Mở hồ sơ
+        </Link>
       </p>
     ) : (
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={onEdit} className={outline}>Mở biểu mẫu để sửa</button>
+        <button type="button" onClick={onEdit} className={outline}>
+          Mở biểu mẫu để sửa
+        </button>
         <button type="button" onClick={onConfirm} className={primary}>
           <Check className="h-4 w-4" aria-hidden />
           Xác nhận tạo nháp

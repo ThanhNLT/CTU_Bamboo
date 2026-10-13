@@ -10,14 +10,29 @@ import { filterArchive, formatInt } from "../utils";
 import { ArchiveDocRow } from "./ArchiveDocRow";
 
 const RULES = [
-  { icon: Droplets, title: "Dấu chìm tên người xem", text: "Mỗi trang phủ tên bạn và thời điểm mở, nên ảnh chụp màn hình vẫn truy được nguồn." },
-  { icon: EyeOff, title: "Không tải xuống", text: "Máy chủ chỉ trả ảnh trang đã đóng dấu; không có tệp gốc trên trình duyệt." },
-  { icon: ScrollText, title: "Ghi nhật ký truy cập", text: "Mọi lần mở đều được ghi lại và niêm phong định kỳ lên sổ cái." },
+  {
+    icon: Droplets,
+    title: "Dấu chìm tên người xem",
+    text: "Mỗi trang phủ tên bạn và thời điểm mở, nên ảnh chụp màn hình vẫn truy được nguồn.",
+  },
+  {
+    icon: EyeOff,
+    title: "Không tải xuống",
+    text: "Máy chủ chỉ trả ảnh trang đã đóng dấu; không có tệp gốc trên trình duyệt.",
+  },
+  {
+    icon: ScrollText,
+    title: "Ghi nhật ký truy cập",
+    text: "Mọi lần mở đều được ghi lại và niêm phong định kỳ lên sổ cái.",
+  },
 ];
 
 /** Tab Phòng đọc ảo: tìm hồ sơ lưu trữ (lạnh, chỉ đọc), nhật ký truy cập, quy tắc. */
 export const ReadingRoomPanel = ({
-  docs, totalArchived, logs, onOpen,
+  docs,
+  totalArchived,
+  logs,
+  onOpen,
 }: {
   docs: ArchiveDoc[];
   totalArchived: number;
@@ -28,7 +43,12 @@ export const ReadingRoomPanel = ({
   const visible = filterArchive(docs, query);
 
   return (
-    <div id="ledger-panel-reading" role="tabpanel" aria-labelledby="ledger-tab-reading" className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,9fr)]">
+    <div
+      id="ledger-panel-reading"
+      role="tabpanel"
+      aria-labelledby="ledger-tab-reading"
+      className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,9fr)]"
+    >
       <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Hồ sơ lưu trữ">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -71,7 +91,10 @@ export const ReadingRoomPanel = ({
           <ul className="m-0 mt-3 list-none space-y-3 p-0">
             {RULES.map((r) => (
               <li key={r.title} className="flex items-start gap-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-bamboo-50 text-bamboo-700" aria-hidden>
+                <span
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-bamboo-50 text-bamboo-700"
+                  aria-hidden
+                >
                   <r.icon className="h-4 w-4" />
                 </span>
                 <span className="min-w-0">

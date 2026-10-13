@@ -14,7 +14,12 @@ import { useUnitTree } from "./useUnitTree";
 type UnitValues = { code: string; name: string; unit_type_id: string; parent_id: string; is_legal_entity: boolean };
 
 export const UnitModal = ({
-  open, org, unit, parentId, onClose, onSaved,
+  open,
+  org,
+  unit,
+  parentId,
+  onClose,
+  onSaved,
 }: {
   open: boolean;
   org: OrgData;
@@ -30,35 +35,67 @@ export const UnitModal = ({
     <FormModal<UnitValues>
       open={open}
       title={unit ? `Sửa đơn vị ${unit.name}` : "Thêm đơn vị"}
-      initial={unit
-        ? { code: unit.code, name: unit.name, unit_type_id: unit.unit_type_id, parent_id: unit.parent_id ?? undefined, is_legal_entity: unit.is_legal_entity }
-        : { parent_id: parentId, is_legal_entity: false }}
+      initial={
+        unit
+          ? {
+              code: unit.code,
+              name: unit.name,
+              unit_type_id: unit.unit_type_id,
+              parent_id: unit.parent_id ?? undefined,
+              is_legal_entity: unit.is_legal_entity,
+            }
+          : { parent_id: parentId, is_legal_entity: false }
+      }
       onCancel={onClose}
       onSubmit={async (v) => onSaved(await adminSave("org_unit", { id: unit?.id, ...v }))}
     >
       {() => (
         <>
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
-            <Form.Item name="code" label="Mã đơn vị" rules={[{ required: true, whitespace: true, message: "Nhập mã" }]}
-                       tooltip="Duy nhất trong tenant; dùng khi nhập từ Excel">
+            <Form.Item
+              name="code"
+              label="Mã đơn vị"
+              rules={[{ required: true, whitespace: true, message: "Nhập mã" }]}
+              tooltip="Duy nhất trong tenant; dùng khi nhập từ Excel"
+            >
               <Input placeholder="PHONG_KT" className="font-mono" />
             </Form.Item>
-            <Form.Item name="name" label="Tên đơn vị" rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}>
+            <Form.Item
+              name="name"
+              label="Tên đơn vị"
+              rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}
+            >
               <Input placeholder="Phòng Kỹ thuật" />
             </Form.Item>
           </div>
-          <Form.Item name="unit_type_id" label="Loại đơn vị" rules={[{ required: true, message: "Chọn loại đơn vị" }]}
-                     extra="Thêm loại mới ở Danh mục & dữ liệu chủ.">
-            <Select showSearch optionFilterProp="label" options={org.unitTypes.map((t) => ({ value: t.id, label: t.name }))} />
+          <Form.Item
+            name="unit_type_id"
+            label="Loại đơn vị"
+            rules={[{ required: true, message: "Chọn loại đơn vị" }]}
+            extra="Thêm loại mới ở Danh mục & dữ liệu chủ."
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              options={org.unitTypes.map((t) => ({ value: t.id, label: t.name }))}
+            />
           </Form.Item>
           {(!unit || unit.parent_id) && (
-            <Form.Item name="parent_id" label="Đơn vị cha" rules={[{ required: true, message: "Chọn đơn vị cha" }]}
-                       extra={unit ? "Đổi đơn vị cha là chuyển cả nhánh; cần quyền ở cả nơi đi và nơi đến." : undefined}>
+            <Form.Item
+              name="parent_id"
+              label="Đơn vị cha"
+              rules={[{ required: true, message: "Chọn đơn vị cha" }]}
+              extra={unit ? "Đổi đơn vị cha là chuyển cả nhánh; cần quyền ở cả nơi đi và nơi đến." : undefined}
+            >
               <TreeSelect treeData={tree} showSearch treeNodeFilterProp="title" treeDefaultExpandAll={false} />
             </Form.Item>
           )}
-          <Form.Item name="is_legal_entity" label="Là công ty (pháp nhân)" valuePropName="checked"
-                     extra="Bật cho công ty con: dùng để xác định công ty khi bổ nhiệm hợp đồng, đơn hàng nội bộ.">
+          <Form.Item
+            name="is_legal_entity"
+            label="Là công ty (pháp nhân)"
+            valuePropName="checked"
+            extra="Bật cho công ty con: dùng để xác định công ty khi bổ nhiệm hợp đồng, đơn hàng nội bộ."
+          >
             <Switch />
           </Form.Item>
         </>
@@ -67,10 +104,21 @@ export const UnitModal = ({
   );
 };
 
-type PositionValues = { name: string; job_title_id?: string; is_head: boolean; reports_to_id?: string; org_unit_id: string };
+type PositionValues = {
+  name: string;
+  job_title_id?: string;
+  is_head: boolean;
+  reports_to_id?: string;
+  org_unit_id: string;
+};
 
 export const PositionModal = ({
-  open, org, position, unitId, onClose, onSaved,
+  open,
+  org,
+  position,
+  unitId,
+  onClose,
+  onSaved,
 }: {
   open: boolean;
   org: OrgData;
@@ -87,33 +135,62 @@ export const PositionModal = ({
     <FormModal<PositionValues>
       open={open}
       title={position ? `Sửa vị trí ${position.name}` : "Thêm vị trí"}
-      initial={position
-        ? { name: position.name, job_title_id: position.job_title_id ?? undefined, is_head: position.is_head,
-            reports_to_id: position.reports_to_id ?? undefined, org_unit_id: position.org_unit_id }
-        : { org_unit_id: unitId, is_head: false }}
+      initial={
+        position
+          ? {
+              name: position.name,
+              job_title_id: position.job_title_id ?? undefined,
+              is_head: position.is_head,
+              reports_to_id: position.reports_to_id ?? undefined,
+              org_unit_id: position.org_unit_id,
+            }
+          : { org_unit_id: unitId, is_head: false }
+      }
       onCancel={onClose}
       onSubmit={async (v) => {
-        await adminSave("position", { id: position?.id, ...v, job_title_id: v.job_title_id ?? null, reports_to_id: v.reports_to_id ?? null });
+        await adminSave("position", {
+          id: position?.id,
+          ...v,
+          job_title_id: v.job_title_id ?? null,
+          reports_to_id: v.reports_to_id ?? null,
+        });
         onSaved();
       }}
     >
       {() => (
         <>
-          <Form.Item name="name" label="Tên vị trí (ghế)" rules={[{ required: true, whitespace: true, message: "Nhập tên vị trí" }]}
-                     extra="Quyền gắn với vị trí, không gắn với người (ADR #5): ai ngồi ghế thì có quyền của ghế.">
+          <Form.Item
+            name="name"
+            label="Tên vị trí (ghế)"
+            rules={[{ required: true, whitespace: true, message: "Nhập tên vị trí" }]}
+            extra="Quyền gắn với vị trí, không gắn với người (ADR #5): ai ngồi ghế thì có quyền của ghế."
+          >
             <Input placeholder="Trưởng phòng / Chuyên viên mua hàng 1" />
           </Form.Item>
           <Form.Item name="org_unit_id" label="Thuộc đơn vị" rules={[{ required: true, message: "Chọn đơn vị" }]}>
             <TreeSelect treeData={tree} showSearch treeNodeFilterProp="title" />
           </Form.Item>
           <Form.Item name="job_title_id" label="Chức danh">
-            <Select allowClear showSearch optionFilterProp="label" options={org.jobTitles.map((t) => ({ value: t.id, label: t.name }))} />
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={org.jobTitles.map((t) => ({ value: t.id, label: t.name }))}
+            />
           </Form.Item>
-          <Form.Item name="is_head" label="Là trưởng đơn vị" valuePropName="checked"
-                     extra="Mỗi đơn vị một trưởng; trưởng đơn vị nằm trong chuỗi duyệt.">
+          <Form.Item
+            name="is_head"
+            label="Là trưởng đơn vị"
+            valuePropName="checked"
+            extra="Mỗi đơn vị một trưởng; trưởng đơn vị nằm trong chuỗi duyệt."
+          >
             <Switch />
           </Form.Item>
-          <Form.Item name="reports_to_id" label="Báo cáo cho" extra="Bỏ trống: báo cáo cho trưởng đơn vị (hoặc trưởng đơn vị cha nếu là trưởng).">
+          <Form.Item
+            name="reports_to_id"
+            label="Báo cáo cho"
+            extra="Bỏ trống: báo cáo cho trưởng đơn vị (hoặc trưởng đơn vị cha nếu là trưởng)."
+          >
             <Select allowClear showSearch optionFilterProp="label" options={reportOptions} />
           </Form.Item>
         </>
@@ -123,12 +200,22 @@ export const PositionModal = ({
 };
 
 type AssignValues = {
-  person_id: string; position_id: string; assignment_type: string; valid_from?: Dayjs; valid_to?: Dayjs;
-  contract_no?: string; contract_partner?: string;
+  person_id: string;
+  position_id: string;
+  assignment_type: string;
+  valid_from?: Dayjs;
+  valid_to?: Dayjs;
+  contract_no?: string;
+  contract_partner?: string;
 };
 
 export const AssignModal = ({
-  open, org, positionId, personId, onClose, onSaved,
+  open,
+  org,
+  positionId,
+  personId,
+  onClose,
+  onSaved,
 }: {
   open: boolean;
   org: OrgData;
@@ -150,25 +237,42 @@ export const AssignModal = ({
       onCancel={onClose}
       onSubmit={async (v) => {
         await adminSave("assignment", {
-          ...v, valid_from: toDate(v.valid_from), valid_to: toDate(v.valid_to),
-          contract_no: v.contract_no ?? null, contract_partner: v.contract_partner ?? null,
+          ...v,
+          valid_from: toDate(v.valid_from),
+          valid_to: toDate(v.valid_to),
+          contract_no: v.contract_no ?? null,
+          contract_partner: v.contract_partner ?? null,
         });
         onSaved();
       }}
     >
       {(form) => (
         <>
-          <Form.Item name="person_id" label="Người" rules={[{ required: true, message: "Chọn người" }]}
-                     extra={personId ? undefined : "Chưa có trong danh sách? Thêm ở trang Người dùng."}>
-            <Select showSearch optionFilterProp="label" disabled={Boolean(personId)}
-                    options={org.people.map((p) => ({ value: p.id, label: p.employee_code ? `${p.full_name} · ${p.employee_code}` : p.full_name }))} />
+          <Form.Item
+            name="person_id"
+            label="Người"
+            rules={[{ required: true, message: "Chọn người" }]}
+            extra={personId ? undefined : "Chưa có trong danh sách? Thêm ở trang Người dùng."}
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              disabled={Boolean(personId)}
+              options={org.people.map((p) => ({
+                value: p.id,
+                label: p.employee_code ? `${p.full_name} · ${p.employee_code}` : p.full_name,
+              }))}
+            />
           </Form.Item>
           <Form.Item name="position_id" label="Vị trí còn trống" rules={[{ required: true, message: "Chọn vị trí" }]}>
             <Select showSearch optionFilterProp="label" disabled={Boolean(positionId)} options={vacant} />
           </Form.Item>
           <Form.Item name="assignment_type" label="Loại bổ nhiệm" rules={[{ required: true }]}>
-            <Radio.Group optionType="button" buttonStyle="solid"
-                         options={Object.entries(ASSIGNMENT_LABEL).map(([value, label]) => ({ value, label }))} />
+            <Radio.Group
+              optionType="button"
+              buttonStyle="solid"
+              options={Object.entries(ASSIGNMENT_LABEL).map(([value, label]) => ({ value, label }))}
+            />
           </Form.Item>
           <div className="grid grid-cols-2 gap-x-4">
             <Form.Item name="valid_from" label="Từ ngày" extra="Bỏ trống: từ bây giờ">
@@ -176,27 +280,42 @@ export const AssignModal = ({
             </Form.Item>
             <Form.Item noStyle dependencies={["assignment_type"]}>
               {() => (
-                <Form.Item name="valid_to" label="Đến ngày"
-                           rules={[{ required: form.getFieldValue("assignment_type") === "CONTRACT", message: "Hợp đồng phải có ngày kết thúc" }]}>
+                <Form.Item
+                  name="valid_to"
+                  label="Đến ngày"
+                  rules={[
+                    {
+                      required: form.getFieldValue("assignment_type") === "CONTRACT",
+                      message: "Hợp đồng phải có ngày kết thúc",
+                    },
+                  ]}
+                >
                   <DatePicker format="DD/MM/YYYY" className="w-full" />
                 </Form.Item>
               )}
             </Form.Item>
           </div>
           <Form.Item noStyle dependencies={["assignment_type"]}>
-            {() => form.getFieldValue("assignment_type") === "CONTRACT" && (
-              <div className="grid grid-cols-2 gap-x-4">
-                <Form.Item name="contract_no" label="Số hợp đồng" rules={[{ required: true, whitespace: true, message: "Nhập số hợp đồng" }]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item name="contract_partner" label="Bên thuê / đối tác">
-                  <Input />
-                </Form.Item>
-              </div>
-            )}
+            {() =>
+              form.getFieldValue("assignment_type") === "CONTRACT" && (
+                <div className="grid grid-cols-2 gap-x-4">
+                  <Form.Item
+                    name="contract_no"
+                    label="Số hợp đồng"
+                    rules={[{ required: true, whitespace: true, message: "Nhập số hợp đồng" }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item name="contract_partner" label="Bên thuê / đối tác">
+                    <Input />
+                  </Form.Item>
+                </div>
+              )
+            }
           </Form.Item>
           <p className="m-0 text-[12px] text-muted">
-            Mỗi người chỉ giữ chính một ghế tại một thời điểm; hợp đồng không giữ ghế trưởng và phải ở công ty khác công ty giữ chính (ADR #29).
+            Mỗi người chỉ giữ chính một ghế tại một thời điểm; hợp đồng không giữ ghế trưởng và phải ở công ty khác công
+            ty giữ chính (ADR #29).
           </p>
         </>
       )}

@@ -10,7 +10,9 @@ export const useUnitTree = (org: OrgData, exclude?: string) =>
   useMemo(() => {
     type Node = { value: string; title: string; children: Node[] };
     const active = org.units.filter((u) => u.period.active && u.id !== exclude);
-    const nodes = new Map(active.map((u) => [u.id, { value: u.id, title: `${u.name} · ${u.code}`, children: [] as Node[] }]));
+    const nodes = new Map(
+      active.map((u) => [u.id, { value: u.id, title: `${u.name} · ${u.code}`, children: [] as Node[] }]),
+    );
     const roots: Node[] = [];
     for (const u of active) {
       const node = nodes.get(u.id)!;

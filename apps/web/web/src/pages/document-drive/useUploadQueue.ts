@@ -21,7 +21,8 @@ const put = (url: string, file: File, contentType: string, onProgress: (pct: num
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
-    xhr.onload = () => (xhr.status < 300 ? resolve() : reject(new Error(`Tải lên kho lưu trữ thất bại (${xhr.status})`)));
+    xhr.onload = () =>
+      xhr.status < 300 ? resolve() : reject(new Error(`Tải lên kho lưu trữ thất bại (${xhr.status})`));
     xhr.onerror = () => reject(new Error("Mất kết nối khi tải lên"));
     xhr.send(file);
   });
@@ -34,16 +35,25 @@ export const useUploadQueue = () => {
   const uploadOne = useCallback(async (id: string, file: File, target: Target) => {
     try {
       if (file.size > MAX_BYTES) throw new Error("Tệp phải nhỏ hơn 25 MB");
-      const { get_upload_url: t } = await request<{ get_upload_url: { attachment_id: string; upload_url: string; content_type: string } }>(
+      const { get_upload_url: t } = await request<{
+        get_upload_url: { attachment_id: string; upload_url: string; content_type: string };
+      }>(
         `mutation Up($entity: String!, $id: uuid!, $name: String!, $type: String!, $size: Int!) {
            get_upload_url(entity_type: $entity, entity_id: $id, file_name: $name, content_type: $type, size_bytes: $size) {
              attachment_id upload_url content_type } }`,
-        { entity: target.entityType, id: target.entityId, name: file.name, type: file.type || "application/octet-stream", size: file.size },
+        {
+          entity: target.entityType,
+          id: target.entityId,
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          size: file.size,
+        },
       );
       await put(t.upload_url, file, t.content_type, (progress) => patch(id, { progress }));
       patch(id, { progress: 100, status: "scanning" });
       const { confirm_upload: r } = await request<{ confirm_upload: { status: string; scan_result: string | null } }>(
-        `mutation Confirm($a: uuid!) { confirm_upload(attachment_id: $a) { status scan_result } }`, { a: t.attachment_id },
+        `mutation Confirm($a: uuid!) { confirm_upload(attachment_id: $a) { status scan_result } }`,
+        { a: t.attachment_id },
       );
       patch(id, r.status === "CLEAN" ? { status: "clean" } : { status: "blocked", error: r.scan_result ?? r.status });
     } catch (e) {
@@ -51,14 +61,18 @@ export const useUploadQueue = () => {
     }
   }, []);
 
-  const enqueue = useCallback((files: FileList | File[], target: Target) => {
-    const stamp = Date.now();
-    const added = Array.from(files).map((file, i) => ({
-      file, item: { id: `${stamp}-${i}-${file.name}`, name: file.name, progress: 0, status: "uploading" as const },
-    }));
-    setItems((prev) => [...prev, ...added.map((a) => a.item)]);
-    for (const a of added) void uploadOne(a.item.id, a.file, target);
-  }, [uploadOne]);
+  const enqueue = useCallback(
+    (files: FileList | File[], target: Target) => {
+      const stamp = Date.now();
+      const added = Array.from(files).map((file, i) => ({
+        file,
+        item: { id: `${stamp}-${i}-${file.name}`, name: file.name, progress: 0, status: "uploading" as const },
+      }));
+      setItems((prev) => [...prev, ...added.map((a) => a.item)]);
+      for (const a of added) void uploadOne(a.item.id, a.file, target);
+    },
+    [uploadOne],
+  );
 
   const clearFinished = useCallback(() => {
     setItems((prev) => prev.filter((i) => i.status === "uploading" || i.status === "scanning"));

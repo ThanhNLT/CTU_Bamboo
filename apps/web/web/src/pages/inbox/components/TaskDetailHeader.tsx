@@ -19,7 +19,12 @@ const navBtn =
 
 /** Mã · bước duyệt, tiêu đề, nhãn SLA, liên kết chứng từ và nút Trước (K) / Kế tiếp (J). */
 export const TaskDetailHeader = ({
-  task, onPrev, onNext, hasPrev, hasNext, to,
+  task,
+  onPrev,
+  onNext,
+  hasPrev,
+  hasNext,
+  to,
 }: {
   task: InboxTask;
   onPrev: () => void;
@@ -34,7 +39,10 @@ export const TaskDetailHeader = ({
       <div className="font-mono text-[11.5px] tracking-tight text-muted">
         {task.code} · Duyệt cấp {task.level}
         {to && (
-          <Link to={to} className="ml-2 inline-flex items-center gap-1 font-sans text-bamboo-700 hover:underline underline-offset-2">
+          <Link
+            to={to}
+            className="ml-2 inline-flex items-center gap-1 font-sans text-bamboo-700 hover:underline underline-offset-2"
+          >
             Mở chứng từ <ExternalLink className="h-3 w-3" aria-hidden />
           </Link>
         )}

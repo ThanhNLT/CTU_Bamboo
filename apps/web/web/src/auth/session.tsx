@@ -38,15 +38,28 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
   }, []);
 
   if (error) {
-    return <Alert type="error" showIcon style={{ margin: 48 }} message="Không lấy được danh sách tenant" description={error} />;
+    return (
+      <Alert
+        type="error"
+        showIcon
+        style={{ margin: 48 }}
+        message="Không lấy được danh sách tenant"
+        description={error}
+      />
+    );
   }
   if (!tenants) {
     return <Spin fullscreen tip="Đang tải phiên làm việc..." />;
   }
   if (tenants.length === 0) {
     return (
-      <Alert type="warning" showIcon style={{ margin: 48 }} message="Tài khoản chưa thuộc tenant nào"
-             description="Liên hệ quản trị để được bổ nhiệm vào một đơn vị." />
+      <Alert
+        type="warning"
+        showIcon
+        style={{ margin: 48 }}
+        message="Tài khoản chưa thuộc tenant nào"
+        description="Liên hệ quản trị để được bổ nhiệm vào một đơn vị."
+      />
     );
   }
   const tenant = tenants.find((t) => t.tenant_id === selected);
@@ -61,8 +74,15 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
             dataSource={tenants}
             renderItem={(t) => (
               <List.Item>
-                <Button block size="large" icon={t.tenant_code === "BVX" ? <MedicineBoxOutlined /> : <BankOutlined />}
-                        onClick={() => { setTenant(t.tenant_id); setSelected(t.tenant_id); }}>
+                <Button
+                  block
+                  size="large"
+                  icon={t.tenant_code === "BVX" ? <MedicineBoxOutlined /> : <BankOutlined />}
+                  onClick={() => {
+                    setTenant(t.tenant_id);
+                    setSelected(t.tenant_id);
+                  }}
+                >
                   {t.tenant_name} — {t.full_name}
                 </Button>
               </List.Item>

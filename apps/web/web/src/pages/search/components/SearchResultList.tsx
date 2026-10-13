@@ -15,7 +15,18 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
 
 /** Cột kết quả: tổng số + thời gian, sắp xếp, danh sách, "Xem thêm". */
 export const SearchResultList = ({
-  query, results, total, moreOnServer, elapsedMs, sort, onSortChange, onShowMore, loading, error, terms, onDownload,
+  query,
+  results,
+  total,
+  moreOnServer,
+  elapsedMs,
+  sort,
+  onSortChange,
+  onShowMore,
+  loading,
+  error,
+  terms,
+  onDownload,
 }: {
   query: string;
   /** Kết quả đang hiển thị (đã cắt trang). */
@@ -43,7 +54,13 @@ export const SearchResultList = ({
           </b>{" "}
           · {formatSeconds(elapsedMs)}
         </p>
-        <Select<SortKey> value={sort} onChange={onSortChange} options={SORT_OPTIONS} style={{ width: 150 }} aria-label="Sắp xếp kết quả" />
+        <Select<SortKey>
+          value={sort}
+          onChange={onSortChange}
+          options={SORT_OPTIONS}
+          style={{ width: 150 }}
+          aria-label="Sắp xếp kết quả"
+        />
       </div>
 
       {error && (

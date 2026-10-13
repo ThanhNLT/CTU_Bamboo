@@ -34,19 +34,36 @@ export const PurchaseRequestEdit = () => {
   }
 
   const initial: Partial<PrFormValues> = {
-    title: pr.title, description: pr.description ?? undefined, requester_position_id: pr.requester_position_id,
-    category_code: pr.category_code, partner_id: pr.partner_id, needed_by: pr.needed_by ? dayjs(pr.needed_by) : null,
+    title: pr.title,
+    description: pr.description ?? undefined,
+    requester_position_id: pr.requester_position_id,
+    category_code: pr.category_code,
+    partner_id: pr.partner_id,
+    needed_by: pr.needed_by ? dayjs(pr.needed_by) : null,
     items: pr.purchase_request_items.map((i) => ({
-      item_id: i.item_id, description: i.description, uom: i.uom, quantity: Number(i.quantity),
-      unit_price: Number(i.unit_price), note: i.note ?? undefined,
+      item_id: i.item_id,
+      description: i.description,
+      uom: i.uom,
+      quantity: Number(i.quantity),
+      unit_price: Number(i.unit_price),
+      note: i.note ?? undefined,
     })),
   };
   return (
     <Edit title={`Sửa ${pr.doc_no}`} footerButtons={() => null} headerButtons={() => null}>
-      {pr.status === "RETURNED" && <Alert style={{ marginBottom: 16 }} type="warning" showIcon
-        message="Đề nghị bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại (chuỗi duyệt tính lại theo hạn mức hiện hành)." />}
-      <PurchaseRequestForm id={pr.id} initial={initial}
-        onSaved={(savedId) => go({ to: { resource: "proc_purchase_request", action: "show", id: savedId } })} />
+      {pr.status === "RETURNED" && (
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="warning"
+          showIcon
+          message="Đề nghị bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại (chuỗi duyệt tính lại theo hạn mức hiện hành)."
+        />
+      )}
+      <PurchaseRequestForm
+        id={pr.id}
+        initial={initial}
+        onSaved={(savedId) => go({ to: { resource: "proc_purchase_request", action: "show", id: savedId } })}
+      />
     </Edit>
   );
 };

@@ -10,8 +10,15 @@ import { useEffect, useId, useState, type ReactNode } from "react";
  * Hộp thoại form quản trị: điền sẵn khi mở, kiểm tra trường, gọi `onSubmit` (Action), báo lỗi máy chủ nguyên văn và
  * giữ hộp thoại mở để sửa.
  */
-export const FormModal = <T extends object,>({
-  open, title, okText = "Lưu", initial, onCancel, onSubmit, children, width = 560,
+export const FormModal = <T extends object>({
+  open,
+  title,
+  okText = "Lưu",
+  initial,
+  onCancel,
+  onSubmit,
+  children,
+  width = 560,
 }: {
   open: boolean;
   title: string;

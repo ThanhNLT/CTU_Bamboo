@@ -16,7 +16,15 @@ const PILL: Record<string, string> = {
 };
 
 /** Trạng thái hồ sơ: chấm màu (hoặc ổ khóa khi đã đóng) + chữ. `pill` dùng ở khung chi tiết. */
-export const RecordStatusBadge = ({ status, label, pill = false }: { status: RecordStatus; label: string; pill?: boolean }) => {
+export const RecordStatusBadge = ({
+  status,
+  label,
+  pill = false,
+}: {
+  status: RecordStatus;
+  label: string;
+  pill?: boolean;
+}) => {
   const v = STATUS_VIEW[status];
   return (
     <span
@@ -25,11 +33,7 @@ export const RecordStatusBadge = ({ status, label, pill = false }: { status: Rec
         pill ? cn("rounded-full px-2.5 py-0.5 text-[11.5px] font-medium", PILL[v.tone]) : "text-[12.5px] text-body",
       )}
     >
-      {v.locked ? (
-        <Lock className="h-3 w-3 text-muted" strokeWidth={2} aria-hidden />
-      ) : (
-        <Dot tone={v.tone} size="md" />
-      )}
+      {v.locked ? <Lock className="h-3 w-3 text-muted" strokeWidth={2} aria-hidden /> : <Dot tone={v.tone} size="md" />}
       {label}
     </span>
   );

@@ -5,7 +5,12 @@
 import type { ReactElement } from "react";
 import { Tag } from "antd";
 import {
-  CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EditOutlined, RollbackOutlined, StopOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
+  EditOutlined,
+  RollbackOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
 import { PR_STATUS_LABEL } from "../utils/status";
 
@@ -21,8 +26,17 @@ const STYLE: Record<string, { color: string; icon: ReactElement }> = {
   CANCELLED: { color: "default", icon: <StopOutlined /> },
 };
 
-export const StatusTag = ({ status, labels = PR_STATUS_LABEL }: { status: string; labels?: Record<string, string> }) => {
+export const StatusTag = ({
+  status,
+  labels = PR_STATUS_LABEL,
+}: {
+  status: string;
+  labels?: Record<string, string>;
+}) => {
   const s = STYLE[status];
-  return <Tag color={s?.color} icon={s?.icon}>{labels[status] ?? status}</Tag>;
+  return (
+    <Tag color={s?.color} icon={s?.icon}>
+      {labels[status] ?? status}
+    </Tag>
+  );
 };
-

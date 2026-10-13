@@ -4,7 +4,16 @@
 
 import { App } from "antd";
 import {
-  ChevronLeft, ChevronRight, Download, FileIcon, ImageIcon, Loader2, Minus, Plus, ShieldAlert, ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileIcon,
+  ImageIcon,
+  Loader2,
+  Minus,
+  Plus,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { request } from "../../../api/client";
@@ -37,9 +46,13 @@ const PaperPage = ({ preview, page }: { preview: DocPreview; page: number }) => 
     ) : (
       <>
         <div className="text-[10px] font-semibold text-ink">Trang {page}</div>
-        {["w-full", "w-11/12", "w-10/12", "w-full", "w-9/12", "w-11/12", "w-6/12"].map((w, i) => <Line key={i} w={w} />)}
+        {["w-full", "w-11/12", "w-10/12", "w-full", "w-9/12", "w-11/12", "w-6/12"].map((w, i) => (
+          <Line key={i} w={w} />
+        ))}
         <div className="my-1 h-16 rounded-lg border border-line bg-canvas" />
-        {["w-full", "w-10/12", "w-8/12"].map((w, i) => <Line key={`b${i}`} w={w} />)}
+        {["w-full", "w-10/12", "w-8/12"].map((w, i) => (
+          <Line key={`b${i}`} w={w} />
+        ))}
       </>
     )}
   </div>
@@ -47,9 +60,11 @@ const PaperPage = ({ preview, page }: { preview: DocPreview; page: number }) => 
 
 const ImagePreview = ({ name, kind }: { name: string; kind: Attachment["kind"] }) => (
   <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-lg bg-linear-to-br from-bamboo-50 to-canvas text-muted">
-    {kind === "image"
-      ? <ImageIcon className="h-8 w-8" strokeWidth={1.25} aria-hidden />
-      : <FileIcon className="h-8 w-8" strokeWidth={1.25} aria-hidden />}
+    {kind === "image" ? (
+      <ImageIcon className="h-8 w-8" strokeWidth={1.25} aria-hidden />
+    ) : (
+      <FileIcon className="h-8 w-8" strokeWidth={1.25} aria-hidden />
+    )}
     <span className="text-[11px]">{name}</span>
   </div>
 );
@@ -64,7 +79,9 @@ const useDownload = () => {
   return async (attachmentId: string) => {
     try {
       const { get_download_url } = await request<{ get_download_url: { url: string } }>(
-        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`, { a: attachmentId });
+        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`,
+        { a: attachmentId },
+      );
       window.open(get_download_url.url, "_blank", "noopener");
     } catch (e) {
       message.error((e as Error).message);
@@ -77,7 +94,11 @@ const useDownload = () => {
  * Trang đầu dựng từ thông tin chứng từ (máy chủ chưa dựng ảnh trang); nội dung thật mở bằng nút Tải tệp.
  * Chứng từ không có tệp thì chỉ hiện trang đầu.
  */
-export const DocumentViewer = ({ attachments, preview, className }: {
+export const DocumentViewer = ({
+  attachments,
+  preview,
+  className,
+}: {
   attachments: Attachment[];
   preview: DocPreview;
   className?: string;
@@ -98,7 +119,10 @@ export const DocumentViewer = ({ attachments, preview, className }: {
   const z = ZOOM_STEPS.indexOf(zoom);
 
   return (
-    <section aria-label="Tài liệu đính kèm" className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white p-4 shadow-card", className)}>
+    <section
+      aria-label="Tài liệu đính kèm"
+      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white p-4 shadow-card", className)}
+    >
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Tệp đính kèm">
         {attachments.map((a, i) => (
           <button
@@ -136,8 +160,11 @@ export const DocumentViewer = ({ attachments, preview, className }: {
             {file.scan === "clean" ? "Sạch (ClamAV)" : file.scan === "pending" ? "Đang kiểm dịch" : "Bị chặn · mã độc"}
             {file.sha256 && (
               <>
-                {" "}· SHA-256{" "}
-                <span className="font-mono text-[11px]" title={file.sha256}>{shortHash(file.sha256)}</span>
+                {" "}
+                · SHA-256{" "}
+                <span className="font-mono text-[11px]" title={file.sha256}>
+                  {shortHash(file.sha256)}
+                </span>
               </>
             )}
           </span>
@@ -160,9 +187,11 @@ export const DocumentViewer = ({ attachments, preview, className }: {
               className="mx-auto rounded-md bg-white p-6 shadow-[0_6px_24px_-6px_rgb(16_24_20/0.18)] transition-[width] duration-200"
               style={{ width: `${(340 * zoom) / 100}px`, maxWidth: zoom <= 100 ? "100%" : undefined }}
             >
-              {!file || file.kind === "pdf"
-                ? <PaperPage preview={preview} page={page} />
-                : <ImagePreview name={file.name} kind={file.kind} />}
+              {!file || file.kind === "pdf" ? (
+                <PaperPage preview={preview} page={page} />
+              ) : (
+                <ImagePreview name={file.name} kind={file.kind} />
+              )}
             </div>
           ) : file.scan === "pending" ? (
             <div className="flex h-full items-center justify-center text-[13px] text-muted">
@@ -177,21 +206,45 @@ export const DocumentViewer = ({ attachments, preview, className }: {
 
         {(!file || file.scan === "clean") && (
           <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-line bg-white px-1.5 py-1 shadow-float">
-            <button type="button" className={toolBtn} onClick={() => setZoom(ZOOM_STEPS[z - 1])} disabled={z <= 0} aria-label="Thu nhỏ">
+            <button
+              type="button"
+              className={toolBtn}
+              onClick={() => setZoom(ZOOM_STEPS[z - 1])}
+              disabled={z <= 0}
+              aria-label="Thu nhỏ"
+            >
               <Minus className="h-3.5 w-3.5" />
             </button>
             <span className="w-11 text-center text-[12px] tabular-nums text-ink">{zoom}%</span>
-            <button type="button" className={toolBtn} onClick={() => setZoom(ZOOM_STEPS[z + 1])} disabled={z >= ZOOM_STEPS.length - 1} aria-label="Phóng to">
+            <button
+              type="button"
+              className={toolBtn}
+              onClick={() => setZoom(ZOOM_STEPS[z + 1])}
+              disabled={z >= ZOOM_STEPS.length - 1}
+              aria-label="Phóng to"
+            >
               <Plus className="h-3.5 w-3.5" />
             </button>
             <span className="mx-1 h-4 w-px bg-line" aria-hidden />
-            <button type="button" className={toolBtn} onClick={() => setPage((p) => p - 1)} disabled={page <= 1} aria-label="Trang trước">
+            <button
+              type="button"
+              className={toolBtn}
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page <= 1}
+              aria-label="Trang trước"
+            >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
             <span className="whitespace-nowrap text-[12px] tabular-nums text-ink">
               Trang {page} / {file?.pages ?? 1}
             </span>
-            <button type="button" className={toolBtn} onClick={() => setPage((p) => p + 1)} disabled={page >= (file?.pages ?? 1)} aria-label="Trang sau">
+            <button
+              type="button"
+              className={toolBtn}
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= (file?.pages ?? 1)}
+              aria-label="Trang sau"
+            >
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>

@@ -22,8 +22,16 @@ const HOUR = 3_600_000;
 
 const UNITS = gql`
   query OpsUnits($limit: Int, $offset: Int, $order_by: [core_org_unit_order_by!], $where: core_org_unit_bool_exp) {
-    core_org_unit(limit: $limit, offset: $offset, order_by: $order_by, where: $where) { id name path }
-    core_org_unit_aggregate(where: $where) { aggregate { count } }
+    core_org_unit(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+      id
+      name
+      path
+    }
+    core_org_unit_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
@@ -40,31 +48,67 @@ const OPEN_TASKS = gql`
 
 const DONE_TASKS = gql`
   query OpsDone($limit: Int, $offset: Int, $order_by: [wf_task_order_by!], $where: wf_task_bool_exp) {
-    wf_task(limit: $limit, offset: $offset, order_by: $order_by, where: $where) { id created_at closed_at }
-    wf_task_aggregate(where: $where) { aggregate { count } }
+    wf_task(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+      id
+      created_at
+      closed_at
+    }
+    wf_task_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 const COMPLETED = gql`
-  query OpsCompleted($limit: Int, $offset: Int, $order_by: [wf_approval_history_order_by!], $where: wf_approval_history_bool_exp) {
+  query OpsCompleted(
+    $limit: Int
+    $offset: Int
+    $order_by: [wf_approval_history_order_by!]
+    $where: wf_approval_history_bool_exp
+  ) {
     wf_approval_history(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id created_at purchase_request { org_unit_id } onboarding_request { org_unit_id }
+      id
+      created_at
+      purchase_request {
+        org_unit_id
+      }
+      onboarding_request {
+        org_unit_id
+      }
     }
-    wf_approval_history_aggregate(where: $where) { aggregate { count } }
+    wf_approval_history_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 const COUNT_IC = gql`
   query OpsIc($limit: Int, $offset: Int, $order_by: [ic_ic_order_order_by!], $where: ic_ic_order_bool_exp) {
-    ic_ic_order(limit: $limit, offset: $offset, order_by: $order_by, where: $where) { id }
-    ic_ic_order_aggregate(where: $where) { aggregate { count } }
+    ic_ic_order(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+      id
+    }
+    ic_ic_order_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 const COUNT_FILES = gql`
   query OpsFiles($limit: Int, $offset: Int, $order_by: [core_attachment_order_by!], $where: core_attachment_bool_exp) {
-    core_attachment(limit: $limit, offset: $offset, order_by: $order_by, where: $where) { id }
-    core_attachment_aggregate(where: $where) { aggregate { count } }
+    core_attachment(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+      id
+    }
+    core_attachment_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
@@ -76,12 +120,16 @@ type DocRef = {
 type OpenTask = { id: string; created_at: string; step: DocRef & { step_order: number } };
 type DoneTask = { id: string; created_at: string; closed_at: string | null };
 type Completed = {
-  id: string; created_at: string;
-  purchase_request: { org_unit_id: string } | null; onboarding_request: { org_unit_id: string } | null;
+  id: string;
+  created_at: string;
+  purchase_request: { org_unit_id: string } | null;
+  onboarding_request: { org_unit_id: string } | null;
 };
 
-const unitOf = (d: { purchase_request: { org_unit_id: string } | null; onboarding_request: { org_unit_id: string } | null }) =>
-  d.purchase_request?.org_unit_id ?? d.onboarding_request?.org_unit_id;
+const unitOf = (d: {
+  purchase_request: { org_unit_id: string } | null;
+  onboarding_request: { org_unit_id: string } | null;
+}) => d.purchase_request?.org_unit_id ?? d.onboarding_request?.org_unit_id;
 
 /** "1 ngày 3 giờ" / "5 giờ" / "20 phút". */
 const span = (ms: number) => {
@@ -103,28 +151,47 @@ export const useOpsData = (period: Period) => {
 
   const units = useList<Unit>({ resource: "core_org_unit", pagination: { pageSize: 1000 }, meta: { gqlQuery: UNITS } });
   const open = useList<OpenTask>({
-    resource: "wf_task", filters: [{ field: "status", operator: "eq", value: "OPEN" }],
-    sorters: [{ field: "created_at", order: "asc" }], pagination: { pageSize: 1000 },
-    meta: { gqlQuery: OPEN_TASKS }, liveMode: "auto",
+    resource: "wf_task",
+    filters: [{ field: "status", operator: "eq", value: "OPEN" }],
+    sorters: [{ field: "created_at", order: "asc" }],
+    pagination: { pageSize: 1000 },
+    meta: { gqlQuery: OPEN_TASKS },
+    liveMode: "auto",
   });
   const done = useList<DoneTask>({
     resource: "wf_task",
-    filters: [{ field: "status", operator: "eq", value: "DONE" }, { field: "closed_at", operator: "gte", value: since.toISOString() }],
-    pagination: { pageSize: 5000 }, meta: { gqlQuery: DONE_TASKS },
+    filters: [
+      { field: "status", operator: "eq", value: "DONE" },
+      { field: "closed_at", operator: "gte", value: since.toISOString() },
+    ],
+    pagination: { pageSize: 5000 },
+    meta: { gqlQuery: DONE_TASKS },
   });
   const completed = useList<Completed>({
     resource: "wf_approval_history",
-    filters: [{ field: "event", operator: "eq", value: "COMPLETED" }, { field: "created_at", operator: "gte", value: yearStart.toISOString() }],
-    sorters: [{ field: "created_at", order: "asc" }], pagination: { pageSize: 10000 }, meta: { gqlQuery: COMPLETED },
+    filters: [
+      { field: "event", operator: "eq", value: "COMPLETED" },
+      { field: "created_at", operator: "gte", value: yearStart.toISOString() },
+    ],
+    sorters: [{ field: "created_at", order: "asc" }],
+    pagination: { pageSize: 10000 },
+    meta: { gqlQuery: COMPLETED },
   });
   const icPending = useList({
-    resource: "ic_ic_order", filters: [{ field: "status", operator: "eq", value: "PENDING" }],
-    pagination: { pageSize: 1 }, meta: { gqlQuery: COUNT_IC }, liveMode: "auto",
+    resource: "ic_ic_order",
+    filters: [{ field: "status", operator: "eq", value: "PENDING" }],
+    pagination: { pageSize: 1 },
+    meta: { gqlQuery: COUNT_IC },
+    liveMode: "auto",
   });
   const blockedFiles = useList({
     resource: "core_attachment",
-    filters: [{ field: "status", operator: "in", value: ["INFECTED", "REJECTED"] }, { field: "created_at", operator: "gte", value: weekAgo.toISOString() }],
-    pagination: { pageSize: 1 }, meta: { gqlQuery: COUNT_FILES },
+    filters: [
+      { field: "status", operator: "in", value: ["INFECTED", "REJECTED"] },
+      { field: "created_at", operator: "gte", value: weekAgo.toISOString() },
+    ],
+    pagination: { pageSize: 1 },
+    meta: { gqlQuery: COUNT_FILES },
   });
 
   const unitRows = units.result.data;
@@ -154,7 +221,10 @@ export const useOpsData = (period: Period) => {
     const ranked = [...volume.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => byId.get(id)!);
     const named = ranked.slice(0, PALETTE.length);
     const companies: Company[] = named.map((u, i) => ({
-      key: u.id, name: u.name, short: u.name.replace(/^(Công ty|Khối|Phòng|Văn phòng)\s+/i, ""), color: PALETTE[i],
+      key: u.id,
+      name: u.name,
+      short: u.name.replace(/^(Công ty|Khối|Phòng|Văn phòng)\s+/i, ""),
+      color: PALETTE[i],
     }));
     if (ranked.length > named.length) {
       companies.push({ key: OTHER_COMPANY, name: "Đơn vị khác", short: "Khác", color: OTHER_COLOR });
@@ -193,7 +263,9 @@ export const useOpsData = (period: Period) => {
     // Theo tháng: năm nay (cột, các tháng chưa tới để trống) so với năm trước (đường).
     const year = today.year();
     const monthly: MonthlyPoint[] = Array.from({ length: 12 }, (_, m) => ({
-      month: `T${m + 1}`, current: m <= today.month() ? 0 : null, previous: 0,
+      month: `T${m + 1}`,
+      current: m <= today.month() ? 0 : null,
+      previous: 0,
     }));
     for (const h of completedRows) {
       const d = dayjs(h.created_at);
@@ -222,7 +294,9 @@ export const useOpsData = (period: Period) => {
       });
 
     // KPI.
-    const onTime = doneRows.filter((t) => t.closed_at && Date.parse(t.closed_at) - Date.parse(t.created_at) <= SLA_HOURS * HOUR).length;
+    const onTime = doneRows.filter(
+      (t) => t.closed_at && Date.parse(t.closed_at) - Date.parse(t.created_at) <= SLA_HOURS * HOUR,
+    ).length;
     const inPeriod = completedRows.filter((h) => !dayjs(h.created_at).isBefore(since)).length;
     const prevSince = since.subtract(days, "day");
     const prevPeriod = completedRows.filter((h) => {
@@ -233,7 +307,9 @@ export const useOpsData = (period: Period) => {
     const hot = { tier: "Nóng" as const, at };
     const kpis: Kpi[] = [
       {
-        key: "pending", label: "Hồ sơ chờ duyệt", value: String(openRows.length),
+        key: "pending",
+        label: "Hồ sơ chờ duyệt",
+        value: String(openRows.length),
         delta: overdueAll.length
           ? { dir: "dot", tone: "bad", text: `${overdueAll.length} quá hạn SLA` }
           : { dir: "dot", tone: "good", text: "Không có việc quá hạn" },
@@ -241,27 +317,40 @@ export const useOpsData = (period: Period) => {
         definition: "Số bước duyệt đang mở (wf.task OPEN) bạn được xem, tại thời điểm cập nhật.",
       },
       {
-        key: "ontime", label: "Duyệt đúng hạn", value: doneRows.length ? `${pct.format((onTime / doneRows.length) * 100)}%` : "—",
+        key: "ontime",
+        label: "Duyệt đúng hạn",
+        value: doneRows.length ? `${pct.format((onTime / doneRows.length) * 100)}%` : "—",
         delta: { dir: "none", tone: "neutral", text: `${doneRows.length} bước duyệt trong kỳ` },
         freshness: hot,
         definition: `Tỷ lệ bước duyệt hoàn tất trong vòng ${SLA_HOURS} giờ kể từ lúc giao, trong kỳ đang chọn.`,
       },
       {
-        key: "completed", label: "Duyệt xong trong kỳ", value: String(inPeriod),
-        delta: change == null
-          ? { dir: "none", tone: "neutral", text: "Kỳ trước không có" }
-          : { dir: change >= 0 ? "up" : "down", tone: change >= 0 ? "good" : "bad", text: `${Math.abs(change)}% so với kỳ trước` },
+        key: "completed",
+        label: "Duyệt xong trong kỳ",
+        value: String(inPeriod),
+        delta:
+          change == null
+            ? { dir: "none", tone: "neutral", text: "Kỳ trước không có" }
+            : {
+                dir: change >= 0 ? "up" : "down",
+                tone: change >= 0 ? "good" : "bad",
+                text: `${Math.abs(change)}% so với kỳ trước`,
+              },
         freshness: hot,
         definition: "Số hồ sơ hoàn tất toàn bộ chuỗi duyệt (sự kiện COMPLETED) trong kỳ đang chọn.",
       },
       {
-        key: "ic", label: "Đơn nội bộ chờ xác nhận", value: String(icPending.result.total ?? 0),
+        key: "ic",
+        label: "Đơn nội bộ chờ xác nhận",
+        value: String(icPending.result.total ?? 0),
         delta: { dir: "none", tone: "neutral", text: "Bên bán chưa xác nhận" },
         freshness: hot,
         definition: "Đơn hàng nội bộ (ic.ic_order) ở trạng thái chờ bên bán xác nhận.",
       },
       {
-        key: "blocked", label: "Tệp bị chặn · 7 ngày", value: String(blockedFiles.result.total ?? 0),
+        key: "blocked",
+        label: "Tệp bị chặn · 7 ngày",
+        value: String(blockedFiles.result.total ?? 0),
         delta: { dir: "none", tone: "neutral", text: "Kiểm dịch ClamAV" },
         freshness: hot,
         definition: "Tệp tải lên bị loại (sai định dạng) hoặc nhiễm mã độc trong 7 ngày gần nhất.",
@@ -269,8 +358,15 @@ export const useOpsData = (period: Period) => {
     ];
 
     return {
-      companies, company, daily, pending, monthly, overdue: overdueAll.slice(0, 5), kpis,
-      updatedAt: at, rangeLabel: `${since.format("DD/MM")} – ${today.format("DD/MM")}`,
+      companies,
+      company,
+      daily,
+      pending,
+      monthly,
+      overdue: overdueAll.slice(0, 5),
+      kpis,
+      updatedAt: at,
+      rangeLabel: `${since.format("DD/MM")} – ${today.format("DD/MM")}`,
     };
     // since/today/yearStart suy ra từ `days` và ngày hiện tại.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -285,4 +381,3 @@ export const useOpsData = (period: Period) => {
 };
 
 export type OpsData = ReturnType<typeof useOpsData>;
-

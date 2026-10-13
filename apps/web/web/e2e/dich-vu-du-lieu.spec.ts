@@ -28,7 +28,10 @@ test("CDO xem tập dữ liệu Lakehouse và dữ liệu mẫu đã che", async
   // Bảng không thuộc tenant nào (danh mục quyền chung) không có trong danh mục của người dùng tenant.
   await expect(list.getByText("lakehouse.silver.core_permission")).toHaveCount(0);
 
-  await page.getByRole("group", { name: "Lĩnh vực" }).getByRole("button", { name: /^Mua sắm/ }).click();
+  await page
+    .getByRole("group", { name: "Lĩnh vực" })
+    .getByRole("button", { name: /^Mua sắm/ })
+    .click();
   await list.getByRole("button", { name: /^Đề nghị mua sắm/ }).click();
   const detail = page.locator("article");
   await expect(detail.getByRole("heading", { name: "Đề nghị mua sắm" })).toBeVisible();

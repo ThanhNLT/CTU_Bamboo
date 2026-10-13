@@ -20,7 +20,10 @@ async function login(page: Page, username: string) {
 
 async function logout(page: Page) {
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
-  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page
+    .locator("header")
+    .getByRole("button", { name: /^Tài khoản:/ })
+    .click();
   await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
@@ -43,7 +46,10 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
   // Trang chủ: việc mới nằm trong "Việc của tôi", bấm vào mở đúng việc trong Hộp việc.
   await page.goto("/");
   await page.getByText("Lịch", { exact: true }).click(); // Chế độ Lịch hiện mọi việc (Danh sách chỉ 4 việc gấp nhất).
-  await page.getByRole("link", { name: new RegExp(TITLE) }).first().click();
+  await page
+    .getByRole("link", { name: new RegExp(TITLE) })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/p\/tasks\?code=/);
   const detail = page.locator("header", { has: page.getByRole("heading", { name: TITLE }) });
   await expect(detail).toBeVisible();

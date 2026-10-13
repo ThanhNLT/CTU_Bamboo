@@ -6,13 +6,35 @@
 import gql from "graphql-tag";
 
 export const OB_LIST = gql`
-  query Onboardings($limit: Int, $offset: Int, $order_by: [hr_onboarding_request_order_by!], $where: hr_onboarding_request_bool_exp) {
+  query Onboardings(
+    $limit: Int
+    $offset: Int
+    $order_by: [hr_onboarding_request_order_by!]
+    $where: hr_onboarding_request_bool_exp
+  ) {
     hr_onboarding_request(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id doc_no full_name status account_status start_date created_at
-      requester { full_name }
-      target_position { name org_unit { name } }
+      id
+      doc_no
+      full_name
+      status
+      account_status
+      start_date
+      created_at
+      requester {
+        full_name
+      }
+      target_position {
+        name
+        org_unit {
+          name
+        }
+      }
     }
-    hr_onboarding_request_aggregate(where: $where) { aggregate { count } }
+    hr_onboarding_request_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 

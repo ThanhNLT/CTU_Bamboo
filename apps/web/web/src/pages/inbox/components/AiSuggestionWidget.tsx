@@ -16,10 +16,15 @@ export const AiSuggestionWidget = ({ suggestion }: { suggestion?: AiSuggestion }
     {suggestion ? (
       <>
         <ul className="m-0 mt-2.5 list-disc space-y-1 pl-4 text-[12.5px] leading-relaxed text-body marker:text-bamboo-500">
-          {suggestion.bullets.map((b) => <li key={b}>{b}</li>)}
+          {suggestion.bullets.map((b) => (
+            <li key={b}>{b}</li>
+          ))}
         </ul>
         {suggestion.citation && (
-          <Link to={suggestion.citation.to} className="mt-2.5 inline-block text-[12px] text-bamboo-700 hover:underline underline-offset-2">
+          <Link
+            to={suggestion.citation.to}
+            className="mt-2.5 inline-block text-[12px] text-bamboo-700 hover:underline underline-offset-2"
+          >
             {suggestion.citation.label}
           </Link>
         )}

@@ -26,18 +26,10 @@ export const Login: React.FC = () => {
             marginBottom: "36px",
           }}
         />
-        <Button
-          style={{ width: "240px" }}
-          type="primary"
-          size="middle"
-          onClick={() => login({})}
-        >
+        <Button style={{ width: "240px" }} type="primary" size="middle" onClick={() => login({})}>
           Đăng nhập bằng tài khoản tập đoàn
         </Button>
-        <Typography.Text type="secondary">
-          Xác thực qua 
-          Keycloak
-        </Typography.Text>
+        <Typography.Text type="secondary">Xác thực qua Keycloak</Typography.Text>
       </Space>
     </Layout>
   );

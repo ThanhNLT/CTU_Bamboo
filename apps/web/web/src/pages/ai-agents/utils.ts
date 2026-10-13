@@ -29,11 +29,15 @@ export const computeKpis = (agents: Agent[]) => {
   const up = agents.reduce((s, a) => s + a.ratingsUp, 0);
   const total = agents.reduce((s, a) => s + a.ratingsTotal, 0);
   return {
-    active, paused, sessions,
+    active,
+    paused,
+    sessions,
     errorRate: calls ? errors / calls : 0,
     errorThreshold: KPI_STATIC.errorThreshold / 100,
-    p95: KPI_STATIC.p95, p95Target: KPI_STATIC.p95Target,
-    helpful: total ? up / total : 0, ratings: total,
+    p95: KPI_STATIC.p95,
+    p95Target: KPI_STATIC.p95Target,
+    helpful: total ? up / total : 0,
+    ratings: total,
   };
 };
 

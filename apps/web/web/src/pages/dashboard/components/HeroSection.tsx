@@ -29,11 +29,7 @@ export const HeroSection = ({ user, now = dayjs() }: { user: DashboardUser; now?
       </div>
 
       <div className="flex shrink-0 items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => go({ to: "/i/ocr" })}
-          className={secondaryButtonClass}
-        >
+        <button type="button" onClick={() => go({ to: "/i/ocr" })} className={secondaryButtonClass}>
           <ScanLine className="h-4 w-4 text-body" strokeWidth={1.75} aria-hidden />
           Nhập bằng OCR
         </button>

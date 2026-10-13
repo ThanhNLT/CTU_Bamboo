@@ -42,7 +42,8 @@ export const RecordsPage = () => {
 
   const { tab, query, type, range, mineOnly } = filters;
   const base = useMemo(
-    () => filterExceptTab(records, { query, type, range, mineOnly }, { me: tenant.person_id, now: Date.now(), myTasks }),
+    () =>
+      filterExceptTab(records, { query, type, range, mineOnly }, { me: tenant.person_id, now: Date.now(), myTasks }),
     [records, query, type, range, mineOnly, tenant.person_id, myTasks],
   );
   const counts = useMemo(() => countByTab(base), [base]);

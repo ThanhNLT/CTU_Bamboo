@@ -6,13 +6,32 @@
 import gql from "graphql-tag";
 
 export const PR_LIST = gql`
-  query PurchaseRequests($limit: Int, $offset: Int, $order_by: [proc_purchase_request_order_by!], $where: proc_purchase_request_bool_exp) {
+  query PurchaseRequests(
+    $limit: Int
+    $offset: Int
+    $order_by: [proc_purchase_request_order_by!]
+    $where: proc_purchase_request_bool_exp
+  ) {
     proc_purchase_request(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id doc_no title status total_amount created_at updated_at
-      requester { full_name }
-      org_unit { name }
+      id
+      doc_no
+      title
+      status
+      total_amount
+      created_at
+      updated_at
+      requester {
+        full_name
+      }
+      org_unit {
+        name
+      }
     }
-    proc_purchase_request_aggregate(where: $where) { aggregate { count } }
+    proc_purchase_request_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 

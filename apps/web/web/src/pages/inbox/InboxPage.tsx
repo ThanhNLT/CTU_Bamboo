@@ -47,17 +47,23 @@ export const InboxPage = () => {
 
   // Việc đang chọn nằm trên URL (?code=) để chia sẻ/quay lại được; mặc định là việc gấp nhất.
   const code = params.get("code");
-  const index = Math.max(0, list.findIndex((t) => t.code === code));
+  const index = Math.max(
+    0,
+    list.findIndex((t) => t.code === code),
+  );
   const selected = list[index];
 
   const select = useCallback(
     (t?: InboxTask) => {
       if (!t) return;
-      setParams((p) => {
-        const next = new URLSearchParams(p);
-        next.set("code", t.code);
-        return next;
-      }, { replace: true });
+      setParams(
+        (p) => {
+          const next = new URLSearchParams(p);
+          next.set("code", t.code);
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setParams],
   );
@@ -91,7 +97,11 @@ export const InboxPage = () => {
         <div className="space-y-1.5 text-[13px]">
           <p className="font-medium text-ink">{task.title}</p>
           {comment && <p className="text-body">Ý kiến: “{comment}”</p>}
-          {task.viaDelegation && <p className="text-body">Bạn đang <b>duyệt thay {task.assignee}</b> theo ủy quyền; lịch sử sẽ ghi rõ.</p>}
+          {task.viaDelegation && (
+            <p className="text-body">
+              Bạn đang <b>duyệt thay {task.assignee}</b> theo ủy quyền; lịch sử sẽ ghi rõ.
+            </p>
+          )}
           <p className="text-muted">Quyết định được ghi nhật ký kiểm toán và không hoàn tác từ trang này.</p>
         </div>
       ),
@@ -113,19 +123,28 @@ export const InboxPage = () => {
     });
   };
 
-  const readOnly = selected && !selected.actionable
-    ? `Việc của ${selected.assignee} — bạn chỉ xem, không quyết định thay.`
-    : undefined;
+  const readOnly =
+    selected && !selected.actionable
+      ? `Việc của ${selected.assignee} — bạn chỉ xem, không quyết định thay.`
+      : undefined;
 
   if (inbox.loading && inbox.team.length === 0) {
-    return <div className="flex justify-center py-24"><Spin /></div>;
+    return (
+      <div className="flex justify-center py-24">
+        <Spin />
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <InboxHeader
-        mineCount={mine.length} teamCount={sorted.length} scope={scope} onScopeChange={setScope}
-        slaHours={SLA_HOURS} error={inbox.error}
+        mineCount={mine.length}
+        teamCount={sorted.length}
+        scope={scope}
+        onScopeChange={setScope}
+        slaHours={SLA_HOURS}
+        error={inbox.error}
       />
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(240px,3fr)_minmax(0,7fr)]">

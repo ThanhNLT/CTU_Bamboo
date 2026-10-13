@@ -18,9 +18,17 @@ import type { FieldKey, FormValues, ImportRecord, Phase, SourceDoc, Step } from 
 import { formatBytes, initialValues, pendingReview, validate } from "./utils";
 
 /** Thời gian mô phỏng từng bước phía máy chủ (ms). */
-const DURATION: Record<Exclude<Phase, "review" | "created">, number> = { uploading: 500, scanning: 900, extracting: 1200 };
+const DURATION: Record<Exclude<Phase, "review" | "created">, number> = {
+  uploading: 500,
+  scanning: 900,
+  extracting: 1200,
+};
 const BUSY_LABEL: Record<Phase, string | undefined> = {
-  uploading: "Đang tải lên…", scanning: "Đang quét mã độc…", extracting: "Đang trích xuất trường…", review: undefined, created: undefined,
+  uploading: "Đang tải lên…",
+  scanning: "Đang quét mã độc…",
+  extracting: "Đang trích xuất trường…",
+  review: undefined,
+  created: undefined,
 };
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -60,7 +68,8 @@ export const OcrInputPage = () => {
   const runPipeline = (from: "uploading" | "extracting") => {
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current.clear();
-    const order: Phase[] = from === "uploading" ? ["uploading", "scanning", "extracting", "review"] : ["extracting", "review"];
+    const order: Phase[] =
+      from === "uploading" ? ["uploading", "scanning", "extracting", "review"] : ["extracting", "review"];
     let at = 0;
     setPhase(order[0] ?? "review");
     setCreatedCode(undefined);
@@ -116,7 +125,14 @@ export const OcrInputPage = () => {
       setCreatedCode(NEXT_RECORD_CODE);
       setPhase("created");
       setHistory((h) => [
-        { id: `ih-${Date.now()}`, file: doc.name, template: TEMPLATE.name, at: "Vừa xong", result: NEXT_RECORD_CODE, to: "/p/records" },
+        {
+          id: `ih-${Date.now()}`,
+          file: doc.name,
+          template: TEMPLATE.name,
+          at: "Vừa xong",
+          result: NEXT_RECORD_CODE,
+          to: "/p/records",
+        },
         ...h,
       ]);
       message.success(`Đã tạo hồ sơ nháp ${NEXT_RECORD_CODE} · ${values.recordType}.`);
@@ -144,13 +160,26 @@ export const OcrInputPage = () => {
     const runOrDone = (i: number): Step["state"] => (at > i ? "done" : at === i ? "running" : "pending");
     const reviewState: Step["state"] = at === 2 ? "running" : at === 3 ? "active" : at === 4 ? "done" : "pending";
     const reviewSub =
-      at < 2 ? "Chờ quét xong" : at === 2 ? "Đang trích xuất…" :
-        `${OCR_FIELDS.length} trường · ${pending.length ? `${pending.length} cần xem` : "đã kiểm tra hết"}`;
+      at < 2
+        ? "Chờ quét xong"
+        : at === 2
+          ? "Đang trích xuất…"
+          : `${OCR_FIELDS.length} trường · ${pending.length ? `${pending.length} cần xem` : "đã kiểm tra hết"}`;
     return [
       { key: "upload", title: "Tải lên", sub: at === 0 ? "Đang tải…" : doc.name, state: runOrDone(0) },
-      { key: "scan", title: "Quét mã độc", sub: at === 0 ? "Chờ tải xong" : at === 1 ? "Đang quét…" : "Sạch · ClamAV", state: runOrDone(1) },
+      {
+        key: "scan",
+        title: "Quét mã độc",
+        sub: at === 0 ? "Chờ tải xong" : at === 1 ? "Đang quét…" : "Sạch · ClamAV",
+        state: runOrDone(1),
+      },
       { key: "review", title: "Kiểm tra trường", sub: reviewSub, state: reviewState },
-      { key: "create", title: "Tạo hồ sơ", sub: createdCode ?? "Chờ bạn xác nhận", state: at === 4 ? "done" : "pending" },
+      {
+        key: "create",
+        title: "Tạo hồ sơ",
+        sub: createdCode ?? "Chờ bạn xác nhận",
+        state: at === 4 ? "done" : "pending",
+      },
     ];
   }, [phase, doc.name, pending.length, createdCode]);
 
@@ -164,7 +193,9 @@ export const OcrInputPage = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Nhập liệu OCR</h1>
-          <p className="mt-1 text-[13px] text-muted">Chụp hoặc quét giấy tờ → hệ thống trích xuất trường → bạn kiểm tra → tạo hồ sơ</p>
+          <p className="mt-1 text-[13px] text-muted">
+            Chụp hoặc quét giấy tờ → hệ thống trích xuất trường → bạn kiểm tra → tạo hồ sơ
+          </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2.5">
           <button type="button" onClick={() => setHistoryOpen(true)} className={secondaryButtonClass}>
@@ -172,7 +203,13 @@ export const OcrInputPage = () => {
             Lịch sử nhập ({IMPORT_COUNT + history.length - IMPORT_HISTORY.length})
           </button>
           {/* capture="environment": trên điện thoại mở thẳng camera sau. */}
-          <label className={cn(primaryButtonClass, "cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-bamboo-500", busy && "pointer-events-none opacity-60")}>
+          <label
+            className={cn(
+              primaryButtonClass,
+              "cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-bamboo-500",
+              busy && "pointer-events-none opacity-60",
+            )}
+          >
             <input
               type="file"
               accept="image/*"

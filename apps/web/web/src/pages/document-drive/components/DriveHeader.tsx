@@ -9,7 +9,8 @@ import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui
 
 /** Tiêu đề trang + nút "Tải lên" (mở hộp chọn tệp). Tệp luôn thuộc một chứng từ: chỉ tải được khi đang mở thư mục. */
 export const DriveHeader = ({
-  onUpload, uploadDisabledReason,
+  onUpload,
+  uploadDisabledReason,
 }: {
   onUpload: (files: FileList) => void;
   uploadDisabledReason?: string;
@@ -30,7 +31,9 @@ export const DriveHeader = ({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={Boolean(uploadDisabledReason)}
-            className={uploadDisabledReason ? `${secondaryButtonClass} cursor-not-allowed opacity-60` : primaryButtonClass}
+            className={
+              uploadDisabledReason ? `${secondaryButtonClass} cursor-not-allowed opacity-60` : primaryButtonClass
+            }
           >
             <Upload className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Tải lên

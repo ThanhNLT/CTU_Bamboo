@@ -16,26 +16,66 @@ import { useInboxTasks } from "../inbox/useInboxTasks";
 import type { DashboardUser, NotificationItem, RecentRecord, SummaryStat, TaskItem, Tone } from "./types";
 
 const NOTIFICATIONS = gql`
-  query HomeNotifications($limit: Int, $offset: Int, $order_by: [collab_notification_order_by!], $where: collab_notification_bool_exp) {
+  query HomeNotifications(
+    $limit: Int
+    $offset: Int
+    $order_by: [collab_notification_order_by!]
+    $where: collab_notification_bool_exp
+  ) {
     collab_notification(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id kind title entity_type entity_id created_at read_at actor { full_name }
+      id
+      kind
+      title
+      entity_type
+      entity_id
+      created_at
+      read_at
+      actor {
+        full_name
+      }
     }
-    collab_notification_aggregate(where: $where) { aggregate { count } }
+    collab_notification_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 const MY_POSITION = gql`
-  query MyPosition($limit: Int, $offset: Int, $order_by: [core_assignment_order_by!], $where: core_assignment_bool_exp) {
+  query MyPosition(
+    $limit: Int
+    $offset: Int
+    $order_by: [core_assignment_order_by!]
+    $where: core_assignment_bool_exp
+  ) {
     core_assignment(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id assignment_type position { name org_unit { name } }
+      id
+      assignment_type
+      position {
+        name
+        org_unit {
+          name
+        }
+      }
     }
-    core_assignment_aggregate(where: $where) { aggregate { count } }
+    core_assignment_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 
 type Note = {
-  id: string; kind: string; title: string; entity_type: string | null; entity_id: string | null;
-  created_at: string; read_at: string | null; actor: { full_name: string } | null;
+  id: string;
+  kind: string;
+  title: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  created_at: string;
+  read_at: string | null;
+  actor: { full_name: string } | null;
 };
 
 // Đường dẫn trang chi tiết theo loại chứng từ của thông báo.
@@ -46,17 +86,30 @@ const DETAIL: Record<string, string> = {
 };
 
 const NOTE_TONE: Record<string, Tone> = {
-  REQUEST_APPROVED: "success", IC_ORDER_CONFIRMED: "success", REQUEST_RETURNED: "warning", REQUEST_REJECTED: "danger",
-  IC_ORDER_REJECTED: "danger", TASK_ASSIGNED: "warning", IC_ORDER_NEW: "warning",
+  REQUEST_APPROVED: "success",
+  IC_ORDER_CONFIRMED: "success",
+  REQUEST_RETURNED: "warning",
+  REQUEST_REJECTED: "danger",
+  IC_ORDER_REJECTED: "danger",
+  TASK_ASSIGNED: "warning",
+  IC_ORDER_NEW: "warning",
 };
 
 const recordTone = (d: DocSummary): { tone: Tone; locked?: boolean } => {
   switch (d.status) {
-    case "PENDING": return { tone: "warning" };
-    case "RETURNED": return { tone: "danger" };
-    case "APPROVED": case "CONFIRMED": case "SETTLED": return { tone: "success" };
-    case "REJECTED": case "CANCELLED": return { tone: "neutral", locked: true };
-    default: return { tone: "neutral" };
+    case "PENDING":
+      return { tone: "warning" };
+    case "RETURNED":
+      return { tone: "danger" };
+    case "APPROVED":
+    case "CONFIRMED":
+    case "SETTLED":
+      return { tone: "success" };
+    case "REJECTED":
+    case "CANCELLED":
+      return { tone: "neutral", locked: true };
+    default:
+      return { tone: "neutral" };
   }
 };
 
@@ -65,7 +118,9 @@ const dueDay = (iso: string, now = dayjs()) => {
   const diff = dayjs(iso).startOf("day").diff(now.startOf("day"), "day");
   if (diff <= 0) return diff < 0 ? "Đã quá hạn" : "Hôm nay";
   if (diff === 1) return "Ngày mai";
-  return dayjs(iso).format("dddd, DD/MM").replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
+  return dayjs(iso)
+    .format("dddd, DD/MM")
+    .replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
 };
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -89,7 +144,11 @@ export const useDashboard = () => {
     meta: { gqlQuery: NOTIFICATIONS },
     liveMode: "auto",
   });
-  const position = useList<{ id: string; assignment_type: string; position: { name: string; org_unit: { name: string } } | null }>({
+  const position = useList<{
+    id: string;
+    assignment_type: string;
+    position: { name: string; org_unit: { name: string } } | null;
+  }>({
     resource: "core_assignment",
     filters: [{ field: "person_id", operator: "eq", value: tenant.person_id }],
     pagination: { pageSize: 1 },
@@ -103,18 +162,31 @@ export const useDashboard = () => {
   };
 
   const tasks: TaskItem[] = useMemo(
-    () => [...inbox.mine].sort((a, b) => a.dueAt.localeCompare(b.dueAt)).map((t) => ({
-      code: t.code, title: t.title, to: `/p/tasks?code=${encodeURIComponent(t.code)}`,
-      dueLabel: capitalize(t.sla.label), dueLevel: t.sla.level, dueDay: dueDay(t.dueAt),
-    })),
+    () =>
+      [...inbox.mine]
+        .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
+        .map((t) => ({
+          code: t.code,
+          title: t.title,
+          to: `/p/tasks?code=${encodeURIComponent(t.code)}`,
+          dueLabel: capitalize(t.sla.label),
+          dueLevel: t.sla.level,
+          dueDay: dueDay(t.dueAt),
+        })),
     [inbox.mine],
   );
 
   const recent: RecentRecord[] = useMemo(
-    () => docs.documents.slice(0, 6).map((d) => ({
-      code: d.code, title: d.title, kind: DOC_KIND_LABEL[d.kind], statusLabel: d.statusLabel, ...recordTone(d),
-      updatedAt: ago(d.updatedAt), to: d.to,
-    })),
+    () =>
+      docs.documents.slice(0, 6).map((d) => ({
+        code: d.code,
+        title: d.title,
+        kind: DOC_KIND_LABEL[d.kind],
+        statusLabel: d.statusLabel,
+        ...recordTone(d),
+        updatedAt: ago(d.updatedAt),
+        to: d.to,
+      })),
     [docs.documents],
   );
 
@@ -134,26 +206,53 @@ export const useDashboard = () => {
   const processing = docs.documents.filter((d) => d.status === "PENDING");
   const newestUnread = notifications.find((n) => !n.read);
   const summary: SummaryStat[] = [
-    { key: "waiting", label: "Việc chờ tôi", value: tasks.length,
-      hint: today ? `${today} việc đến hạn hôm nay` : "Không có việc đến hạn hôm nay", to: "/p/tasks" },
-    { key: "processing", label: "Hồ sơ của tôi đang xử lý", value: processing.length,
-      hint: processing[0] ? `Mới nhất: ${processing[0].code}` : "Không có hồ sơ chờ duyệt", to: "/p/records" },
+    {
+      key: "waiting",
+      label: "Việc chờ tôi",
+      value: tasks.length,
+      hint: today ? `${today} việc đến hạn hôm nay` : "Không có việc đến hạn hôm nay",
+      to: "/p/tasks",
+    },
+    {
+      key: "processing",
+      label: "Hồ sơ của tôi đang xử lý",
+      value: processing.length,
+      hint: processing[0] ? `Mới nhất: ${processing[0].code}` : "Không có hồ sơ chờ duyệt",
+      to: "/p/records",
+    },
     overdue.length
-      ? { key: "sla", label: "Quá hạn SLA", value: overdue.length, hint: `Gấp nhất · ${overdue[0].code}`, tone: "danger",
-          to: overdue[0].to }
+      ? {
+          key: "sla",
+          label: "Quá hạn SLA",
+          value: overdue.length,
+          hint: `Gấp nhất · ${overdue[0].code}`,
+          tone: "danger",
+          to: overdue[0].to,
+        }
       : { key: "sla", label: "Quá hạn SLA", value: 0, hint: "Không có việc quá hạn" },
-    { key: "unread", label: "Thông báo chưa đọc", value: unread,
-      hint: newestUnread ? `Mới nhất ${newestUnread.time}` : "Đã đọc hết" },
+    {
+      key: "unread",
+      label: "Thông báo chưa đọc",
+      value: unread,
+      hint: newestUnread ? `Mới nhất ${newestUnread.time}` : "Đã đọc hết",
+    },
   ];
 
   const markRead = async (ids?: string[]) => {
-    await request(`mutation Read($ids: _uuid) { collab_mark_notifications_read(args: {ids: $ids}) { id } }`,
-                  { ids: ids ? `{${ids.join(",")}}` : null });
+    await request(`mutation Read($ids: _uuid) { collab_mark_notifications_read(args: {ids: $ids}) { id } }`, {
+      ids: ids ? `{${ids.join(",")}}` : null,
+    });
     invalidate({ resource: "collab_notification", invalidates: ["list"] });
   };
 
   return {
-    user, summary, tasks, recent, notifications, unread, markRead,
+    user,
+    summary,
+    tasks,
+    recent,
+    notifications,
+    unread,
+    markRead,
     error: inbox.error ?? docs.error ?? notes.query.error?.message,
   };
 };

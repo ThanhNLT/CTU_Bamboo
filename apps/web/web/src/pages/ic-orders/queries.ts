@@ -8,12 +8,27 @@ import gql from "graphql-tag";
 export const IC_LIST = gql`
   query IcOrders($limit: Int, $offset: Int, $order_by: [ic_ic_order_order_by!], $where: ic_ic_order_bool_exp) {
     ic_ic_order(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
-      id doc_no status total_amount created_at can_confirm
-      seller_unit { name }
-      buyer_unit { name }
-      created_by_person { full_name }
+      id
+      doc_no
+      status
+      total_amount
+      created_at
+      can_confirm
+      seller_unit {
+        name
+      }
+      buyer_unit {
+        name
+      }
+      created_by_person {
+        full_name
+      }
     }
-    ic_ic_order_aggregate(where: $where) { aggregate { count } }
+    ic_ic_order_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
   }
 `;
 

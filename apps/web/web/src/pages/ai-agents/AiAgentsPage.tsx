@@ -25,12 +25,14 @@ export const AiAgentsPage = () => {
   const kpi = useMemo(() => computeKpis(agents), [agents]);
   const selected = agents.find((a) => a.id === selectedId) ?? agents[0];
 
-  const patch = (id: string, fn: (a: Agent) => Agent) => setAgents((list) => list.map((a) => (a.id === id ? fn(a) : a)));
+  const patch = (id: string, fn: (a: Agent) => Agent) =>
+    setAgents((list) => list.map((a) => (a.id === id ? fn(a) : a)));
 
   const pause = (a: Agent) =>
     modal.confirm({
       title: `Tạm dừng “${a.name}”?`,
-      content: "Phiên mới sẽ được chuyển sang trợ lý mặc định; phiên đang chạy vẫn được hoàn tất. Thao tác được ghi nhật ký kiểm toán.",
+      content:
+        "Phiên mới sẽ được chuyển sang trợ lý mặc định; phiên đang chạy vẫn được hoàn tất. Thao tác được ghi nhật ký kiểm toán.",
       okText: "Tạm dừng",
       cancelText: "Hủy",
       onOk: () => {
@@ -82,13 +84,34 @@ export const AiAgentsPage = () => {
         onSubmit={(v) => {
           const id = `ag-${Date.now().toString(36)}`;
           const agent: Agent = {
-            id, name: v.name.trim(), description: v.description.trim(), model: v.model, tools: v.tools, status: "pending",
-            sessions24h: 0, calls24h: 0, errors24h: 0, p95: 0, ratingsUp: 0, ratingsTotal: 0,
+            id,
+            name: v.name.trim(),
+            description: v.description.trim(),
+            model: v.model,
+            tools: v.tools,
+            status: "pending",
+            sessions24h: 0,
+            calls24h: 0,
+            errors24h: 0,
+            p95: 0,
+            ratingsUp: 0,
+            ratingsTotal: 0,
             week: DAYS.map((day) => ({ day, success: 0, errors: 0 })),
             toolStats: v.tools.map((name) => ({ name, calls: 0, errors: 0, p95: 0, scope: v.scopes[0] ?? "" })),
-            events: [], sessions: [],
-            guards: { "scope-guard": v.guards.includes("scope-guard"), "pii-guard": v.guards.includes("pii-guard"), "prompt-guard": v.guards.includes("prompt-guard") },
-            config: { temperature: 0.2, maxTokens: 2048, scopes: v.scopes, retentionDays: 30, systemPrompt: "(chưa cấu hình)" },
+            events: [],
+            sessions: [],
+            guards: {
+              "scope-guard": v.guards.includes("scope-guard"),
+              "pii-guard": v.guards.includes("pii-guard"),
+              "prompt-guard": v.guards.includes("prompt-guard"),
+            },
+            config: {
+              temperature: 0.2,
+              maxTokens: 2048,
+              scopes: v.scopes,
+              retentionDays: 30,
+              systemPrompt: "(chưa cấu hình)",
+            },
           };
           setAgents((list) => [...list, agent]);
           setSelectedId(id);

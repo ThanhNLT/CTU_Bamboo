@@ -24,7 +24,10 @@ async function login(page: Page, username: string) {
 
 async function logout(page: Page) {
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
-  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page
+    .locator("header")
+    .getByRole("button", { name: /^Tài khoản:/ })
+    .click();
   await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
@@ -34,8 +37,13 @@ async function logout(page: Page) {
 async function pick(page: Page, label: string, text: string) {
   // Hộp thoại có thể mở chồng lên ngăn kéo: gõ thẳng vào ô tìm của Select (không cần bấm).
   await page.locator(".ant-modal:visible").getByRole("combobox", { name: label, exact: true }).fill(text);
-  await page.locator(".ant-select-dropdown:visible .ant-select-item-option, .ant-select-dropdown:visible .ant-select-tree-treenode")
-    .filter({ hasText: text }).first().click();
+  await page
+    .locator(
+      ".ant-select-dropdown:visible .ant-select-item-option, .ant-select-dropdown:visible .ant-select-tree-treenode",
+    )
+    .filter({ hasText: text })
+    .first()
+    .click();
 }
 
 test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", async ({ page }) => {
@@ -115,15 +123,21 @@ test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", a
   await page.getByRole("button", { name: "Nhập từ Excel" }).click();
   await page.getByRole("menuitem", { name: "Nhập đơn vị" }).click();
   const importer = page.getByRole("dialog", { name: "Nhập đơn vị từ Excel" });
-  const csv = (parent: string) => Buffer.from(
-    `Mã đơn vị,Tên đơn vị,Mã đơn vị cha,Mã loại đơn vị\n${UNIT}_A,Tổ A ${STAMP},${UNIT},PHONG\n${UNIT}_B,Tổ B ${STAMP},${parent},PHONG\n`);
+  const csv = (parent: string) =>
+    Buffer.from(
+      `Mã đơn vị,Tên đơn vị,Mã đơn vị cha,Mã loại đơn vị\n${UNIT}_A,Tổ A ${STAMP},${UNIT},PHONG\n${UNIT}_B,Tổ B ${STAMP},${parent},PHONG\n`,
+    );
   await expect(importer.getByText("Kéo thả hoặc bấm để chọn tệp")).toBeVisible();
-  await importer.locator('input[type="file"]').setInputFiles({ name: "don-vi.csv", mimeType: "text/csv", buffer: csv("KHONG_CO") });
+  await importer
+    .locator('input[type="file"]')
+    .setInputFiles({ name: "don-vi.csv", mimeType: "text/csv", buffer: csv("KHONG_CO") });
   await expect(importer.getByText("1 / 2 dòng có lỗi")).toBeVisible();
   await expect(importer.getByRole("cell", { name: "Không có đơn vị mã KHONG_CO" })).toBeVisible();
   await importer.getByRole("button", { name: "Chọn tệp khác" }).click();
   await expect(importer.getByText("Kéo thả hoặc bấm để chọn tệp")).toBeVisible();
-  await importer.locator('input[type="file"]').setInputFiles({ name: "don-vi.csv", mimeType: "text/csv", buffer: csv(UNIT) });
+  await importer
+    .locator('input[type="file"]')
+    .setInputFiles({ name: "don-vi.csv", mimeType: "text/csv", buffer: csv(UNIT) });
   await expect(importer.getByText("2 dòng hợp lệ — sẵn sàng ghi.")).toBeVisible();
   await importer.getByRole("button", { name: "Ghi 2 dòng" }).click();
   await expect(page.getByText("Đã nhập 2 dòng đơn vị.")).toBeVisible();

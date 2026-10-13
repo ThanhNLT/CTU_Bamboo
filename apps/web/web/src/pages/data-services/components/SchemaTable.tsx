@@ -13,9 +13,15 @@ export const SchemaTable = ({ columns }: { columns: ColumnDef[] }) => (
     <table className="w-full min-w-[440px] text-[12.5px]">
       <thead>
         <tr className="border-b border-line">
-          <th scope="col" className={TH}>Cột</th>
-          <th scope="col" className={TH}>Kiểu</th>
-          <th scope="col" className={TH}>Mô tả</th>
+          <th scope="col" className={TH}>
+            Cột
+          </th>
+          <th scope="col" className={TH}>
+            Kiểu
+          </th>
+          <th scope="col" className={TH}>
+            Mô tả
+          </th>
         </tr>
       </thead>
       <tbody>

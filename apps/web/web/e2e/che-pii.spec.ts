@@ -23,7 +23,10 @@ async function logout(page: Page) {
   // Chờ Keycloak xóa phiên SSO trước khi đăng nhập tài khoản khác (check-sso sẽ đăng nhập lại người cũ).
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
   // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
-  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page
+    .locator("header")
+    .getByRole("button", { name: /^Tài khoản:/ })
+    .click();
   await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();

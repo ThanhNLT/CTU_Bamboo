@@ -29,7 +29,9 @@ export const KnowledgeLibraryPage = () => {
   const selected = visible.find((d) => d.id === selectedId) ?? visible[0];
 
   const reindex = (doc: LibraryDoc) => {
-    setDocs((prev) => prev.map((d): LibraryDoc => (d.id === doc.id ? { ...d, index: { status: "indexing", progress: 0 } } : d)));
+    setDocs((prev) =>
+      prev.map((d): LibraryDoc => (d.id === doc.id ? { ...d, index: { status: "indexing", progress: 0 } } : d)),
+    );
     message.info(`Đã gửi yêu cầu nạp lại “${doc.title}”.`);
   };
 

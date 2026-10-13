@@ -8,7 +8,10 @@ import { cn } from "../../../utils/cn";
 
 /** Nút nhỏ dạng viên thuốc ở chân khối ("Xem dạng bảng", "Định nghĩa và nguồn", "Xuất CSV"). */
 export const ChipButton = ({
-  children, onClick, pressed, className,
+  children,
+  onClick,
+  pressed,
+  className,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -32,7 +35,11 @@ export const ChipButton = ({
 
 /** "Định nghĩa và nguồn": mở hộp nổi giải thích chỉ số. */
 export const DefinitionButton = ({ text }: { text: string }) => (
-  <Popover content={<p className="max-w-[300px] text-[12.5px] leading-relaxed text-body">{text}</p>} trigger="click" placement="topLeft">
+  <Popover
+    content={<p className="max-w-[300px] text-[12.5px] leading-relaxed text-body">{text}</p>}
+    trigger="click"
+    placement="topLeft"
+  >
     <span>
       <ChipButton>Định nghĩa và nguồn</ChipButton>
     </span>
@@ -41,7 +48,12 @@ export const DefinitionButton = ({ text }: { text: string }) => (
 
 /** Khung khối biểu đồ: tiêu đề, ghi chú độ tươi bên phải, thông báo (tùy chọn), thân, chân. */
 export const ChartWidget = ({
-  title, meta, notice, footer, children, className,
+  title,
+  meta,
+  notice,
+  footer,
+  children,
+  className,
 }: {
   title: string;
   meta?: ReactNode;
@@ -50,7 +62,10 @@ export const ChartWidget = ({
   children: ReactNode;
   className?: string;
 }) => (
-  <section className={cn("flex min-w-0 flex-col rounded-2xl border border-line bg-white p-5 shadow-card", className)} aria-label={title}>
+  <section
+    className={cn("flex min-w-0 flex-col rounded-2xl border border-line bg-white p-5 shadow-card", className)}
+    aria-label={title}
+  >
     <header className="flex items-start justify-between gap-3">
       <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
       {meta && <div className="shrink-0 text-[11.5px] text-muted">{meta}</div>}

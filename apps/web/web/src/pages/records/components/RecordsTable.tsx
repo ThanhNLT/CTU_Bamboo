@@ -16,7 +16,16 @@ const TH = "px-3 pb-2 pt-1 text-left text-[12px] font-medium text-muted";
  * Mũi tên lên/xuống trên một dòng chuyển hồ sơ đang chọn.
  */
 export const RecordsTable = ({
-  rows, total, selectedId, onSelect, page, pageSize, onPageChange, formatUpdated, loading, className,
+  rows,
+  total,
+  selectedId,
+  onSelect,
+  page,
+  pageSize,
+  onPageChange,
+  formatUpdated,
+  loading,
+  className,
 }: {
   rows: EofficeRecord[];
   total: number;
@@ -64,10 +73,18 @@ export const RecordsTable = ({
           <table className="w-full min-w-[620px] table-fixed border-separate border-spacing-0 text-[13px]">
             <thead className="sticky top-0 z-10 bg-white">
               <tr>
-                <th scope="col" className={TH}>Hồ sơ</th>
-                <th scope="col" className={cn(TH, "w-[160px]")}>Trạng thái</th>
-                <th scope="col" className={cn(TH, "w-[150px] text-right")}>Số tiền</th>
-                <th scope="col" className={cn(TH, "w-[110px]")}>Cập nhật</th>
+                <th scope="col" className={TH}>
+                  Hồ sơ
+                </th>
+                <th scope="col" className={cn(TH, "w-[160px]")}>
+                  Trạng thái
+                </th>
+                <th scope="col" className={cn(TH, "w-[150px] text-right")}>
+                  Số tiền
+                </th>
+                <th scope="col" className={cn(TH, "w-[110px]")}>
+                  Cập nhật
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -101,12 +118,17 @@ export const RecordsTable = ({
                     <td className={cn(td, "rounded-l-xl")}>
                       <div className="truncate font-semibold text-ink">{r.title}</div>
                       <div className="mt-0.5 truncate text-[11.5px] text-muted">
-                        <span className="font-mono tracking-tight">{r.code}</span> · {DOC_KIND_LABEL[r.type]} · {r.submitter}
+                        <span className="font-mono tracking-tight">{r.code}</span> · {DOC_KIND_LABEL[r.type]} ·{" "}
+                        {r.submitter}
                       </div>
                     </td>
-                    <td className={td}><RecordStatusBadge status={r.status} label={r.statusLabel} /></td>
+                    <td className={td}>
+                      <RecordStatusBadge status={r.status} label={r.statusLabel} />
+                    </td>
                     <td className={cn(td, "whitespace-nowrap text-right tabular-nums text-ink")}>{r.amount}</td>
-                    <td className={cn(td, "rounded-r-xl whitespace-nowrap text-muted")}>{formatUpdated(r.updatedAt)}</td>
+                    <td className={cn(td, "rounded-r-xl whitespace-nowrap text-muted")}>
+                      {formatUpdated(r.updatedAt)}
+                    </td>
                   </tr>
                 );
               })}

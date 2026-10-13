@@ -9,7 +9,10 @@ import type { ImportRecord } from "../types";
 
 /** Lịch sử nhập: các phiếu đã quét gần đây và hồ sơ được tạo từ đó. */
 export const ImportHistoryDrawer = ({
-  open, total, items, onClose,
+  open,
+  total,
+  items,
+  onClose,
 }: {
   open: boolean;
   total: number;
@@ -17,7 +20,9 @@ export const ImportHistoryDrawer = ({
   onClose: () => void;
 }) => (
   <Drawer title={`Lịch sử nhập (${total})`} open={open} onClose={onClose} width={420}>
-    <p className="mb-3 text-[12.5px] text-muted">{total} phiếu trong 30 ngày · hiển thị {items.length} phiếu gần nhất</p>
+    <p className="mb-3 text-[12.5px] text-muted">
+      {total} phiếu trong 30 ngày · hiển thị {items.length} phiếu gần nhất
+    </p>
     <ul className="m-0 list-none divide-y divide-line p-0">
       {items.map((it) => (
         <li key={it.id} className="flex items-start gap-3 py-3">
@@ -26,9 +31,15 @@ export const ImportHistoryDrawer = ({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-mono text-[12.5px] text-ink">{it.file}</span>
-            <span className="block truncate text-[11.5px] text-muted">{it.template} · {it.at}</span>
+            <span className="block truncate text-[11.5px] text-muted">
+              {it.template} · {it.at}
+            </span>
             {it.to ? (
-              <Link to={it.to} onClick={onClose} className="mt-0.5 inline-block font-mono text-[12px] font-semibold text-bamboo-700 underline-offset-2 hover:underline">
+              <Link
+                to={it.to}
+                onClick={onClose}
+                className="mt-0.5 inline-block font-mono text-[12px] font-semibold text-bamboo-700 underline-offset-2 hover:underline"
+              >
                 {it.result}
               </Link>
             ) : (

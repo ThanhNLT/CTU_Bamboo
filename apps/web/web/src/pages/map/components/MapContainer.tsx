@@ -27,7 +27,9 @@ const Legend = () => (
   >
     {(Object.keys(COMPANY_STYLE) as CompanyKey[]).map((k) => (
       <li key={k} className="inline-flex items-center gap-1.5">
-        <span className="grid h-3.5 w-3.5 place-items-center"><CompanyShape company={k} size={9} /></span>
+        <span className="grid h-3.5 w-3.5 place-items-center">
+          <CompanyShape company={k} size={9} />
+        </span>
         {COMPANY_STYLE[k].name}
       </li>
     ))}
@@ -41,17 +43,20 @@ const clampPan = (v: MapView, w: number, h: number): MapView => {
   return { ...v, panX: Math.max(-mx, Math.min(mx, v.panX)), panY: Math.max(-my, Math.min(my, v.panY)) };
 };
 
-export const MapContainer = forwardRef<MapHandle, {
-  /** Các điểm thuộc lớp đang bật. */
-  sites: MapSite[];
-  /** Mọi điểm (để tìm kiếm cả khi lớp đang tắt). */
-  allSites: MapSite[];
-  showBoundary: boolean;
-  /** Điểm mở popup sẵn khi vào trang. */
-  initialOpenId?: string;
-  /** Tìm thấy một điểm ở lớp đang tắt → trang cha bật lớp đó. */
-  onRevealLayer: (site: MapSite) => void;
-}>(({ sites, allSites, showBoundary, initialOpenId, onRevealLayer }, ref) => {
+export const MapContainer = forwardRef<
+  MapHandle,
+  {
+    /** Các điểm thuộc lớp đang bật. */
+    sites: MapSite[];
+    /** Mọi điểm (để tìm kiếm cả khi lớp đang tắt). */
+    allSites: MapSite[];
+    showBoundary: boolean;
+    /** Điểm mở popup sẵn khi vào trang. */
+    initialOpenId?: string;
+    /** Tìm thấy một điểm ở lớp đang tắt → trang cha bật lớp đó. */
+    onRevealLayer: (site: MapSite) => void;
+  }
+>(({ sites, allSites, showBoundary, initialOpenId, onRevealLayer }, ref) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const [dragging, setDragging] = useState(false);

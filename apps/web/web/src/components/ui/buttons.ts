@@ -9,8 +9,7 @@ const base =
 
 export const secondaryButtonClass = `${base} border border-line bg-white font-medium text-ink shadow-card hover:bg-bamboo-50`;
 
-export const primaryButtonClass =
-  `${base} bg-bamboo-600 font-semibold text-white shadow-[0_1px_2px_rgb(31_81_42/0.25)] hover:bg-bamboo-700`;
+export const primaryButtonClass = `${base} bg-bamboo-600 font-semibold text-white shadow-[0_1px_2px_rgb(31_81_42/0.25)] hover:bg-bamboo-700`;
 
 // Nút nhỏ trong thẻ (h-8): dùng cho thao tác phụ bên trong nội dung, không dùng ở đầu trang.
 const small =

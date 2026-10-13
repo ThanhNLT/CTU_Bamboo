@@ -19,12 +19,25 @@ const columns: TableColumnsType<DriveFile> = [
     render: (name: string, f) => (
       <span className="flex min-w-0 items-center gap-2.5">
         <FileTypeBadge name={name} />
-        <span className={cn("truncate", f.scan === "clean" ? "text-ink" : "text-muted")} title={name}>{name}</span>
+        <span className={cn("truncate", f.scan === "clean" ? "text-ink" : "text-muted")} title={name}>
+          {name}
+        </span>
       </span>
     ),
   },
-  { title: "Chủ sở hữu", dataIndex: "owner", width: 170, ellipsis: true, render: (v: string) => <span className="text-ink">{v}</span> },
-  { title: "Cập nhật", dataIndex: "updatedLabel", width: 130, render: (v: string) => <span className="text-muted">{v}</span> },
+  {
+    title: "Chủ sở hữu",
+    dataIndex: "owner",
+    width: 170,
+    ellipsis: true,
+    render: (v: string) => <span className="text-ink">{v}</span>,
+  },
+  {
+    title: "Cập nhật",
+    dataIndex: "updatedLabel",
+    width: 130,
+    render: (v: string) => <span className="text-muted">{v}</span>,
+  },
   {
     title: "Dung lượng",
     dataIndex: "bytes",
@@ -51,7 +64,9 @@ const FileCardGrid = ({ files, onOpen }: { files: DriveFile[]; onOpen: (f: Drive
           <ScanStatus result={f.scan} />
         </div>
         <div className="min-w-0">
-          <div className="truncate text-[13px] font-medium text-ink" title={f.name}>{f.name}</div>
+          <div className="truncate text-[13px] font-medium text-ink" title={f.name}>
+            {f.name}
+          </div>
           <div className="mt-0.5 truncate text-[11.5px] text-muted">
             {f.owner} · {f.updatedLabel} · {formatBytes(f.bytes)}
           </div>
@@ -63,7 +78,10 @@ const FileCardGrid = ({ files, onOpen }: { files: DriveFile[]; onOpen: (f: Drive
 
 /** Khối "Tệp": bảng (Danh sách) hoặc thẻ (Lưới), kèm tổng số tệp và dung lượng. Bấm tệp sạch để tải về. */
 export const FileTable = ({
-  files, view, onOpen, emptyText,
+  files,
+  view,
+  onOpen,
+  emptyText,
 }: {
   files: DriveFile[];
   view: DriveView;
@@ -74,7 +92,11 @@ export const FileTable = ({
   return (
     <Panel
       title="Tệp"
-      extra={<span className="text-[12px] tabular-nums text-muted">{files.length} tệp · {formatBytes(total)}</span>}
+      extra={
+        <span className="text-[12px] tabular-nums text-muted">
+          {files.length} tệp · {formatBytes(total)}
+        </span>
+      }
       bodyClassName={view === "list" ? "px-3 pb-3" : undefined}
     >
       {view === "list" ? (
@@ -91,8 +113,10 @@ export const FileTable = ({
             locale={{ emptyText }}
           />
         </ConfigProvider>
+      ) : files.length ? (
+        <FileCardGrid files={files} onOpen={onOpen} />
       ) : (
-        files.length ? <FileCardGrid files={files} onOpen={onOpen} /> : <p className="py-6 text-center text-[13px] text-muted">{emptyText}</p>
+        <p className="py-6 text-center text-[13px] text-muted">{emptyText}</p>
       )}
     </Panel>
   );

@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { request } from "../../../api/client";
 
-export const useGql = <T,>(query: string, variables?: Record<string, unknown>) => {
+export const useGql = <T>(query: string, variables?: Record<string, unknown>) => {
   const [data, setData] = useState<T>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(true);

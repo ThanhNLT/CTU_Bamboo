@@ -50,7 +50,10 @@ export type SortKey = "updated" | "name" | "size";
 export type UploadStatus = "uploading" | "scanning" | "clean" | "blocked";
 
 export type UploadItem = {
-  id: string; name: string; progress: number; status: UploadStatus;
+  id: string;
+  name: string;
+  progress: number;
+  status: UploadStatus;
   /** Lý do khi bị chặn / lỗi (thông điệp của máy chủ). */
   error?: string;
 };
