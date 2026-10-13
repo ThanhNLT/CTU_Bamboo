@@ -16,7 +16,9 @@ class FlowableClient:
 
     def _check(self, resp: httpx.Response) -> httpx.Response:
         if resp.status_code >= 400:
-            raise RuntimeError(f"Flowable {resp.request.method} {resp.request.url.path}: {resp.status_code} {resp.text[:300]}")
+            raise RuntimeError(
+                f"Flowable {resp.request.method} {resp.request.url.path}: {resp.status_code} {resp.text[:300]}"
+            )
         return resp
 
     # --- Triển khai quy trình -------------------------------------------------
@@ -25,8 +27,9 @@ class FlowableClient:
         return self._check(self.http.get("repository/deployments", params={"name": name})).json()["data"]
 
     def deploy(self, name: str, filename: str, content: bytes) -> dict:
-        resp = self.http.post("repository/deployments", params={"deploymentName": name},
-                              files={"file": (filename, content, "text/xml")})
+        resp = self.http.post(
+            "repository/deployments", params={"deploymentName": name}, files={"file": (filename, content, "text/xml")}
+        )
         return self._check(resp).json()
 
     # --- Tiến trình -----------------------------------------------------------
@@ -41,8 +44,11 @@ class FlowableClient:
 
     def find_process(self, key: str, business_key: str) -> dict | None:
         """Tiến trình (đang chạy hoặc đã kết thúc) theo business key."""
-        resp = self._check(self.http.get("history/historic-process-instances",
-                                         params={"processDefinitionKey": key, "businessKey": business_key}))
+        resp = self._check(
+            self.http.get(
+                "history/historic-process-instances", params={"processDefinitionKey": key, "businessKey": business_key}
+            )
+        )
         data = resp.json()["data"]
         return data[0] if data else None
 
@@ -64,8 +70,12 @@ class FlowableClient:
 
     def historic_activities(self, process_id: str) -> list[dict]:
         """Các bước đã đi qua và đang đứng (endTime rỗng), theo thứ tự thời gian."""
-        resp = self._check(self.http.get("history/historic-activity-instances", params={
-            "processInstanceId": process_id, "sort": "startTime", "order": "asc", "size": 1000}))
+        resp = self._check(
+            self.http.get(
+                "history/historic-activity-instances",
+                params={"processInstanceId": process_id, "sort": "startTime", "order": "asc", "size": 1000},
+            )
+        )
         return resp.json()["data"]
 
     def process_definition_xml(self, definition_id: str) -> str:

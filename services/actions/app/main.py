@@ -19,11 +19,24 @@ import psycopg
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
-from starlette.concurrency import run_in_threadpool
 from psycopg_pool import ConnectionPool
+from starlette.concurrency import run_in_threadpool
 
-from . import (admin, attachments, audit, auth, config, forms, hr, hr_account, ic, lakehouse_query, pii_guard, search,
-               trino)
+from . import (
+    admin,
+    attachments,
+    audit,
+    auth,
+    config,
+    forms,
+    hr,
+    hr_account,
+    ic,
+    lakehouse_query,
+    pii_guard,
+    search,
+    trino,
+)
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
@@ -86,15 +99,17 @@ def cancel_purchase_request(conn: psycopg.Connection, session: dict, request_id:
 def process_state(conn: psycopg.Connection, session: dict, request_id: str, flowable: FlowableClient | None) -> dict:
     """Sơ đồ và bước hiện tại của lần gửi duyệt gần nhất. Đọc từ Flowable (bản phản chiếu,
     ADR #31); Flowable chưa đồng bộ hoặc không truy cập được thì suy ra từ trạng thái trong CSDL."""
-    row = conn.execute("SELECT tenant_id, status, approval_round FROM proc.purchase_request WHERE id = %s",
-                       (request_id,)).fetchone()
+    row = conn.execute(
+        "SELECT tenant_id, status, approval_round FROM proc.purchase_request WHERE id = %s", (request_id,)
+    ).fetchone()
     person = session_identity(session, row[0] if row else None)
-    require_read(conn, 'proc.purchase_request', request_id, person)
+    require_read(conn, "proc.purchase_request", request_id, person)
     _, status, round_no = row
     sync = conn.execute(
         """SELECT process_instance_id FROM wf.flow_sync
            WHERE entity_type = 'proc.purchase_request' AND entity_id = %s AND round = %s""",
-        (request_id, round_no)).fetchone()
+        (request_id, round_no),
+    ).fetchone()
     process_id = sync[0] if sync else None
     result = {"request_id": request_id, "round": round_no, "status": status, "process_instance_id": process_id}
 
@@ -104,23 +119,36 @@ def process_state(conn: psycopg.Connection, session: dict, request_id: str, flow
             activities = flowable.historic_activities(process_id)
             completed = list(dict.fromkeys(a["activityId"] for a in activities if a.get("endTime")))
             active = list(dict.fromkeys(a["activityId"] for a in activities if not a.get("endTime")))
-            return {**result, "bpmn_xml": flowable.process_definition_xml(instance["processDefinitionId"]),
-                    "completed_activity_ids": completed, "active_activity_ids": active, "source": "flowable"}
+            return {
+                **result,
+                "bpmn_xml": flowable.process_definition_xml(instance["processDefinitionId"]),
+                "completed_activity_ids": completed,
+                "active_activity_ids": active,
+                "source": "flowable",
+            }
         except Exception as exc:  # noqa: BLE001 - Flowable là bản phản chiếu, lỗi thì dùng CSDL
             log.warning("process_state: không đọc được Flowable cho %s: %s", request_id, exc)
     completed, active = _DB_ACTIVITIES.get(status, ([], []))
-    return {**result, "bpmn_xml": BPMN.read_text(encoding="utf-8"),
-            "completed_activity_ids": completed, "active_activity_ids": active, "source": "database"}
+    return {
+        **result,
+        "bpmn_xml": BPMN.read_text(encoding="utf-8"),
+        "completed_activity_ids": completed,
+        "active_activity_ids": active,
+        "source": "database",
+    }
 
 
 HANDLERS = {
     "my_tenants": lambda conn, session, args, _ctx: auth.my_tenants(conn, session),
     "submit_purchase_request": lambda conn, session, args, _ctx: submit_purchase_request(
-        conn, session, args["request_id"]),
+        conn, session, args["request_id"]
+    ),
     "act_on_task": lambda conn, session, args, _ctx: act_on_task(
-        conn, session, args["task_id"], args["decision"], args.get("note")),
+        conn, session, args["task_id"], args["decision"], args.get("note")
+    ),
     "cancel_purchase_request": lambda conn, session, args, _ctx: cancel_purchase_request(
-        conn, session, args["request_id"], args["reason"]),
+        conn, session, args["request_id"], args["reason"]
+    ),
     "process_state": lambda conn, session, args, ctx: process_state(conn, session, args["request_id"], ctx.flowable),
     "get_upload_url": attachments.get_upload_url,
     "confirm_upload": attachments.confirm_upload,
@@ -181,18 +209,28 @@ def _pii_cipher() -> PiiCipher | None:
     return PiiCipher(addr, approle) if addr and approle else None
 
 
-def create_app(settings: config.Settings | None = None, pool: ConnectionPool | None = None,
-               verifier: auth.KeycloakVerifier | None = None, ctx: Context | None = None) -> FastAPI:
+def create_app(
+    settings: config.Settings | None = None,
+    pool: ConnectionPool | None = None,
+    verifier: auth.KeycloakVerifier | None = None,
+    ctx: Context | None = None,
+) -> FastAPI:
     settings = settings or config.load()
     ctx = ctx or Context(
         flowable=FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password, timeout=5.0),
-        storage=Storage(settings), clamav_host=settings.clamav_host, clamav_port=settings.clamav_port,
+        storage=Storage(settings),
+        clamav_host=settings.clamav_host,
+        clamav_port=settings.clamav_port,
         search=search.Meili(settings.meili_url, settings.meili_search_key, timeout=5.0),
-        search_index=settings.meili_index, gotenberg_url=settings.gotenberg_url, pii=_pii_cipher(),
+        search_index=settings.meili_index,
+        gotenberg_url=settings.gotenberg_url,
+        pii=_pii_cipher(),
         users=_keycloak_users(settings),
-        lakehouse=_lakehouse(settings))
-    verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
-                                                 set(settings.keycloak_clients))
+        lakehouse=_lakehouse(settings),
+    )
+    verifier = verifier or auth.KeycloakVerifier(
+        settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -215,13 +253,19 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
         Chỉ kiểm token (chữ ký, hạn, issuer, client); tenant và quyền do Hasura webhook xử lý."""
         header = request.headers.get("authorization", "")
         if not header.lower().startswith("bearer "):
-            return JSONResponse({"message": "Cần đăng nhập", "extensions": {"code": "unauthorized"}}, 401,
-                                headers={"WWW-Authenticate": "Bearer"})
+            return JSONResponse(
+                {"message": "Cần đăng nhập", "extensions": {"code": "unauthorized"}},
+                401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         try:
             claims = verifier.verify(header[7:].strip())
         except auth.AuthError as exc:
-            return JSONResponse({"message": str(exc), "extensions": {"code": "unauthorized"}}, 401,
-                                headers={"WWW-Authenticate": 'Bearer error="invalid_token"'})
+            return JSONResponse(
+                {"message": str(exc), "extensions": {"code": "unauthorized"}},
+                401,
+                headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            )
         return JSONResponse({"ok": True}, headers={"X-User-Sub": claims["sub"]})
 
     @app.get("/auth/hasura")
@@ -233,8 +277,13 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
         try:
             claims = verifier.verify(header[7:].strip())
             with app.state.pool.connection() as conn:
-                session = auth.session_for(conn, claims, request.headers.get("x-bamboo-tenant"),
-                                           request.headers.get("x-hasura-role"), memberships)
+                session = auth.session_for(
+                    conn,
+                    claims,
+                    request.headers.get("x-bamboo-tenant"),
+                    request.headers.get("x-hasura-role"),
+                    memberships,
+                )
         except auth.AuthError as exc:
             return JSONResponse({"message": str(exc)}, 401)
         except psycopg.errors.InvalidTextRepresentation:

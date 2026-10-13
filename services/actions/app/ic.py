@@ -27,8 +27,11 @@ def _order(conn: psycopg.Connection, session: dict, order_id: str) -> str:
 
 def _result(conn: psycopg.Connection, order_id: str, purchase_order_id=None) -> dict:
     status = conn.execute("SELECT status FROM ic.ic_order WHERE id = %s", (order_id,)).fetchone()[0]
-    return {"order_id": order_id, "status": status,
-            "purchase_order_id": str(purchase_order_id) if purchase_order_id else None}
+    return {
+        "order_id": order_id,
+        "status": status,
+        "purchase_order_id": str(purchase_order_id) if purchase_order_id else None,
+    }
 
 
 def confirm_ic_order(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
@@ -39,8 +42,7 @@ def confirm_ic_order(conn: psycopg.Connection, session: dict, args: dict, _ctx: 
         if entry["line_id"] in lots:
             raise ActionError("Mỗi dòng hàng chỉ chọn một lô", "rejected")
         lots[entry["line_id"]] = entry["lot_id"]
-    po = conn.execute("SELECT ic.confirm_order(%s, %s, %s::jsonb)",
-                      (order_id, person, json.dumps(lots))).fetchone()[0]
+    po = conn.execute("SELECT ic.confirm_order(%s, %s, %s::jsonb)", (order_id, person, json.dumps(lots))).fetchone()[0]
     return _result(conn, order_id, po)
 
 

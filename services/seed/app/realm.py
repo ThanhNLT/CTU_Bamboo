@@ -26,18 +26,20 @@ def build() -> dict:
     users = []
     for user in [*DEMO_USERS, *HR_DEMO_USERS]:
         last, _, first = user.full_name.rpartition(" ")
-        users.append({
-            "id": str(user.id),
-            "username": user.username,
-            "enabled": True,
-            "emailVerified": True,
-            "firstName": first,
-            "lastName": last,
-            "email": f"{user.username}@demo.bamboo.local",
-            "credentials": [{"type": "password", "value": "${DEMO_PASSWORD}", "temporary": False}],
-            "realmRoles": ["default-roles-bms", *user.realm_roles],
-            "requiredActions": ["CONFIGURE_TOTP"] if "platform_admin" in user.realm_roles else [],
-        })
+        users.append(
+            {
+                "id": str(user.id),
+                "username": user.username,
+                "enabled": True,
+                "emailVerified": True,
+                "firstName": first,
+                "lastName": last,
+                "email": f"{user.username}@demo.bamboo.local",
+                "credentials": [{"type": "password", "value": "${DEMO_PASSWORD}", "temporary": False}],
+                "realmRoles": ["default-roles-bms", *user.realm_roles],
+                "requiredActions": ["CONFIGURE_TOTP"] if "platform_admin" in user.realm_roles else [],
+            }
+        )
     return {
         "realm": "bms",
         "enabled": True,
@@ -57,9 +59,11 @@ def build() -> dict:
         "otpPolicyAlgorithm": "HmacSHA1",
         "otpPolicyDigits": 6,
         "otpPolicyPeriod": 30,
-        "roles": {"realm": [
-            {"name": "platform_admin", "description": "Quản trị kỹ thuật nền tảng (bắt buộc OTP)"},
-        ]},
+        "roles": {
+            "realm": [
+                {"name": "platform_admin", "description": "Quản trị kỹ thuật nền tảng (bắt buộc OTP)"},
+            ]
+        },
         "clients": [
             {
                 "clientId": "bms-web",
@@ -69,8 +73,10 @@ def build() -> dict:
                 "directAccessGrantsEnabled": False,
                 "redirectUris": [f"{WEB_ORIGIN}/*", f"{DEV_ORIGIN}/*"],
                 "webOrigins": [WEB_ORIGIN, DEV_ORIGIN],
-                "attributes": {"pkce.code.challenge.method": "S256",
-                               "post.logout.redirect.uris": f"{WEB_ORIGIN}/*##{DEV_ORIGIN}/*"},
+                "attributes": {
+                    "pkce.code.challenge.method": "S256",
+                    "post.logout.redirect.uris": f"{WEB_ORIGIN}/*##{DEV_ORIGIN}/*",
+                },
             },
             {
                 "clientId": "bms-e2e",

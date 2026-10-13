@@ -32,10 +32,10 @@ extensions = [
 myst_enable_extensions = [
     "colon_fence",  # ::: cho directive
     "deflist",
-    "tasklist",     # - [x] trong mục "Còn phải làm"
+    "tasklist",  # - [x] trong mục "Còn phải làm"
 ]
-myst_heading_anchors = 3                 # liên kết kiểu GitHub tới tiêu đề h1–h3
-myst_fence_as_directive = ["mermaid"]    # ```mermaid hiển thị như trên GitHub
+myst_heading_anchors = 3  # liên kết kiểu GitHub tới tiêu đề h1–h3
+myst_fence_as_directive = ["mermaid"]  # ```mermaid hiển thị như trên GitHub
 
 # --- HTML -------------------------------------------------------------------
 html_theme = "furo"

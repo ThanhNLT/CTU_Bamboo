@@ -52,10 +52,20 @@ def content_disposition(file_name: str) -> str:
 
 
 def _client(endpoint: str, access_key: str, secret_key: str, region: str):
-    return boto3.client("s3", endpoint_url=endpoint, aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                        region_name=region,
-                        config=Config(signature_version="s3v4", s3={"addressing_style": "path"},
-                                      connect_timeout=5, read_timeout=30, retries={"max_attempts": 2}))
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        region_name=region,
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "path"},
+            connect_timeout=5,
+            read_timeout=30,
+            retries={"max_attempts": 2},
+        ),
+    )
 
 
 class Storage:
@@ -63,20 +73,28 @@ class Storage:
         self.quarantine = settings.s3_quarantine_bucket
         self.documents = settings.s3_documents_bucket
         self.s3 = _client(settings.s3_endpoint, settings.s3_access_key, settings.s3_secret_key, settings.s3_region)
-        self.public = _client(settings.s3_public_endpoint, settings.s3_access_key, settings.s3_secret_key,
-                              settings.s3_region)
+        self.public = _client(
+            settings.s3_public_endpoint, settings.s3_access_key, settings.s3_secret_key, settings.s3_region
+        )
 
     def upload_url(self, key: str, content_type: str) -> str:
         return self.public.generate_presigned_url(
-            "put_object", Params={"Bucket": self.quarantine, "Key": key, "ContentType": content_type},
-            ExpiresIn=UPLOAD_TTL)
+            "put_object",
+            Params={"Bucket": self.quarantine, "Key": key, "ContentType": content_type},
+            ExpiresIn=UPLOAD_TTL,
+        )
 
     def download_url(self, key: str, file_name: str, content_type: str) -> str:
         return self.public.generate_presigned_url(
-            "get_object", Params={"Bucket": self.documents, "Key": key,
-                                  "ResponseContentDisposition": content_disposition(file_name),
-                                  "ResponseContentType": content_type},
-            ExpiresIn=DOWNLOAD_TTL)
+            "get_object",
+            Params={
+                "Bucket": self.documents,
+                "Key": key,
+                "ResponseContentDisposition": content_disposition(file_name),
+                "ResponseContentType": content_type,
+            },
+            ExpiresIn=DOWNLOAD_TTL,
+        )
 
     def read_quarantine(self, key: str, limit: int = MAX_BYTES + 1) -> bytes | None:
         """Nội dung tệp vừa tải lên (tối đa `limit` byte); None nếu chưa có tệp."""
@@ -89,8 +107,13 @@ class Storage:
         return obj["Body"].read()
 
     def promote(self, key: str, content_type: str) -> None:
-        self.s3.copy_object(Bucket=self.documents, Key=key, CopySource={"Bucket": self.quarantine, "Key": key},
-                            ContentType=content_type, MetadataDirective="REPLACE")
+        self.s3.copy_object(
+            Bucket=self.documents,
+            Key=key,
+            CopySource={"Bucket": self.quarantine, "Key": key},
+            ContentType=content_type,
+            MetadataDirective="REPLACE",
+        )
         self.s3.delete_object(Bucket=self.quarantine, Key=key)
 
     def document_exists(self, key: str) -> bool:
@@ -116,7 +139,7 @@ def scan(data: bytes, host: str, port: int = 3310, timeout: float = 30.0) -> tup
     with socket.create_connection((host, port), timeout=timeout) as sock:
         sock.sendall(b"zINSTREAM\0")
         for i in range(0, len(data), 65536):
-            chunk = data[i:i + 65536]
+            chunk = data[i : i + 65536]
             sock.sendall(struct.pack("!L", len(chunk)) + chunk)
         sock.sendall(struct.pack("!L", 0))
         reply = b""
@@ -135,31 +158,50 @@ def scan(data: bytes, host: str, port: int = 3310, timeout: float = 30.0) -> tup
 
 # --- Khởi tạo (job openbao-init ghi s3.json, job bootstrap tạo bucket) -------------
 
+
 def s3_identities(settings: config.Settings) -> dict:
     """Cấu hình định danh S3 cho SeaweedFS (-s3.config): admin toàn quyền, ứng dụng chỉ đọc/ghi hai bucket,
     search-sync chỉ đọc bucket tài liệu đã kiểm tra (ADR #36)."""
-    app_actions = [f"{a}:{b}" for b in (settings.s3_quarantine_bucket, settings.s3_documents_bucket)
-                   for a in ("Read", "Write", "List", "Tagging")]
-    return {"identities": [
-        {"name": "admin", "credentials": [{"accessKey": settings.s3_admin_access_key,
-                                           "secretKey": settings.s3_admin_secret_key}],
-         "actions": ["Admin", "Read", "Write", "List", "Tagging"]},
-        {"name": "bms-app", "credentials": [{"accessKey": settings.s3_access_key,
-                                             "secretKey": settings.s3_secret_key}],
-         "actions": app_actions},
-        {"name": "bms-search", "credentials": [{"accessKey": settings.s3_search_access_key,
-                                                "secretKey": settings.s3_search_secret_key}],
-         "actions": [f"Read:{settings.s3_documents_bucket}"]},
-        {"name": "bms-lakehouse", "credentials": [{"accessKey": settings.s3_lakehouse_access_key,
-                                                   "secretKey": settings.s3_lakehouse_secret_key}],
-         "actions": [f"{a}:{settings.s3_lakehouse_bucket}" for a in ("Read", "Write", "List", "Tagging")]},
-    ]}
+    app_actions = [
+        f"{a}:{b}"
+        for b in (settings.s3_quarantine_bucket, settings.s3_documents_bucket)
+        for a in ("Read", "Write", "List", "Tagging")
+    ]
+    return {
+        "identities": [
+            {
+                "name": "admin",
+                "credentials": [{"accessKey": settings.s3_admin_access_key, "secretKey": settings.s3_admin_secret_key}],
+                "actions": ["Admin", "Read", "Write", "List", "Tagging"],
+            },
+            {
+                "name": "bms-app",
+                "credentials": [{"accessKey": settings.s3_access_key, "secretKey": settings.s3_secret_key}],
+                "actions": app_actions,
+            },
+            {
+                "name": "bms-search",
+                "credentials": [
+                    {"accessKey": settings.s3_search_access_key, "secretKey": settings.s3_search_secret_key}
+                ],
+                "actions": [f"Read:{settings.s3_documents_bucket}"],
+            },
+            {
+                "name": "bms-lakehouse",
+                "credentials": [
+                    {"accessKey": settings.s3_lakehouse_access_key, "secretKey": settings.s3_lakehouse_secret_key}
+                ],
+                "actions": [f"{a}:{settings.s3_lakehouse_bucket}" for a in ("Read", "Write", "List", "Tagging")],
+            },
+        ]
+    }
 
 
 def read_document(settings: config.Settings, key: str, limit: int = MAX_BYTES) -> bytes | None:
     """Nội dung tệp đã kiểm tra (bucket tài liệu) bằng khóa chỉ đọc của search-sync; None nếu không còn."""
-    client = _client(settings.s3_endpoint, settings.s3_search_access_key, settings.s3_search_secret_key,
-                     settings.s3_region)
+    client = _client(
+        settings.s3_endpoint, settings.s3_search_access_key, settings.s3_search_secret_key, settings.s3_region
+    )
     try:
         obj = client.get_object(Bucket=settings.s3_documents_bucket, Key=key, Range=f"bytes=0-{limit - 1}")
     except ClientError as exc:
@@ -171,8 +213,9 @@ def read_document(settings: config.Settings, key: str, limit: int = MAX_BYTES) -
 
 def ensure_buckets(settings: config.Settings) -> list[str]:
     """Tạo bucket còn thiếu bằng khóa admin. Trả về các bucket vừa tạo."""
-    admin = _client(settings.s3_endpoint, settings.s3_admin_access_key, settings.s3_admin_secret_key,
-                    settings.s3_region)
+    admin = _client(
+        settings.s3_endpoint, settings.s3_admin_access_key, settings.s3_admin_secret_key, settings.s3_region
+    )
     existing = {b["Name"] for b in admin.list_buckets().get("Buckets", [])}
     created = []
     for bucket in (settings.s3_quarantine_bucket, settings.s3_documents_bucket, settings.s3_lakehouse_bucket):
@@ -180,4 +223,3 @@ def ensure_buckets(settings: config.Settings) -> list[str]:
             admin.create_bucket(Bucket=bucket)
             created.append(bucket)
     return created
-

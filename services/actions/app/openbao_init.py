@@ -90,16 +90,21 @@ def env_secrets() -> dict[str, dict]:
         # Tài khoản CSDL của actions/flow-sync (ADR #35), không phải superuser.
         "bms/postgres": {"username": "bamboo_actions", "password": env("ACTIONS_DB_PASSWORD", "actions-db-dev")},
         "bms/hasura": {"admin_secret": env("HASURA_GRAPHQL_ADMIN_SECRET", "dev-admin-secret")},
-        "bms/keycloak": {"username": env("KEYCLOAK_ADMIN", "kcadmin"),
-                         "password": env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev")},
-        "bms/flowable": {"username": env("FLOWABLE_ADMIN", "rest-admin"),
-                         "password": env("FLOWABLE_ADMIN_PASSWORD", "test")},
+        "bms/keycloak": {
+            "username": env("KEYCLOAK_ADMIN", "kcadmin"),
+            "password": env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"),
+        },
+        "bms/flowable": {
+            "username": env("FLOWABLE_ADMIN", "rest-admin"),
+            "password": env("FLOWABLE_ADMIN_PASSWORD", "test"),
+        },
         "bms/actions": {"secret": env("ACTIONS_SECRET", "dev-actions-secret")},
-        "bms/lakehouse": {"username": "bamboo_lakehouse",
-                          "password": env("LAKEHOUSE_DB_PASSWORD", "lakehouse-db-dev")},
+        "bms/lakehouse": {"username": "bamboo_lakehouse", "password": env("LAKEHOUSE_DB_PASSWORD", "lakehouse-db-dev")},
         # Kafka (ADR #45): broker đặt cùng mật khẩu này cho tài khoản SCRAM `lakehouse` lúc khởi động.
-        "bms/kafka-lakehouse": {"username": "lakehouse",
-                                "password": env("LAKEHOUSE_KAFKA_PASSWORD", "lakehouse-kafka-dev")},
+        "bms/kafka-lakehouse": {
+            "username": "lakehouse",
+            "password": env("LAKEHOUSE_KAFKA_PASSWORD", "lakehouse-kafka-dev"),
+        },
     }
 
 
@@ -132,8 +137,10 @@ def init_and_unseal(addr: str, keys_file: pathlib.Path) -> str:
         _write_private(keys_file, {"unseal_keys_b64": result["keys_base64"], "root_token": result["root_token"]})
         log.info("đã khởi tạo OpenBao, khóa lưu ở %s", keys_file)
     if not keys_file.exists():
-        raise RuntimeError(f"OpenBao đã khởi tạo nhưng không có {keys_file}: khôi phục file khóa hoặc "
-                           "xóa volume openbao-data để khởi tạo lại (mất toàn bộ secret)")
+        raise RuntimeError(
+            f"OpenBao đã khởi tạo nhưng không có {keys_file}: khôi phục file khóa hoặc "
+            "xóa volume openbao-data để khởi tạo lại (mất toàn bộ secret)"
+        )
     keys = json.loads(keys_file.read_text(encoding="utf-8"))
     if bao.request("GET", "sys/seal-status")["sealed"]:
         for key in keys["unseal_keys_b64"]:
@@ -159,18 +166,34 @@ def configure(root: Bao) -> None:
     if "pki/" not in mounts:
         root.request("POST", "sys/mounts/pki", {"type": "pki", "config": {"max_lease_ttl": "87600h"}})
     if not root.request("LIST", "pki/issuers", ok404=True):
-        root.request("POST", "pki/root/generate/internal",
-                     {"common_name": "Bamboo DX-OS internal CA", "ttl": "87600h", "key_type": "ec"})
+        root.request(
+            "POST",
+            "pki/root/generate/internal",
+            {"common_name": "Bamboo DX-OS internal CA", "ttl": "87600h", "key_type": "ec"},
+        )
         log.info("đã tạo CA nội bộ pki/")
-    root.request("POST", "pki/roles/internal", {
-        "allowed_domains": INTERNAL_HOSTS, "allow_bare_domains": True, "allow_localhost": True,
-        "allow_ip_sans": True, "key_type": "rsa", "key_bits": 2048, "max_ttl": "8760h"})
+    root.request(
+        "POST",
+        "pki/roles/internal",
+        {
+            "allowed_domains": INTERNAL_HOSTS,
+            "allow_bare_domains": True,
+            "allow_localhost": True,
+            "allow_ip_sans": True,
+            "key_type": "rsa",
+            "key_bits": 2048,
+            "max_ttl": "8760h",
+        },
+    )
     if "approle/" not in root.request("GET", "sys/auth")["data"]:
         root.request("POST", "sys/auth/approle", {"type": "approle"})
     for name, policy in POLICIES.items():
         root.request("PUT", f"sys/policies/acl/{name}", {"policy": policy})
-        root.request("POST", f"auth/approle/role/{name}", {
-            "token_policies": [name], "token_ttl": "1h", "token_max_ttl": "24h", "secret_id_ttl": "0"})
+        root.request(
+            "POST",
+            f"auth/approle/role/{name}",
+            {"token_policies": [name], "token_ttl": "1h", "token_max_ttl": "24h", "secret_id_ttl": "0"},
+        )
 
 
 def sync_secrets(root: Bao) -> None:
@@ -179,8 +202,12 @@ def sync_secrets(root: Bao) -> None:
         if root.read(path) != values:
             root.write(path, values)
             log.info("đã cập nhật secret/%s", path)
-    for path, access_key in (("bms/seaweedfs", "bms-app"), ("bms/seaweedfs-admin", "bms-admin"),
-                             ("bms/seaweedfs-search", "bms-search"), ("bms/seaweedfs-lakehouse", "bms-lakehouse")):
+    for path, access_key in (
+        ("bms/seaweedfs", "bms-app"),
+        ("bms/seaweedfs-admin", "bms-admin"),
+        ("bms/seaweedfs-search", "bms-search"),
+        ("bms/seaweedfs-lakehouse", "bms-lakehouse"),
+    ):
         if root.read(path) is None:
             root.write(path, {"access_key": access_key, "secret_key": secrets.token_urlsafe(32)})
             log.info("đã sinh khóa S3 secret/%s", path)
@@ -200,8 +227,10 @@ def sync_secrets(root: Bao) -> None:
         admin = {"master_key": secrets.token_urlsafe(32)}
         root.write("bms/meilisearch-admin", admin)
         log.info("đã sinh khóa chủ Meilisearch")
-    for path, uid in (("bms/meilisearch-search", search.SEARCH_KEY_UID),
-                      ("bms/meilisearch-indexer", search.INDEXER_KEY_UID)):
+    for path, uid in (
+        ("bms/meilisearch-search", search.SEARCH_KEY_UID),
+        ("bms/meilisearch-indexer", search.INDEXER_KEY_UID),
+    ):
         values = {"key": search.derive_key(admin["master_key"], uid)}
         if root.read(path) != values:
             root.write(path, values)
@@ -230,7 +259,7 @@ def write_approle(root: Bao, addr: str, role: str, path: pathlib.Path, uid: int 
 
 
 def parse_outputs(spec: str) -> dict[str, pathlib.Path]:
-    """"actions=/run/a.json,bootstrap=/run/b.json" → {role: đường dẫn}."""
+    """ "actions=/run/a.json,bootstrap=/run/b.json" → {role: đường dẫn}."""
     return {k.strip(): pathlib.Path(v.strip()) for k, v in (item.split("=", 1) for item in spec.split(",") if item)}
 
 
@@ -250,22 +279,27 @@ def trino_catalog(root: Bao, db_url: str, s3_endpoint: str, bucket: str) -> str:
     """Catalog Iceberg của Trino (ADR #40): cùng JDBC catalog (CSDL lakehouse) và bucket với lakehouse-sink."""
     db = root.read("bms/lakehouse")
     s3 = root.read("bms/seaweedfs-lakehouse")
-    return "\n".join([
-        "connector.name=iceberg",
-        "iceberg.catalog.type=jdbc",
-        "iceberg.jdbc-catalog.catalog-name=bms",   # trùng tên catalog của pyiceberg (lakehouse_sink.catalog)
-        "iceberg.jdbc-catalog.driver-class=org.postgresql.Driver",
-        f"iceberg.jdbc-catalog.connection-url={db_url}",
-        f"iceberg.jdbc-catalog.connection-user={db['username']}",
-        f"iceberg.jdbc-catalog.connection-password={db['password']}",
-        f"iceberg.jdbc-catalog.default-warehouse-dir=s3://{bucket}/warehouse",
-        "fs.native-s3.enabled=true",
-        f"s3.endpoint={s3_endpoint}",
-        "s3.region=us-east-1",
-        "s3.path-style-access=true",
-        f"s3.aws-access-key={s3['access_key']}",
-        f"s3.aws-secret-key={s3['secret_key']}",
-    ]) + "\n"
+    return (
+        "\n".join(
+            [
+                "connector.name=iceberg",
+                "iceberg.catalog.type=jdbc",
+                "iceberg.jdbc-catalog.catalog-name=bms",  # trùng tên catalog của pyiceberg (lakehouse_sink.catalog)
+                "iceberg.jdbc-catalog.driver-class=org.postgresql.Driver",
+                f"iceberg.jdbc-catalog.connection-url={db_url}",
+                f"iceberg.jdbc-catalog.connection-user={db['username']}",
+                f"iceberg.jdbc-catalog.connection-password={db['password']}",
+                f"iceberg.jdbc-catalog.default-warehouse-dir=s3://{bucket}/warehouse",
+                "fs.native-s3.enabled=true",
+                f"s3.endpoint={s3_endpoint}",
+                "s3.region=us-east-1",
+                "s3.path-style-access=true",
+                f"s3.aws-access-key={s3['access_key']}",
+                f"s3.aws-secret-key={s3['secret_key']}",
+            ]
+        )
+        + "\n"
+    )
 
 
 def trino_password_hash(password: str, salt: bytes | None = None) -> str:
@@ -279,8 +313,9 @@ def trino_password_hash(password: str, salt: bytes | None = None) -> str:
 def _trino_hash_matches(line: str, password: str) -> bool:
     try:
         iterations, salt, digest = line.split(":")
-        computed = hashlib.pbkdf2_hmac("sha1", password.encode(), bytes.fromhex(salt), int(iterations),
-                                       dklen=len(digest) // 2)
+        computed = hashlib.pbkdf2_hmac(
+            "sha1", password.encode(), bytes.fromhex(salt), int(iterations), dklen=len(digest) // 2
+        )
     except ValueError:
         return False
     return hmac.compare_digest(computed.hex(), digest)
@@ -289,11 +324,12 @@ def _trino_hash_matches(line: str, password: str) -> bool:
 def _cert_needs_renewal(pem_path: pathlib.Path, ca_pem: str) -> bool:
     """Chưa có, sắp hết hạn, hoặc do CA khác cấp (CA đã tạo lại) thì cấp chứng chỉ mới."""
     from cryptography import x509
+
     if not pem_path.exists():
         return True
     text = pem_path.read_text(encoding="utf-8")
     try:
-        cert = x509.load_pem_x509_certificate(text[text.index("-----BEGIN CERTIFICATE-----"):].encode())
+        cert = x509.load_pem_x509_certificate(text[text.index("-----BEGIN CERTIFICATE-----") :].encode())
     except ValueError:
         return True
     if ca_pem.strip() not in text:
@@ -314,17 +350,24 @@ def trino_secrets(root: Bao, directory: pathlib.Path, uid: int | None) -> None:
     ca_pem = root.request("GET", "pki/cert/ca")["data"]["certificate"]
     pem = directory / "trino.pem"
     if _cert_needs_renewal(pem, ca_pem):
-        issued = root.request("POST", "pki/issue/internal", {
-            "common_name": "trino", "alt_names": "localhost", "ip_sans": "127.0.0.1", "ttl": "8760h"})["data"]
-        _write_if_changed(pem, "\n".join([issued["private_key"], issued["certificate"], issued["issuing_ca"]]) + "\n",
-                          0o600)
+        issued = root.request(
+            "POST",
+            "pki/issue/internal",
+            {"common_name": "trino", "alt_names": "localhost", "ip_sans": "127.0.0.1", "ttl": "8760h"},
+        )["data"]
+        _write_if_changed(
+            pem, "\n".join([issued["private_key"], issued["certificate"], issued["issuing_ca"]]) + "\n", 0o600
+        )
         log.info("đã cấp chứng chỉ TLS cho Trino")
     _write_if_changed(directory / "ca.pem", ca_pem.strip() + "\n", 0o644)
 
     old = {}
     if (directory / "password.db").exists():
-        old = dict(line.split(":", 1) for line in (directory / "password.db").read_text(encoding="utf-8").split()
-                   if ":" in line)
+        old = dict(
+            line.split(":", 1)
+            for line in (directory / "password.db").read_text(encoding="utf-8").split()
+            if ":" in line
+        )
     lines = []
     for user, path in TRINO_USERS.items():
         password = root.read(path)["password"]
@@ -348,11 +391,18 @@ def write_internal_ca(root: Bao, paths: list[pathlib.Path]) -> None:
             log.info("đã ghi CA nội bộ %s", path)
 
 
-def run(addr: str, keys_file: pathlib.Path, approle_outputs: dict[str, pathlib.Path],
-        s3_config_path: pathlib.Path | None, approle_uid: int | None = None,
-        meili_config_path: pathlib.Path | None = None, trino_catalog_path: pathlib.Path | None = None,
-        trino_uid: int | None = None, trino_secrets_dir: pathlib.Path | None = None,
-        ca_outputs: list[pathlib.Path] | None = None) -> None:
+def run(
+    addr: str,
+    keys_file: pathlib.Path,
+    approle_outputs: dict[str, pathlib.Path],
+    s3_config_path: pathlib.Path | None,
+    approle_uid: int | None = None,
+    meili_config_path: pathlib.Path | None = None,
+    trino_catalog_path: pathlib.Path | None = None,
+    trino_uid: int | None = None,
+    trino_secrets_dir: pathlib.Path | None = None,
+    ca_outputs: list[pathlib.Path] | None = None,
+) -> None:
     wait_reachable(addr)
     root = Bao(addr, init_and_unseal(addr, keys_file))
     configure(root)
@@ -363,13 +413,18 @@ def run(addr: str, keys_file: pathlib.Path, approle_outputs: dict[str, pathlib.P
             log.info("đã ghi cấu hình S3 %s", s3_config_path)
     if meili_config_path:
         # Meilisearch chạy bằng root trong container nên tệp chứa khóa chủ chỉ root đọc được.
-        if _write_if_changed(meili_config_path, search.config_toml(root.read("bms/meilisearch-admin")["master_key"]),
-                             0o600):
+        if _write_if_changed(
+            meili_config_path, search.config_toml(root.read("bms/meilisearch-admin")["master_key"]), 0o600
+        ):
             log.info("đã ghi cấu hình Meilisearch %s", meili_config_path)
     if trino_catalog_path:
         env = os.environ.get
-        text = trino_catalog(root, env("TRINO_CATALOG_DB_URL", "jdbc:postgresql://db:5432/lakehouse"),
-                             env("S3_ENDPOINT", "http://seaweedfs:8333"), env("S3_LAKEHOUSE_BUCKET", "bms-lakehouse"))
+        text = trino_catalog(
+            root,
+            env("TRINO_CATALOG_DB_URL", "jdbc:postgresql://db:5432/lakehouse"),
+            env("S3_ENDPOINT", "http://seaweedfs:8333"),
+            env("S3_LAKEHOUSE_BUCKET", "bms-lakehouse"),
+        )
         if _write_if_changed(trino_catalog_path, text, 0o600):
             log.info("đã ghi catalog Trino %s", trino_catalog_path)
         # Trino chạy bằng uid 1000 trong image: tệp chứa mật khẩu chỉ người dùng đó đọc được.
@@ -396,7 +451,8 @@ def main() -> int:
     trino_uid = env("TRINO_UID")
     trino_secrets_dir = env("TRINO_SECRETS_DIR")
     uid = env("APPROLE_UID")
-    run(env("BAO_ADDR", "http://openbao:8200"),
+    run(
+        env("BAO_ADDR", "http://openbao:8200"),
         pathlib.Path(env("BAO_KEYS_FILE", "/openbao/keys/init.json")),
         parse_outputs(env("APPROLE_OUTPUTS", "")),
         pathlib.Path(s3_path) if s3_path else None,
@@ -405,7 +461,8 @@ def main() -> int:
         pathlib.Path(trino_path) if trino_path else None,
         int(trino_uid) if trino_uid else None,
         pathlib.Path(trino_secrets_dir) if trino_secrets_dir else None,
-        [pathlib.Path(p) for p in env("INTERNAL_CA_OUTPUTS", "").split(",") if p])
+        [pathlib.Path(p) for p in env("INTERNAL_CA_OUTPUTS", "").split(",") if p],
+    )
     return 0
 
 

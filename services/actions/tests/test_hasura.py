@@ -51,8 +51,12 @@ def test_ghi_nhap_qua_hasura(hasura, conn):
     data = hasura(update, {"id": row["id"], "amount": 16_000_000}, person=i["c"], tenant=i["TDX"])
     assert data["data"]["update_proc_purchase_request_by_pk"]["total_amount"] == 16000000
 
-    data = hasura("""mutation($id: uuid!) { submit_purchase_request(request_id: $id) { status } }""",
-                  {"id": row["id"]}, person=i["c"], tenant=i["TDX"])
+    data = hasura(
+        """mutation($id: uuid!) { submit_purchase_request(request_id: $id) { status } }""",
+        {"id": row["id"]},
+        person=i["c"],
+        tenant=i["TDX"],
+    )
     assert data["data"]["submit_purchase_request"]["status"] == "PENDING", data
     data = hasura(update, {"id": row["id"], "amount": 1}, person=i["c"], tenant=i["TDX"])
     assert data["data"]["update_proc_purchase_request_by_pk"] is None, "đang chờ duyệt thì không sửa được"

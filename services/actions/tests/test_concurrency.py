@@ -20,16 +20,23 @@ def test_slow_action_does_not_block_other_requests(monkeypatch):
 
     monkeypatch.setattr(main, "run_action", slow)
     settings = config.Settings(**SETTINGS.__dict__)
-    app = main.create_app(settings, pool=object(), ctx=common.Context(),
-                          verifier=auth.KeycloakVerifier("", "", set(), jwks_client=object()))
+    app = main.create_app(
+        settings,
+        pool=object(),
+        ctx=common.Context(),
+        verifier=auth.KeycloakVerifier("", "", set(), jwks_client=object()),
+    )
     app.state.pool = object()
 
     async def scenario():
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://actions") as client:
             started = time.monotonic()
-            action = asyncio.create_task(client.post(
-                "/actions/get_purchase_request_pdf", json={}, headers={"x-actions-secret": settings.actions_secret}))
+            action = asyncio.create_task(
+                client.post(
+                    "/actions/get_purchase_request_pdf", json={}, headers={"x-actions-secret": settings.actions_secret}
+                )
+            )
             await asyncio.sleep(0.1)
             health = await client.get("/healthz")
             waited = time.monotonic() - started

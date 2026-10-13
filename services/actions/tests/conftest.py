@@ -113,8 +113,11 @@ def org(conn):
 
 
 def pr(conn, key: str, person: str, position: str, amount: int, submit: bool = True) -> str:
-    return str(conn.execute("SELECT test.pr(%s, %s, %s, %s, %s) AS id",
-                            (key, person, position, amount, submit)).fetchone()["id"])
+    return str(
+        conn.execute("SELECT test.pr(%s, %s, %s, %s, %s) AS id", (key, person, position, amount, submit)).fetchone()[
+            "id"
+        ]
+    )
 
 
 def status(conn, pr_id: str) -> str:
@@ -124,7 +127,9 @@ def status(conn, pr_id: str) -> str:
 def open_task(conn, pr_id: str) -> dict | None:
     return conn.execute(
         """SELECT t.* FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
-           WHERE s.entity_id = %s AND t.status = 'OPEN'""", (pr_id,)).fetchone()
+           WHERE s.entity_id = %s AND t.status = 'OPEN'""",
+        (pr_id,),
+    ).fetchone()
 
 
 # --- Dịch vụ ngoài -------------------------------------------------------------
@@ -154,8 +159,9 @@ def _missing(name: str):
 
 @pytest.fixture(scope="session")
 def flowable(database) -> FlowableClient:
-    if not _reachable(SETTINGS.flowable_url + "/management/engine",
-                      auth=(SETTINGS.flowable_user, SETTINGS.flowable_password)):
+    if not _reachable(
+        SETTINGS.flowable_url + "/management/engine", auth=(SETTINGS.flowable_user, SETTINGS.flowable_password)
+    ):
         _missing("Flowable")
     client = FlowableClient(SETTINGS.flowable_url, SETTINGS.flowable_user, SETTINGS.flowable_password)
     bootstrap.deploy_bpmn(client)
@@ -219,8 +225,9 @@ def trino_reachable(settings: config.Settings) -> bool:
 def search_settings(database) -> config.Settings:
     """Cấu hình tìm kiếm cho kiểm thử: khóa chủ, khóa ghi chỉ mục, khóa S3 chỉ đọc lấy từ OpenBao (root_settings)
     hoặc từ MEILI_MASTER_KEY khi chạy native. Index kiểm thử tạo lại."""
-    settings = config.Settings(**{**root_settings().__dict__, "database_url": TEST_APP_DB_URL,
-                                  "meili_index": MEILI_TEST_INDEX})
+    settings = config.Settings(
+        **{**root_settings().__dict__, "database_url": TEST_APP_DB_URL, "meili_index": MEILI_TEST_INDEX}
+    )
     if not settings.meili_master_key or not _reachable(settings.meili_url + "/health"):
         _missing("Meilisearch")
     if not _reachable(settings.tika_url + "/version"):
@@ -235,10 +242,12 @@ def search_settings(database) -> config.Settings:
 
 @pytest.fixture(scope="session")
 def actions_server(database):
-    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": TEST_APP_DB_URL,
-                                  "meili_index": MEILI_TEST_INDEX})
-    server = uvicorn.Server(uvicorn.Config(main.create_app(settings), host="0.0.0.0", port=ACTIONS_PORT,
-                                           log_level="warning"))
+    settings = config.Settings(
+        **{**SETTINGS.__dict__, "database_url": TEST_APP_DB_URL, "meili_index": MEILI_TEST_INDEX}
+    )
+    server = uvicorn.Server(
+        uvicorn.Config(main.create_app(settings), host="0.0.0.0", port=ACTIONS_PORT, log_level="warning")
+    )
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
     for _ in range(50):
@@ -266,7 +275,12 @@ class Gql:
         self.secret = secret
 
     def __call__(self, query: str, variables: dict | None = None, *, person: str, tenant: str) -> dict:
-        headers = {"x-hasura-admin-secret": self.secret, "x-hasura-role": "user",
-                   "x-hasura-user-id": person, "x-hasura-tenant-id": tenant}
-        return self.http.post("/v1/graphql", json={"query": query, "variables": variables or {}},
-                              headers=headers).json()
+        headers = {
+            "x-hasura-admin-secret": self.secret,
+            "x-hasura-role": "user",
+            "x-hasura-user-id": person,
+            "x-hasura-tenant-id": tenant,
+        }
+        return self.http.post(
+            "/v1/graphql", json={"query": query, "variables": variables or {}}, headers=headers
+        ).json()

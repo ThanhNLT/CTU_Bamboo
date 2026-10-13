@@ -40,8 +40,9 @@ def keycloak_ready():
 
 
 def login(username: str) -> dict:
-    return httpx.post(TOKEN_URL, data={"grant_type": "password", "client_id": "bms-e2e",
-                                       "username": username, "password": PASSWORD}).json()
+    return httpx.post(
+        TOKEN_URL, data={"grant_type": "password", "client_id": "bms-e2e", "username": username, "password": PASSWORD}
+    ).json()
 
 
 def gql(token: str, query: str, tenant: str | None = None) -> dict:
@@ -69,15 +70,22 @@ def test_admin_bat_buoc_otp():
 
 def test_kiem_nhiem_hai_tenant_va_cach_ly():
     token = login("kiemnhiem")["access_token"]
-    codes = {t["tenant_code"]: t["tenant_id"] for t in gql(token, "{ my_tenants { tenant_id tenant_code } }")["data"]["my_tenants"]}
+    codes = {
+        t["tenant_code"]: t["tenant_id"]
+        for t in gql(token, "{ my_tenants { tenant_id tenant_code } }")["data"]["my_tenants"]
+    }
     assert set(codes) == {"TDX", "BVX"}
     tgd = login("tgd")["access_token"]
-    assert gql(tgd, "{ my_tenants { tenant_code } }", codes["BVX"])["errors"][0]["extensions"]["code"] == "access-denied"
+    assert (
+        gql(tgd, "{ my_tenants { tenant_code } }", codes["BVX"])["errors"][0]["extensions"]["code"] == "access-denied"
+    )
 
 
 def test_hop_viec_tgd_co_de_nghi_cho_duyet():
     token = login("tgd")["access_token"]
     tdx = gql(token, "{ my_tenants { tenant_id } }")["data"]["my_tenants"][0]["tenant_id"]
-    titles = [x["purchase_request"]["title"] for x in
-              gql(token, "{ wf_v_inbox { purchase_request { title } } }", tdx)["data"]["wf_v_inbox"]]
+    titles = [
+        x["purchase_request"]["title"]
+        for x in gql(token, "{ wf_v_inbox { purchase_request { title } } }", tdx)["data"]["wf_v_inbox"]
+    ]
     assert "Máy chủ cho nền tảng DX-OS" in titles

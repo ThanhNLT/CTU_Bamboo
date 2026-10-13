@@ -43,8 +43,12 @@ def test_de_nghi_co_dong_hang(hasura, conn):
     items = "query($id: uuid!) { proc_purchase_request_item(where: {request_id: {_eq: $id}}) { id } }"
     assert hasura(items, {"id": row["id"]}, person=i["d"], tenant=i["TDX"])["data"]["proc_purchase_request_item"] == []
 
-    data = hasura("""mutation($id: uuid!) { submit_purchase_request(request_id: $id) { status } }""",
-                  {"id": row["id"]}, person=i["c"], tenant=i["TDX"])
+    data = hasura(
+        """mutation($id: uuid!) { submit_purchase_request(request_id: $id) { status } }""",
+        {"id": row["id"]},
+        person=i["c"],
+        tenant=i["TDX"],
+    )
     assert data["data"]["submit_purchase_request"]["status"] == "PENDING", data
     data = hasura(ADD_ITEM, {"id": row["id"]}, person=i["c"], tenant=i["TDX"])
     assert "errors" in data, "đã gửi duyệt thì không thêm dòng hàng"
@@ -100,9 +104,11 @@ def _grant_auditor(conn, position_key: str) -> None:
         INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
         SELECT tenant_id, id, 'audit.read' FROM core.role WHERE code = 'KIEM_TOAN_TEST'
         ON CONFLICT DO NOTHING;""")
-    conn.execute("""INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
+    conn.execute(
+        """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
                     SELECT tenant_id, id, test.id(%s), 'TENANT' FROM core.role WHERE code = 'KIEM_TOAN_TEST'""",
-                 (position_key,))
+        (position_key,),
+    )
 
 
 def test_nhat_ky_kiem_toan(hasura, conn):

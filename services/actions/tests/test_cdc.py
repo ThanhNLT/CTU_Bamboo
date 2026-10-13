@@ -43,8 +43,7 @@ def topics() -> set[str]:
 
 
 def _messages(topic: str, *, from_end: bool, timeout: float, limit: int = 50) -> list[dict]:
-    consumer = kafka.KafkaConsumer(**OPTIONS, enable_auto_commit=False,
-                                   consumer_timeout_ms=int(timeout * 1000))
+    consumer = kafka.KafkaConsumer(**OPTIONS, enable_auto_commit=False, consumer_timeout_ms=int(timeout * 1000))
     parts = [kafka.TopicPartition(topic, p) for p in consumer.partitions_for_topic(topic)]
     consumer.assign(parts)
     (consumer.seek_to_end if from_end else consumer.seek_to_beginning)(*parts)
@@ -86,10 +85,14 @@ needs_sasl = pytest.mark.skipif(not SETTINGS.kafka_password, reason="Kafka chạ
 
 
 @needs_sasl
-@pytest.mark.parametrize("options", [
-    {"bootstrap_servers": SETTINGS.kafka_bootstrap},                    # không SASL
-    {**OPTIONS, "sasl_plain_password": SETTINGS.kafka_password + "-sai"},  # sai mật khẩu
-], ids=["khong-sasl", "sai-mat-khau"])
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"bootstrap_servers": SETTINGS.kafka_bootstrap},  # không SASL
+        {**OPTIONS, "sasl_plain_password": SETTINGS.kafka_password + "-sai"},  # sai mật khẩu
+    ],
+    ids=["khong-sasl", "sai-mat-khau"],
+)
 def test_kafka_tu_choi_client_khong_xac_thuc(topics, options):
     with pytest.raises(kafka.errors.KafkaTimeoutError, match="Unable to bootstrap"):
         kafka.KafkaConsumer(**options, request_timeout_ms=3000, bootstrap_timeout_ms=5000)

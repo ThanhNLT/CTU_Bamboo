@@ -22,8 +22,12 @@ from .pii import mask_tail
 
 LANG = "vi"
 LABELS = {
-    "VN_CCCD": "Số CCCD", "VN_CMND": "Số CMND", "VN_PHONE": "Số điện thoại", "EMAIL_ADDRESS": "Email",
-    "VN_BANK_ACCOUNT": "Số tài khoản", "CREDIT_CARD": "Số thẻ",
+    "VN_CCCD": "Số CCCD",
+    "VN_CMND": "Số CMND",
+    "VN_PHONE": "Số điện thoại",
+    "EMAIL_ADDRESS": "Email",
+    "VN_BANK_ACCOUNT": "Số tài khoản",
+    "CREDIT_CARD": "Số thẻ",
 }
 SCORE_THRESHOLD = 0.5
 
@@ -74,8 +78,14 @@ class PiiGuard:
             if self._analyzer is not None:
                 return
             import spacy
-            from presidio_analyzer import (AnalyzerEngine, EntityRecognizer, Pattern, PatternRecognizer,
-                                           RecognizerRegistry, RecognizerResult)
+            from presidio_analyzer import (
+                AnalyzerEngine,
+                EntityRecognizer,
+                Pattern,
+                PatternRecognizer,
+                RecognizerRegistry,
+                RecognizerResult,
+            )
             from presidio_analyzer.nlp_engine import SpacyNlpEngine
             from presidio_analyzer.predefined_recognizers import CreditCardRecognizer
             from presidio_anonymizer import AnonymizerEngine
@@ -99,26 +109,33 @@ class PiiGuard:
                     pass
 
                 def analyze(self, text, entities, nlp_artifacts=None):
-                    return [RecognizerResult(self.supported_entities[0], m.start("pii"), m.end("pii"), self.score)
-                            for m in self.pattern.finditer(text)]
+                    return [
+                        RecognizerResult(self.supported_entities[0], m.start("pii"), m.end("pii"), self.score)
+                        for m in self.pattern.finditer(text)
+                    ]
 
             def pattern(entity: str, regex: str, score: float):
-                return PatternRecognizer(supported_entity=entity, supported_language=LANG,
-                                         patterns=[Pattern(entity.lower(), regex, score)])
+                return PatternRecognizer(
+                    supported_entity=entity, supported_language=LANG, patterns=[Pattern(entity.lower(), regex, score)]
+                )
 
             nlp = BlankNlpEngine(models=[{"lang_code": LANG, "model_name": "blank"}])
             nlp.load()
             registry = RecognizerRegistry(supported_languages=[LANG])
-            for recognizer in (pattern("VN_CCCD", CCCD, 0.6), pattern("VN_PHONE", PHONE, 0.6),
-                               pattern("EMAIL_ADDRESS", EMAIL, 0.8),
-                               KeywordRecognizer("VN_CMND", CMND, 0.7),
-                               KeywordRecognizer("VN_BANK_ACCOUNT", BANK_ACCOUNT, 0.7),
-                               CreditCardRecognizer(supported_language=LANG)):
+            for recognizer in (
+                pattern("VN_CCCD", CCCD, 0.6),
+                pattern("VN_PHONE", PHONE, 0.6),
+                pattern("EMAIL_ADDRESS", EMAIL, 0.8),
+                KeywordRecognizer("VN_CMND", CMND, 0.7),
+                KeywordRecognizer("VN_BANK_ACCOUNT", BANK_ACCOUNT, 0.7),
+                CreditCardRecognizer(supported_language=LANG),
+            ):
                 registry.add_recognizer(recognizer)
             self._operators = {e: OperatorConfig("custom", {"lambda": lambda v, e=e: mask_value(e, v)}) for e in LABELS}
             self._anonymizer = AnonymizerEngine()
-            self._analyzer = AnalyzerEngine(nlp_engine=nlp, registry=registry, supported_languages=[LANG],
-                                            default_score_threshold=SCORE_THRESHOLD)
+            self._analyzer = AnalyzerEngine(
+                nlp_engine=nlp, registry=registry, supported_languages=[LANG], default_score_threshold=SCORE_THRESHOLD
+            )
 
     def _results(self, text: str):
         if self._analyzer is None:
@@ -174,5 +191,7 @@ def check_pii(_conn, _session: dict, args: dict, _ctx) -> dict:
     if len(text) > MAX_CHECK_CHARS:
         raise ActionError(f"Văn bản quá dài (tối đa {MAX_CHECK_CHARS} ký tự)", "rejected")
     masked, findings = _guard.mask(text)
-    return {"masked_text": masked,
-            "entities": [{"entity": f.entity, "label": f.label, "start": f.start, "end": f.end} for f in findings]}
+    return {
+        "masked_text": masked,
+        "entities": [{"entity": f.entity, "label": f.label, "start": f.start, "end": f.end} for f in findings],
+    }

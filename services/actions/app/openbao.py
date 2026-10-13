@@ -4,9 +4,9 @@
 
 """Client tối thiểu cho OpenBao (ADR #25): KV v2 ở `secret/`, transit ở `transit/`, đăng nhập AppRole.
 
-    bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")
-    bao.read("bms/flowable")          # {"username": ..., "password": ...}
-    bao.encrypt("079123456789")       # "vault:v1:..."
+bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")
+bao.read("bms/flowable")          # {"username": ..., "password": ...}
+bao.encrypt("079123456789")       # "vault:v1:..."
 """
 
 import base64
@@ -27,8 +27,9 @@ class Bao:
         self.http = httpx.Client(base_url=addr.rstrip("/") + "/v1/", timeout=timeout)
         self.token = token
 
-    def request(self, method: str, path: str, body: dict | None = None, ok404: bool = False,
-                timeout: float | None = None) -> dict | None:
+    def request(
+        self, method: str, path: str, body: dict | None = None, ok404: bool = False, timeout: float | None = None
+    ) -> dict | None:
         headers = {"X-Vault-Token": self.token} if self.token else {}
         extra = {"timeout": timeout} if timeout else {}
         resp = self.http.request(method, path, json=body, headers=headers, **extra)

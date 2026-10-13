@@ -51,30 +51,30 @@ class Settings:
     s3_documents_bucket: str
     clamav_host: str
     clamav_port: int
-    keycloak_url: str             # địa chỉ nội bộ (Admin API), không qua cổng công khai
+    keycloak_url: str  # địa chỉ nội bộ (Admin API), không qua cổng công khai
     keycloak_admin_user: str
     keycloak_admin_password: str
-    web_origin: str               # địa chỉ ứng dụng trình duyệt thấy (redirect URI của bms-web)
+    web_origin: str  # địa chỉ ứng dụng trình duyệt thấy (redirect URI của bms-web)
     keycloak_provisioner_secret: str  # client bms-provisioner: chỉ quản lý người dùng realm bms (ADR #41)
-    s3_search_access_key: str     # search-sync: chỉ đọc bucket tài liệu (ADR #36)
+    s3_search_access_key: str  # search-sync: chỉ đọc bucket tài liệu (ADR #36)
     s3_search_secret_key: str
     meili_url: str
     meili_index: str
-    meili_master_key: str         # chỉ job bootstrap (tạo index, khóa API)
-    meili_search_key: str         # actions: chỉ tìm
-    meili_indexer_key: str        # search-sync: ghi chỉ mục
+    meili_master_key: str  # chỉ job bootstrap (tạo index, khóa API)
+    meili_search_key: str  # actions: chỉ tìm
+    meili_indexer_key: str  # search-sync: ghi chỉ mục
     tika_url: str
-    gotenberg_url: str            # in phiếu PDF (ADR #37)
-    kafka_bootstrap: str          # CDC (ADR #38)
-    kafka_username: str           # SCRAM (ADR #45); bỏ trống: Kafka không xác thực (chạy native khi dev)
+    gotenberg_url: str  # in phiếu PDF (ADR #37)
+    kafka_bootstrap: str  # CDC (ADR #38)
+    kafka_username: str  # SCRAM (ADR #45); bỏ trống: Kafka không xác thực (chạy native khi dev)
     kafka_password: str
-    lakehouse_catalog_url: str    # catalog Iceberg (SQLAlchemy, CSDL lakehouse; ADR #39)
+    lakehouse_catalog_url: str  # catalog Iceberg (SQLAlchemy, CSDL lakehouse; ADR #39)
     s3_lakehouse_bucket: str
     s3_lakehouse_access_key: str  # lakehouse-sink: chỉ đọc/ghi bucket lakehouse
     s3_lakehouse_secret_key: str
-    trino_url: str                # truy vấn Lakehouse (ADR #45): HTTPS, CA nội bộ của OpenBao
+    trino_url: str  # truy vấn Lakehouse (ADR #45): HTTPS, CA nội bộ của OpenBao
     trino_ca_file: str
-    trino_user: str               # bms-actions: chỉ mượn danh người dùng tenant t_<tenant_id>
+    trino_user: str  # bms-actions: chỉ mượn danh người dùng tenant t_<tenant_id>
     trino_password: str
 
 
@@ -111,12 +111,16 @@ def assert_production_ready(env: dict[str, str] | None = None) -> None:
         return
     problems = production_problems(env)
     if problems:
-        raise SystemExit("BAMBOO_ENV=production nhưng còn giá trị mặc định của môi trường dev: "
-                         + ", ".join(problems) + ". Đặt giá trị riêng trong .env (xem .env.example).")
+        raise SystemExit(
+            "BAMBOO_ENV=production nhưng còn giá trị mặc định của môi trường dev: "
+            + ", ".join(problems)
+            + ". Đặt giá trị riêng trong .env (xem .env.example)."
+        )
 
 
 def with_openbao(settings: Settings, bao: Bao) -> Settings:
     """Thay các giá trị env bằng secret đọc được từ OpenBao."""
+
     def read(path: str) -> dict | None:
         try:
             return bao.read(path)
@@ -140,8 +144,12 @@ def kafka_options(settings: Settings) -> dict:
     """Tham số kết nối cho kafka-python: SCRAM-SHA-512 khi có tài khoản (ADR #45)."""
     options = {"bootstrap_servers": settings.kafka_bootstrap}
     if settings.kafka_password:
-        options.update(security_protocol="SASL_PLAINTEXT", sasl_mechanism="SCRAM-SHA-512",
-                       sasl_plain_username=settings.kafka_username, sasl_plain_password=settings.kafka_password)
+        options.update(
+            security_protocol="SASL_PLAINTEXT",
+            sasl_mechanism="SCRAM-SHA-512",
+            sasl_plain_username=settings.kafka_username,
+            sasl_plain_password=settings.kafka_password,
+        )
     return options
 
 
@@ -210,8 +218,9 @@ def _from_env() -> Settings:
         kafka_bootstrap=env("KAFKA_BOOTSTRAP", "kafka:9092"),
         kafka_username=env("KAFKA_USERNAME", ""),
         kafka_password=env("KAFKA_PASSWORD", ""),
-        lakehouse_catalog_url=env("LAKEHOUSE_CATALOG_URL",
-                                  "postgresql+psycopg://bamboo_lakehouse:lakehouse-db-dev@db:5432/lakehouse"),
+        lakehouse_catalog_url=env(
+            "LAKEHOUSE_CATALOG_URL", "postgresql+psycopg://bamboo_lakehouse:lakehouse-db-dev@db:5432/lakehouse"
+        ),
         s3_lakehouse_bucket=env("S3_LAKEHOUSE_BUCKET", "bms-lakehouse"),
         s3_lakehouse_access_key=env("S3_LAKEHOUSE_ACCESS_KEY", "bms-lakehouse"),
         s3_lakehouse_secret_key=env("S3_LAKEHOUSE_SECRET_KEY", "bms-lakehouse-dev-secret"),

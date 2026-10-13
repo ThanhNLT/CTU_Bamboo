@@ -29,8 +29,15 @@ PREVIEW_ROWS = 20
 DATASET_NAME = re.compile(r"^[a-z][a-z0-9_]{0,62}$")
 
 # Tên hiển thị của các tập dữ liệu (view silver <schema>_<bảng>); tập chưa có tên thì hiện <schema>.<bảng>.
-DOMAINS = {"core": "Tổ chức", "proc": "Mua sắm", "ic": "Giao dịch nội bộ", "wf": "Phê duyệt", "mdm": "Dữ liệu chủ",
-           "mfg": "Sản xuất", "collab": "Cộng tác"}
+DOMAINS = {
+    "core": "Tổ chức",
+    "proc": "Mua sắm",
+    "ic": "Giao dịch nội bộ",
+    "wf": "Phê duyệt",
+    "mdm": "Dữ liệu chủ",
+    "mfg": "Sản xuất",
+    "collab": "Cộng tác",
+}
 LABELS = {
     "collab_comment": "Trao đổi trên chứng từ",
     "collab_notification": "Thông báo",
@@ -77,7 +84,9 @@ def _require(conn: psycopg.Connection, session: dict, ctx: Context) -> tuple[str
     allowed = conn.execute(
         """SELECT core.has_permission(%s, %s, u.id) FROM core.org_unit u
            WHERE u.tenant_id = %s AND u.parent_id IS NULL AND u.valid_period @> now()
-           ORDER BY u.created_at LIMIT 1""", (person, PERMISSION, tenant)).fetchone()
+           ORDER BY u.created_at LIMIT 1""",
+        (person, PERMISSION, tenant),
+    ).fetchone()
     if not (allowed and allowed[0]):
         raise ActionError(f"Cần quyền {PERMISSION} để xem dữ liệu Lakehouse", "forbidden", 403)
     if ctx.lakehouse is None:
@@ -100,14 +109,22 @@ def _query(client: Trino, tenant: str, sql: str) -> tuple[list[dict], list[list]
 
 def _describe(name: str, columns: list[dict]) -> dict:
     schema = name.split("_", 1)[0]
-    return {"name": name, "label": LABELS.get(name, name.replace("_", ".", 1)),
-            "domain": DOMAINS.get(schema, schema), "columns": columns}
+    return {
+        "name": name,
+        "label": LABELS.get(name, name.replace("_", ".", 1)),
+        "domain": DOMAINS.get(schema, schema),
+        "columns": columns,
+    }
 
 
 def _datasets(client: Trino, tenant: str) -> dict[str, list[dict]]:
     """Các view silver người dùng tenant được đọc (information_schema đã lọc theo quyền của Trino)."""
-    _, rows = _query(client, tenant, "SELECT table_name, column_name, data_type FROM information_schema.columns "
-                                     "WHERE table_schema = 'silver' ORDER BY table_name, ordinal_position")
+    _, rows = _query(
+        client,
+        tenant,
+        "SELECT table_name, column_name, data_type FROM information_schema.columns "
+        "WHERE table_schema = 'silver' ORDER BY table_name, ordinal_position",
+    )
     out: dict[str, list[dict]] = {}
     for table, column, data_type in rows:
         out.setdefault(table, []).append({"name": column, "type": data_type})

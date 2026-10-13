@@ -12,6 +12,7 @@ ghế, hợp đồng không giữ ghế trưởng, gán vai trò cho vị trí t
 Ngày hiệu lực theo giờ Việt Nam: "từ ngày" tính từ 0 giờ ngày đó, "đến ngày" tính hết ngày đó; bỏ trống "từ ngày"
 là từ bây giờ.
 """
+
 import base64
 import csv
 import io
@@ -49,14 +50,20 @@ class Admin:
         root = conn.execute(
             """SELECT id FROM core.org_unit
                WHERE tenant_id = %s AND parent_id IS NULL AND valid_period @> now()
-               ORDER BY created_at LIMIT 1""", (self.tenant,)).fetchone()
+               ORDER BY created_at LIMIT 1""",
+            (self.tenant,),
+        ).fetchone()
         self.root = root[0] if root else None
         bind_session(conn, session)
 
     def require(self, permission: str, unit=None) -> None:
         unit = unit or self.root
-        ok = unit is not None and self.conn.execute(
-            "SELECT core.has_permission(%s, %s, %s)", (self.person, permission, unit)).fetchone()[0]
+        ok = (
+            unit is not None
+            and self.conn.execute("SELECT core.has_permission(%s, %s, %s)", (self.person, permission, unit)).fetchone()[
+                0
+            ]
+        )
         if not ok:
             raise ActionError(f"Bạn không có quyền {permission} ở đơn vị này", "forbidden", 403)
 
@@ -68,6 +75,7 @@ class Admin:
 
 
 # --- Đọc dữ liệu đầu vào ------------------------------------------------------
+
 
 def _text(data: dict, key: str, label: str, required: bool = True) -> str | None:
     value = data.get(key)
@@ -112,20 +120,29 @@ def _period(data: dict, end_required: bool = False) -> tuple[date | None, date |
 
 
 # tstzrange theo ngày Việt Nam; start NULL = bây giờ, end NULL = vô thời hạn.
-RANGE_SQL = (f"tstzrange(coalesce((%s::date)::timestamp AT TIME ZONE '{TZ}', now()), "
-             f"((%s::date + 1)::timestamp AT TIME ZONE '{TZ}'))")
+RANGE_SQL = (
+    f"tstzrange(coalesce((%s::date)::timestamp AT TIME ZONE '{TZ}', now()), "
+    f"((%s::date + 1)::timestamp AT TIME ZONE '{TZ}'))"
+)
 
 
 # --- Mã → id -------------------------------------------------------------------
 
+
 def _unit_by_code(a: Admin, code: str):
-    return a.one("SELECT id FROM core.org_unit WHERE tenant_id = %s AND code = %s AND valid_period @> now()",
-                 (a.tenant, code), f"Không có đơn vị mã {code}")[0]
+    return a.one(
+        "SELECT id FROM core.org_unit WHERE tenant_id = %s AND code = %s AND valid_period @> now()",
+        (a.tenant, code),
+        f"Không có đơn vị mã {code}",
+    )[0]
 
 
 def _catalog_by_code(a: Admin, catalog: str, code: str):
-    return a.one("SELECT id FROM core.catalog_item WHERE tenant_id = %s AND catalog = %s AND code = %s",
-                 (a.tenant, catalog, code), f"Không có mục {code} trong danh mục {catalog}")[0]
+    return a.one(
+        "SELECT id FROM core.catalog_item WHERE tenant_id = %s AND catalog = %s AND code = %s",
+        (a.tenant, catalog, code),
+        f"Không có mục {code} trong danh mục {catalog}",
+    )[0]
 
 
 def _ref(a: Admin, data: dict, id_key: str, code_key: str, resolve: Callable[[str], object], required=True):
@@ -141,14 +158,17 @@ def _ref(a: Admin, data: dict, id_key: str, code_key: str, resolve: Callable[[st
 
 
 def _position_ref(a: Admin, ref: str):
-    """"MÃ_ĐƠN_VỊ/Tên vị trí" → id vị trí đang hiệu lực."""
+    """ "MÃ_ĐƠN_VỊ/Tên vị trí" → id vị trí đang hiệu lực."""
     unit_code, sep, name = ref.partition("/")
     if not sep or not name.strip():
         raise ActionError(f"Vị trí phải ghi dạng MÃ_ĐƠN_VỊ/Tên vị trí: {ref}")
     unit = _unit_by_code(a, unit_code.strip())
-    return a.one("""SELECT id FROM core.position
+    return a.one(
+        """SELECT id FROM core.position
                     WHERE tenant_id = %s AND org_unit_id = %s AND name = %s AND valid_period @> now()""",
-                 (a.tenant, unit, name.strip()), f"Không có vị trí {ref}")[0]
+        (a.tenant, unit, name.strip()),
+        f"Không có vị trí {ref}",
+    )[0]
 
 
 def _belongs(a: Admin, table: str, row_id) -> None:
@@ -156,6 +176,7 @@ def _belongs(a: Admin, table: str, row_id) -> None:
 
 
 # --- Ghi từng loại -------------------------------------------------------------
+
 
 def save_org_unit(a: Admin, data: dict) -> str:
     unit_id = data.get("id")
@@ -166,29 +187,38 @@ def save_org_unit(a: Admin, data: dict) -> str:
     legal = _bool(data.get("is_legal_entity"))
     if unit_id is None and code:
         # Nhập lại cùng mã = cập nhật (tệp nhập chạy lại được).
-        row = a.conn.execute("SELECT id FROM core.org_unit WHERE tenant_id = %s AND code = %s",
-                             (a.tenant, code)).fetchone()
+        row = a.conn.execute(
+            "SELECT id FROM core.org_unit WHERE tenant_id = %s AND code = %s", (a.tenant, code)
+        ).fetchone()
         unit_id = row[0] if row else None
     if unit_id is None:
         if parent is None:
             raise ActionError("Đơn vị mới phải có đơn vị cha")
         a.require(ORG, parent)
-        return str(a.conn.execute(
-            """INSERT INTO core.org_unit (tenant_id, parent_id, unit_type_id, code, name, is_legal_entity)
+        return str(
+            a.conn.execute(
+                """INSERT INTO core.org_unit (tenant_id, parent_id, unit_type_id, code, name, is_legal_entity)
                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-            (a.tenant, parent, unit_type, code, name, legal)).fetchone()[0])
-    old_parent = a.one("SELECT parent_id FROM core.org_unit WHERE id = %s AND tenant_id = %s",
-                       (unit_id, a.tenant), "Không tìm thấy đơn vị")[0]
+                (a.tenant, parent, unit_type, code, name, legal),
+            ).fetchone()[0]
+        )
+    old_parent = a.one(
+        "SELECT parent_id FROM core.org_unit WHERE id = %s AND tenant_id = %s",
+        (unit_id, a.tenant),
+        "Không tìm thấy đơn vị",
+    )[0]
     a.require(ORG, unit_id)
     if parent is None:
         parent = old_parent
     if str(parent or "") != str(old_parent or ""):
         if old_parent is None:
             raise ActionError("Không chuyển được đơn vị gốc của tenant")
-        a.require(ORG, parent)   # chuyển sang nhánh mới: cần quyền ở cả nơi đến
-    a.conn.execute("""UPDATE core.org_unit SET parent_id = %s, unit_type_id = %s, code = %s, name = %s,
+        a.require(ORG, parent)  # chuyển sang nhánh mới: cần quyền ở cả nơi đến
+    a.conn.execute(
+        """UPDATE core.org_unit SET parent_id = %s, unit_type_id = %s, code = %s, name = %s,
                              is_legal_entity = %s WHERE id = %s""",
-                   (parent, unit_type, code, name, legal, unit_id))
+        (parent, unit_type, code, name, legal, unit_id),
+    )
     return str(unit_id)
 
 
@@ -197,11 +227,17 @@ def close_org_unit(a: Admin, unit_id, end: date | None) -> str:
     a.require(ORG, unit_id)
     if a.conn.execute("SELECT parent_id IS NULL FROM core.org_unit WHERE id = %s", (unit_id,)).fetchone()[0]:
         raise ActionError("Không ngừng được đơn vị gốc của tenant")
-    if a.conn.execute("""SELECT 1 FROM core.org_unit WHERE parent_id = %s AND upper_inf(valid_period)
-                         LIMIT 1""", (unit_id,)).fetchone():
+    if a.conn.execute(
+        """SELECT 1 FROM core.org_unit WHERE parent_id = %s AND upper_inf(valid_period)
+                         LIMIT 1""",
+        (unit_id,),
+    ).fetchone():
         raise ActionError("Đơn vị còn đơn vị con đang hoạt động: ngừng hoặc chuyển đơn vị con trước")
-    if a.conn.execute("""SELECT 1 FROM core.position WHERE org_unit_id = %s AND upper_inf(valid_period)
-                         LIMIT 1""", (unit_id,)).fetchone():
+    if a.conn.execute(
+        """SELECT 1 FROM core.position WHERE org_unit_id = %s AND upper_inf(valid_period)
+                         LIMIT 1""",
+        (unit_id,),
+    ).fetchone():
         raise ActionError("Đơn vị còn vị trí đang dùng: ngừng các vị trí trước")
     _end(a, "core.org_unit", unit_id, end)
     return str(unit_id)
@@ -211,34 +247,51 @@ def save_position(a: Admin, data: dict) -> str:
     pos_id = data.get("id")
     name = _text(data, "name", "tên vị trí")
     unit = _ref(a, data, "org_unit_id", "unit_code", lambda c: _unit_by_code(a, c))
-    job = _ref(a, data, "job_title_id", "job_title_code", lambda c: _catalog_by_code(a, "JOB_TITLE", c),
-               required=False)
+    job = _ref(a, data, "job_title_id", "job_title_code", lambda c: _catalog_by_code(a, "JOB_TITLE", c), required=False)
     reports = _ref(a, data, "reports_to_id", "reports_to", lambda r: _position_ref(a, r), required=False)
     head = _bool(data.get("is_head"))
     if pos_id is None:
-        row = a.conn.execute("""SELECT id FROM core.position WHERE tenant_id = %s AND org_unit_id = %s
-                                AND name = %s AND upper_inf(valid_period)""", (a.tenant, unit, name)).fetchone()
+        row = a.conn.execute(
+            """SELECT id FROM core.position WHERE tenant_id = %s AND org_unit_id = %s
+                                AND name = %s AND upper_inf(valid_period)""",
+            (a.tenant, unit, name),
+        ).fetchone()
         pos_id = row[0] if row else None
     a.require(ORG, unit)
     if pos_id is None:
-        return str(a.conn.execute(
-            """INSERT INTO core.position (tenant_id, org_unit_id, job_title_id, name, is_head, reports_to_id)
+        return str(
+            a.conn.execute(
+                """INSERT INTO core.position (tenant_id, org_unit_id, job_title_id, name, is_head, reports_to_id)
                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-            (a.tenant, unit, job, name, head, reports)).fetchone()[0])
-    old_unit = a.one("SELECT org_unit_id FROM core.position WHERE id = %s AND tenant_id = %s",
-                     (pos_id, a.tenant), "Không tìm thấy vị trí")[0]
+                (a.tenant, unit, job, name, head, reports),
+            ).fetchone()[0]
+        )
+    old_unit = a.one(
+        "SELECT org_unit_id FROM core.position WHERE id = %s AND tenant_id = %s",
+        (pos_id, a.tenant),
+        "Không tìm thấy vị trí",
+    )[0]
     a.require(ORG, old_unit)
-    a.conn.execute("""UPDATE core.position SET org_unit_id = %s, job_title_id = %s, name = %s, is_head = %s,
-                             reports_to_id = %s WHERE id = %s""", (unit, job, name, head, reports, pos_id))
+    a.conn.execute(
+        """UPDATE core.position SET org_unit_id = %s, job_title_id = %s, name = %s, is_head = %s,
+                             reports_to_id = %s WHERE id = %s""",
+        (unit, job, name, head, reports, pos_id),
+    )
     return str(pos_id)
 
 
 def close_position(a: Admin, pos_id, end: date | None) -> str:
-    unit = a.one("SELECT org_unit_id FROM core.position WHERE id = %s AND tenant_id = %s",
-                 (pos_id, a.tenant), "Không tìm thấy vị trí")[0]
+    unit = a.one(
+        "SELECT org_unit_id FROM core.position WHERE id = %s AND tenant_id = %s",
+        (pos_id, a.tenant),
+        "Không tìm thấy vị trí",
+    )[0]
     a.require(ORG, unit)
-    if a.conn.execute("""SELECT 1 FROM core.assignment WHERE position_id = %s AND upper_inf(valid_period)
-                         LIMIT 1""", (pos_id,)).fetchone():
+    if a.conn.execute(
+        """SELECT 1 FROM core.assignment WHERE position_id = %s AND upper_inf(valid_period)
+                         LIMIT 1""",
+        (pos_id,),
+    ).fetchone():
         raise ActionError("Vị trí còn người giữ: kết thúc bổ nhiệm trước")
     _end(a, "core.position", pos_id, end)
     return str(pos_id)
@@ -250,22 +303,28 @@ def save_person(a: Admin, data: dict) -> str:
     code = _text(data, "employee_code", "mã nhân viên", required=False)
     a.require(ORG)
     if person_id is None and code:
-        row = a.conn.execute("SELECT id FROM core.person WHERE tenant_id = %s AND employee_code = %s",
-                             (a.tenant, code)).fetchone()
+        row = a.conn.execute(
+            "SELECT id FROM core.person WHERE tenant_id = %s AND employee_code = %s", (a.tenant, code)
+        ).fetchone()
         person_id = row[0] if row else None
     if person_id is None:
-        return str(a.conn.execute(
-            "INSERT INTO core.person (tenant_id, full_name, employee_code) VALUES (%s, %s, %s) RETURNING id",
-            (a.tenant, name, code)).fetchone()[0])
+        return str(
+            a.conn.execute(
+                "INSERT INTO core.person (tenant_id, full_name, employee_code) VALUES (%s, %s, %s) RETURNING id",
+                (a.tenant, name, code),
+            ).fetchone()[0]
+        )
     _belongs(a, "core.person", person_id)
-    a.conn.execute("UPDATE core.person SET full_name = %s, employee_code = %s WHERE id = %s",
-                   (name, code, person_id))
+    a.conn.execute("UPDATE core.person SET full_name = %s, employee_code = %s WHERE id = %s", (name, code, person_id))
     return str(person_id)
 
 
 def _person_by_code(a: Admin, code: str):
-    return a.one("SELECT id FROM core.person WHERE tenant_id = %s AND employee_code = %s",
-                 (a.tenant, code), f"Không có nhân viên mã {code}")[0]
+    return a.one(
+        "SELECT id FROM core.person WHERE tenant_id = %s AND employee_code = %s",
+        (a.tenant, code),
+        f"Không có nhân viên mã {code}",
+    )[0]
 
 
 def save_assignment(a: Admin, data: dict) -> str:
@@ -278,25 +337,42 @@ def save_assignment(a: Admin, data: dict) -> str:
     if kind not in ASSIGNMENT_TYPES:
         raise ActionError(f"Loại bổ nhiệm không hợp lệ: {kind}")
     start, end = _period(data, end_required=kind == "CONTRACT")
-    unit = a.one("SELECT org_unit_id FROM core.position WHERE id = %s AND tenant_id = %s",
-                 (position, a.tenant), "Không tìm thấy vị trí")[0]
+    unit = a.one(
+        "SELECT org_unit_id FROM core.position WHERE id = %s AND tenant_id = %s",
+        (position, a.tenant),
+        "Không tìm thấy vị trí",
+    )[0]
     _belongs(a, "core.person", person)
     a.require(ORG, unit)
-    return str(a.conn.execute(
-        f"""INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period,
+    return str(
+        a.conn.execute(
+            f"""INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period,
                                          contract_no, contract_partner)
             VALUES (%s, %s, %s, %s, {RANGE_SQL}, %s, %s) RETURNING id""",
-        (a.tenant, person, position, kind, start, end,
-         _text(data, "contract_no", "số hợp đồng", required=False),
-         _text(data, "contract_partner", "đối tác hợp đồng", required=False))).fetchone()[0])
+            (
+                a.tenant,
+                person,
+                position,
+                kind,
+                start,
+                end,
+                _text(data, "contract_no", "số hợp đồng", required=False),
+                _text(data, "contract_partner", "đối tác hợp đồng", required=False),
+            ),
+        ).fetchone()[0]
+    )
 
 
 ASSIGNMENT_LABELS = {"giữ chính": "PRIMARY", "kiêm nhiệm": "CONCURRENT", "quyền": "ACTING", "hợp đồng": "CONTRACT"}
 
 
 def close_assignment(a: Admin, assignment_id, end: date | None) -> str:
-    unit = a.one("""SELECT p.org_unit_id FROM core.assignment x JOIN core.position p ON p.id = x.position_id
-                    WHERE x.id = %s AND x.tenant_id = %s""", (assignment_id, a.tenant), "Không tìm thấy bổ nhiệm")[0]
+    unit = a.one(
+        """SELECT p.org_unit_id FROM core.assignment x JOIN core.position p ON p.id = x.position_id
+                    WHERE x.id = %s AND x.tenant_id = %s""",
+        (assignment_id, a.tenant),
+        "Không tìm thấy bổ nhiệm",
+    )[0]
     a.require(ORG, unit)
     _end(a, "core.assignment", assignment_id, end)
     return str(assignment_id)
@@ -311,12 +387,12 @@ def save_role(a: Admin, data: dict) -> str:
         permissions = [p.strip() for p in permissions.replace(";", ",").split(",") if p.strip()]
     a.require(PERM)
     if role_id is None:
-        row = a.conn.execute("SELECT id FROM core.role WHERE tenant_id = %s AND code = %s",
-                             (a.tenant, code)).fetchone()
+        row = a.conn.execute("SELECT id FROM core.role WHERE tenant_id = %s AND code = %s", (a.tenant, code)).fetchone()
         role_id = row[0] if row else None
     if role_id is None:
-        role_id = a.conn.execute("INSERT INTO core.role (tenant_id, code, name) VALUES (%s, %s, %s) RETURNING id",
-                                 (a.tenant, code, name)).fetchone()[0]
+        role_id = a.conn.execute(
+            "INSERT INTO core.role (tenant_id, code, name) VALUES (%s, %s, %s) RETURNING id", (a.tenant, code, name)
+        ).fetchone()[0]
     else:
         _belongs(a, "core.role", role_id)
         a.conn.execute("UPDATE core.role SET code = %s, name = %s WHERE id = %s", (code, name, role_id))
@@ -324,19 +400,31 @@ def save_role(a: Admin, data: dict) -> str:
         unknown = set(permissions) - {r[0] for r in a.conn.execute("SELECT code FROM core.permission")}
         if unknown:
             raise ActionError(f"Không có quyền: {', '.join(sorted(unknown))}")
-        a.conn.execute("DELETE FROM core.role_permission WHERE role_id = %s AND NOT permission_code = ANY(%s)",
-                       (role_id, list(permissions)))
+        a.conn.execute(
+            "DELETE FROM core.role_permission WHERE role_id = %s AND NOT permission_code = ANY(%s)",
+            (role_id, list(permissions)),
+        )
         for p in permissions:
-            a.conn.execute("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
-                              VALUES (%s, %s, %s) ON CONFLICT DO NOTHING""", (a.tenant, role_id, p))
+            a.conn.execute(
+                """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                              VALUES (%s, %s, %s) ON CONFLICT DO NOTHING""",
+                (a.tenant, role_id, p),
+            )
     return str(role_id)
 
 
 def save_role_grant(a: Admin, data: dict) -> str:
     if data.get("id"):
         raise ActionError("Cấp quyền không sửa được: thu hồi rồi cấp lại")
-    role = _ref(a, data, "role_id", "role_code", lambda c: a.one(
-        "SELECT id FROM core.role WHERE tenant_id = %s AND code = %s", (a.tenant, c), f"Không có vai trò {c}")[0])
+    role = _ref(
+        a,
+        data,
+        "role_id",
+        "role_code",
+        lambda c: a.one(
+            "SELECT id FROM core.role WHERE tenant_id = %s AND code = %s", (a.tenant, c), f"Không có vai trò {c}"
+        )[0],
+    )
     _belongs(a, "core.role", role)
     targets = {
         "position_id": _ref(a, data, "position_id", "position", lambda r: _position_ref(a, r), required=False),
@@ -358,19 +446,39 @@ def save_role_grant(a: Admin, data: dict) -> str:
     else:
         anchor = scope_unit or chosen.get("org_unit_id")
         if anchor is None and "position_id" in chosen:
-            anchor = a.conn.execute("SELECT org_unit_id FROM core.position WHERE id = %s",
-                                    (chosen["position_id"],)).fetchone()[0]
+            anchor = a.conn.execute(
+                "SELECT org_unit_id FROM core.position WHERE id = %s", (chosen["position_id"],)
+            ).fetchone()[0]
         a.require(PERM, anchor)
-    return str(a.conn.execute(
-        f"""INSERT INTO core.role_grant (tenant_id, role_id, person_id, position_id, org_unit_id, scope,
+    return str(
+        a.conn.execute(
+            f"""INSERT INTO core.role_grant (tenant_id, role_id, person_id, position_id, org_unit_id, scope,
                                          scope_unit_id, valid_period)
             VALUES (%s, %s, %s, %s, %s, %s, %s, {RANGE_SQL}) RETURNING id""",
-        (a.tenant, role, targets["person_id"], targets["position_id"], targets["org_unit_id"], scope, scope_unit,
-         start, end)).fetchone()[0])
+            (
+                a.tenant,
+                role,
+                targets["person_id"],
+                targets["position_id"],
+                targets["org_unit_id"],
+                scope,
+                scope_unit,
+                start,
+                end,
+            ),
+        ).fetchone()[0]
+    )
 
 
-SCOPE_LABELS = {"cả tenant": "TENANT", "toàn tenant": "TENANT", "nhánh": "SUBTREE", "cây con": "SUBTREE",
-                "đơn vị": "UNIT", "một đơn vị": "UNIT", "bản thân": "SELF"}
+SCOPE_LABELS = {
+    "cả tenant": "TENANT",
+    "toàn tenant": "TENANT",
+    "nhánh": "SUBTREE",
+    "cây con": "SUBTREE",
+    "đơn vị": "UNIT",
+    "một đơn vị": "UNIT",
+    "bản thân": "SELF",
+}
 
 
 def close_role_grant(a: Admin, grant_id, end: date | None) -> str:
@@ -389,10 +497,13 @@ def save_catalog_item(a: Admin, data: dict) -> str:
     name = _text(data, "name", "tên")
     a.require(CATALOGS[catalog])
     if item_id is None:
-        return str(a.conn.execute(
-            """INSERT INTO core.catalog_item (tenant_id, catalog, code, name) VALUES (%s, %s, %s, %s)
+        return str(
+            a.conn.execute(
+                """INSERT INTO core.catalog_item (tenant_id, catalog, code, name) VALUES (%s, %s, %s, %s)
                ON CONFLICT (tenant_id, catalog, code) DO UPDATE SET name = EXCLUDED.name RETURNING id""",
-            (a.tenant, catalog, code, name)).fetchone()[0])
+                (a.tenant, catalog, code, name),
+            ).fetchone()[0]
+        )
     _belongs(a, "core.catalog_item", item_id)
     a.conn.execute("UPDATE core.catalog_item SET code = %s, name = %s WHERE id = %s", (code, name, item_id))
     return str(item_id)
@@ -401,23 +512,35 @@ def save_catalog_item(a: Admin, data: dict) -> str:
 def save_partner(a: Admin, data: dict) -> str:
     a.require(MDM)
     internal = _ref(a, data, "internal_unit_id", "internal_unit_code", lambda c: _unit_by_code(a, c), required=False)
-    values = (_text(data, "code", "mã nhà cung cấp"), _text(data, "name", "tên nhà cung cấp"),
-              _text(data, "tax_code", "mã số thuế", False), _text(data, "address", "địa chỉ", False),
-              _text(data, "email", "email", False), _text(data, "phone", "điện thoại", False), internal,
-              data.get("is_active") is None or _bool(data.get("is_active")))
+    values = (
+        _text(data, "code", "mã nhà cung cấp"),
+        _text(data, "name", "tên nhà cung cấp"),
+        _text(data, "tax_code", "mã số thuế", False),
+        _text(data, "address", "địa chỉ", False),
+        _text(data, "email", "email", False),
+        _text(data, "phone", "điện thoại", False),
+        internal,
+        data.get("is_active") is None or _bool(data.get("is_active")),
+    )
     if data.get("id"):
         _belongs(a, "mdm.partner", data["id"])
-        a.conn.execute("""UPDATE mdm.partner SET code = %s, name = %s, tax_code = %s, address = %s, email = %s,
+        a.conn.execute(
+            """UPDATE mdm.partner SET code = %s, name = %s, tax_code = %s, address = %s, email = %s,
                                  phone = %s, internal_unit_id = %s, is_active = %s WHERE id = %s""",
-                       (*values, data["id"]))
+            (*values, data["id"]),
+        )
         return str(data["id"])
-    return str(a.conn.execute(
-        """INSERT INTO mdm.partner (tenant_id, code, name, tax_code, address, email, phone, internal_unit_id, is_active)
+    return str(
+        a.conn.execute(
+            """INSERT INTO mdm.partner (tenant_id, code, name, tax_code, address, email, phone, internal_unit_id, is_active)
            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
            ON CONFLICT (tenant_id, code) DO UPDATE SET name = EXCLUDED.name, tax_code = EXCLUDED.tax_code,
                address = EXCLUDED.address, email = EXCLUDED.email, phone = EXCLUDED.phone,
                internal_unit_id = EXCLUDED.internal_unit_id, is_active = EXCLUDED.is_active
-           RETURNING id""", (a.tenant, *values)).fetchone()[0])
+           RETURNING id""",
+            (a.tenant, *values),
+        ).fetchone()[0]
+    )
 
 
 def save_item(a: Admin, data: dict) -> str:
@@ -430,20 +553,32 @@ def save_item(a: Admin, data: dict) -> str:
             price = float(str(price).replace(".", "").replace(",", ".")) if isinstance(price, str) else float(price)
         except ValueError as exc:
             raise ActionError(f"Giá tham khảo không phải số: {data.get('ref_price')}") from exc
-    values = (_text(data, "code", "mã vật tư"), _text(data, "name", "tên vật tư"), _text(data, "uom", "đơn vị tính"),
-              _text(data, "category_code", "nhóm vật tư", False), price,
-              data.get("is_active") is None or _bool(data.get("is_active")))
+    values = (
+        _text(data, "code", "mã vật tư"),
+        _text(data, "name", "tên vật tư"),
+        _text(data, "uom", "đơn vị tính"),
+        _text(data, "category_code", "nhóm vật tư", False),
+        price,
+        data.get("is_active") is None or _bool(data.get("is_active")),
+    )
     if data.get("id"):
         _belongs(a, "mdm.item", data["id"])
-        a.conn.execute("""UPDATE mdm.item SET code = %s, name = %s, uom = %s, category_code = %s, ref_price = %s,
-                                 is_active = %s WHERE id = %s""", (*values, data["id"]))
+        a.conn.execute(
+            """UPDATE mdm.item SET code = %s, name = %s, uom = %s, category_code = %s, ref_price = %s,
+                                 is_active = %s WHERE id = %s""",
+            (*values, data["id"]),
+        )
         return str(data["id"])
-    return str(a.conn.execute(
-        """INSERT INTO mdm.item (tenant_id, code, name, uom, category_code, ref_price, is_active)
+    return str(
+        a.conn.execute(
+            """INSERT INTO mdm.item (tenant_id, code, name, uom, category_code, ref_price, is_active)
            VALUES (%s, %s, %s, %s, %s, %s, %s)
            ON CONFLICT (tenant_id, code) DO UPDATE SET name = EXCLUDED.name, uom = EXCLUDED.uom,
                category_code = EXCLUDED.category_code, ref_price = EXCLUDED.ref_price, is_active = EXCLUDED.is_active
-           RETURNING id""", (a.tenant, *values)).fetchone()[0])
+           RETURNING id""",
+            (a.tenant, *values),
+        ).fetchone()[0]
+    )
 
 
 def _end(a: Admin, table: str, row_id, end: date | None) -> None:
@@ -452,16 +587,26 @@ def _end(a: Admin, table: str, row_id, end: date | None) -> None:
         f"""UPDATE {table} SET valid_period = tstzrange(lower(valid_period),
                  greatest(lower(valid_period) + interval '1 second',
                           coalesce(((%s::date + 1)::timestamp AT TIME ZONE '{TZ}'), now())))
-            WHERE id = %s AND upper_inf(valid_period)""", (end, row_id))
+            WHERE id = %s AND upper_inf(valid_period)""",
+        (end, row_id),
+    )
 
 
 SAVE: dict[str, Callable[[Admin, dict], str]] = {
-    "org_unit": save_org_unit, "position": save_position, "person": save_person, "assignment": save_assignment,
-    "role": save_role, "role_grant": save_role_grant, "catalog_item": save_catalog_item,
-    "partner": save_partner, "item": save_item,
+    "org_unit": save_org_unit,
+    "position": save_position,
+    "person": save_person,
+    "assignment": save_assignment,
+    "role": save_role,
+    "role_grant": save_role_grant,
+    "catalog_item": save_catalog_item,
+    "partner": save_partner,
+    "item": save_item,
 }
 CLOSE: dict[str, Callable[[Admin, object, date | None], str]] = {
-    "org_unit": close_org_unit, "position": close_position, "assignment": close_assignment,
+    "org_unit": close_org_unit,
+    "position": close_position,
+    "assignment": close_assignment,
     "role_grant": close_role_grant,
 }
 
@@ -486,6 +631,7 @@ def admin_close(conn: psycopg.Connection, session: dict, args: dict, _ctx: Conte
 
 # --- Tài khoản đăng nhập ------------------------------------------------------
 
+
 def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> list[dict]:
     """Tạo (hoặc liên kết) tài khoản Keycloak cho từng người; mật khẩu tạm chỉ trả về một lần.
 
@@ -503,8 +649,11 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
         email = (entry.get("email") or "").strip() or None
         result = {"person_id": person_id, "username": username, "temporary_password": None, "error": None}
         try:
-            row = a.one("SELECT full_name, idp_subject FROM core.person WHERE id = %s AND tenant_id = %s",
-                        (person_id, a.tenant), "Không tìm thấy người")
+            row = a.one(
+                "SELECT full_name, idp_subject FROM core.person WHERE id = %s AND tenant_id = %s",
+                (person_id, a.tenant),
+                "Không tìm thấy người",
+            )
             if row[1]:
                 raise ActionError("Người này đã có tài khoản")
             if not username:
@@ -517,8 +666,9 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
                     subject = existing["id"]
                 else:
                     password = hr_account.temporary_password()
-                    subject = ctx.users.create(str(person_id), username, row[0], email, password,
-                                               attribute="bamboo_person")
+                    subject = ctx.users.create(
+                        str(person_id), username, row[0], email, password, attribute="bamboo_person"
+                    )
                     result["temporary_password"] = password
                 # Trigger core.person_check_account chặn dùng chung tài khoản giữa hai công ty mẹ khác nhau.
                 conn.execute("UPDATE core.person SET idp_subject = %s WHERE id = %s", (subject, person_id))
@@ -541,37 +691,71 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
 
 # Cột của tệp mẫu: (khóa, tiêu đề, bắt buộc, ví dụ).
 COLUMNS: dict[str, list[tuple[str, str, bool, str]]] = {
-    "org_unit": [("code", "Mã đơn vị", True, "PHONG_KT"), ("name", "Tên đơn vị", True, "Phòng Kỹ thuật"),
-                 ("parent_code", "Mã đơn vị cha", True, "CTY_A"), ("unit_type_code", "Mã loại đơn vị", True, "PHONG"),
-                 ("is_legal_entity", "Là pháp nhân (Có/Không)", False, "Không")],
-    "position": [("unit_code", "Mã đơn vị", True, "PHONG_KT"), ("name", "Tên vị trí", True, "Trưởng phòng"),
-                 ("job_title_code", "Mã chức danh", False, "TRUONG_PHONG"),
-                 ("is_head", "Là trưởng đơn vị (Có/Không)", False, "Có"),
-                 ("reports_to", "Báo cáo cho (MÃ_ĐƠN_VỊ/Tên vị trí)", False, "")],
-    "person": [("employee_code", "Mã nhân viên", True, "NV0001"), ("full_name", "Họ tên", True, "Nguyễn Văn An"),
-               ("position", "Vị trí (MÃ_ĐƠN_VỊ/Tên vị trí)", False, "PHONG_KT/Trưởng phòng"),
-               ("assignment_type", "Loại bổ nhiệm (Giữ chính/Kiêm nhiệm/Quyền/Hợp đồng)", False, "Giữ chính"),
-               ("valid_from", "Từ ngày (dd/mm/yyyy)", False, ""), ("valid_to", "Đến ngày (dd/mm/yyyy)", False, ""),
-               ("contract_no", "Số hợp đồng", False, ""), ("username", "Tên đăng nhập", False, "an.nv"),
-               ("email", "Email", False, "an.nv@congty.vn")],
-    "role_grant": [("role_code", "Mã vai trò", True, "QUAN_LY"),
-                   ("position", "Vị trí (MÃ_ĐƠN_VỊ/Tên vị trí)", False, "PHONG_KT/Trưởng phòng"),
-                   ("unit_code", "Hoặc mã đơn vị (cả đơn vị nhận)", False, ""),
-                   ("scope", "Phạm vi (Cả tenant/Nhánh/Đơn vị)", False, "Nhánh"),
-                   ("scope_unit_code", "Mã đơn vị neo phạm vi", False, ""),
-                   ("valid_from", "Từ ngày (dd/mm/yyyy)", False, ""), ("valid_to", "Đến ngày (dd/mm/yyyy)", False, "")],
-    "catalog_item": [("catalog", "Danh mục (UNIT_TYPE/JOB_TITLE/ITEM_CATEGORY)", True, "JOB_TITLE"),
-                     ("code", "Mã", True, "TRUONG_PHONG"), ("name", "Tên", True, "Trưởng phòng")],
-    "partner": [("code", "Mã nhà cung cấp", True, "NCC001"), ("name", "Tên nhà cung cấp", True, "Công ty TNHH B"),
-                ("tax_code", "Mã số thuế", False, "0101234567"), ("address", "Địa chỉ", False, ""),
-                ("email", "Email", False, ""), ("phone", "Điện thoại", False, ""),
-                ("internal_unit_code", "Mã đơn vị nội bộ (nếu là công ty trong tập đoàn)", False, "")],
-    "item": [("code", "Mã vật tư", True, "VT001"), ("name", "Tên vật tư", True, "Tụ điện 10uF"),
-             ("uom", "Đơn vị tính", True, "cái"), ("category_code", "Nhóm vật tư", False, ""),
-             ("ref_price", "Giá tham khảo", False, "1500")],
+    "org_unit": [
+        ("code", "Mã đơn vị", True, "PHONG_KT"),
+        ("name", "Tên đơn vị", True, "Phòng Kỹ thuật"),
+        ("parent_code", "Mã đơn vị cha", True, "CTY_A"),
+        ("unit_type_code", "Mã loại đơn vị", True, "PHONG"),
+        ("is_legal_entity", "Là pháp nhân (Có/Không)", False, "Không"),
+    ],
+    "position": [
+        ("unit_code", "Mã đơn vị", True, "PHONG_KT"),
+        ("name", "Tên vị trí", True, "Trưởng phòng"),
+        ("job_title_code", "Mã chức danh", False, "TRUONG_PHONG"),
+        ("is_head", "Là trưởng đơn vị (Có/Không)", False, "Có"),
+        ("reports_to", "Báo cáo cho (MÃ_ĐƠN_VỊ/Tên vị trí)", False, ""),
+    ],
+    "person": [
+        ("employee_code", "Mã nhân viên", True, "NV0001"),
+        ("full_name", "Họ tên", True, "Nguyễn Văn An"),
+        ("position", "Vị trí (MÃ_ĐƠN_VỊ/Tên vị trí)", False, "PHONG_KT/Trưởng phòng"),
+        ("assignment_type", "Loại bổ nhiệm (Giữ chính/Kiêm nhiệm/Quyền/Hợp đồng)", False, "Giữ chính"),
+        ("valid_from", "Từ ngày (dd/mm/yyyy)", False, ""),
+        ("valid_to", "Đến ngày (dd/mm/yyyy)", False, ""),
+        ("contract_no", "Số hợp đồng", False, ""),
+        ("username", "Tên đăng nhập", False, "an.nv"),
+        ("email", "Email", False, "an.nv@congty.vn"),
+    ],
+    "role_grant": [
+        ("role_code", "Mã vai trò", True, "QUAN_LY"),
+        ("position", "Vị trí (MÃ_ĐƠN_VỊ/Tên vị trí)", False, "PHONG_KT/Trưởng phòng"),
+        ("unit_code", "Hoặc mã đơn vị (cả đơn vị nhận)", False, ""),
+        ("scope", "Phạm vi (Cả tenant/Nhánh/Đơn vị)", False, "Nhánh"),
+        ("scope_unit_code", "Mã đơn vị neo phạm vi", False, ""),
+        ("valid_from", "Từ ngày (dd/mm/yyyy)", False, ""),
+        ("valid_to", "Đến ngày (dd/mm/yyyy)", False, ""),
+    ],
+    "catalog_item": [
+        ("catalog", "Danh mục (UNIT_TYPE/JOB_TITLE/ITEM_CATEGORY)", True, "JOB_TITLE"),
+        ("code", "Mã", True, "TRUONG_PHONG"),
+        ("name", "Tên", True, "Trưởng phòng"),
+    ],
+    "partner": [
+        ("code", "Mã nhà cung cấp", True, "NCC001"),
+        ("name", "Tên nhà cung cấp", True, "Công ty TNHH B"),
+        ("tax_code", "Mã số thuế", False, "0101234567"),
+        ("address", "Địa chỉ", False, ""),
+        ("email", "Email", False, ""),
+        ("phone", "Điện thoại", False, ""),
+        ("internal_unit_code", "Mã đơn vị nội bộ (nếu là công ty trong tập đoàn)", False, ""),
+    ],
+    "item": [
+        ("code", "Mã vật tư", True, "VT001"),
+        ("name", "Tên vật tư", True, "Tụ điện 10uF"),
+        ("uom", "Đơn vị tính", True, "cái"),
+        ("category_code", "Nhóm vật tư", False, ""),
+        ("ref_price", "Giá tham khảo", False, "1500"),
+    ],
 }
-TITLES = {"org_unit": "don-vi", "position": "vi-tri", "person": "nhan-su", "role_grant": "cap-quyen",
-          "catalog_item": "danh-muc", "partner": "nha-cung-cap", "item": "vat-tu"}
+TITLES = {
+    "org_unit": "don-vi",
+    "position": "vi-tri",
+    "person": "nhan-su",
+    "role_grant": "cap-quyen",
+    "catalog_item": "danh-muc",
+    "partner": "nha-cung-cap",
+    "item": "vat-tu",
+}
 MAX_IMPORT_BYTES = 2 * 1024 * 1024
 MAX_IMPORT_ROWS = 5000
 
@@ -592,6 +776,7 @@ def _read_rows(kind: str, file_name: str, content: bytes) -> list[dict]:
     """Đọc CSV (UTF-8, dấu phẩy hoặc chấm phẩy) hoặc XLSX (trang đầu); dòng 1 là tiêu đề (theo mẫu hoặc theo khóa)."""
     if file_name.lower().endswith((".xlsx", ".xlsm")):
         from openpyxl import load_workbook
+
         try:
             sheet = load_workbook(io.BytesIO(content), read_only=True, data_only=True).worksheets[0]
         except Exception as exc:  # noqa: BLE001 - tệp hỏng, không phải Excel
@@ -651,7 +836,9 @@ def _import_person(a: Admin, row: dict) -> str:
     if row.get("position"):
         current = a.conn.execute(
             """SELECT 1 FROM core.assignment x WHERE x.person_id = %s AND x.position_id = %s
-                 AND x.valid_period @> now()""", (person_id, _position_ref(a, str(row["position"])))).fetchone()
+                 AND x.valid_period @> now()""",
+            (person_id, _position_ref(a, str(row["position"]))),
+        ).fetchone()
         if not current:
             save_assignment(a, {**row, "person_id": person_id})
     return person_id
@@ -667,7 +854,7 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
         raise ActionError("Nội dung tệp không hợp lệ") from exc
     if len(content) > MAX_IMPORT_BYTES:
         raise ActionError("Tệp tối đa 2 MB")
-    rows = list(enumerate(_read_rows(kind, args["file_name"], content), start=2))   # dòng 1 là tiêu đề
+    rows = list(enumerate(_read_rows(kind, args["file_name"], content), start=2))  # dòng 1 là tiêu đề
     dry_run = bool(args.get("dry_run", True))
     a = Admin(conn, session)
     handler = _import_person if kind == "person" else SAVE[kind]
@@ -678,22 +865,35 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
     with conn.transaction() as tx:
         for line, row in rows:
             try:
-                with conn.transaction():      # savepoint: dòng lỗi không làm hỏng các dòng khác
+                with conn.transaction():  # savepoint: dòng lỗi không làm hỏng các dòng khác
                     row_id = handler(a, row)
                 if kind == "person" and row.get("username"):
-                    created.append({"row": line, "person_id": row_id, "username": str(row["username"]).strip(),
-                                    "full_name": str(row.get("full_name") or "").strip(),
-                                    "email": str(row.get("email") or "").strip() or None})
+                    created.append(
+                        {
+                            "row": line,
+                            "person_id": row_id,
+                            "username": str(row["username"]).strip(),
+                            "full_name": str(row.get("full_name") or "").strip(),
+                            "email": str(row.get("email") or "").strip() or None,
+                        }
+                    )
             except ActionError as exc:
                 errors.append({"row": line, "message": exc.message})
             except psycopg.Error as exc:
                 errors.append({"row": line, "message": exc.diag.message_primary or str(exc)})
         applied = not dry_run and not errors
         if not applied:
-            raise Rollback(tx)        # xem trước, hoặc có lỗi: không ghi dòng nào
+            raise Rollback(tx)  # xem trước, hoặc có lỗi: không ghi dòng nào
     errors.sort(key=lambda e: e["row"])
-    return {"kind": kind, "total": len(rows), "valid": len(rows) - len(errors), "applied": applied,
-            "dry_run": dry_run, "errors": errors, "created": created if applied else []}
+    return {
+        "kind": kind,
+        "total": len(rows),
+        "valid": len(rows) - len(errors),
+        "applied": applied,
+        "dry_run": dry_run,
+        "errors": errors,
+        "created": created if applied else [],
+    }
 
 
 def admin_import_template(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:

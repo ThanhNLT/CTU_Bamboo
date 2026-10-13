@@ -26,8 +26,15 @@ class StaticJwks:
 
 
 def token(sub, key=KEY, **over):
-    claims = {"sub": sub, "iss": ISSUER, "typ": "Bearer", "azp": "bms-web", "exp": int(time.time()) + 300,
-              "realm_access": {"roles": []}, **over}
+    claims = {
+        "sub": sub,
+        "iss": ISSUER,
+        "typ": "Bearer",
+        "azp": "bms-web",
+        "exp": int(time.time()) + 300,
+        "realm_access": {"roles": []},
+        **over,
+    }
     return jwt.encode(claims, key, algorithm="RS256")
 
 
@@ -44,7 +51,9 @@ def account(conn):
     """Một tài khoản dùng chung hai tenant cùng công ty mẹ: TDX và BVX (ADR #30)."""
     sub = str(uuid.uuid4())
     conn.execute("UPDATE core.person SET idp_subject = %s WHERE id = test.id('e')", (sub,))
-    conn.execute("INSERT INTO core.person (tenant_id, idp_subject, full_name) VALUES (test.id('BVX'), %s, 'Chị E')", (sub,))
+    conn.execute(
+        "INSERT INTO core.person (tenant_id, idp_subject, full_name) VALUES (test.id('BVX'), %s, 'Chị E')", (sub,)
+    )
     return sub
 
 
@@ -81,10 +90,16 @@ def test_khong_thuoc_tenant(client, conn, account):
     assert hook(client, token(account), tenant="khong-phai-uuid").status_code == 401
 
 
-@pytest.mark.parametrize("bad", [
-    {"key": OTHER_KEY}, {"iss": "http://evil/realms/bms"}, {"azp": "client-la"},
-    {"typ": "Refresh"}, {"exp": int(time.time()) - 10},
-])
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"key": OTHER_KEY},
+        {"iss": "http://evil/realms/bms"},
+        {"azp": "client-la"},
+        {"typ": "Refresh"},
+        {"exp": int(time.time()) - 10},
+    ],
+)
 def test_token_khong_hop_le(client, account, bad):
     key = bad.pop("key", KEY)
     assert hook(client, token(account, key=key, **bad)).status_code == 401
@@ -103,8 +118,11 @@ def test_platform_admin(client, conn, account):
 
 
 def test_my_tenants(client, conn, account):
-    payload = {"action": {"name": "my_tenants"}, "input": {},
-               "session_variables": {"x-hasura-role": "account", "x-hasura-account-id": account}}
+    payload = {
+        "action": {"name": "my_tenants"},
+        "input": {},
+        "session_variables": {"x-hasura-role": "account", "x-hasura-account-id": account},
+    }
     resp = client.post("/actions/my_tenants", json=payload, headers={"x-actions-secret": SETTINGS.actions_secret})
     assert [t["tenant_code"] for t in resp.json()] == ["BVX", "TDX"]
 
