@@ -24,6 +24,7 @@ SECRET_FIELDS = {
     "bms/meilisearch-search": {"key": "meili_search_key"},
     "bms/meilisearch-indexer": {"key": "meili_indexer_key"},
     "bms/kafka-lakehouse": {"username": "kafka_username", "password": "kafka_password"},
+    "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
 }
 
 
@@ -71,6 +72,10 @@ class Settings:
     s3_lakehouse_bucket: str
     s3_lakehouse_access_key: str  # lakehouse-sink: chỉ đọc/ghi bucket lakehouse
     s3_lakehouse_secret_key: str
+    trino_url: str                # truy vấn Lakehouse (ADR #45): HTTPS, CA nội bộ của OpenBao
+    trino_ca_file: str
+    trino_user: str               # bms-actions: chỉ mượn danh người dùng tenant t_<tenant_id>
+    trino_password: str
 
 
 # Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
@@ -210,4 +215,8 @@ def _from_env() -> Settings:
         s3_lakehouse_bucket=env("S3_LAKEHOUSE_BUCKET", "bms-lakehouse"),
         s3_lakehouse_access_key=env("S3_LAKEHOUSE_ACCESS_KEY", "bms-lakehouse"),
         s3_lakehouse_secret_key=env("S3_LAKEHOUSE_SECRET_KEY", "bms-lakehouse-dev-secret"),
+        trino_url=env("TRINO_URL", "https://trino:8443"),
+        trino_ca_file=env("TRINO_CA_FILE", ""),
+        trino_user=env("TRINO_USER", "bms-actions"),
+        trino_password=env("TRINO_PASSWORD", ""),
     )

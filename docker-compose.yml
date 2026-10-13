@@ -42,6 +42,9 @@ x-actions-env: &actions-env
   BAO_APPROLE_FILE: /run/bms/approle.json
   # Bỏ trống: chưa quét virus. Bật ClamAV: `docker compose --profile scan up -d` và CLAMAV_HOST=clamav.
   CLAMAV_HOST: ${CLAMAV_HOST:-}
+  # Lakehouse qua Trino (ADR #45): HTTPS, CA nội bộ do openbao-init ghi cạnh file AppRole.
+  TRINO_URL: https://trino:8443
+  TRINO_CA_FILE: /run/bms/trino-ca.pem
 
 # Secret hạ tầng openbao-init chép vào OpenBao (môi trường dev khai báo ở .env).
 x-bao-sync-env: &bao-sync-env
@@ -283,6 +286,9 @@ services:
       # Catalog Iceberg của Trino (mật khẩu CSDL lakehouse, khóa S3), thuộc uid 1000 của image Trino (ADR #40).
       TRINO_CATALOG_PATH: /etc/trino/bms-catalog/lakehouse.properties
       TRINO_UID: "1000"
+      # Chứng chỉ TLS, tệp mật khẩu, khóa ký nội bộ của Trino; CA nội bộ cho actions gọi Trino (ADR #45).
+      TRINO_SECRETS_DIR: /etc/trino/secrets
+      INTERNAL_CA_OUTPUTS: /run/bms-actions/trino-ca.pem
     command: ["python", "-m", "app.openbao_init"]
     # Ghi vào các volume secret (sở hữu bởi root).
     user: "0"
@@ -295,6 +301,7 @@ services:
       - seaweedfs-config:/etc/bms
       - meilisearch-config:/etc/meilisearch
       - trino-catalog:/etc/trino/bms-catalog
+      - trino-secrets:/etc/trino/secrets
     restart: "no"
 
   # Lưu trữ đối tượng S3 (ADR #2, #26). Không cho truy cập ẩn danh; CORS cho ứng dụng Refine.
@@ -584,7 +591,9 @@ services:
     restart: unless-stopped
 
   # Truy vấn Lakehouse (ADR #40): Trino một node, catalog `lakehouse` là catalog Iceberg mà lakehouse-sink ghi.
-  # Không xác thực, chỉ dành cho máy dev (127.0.0.1:8085, giao diện web) và dịch vụ nội bộ.
+  # Xác thực (ADR #45): HTTPS 8443, tài khoản dịch vụ bms-admin (trino-init) và bms-actions (chỉ mượn danh người
+  # dùng tenant, row filter theo tenant trong rules.json). Giao diện web cho máy dev: https://127.0.0.1:8085
+  # (đăng nhập bms-admin, mật khẩu: `make trino-password`).
   trino:
     logging: *logging
     build:
@@ -599,8 +608,9 @@ services:
         condition: service_started
     volumes:
       - trino-catalog:/etc/trino/bms-catalog:ro
+      - trino-secrets:/etc/trino/secrets:ro
     ports:
-      - "127.0.0.1:8085:8080"
+      - "127.0.0.1:8085:8443"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "/usr/lib/trino/bin/health-check"]
@@ -610,6 +620,7 @@ services:
       start_period: 20s
 
   # Tạo bảng bronze còn thiếu và view silver (platform/trino/silver.sql, sinh bằng app.lakehouse_silver) rồi thoát.
+  # Đăng nhập bms-admin qua HTTPS; mật khẩu và CA đọc từ volume bí mật của Trino.
   trino-init:
     logging: *logging
     build:
@@ -618,7 +629,9 @@ services:
     depends_on:
       trino:
         condition: service_healthy
-    command: ["trino", "--server", "http://trino:8080", "--user", "trino-init", "--file", "/etc/trino/bms/silver.sql"]
+    volumes:
+      - trino-secrets:/etc/trino/secrets:ro
+    entrypoint: ["bash", "-c", "TRINO_PASSWORD=$$(cat /etc/trino/secrets/admin.password) exec trino --server https://trino:8443 --truststore-path /etc/trino/secrets/ca.pem --user bms-admin --password --file /etc/trino/bms/silver.sql"]
     restart: "no"
 
   # Cổng API (ADR #34): điểm vào duy nhất từ trình duyệt. APISIX standalone, route trong
@@ -739,3 +752,4 @@ volumes:
   debezium-data:
   lakehouse-secrets:
   trino-catalog:
+  trino-secrets:

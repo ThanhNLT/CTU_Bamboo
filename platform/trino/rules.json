@@ -1,0 +1,344 @@
+{
+  "impersonation": [
+    {
+      "original_user": "bms-actions",
+      "new_user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    }
+  ],
+  "catalogs": [
+    {
+      "user": "bms-admin",
+      "allow": "all"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "allow": "read-only"
+    }
+  ],
+  "schemas": [
+    {
+      "user": "bms-admin",
+      "owner": true
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "owner": false
+    }
+  ],
+  "tables": [
+    {
+      "user": "bms-admin",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "DELETE",
+        "UPDATE",
+        "OWNERSHIP",
+        "GRANT_SELECT"
+      ]
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "collab_comment",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "collab_notification",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_assignment",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_attachment",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_catalog_item",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_delegation",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_doc_sequence",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_org_unit",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_person",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_position",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_role",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_role_grant",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_role_permission",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_team",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_team_member",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_tenant",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "ic_ic_order",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "ic_ic_order_item",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "mdm_item",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "mdm_partner",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "mfg_lot",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "proc_purchase_order",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "proc_purchase_order_item",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "proc_purchase_request",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "proc_purchase_request_item",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "wf_approval_history",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "wf_approval_rule",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "wf_approval_step",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "wf_flow_sync",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "wf_task",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    }
+  ]
+}

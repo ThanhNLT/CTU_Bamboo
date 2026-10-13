@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .hr_account import KeycloakUsers
     from .pii import PiiCipher
     from .search import Meili
+    from .trino import Trino
 
 
 @dataclass
@@ -31,6 +32,7 @@ class Context:
     gotenberg_url: str = ""           # in phiếu PDF (ADR #37)
     pii: "PiiCipher | None" = None    # mã hóa dữ liệu cá nhân nhạy cảm (ADR #41)
     users: "KeycloakUsers | None" = None  # tạo tài khoản đăng nhập khi quản trị thêm người (ADR #44)
+    lakehouse: "Trino | None" = None  # truy vấn tầng silver qua Trino (ADR #45)
 
 
 class ActionError(Exception):
