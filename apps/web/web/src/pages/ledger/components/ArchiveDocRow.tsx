@@ -7,9 +7,10 @@ import { Eye, Lock } from "lucide-react"; // Lucide React
 
 // ===== Module nội bộ =====
 import type { ArchiveDoc } from "../types";
+import { formatBytes } from "../utils";
 
 // ===== Component =====
-/** Một hồ sơ lưu trữ: ổ khóa, tên, năm · số trang, nút "Mở chỉ đọc". */
+/** Một hồ sơ lưu trữ: ổ khóa, tên, tệp · năm, nút "Mở chỉ đọc". */
 export const ArchiveDocRow = ({
   doc,
   detailed,
@@ -26,8 +27,9 @@ export const ArchiveDocRow = ({
     <div className="min-w-0 flex-1">
       <div className="truncate text-[13.5px] font-semibold text-ink">{doc.title}</div>
       <div className="truncate text-[11.5px] text-muted">
-        {detailed ? `${doc.code} · ` : ""}Lưu trữ {doc.archivedYear} · {doc.pages} trang
-        {detailed ? ` · ${doc.unit} · ${doc.access}` : ""}
+        {detailed ? `${doc.code} · ` : ""}
+        {doc.fileName} · {formatBytes(doc.sizeBytes)} · Lưu trữ {doc.archivedYear}
+        {detailed ? ` · ${doc.unit} · ${doc.restricted ? "Hạn chế" : "Nội bộ"}` : ""}
       </div>
     </div>
     <button

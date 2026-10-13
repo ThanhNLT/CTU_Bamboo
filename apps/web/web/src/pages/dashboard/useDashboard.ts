@@ -177,7 +177,7 @@ export const useDashboard = () => {
         .map((t) => ({
           code: t.code,
           title: t.title,
-          to: `/p/tasks?code=${encodeURIComponent(t.code)}`,
+          to: `/p/tasks?doc=${encodeURIComponent(t.code)}`,
           dueLabel: capitalize(t.sla.label),
           dueLevel: t.sla.level,
           dueDay: dueDay(t.dueAt),

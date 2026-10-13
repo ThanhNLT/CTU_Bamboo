@@ -90,17 +90,33 @@ class Storage:
             ExpiresIn=UPLOAD_TTL,
         )
 
-    def download_url(self, key: str, file_name: str, content_type: str) -> str:
+    def download_url(
+        self, key: str, file_name: str, content_type: str, *, inline: bool = False, ttl: int = DOWNLOAD_TTL
+    ) -> str:
+        """Link GET có chữ ký. `inline`: trình duyệt hiển thị thay vì tải về (phòng đọc của Sổ cái, ADR #46)."""
+        disposition = content_disposition(file_name)
+        if inline:
+            disposition = "inline" + disposition.removeprefix("attachment")
         return self.public.generate_presigned_url(
             "get_object",
             Params={
                 "Bucket": self.documents,
                 "Key": key,
-                "ResponseContentDisposition": content_disposition(file_name),
+                "ResponseContentDisposition": disposition,
                 "ResponseContentType": content_type,
             },
-            ExpiresIn=DOWNLOAD_TTL,
+            ExpiresIn=ttl,
         )
+
+    def read_stored(self, key: str, limit: int = MAX_BYTES + 1) -> bytes | None:
+        """Nội dung tệp đang nằm trong bucket tài liệu (đối soát của Sổ cái); None nếu không còn."""
+        try:
+            obj = self.s3.get_object(Bucket=self.documents, Key=key, Range=f"bytes=0-{limit - 1}")
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] in ("NoSuchKey", "404", "InvalidRange"):
+                return None
+            raise
+        return obj["Body"].read()
 
     def read_quarantine(self, key: str, limit: int = MAX_BYTES + 1) -> bytes | None:
         """Nội dung tệp vừa tải lên (tối đa `limit` byte); None nếu chưa có tệp."""

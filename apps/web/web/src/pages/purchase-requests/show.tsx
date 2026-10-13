@@ -14,7 +14,6 @@ import {
   Col,
   Descriptions,
   Input,
-  Modal,
   Row,
   Space,
   Spin,
@@ -49,7 +48,8 @@ import type { PurchaseRequest } from "./types";
 export const PurchaseRequestShow = () => {
   const { id } = useParsed();
   const go = useGo();
-  const { message } = App.useApp();
+  // modal của App.useApp(): Modal.confirm tĩnh của antd v5 không hiển thị trên React 19.
+  const { message, modal } = App.useApp();
   const { tenant } = useSession();
   const [pr, setPr] = useState<PurchaseRequest | null>();
   const [task, setTask] = useState<{ task_id: string; via_delegation: boolean } | null>(null);
@@ -115,7 +115,7 @@ export const PurchaseRequestShow = () => {
 
   const cancel = () => {
     let reason = "";
-    Modal.confirm({
+    modal.confirm({
       title: `Hủy đề nghị ${pr.doc_no}?`,
       content: (
         <Input.TextArea
