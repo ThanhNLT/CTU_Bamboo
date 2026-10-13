@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { fold } from "../../utils/text";
-import type { ColumnDef, Dataset, DomainFilter } from "./types";
+import type { Dataset, DomainFilter } from "./types";
 
 const num = new Intl.NumberFormat("vi-VN");
 export const formatInt = (n: number) => num.format(n);
@@ -17,18 +17,19 @@ export const filterDatasets = (list: Dataset[], query: string, domain: DomainFil
   );
 };
 
-/** Dòng mẫu: dùng mẫu có sẵn, nếu không thì sinh giá trị minh họa theo kiểu cột (cố định, không ngẫu nhiên). */
-export const sampleRows = (d: Dataset, count = 5) => {
-  if (d.sample?.length) return d.sample;
-  const value = (c: ColumnDef, i: number, j: number): string | number => {
-    if (c.pii) return "••••••";
-    if (c.type === "date") return `2026-10-0${6 - i}`;
-    if (c.type === "timestamptz") return `2026-10-06 ${String(8 + i).padStart(2, "0")}:00`;
-    if (c.type === "int") return 10 + ((i * 7 + j * 3) % 13);
-    if (c.type === "numeric") return (0.72 + ((i * 3 + j * 5) % 25) / 100).toFixed(3);
-    return `${c.name.toUpperCase().slice(0, 3)}-${String(i + 1).padStart(2, "0")}`;
-  };
-  return Array.from({ length: count }, (_, i) => Object.fromEntries(d.columns.map((c, j) => [c.name, value(c, i, j)])));
+/** Chip lĩnh vực: số tập dữ liệu mỗi lĩnh vực, theo thứ tự xuất hiện nhiều nhất. */
+export const domainCounts = (list: Dataset[]) => {
+  const counts = new Map<string, number>();
+  for (const d of list) counts.set(d.domain, (counts.get(d.domain) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "vi")).map(([key, count]) => ({ key, count }));
+};
+
+/** Giá trị một ô của bản xem trước: mảng nối bằng dấu phẩy, null để trống. */
+export const cellText = (value: unknown) => {
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
 };
 
 export { copyText } from "../../utils/clipboard";
