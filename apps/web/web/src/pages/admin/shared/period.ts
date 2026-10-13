@@ -3,16 +3,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Khoảng hiệu lực (tstzrange của PostgreSQL, Hasura trả dạng chuỗi) → ngày bắt đầu / kết thúc.
-import dayjs from "dayjs";
 
+// ===== Thư viện =====
+import dayjs from "dayjs"; // Day.js
+
+// ===== Module nội bộ =====
+import { parsePgTimestamp } from "../../../utils/format";
+
+// ===== Kiểu dữ liệu =====
 export type Period = { from?: string; to?: string; active: boolean; ended: boolean };
 
+// ===== Hàm tiện ích =====
 /** '["2026-10-01 05:00:00+00","2026-12-31 17:00:00+00")' → { from, to, active }. Cận trên là "hết ngày trước đó". */
 export const parsePeriod = (range?: string | null): Period => {
   const m = /^[[(]"?([^",]*)"?,"?([^",)\]]*)"?[)\]]$/.exec(range ?? "");
   if (!m) return { active: true, ended: false };
-  const from = m[1] ? dayjs(m[1]) : undefined;
-  const to = m[2] ? dayjs(m[2]) : undefined;
+  const from = m[1] ? parsePgTimestamp(m[1]) : undefined;
+  const to = m[2] ? parsePgTimestamp(m[2]) : undefined;
   const now = dayjs();
   return {
     from: from?.toISOString(),

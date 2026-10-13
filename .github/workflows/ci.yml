@@ -27,7 +27,10 @@ jobs:
       - name: Giấy phép từng tệp (REUSE 3.3)
         run: uvx --from 'reuse[charset-normalizer]' reuse lint
       - name: Python (ruff)
-        run: uvx ruff check services --select E,F,W,B --ignore E501
+        run: |
+          uvx ruff check services --select E,F,W,B --ignore E501
+          uvx ruff check . --select I
+          uvx ruff format --check .
       - name: Docker Compose hợp lệ
         run: docker compose --profile test --profile scan config -q
       - uses: actions/setup-node@v7
@@ -40,6 +43,7 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run lint
+          npm run format:check
           npm run build
       - name: Giấy phép phụ thuộc production của giao diện
         working-directory: apps/web/web

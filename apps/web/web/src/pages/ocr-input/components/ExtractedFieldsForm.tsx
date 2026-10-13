@@ -2,21 +2,29 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, Select } from "antd";
-import { Check, CheckCircle2, RotateCcw } from "lucide-react";
-import type { ReactNode } from "react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { Checkbox, Select } from "antd"; // Ant Design
+import { Check, CheckCircle2, RotateCcw } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { PRIORITIES, RECORD_TYPES } from "../mock";
 import type { FieldKey, FormValues, OcrField } from "../types";
 import { LEVEL_STYLE, formatConfidence, levelOf } from "../utils";
 
+// ===== Hàm tiện ích =====
 const fieldId = (k: FieldKey) => `ocr-field-${k}`;
 
+// ===== Component =====
 /** Thẻ độ tin cậy cạnh nhãn. Trường cần xem: bấm để xác nhận "đã xem" mà không cần sửa. */
 const ConfidenceTag = ({
-  field, reviewed, canConfirm, onConfirm,
+  field,
+  reviewed,
+  canConfirm,
+  onConfirm,
 }: {
   field: OcrField;
   reviewed: boolean;
@@ -42,7 +50,12 @@ const ConfidenceTag = ({
   );
   const cls = cn("inline-flex h-5 items-center gap-1 rounded-full px-2 text-[11px] font-medium", st.tag);
   return lv !== "high" && canConfirm ? (
-    <button type="button" onClick={onConfirm} title="Bấm để xác nhận bạn đã xem giá trị này" className={cn(cls, "hover:brightness-95")}>
+    <button
+      type="button"
+      onClick={onConfirm}
+      title="Bấm để xác nhận bạn đã xem giá trị này"
+      className={cn(cls, "hover:brightness-95")}
+    >
       {content}
     </button>
   ) : (
@@ -51,7 +64,14 @@ const ConfidenceTag = ({
 };
 
 const Field = ({
-  field, label, reviewed, onConfirm, canConfirm = true, error, children, className,
+  field,
+  label,
+  reviewed,
+  onConfirm,
+  canConfirm = true,
+  error,
+  children,
+  className,
 }: {
   field?: OcrField;
   label: string;
@@ -64,14 +84,21 @@ const Field = ({
 }) => (
   <div className={cn("min-w-0", className)}>
     <div className="mb-1.5 flex items-center justify-between gap-2">
-      <label htmlFor={field ? fieldId(field.key) : undefined} className="text-[12.5px] text-body">{label}</label>
+      <label htmlFor={field ? fieldId(field.key) : undefined} className="text-[12.5px] text-body">
+        {label}
+      </label>
       {field && <ConfidenceTag field={field} reviewed={reviewed} canConfirm={canConfirm} onConfirm={onConfirm} />}
     </div>
     {children}
-    {error && <p className="mt-1 text-[11.5px] text-red-600" role="alert">{error}</p>}
+    {error && (
+      <p className="mt-1 text-[11.5px] text-red-600" role="alert">
+        {error}
+      </p>
+    )}
   </div>
 );
 
+// ===== Hàm tiện ích =====
 const inputClass = (invalid: boolean, mono = false) =>
   cn(
     "w-full rounded-xl border px-3 text-ink outline-none transition-colors",
@@ -81,10 +108,22 @@ const inputClass = (invalid: boolean, mono = false) =>
       : "border-transparent bg-canvas placeholder:text-muted hover:border-line focus:border-bamboo-600 focus:bg-white focus:ring-3 focus:ring-bamboo-100",
   );
 
+// ===== Component =====
 /** Cột phải: các trường đã trích xuất, độ tin cậy từng trường, và thao tác tạo hồ sơ / quét lại. */
 export const ExtractedFieldsForm = ({
-  fields, values, reviewed, errors, pendingCount, disabled, createdCode,
-  onChange, onConfirm, onFocusField, onCreate, onRescan, onReset,
+  fields,
+  values,
+  reviewed,
+  errors,
+  pendingCount,
+  disabled,
+  createdCode,
+  onChange,
+  onConfirm,
+  onFocusField,
+  onCreate,
+  onRescan,
+  onReset,
 }: {
   fields: OcrField[];
   values: FormValues;
@@ -109,11 +148,19 @@ export const ExtractedFieldsForm = ({
     onBlur: () => onFocusField(undefined),
     "aria-invalid": errors[k] ? true : undefined,
   });
-  const props = (k: FieldKey) => ({ field: f(k), reviewed: reviewed.has(k), onConfirm: () => onConfirm(k), error: errors[k] });
+  const props = (k: FieldKey) => ({
+    field: f(k),
+    reviewed: reviewed.has(k),
+    onConfirm: () => onConfirm(k),
+    error: errors[k],
+  });
   const requesterEmpty = !values.requester.trim();
 
   return (
-    <section aria-label="Trường đã trích xuất" className="flex min-w-0 flex-col rounded-2xl border border-line bg-white p-4 shadow-card sm:p-5">
+    <section
+      aria-label="Trường đã trích xuất"
+      className="flex min-w-0 flex-col rounded-2xl border border-line bg-white p-4 shadow-card sm:p-5"
+    >
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-ink">Trường đã trích xuất</h2>
         {pendingCount > 0 ? (
@@ -130,7 +177,9 @@ export const ExtractedFieldsForm = ({
       </div>
 
       <div className="mt-4">
-        <label htmlFor="ocr-record-type" className="mb-1.5 block text-[12.5px] text-body">Loại hồ sơ sẽ tạo</label>
+        <label htmlFor="ocr-record-type" className="mb-1.5 block text-[12.5px] text-body">
+          Loại hồ sơ sẽ tạo
+        </label>
         <Select
           id="ocr-record-type"
           value={values.recordType}
@@ -143,20 +192,44 @@ export const ExtractedFieldsForm = ({
         />
       </div>
 
-      <div className={cn("mt-4 grid grid-cols-1 gap-x-4 gap-y-3.5 border-t border-line pt-4 transition-opacity sm:grid-cols-2", disabled && "opacity-50")} aria-busy={disabled || undefined}>
+      <div
+        className={cn(
+          "mt-4 grid grid-cols-1 gap-x-4 gap-y-3.5 border-t border-line pt-4 transition-opacity sm:grid-cols-2",
+          disabled && "opacity-50",
+        )}
+        aria-busy={disabled || undefined}
+      >
         <Field label="Số phiếu" {...props("docNo")}>
-          <input {...common("docNo")} onChange={(e) => onChange("docNo", e.target.value)} className={cn(inputClass(!!errors.docNo, true), "h-10")} />
+          <input
+            {...common("docNo")}
+            onChange={(e) => onChange("docNo", e.target.value)}
+            className={cn(inputClass(!!errors.docNo, true), "h-10")}
+          />
         </Field>
         <Field label="Ngày lập" {...props("date")}>
-          <input {...common("date")} inputMode="numeric" placeholder="dd/mm/yyyy" onChange={(e) => onChange("date", e.target.value)} className={cn(inputClass(!!errors.date), "h-10 tabular-nums")} />
+          <input
+            {...common("date")}
+            inputMode="numeric"
+            placeholder="dd/mm/yyyy"
+            onChange={(e) => onChange("date", e.target.value)}
+            className={cn(inputClass(!!errors.date), "h-10 tabular-nums")}
+          />
         </Field>
 
         <Field label="Đơn vị yêu cầu" className="sm:col-span-2" {...props("unit")}>
-          <input {...common("unit")} onChange={(e) => onChange("unit", e.target.value)} className={cn(inputClass(!!errors.unit), "h-10")} />
+          <input
+            {...common("unit")}
+            onChange={(e) => onChange("unit", e.target.value)}
+            className={cn(inputClass(!!errors.unit), "h-10")}
+          />
         </Field>
 
         <Field label="Thiết bị" {...props("device")}>
-          <input {...common("device")} onChange={(e) => onChange("device", e.target.value)} className={cn(inputClass(!!errors.device), "h-10")} />
+          <input
+            {...common("device")}
+            onChange={(e) => onChange("device", e.target.value)}
+            className={cn(inputClass(!!errors.device), "h-10")}
+          />
         </Field>
         <Field label="Mức ưu tiên" {...props("priority")}>
           <Select
@@ -174,7 +247,12 @@ export const ExtractedFieldsForm = ({
         </Field>
 
         <Field label="Mô tả sự cố" className="sm:col-span-2" {...props("description")}>
-          <textarea {...common("description")} rows={2} onChange={(e) => onChange("description", e.target.value)} className={cn(inputClass(!!errors.description), "resize-y py-2 leading-relaxed")} />
+          <textarea
+            {...common("description")}
+            rows={2}
+            onChange={(e) => onChange("description", e.target.value)}
+            className={cn(inputClass(!!errors.description), "resize-y py-2 leading-relaxed")}
+          />
         </Field>
 
         <Field label="Người đề nghị" className="sm:col-span-2" {...props("requester")} canConfirm={!requesterEmpty}>
@@ -196,7 +274,12 @@ export const ExtractedFieldsForm = ({
             <span className="text-[12.5px] text-body">Phiếu có chữ ký người đề nghị</span>
           </Checkbox>
           {f("signature") && (
-            <ConfidenceTag field={f("signature") as OcrField} reviewed={reviewed.has("signature")} canConfirm onConfirm={() => onConfirm("signature")} />
+            <ConfidenceTag
+              field={f("signature") as OcrField}
+              reviewed={reviewed.has("signature")}
+              canConfirm
+              onConfirm={() => onConfirm("signature")}
+            />
           )}
         </div>
       </div>
@@ -207,10 +290,16 @@ export const ExtractedFieldsForm = ({
             <CheckCircle2 className="h-4 w-4" aria-hidden />
             Đã tạo hồ sơ nháp <span className="font-mono">{createdCode}</span>
           </p>
-          <p className="mt-1 text-[12px] text-body">Ảnh gốc đã đính kèm. Bạn rà soát rồi gửi duyệt trong trang Hồ sơ.</p>
+          <p className="mt-1 text-[12px] text-body">
+            Ảnh gốc đã đính kèm. Bạn rà soát rồi gửi duyệt trong trang Hồ sơ.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Link to="/p/records" className={primaryButtonClass}>Mở hồ sơ</Link>
-            <button type="button" onClick={onReset} className={secondaryButtonClass}>Nhập phiếu khác</button>
+            <Link to="/p/records" className={primaryButtonClass}>
+              Mở hồ sơ
+            </Link>
+            <button type="button" onClick={onReset} className={secondaryButtonClass}>
+              Nhập phiếu khác
+            </button>
           </div>
         </div>
       ) : (

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 export type NodeType = "start" | "userTask" | "serviceTask" | "gateway" | "end";
 
 export type TaskDecision = "approve" | "return" | "reject";

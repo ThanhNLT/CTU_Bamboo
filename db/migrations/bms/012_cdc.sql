@@ -7,6 +7,10 @@
 -- `audit` (nhật ký có chuỗi hash riêng, ADR #33), `search` (hàng đợi nội bộ), `public`.
 -- Cần PostgreSQL chạy với wal_level=logical (docker-compose.yml); migration vẫn chạy được khi chưa bật.
 
+-- ---------------------------------------------------------------------------
+-- Nhịp tim CDC
+-- ---------------------------------------------------------------------------
+
 CREATE SCHEMA cdc;
 
 -- Nhịp tim: Debezium ghi định kỳ để vị trí replication slot luôn tiến, kể cả khi bảng nghiệp vụ không
@@ -16,5 +20,9 @@ CREATE TABLE cdc.heartbeat (
     beat_at  timestamptz NOT NULL DEFAULT now()
 );
 INSERT INTO cdc.heartbeat (id) VALUES (1);
+
+-- ---------------------------------------------------------------------------
+-- Publication cho Debezium
+-- ---------------------------------------------------------------------------
 
 CREATE PUBLICATION bms_cdc FOR TABLES IN SCHEMA core, mdm, wf, proc, ic, collab, cdc;

@@ -4,13 +4,17 @@
 
 """Chặn chạy production với mật khẩu/secret mặc định của môi trường dev."""
 
-import pytest
+# ===== Thư viện bên ngoài =====
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import config
 
+# ===== Hằng số & cấu hình =====
 STRONG = {name: f"bi-mat-rieng-{i}" for i, name in enumerate(config.DEV_DEFAULTS)}
 
 
+# ===== Kiểm thử =====
 def test_moi_truong_dev_khong_chan():
     config.assert_production_ready({"BAMBOO_ENV": "development"})
     config.assert_production_ready({})

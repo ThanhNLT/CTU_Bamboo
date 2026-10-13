@@ -5,19 +5,24 @@
 // Sơ đồ quy trình duyệt của một đề nghị (Action process_state): tô sáng bước đang chạy và bước đã
 // qua của lần gửi duyệt gần nhất. Trang tải lười (React.lazy) nên bpmn-js không vào bundle chính.
 // Giấy phép bpmn.io: PHẢI giữ nguyên watermark bpmn.io, không che, không ẩn.
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useGo } from "@refinedev/core";
-import { Alert, Button, Card, Col, Descriptions, Row, Space, Spin, Tag, Typography } from "antd";
-import { ArrowLeftOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useParams } from "react-router";
-import NavigatedViewer from "bpmn-js/lib/NavigatedViewer";
-import "bpmn-js/dist/assets/diagram-js.css";
-import "bpmn-js/dist/assets/bpmn-js.css";
+
+// ===== Thư viện =====
+import { useCallback, useEffect, useRef, useState } from "react"; // React
+import { useGo } from "@refinedev/core"; // Refine
+import { Alert, Button, Card, Col, Descriptions, Row, Space, Spin, Tag, Typography } from "antd"; // Ant Design
+import { ArrowLeftOutlined, ReloadOutlined } from "@ant-design/icons"; // Ant Design Icons
+import { useParams } from "react-router"; // React Router
+import NavigatedViewer from "bpmn-js/lib/NavigatedViewer"; // bpmn-js
+import "bpmn-js/dist/assets/diagram-js.css"; // bpmn-js
+import "bpmn-js/dist/assets/bpmn-js.css"; // bpmn-js
+
+// ===== Module nội bộ =====
 import "./diagram.css";
 import { request } from "../../api/client";
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, STEP_STATUS } from "../../utils/format";
 
+// ===== Truy vấn GraphQL =====
 const PROCESS_STATE = `
   query ProcessState($id: uuid!) {
     process_state(request_id: $id) {
@@ -34,23 +39,42 @@ const PROCESS_STATE = `
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type State = {
-  round: number; status: string; source: string; process_instance_id: string | null; bpmn_xml: string;
-  active_activity_ids: string[]; completed_activity_ids: string[];
+  round: number;
+  status: string;
+  source: string;
+  process_instance_id: string | null;
+  bpmn_xml: string;
+  active_activity_ids: string[];
+  completed_activity_ids: string[];
 };
 type Step = {
-  id: string; round: number; step_order: number; status: string; acted_at: string | null;
-  position: { name: string; org_unit: { name: string } } | null; acted_by_person: { full_name: string } | null;
+  id: string;
+  round: number;
+  step_order: number;
+  status: string;
+  acted_at: string | null;
+  position: { name: string; org_unit: { name: string } } | null;
+  acted_by_person: { full_name: string } | null;
 };
 type Pr = { id: string; doc_no: string; title: string; approval_round: number; approval_steps: Step[] };
 type Picked = { id: string; type: string; name?: string };
 
 type Canvas = { addMarker: (id: string, cls: string) => void; zoom: (level: string) => void };
 type ElementRegistry = { get: (id: string) => unknown };
-type EventBus = { on: (event: string, cb: (e: { element: { id: string; type: string; businessObject?: { name?: string } } }) => void) => void };
+type EventBus = {
+  on: (
+    event: string,
+    cb: (e: { element: { id: string; type: string; businessObject?: { name?: string } } }) => void,
+  ) => void;
+};
 
+// ===== Hằng số =====
 // Nhãn task trong BPMN là biểu thức Flowable (`Duyệt bước ${stepIndex + 1}/${stepCount}`): thay bằng số bước thật.
 const STEP_LABEL = /\$\{stepIndex \+ 1\}\/\$\{stepCount\}/g;
+
+// ===== Hàm tiện ích =====
 const stepLabel = (steps: Step[]) => {
   const active = steps.find((x) => x.status === "ACTIVE");
   if (active) return `${active.step_order}/${steps.length}`;
@@ -60,6 +84,7 @@ const stepLabel = (steps: Step[]) => {
 const state = (s: State, id: string) =>
   s.active_activity_ids.includes(id) ? "Đang chạy" : s.completed_activity_ids.includes(id) ? "Đã qua" : "Chưa tới";
 
+// ===== Component =====
 export const ProcessDiagram = () => {
   const { id } = useParams();
   const go = useGo();
@@ -78,26 +103,32 @@ export const ProcessDiagram = () => {
     }
   }, [id]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   useEffect(() => {
     if (!data || !container.current) return;
     const viewer = new NavigatedViewer({ container: container.current });
     let alive = true;
     const steps = data.pr?.approval_steps.filter((x) => x.round === data.state.round) ?? [];
-    viewer.importXML(data.state.bpmn_xml.replace(STEP_LABEL, stepLabel(steps))).then(() => {
-      if (!alive) return;
-      const canvas = viewer.get<Canvas>("canvas");
-      const registry = viewer.get<ElementRegistry>("elementRegistry");
-      const mark = (ids: string[], cls: string) => ids.filter((x) => registry.get(x)).forEach((x) => canvas.addMarker(x, cls));
-      mark(data.state.completed_activity_ids, "bamboo-done");
-      mark(data.state.active_activity_ids, "bamboo-active");
-      canvas.zoom("fit-viewport");
-      viewer.get<EventBus>("eventBus").on("element.click", ({ element }) => {
-        if (element.type === "bpmn:Process" || element.type === "label") setPicked(null);
-        else setPicked({ id: element.id, type: element.type, name: element.businessObject?.name });
-      });
-    }).catch((e: Error) => alive && setError(`Không hiển thị được sơ đồ: ${e.message}`));
+    viewer
+      .importXML(data.state.bpmn_xml.replace(STEP_LABEL, stepLabel(steps)))
+      .then(() => {
+        if (!alive) return;
+        const canvas = viewer.get<Canvas>("canvas");
+        const registry = viewer.get<ElementRegistry>("elementRegistry");
+        const mark = (ids: string[], cls: string) =>
+          ids.filter((x) => registry.get(x)).forEach((x) => canvas.addMarker(x, cls));
+        mark(data.state.completed_activity_ids, "bamboo-done");
+        mark(data.state.active_activity_ids, "bamboo-active");
+        canvas.zoom("fit-viewport");
+        viewer.get<EventBus>("eventBus").on("element.click", ({ element }) => {
+          if (element.type === "bpmn:Process" || element.type === "label") setPicked(null);
+          else setPicked({ id: element.id, type: element.type, name: element.businessObject?.name });
+        });
+      })
+      .catch((e: Error) => alive && setError(`Không hiển thị được sơ đồ: ${e.message}`));
     return () => {
       alive = false;
       viewer.destroy();
@@ -111,30 +142,49 @@ export const ProcessDiagram = () => {
 
   return (
     <Card
-      title={(
+      title={
         <Space wrap>
-          <Button type="text" icon={<ArrowLeftOutlined />} aria-label="Về đề nghị"
-                  onClick={() => go({ to: { resource: "proc_purchase_request", action: "show", id: id! } })} />
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            aria-label="Về đề nghị"
+            onClick={() => go({ to: { resource: "proc_purchase_request", action: "show", id: id! } })}
+          />
           <span>Sơ đồ quy trình {pr?.doc_no}</span>
           <StatusTag status={s.status} />
           {s.round > 0 && <Tag>Lần gửi {s.round}</Tag>}
         </Space>
-      )}
-      extra={<Button icon={<ReloadOutlined />} onClick={load}>Tải lại</Button>}
+      }
+      extra={
+        <Button icon={<ReloadOutlined />} onClick={load}>
+          Tải lại
+        </Button>
+      }
     >
       {s.source !== "flowable" && s.round > 0 && (
-        <Alert style={{ marginBottom: 12 }} type="info" showIcon
-               message="Bộ máy quy trình chưa đồng bộ xong; trạng thái trên sơ đồ suy ra từ dữ liệu chứng từ." />
+        <Alert
+          style={{ marginBottom: 12 }}
+          type="info"
+          showIcon
+          message="Bộ máy quy trình chưa đồng bộ xong; trạng thái trên sơ đồ suy ra từ dữ liệu chứng từ."
+        />
       )}
       {s.round === 0 && <Alert style={{ marginBottom: 12 }} type="info" showIcon message="Đề nghị chưa gửi duyệt." />}
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={17}>
-          <div ref={container} className="bamboo-bpmn" role="img" aria-label={`Sơ đồ quy trình duyệt ${pr?.doc_no ?? ""}`} />
+          <div
+            ref={container}
+            className="bamboo-bpmn"
+            role="img"
+            aria-label={`Sơ đồ quy trình duyệt ${pr?.doc_no ?? ""}`}
+          />
           <Space style={{ marginTop: 8 }} wrap>
             <span className="bamboo-legend bamboo-legend-active">Đang chạy</span>
             <span className="bamboo-legend bamboo-legend-done">Đã qua</span>
             <span className="bamboo-legend">Chưa tới</span>
-            <Typography.Text type="secondary">Nhấn vào một bước để xem chi tiết; kéo để di chuyển, cuộn để phóng to.</Typography.Text>
+            <Typography.Text type="secondary">
+              Nhấn vào một bước để xem chi tiết; kéo để di chuyển, cuộn để phóng to.
+            </Typography.Text>
           </Space>
         </Col>
         <Col xs={24} xl={7}>
@@ -146,11 +196,19 @@ export const ProcessDiagram = () => {
             </Card>
           )}
           <Card size="small" title="Các bước duyệt">
-            {steps.length === 0 ? <Typography.Text type="secondary">Chưa có bước duyệt.</Typography.Text> : (
+            {steps.length === 0 ? (
+              <Typography.Text type="secondary">Chưa có bước duyệt.</Typography.Text>
+            ) : (
               <Space direction="vertical" style={{ width: "100%" }}>
                 {steps.map((x) => (
-                  <div key={x.id} className={picked?.id === "approveStep" && x.status === "ACTIVE" ? "bamboo-step-picked" : undefined}>
-                    <b>{x.step_order}. {x.position?.name}</b> – {x.position?.org_unit.name}
+                  <div
+                    key={x.id}
+                    className={picked?.id === "approveStep" && x.status === "ACTIVE" ? "bamboo-step-picked" : undefined}
+                  >
+                    <b>
+                      {x.step_order}. {x.position?.name}
+                    </b>{" "}
+                    – {x.position?.org_unit.name}
                     <div>
                       {STEP_STATUS[x.status] ?? x.status}
                       {x.acted_by_person ? `: ${x.acted_by_person.full_name}` : ""}

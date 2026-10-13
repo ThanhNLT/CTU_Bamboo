@@ -4,12 +4,16 @@
 
 // Ổ đĩa tài liệu và Trung tâm điều hành dùng dữ liệu thật: tải tệp vào chứng từ qua Ổ đĩa (kiểm dịch thật),
 // tệp hiện trong "Tệp tôi tải lên"; Trung tâm điều hành hiện số liệu thật.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E ổ đĩa ${Date.now()}`;
 const FILE = `bao-gia-${Date.now()}.pdf`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -19,6 +23,7 @@ async function login(page: Page, username: string) {
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("tải tệp vào chứng từ qua Ổ đĩa, xem số liệu điều hành", async ({ page }) => {
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/p/documents/create");
@@ -36,9 +41,13 @@ test("tải tệp vào chứng từ qua Ổ đĩa, xem số liệu điều hành
 
   // Mở chứng từ làm thư mục trong Ổ đĩa (chưa có tệp) rồi tải lên.
   await page.goto(`/h/drive?folder=${id}`);
-  await expect(page.getByRole("navigation", { name: "Đường dẫn thư mục" }).getByText(TITLE, { exact: false })).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Đường dẫn thư mục" }).getByText(TITLE, { exact: false }),
+  ).toBeVisible();
   await page.locator('input[type="file"]').setInputFiles({
-    name: FILE, mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7\nbao gia o dia\n%%EOF\n"),
+    name: FILE,
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.7\nbao gia o dia\n%%EOF\n"),
   });
   await expect(page.getByLabel("Tiến trình tải lên").getByText("Sạch · đã lưu")).toBeVisible();
   await expect(page.getByRole("row", { name: new RegExp(FILE) }).getByText("Sạch")).toBeVisible();
@@ -51,6 +60,8 @@ test("tải tệp vào chứng từ qua Ổ đĩa, xem số liệu điều hành
   // Trung tâm điều hành: các khối có số thật của tenant (dữ liệu demo có sẵn đề nghị đang chờ của Điện thoại X).
   await page.goto("/d/ops");
   await expect(page.getByRole("region", { name: "Hồ sơ chờ duyệt" }).getByText(/^\d+$/)).toBeVisible();
-  await expect(page.getByRole("region", { name: "Hồ sơ đang chờ theo công ty" }).getByText("Điện thoại X").first()).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Hồ sơ đang chờ theo công ty" }).getByText("Điện thoại X").first(),
+  ).toBeVisible();
   await expect(page.getByText("Dữ liệu minh họa")).toHaveCount(0);
 });

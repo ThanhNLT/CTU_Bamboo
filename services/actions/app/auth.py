@@ -4,21 +4,25 @@
 
 """Hasura auth webhook (ADR #32): token Keycloak + tenant đã chọn → biến phiên Hasura.
 
-    Authorization: Bearer <access token Keycloak>
-    x-bamboo-tenant: <tenant id>         (bỏ trống: role `account`, chỉ gọi được my_tenants)
-    x-hasura-role: platform_admin        (tùy chọn; cần realm role platform_admin)
+Authorization: Bearer <access token Keycloak>
+x-bamboo-tenant: <tenant id>         (bỏ trống: role `account`, chỉ gọi được my_tenants)
+x-hasura-role: platform_admin        (tùy chọn; cần realm role platform_admin)
 """
 
+# ===== Thư viện chuẩn =====
 import time
 
-import jwt
-import psycopg
+# ===== Thư viện bên ngoài =====
+import jwt  # PyJWT
+import psycopg  # psycopg
 
 
+# ===== Lỗi (exception) =====
 class AuthError(Exception):
     pass
 
 
+# ===== Lớp =====
 class KeycloakVerifier:
     def __init__(self, jwks_url: str, issuer: str, clients: set[str], jwks_client=None):
         self.jwks = jwks_client or jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=300)
@@ -28,8 +32,13 @@ class KeycloakVerifier:
     def verify(self, token: str) -> dict:
         try:
             key = self.jwks.get_signing_key_from_jwt(token)
-            claims = jwt.decode(token, key.key, algorithms=["RS256"], issuer=self.issuer,
-                                options={"verify_aud": False, "require": ["exp", "sub", "iss"]})
+            claims = jwt.decode(
+                token,
+                key.key,
+                algorithms=["RS256"],
+                issuer=self.issuer,
+                options={"verify_aud": False, "require": ["exp", "sub", "iss"]},
+            )
         except jwt.PyJWTError as exc:
             raise AuthError(f"Token không hợp lệ: {exc}") from exc
         if claims.get("typ") != "Bearer":
@@ -57,8 +66,9 @@ class MembershipCache:
         hit = self.items.get((sub, tenant))
         if hit and hit[0] > now:
             return hit[1]
-        row = conn.execute("SELECT person_id FROM core.account_tenants(%s) WHERE tenant_id::text = %s",
-                           (sub, tenant)).fetchone()
+        row = conn.execute(
+            "SELECT person_id FROM core.account_tenants(%s) WHERE tenant_id::text = %s", (sub, tenant)
+        ).fetchone()
         if len(self.items) >= self.max_size:
             self.items.clear()
         person = str(row[0]) if row else None
@@ -66,8 +76,14 @@ class MembershipCache:
         return person
 
 
-def session_for(conn: psycopg.Connection, claims: dict, tenant: str | None, requested_role: str | None,
-                cache: MembershipCache | None = None) -> dict:
+# ===== Hàm =====
+def session_for(
+    conn: psycopg.Connection,
+    claims: dict,
+    tenant: str | None,
+    requested_role: str | None,
+    cache: MembershipCache | None = None,
+) -> dict:
     """Biến phiên Hasura cho token đã kiểm tra."""
     sub = claims["sub"]
     # Hạn của kết nối websocket (subscription) theo hạn token.
@@ -99,5 +115,7 @@ def my_tenants(conn: psycopg.Connection, session: dict) -> list[dict]:
            ORDER BY a.tenant_code""",
         (sub,),
     ).fetchall()
-    return [{"tenant_id": str(r[0]), "tenant_code": r[1], "tenant_name": r[2],
-             "person_id": str(r[3]), "full_name": r[4]} for r in rows]
+    return [
+        {"tenant_id": str(r[0]), "tenant_code": r[1], "tenant_name": r[2], "person_id": str(r[3]), "full_name": r[4]}
+        for r in rows
+    ]

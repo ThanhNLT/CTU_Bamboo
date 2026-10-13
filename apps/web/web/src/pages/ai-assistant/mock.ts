@@ -4,8 +4,11 @@
 
 // Dữ liệu mẫu cho Trợ lý đa năng. Số liệu khớp các trang khác: OEE 81,0% (−3,2 điểm) như Trung tâm điều hành,
 // hồ sơ HS-MOB-2026-00305 "Báo cáo lỗi dây chuyền SMT-02" đang ở Cấp 1.
+
+// ===== Module nội bộ =====
 import type { AssistantMode, ChartSpec, ChatSession, Citation } from "./types";
 
+// ===== Hằng số =====
 export const MODES: Array<{ key: AssistantMode; label: string }> = [
   { key: "auto", label: "Tự động" },
   { key: "knowledge", label: "Tri thức" },

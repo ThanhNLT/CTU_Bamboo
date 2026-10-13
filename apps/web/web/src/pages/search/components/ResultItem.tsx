@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BookOpen, Cpu, Database, Download, FileText, FolderClosed, type LucideIcon } from "lucide-react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { BookOpen, Cpu, Database, Download, FileText, FolderClosed, type LucideIcon } from "lucide-react"; // Lucide React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { StatusTag } from "../../../components/StatusTag";
 import { cn } from "../../../utils/cn";
 import { highlight } from "../engine";
 import type { ResultType, SearchResult } from "../types";
 
+// ===== Hằng số =====
 const ICON: Record<ResultType, { icon: LucideIcon; className: string }> = {
   twin: { icon: Cpu, className: "bg-bamboo-50 text-bamboo-700" },
   record: { icon: FileText, className: "bg-canvas text-body" },
@@ -19,18 +23,31 @@ const ICON: Record<ResultType, { icon: LucideIcon; className: string }> = {
 
 const MARK = "rounded-[3px] bg-yellow-100 text-ink";
 
+// ===== Component =====
 /** Văn bản có các cụm khớp được bọc <mark> nền vàng nhạt. */
 const Highlighted = ({ text, terms }: { text: string; terms: string[] }) => (
   <>
-    {highlight(text, terms).map((s, i) => (s.mark ? <mark key={i} className={MARK}>{s.text}</mark> : <span key={i}>{s.text}</span>))}
+    {highlight(text, terms).map((s, i) =>
+      s.mark ? (
+        <mark key={i} className={MARK}>
+          {s.text}
+        </mark>
+      ) : (
+        <span key={i}>{s.text}</span>
+      ),
+    )}
   </>
 );
 
+// ===== Hàm tiện ích =====
 const fmtScore = (n: number) => n.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// ===== Component =====
 /** Một kết quả: biểu tượng theo loại, tiêu đề (liên kết), đường dẫn, đoạn trích tô sáng, thẻ độ khớp. */
 export const ResultItem = ({
-  result, terms, onDownload,
+  result,
+  terms,
+  onDownload,
 }: {
   result: SearchResult;
   terms: string[];
@@ -51,7 +68,9 @@ export const ResultItem = ({
               result.mono && "font-mono text-[13px]",
             )}
           >
-            {result.code && <span className="mr-1.5 font-mono text-[12.5px] font-medium text-muted">{result.code}</span>}
+            {result.code && (
+              <span className="mr-1.5 font-mono text-[12.5px] font-medium text-muted">{result.code}</span>
+            )}
             <Highlighted text={result.title} terms={terms} />
           </Link>
           {result.status && <StatusTag status={result.status} />}
@@ -82,7 +101,9 @@ export const ResultItem = ({
             </span>
           )}
           {result.updatedLabel && (
-            <span className="inline-flex h-6 items-center rounded-full bg-black/[0.045] px-2.5 font-medium text-body">{result.updatedLabel}</span>
+            <span className="inline-flex h-6 items-center rounded-full bg-black/[0.045] px-2.5 font-medium text-body">
+              {result.updatedLabel}
+            </span>
           )}
           {result.attachmentId && (
             <button

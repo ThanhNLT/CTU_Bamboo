@@ -2,20 +2,36 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Select } from "antd";
-import { SearchX } from "lucide-react";
+// ===== Thư viện =====
+import { Select } from "antd"; // Ant Design
+import { SearchX } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { formatSeconds } from "../engine";
 import type { SearchResult, SortKey } from "../types";
 import { ResultItem } from "./ResultItem";
 
+// ===== Hằng số =====
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "relevance", label: "Phù hợp nhất" },
   { value: "newest", label: "Mới nhất" },
 ];
 
+// ===== Component =====
 /** Cột kết quả: tổng số + thời gian, sắp xếp, danh sách, "Xem thêm". */
 export const SearchResultList = ({
-  query, results, total, moreOnServer, elapsedMs, sort, onSortChange, onShowMore, loading, error, terms, onDownload,
+  query,
+  results,
+  total,
+  moreOnServer,
+  elapsedMs,
+  sort,
+  onSortChange,
+  onShowMore,
+  loading,
+  error,
+  terms,
+  onDownload,
 }: {
   query: string;
   /** Kết quả đang hiển thị (đã cắt trang). */
@@ -43,7 +59,13 @@ export const SearchResultList = ({
           </b>{" "}
           · {formatSeconds(elapsedMs)}
         </p>
-        <Select<SortKey> value={sort} onChange={onSortChange} options={SORT_OPTIONS} style={{ width: 150 }} aria-label="Sắp xếp kết quả" />
+        <Select<SortKey>
+          value={sort}
+          onChange={onSortChange}
+          options={SORT_OPTIONS}
+          style={{ width: 150 }}
+          aria-label="Sắp xếp kết quả"
+        />
       </div>
 
       {error && (

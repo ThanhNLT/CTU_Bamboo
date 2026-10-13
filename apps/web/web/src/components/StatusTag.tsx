@@ -2,13 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ReactElement } from "react";
-import { Tag } from "antd";
+// ===== Thư viện =====
+import type { ReactElement } from "react"; // React
+import { Tag } from "antd"; // Ant Design
 import {
-  CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EditOutlined, RollbackOutlined, StopOutlined,
-} from "@ant-design/icons";
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
+  EditOutlined,
+  RollbackOutlined,
+  StopOutlined,
+} from "@ant-design/icons"; // Ant Design Icons
+
+// ===== Module nội bộ =====
 import { PR_STATUS_LABEL } from "../utils/status";
 
+// ===== Hằng số =====
 // Trạng thái luôn có chữ và biểu tượng, không truyền nghĩa chỉ bằng màu (UI-10).
 const STYLE: Record<string, { color: string; icon: ReactElement }> = {
   DRAFT: { color: "default", icon: <EditOutlined /> },
@@ -21,8 +30,18 @@ const STYLE: Record<string, { color: string; icon: ReactElement }> = {
   CANCELLED: { color: "default", icon: <StopOutlined /> },
 };
 
-export const StatusTag = ({ status, labels = PR_STATUS_LABEL }: { status: string; labels?: Record<string, string> }) => {
+// ===== Component =====
+export const StatusTag = ({
+  status,
+  labels = PR_STATUS_LABEL,
+}: {
+  status: string;
+  labels?: Record<string, string>;
+}) => {
   const s = STYLE[status];
-  return <Tag color={s?.color} icon={s?.icon}>{labels[status] ?? status}</Tag>;
+  return (
+    <Tag color={s?.color} icon={s?.icon}>
+      {labels[status] ?? status}
+    </Tag>
+  );
 };
-

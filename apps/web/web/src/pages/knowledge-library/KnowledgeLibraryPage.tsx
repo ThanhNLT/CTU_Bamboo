@@ -4,9 +4,13 @@
 
 // Thư viện tri thức (Con người số): master–detail. Trái 40% danh sách, phải 60% chi tiết; trên màn hình
 // lớn hai cột cao bằng nhau và cuộn độc lập. Dữ liệu minh họa ở ./mock.
-import { App } from "antd";
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { useMemo, useState } from "react"; // React
+import { useNavigate } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { DocumentDetail } from "./components/DocumentDetail";
 import { DocumentList } from "./components/DocumentList";
 import { FilterSection } from "./components/FilterSection";
@@ -15,6 +19,7 @@ import { MOCK_DOCS } from "./mock";
 import type { CategoryFilter, LibraryDoc, ScopeFilter } from "./types";
 import { filterDocs } from "./utils";
 
+// ===== Component =====
 export const KnowledgeLibraryPage = () => {
   const navigate = useNavigate();
   const { message } = App.useApp();
@@ -29,7 +34,9 @@ export const KnowledgeLibraryPage = () => {
   const selected = visible.find((d) => d.id === selectedId) ?? visible[0];
 
   const reindex = (doc: LibraryDoc) => {
-    setDocs((prev) => prev.map((d): LibraryDoc => (d.id === doc.id ? { ...d, index: { status: "indexing", progress: 0 } } : d)));
+    setDocs((prev) =>
+      prev.map((d): LibraryDoc => (d.id === doc.id ? { ...d, index: { status: "indexing", progress: 0 } } : d)),
+    );
     message.info(`Đã gửi yêu cầu nạp lại “${doc.title}”.`);
   };
 

@@ -4,8 +4,12 @@
 
 // Thiết kế quy trình (Quy trình số): soạn bản nháp BPMN trực quan. 3 cột ~20/55/25: danh sách quy trình +
 // bảng thành phần · canvas · thuộc tính. Xuất tệp BPMN để commit vào Git (CI triển khai). Dữ liệu minh họa ở ./mock.
-import { App, Segmented } from "antd";
-import { useMemo, useRef, useState } from "react";
+
+// ===== Thư viện =====
+import { App, Segmented } from "antd"; // Ant Design
+import { useMemo, useRef, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { BpmnCanvasMock } from "./components/BpmnCanvasMock";
 import { FormsTab } from "./components/FormsTab";
 import { ProcessHeader } from "./components/ProcessHeader";
@@ -16,8 +20,10 @@ import type { BpmnEdge, BpmnNode, NodeType, ProcessModel } from "./types";
 import { useHistory } from "./useHistory";
 import { downloadText, newNode, toBpmnXml, validate } from "./utils";
 
+// ===== Kiểu dữ liệu =====
 type Tab = "process" | "forms";
 
+// ===== Component =====
 export const ProcessDesignPage = () => {
   const { message, modal } = App.useApp();
   const [processId, setProcessId] = useState(MOCK_PROCESSES[0].id);

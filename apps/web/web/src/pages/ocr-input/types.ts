@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 export type FieldKey = "docNo" | "date" | "unit" | "device" | "priority" | "description" | "requester" | "signature";
 
 /** Khung nhận diện trên trang giấy (px, theo khổ giấy gốc 320 × 350 trước khi phóng to). */

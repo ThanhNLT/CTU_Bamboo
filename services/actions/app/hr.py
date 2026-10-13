@@ -8,20 +8,25 @@ Dữ liệu nhạy cảm (CCCD, số tài khoản, địa chỉ) chỉ đi qua �
 lưu kèm bản che; xem bản rõ cần quyền hr.onboarding.private.read và mỗi lần xem ghi hr.private_access.
 """
 
+# ===== Thư viện chuẩn =====
 import re
 
-import psycopg
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .openbao import BaoError
 from .pii import mask_address, mask_tail
 
+# ===== Hằng số & cấu hình =====
 ENTITY = "hr.onboarding_request"
 EDITABLE = ("DRAFT", "RETURNED")
-NATIONAL_ID = re.compile(r"^(\d{9}|\d{12})$")      # CMND 9 số hoặc CCCD 12 số
+NATIONAL_ID = re.compile(r"^(\d{9}|\d{12})$")  # CMND 9 số hoặc CCCD 12 số
 BANK_ACCOUNT = re.compile(r"^\d{6,20}$")
 
 
+# ===== Hàm =====
 def _request(conn: psycopg.Connection, request_id: str, session: dict, columns: str = "tenant_id") -> tuple:
     row = conn.execute(f"SELECT {columns} FROM hr.onboarding_request WHERE id = %s", (request_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -39,6 +44,7 @@ def _clean(value: str | None) -> str | None:
     return None if value is None else "".join(value.split()) if value.strip() else ""
 
 
+# ===== Hasura Action =====
 def save_onboarding_private(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     """Ghi CCCD, số tài khoản, ngân hàng, địa chỉ. Trường không gửi (null) giữ nguyên; chuỗi rỗng là xóa."""
     request_id = args["request_id"]
@@ -66,12 +72,17 @@ def save_onboarding_private(conn: psycopg.Connection, session: dict, args: dict,
         if national_id is not None:
             changes |= {"national_id_enc": cipher.encrypt(national_id), "national_id_masked": mask_tail(national_id, 3)}
         if bank_account is not None:
-            changes |= ({"bank_account_enc": cipher.encrypt(bank_account),
-                         "bank_account_masked": mask_tail(bank_account, 4)} if bank_account
-                        else {"bank_account_enc": None, "bank_account_masked": None})
+            changes |= (
+                {"bank_account_enc": cipher.encrypt(bank_account), "bank_account_masked": mask_tail(bank_account, 4)}
+                if bank_account
+                else {"bank_account_enc": None, "bank_account_masked": None}
+            )
         if address is not None:
-            changes |= ({"address_enc": cipher.encrypt(address), "address_masked": mask_address(address)} if address
-                        else {"address_enc": None, "address_masked": None})
+            changes |= (
+                {"address_enc": cipher.encrypt(address), "address_masked": mask_address(address)}
+                if address
+                else {"address_enc": None, "address_masked": None}
+            )
     except (BaoError, OSError) as exc:
         raise ActionError("Két mã hóa dữ liệu cá nhân tạm thời không truy cập được", "pii-unavailable", 503) from exc
     if "bank_name" in args and args["bank_name"] is not None:
@@ -85,8 +96,12 @@ def save_onboarding_private(conn: psycopg.Connection, session: dict, args: dict,
 
 def reveal_onboarding_private(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     request_id = args["request_id"]
-    person, row = _request(conn, request_id, session,
-                           "tenant_id, national_id_enc, bank_account_enc, address_enc, initial_password_enc, username")
+    person, row = _request(
+        conn,
+        request_id,
+        session,
+        "tenant_id, national_id_enc, bank_account_enc, address_enc, initial_password_enc, username",
+    )
     if not conn.execute("SELECT hr.can_read_private(%s, %s)", (request_id, person)).fetchone()[0]:
         raise ActionError("Cần quyền xem dữ liệu cá nhân của hồ sơ nhân sự", "forbidden", 403)
     tenant, *encrypted, username = row
@@ -98,8 +113,10 @@ def reveal_onboarding_private(conn: psycopg.Connection, session: dict, args: dic
         raise ActionError("Két mã hóa dữ liệu cá nhân tạm thời không truy cập được", "pii-unavailable", 503) from exc
     fields = [n for n in names if plain[n] is not None]
     bind_session(conn, session)
-    conn.execute("INSERT INTO hr.private_access (tenant_id, request_id, person_id, fields) VALUES (%s, %s, %s, %s)",
-                 (tenant, request_id, person, fields))
+    conn.execute(
+        "INSERT INTO hr.private_access (tenant_id, request_id, person_id, fields) VALUES (%s, %s, %s, %s)",
+        (tenant, request_id, person, fields),
+    )
     return {"request_id": request_id, "username": username, **plain}
 
 
@@ -120,17 +137,19 @@ def cancel_onboarding_request(conn: psycopg.Connection, session: dict, args: dic
 def retry_onboarding_account(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
     person, _ = _request(conn, args["request_id"], session)
     bind_session(conn, session)
-    conn.execute("SELECT hr.retry_onboarding_account(%s, %s, %s)",
-                 (args["request_id"], person, args.get("username")))
+    conn.execute("SELECT hr.retry_onboarding_account(%s, %s, %s)", (args["request_id"], person, args.get("username")))
     return _result(conn, args["request_id"])
 
 
+# ===== Hàm =====
 def _result(conn: psycopg.Connection, request_id: str) -> dict:
-    status, account = conn.execute("SELECT status, account_status FROM hr.onboarding_request WHERE id = %s",
-                                   (request_id,)).fetchone()
+    status, account = conn.execute(
+        "SELECT status, account_status FROM hr.onboarding_request WHERE id = %s", (request_id,)
+    ).fetchone()
     return {"request_id": request_id, "status": status, "account_status": account}
 
 
+# ===== Đăng ký Action =====
 HANDLERS = {
     "save_onboarding_private": save_onboarding_private,
     "reveal_onboarding_private": reveal_onboarding_private,

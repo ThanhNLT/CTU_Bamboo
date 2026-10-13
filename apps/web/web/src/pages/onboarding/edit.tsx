@@ -2,16 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useEffect, useState } from "react";
-import { Edit } from "@refinedev/antd";
-import { useGo, useParsed } from "@refinedev/core";
-import { Alert, Spin } from "antd";
+// ===== Thư viện =====
+import { useEffect, useState } from "react"; // React
+import { Edit } from "@refinedev/antd"; // Refine Ant Design
+import { useGo, useParsed } from "@refinedev/core"; // Refine
+import { Alert, Spin } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { OnboardingForm } from "./form";
 import { OB_DETAIL } from "./queries";
 import type { Onboarding } from "./types";
 
+// ===== Component =====
 export const OnboardingEdit = () => {
   const { id } = useParsed();
   const go = useGo();
@@ -33,8 +37,10 @@ export const OnboardingEdit = () => {
   }
   return (
     <Edit title={`Sửa ${record.doc_no}`} footerButtons={() => null} headerButtons={() => null}>
-      <OnboardingForm record={record}
-        onSaved={(savedId) => go({ to: { resource: "hr_onboarding_request", action: "show", id: savedId } })} />
+      <OnboardingForm
+        record={record}
+        onSaved={(savedId) => go({ to: { resource: "hr_onboarding_request", action: "show", id: savedId } })}
+      />
     </Edit>
   );
 };

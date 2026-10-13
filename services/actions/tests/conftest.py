@@ -18,6 +18,7 @@ Biến môi trường (mặc định khớp `make test-actions` trong docker com
   REQUIRE_SERVICES=1  thiếu Hasura/Flowable/SeaweedFS thì báo lỗi thay vì bỏ qua (dùng trong `make test-actions`)
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
@@ -27,16 +28,19 @@ import time
 import uuid
 from urllib.parse import urlparse, urlunparse
 
-import httpx
-import psycopg
-import pytest
-import uvicorn
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
+import pytest  # pytest
+import uvicorn  # Uvicorn
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from app import bootstrap, config, main, search, storage
 from app.flowable import FlowableClient
 from app.openbao import Bao
 
+# ===== Hằng số & cấu hình =====
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_hasura_test")
 TEST_APP_DB_URL = os.environ.get("TEST_APP_DATABASE_URL") or TEST_DB_URL
@@ -45,10 +49,12 @@ MEILI_TEST_INDEX = os.environ.get("MEILI_TEST_INDEX", "documents_test")
 SETTINGS = config.load()
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _admin_url(url: str) -> str:
     return urlunparse(urlparse(url)._replace(path="/postgres"))
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="session")
 def database() -> str:
     """CSDL kiểm thử sạch: migration, hàm tiện ích db/tests/helpers.sql, dữ liệu mẫu Tập đoàn X."""
@@ -81,10 +87,12 @@ def conn(database):
         yield c
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def ids(conn: psycopg.Connection, *keys: str) -> dict[str, str]:
     return {k: str(conn.execute("SELECT test.id(%s) AS id", (k,)).fetchone()["id"]) for k in keys}
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def org(conn):
     """Một công ty con riêng cho từng kiểm thử (dưới Tập đoàn X): giám đốc, trưởng phòng, chuyên viên.
@@ -112,9 +120,13 @@ def org(conn):
     return k
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def pr(conn, key: str, person: str, position: str, amount: int, submit: bool = True) -> str:
-    return str(conn.execute("SELECT test.pr(%s, %s, %s, %s, %s) AS id",
-                            (key, person, position, amount, submit)).fetchone()["id"])
+    return str(
+        conn.execute("SELECT test.pr(%s, %s, %s, %s, %s) AS id", (key, person, position, amount, submit)).fetchone()[
+            "id"
+        ]
+    )
 
 
 def status(conn, pr_id: str) -> str:
@@ -124,10 +136,12 @@ def status(conn, pr_id: str) -> str:
 def open_task(conn, pr_id: str) -> dict | None:
     return conn.execute(
         """SELECT t.* FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
-           WHERE s.entity_id = %s AND t.status = 'OPEN'""", (pr_id,)).fetchone()
+           WHERE s.entity_id = %s AND t.status = 'OPEN'""",
+        (pr_id,),
+    ).fetchone()
 
 
-# --- Dịch vụ ngoài -------------------------------------------------------------
+# ===== Dịch vụ ngoài =====
 
 WAIT_SECONDS = float(os.environ.get("WAIT_FOR_SERVICES", "180"))
 
@@ -154,8 +168,9 @@ def _missing(name: str):
 
 @pytest.fixture(scope="session")
 def flowable(database) -> FlowableClient:
-    if not _reachable(SETTINGS.flowable_url + "/management/engine",
-                      auth=(SETTINGS.flowable_user, SETTINGS.flowable_password)):
+    if not _reachable(
+        SETTINGS.flowable_url + "/management/engine", auth=(SETTINGS.flowable_user, SETTINGS.flowable_password)
+    ):
         _missing("Flowable")
     client = FlowableClient(SETTINGS.flowable_url, SETTINGS.flowable_user, SETTINGS.flowable_password)
     bootstrap.deploy_bpmn(client)
@@ -219,8 +234,9 @@ def trino_reachable(settings: config.Settings) -> bool:
 def search_settings(database) -> config.Settings:
     """Cấu hình tìm kiếm cho kiểm thử: khóa chủ, khóa ghi chỉ mục, khóa S3 chỉ đọc lấy từ OpenBao (root_settings)
     hoặc từ MEILI_MASTER_KEY khi chạy native. Index kiểm thử tạo lại."""
-    settings = config.Settings(**{**root_settings().__dict__, "database_url": TEST_APP_DB_URL,
-                                  "meili_index": MEILI_TEST_INDEX})
+    settings = config.Settings(
+        **{**root_settings().__dict__, "database_url": TEST_APP_DB_URL, "meili_index": MEILI_TEST_INDEX}
+    )
     if not settings.meili_master_key or not _reachable(settings.meili_url + "/health"):
         _missing("Meilisearch")
     if not _reachable(settings.tika_url + "/version"):
@@ -235,10 +251,12 @@ def search_settings(database) -> config.Settings:
 
 @pytest.fixture(scope="session")
 def actions_server(database):
-    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": TEST_APP_DB_URL,
-                                  "meili_index": MEILI_TEST_INDEX})
-    server = uvicorn.Server(uvicorn.Config(main.create_app(settings), host="0.0.0.0", port=ACTIONS_PORT,
-                                           log_level="warning"))
+    settings = config.Settings(
+        **{**SETTINGS.__dict__, "database_url": TEST_APP_DB_URL, "meili_index": MEILI_TEST_INDEX}
+    )
+    server = uvicorn.Server(
+        uvicorn.Config(main.create_app(settings), host="0.0.0.0", port=ACTIONS_PORT, log_level="warning")
+    )
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
     for _ in range(50):
@@ -266,7 +284,12 @@ class Gql:
         self.secret = secret
 
     def __call__(self, query: str, variables: dict | None = None, *, person: str, tenant: str) -> dict:
-        headers = {"x-hasura-admin-secret": self.secret, "x-hasura-role": "user",
-                   "x-hasura-user-id": person, "x-hasura-tenant-id": tenant}
-        return self.http.post("/v1/graphql", json={"query": query, "variables": variables or {}},
-                              headers=headers).json()
+        headers = {
+            "x-hasura-admin-secret": self.secret,
+            "x-hasura-role": "user",
+            "x-hasura-user-id": person,
+            "x-hasura-tenant-id": tenant,
+        }
+        return self.http.post(
+            "/v1/graphql", json={"query": query, "variables": variables or {}}, headers=headers
+        ).json()

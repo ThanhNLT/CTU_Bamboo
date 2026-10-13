@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import type { Dataset, DomainFilter } from "./types";
 
+// ===== Khởi tạo =====
 const num = new Intl.NumberFormat("vi-VN");
+
+// ===== Hàm tiện ích =====
 export const formatInt = (n: number) => num.format(n);
 
 export const filterDatasets = (list: Dataset[], query: string, domain: DomainFilter) => {
@@ -21,7 +25,9 @@ export const filterDatasets = (list: Dataset[], query: string, domain: DomainFil
 export const domainCounts = (list: Dataset[]) => {
   const counts = new Map<string, number>();
   for (const d of list) counts.set(d.domain, (counts.get(d.domain) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "vi")).map(([key, count]) => ({ key, count }));
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "vi"))
+    .map(([key, count]) => ({ key, count }));
 };
 
 /** Giá trị một ô của bản xem trước: mảng nối bằng dấu phẩy, null để trống. */
@@ -32,4 +38,5 @@ export const cellText = (value: unknown) => {
   return String(value);
 };
 
+// ===== Xuất lại =====
 export { copyText } from "../../utils/clipboard";

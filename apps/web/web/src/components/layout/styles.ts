@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hằng số =====
 // Class dùng chung cho các nút trên header để mọi nút cùng kích thước và hiệu ứng.
 export const iconButtonClass =
   "relative grid h-9 w-9 place-items-center rounded-full text-body transition-colors hover:bg-black/5 " +

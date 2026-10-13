@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, Select } from "antd";
-import { Lock } from "lucide-react";
+// ===== Thư viện =====
+import { Checkbox, Select } from "antd"; // Ant Design
+import { Lock } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { COMPANY_LABEL, TYPE_LABEL } from "../mock";
 import type { Company, ResultType, TimeRange } from "../types";
 
+// ===== Hằng số =====
 const TYPES = Object.keys(TYPE_LABEL) as ResultType[];
 const TIME_OPTIONS: Array<{ value: TimeRange; label: string }> = [
   { value: "7d", label: "7 ngày qua" },
@@ -15,14 +19,31 @@ const TIME_OPTIONS: Array<{ value: TimeRange; label: string }> = [
   { value: "all", label: "Mọi thời điểm" },
 ];
 
+// ===== Component =====
 const GroupTitle = ({ children }: { children: string }) => (
   <h2 className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h2>
 );
 
+// ===== Hàm tiện ích =====
 const toggle = <T,>(list: T[], v: T, on: boolean) => (on ? [...list, v] : list.filter((x) => x !== v));
 
-const Option = ({ label, count, checked, onChange }: { label: string; count: number; checked: boolean; onChange: (on: boolean) => void }) => (
-  <Checkbox checked={checked} onChange={(e) => onChange(e.target.checked)} className="flex w-full items-center py-1 [&>span:last-child]:flex-1">
+// ===== Component =====
+const Option = ({
+  label,
+  count,
+  checked,
+  onChange,
+}: {
+  label: string;
+  count: number;
+  checked: boolean;
+  onChange: (on: boolean) => void;
+}) => (
+  <Checkbox
+    checked={checked}
+    onChange={(e) => onChange(e.target.checked)}
+    className="flex w-full items-center py-1 [&>span:last-child]:flex-1"
+  >
     <span className="flex w-full items-center justify-between gap-2 text-[13px] text-ink">
       {label}
       <span className="tabular-nums text-[12px] text-muted">{count}</span>
@@ -32,7 +53,16 @@ const Option = ({ label, count, checked, onChange }: { label: string; count: num
 
 /** Cột lọc: loại, công ty (chỉ các công ty bạn được xem), thời gian, và số kết quả bị ẩn vì quyền. */
 export const SearchFilters = ({
-  types, onTypesChange, companies, onCompaniesChange, permitted, range, onRangeChange, counts, hiddenCount, className,
+  types,
+  onTypesChange,
+  companies,
+  onCompaniesChange,
+  permitted,
+  range,
+  onRangeChange,
+  counts,
+  hiddenCount,
+  className,
 }: {
   types: ResultType[];
   onTypesChange: (t: ResultType[]) => void;
@@ -50,7 +80,13 @@ export const SearchFilters = ({
       <section>
         <GroupTitle>Loại</GroupTitle>
         {TYPES.map((t) => (
-          <Option key={t} label={TYPE_LABEL[t]} count={counts.types[t] ?? 0} checked={types.includes(t)} onChange={(on) => onTypesChange(toggle(types, t, on))} />
+          <Option
+            key={t}
+            label={TYPE_LABEL[t]}
+            count={counts.types[t] ?? 0}
+            checked={types.includes(t)}
+            onChange={(on) => onTypesChange(toggle(types, t, on))}
+          />
         ))}
       </section>
 
@@ -58,14 +94,26 @@ export const SearchFilters = ({
         <section className="mt-3 border-t border-line pt-3">
           <GroupTitle>Công ty</GroupTitle>
           {permitted.map((c) => (
-            <Option key={c} label={COMPANY_LABEL[c]} count={counts.companies[c] ?? 0} checked={companies.includes(c)} onChange={(on) => onCompaniesChange(toggle(companies, c, on))} />
+            <Option
+              key={c}
+              label={COMPANY_LABEL[c]}
+              count={counts.companies[c] ?? 0}
+              checked={companies.includes(c)}
+              onChange={(on) => onCompaniesChange(toggle(companies, c, on))}
+            />
           ))}
         </section>
       )}
 
       <section className="mt-3 border-t border-line pt-3">
         <GroupTitle>Thời gian</GroupTitle>
-        <Select<TimeRange> value={range} onChange={onRangeChange} options={TIME_OPTIONS} className="w-full" aria-label="Khoảng thời gian" />
+        <Select<TimeRange>
+          value={range}
+          onChange={onRangeChange}
+          options={TIME_OPTIONS}
+          className="w-full"
+          aria-label="Khoảng thời gian"
+        />
       </section>
 
       {hiddenCount > 0 && (

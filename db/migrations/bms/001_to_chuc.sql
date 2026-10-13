@@ -5,6 +5,10 @@
 -- 001: Tenant, cây tổ chức, vị trí, người, bổ nhiệm (CONTEXT.md mục "Tổ chức").
 -- Khóa kép (tenant_id, id) chặn tham chiếu chéo tenant (ADR #14).
 
+-- ---------------------------------------------------------------------------
+-- Tiện ích mở rộng PostgreSQL (ltree, btree_gist) và schema
+-- ---------------------------------------------------------------------------
+
 CREATE EXTENSION IF NOT EXISTS ltree;
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 

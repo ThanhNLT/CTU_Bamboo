@@ -2,11 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from "react";
+// ===== Thư viện =====
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import type { SealLogRow } from "../types";
 
+// ===== Hằng số =====
 const DEFAULT_ROWS = 5;
 
+// ===== Component =====
 const ResultTag = ({ result }: { result: SealLogRow["result"] }) =>
   result === "match" ? (
     <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink">
@@ -45,10 +50,18 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: SealLogRow[]; onPick
         <table className="w-full min-w-[400px] border-collapse whitespace-nowrap text-[12.5px]">
           <thead>
             <tr className="text-left text-[11.5px] text-muted">
-              <th scope="col" className="border-b border-line py-2 pr-3 font-medium">Hồ sơ</th>
-              <th scope="col" className="border-b border-line px-3 py-2 font-medium">Phiên bản</th>
-              <th scope="col" className="border-b border-line px-3 py-2 font-medium">Thời điểm</th>
-              <th scope="col" className="border-b border-line py-2 pl-3 font-medium">Kết quả</th>
+              <th scope="col" className="border-b border-line py-2 pr-3 font-medium">
+                Hồ sơ
+              </th>
+              <th scope="col" className="border-b border-line px-3 py-2 font-medium">
+                Phiên bản
+              </th>
+              <th scope="col" className="border-b border-line px-3 py-2 font-medium">
+                Thời điểm
+              </th>
+              <th scope="col" className="border-b border-line py-2 pl-3 font-medium">
+                Kết quả
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -66,7 +79,9 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: SealLogRow[]; onPick
                 </td>
                 <td className="border-b border-line/70 px-3 py-2.5 text-body">v{r.version}</td>
                 <td className="border-b border-line/70 px-3 py-2.5 tabular-nums text-body">{r.time}</td>
-                <td className="border-b border-line/70 py-2.5 pl-3"><ResultTag result={r.result} /></td>
+                <td className="border-b border-line/70 py-2.5 pl-3">
+                  <ResultTag result={r.result} />
+                </td>
               </tr>
             ))}
           </tbody>

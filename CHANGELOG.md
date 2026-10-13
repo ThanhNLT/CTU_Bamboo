@@ -38,6 +38,10 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 ### Sửa
 - Dịch vụ actions không khởi động được nếu thiếu tệp CA của Trino (chạy ngoài compose, volume chưa ghi): nay chỉ ghi cảnh báo, các Action Lakehouse trả 503, các Action khác chạy bình thường.
 - README ghi Trino không mật khẩu ở `http://localhost:8085`; đúng là `https://localhost:8085`, tài khoản `bms-admin` (`make trino-password`).
+- Nhập hàng loạt: tệp mẫu tải về từ trang quản trị không nhập lại được (tiêu đề cột bắt buộc có dấu ` *` nên báo "Thiếu cột"). Ô Excel kiểu số (mã nhân viên, mã số thuế) không còn thành `1001.0`, ô ngày Excel so sánh được với ngày gõ tay; CSV một cột không còn lỗi máy chủ.
+- flow-sync: Flowable tạm thời không truy cập được thì không còn thử lại liên tục hết 20 lượt trong vài giây rồi bỏ dở lần gửi duyệt; mỗi lượt thử cách nhau tới khi có thông báo mới hoặc sau 30 giây.
+- Dịch vụ actions: body không phải JSON trả 400 thay vì 500; mã bí mật Hasura → actions so sánh thời gian hằng; ClamAV trả lời lạ thì giữ tệp ở trạng thái chờ quét (503) thay vì lỗi 500.
+- Giao diện: khoảng hiệu lực (tstzrange) ở trang quản trị và form tiếp nhận nhân sự đọc sai trên Safari / Firefox (chuỗi thời gian PostgreSQL `2026-10-01 05:00:00+00`); tham số `to` của trang đăng nhập chỉ nhận đường dẫn nội bộ.
 - Trang đăng nhập thỉnh thoảng báo `403 Forbidden` (cổng API): cookie phiên của Keycloak là chuỗi ngẫu nhiên, đôi khi tình cờ chứa mẫu mà WAF coi là tấn công (tên hàm PHP, giá trị bọc nháy kép), khoảng 1/1500 lượt mở trang đăng nhập. WAF không kiểm các cookie phiên Keycloak nữa (Keycloak tự kiểm chúng); cookie khác, tham số và nội dung vẫn qua OWASP CRS như cũ.
 
 ### Bảo mật

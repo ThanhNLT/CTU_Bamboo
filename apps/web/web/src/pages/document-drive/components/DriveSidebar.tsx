@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { DriveNavItem, DriveSection } from "../types";
 
+// ===== Component =====
 /** Menu vùng lưu trữ (Của tôi, Phòng, Dùng chung...) ở cột trái của Ổ đĩa. */
 export const DriveSidebar = ({
-  items, active, onChange,
+  items,
+  active,
+  onChange,
 }: {
   items: DriveNavItem[];
   active: DriveSection;

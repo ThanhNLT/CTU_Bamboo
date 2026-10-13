@@ -3,21 +3,33 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Chụp màn hình demo (không phải kiểm thử): DEMO_SHOTS=<thư mục> npx playwright test e2e/demo.spec.ts
-import { expect, test, type Browser, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Browser, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const OUT = process.env.DEMO_SHOTS ?? "demo-shots";
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
+
+// ===== Kịch bản kiểm thử =====
 test.use({ viewport: { width: 1440, height: 900 } });
+
+// ===== Khởi tạo =====
 test.skip(!process.env.DEMO_SHOTS, "chỉ chạy khi đặt DEMO_SHOTS");
 
+// ===== Hàm tiện ích =====
 const shot = (page: Page, name: string) => page.screenshot({ path: `${OUT}/${name}.png` });
 
+// ===== Trạng thái module =====
 let browserRef: Browser;
 
+// ===== Hàm tiện ích =====
 // Mỗi người dùng một phiên trình duyệt riêng (cookie Keycloak, tenant đã chọn không lẫn nhau).
 async function login(_old: Page | null, username: string, pick?: RegExp): Promise<Page> {
   const context = await browserRef.newContext({
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8000", viewport: { width: 1440, height: 900 }, locale: "vi-VN",
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8000",
+    viewport: { width: 1440, height: 900 },
+    locale: "vi-VN",
   });
   const page = await context.newPage();
   await page.goto("/login");
@@ -31,6 +43,7 @@ async function login(_old: Page | null, username: string, pick?: RegExp): Promis
   return page;
 }
 
+// ===== Kịch bản kiểm thử =====
 test("chụp màn hình demo", async ({ browser, page: first }) => {
   test.setTimeout(300_000);
   browserRef = browser;
@@ -52,7 +65,10 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   await expect(page.locator("tr.ant-table-row").first()).toBeVisible();
   await page.waitForTimeout(1000);
   await shot(page, "04-hop-viec");
-  await page.locator("header").getByRole("button", { name: /thông báo chưa đọc$/ }).click();
+  await page
+    .locator("header")
+    .getByRole("button", { name: /thông báo chưa đọc$/ })
+    .click();
   await page.waitForTimeout(800);
   await shot(page, "05-thong-bao");
   await page.keyboard.press("Escape");
@@ -92,7 +108,9 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   await row2.getByPlaceholder("Mô tả").fill("Vận chuyển hàng nhanh");
   await row2.locator("input").nth(2).fill("chuyến");
   await row2.locator("input").nth(4).fill("2500000");
-  await page.getByLabel("Mô tả, lý do mua").fill("Bổ sung linh kiện cho lô điện thoại bị ảnh hưởng bởi sự cố phòng sạch.");
+  await page
+    .getByLabel("Mô tả, lý do mua")
+    .fill("Bổ sung linh kiện cho lô điện thoại bị ảnh hưởng bởi sự cố phòng sạch.");
   await page.waitForTimeout(400);
   await shot(page, "10-lap-de-nghi");
   await page.goto("/p/documents");

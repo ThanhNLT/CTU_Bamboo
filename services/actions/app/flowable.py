@@ -4,9 +4,11 @@
 
 """Client REST tối thiểu cho Flowable (chỉ dịch vụ actions gọi Flowable)."""
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
 
+# ===== Lớp =====
 class FlowableClient:
     def __init__(self, base_url: str, user: str, password: str, timeout: float = 15.0):
         self.http = httpx.Client(base_url=base_url.rstrip("/") + "/", auth=(user, password), timeout=timeout)
@@ -16,20 +18,23 @@ class FlowableClient:
 
     def _check(self, resp: httpx.Response) -> httpx.Response:
         if resp.status_code >= 400:
-            raise RuntimeError(f"Flowable {resp.request.method} {resp.request.url.path}: {resp.status_code} {resp.text[:300]}")
+            raise RuntimeError(
+                f"Flowable {resp.request.method} {resp.request.url.path}: {resp.status_code} {resp.text[:300]}"
+            )
         return resp
 
-    # --- Triển khai quy trình -------------------------------------------------
+    # ===== Triển khai quy trình =====
 
     def deployments_named(self, name: str) -> list[dict]:
         return self._check(self.http.get("repository/deployments", params={"name": name})).json()["data"]
 
     def deploy(self, name: str, filename: str, content: bytes) -> dict:
-        resp = self.http.post("repository/deployments", params={"deploymentName": name},
-                              files={"file": (filename, content, "text/xml")})
+        resp = self.http.post(
+            "repository/deployments", params={"deploymentName": name}, files={"file": (filename, content, "text/xml")}
+        )
         return self._check(resp).json()
 
-    # --- Tiến trình -----------------------------------------------------------
+    # ===== Tiến trình =====
 
     def start_process(self, key: str, business_key: str, variables: dict) -> str:
         body = {
@@ -41,8 +46,11 @@ class FlowableClient:
 
     def find_process(self, key: str, business_key: str) -> dict | None:
         """Tiến trình (đang chạy hoặc đã kết thúc) theo business key."""
-        resp = self._check(self.http.get("history/historic-process-instances",
-                                         params={"processDefinitionKey": key, "businessKey": business_key}))
+        resp = self._check(
+            self.http.get(
+                "history/historic-process-instances", params={"processDefinitionKey": key, "businessKey": business_key}
+            )
+        )
         data = resp.json()["data"]
         return data[0] if data else None
 
@@ -64,14 +72,18 @@ class FlowableClient:
 
     def historic_activities(self, process_id: str) -> list[dict]:
         """Các bước đã đi qua và đang đứng (endTime rỗng), theo thứ tự thời gian."""
-        resp = self._check(self.http.get("history/historic-activity-instances", params={
-            "processInstanceId": process_id, "sort": "startTime", "order": "asc", "size": 1000}))
+        resp = self._check(
+            self.http.get(
+                "history/historic-activity-instances",
+                params={"processInstanceId": process_id, "sort": "startTime", "order": "asc", "size": 1000},
+            )
+        )
         return resp.json()["data"]
 
     def process_definition_xml(self, definition_id: str) -> str:
         return self._check(self.http.get(f"repository/process-definitions/{definition_id}/resourcedata")).text
 
-    # --- User task ------------------------------------------------------------
+    # ===== User task =====
 
     def tasks(self, process_id: str) -> list[dict]:
         return self._check(self.http.get("runtime/tasks", params={"processInstanceId": process_id})).json()["data"]

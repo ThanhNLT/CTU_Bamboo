@@ -5,10 +5,14 @@
 // Sổ cái (Dữ liệu số): niêm phong bất biến trên Hyperledger Fabric. Tab "Đối soát" so mã hồ sơ hoặc tệp
 // (băm SHA-256 ngay trong trình duyệt) với bản niêm phong; tab "Phòng đọc ảo" mở hồ sơ lưu trữ ở chế độ chỉ đọc.
 // Mở thẳng một hồ sơ: /d/ledger?code=HS-SEMI-2026-00087. Dữ liệu minh họa ở ./mock.
-import { App } from "antd";
-import { Download } from "lucide-react";
-import { useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { Download } from "lucide-react"; // Lucide React
+import { useRef, useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { useSession } from "../../auth/useSession";
 import { secondaryButtonClass } from "../../components/ui";
 import { copyText } from "../../utils/clipboard";
@@ -20,18 +24,35 @@ import { RecentSealsWidget } from "./components/RecentSealsWidget";
 import { VerificationPanel } from "./components/VerificationPanel";
 import { VirtualReadingRoomWidget } from "./components/VirtualReadingRoomWidget";
 import {
-  ACCESS_LOGS, ARCHIVE_DOCS, DEFAULT_CODE, FEATURED_ARCHIVE_IDS, RECENT_SEALS, SAMPLE_FILE, SEALS, STATS,
+  ACCESS_LOGS,
+  ARCHIVE_DOCS,
+  DEFAULT_CODE,
+  FEATURED_ARCHIVE_IDS,
+  RECENT_SEALS,
+  SAMPLE_FILE,
+  SEALS,
+  STATS,
 } from "./mock";
 import type { AccessLog, ArchiveDoc, LedgerTab, SealLogRow, VerifyResult } from "./types";
 import {
-  MAX_FILE_BYTES, certificateHtml, downloadText, evidenceText, formatInt, formatStamp, reconciliationCsv,
-  sha256Hex, verifyByCode, verifyByHash,
+  MAX_FILE_BYTES,
+  certificateHtml,
+  downloadText,
+  evidenceText,
+  formatInt,
+  formatStamp,
+  reconciliationCsv,
+  sha256Hex,
+  verifyByCode,
+  verifyByHash,
 } from "./utils";
 
+// ===== Hằng số =====
 /** Độ trễ giả lập một lần truy vấn sổ cái (để thấy trạng thái "Đang đối soát…"). */
 const QUERY_DELAY_MS = 500;
 const FEATURED = ARCHIVE_DOCS.filter((d) => FEATURED_ARCHIVE_IDS.includes(d.id));
 
+// ===== Component =====
 export const LedgerPage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();
@@ -63,7 +84,12 @@ export const LedgerPage = () => {
       const time = r.checkedAt.slice(-5);
       const key = `${r.seal.code}#${r.seal.version}`;
       setLog((rows) => {
-        const row: SealLogRow = { code: r.seal.code, version: r.seal.version, time, result: r.kind === "match" ? "match" : "mismatch" };
+        const row: SealLogRow = {
+          code: r.seal.code,
+          version: r.seal.version,
+          time,
+          result: r.kind === "match" ? "match" : "mismatch",
+        };
         const exists = rows.some((x) => `${x.code}#${x.version}` === key);
         return exists ? rows.map((x) => (`${x.code}#${x.version}` === key ? { ...x, result: row.result } : x)) : rows;
       });
@@ -131,13 +157,30 @@ export const LedgerPage = () => {
   };
 
   const stats: LedgerStat[] = [
-    { key: "sealed", label: "Đã niêm phong", value: STATS.sealed, note: `+${formatInt(STATS.sealedThisWeek)} tuần này` },
     {
-      key: "today", label: "Xác minh hôm nay", value: STATS.verifiedToday + session.verified, tone: "success",
-      note: `${formatInt(STATS.matchedToday + session.matched)} khớp · ${STATS.pendingToday} đang chờ` +
-        (session.verified - session.matched - session.mismatched > 0 ? ` · ${session.verified - session.matched - session.mismatched} chưa niêm phong` : ""),
+      key: "sealed",
+      label: "Đã niêm phong",
+      value: STATS.sealed,
+      note: `+${formatInt(STATS.sealedThisWeek)} tuần này`,
     },
-    { key: "mismatch", label: "Không khớp · 30 ngày", value: STATS.mismatch30d, tone: "warning", note: "Đã xử lý, có biên bản" },
+    {
+      key: "today",
+      label: "Xác minh hôm nay",
+      value: STATS.verifiedToday + session.verified,
+      tone: "success",
+      note:
+        `${formatInt(STATS.matchedToday + session.matched)} khớp · ${STATS.pendingToday} đang chờ` +
+        (session.verified - session.matched - session.mismatched > 0
+          ? ` · ${session.verified - session.matched - session.mismatched} chưa niêm phong`
+          : ""),
+    },
+    {
+      key: "mismatch",
+      label: "Không khớp · 30 ngày",
+      value: STATS.mismatch30d,
+      tone: "warning",
+      note: "Đã xử lý, có biên bản",
+    },
     { key: "archived", label: "Hồ sơ lưu trữ", value: STATS.archived, note: "Lạnh · chỉ đọc" },
   ];
 

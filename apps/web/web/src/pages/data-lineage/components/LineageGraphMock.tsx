@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
-import {
-  LAYERS, NODE_W, STATUS_LABEL, colLeft, edgePath, graphHeight, graphMetrics,
-} from "../graph";
+import { LAYERS, NODE_W, STATUS_LABEL, colLeft, edgePath, graphHeight, graphMetrics } from "../graph";
 import type { Direction, LineageEdge, LineageNode, NodeStatus } from "../types";
 
+// ===== Hằng số =====
 const NODE_CLASS: Record<NodeStatus, string> = {
   healthy: "border border-line bg-white",
   failed: "border-[1.5px] border-red-500 bg-red-50",
@@ -38,8 +38,13 @@ const DIRECTIONS: Array<{ key: Direction; label: string }> = [
   { key: "downstream", label: "Phía sau" },
 ];
 
+// ===== Component =====
 const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: Direction) => void }) => (
-  <div role="group" aria-label="Hướng phả hệ" className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1">
+  <div
+    role="group"
+    aria-label="Hướng phả hệ"
+    className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1"
+  >
     {DIRECTIONS.map(({ key, label }) => {
       const active = key === value;
       return (
@@ -69,7 +74,15 @@ const LegendDot = ({ className, label }: { className: string; label: string }) =
 );
 
 const NodeCard = ({
-  node, status, selected, dimmed, matched, columnMode, top, height, onSelect,
+  node,
+  status,
+  selected,
+  dimmed,
+  matched,
+  columnMode,
+  top,
+  height,
+  onSelect,
 }: {
   node: LineageNode;
   status: NodeStatus;
@@ -119,8 +132,19 @@ const NodeCard = ({
  * đường nối là một lớp SVG phía dưới, co giãn theo bề rộng thẻ. Màn hình hẹp thì cuộn ngang.
  */
 export const LineageGraphMock = ({
-  focus, nodes, edges, statuses, inScope, matches, query, selectedId, direction, columnMode, updatedAt,
-  onSelect, onDirectionChange,
+  focus,
+  nodes,
+  edges,
+  statuses,
+  inScope,
+  matches,
+  query,
+  selectedId,
+  direction,
+  columnMode,
+  updatedAt,
+  onSelect,
+  onDirectionChange,
 }: {
   focus: LineageNode;
   nodes: LineageNode[];

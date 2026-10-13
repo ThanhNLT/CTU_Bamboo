@@ -2,11 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Segmented, Select } from "antd";
+// ===== Thư viện =====
+import { Segmented, Select } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import type { SortKey } from "../types";
 
+// ===== Kiểu dữ liệu =====
 export type DriveView = "grid" | "list";
 
+// ===== Hằng số =====
 const VIEW_OPTIONS = [
   { label: "Lưới", value: "grid" },
   { label: "Danh sách", value: "list" },
@@ -18,9 +23,15 @@ const SORT_OPTIONS: Array<{ label: string; value: SortKey }> = [
   { label: "Dung lượng lớn nhất", value: "size" },
 ];
 
+// ===== Component =====
 /** Breadcrumb thư mục + chuyển Lưới/Danh sách + Sắp xếp. */
 export const DriveToolbar = ({
-  path, onCrumb, view, onViewChange, sort, onSortChange,
+  path,
+  onCrumb,
+  view,
+  onViewChange,
+  sort,
+  onSortChange,
 }: {
   path: string[];
   /** Bấm một mục (không phải mục cuối) của đường dẫn để quay lại. */
@@ -38,15 +49,26 @@ export const DriveToolbar = ({
           return (
             <li key={`${part}-${i}`} className="flex min-w-0 items-center gap-1.5">
               {last || !onCrumb ? (
-                <span className={last ? "truncate font-semibold text-ink" : "shrink-0 text-muted"} aria-current={last ? "page" : undefined}>
+                <span
+                  className={last ? "truncate font-semibold text-ink" : "shrink-0 text-muted"}
+                  aria-current={last ? "page" : undefined}
+                >
                   {part}
                 </span>
               ) : (
-                <button type="button" onClick={() => onCrumb(i)} className="shrink-0 text-muted hover:text-ink hover:underline underline-offset-2">
+                <button
+                  type="button"
+                  onClick={() => onCrumb(i)}
+                  className="shrink-0 text-muted hover:text-ink hover:underline underline-offset-2"
+                >
                   {part}
                 </button>
               )}
-              {!last && <span className="text-muted/70" aria-hidden>/</span>}
+              {!last && (
+                <span className="text-muted/70" aria-hidden>
+                  /
+                </span>
+              )}
             </li>
           );
         })}

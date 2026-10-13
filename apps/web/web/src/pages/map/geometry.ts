@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hằng số =====
 // Hình nền bản đồ giả lập (hệ tọa độ 1000×700) — dùng chung cho màn hình (MapBackdrop) và ảnh xuất.
 export const VIEWBOX = { w: 1000, h: 700 };
 
@@ -17,5 +18,11 @@ export const ROADS = [
   "M-10 560L560 470", // đường chéo nam
   "M860 -10L960 710",
 ];
-export const MINOR_ROADS = ["M0 120L1000 150", "M150 -10L120 710", "M520 300L540 710", "M780 330L1000 470", "M0 420L380 380"];
+export const MINOR_ROADS = [
+  "M0 120L1000 150",
+  "M150 -10L120 710",
+  "M520 300L540 710",
+  "M780 330L1000 470",
+  "M0 420L380 380",
+];
 export const BOUNDARIES = ["M60 60L540 40L560 360L300 420L80 330Z", "M560 360L940 300L960 640L600 660Z"];

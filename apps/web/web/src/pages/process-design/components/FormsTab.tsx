@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { FORMS } from "../mock";
 import type { ProcessModel } from "../types";
 
+// ===== Component =====
 /** Tab "Biểu mẫu": các biểu mẫu và bước nào trong quy trình đang dùng chúng (xem trước, chưa sửa được). */
 export const FormsTab = ({ model }: { model: ProcessModel }) => (
   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -18,10 +20,18 @@ export const FormsTab = ({ model }: { model: ProcessModel }) => (
           </p>
           <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
             {f.fields.map((fd) => (
-              <li key={fd.label} className="flex items-center justify-between gap-3 rounded-lg bg-canvas px-2.5 py-1.5 text-[12.5px]">
+              <li
+                key={fd.label}
+                className="flex items-center justify-between gap-3 rounded-lg bg-canvas px-2.5 py-1.5 text-[12.5px]"
+              >
                 <span className="truncate text-ink">
                   {fd.label}
-                  {fd.required && <span className="text-red-600" aria-label="bắt buộc"> *</span>}
+                  {fd.required && (
+                    <span className="text-red-600" aria-label="bắt buộc">
+                      {" "}
+                      *
+                    </span>
+                  )}
                 </span>
                 <span className="shrink-0 text-[11px] text-muted">{fd.type}</span>
               </li>

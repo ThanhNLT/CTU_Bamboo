@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 /** 5 tầng của sơ đồ, theo thứ tự trái → phải. */
 export type Layer = "source" | "stream" | "lake" | "serving" | "consumer";
 

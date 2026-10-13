@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { fileExtension } from "../utils";
 
+// ===== Hằng số =====
 // Màu nhạt theo nhóm định dạng; luôn kèm chữ viết tắt nên không chỉ dựa vào màu.
 const KIND: Array<{ exts: string[]; label?: string; className: string }> = [
   { exts: ["pdf"], className: "bg-red-50 text-red-700 border-red-100" },
@@ -13,6 +15,7 @@ const KIND: Array<{ exts: string[]; label?: string; className: string }> = [
   { exts: ["doc", "docx", "odt"], label: "DOC", className: "bg-sky-50 text-sky-700 border-sky-100" },
 ];
 
+// ===== Component =====
 export const FileTypeBadge = ({ name, size = "sm" }: { name: string; size?: "sm" | "lg" }) => {
   const ext = fileExtension(name);
   const kind = KIND.find((k) => k.exts.includes(ext));

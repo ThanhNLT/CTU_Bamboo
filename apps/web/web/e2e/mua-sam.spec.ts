@@ -4,11 +4,15 @@
 
 // Luồng chính của ứng dụng mua sắm qua giao diện thật: chuyên viên lập đề nghị kèm dòng hàng và
 // báo giá, gửi duyệt; trưởng phòng nhận thông báo, duyệt trong hộp việc.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E mua linh kiện ${Date.now()}`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -23,12 +27,16 @@ async function logout(page: Page) {
   // sớm sẽ cắt ngang, phiên cũ còn nên check-sso đăng nhập lại người cũ và không còn trang đăng nhập.
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
   // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
-  await page.locator("header").getByRole("button", { name: /^Tài khoản:/ }).click();
+  await page
+    .locator("header")
+    .getByRole("button", { name: /^Tài khoản:/ })
+    .click();
   await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("lập đề nghị, đính kèm, gửi duyệt và duyệt", async ({ page }) => {
   // Chuyên viên mua hàng Điện thoại X lập đề nghị.
   await login(page, "nv.muahang.dienthoai");
@@ -50,12 +58,16 @@ test("lập đề nghị, đính kèm, gửi duyệt và duyệt", async ({ page
 
   // Đính kèm báo giá: tải lên S3 qua link có chữ ký, kiểm tra rồi nhận.
   await page.locator('input[type="file"]').setInputFiles({
-    name: "bao-gia.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7\nbao gia\n%%EOF\n"),
+    name: "bao-gia.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.7\nbao gia\n%%EOF\n"),
   });
   await expect(page.getByText("Sạch")).toBeVisible();
   // Tệp giả mạo: khai là PDF nhưng là tệp thực thi → bị loại.
   await page.locator('input[type="file"]').setInputFiles({
-    name: "virus.pdf", mimeType: "application/pdf", buffer: Buffer.from("MZ\x90\x00 not a pdf"),
+    name: "virus.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("MZ\x90\x00 not a pdf"),
   });
   await expect(page.getByText("Bị loại – đã xóa")).toBeVisible();
 

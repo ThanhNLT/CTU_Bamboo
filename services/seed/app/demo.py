@@ -8,12 +8,15 @@ Id tenant, đơn vị, vị trí và tài khoản demo cố định bằng uuid5
 khớp nhau mà không gọi API lẫn nhau. Tài khoản demo đặt tên theo vai trò.
 """
 
+# ===== Thư viện chuẩn =====
 import uuid
 from dataclasses import dataclass, field
 
+# ===== Hằng số & cấu hình =====
 DEMO_NS = uuid.UUID("7d3f0a52-1c4b-5e8f-9a6d-2b7c4e1f0a93")
 
 
+# ===== Hàm =====
 def uid(*parts: str) -> uuid.UUID:
     return uuid.uuid5(DEMO_NS, ":".join(parts))
 
@@ -23,6 +26,7 @@ def account_id(username: str) -> uuid.UUID:
     return uid("account", username)
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Tenant:
     code: str
@@ -30,99 +34,302 @@ class Tenant:
     parent: str | None = None
 
 
+# ===== Hằng số & cấu hình =====
 TENANTS = [Tenant("TDX", "Tập đoàn X"), Tenant("BVX", "Bệnh viện X", parent="TDX")]
 
 UNIT_TYPES = {
-    "TAP_DOAN": "Tập đoàn", "CONG_TY": "Công ty", "BENH_VIEN": "Bệnh viện", "HOI_DONG": "Hội đồng",
-    "KHOI": "Khối", "PHONG": "Phòng", "VAN_PHONG": "Văn phòng", "NHA_MAY": "Nhà máy",
-    "PHAN_XUONG": "Phân xưởng", "MIEN": "Miền", "CHI_NHANH": "Chi nhánh", "TRUNG_TAM": "Trung tâm",
-    "DOI": "Đội", "KHOA": "Khoa",
+    "TAP_DOAN": "Tập đoàn",
+    "CONG_TY": "Công ty",
+    "BENH_VIEN": "Bệnh viện",
+    "HOI_DONG": "Hội đồng",
+    "KHOI": "Khối",
+    "PHONG": "Phòng",
+    "VAN_PHONG": "Văn phòng",
+    "NHA_MAY": "Nhà máy",
+    "PHAN_XUONG": "Phân xưởng",
+    "MIEN": "Miền",
+    "CHI_NHANH": "Chi nhánh",
+    "TRUNG_TAM": "Trung tâm",
+    "DOI": "Đội",
+    "KHOA": "Khoa",
 }
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass
 class Unit:
     code: str
     name: str
     type: str
-    head: str                       # chức danh vị trí trưởng
-    staff: int = 2                  # số ghế nhân viên
+    head: str  # chức danh vị trí trưởng
+    staff: int = 2  # số ghế nhân viên
     staff_title: str = "Chuyên viên"
-    legal: bool = False             # công ty (pháp nhân)
+    legal: bool = False  # công ty (pháp nhân)
     deputies: list[str] = field(default_factory=list)
     children: list["Unit"] = field(default_factory=list)
 
 
+# ===== Hàm =====
 def U(code, name, type_, head, staff=2, staff_title="Chuyên viên", legal=False, deputies=(), children=()):
     return Unit(code, name, type_, head, staff, staff_title, legal, list(deputies), list(children))
 
 
+# ===== Hằng số & cấu hình =====
 TREES = {
-    "TDX": U("TDX", "Tập đoàn X", "TAP_DOAN", "Tổng giám đốc", staff=0, legal=True,
-             deputies=["Phó tổng giám đốc"], children=[
-        U("TDX_HDQT", "Hội đồng quản trị", "HOI_DONG", "Chủ tịch HĐQT", staff=2, staff_title="Thành viên HĐQT"),
-        U("TDX_TC", "Khối Tài chính", "KHOI", "Giám đốc tài chính", staff=3),
-        U("TDX_NS", "Khối Nhân sự", "KHOI", "Giám đốc nhân sự", staff=2),
-        U("TDX_PC", "Khối Pháp chế", "KHOI", "Giám đốc pháp chế", staff=2),
-        U("TDX_CDS", "Văn phòng Chuyển đổi số", "VAN_PHONG", "Giám đốc chuyển đổi số (CDO)", staff=3,
-          staff_title="Kỹ sư nền tảng"),
-        U("CHIP", "Công ty Chip X", "CONG_TY", "Giám đốc", staff=0, legal=True, deputies=["Phó giám đốc"], children=[
-            U("CHIP_RD", "Khối R&D", "KHOI", "Giám đốc R&D", staff=0, children=[
-                U("CHIP_RD_TK", "Phòng Thiết kế vi mạch", "PHONG", "Trưởng phòng", staff=4, staff_title="Kỹ sư thiết kế"),
-                U("CHIP_RD_KC", "Phòng Kiểm chứng", "PHONG", "Trưởng phòng", staff=3, staff_title="Kỹ sư kiểm chứng"),
-            ]),
-            U("CHIP_SX", "Khối Sản xuất", "KHOI", "Giám đốc sản xuất", staff=0, children=[
-                U("CHIP_NM1", "Nhà máy 1", "NHA_MAY", "Giám đốc nhà máy", staff=1, children=[
-                    U("CHIP_PS", "Phòng sạch", "PHAN_XUONG", "Quản đốc", staff=4, staff_title="Kỹ thuật viên"),
-                    U("CHIP_PX", "Phân xưởng", "PHAN_XUONG", "Quản đốc", staff=4, staff_title="Kỹ thuật viên"),
-                ]),
-            ]),
-            U("CHIP_CL", "Khối Chất lượng", "KHOI", "Giám đốc chất lượng", staff=2, staff_title="Kỹ sư chất lượng"),
-            U("CHIP_KD", "Khối Kinh doanh B2B", "KHOI", "Giám đốc kinh doanh", staff=3),
-        ]),
-        U("DT", "Công ty Điện thoại X", "CONG_TY", "Giám đốc", staff=0, legal=True, deputies=["Phó giám đốc"], children=[
-            U("DT_RD", "Khối R&D", "KHOI", "Giám đốc R&D", staff=0, children=[
-                U("DT_RD_PC", "Phòng Phần cứng", "PHONG", "Trưởng phòng", staff=3, staff_title="Kỹ sư phần cứng"),
-                U("DT_RD_PM", "Phòng Phần mềm", "PHONG", "Trưởng phòng", staff=3, staff_title="Kỹ sư phần mềm"),
-                U("DT_RD_TK", "Phòng Thiết kế công nghiệp", "PHONG", "Trưởng phòng", staff=2, staff_title="Nhà thiết kế"),
-            ]),
-            U("DT_CCU", "Khối Chuỗi cung ứng", "KHOI", "Giám đốc chuỗi cung ứng", staff=0, children=[
-                U("DT_MH", "Phòng Mua hàng", "PHONG", "Trưởng phòng", staff=3),
-                U("DT_KV", "Phòng Kho vận", "PHONG", "Trưởng phòng", staff=2),
-            ]),
-            U("DT_NM", "Nhà máy lắp ráp", "NHA_MAY", "Giám đốc nhà máy", staff=4, staff_title="Kỹ thuật viên"),
-            U("DT_KD", "Khối Kinh doanh", "KHOI", "Giám đốc kinh doanh", staff=3),
-        ]),
-        U("GD", "Công ty Gia dụng X", "CONG_TY", "Giám đốc", staff=0, legal=True, deputies=["Phó giám đốc"], children=[
-            U("GD_NM", "Nhà máy", "NHA_MAY", "Giám đốc nhà máy", staff=3, staff_title="Kỹ thuật viên"),
-            U("GD_PP", "Khối Phân phối", "KHOI", "Giám đốc phân phối", staff=0, children=[
-                U("GD_MB", "Miền Bắc", "MIEN", "Giám đốc miền", staff=1, children=[
-                    U("GD_CN_HN", "Chi nhánh Hà Nội", "CHI_NHANH", "Giám đốc chi nhánh", staff=2),
-                ]),
-                U("GD_MN", "Miền Nam", "MIEN", "Giám đốc miền", staff=1, children=[
-                    U("GD_CN_HCM", "Chi nhánh TP.HCM", "CHI_NHANH", "Giám đốc chi nhánh", staff=2),
-                ]),
-            ]),
-            U("GD_BH", "Trung tâm Bảo hành", "TRUNG_TAM", "Giám đốc trung tâm", staff=2, children=[
-                U("GD_KTHT", "Đội kỹ thuật hiện trường", "DOI", "Đội trưởng", staff=4, staff_title="Kỹ thuật viên"),
-            ]),
-        ]),
-    ]),
-    "BVX": U("BVX", "Bệnh viện X", "BENH_VIEN", "Giám đốc bệnh viện", staff=0, legal=True,
-             deputies=["Phó giám đốc"], children=[
-        U("BVX_LS", "Khối Lâm sàng", "KHOI", "Trưởng khối", staff=0, children=[
-            U("BVX_NOI", "Khoa Nội", "KHOA", "Trưởng khoa", staff=3, staff_title="Bác sĩ"),
-            U("BVX_NGOAI", "Khoa Ngoại", "KHOA", "Trưởng khoa", staff=3, staff_title="Bác sĩ"),
-            U("BVX_CC", "Khoa Cấp cứu", "KHOA", "Trưởng khoa", staff=3, staff_title="Bác sĩ"),
-        ]),
-        U("BVX_CLS", "Khối Cận lâm sàng", "KHOI", "Trưởng khối", staff=0, children=[
-            U("BVX_XN", "Khoa Xét nghiệm", "KHOA", "Trưởng khoa", staff=2, staff_title="Kỹ thuật viên"),
-            U("BVX_CDHA", "Khoa Chẩn đoán hình ảnh", "KHOA", "Trưởng khoa", staff=2, staff_title="Bác sĩ"),
-        ]),
-        U("BVX_DUOC", "Khoa Dược", "KHOA", "Trưởng khoa", staff=2, staff_title="Dược sĩ"),
-        U("BVX_KHTH", "Phòng Kế hoạch tổng hợp", "PHONG", "Trưởng phòng", staff=2),
-        U("BVX_TC", "Phòng Tài chính", "PHONG", "Trưởng phòng", staff=2),
-    ]),
+    "TDX": U(
+        "TDX",
+        "Tập đoàn X",
+        "TAP_DOAN",
+        "Tổng giám đốc",
+        staff=0,
+        legal=True,
+        deputies=["Phó tổng giám đốc"],
+        children=[
+            U("TDX_HDQT", "Hội đồng quản trị", "HOI_DONG", "Chủ tịch HĐQT", staff=2, staff_title="Thành viên HĐQT"),
+            U("TDX_TC", "Khối Tài chính", "KHOI", "Giám đốc tài chính", staff=3),
+            U("TDX_NS", "Khối Nhân sự", "KHOI", "Giám đốc nhân sự", staff=2),
+            U("TDX_PC", "Khối Pháp chế", "KHOI", "Giám đốc pháp chế", staff=2),
+            U(
+                "TDX_CDS",
+                "Văn phòng Chuyển đổi số",
+                "VAN_PHONG",
+                "Giám đốc chuyển đổi số (CDO)",
+                staff=3,
+                staff_title="Kỹ sư nền tảng",
+            ),
+            U(
+                "CHIP",
+                "Công ty Chip X",
+                "CONG_TY",
+                "Giám đốc",
+                staff=0,
+                legal=True,
+                deputies=["Phó giám đốc"],
+                children=[
+                    U(
+                        "CHIP_RD",
+                        "Khối R&D",
+                        "KHOI",
+                        "Giám đốc R&D",
+                        staff=0,
+                        children=[
+                            U(
+                                "CHIP_RD_TK",
+                                "Phòng Thiết kế vi mạch",
+                                "PHONG",
+                                "Trưởng phòng",
+                                staff=4,
+                                staff_title="Kỹ sư thiết kế",
+                            ),
+                            U(
+                                "CHIP_RD_KC",
+                                "Phòng Kiểm chứng",
+                                "PHONG",
+                                "Trưởng phòng",
+                                staff=3,
+                                staff_title="Kỹ sư kiểm chứng",
+                            ),
+                        ],
+                    ),
+                    U(
+                        "CHIP_SX",
+                        "Khối Sản xuất",
+                        "KHOI",
+                        "Giám đốc sản xuất",
+                        staff=0,
+                        children=[
+                            U(
+                                "CHIP_NM1",
+                                "Nhà máy 1",
+                                "NHA_MAY",
+                                "Giám đốc nhà máy",
+                                staff=1,
+                                children=[
+                                    U(
+                                        "CHIP_PS",
+                                        "Phòng sạch",
+                                        "PHAN_XUONG",
+                                        "Quản đốc",
+                                        staff=4,
+                                        staff_title="Kỹ thuật viên",
+                                    ),
+                                    U(
+                                        "CHIP_PX",
+                                        "Phân xưởng",
+                                        "PHAN_XUONG",
+                                        "Quản đốc",
+                                        staff=4,
+                                        staff_title="Kỹ thuật viên",
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    U(
+                        "CHIP_CL",
+                        "Khối Chất lượng",
+                        "KHOI",
+                        "Giám đốc chất lượng",
+                        staff=2,
+                        staff_title="Kỹ sư chất lượng",
+                    ),
+                    U("CHIP_KD", "Khối Kinh doanh B2B", "KHOI", "Giám đốc kinh doanh", staff=3),
+                ],
+            ),
+            U(
+                "DT",
+                "Công ty Điện thoại X",
+                "CONG_TY",
+                "Giám đốc",
+                staff=0,
+                legal=True,
+                deputies=["Phó giám đốc"],
+                children=[
+                    U(
+                        "DT_RD",
+                        "Khối R&D",
+                        "KHOI",
+                        "Giám đốc R&D",
+                        staff=0,
+                        children=[
+                            U(
+                                "DT_RD_PC",
+                                "Phòng Phần cứng",
+                                "PHONG",
+                                "Trưởng phòng",
+                                staff=3,
+                                staff_title="Kỹ sư phần cứng",
+                            ),
+                            U(
+                                "DT_RD_PM",
+                                "Phòng Phần mềm",
+                                "PHONG",
+                                "Trưởng phòng",
+                                staff=3,
+                                staff_title="Kỹ sư phần mềm",
+                            ),
+                            U(
+                                "DT_RD_TK",
+                                "Phòng Thiết kế công nghiệp",
+                                "PHONG",
+                                "Trưởng phòng",
+                                staff=2,
+                                staff_title="Nhà thiết kế",
+                            ),
+                        ],
+                    ),
+                    U(
+                        "DT_CCU",
+                        "Khối Chuỗi cung ứng",
+                        "KHOI",
+                        "Giám đốc chuỗi cung ứng",
+                        staff=0,
+                        children=[
+                            U("DT_MH", "Phòng Mua hàng", "PHONG", "Trưởng phòng", staff=3),
+                            U("DT_KV", "Phòng Kho vận", "PHONG", "Trưởng phòng", staff=2),
+                        ],
+                    ),
+                    U("DT_NM", "Nhà máy lắp ráp", "NHA_MAY", "Giám đốc nhà máy", staff=4, staff_title="Kỹ thuật viên"),
+                    U("DT_KD", "Khối Kinh doanh", "KHOI", "Giám đốc kinh doanh", staff=3),
+                ],
+            ),
+            U(
+                "GD",
+                "Công ty Gia dụng X",
+                "CONG_TY",
+                "Giám đốc",
+                staff=0,
+                legal=True,
+                deputies=["Phó giám đốc"],
+                children=[
+                    U("GD_NM", "Nhà máy", "NHA_MAY", "Giám đốc nhà máy", staff=3, staff_title="Kỹ thuật viên"),
+                    U(
+                        "GD_PP",
+                        "Khối Phân phối",
+                        "KHOI",
+                        "Giám đốc phân phối",
+                        staff=0,
+                        children=[
+                            U(
+                                "GD_MB",
+                                "Miền Bắc",
+                                "MIEN",
+                                "Giám đốc miền",
+                                staff=1,
+                                children=[
+                                    U("GD_CN_HN", "Chi nhánh Hà Nội", "CHI_NHANH", "Giám đốc chi nhánh", staff=2),
+                                ],
+                            ),
+                            U(
+                                "GD_MN",
+                                "Miền Nam",
+                                "MIEN",
+                                "Giám đốc miền",
+                                staff=1,
+                                children=[
+                                    U("GD_CN_HCM", "Chi nhánh TP.HCM", "CHI_NHANH", "Giám đốc chi nhánh", staff=2),
+                                ],
+                            ),
+                        ],
+                    ),
+                    U(
+                        "GD_BH",
+                        "Trung tâm Bảo hành",
+                        "TRUNG_TAM",
+                        "Giám đốc trung tâm",
+                        staff=2,
+                        children=[
+                            U(
+                                "GD_KTHT",
+                                "Đội kỹ thuật hiện trường",
+                                "DOI",
+                                "Đội trưởng",
+                                staff=4,
+                                staff_title="Kỹ thuật viên",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    ),
+    "BVX": U(
+        "BVX",
+        "Bệnh viện X",
+        "BENH_VIEN",
+        "Giám đốc bệnh viện",
+        staff=0,
+        legal=True,
+        deputies=["Phó giám đốc"],
+        children=[
+            U(
+                "BVX_LS",
+                "Khối Lâm sàng",
+                "KHOI",
+                "Trưởng khối",
+                staff=0,
+                children=[
+                    U("BVX_NOI", "Khoa Nội", "KHOA", "Trưởng khoa", staff=3, staff_title="Bác sĩ"),
+                    U("BVX_NGOAI", "Khoa Ngoại", "KHOA", "Trưởng khoa", staff=3, staff_title="Bác sĩ"),
+                    U("BVX_CC", "Khoa Cấp cứu", "KHOA", "Trưởng khoa", staff=3, staff_title="Bác sĩ"),
+                ],
+            ),
+            U(
+                "BVX_CLS",
+                "Khối Cận lâm sàng",
+                "KHOI",
+                "Trưởng khối",
+                staff=0,
+                children=[
+                    U("BVX_XN", "Khoa Xét nghiệm", "KHOA", "Trưởng khoa", staff=2, staff_title="Kỹ thuật viên"),
+                    U("BVX_CDHA", "Khoa Chẩn đoán hình ảnh", "KHOA", "Trưởng khoa", staff=2, staff_title="Bác sĩ"),
+                ],
+            ),
+            U("BVX_DUOC", "Khoa Dược", "KHOA", "Trưởng khoa", staff=2, staff_title="Dược sĩ"),
+            U("BVX_KHTH", "Phòng Kế hoạch tổng hợp", "PHONG", "Trưởng phòng", staff=2),
+            U("BVX_TC", "Phòng Tài chính", "PHONG", "Trưởng phòng", staff=2),
+        ],
+    ),
 }
 
 # Ghế theo hợp đồng (ADR #29): (tenant, mã ghế, đơn vị, chức danh, báo cáo cho).
@@ -132,11 +339,12 @@ CONTRACT_SEATS = [("TDX", "GD_BH.HD1", "GD_BH", "Kỹ sư tư vấn (hợp đồ
 VACANT = {("TDX", "CHIP_RD_KC.HEAD")}
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Seat:
     tenant: str
-    position: str              # khóa vị trí, ví dụ "DT_MH.S1", "CHIP.HEAD", "TDX.DEP1"
-    type: str = "PRIMARY"      # PRIMARY / CONCURRENT / CONTRACT
+    position: str  # khóa vị trí, ví dụ "DT_MH.S1", "CHIP.HEAD", "TDX.DEP1"
+    type: str = "PRIMARY"  # PRIMARY / CONCURRENT / CONTRACT
 
 
 @dataclass(frozen=True)
@@ -151,10 +359,12 @@ class DemoUser:
         return account_id(self.username)
 
 
+# ===== Hàm =====
 def _u(username, full_name, *seats, roles=()):
     return DemoUser(username, full_name, tuple(seats), tuple(roles))
 
 
+# ===== Hằng số & cấu hình =====
 DEMO_USERS = [
     _u("tgd", "Nguyễn Văn Thành", Seat("TDX", "TDX.HEAD")),
     _u("pho.tgd", "Trần Thị Mai", Seat("TDX", "TDX.DEP1")),
@@ -209,6 +419,7 @@ OPEN_SEATS = [
 ]
 
 
+# ===== Hàm =====
 def walk(unit: Unit, parent: Unit | None = None):
     """Duyệt cây theo thứ tự cha trước con: (đơn vị, đơn vị cha)."""
     yield unit, parent

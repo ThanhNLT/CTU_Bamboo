@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useLogin } from "@refinedev/core";
-import { ThemedTitle } from "@refinedev/antd";
-import { Button, Typography, Layout, Space } from "antd";
+// ===== Thư viện =====
+import { useLogin } from "@refinedev/core"; // Refine
+import { ThemedTitle } from "@refinedev/antd"; // Refine Ant Design
+import { Button, Typography, Layout, Space } from "antd"; // Ant Design
 
+// ===== Component =====
 export const Login: React.FC = () => {
   const { mutate: login } = useLogin();
 
@@ -26,18 +28,10 @@ export const Login: React.FC = () => {
             marginBottom: "36px",
           }}
         />
-        <Button
-          style={{ width: "240px" }}
-          type="primary"
-          size="middle"
-          onClick={() => login({})}
-        >
+        <Button style={{ width: "240px" }} type="primary" size="middle" onClick={() => login({})}>
           Đăng nhập bằng tài khoản tập đoàn
         </Button>
-        <Typography.Text type="secondary">
-          Xác thực qua 
-          Keycloak
-        </Typography.Text>
+        <Typography.Text type="secondary">Xác thực qua Keycloak</Typography.Text>
       </Space>
     </Layout>
   );

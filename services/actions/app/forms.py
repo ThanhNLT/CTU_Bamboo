@@ -12,33 +12,64 @@ Phiếu chỉ chứa dữ liệu của chứng từ (không có giờ in), nên 
 gọi Gotenberg. Mã kiểm tra in ở chân trang là 16 ký tự đầu của mã nội dung.
 """
 
+# ===== Thư viện chuẩn =====
 import hashlib
 import pathlib
 from decimal import ROUND_HALF_UP, Decimal
 
-import httpx
-import jinja2
-import psycopg
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import jinja2  # Jinja2
+import psycopg  # psycopg
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from . import storage
 from .common import ActionError, Context, require_read, session_identity
 
+# ===== Hằng số & cấu hình =====
 TEMPLATES = pathlib.Path(__file__).resolve().parent / "templates"
 # Đổi khi sửa mẫu theo cách không làm đổi HTML (ví dụ tùy chọn khổ giấy) để không dùng lại tệp cũ.
 FORM_VERSION = "1"
-A4 = {"paperWidth": "8.27", "paperHeight": "11.69", "marginTop": "0.6", "marginBottom": "0.7",
-      "marginLeft": "0.6", "marginRight": "0.6", "printBackground": "true", "preferCssPageSize": "false"}
+A4 = {
+    "paperWidth": "8.27",
+    "paperHeight": "11.69",
+    "marginTop": "0.6",
+    "marginBottom": "0.7",
+    "marginLeft": "0.6",
+    "marginRight": "0.6",
+    "printBackground": "true",
+    "preferCssPageSize": "false",
+}
 
-_env = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATES), autoescape=True,
-                          undefined=jinja2.StrictUndefined, trim_blocks=True, lstrip_blocks=True)
+# ===== Khởi tạo =====
+_env = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(TEMPLATES),
+    autoescape=True,
+    undefined=jinja2.StrictUndefined,
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
 
-STATUS_LABELS = {"DRAFT": "Bản nháp", "PENDING": "Chờ duyệt", "RETURNED": "Bị trả về", "APPROVED": "Đã duyệt",
-                 "REJECTED": "Từ chối", "CANCELLED": "Đã hủy"}
-STEP_LABELS = {"WAITING": "Chưa tới", "ACTIVE": "Đang chờ", "APPROVED": "Đã duyệt", "REJECTED": "Từ chối",
-               "RETURNED": "Trả về", "CANCELLED": "Đã hủy"}
+# ===== Hằng số & cấu hình =====
+STATUS_LABELS = {
+    "DRAFT": "Bản nháp",
+    "PENDING": "Chờ duyệt",
+    "RETURNED": "Bị trả về",
+    "APPROVED": "Đã duyệt",
+    "REJECTED": "Từ chối",
+    "CANCELLED": "Đã hủy",
+}
+STEP_LABELS = {
+    "WAITING": "Chưa tới",
+    "ACTIVE": "Đang chờ",
+    "APPROVED": "Đã duyệt",
+    "REJECTED": "Từ chối",
+    "RETURNED": "Trả về",
+    "CANCELLED": "Đã hủy",
+}
 
-# --- Số tiền bằng chữ -----------------------------------------------------------------
+# ===== Số tiền bằng chữ =====
 
 _DIGITS = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"]
 
@@ -95,7 +126,7 @@ def number(value, decimals: int = 0) -> str:
     whole = int(d.quantize(Decimal(1), rounding=ROUND_HALF_UP)) if decimals == 0 else int(d)
     text = f"{whole:,}".replace(",", ".")
     if decimals:
-        frac = str(abs(d) % 1)[2:2 + decimals].rstrip("0")
+        frac = str(abs(d) % 1)[2 : 2 + decimals].rstrip("0")
         if frac:
             text += "," + frac
     return text
@@ -103,7 +134,7 @@ def number(value, decimals: int = 0) -> str:
 
 _env.filters["number"] = number
 
-# --- Dữ liệu ----------------------------------------------------------------------------
+# ===== Dữ liệu =====
 
 
 def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
@@ -126,11 +157,15 @@ def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
            LEFT JOIN core.catalog_item cat ON cat.tenant_id = r.tenant_id AND cat.catalog = 'ITEM_CATEGORY'
                                           AND cat.code = r.category_code
            LEFT JOIN mdm.partner pa ON pa.id = r.partner_id
-           WHERE r.id = %s""", (request_id,)).fetchone()
+           WHERE r.id = %s""",
+        (request_id,),
+    ).fetchone()
     pr["items"] = cur.execute(
         """SELECT i.line_no, i.description, i.uom, i.quantity, i.unit_price, i.amount, i.note, m.code AS item_code
            FROM proc.purchase_request_item i LEFT JOIN mdm.item m ON m.id = i.item_id
-           WHERE i.request_id = %s ORDER BY i.line_no""", (request_id,)).fetchall()
+           WHERE i.request_id = %s ORDER BY i.line_no""",
+        (request_id,),
+    ).fetchall()
     # Chuỗi duyệt của lần gửi duyệt gần nhất.
     pr["steps"] = cur.execute(
         """SELECT s.step_order, s.status, pos.name AS position_name, actor.full_name AS acted_by,
@@ -141,21 +176,27 @@ def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
            LEFT JOIN core.person actor ON actor.id = s.acted_by
            LEFT JOIN core.person principal ON principal.id = s.on_behalf_of
            WHERE s.entity_type = 'proc.purchase_request' AND s.entity_id = %s AND s.round = %s
-           ORDER BY s.step_order""", (request_id, pr["approval_round"])).fetchall()
+           ORDER BY s.step_order""",
+        (request_id, pr["approval_round"]),
+    ).fetchall()
     return pr
 
 
 def render_purchase_request(pr: dict) -> str:
     return _env.get_template("phieu_de_nghi_mua_sam.html").render(
-        pr=pr, status_label=STATUS_LABELS.get(pr["status"], pr["status"]), step_labels=STEP_LABELS,
-        amount_words=amount_in_words(pr["total_amount"]))
+        pr=pr,
+        status_label=STATUS_LABELS.get(pr["status"], pr["status"]),
+        step_labels=STEP_LABELS,
+        amount_words=amount_in_words(pr["total_amount"]),
+    )
 
 
 def footer(doc_no: str, check_code: str) -> str:
     return _env.get_template("chan_trang.html").render(doc_no=doc_no, check_code=check_code)
 
 
-# --- Gotenberg --------------------------------------------------------------------------
+# ===== Gotenberg =====
+
 
 class PdfUnavailable(Exception):
     pass
@@ -163,11 +204,14 @@ class PdfUnavailable(Exception):
 
 def html_to_pdf(gotenberg_url: str, html: str, footer_html: str, timeout: float = 60.0) -> bytes:
     """Chromium của Gotenberg in HTML ra PDF khổ A4. Trang không tải tài nguyên ngoài (CSS nhúng sẵn)."""
-    files = [("files", ("index.html", html.encode(), "text/html")),
-             ("files", ("footer.html", footer_html.encode(), "text/html"))]
+    files = [
+        ("files", ("index.html", html.encode(), "text/html")),
+        ("files", ("footer.html", footer_html.encode(), "text/html")),
+    ]
     try:
-        resp = httpx.post(f"{gotenberg_url.rstrip('/')}/forms/chromium/convert/html", data=A4, files=files,
-                          timeout=timeout)
+        resp = httpx.post(
+            f"{gotenberg_url.rstrip('/')}/forms/chromium/convert/html", data=A4, files=files, timeout=timeout
+        )
     except httpx.HTTPError as exc:
         raise PdfUnavailable(f"Gotenberg không truy cập được: {exc}") from exc
     if resp.status_code != 200 or not resp.content.startswith(b"%PDF-"):
@@ -175,7 +219,8 @@ def html_to_pdf(gotenberg_url: str, html: str, footer_html: str, timeout: float 
     return resp.content
 
 
-# --- Hasura Action ----------------------------------------------------------------------
+# ===== Hasura Action =====
+
 
 def get_purchase_request_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     request_id = args["request_id"]
@@ -199,6 +244,12 @@ def get_purchase_request_pdf(conn: psycopg.Connection, session: dict, args: dict
         except PdfUnavailable as exc:
             raise ActionError("Tạm thời chưa in được phiếu, thử lại sau", "pdf-unavailable", 503) from exc
         ctx.storage.put_document(key, pdf, "application/pdf")
-    return {"request_id": request_id, "file_name": file_name, "check_code": digest[:16].upper(),
-            "status": pr["status"], "cached": cached, "expires_in": storage.DOWNLOAD_TTL,
-            "url": ctx.storage.download_url(key, file_name, "application/pdf")}
+    return {
+        "request_id": request_id,
+        "file_name": file_name,
+        "check_code": digest[:16].upper(),
+        "status": pr["status"],
+        "cached": cached,
+        "expires_in": storage.DOWNLOAD_TTL,
+        "url": ctx.storage.download_url(key, file_name, "application/pdf"),
+    }

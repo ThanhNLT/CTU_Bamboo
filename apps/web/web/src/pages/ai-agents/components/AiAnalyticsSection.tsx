@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Select, Switch } from "antd";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { Select, Switch } from "antd"; // Ant Design
+import { ThumbsDown, ThumbsUp } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { GUARD_INFO, MODELS } from "../mock";
 import type { Agent, AnalyticsTab, GuardKey } from "../types";
@@ -13,6 +16,7 @@ import { SecurityEventsList } from "./SecurityEventsList";
 import { SessionsChart } from "./SessionsChart";
 import { ToolsUsageList } from "./ToolsUsageList";
 
+// ===== Hằng số =====
 const TABS: Array<{ key: AnalyticsTab; label: string }> = [
   { key: "overview", label: "Tổng quan" },
   { key: "sessions", label: "Phiên" },
@@ -21,6 +25,7 @@ const TABS: Array<{ key: AnalyticsTab; label: string }> = [
   { key: "config", label: "Cấu hình" },
 ];
 
+// ===== Component =====
 const Card = ({ children, className }: { children: ReactNode; className?: string }) => (
   <div className={cn("min-w-0 rounded-2xl border border-line bg-white p-5 shadow-card", className)}>{children}</div>
 );
@@ -29,9 +34,11 @@ const Kicker = ({ children }: { children: string }) => (
   <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h3>
 );
 
+// ===== Hằng số =====
 const th = "border-b border-line py-2 pr-3 text-left text-[11.5px] font-medium text-muted";
 const td = "border-b border-line/70 py-2.5 pr-3 align-top";
 
+// ===== Component =====
 const Overview = ({ agent }: { agent: Agent }) => {
   const totals = weekTotals(agent);
   return (
@@ -65,7 +72,14 @@ const Sessions = ({ agent }: { agent: Agent }) => (
     <div className="mt-3 overflow-x-auto">
       <table className="w-full min-w-[680px] border-collapse text-[12.5px]">
         <thead>
-          <tr><th className={th}>Lúc</th><th className={th}>Người dùng</th><th className={th}>Câu hỏi</th><th className={th}>Công cụ</th><th className={th}>Thời gian</th><th className={th}>Kết quả</th></tr>
+          <tr>
+            <th className={th}>Lúc</th>
+            <th className={th}>Người dùng</th>
+            <th className={th}>Câu hỏi</th>
+            <th className={th}>Công cụ</th>
+            <th className={th}>Thời gian</th>
+            <th className={th}>Kết quả</th>
+          </tr>
         </thead>
         <tbody>
           {agent.sessions.map((s) => (
@@ -97,7 +111,13 @@ const Tools = ({ agent }: { agent: Agent }) => (
     <div className="mt-3 overflow-x-auto">
       <table className="w-full min-w-[560px] border-collapse text-[12.5px]">
         <thead>
-          <tr><th className={th}>Công cụ</th><th className={cn(th, "text-right")}>Lượt gọi</th><th className={cn(th, "text-right")}>Lỗi</th><th className={cn(th, "text-right")}>p95</th><th className={th}>Phạm vi dữ liệu</th></tr>
+          <tr>
+            <th className={th}>Công cụ</th>
+            <th className={cn(th, "text-right")}>Lượt gọi</th>
+            <th className={cn(th, "text-right")}>Lỗi</th>
+            <th className={cn(th, "text-right")}>p95</th>
+            <th className={th}>Phạm vi dữ liệu</th>
+          </tr>
         </thead>
         <tbody>
           {agent.toolStats.map((t) => (
@@ -112,7 +132,9 @@ const Tools = ({ agent }: { agent: Agent }) => (
         </tbody>
       </table>
     </div>
-    <p className="mt-3 text-[11.5px] text-muted">Công cụ chạy bằng quyền của người hỏi; dữ liệu tự lọc theo công ty (tenant_id).</p>
+    <p className="mt-3 text-[11.5px] text-muted">
+      Công cụ chạy bằng quyền của người hỏi; dữ liệu tự lọc theo công ty (tenant_id).
+    </p>
   </Card>
 );
 
@@ -127,7 +149,11 @@ const Guards = ({ agent, onToggle }: { agent: Agent; onToggle: (g: GuardKey, on:
               <span className="block font-mono text-[12.5px] text-ink">{GUARD_INFO[g].label}</span>
               <span className="block text-[12px] text-muted">{GUARD_INFO[g].description}</span>
             </span>
-            <Switch checked={agent.guards[g]} onChange={(on) => onToggle(g, on)} aria-label={`Bật ${GUARD_INFO[g].label}`} />
+            <Switch
+              checked={agent.guards[g]}
+              onChange={(on) => onToggle(g, on)}
+              aria-label={`Bật ${GUARD_INFO[g].label}`}
+            />
           </li>
         ))}
       </ul>
@@ -143,7 +169,17 @@ const Guards = ({ agent, onToggle }: { agent: Agent; onToggle: (g: GuardKey, on:
 
 const Config = ({ agent, onModelChange }: { agent: Agent; onModelChange: (m: string) => void }) => {
   const rows: Array<[string, ReactNode]> = [
-    ["Mô hình", <Select key="m" value={agent.model} onChange={onModelChange} options={MODELS.map((m) => ({ value: m, label: m }))} style={{ width: 160 }} aria-label="Mô hình" />],
+    [
+      "Mô hình",
+      <Select
+        key="m"
+        value={agent.model}
+        onChange={onModelChange}
+        options={MODELS.map((m) => ({ value: m, label: m }))}
+        style={{ width: 160 }}
+        aria-label="Mô hình"
+      />,
+    ],
     ["Temperature", num(agent.config.temperature, 1)],
     ["Độ dài trả lời tối đa", `${num(agent.config.maxTokens)} token`],
     ["Phạm vi dữ liệu", agent.config.scopes.join(", ")],
@@ -161,7 +197,9 @@ const Config = ({ agent, onModelChange }: { agent: Agent; onModelChange: (m: str
       </dl>
       <div className="mt-4 border-t border-line pt-4">
         <Kicker>Chỉ dẫn hệ thống (trích)</Kicker>
-        <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-canvas p-3 font-mono text-[12px] leading-relaxed text-body">{agent.config.systemPrompt}</pre>
+        <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-canvas p-3 font-mono text-[12px] leading-relaxed text-body">
+          {agent.config.systemPrompt}
+        </pre>
       </div>
     </Card>
   );
@@ -169,7 +207,11 @@ const Config = ({ agent, onModelChange }: { agent: Agent; onModelChange: (m: str
 
 /** Phần phân tích của tác tử đang chọn: tab Tổng quan / Phiên / Công cụ / Rào chắn / Cấu hình. */
 export const AiAnalyticsSection = ({
-  agent, tab, onTabChange, onToggleGuard, onModelChange,
+  agent,
+  tab,
+  onTabChange,
+  onToggleGuard,
+  onModelChange,
 }: {
   agent: Agent;
   tab: AnalyticsTab;
@@ -180,7 +222,11 @@ export const AiAnalyticsSection = ({
   <section aria-label={`Phân tích ${agent.name}`} className="flex flex-col gap-3">
     <div className="flex flex-wrap items-center gap-3">
       <h2 className="text-[18px] font-semibold tracking-[-0.01em] text-ink">{agent.name}</h2>
-      <div role="tablist" aria-label="Phân tích tác tử" className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1">
+      <div
+        role="tablist"
+        aria-label="Phân tích tác tử"
+        className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+      >
         {TABS.map((t) => {
           const active = t.key === tab;
           return (

@@ -5,16 +5,23 @@
 // Một client GraphQL dùng chung cho dataProvider của Refine và các thao tác gọi Action.
 // Hasura xác thực bằng webhook (ADR #32): mỗi request kèm token Keycloak và tenant đã chọn
 // (header x-bamboo-tenant). Chưa chọn tenant thì chỉ gọi được query my_tenants.
-import { GraphQLClient, graphqlWS } from "@refinedev/hasura";
-import type { HttpError } from "@refinedev/core";
+
+// ===== Thư viện =====
+import { GraphQLClient, graphqlWS } from "@refinedev/hasura"; // Refine Hasura
+import type { HttpError } from "@refinedev/core"; // Refine
+
+// ===== Module nội bộ =====
 import { config } from "../config";
 
+// ===== Hằng số =====
 export const API_URL = config.hasuraUrl;
 const WS_URL = API_URL.replace(/^http/, "ws");
 const TENANT_KEY = "bamboo.tenant";
 
+// ===== Trạng thái module =====
 let token: string | undefined;
 
+// ===== Hàm tiện ích =====
 export const getTenant = (): string | null => {
   try {
     return localStorage.getItem(TENANT_KEY);
@@ -31,6 +38,7 @@ const headers = (withTenant = true): Record<string, string> => {
   return h;
 };
 
+// ===== Khởi tạo =====
 export const client = new GraphQLClient(API_URL, { headers: () => headers() });
 
 export const wsClient = graphqlWS.createClient({
@@ -39,6 +47,7 @@ export const wsClient = graphqlWS.createClient({
   connectionParams: () => ({ headers: headers() }),
 });
 
+// ===== Hàm tiện ích =====
 export const setToken = (value: string | undefined) => {
   token = value;
 };

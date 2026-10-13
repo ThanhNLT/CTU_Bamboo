@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Check, CornerUpLeft } from "lucide-react";
+// ===== Thư viện =====
+import { Check, CornerUpLeft } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { StepState, WorkflowStep } from "../types";
 
+// ===== Hằng số =====
 const STATE_TEXT: Record<StepState, string> = {
   done: "đã xong",
   current: "đang xử lý",
@@ -13,6 +17,7 @@ const STATE_TEXT: Record<StepState, string> = {
   pending: "chưa tới",
 };
 
+// ===== Component =====
 const Marker = ({ state }: { state: StepState }) => {
   if (state === "done") {
     return (
@@ -54,7 +59,9 @@ export const VerticalTimeline = ({ steps }: { steps: WorkflowStep[] }) => (
               )}
             />
           )}
-          <span className="relative z-[1] mt-px shrink-0"><Marker state={s.state} /></span>
+          <span className="relative z-[1] mt-px shrink-0">
+            <Marker state={s.state} />
+          </span>
           <div className="min-w-0 pb-0.5">
             <div
               className={cn(

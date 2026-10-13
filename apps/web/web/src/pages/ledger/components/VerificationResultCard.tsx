@@ -2,19 +2,28 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Copy, Download, SearchX, ShieldAlert, ShieldCheck } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { Copy, Download, SearchX, ShieldAlert, ShieldCheck } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { VerifyResult } from "../types";
 import { shortHash } from "../utils";
 
+// ===== Component =====
 const Row = ({ label, children, mono }: { label: string; children: ReactNode; mono?: boolean }) => (
   <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 py-1.5 sm:grid-cols-[110px_minmax(0,1fr)]">
     <dt className="text-[12px] text-muted">{label}</dt>
-    <dd className={cn("m-0 min-w-0 text-[12.5px] text-ink", mono && "break-all font-mono text-[11.5px] leading-relaxed")}>{children}</dd>
+    <dd
+      className={cn("m-0 min-w-0 text-[12.5px] text-ink", mono && "break-all font-mono text-[11.5px] leading-relaxed")}
+    >
+      {children}
+    </dd>
   </div>
 );
 
+// ===== Hằng số =====
 const actionClass =
   "inline-flex h-8 items-center gap-1.5 rounded-full border bg-white/70 px-3 text-[12px] font-medium text-ink transition-colors hover:bg-white " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
@@ -25,9 +34,12 @@ const STYLE = {
   not_found: { box: "border-amber-200 bg-amber-50", title: "text-amber-800", action: "border-amber-200" },
 } as const;
 
+// ===== Component =====
 /** Khối kết quả đối soát: khớp (xanh), không khớp (đỏ), không tìm thấy (vàng). */
 export const VerificationResultCard = ({
-  result, onCopy, onCertificate,
+  result,
+  onCopy,
+  onCertificate,
 }: {
   result: VerifyResult;
   onCopy: () => void;
@@ -40,17 +52,29 @@ export const VerificationResultCard = ({
         {result.kind === "match" && <ShieldCheck className="h-4 w-4" aria-hidden />}
         {result.kind === "mismatch" && <ShieldAlert className="h-4 w-4" aria-hidden />}
         {result.kind === "not_found" && <SearchX className="h-4 w-4" aria-hidden />}
-        {result.kind === "match" ? "Khớp với bản niêm phong" : result.kind === "mismatch" ? "Không khớp với bản niêm phong" : "Không tìm thấy bản niêm phong"}
+        {result.kind === "match"
+          ? "Khớp với bản niêm phong"
+          : result.kind === "mismatch"
+            ? "Không khớp với bản niêm phong"
+            : "Không tìm thấy bản niêm phong"}
       </h3>
 
       {result.kind === "not_found" ? (
         <div className="mt-2 text-[12.5px] text-body">
           {result.via === "code" ? (
-            <p>Không có bản niêm phong nào cho <b className="font-mono font-semibold">{result.query}</b>. Kiểm tra lại mã (dạng HS-SEMI-2026-00123, có thể thêm “v2”).</p>
+            <p>
+              Không có bản niêm phong nào cho <b className="font-mono font-semibold">{result.query}</b>. Kiểm tra lại mã
+              (dạng HS-SEMI-2026-00123, có thể thêm “v2”).
+            </p>
           ) : (
             <>
-              <p>Mã băm của tệp <b className="font-semibold">{result.fileName}</b> chưa từng được niêm phong. Tệp có thể đã bị chỉnh sửa, hoặc chưa được niêm phong.</p>
-              {result.sha256 && <p className="mt-2 break-all font-mono text-[11.5px] text-muted">SHA-256 {result.sha256}</p>}
+              <p>
+                Mã băm của tệp <b className="font-semibold">{result.fileName}</b> chưa từng được niêm phong. Tệp có thể
+                đã bị chỉnh sửa, hoặc chưa được niêm phong.
+              </p>
+              {result.sha256 && (
+                <p className="mt-2 break-all font-mono text-[11.5px] text-muted">SHA-256 {result.sha256}</p>
+              )}
             </>
           )}
         </div>
@@ -62,7 +86,9 @@ export const VerificationResultCard = ({
             <Row label="Giao dịch" mono>
               <span title={result.seal.txId}>tx {shortHash(result.seal.txId)}</span>
             </Row>
-            <Row label={result.kind === "mismatch" ? "SHA-256 sổ cái" : "SHA-256"} mono>{result.seal.sha256}</Row>
+            <Row label={result.kind === "mismatch" ? "SHA-256 sổ cái" : "SHA-256"} mono>
+              {result.seal.sha256}
+            </Row>
             {result.kind === "mismatch" && (
               <Row label="SHA-256 tệp lưu" mono>
                 <span className="text-red-700">{result.actualSha256}</span>

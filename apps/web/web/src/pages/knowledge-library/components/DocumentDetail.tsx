@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BookOpen, History, RotateCw, Sparkles } from "lucide-react";
+// ===== Thư viện =====
+import { BookOpen, History, RotateCw, Sparkles } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { Dot, smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { CATEGORY_SHORT } from "../mock";
 import type { LibraryDoc } from "../types";
 import { indexTone } from "./indexState";
 
+// ===== Component =====
 const MetaItem = ({ label, value }: { label: string; value: string }) => (
   <div className="min-w-0 truncate text-[12px] text-muted">
     {label}: <span className="text-body">{value}</span>
@@ -32,7 +36,10 @@ const AssistantBox = ({ doc, onAsk, onReindex }: { doc: LibraryDoc; onAsk: () =>
         : `Lỗi nạp · ${index.reason}`;
 
   return (
-    <div className={cn("flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center", box)} role="status">
+    <div
+      className={cn("flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center", box)}
+      role="status"
+    >
       <div className="flex min-w-0 flex-1 items-start gap-2 text-[12.5px] text-body">
         <Dot tone={indexTone(index)} size="md" className="mt-[5px]" />
         <span className="min-w-0">{text}</span>
@@ -60,7 +67,12 @@ const AssistantBox = ({ doc, onAsk, onReindex }: { doc: LibraryDoc; onAsk: () =>
 
 /** Cột phải: thông tin, trạng thái nạp, mục lục và trích đoạn của tài liệu đang chọn. */
 export const DocumentDetail = ({
-  doc, onAsk, onReindex, onHistory, onOpenFull, className,
+  doc,
+  onAsk,
+  onReindex,
+  onHistory,
+  onOpenFull,
+  className,
 }: {
   doc?: LibraryDoc;
   onAsk: (doc: LibraryDoc) => void;
@@ -96,15 +108,21 @@ export const DocumentDetail = ({
         <AssistantBox doc={doc} onAsk={() => onAsk(doc)} onReindex={() => onReindex(doc)} />
 
         <section aria-labelledby="kb-toc">
-          <h3 id="kb-toc" className="text-[13.5px] font-semibold text-ink">Mục lục</h3>
+          <h3 id="kb-toc" className="text-[13.5px] font-semibold text-ink">
+            Mục lục
+          </h3>
           <ol className="m-0 mt-2 list-decimal space-y-0.5 pl-5 text-[13px] leading-relaxed text-body marker:text-muted">
-            {doc.toc.map((t) => <li key={t}>{t}</li>)}
+            {doc.toc.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
           </ol>
         </section>
 
         {doc.excerpt && (
           <section aria-labelledby="kb-excerpt">
-            <h3 id="kb-excerpt" className="text-[13.5px] font-semibold text-ink">{doc.excerpt.heading}</h3>
+            <h3 id="kb-excerpt" className="text-[13.5px] font-semibold text-ink">
+              {doc.excerpt.heading}
+            </h3>
             <p className="mt-2 text-[13px] leading-relaxed text-body">{doc.excerpt.body}</p>
           </section>
         )}

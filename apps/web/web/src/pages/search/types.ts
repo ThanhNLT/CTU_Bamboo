@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 export type ResultType = "record" | "document" | "knowledge" | "twin" | "data";
 export type Company = "chip" | "phone" | "appliance" | "hospital";
 export type SearchMode = "keyword" | "semantic" | "hybrid";

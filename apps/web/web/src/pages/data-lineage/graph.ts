@@ -4,6 +4,8 @@
 
 // Phép tính trên đồ thị phả hệ: trạng thái nút, phạm vi theo hướng + độ sâu, tác động phía sau, tìm kiếm,
 // và toạ độ để vẽ sơ đồ. Không phụ thuộc React, dễ kiểm thử.
+
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import type { Direction, Layer, LineageEdge, LineageNode, NodeStatus, QualityCheck } from "./types";
 
@@ -101,16 +103,16 @@ export const matchesQuery = (n: LineageNode, query: string) => {
   const q = fold(query.trim());
   if (!q) return true;
   const checks = n.checks.map((c) => c.rule).join(" ");
-  return fold(`${n.tech} ${n.name} ${n.fqn} ${n.title} ${(n.columns ?? []).join(" ")} ${checks} ${n.usedBy ?? ""}`).includes(q);
+  return fold(
+    `${n.tech} ${n.name} ${n.fqn} ${n.title} ${(n.columns ?? []).join(" ")} ${checks} ${n.usedBy ?? ""}`,
+  ).includes(q);
 };
 
 /** Danh sách lỗi cho banner: mỗi kiểm tra lỗi kèm nút và số tài sản phía sau bị ảnh hưởng. */
 export const failureSummaries = (nodes: LineageNode[], edges: LineageEdge[]) =>
-  nodes.flatMap((n) =>
-    failedChecks(n).map((check) => ({ node: n, check, impacted: reach(edges, n.id, "down").size })),
-  );
+  nodes.flatMap((n) => failedChecks(n).map((check) => ({ node: n, check, impacted: reach(edges, n.id, "down").size })));
 
-// ---------- Toạ độ sơ đồ ----------
+// ===== Toạ độ sơ đồ =====
 // Trục ngang tính theo % bề rộng (co giãn theo thẻ), trục dọc theo px.
 // 5 cột: mỗi nút rộng NODE_W%, khoảng cách giữa hai cột GAP% → 5 × 17,2 + 4 × 3,5 = 100.
 export const NODE_W = 17.2;

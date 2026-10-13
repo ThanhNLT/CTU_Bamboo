@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { NODE_TYPE_LABEL } from "./mock";
 import type { BpmnNode, Issue, NodeType, ProcessDef, ProcessModel } from "./types";
 
+// ===== Hàm tiện ích =====
 /** "8 giờ làm việc" → "PT8H", "1 ngày" → "P1D", "30 phút" → "PT30M" (dạng Flowable hiểu). null nếu không đọc được. */
 export const slaToIso = (sla?: string): string | null => {
   const m = sla?.trim().match(/^(\d+)\s*(phút|giờ|ngày|tuần)/i);
@@ -24,12 +26,19 @@ export const validate = (model: ProcessModel): Issue[] => {
 
   for (const n of model.nodes) {
     const label = n.name.trim() || NODE_TYPE_LABEL[n.type];
-    if (!n.name.trim()) issues.push({ level: "error", message: `${NODE_TYPE_LABEL[n.type]} chưa có tên.`, nodeId: n.id });
+    if (!n.name.trim())
+      issues.push({ level: "error", message: `${NODE_TYPE_LABEL[n.type]} chưa có tên.`, nodeId: n.id });
     if (n.type === "userTask") {
       if (!n.group) issues.push({ level: "error", message: `“${label}” chưa chọn nhóm xử lý.`, nodeId: n.id });
       if (!n.sla?.trim()) issues.push({ level: "error", message: `“${label}” chưa đặt SLA.`, nodeId: n.id });
-      else if (!slaToIso(n.sla)) issues.push({ level: "error", message: `SLA của “${label}” không đọc được — dùng dạng “8 giờ”, “1 ngày”.`, nodeId: n.id });
-      if (!n.decisions?.length) issues.push({ level: "error", message: `“${label}” chưa cho phép quyết định nào.`, nodeId: n.id });
+      else if (!slaToIso(n.sla))
+        issues.push({
+          level: "error",
+          message: `SLA của “${label}” không đọc được — dùng dạng “8 giờ”, “1 ngày”.`,
+          nodeId: n.id,
+        });
+      if (!n.decisions?.length)
+        issues.push({ level: "error", message: `“${label}” chưa cho phép quyết định nào.`, nodeId: n.id });
     }
     const connected = model.edges.some((e) => e.from === n.id || e.to === n.id);
     if (!connected) issues.push({ level: "warning", message: `“${label}” chưa được nối vào luồng.`, nodeId: n.id });
@@ -38,7 +47,11 @@ export const validate = (model: ProcessModel): Issue[] => {
   for (const e of model.edges) {
     const from = byId.get(e.from);
     if (from?.type === "gateway" && e.label && e.notifySubmitter === false) {
-      issues.push({ level: "warning", message: `Nhánh “${e.label}” chưa gửi thông báo cho người nộp.`, nodeId: from.id });
+      issues.push({
+        level: "warning",
+        message: `Nhánh “${e.label}” chưa gửi thông báo cho người nộp.`,
+        nodeId: from.id,
+      });
     }
   }
   return issues;
@@ -46,6 +59,7 @@ export const validate = (model: ProcessModel): Issue[] => {
 
 const esc = (s: string) => s.replace(/[<>&"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
+// ===== Hằng số =====
 const TAG: Record<NodeType, string> = {
   start: "startEvent",
   userTask: "userTask",
@@ -54,6 +68,7 @@ const TAG: Record<NodeType, string> = {
   end: "endEvent",
 };
 
+// ===== Hàm tiện ích =====
 /** Xuất BPMN 2.0 (kèm thuộc tính Flowable) — phần logic, chưa gồm tọa độ sơ đồ (DI). */
 export const toBpmnXml = (p: ProcessDef, model: ProcessModel) => {
   const el = (n: BpmnNode) => {
@@ -93,13 +108,18 @@ export const downloadText = (filename: string, text: string, type = "application
   URL.revokeObjectURL(url);
 };
 
+// ===== Trạng thái module =====
 let seq = 0;
+
+// ===== Hàm tiện ích =====
 /** Phần tử mới khi kéo từ bảng thành phần vào canvas. */
 export const newNode = (type: NodeType, x: number, y: number): BpmnNode => {
   seq += 1;
   const id = `${type}_${Date.now().toString(36)}${seq}`;
   const base: BpmnNode = { id, type, name: NODE_TYPE_LABEL[type], x, y };
-  if (type === "userTask") return { ...base, name: "Bước duyệt mới", sla: "1 ngày", decisions: ["approve", "return", "reject"] };
-  if (type === "start" || type === "end") return { ...base, labelPos: "right", endTone: type === "end" ? "success" : undefined };
+  if (type === "userTask")
+    return { ...base, name: "Bước duyệt mới", sla: "1 ngày", decisions: ["approve", "return", "reject"] };
+  if (type === "start" || type === "end")
+    return { ...base, labelPos: "right", endTone: type === "end" ? "success" : undefined };
   return base;
 };

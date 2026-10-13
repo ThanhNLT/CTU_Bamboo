@@ -5,9 +5,13 @@
 // Phả hệ dữ liệu (Dữ liệu số): sơ đồ 5 tầng Nguồn → Luồng sự kiện → Hồ dữ liệu → Phục vụ → Tiêu thụ (trái ~70%)
 // và chi tiết nút đang chọn với kiểm tra chất lượng Soda (phải ~30%). Trạng thái lỗi / bị ảnh hưởng tự lan theo đồ thị.
 // Mở thẳng một tài sản: /d/lineage?asset=mart.approval_daily. Dữ liệu minh họa ở ./mock.
-import { App } from "antd";
-import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { useMemo, useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { DataLineageHeader } from "./components/DataLineageHeader";
 import { DataLineageToolbar } from "./components/DataLineageToolbar";
 import { LineageGraphMock } from "./components/LineageGraphMock";
@@ -16,21 +20,31 @@ import { QualityAlertBanner } from "./components/QualityAlertBanner";
 import { RecentRunsTable } from "./components/RecentRunsTable";
 import { ReportIncidentModal } from "./components/ReportIncidentModal";
 import {
-  computeStatuses, failedChecks, failureSummaries, matchesQuery, openMetadataUrl, reach, scopeOf,
+  computeStatuses,
+  failedChecks,
+  failureSummaries,
+  matchesQuery,
+  openMetadataUrl,
+  reach,
+  scopeOf,
 } from "./graph";
 import { DEFAULT_NODE_ID, LINEAGE_EDGES, LINEAGE_NODES, LINEAGE_UPDATED_AT, RECENT_RUNS } from "./mock";
 import type { Direction, LineageNode } from "./types";
 
+// ===== Hằng số =====
 const STATUSES = computeStatuses(LINEAGE_NODES, LINEAGE_EDGES);
 const FAILURES = failureSummaries(LINEAGE_NODES, LINEAGE_EDGES);
 const BY_ID = new Map(LINEAGE_NODES.map((n) => [n.id, n]));
 const DEFAULT_NODE = BY_ID.get(DEFAULT_NODE_ID) as LineageNode;
+
+// ===== Hàm tiện ích =====
 const isNode = (n: LineageNode | undefined): n is LineageNode => n != null;
 
 /** `?asset=` nhận id nút hoặc tên đầy đủ (fqn), ví dụ mart.approval_daily. */
 const nodeFromParam = (asset: string | null) =>
   asset ? LINEAGE_NODES.find((n) => n.id === asset || n.fqn.toLowerCase() === asset.toLowerCase())?.id : undefined;
 
+// ===== Component =====
 export const DataLineagePage = () => {
   const { message } = App.useApp();
   const [params] = useSearchParams();
@@ -67,9 +81,9 @@ export const DataLineagePage = () => {
     () =>
       status === "affected"
         ? [...reach(LINEAGE_EDGES, node.id, "up").keys()]
-          .map((id) => BY_ID.get(id))
-          .filter(isNode)
-          .filter((n) => STATUSES.get(n.id) === "failed")
+            .map((id) => BY_ID.get(id))
+            .filter(isNode)
+            .filter((n) => STATUSES.get(n.id) === "failed")
         : [],
     [node.id, status],
   );
@@ -155,7 +169,9 @@ export const DataLineagePage = () => {
         onSubmit={(v) => {
           const target = BY_ID.get(v.nodeId);
           setReporting(false);
-          message.success(`Đã tạo sự cố dữ liệu DQ-2026-0118 cho ${target?.fqn ?? v.nodeId} · đã báo ${target?.owner ?? "chủ sở hữu"}.`);
+          message.success(
+            `Đã tạo sự cố dữ liệu DQ-2026-0118 cho ${target?.fqn ?? v.nodeId} · đã báo ${target?.owner ?? "chủ sở hữu"}.`,
+          );
         }}
       />
     </div>

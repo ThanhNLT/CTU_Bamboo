@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Paperclip } from "lucide-react";
+// ===== Thư viện =====
+import { Paperclip } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import type { UserMsg } from "../types";
 
+// ===== Component =====
 /** Tin nhắn người dùng: căn phải, bong bóng xám nhạt. */
 export const UserMessage = ({ msg }: { msg: UserMsg }) => (
   <div className="flex justify-end">
@@ -13,7 +17,10 @@ export const UserMessage = ({ msg }: { msg: UserMsg }) => (
       {msg.files?.length ? (
         <ul className="m-0 mt-1.5 flex list-none flex-wrap gap-1.5 p-0">
           {msg.files.map((f) => (
-            <li key={f} className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11.5px] text-body">
+            <li
+              key={f}
+              className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11.5px] text-body"
+            >
               <Paperclip className="h-3 w-3" aria-hidden />
               {f}
             </li>

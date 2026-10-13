@@ -4,7 +4,11 @@
 
 // Trang chủ (Con người số): lời chào, 4 thẻ thống kê, cột trái 70% (Việc của tôi, Hồ sơ gần đây),
 // cột phải 30% (Thông báo, KPI đã ghim). Dữ liệu thật qua ./useDashboard; KPI còn là số minh họa (./mock).
-import { Alert } from "antd";
+
+// ===== Thư viện =====
+import { Alert } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { DashboardFooter } from "./components/DashboardFooter";
 import { HeroSection } from "./components/HeroSection";
 import { MyTasks } from "./components/MyTasks";
@@ -15,6 +19,7 @@ import { SummaryCards } from "./components/SummaryCards";
 import { MOCK_KPIS } from "./mock";
 import { useDashboard } from "./useDashboard";
 
+// ===== Component =====
 export const DashboardPage = () => {
   const d = useDashboard();
   return (
@@ -31,7 +36,10 @@ export const DashboardPage = () => {
           <RecentRecords records={d.recent} />
         </div>
 
-        <aside className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-1" aria-label="Thông báo và chỉ số">
+        <aside
+          className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-1"
+          aria-label="Thông báo và chỉ số"
+        >
           <NotificationsPanel items={d.notifications} unread={d.unread} onRead={d.markRead} />
           <PinnedKpis kpis={MOCK_KPIS} sample />
         </aside>

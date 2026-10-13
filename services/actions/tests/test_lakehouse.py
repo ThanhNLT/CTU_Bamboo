@@ -8,26 +8,45 @@ Kiểm thử tích hợp ghi vào catalog riêng (CSDL lakehouse_test, thư mụ
 lakehouse) từ các topic CDC thật; khóa S3 lakehouse đọc từ OpenBao bằng root token như search_settings.
 """
 
+# ===== Thư viện chuẩn =====
 import datetime as dt
 import json
 import uuid
 from urllib.parse import urlparse, urlunparse
 
-import psycopg
-import pytest
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+import pytest  # pytest
 
-from app import config, lakehouse_sink as ls
+# ===== Module nội bộ =====
+from app import config
+from app import lakehouse_sink as ls
 from conftest import TEST_DB_URL, _missing, _reachable, root_settings
 
+# ===== Khởi tạo =====
 pytest.importorskip("pyiceberg")
 kafka = pytest.importorskip("kafka")
 
-EVENT = {"before": None, "after": {"tenant_id": "t-1", "id": "pr-1", "title": "Tụ điện", "total_amount": "300000.00"},
-         "source": {"connector": "postgresql", "db": "bms", "schema": "proc", "table": "purchase_request",
-                    "lsn": 123456, "txId": 789, "ts_ms": 1791165722100, "ts_us": 1791165722100088},
-         "op": "u", "ts_ms": 1791165722200}
+# ===== Hằng số & cấu hình =====
+EVENT = {
+    "before": None,
+    "after": {"tenant_id": "t-1", "id": "pr-1", "title": "Tụ điện", "total_amount": "300000.00"},
+    "source": {
+        "connector": "postgresql",
+        "db": "bms",
+        "schema": "proc",
+        "table": "purchase_request",
+        "lsn": 123456,
+        "txId": 789,
+        "ts_ms": 1791165722100,
+        "ts_us": 1791165722100088,
+    },
+    "op": "u",
+    "ts_ms": 1791165722200,
+}
 
 
+# ===== Kiểm thử =====
 def test_ten_bang_va_topic():
     assert ls.table_name("bms.proc.purchase_request") == "bronze.proc_purchase_request"
     for topic in ("bms.proc.purchase_request", "bms.core.person", "bms.wf.approval_step"):
@@ -44,11 +63,21 @@ def test_su_kien_thanh_dong_bronze():
     assert row["source_date"] == dt.date(2026, 10, 5) and row["record_key"] == '{"id":"pr-1"}'
     assert json.loads(row["after"])["title"] == "Tụ điện" and row["before"] is None
     assert (row["kafka_partition"], row["kafka_offset"], row["ingested_at"]) == (0, 41, now)
-    deleted = ls.to_row(0, 42, None, json.dumps({**EVENT, "op": "d", "before": {"id": "pr-1", "tenant_id": "t-1"},
-                                                  "after": None}).encode(), now)
-    assert deleted["tenant_id"] == "t-1" and deleted["after"] is None and json.loads(deleted["record_key"]) == {"id": "pr-1"}
+    deleted = ls.to_row(
+        0,
+        42,
+        None,
+        json.dumps({**EVENT, "op": "d", "before": {"id": "pr-1", "tenant_id": "t-1"}, "after": None}).encode(),
+        now,
+    )
+    assert (
+        deleted["tenant_id"] == "t-1"
+        and deleted["after"] is None
+        and json.loads(deleted["record_key"]) == {"id": "pr-1"}
+    )
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def lake_settings() -> config.Settings:
     """Cấu hình ghi vào catalog kiểm thử; cần Kafka có topic CDC, SeaweedFS có bucket lakehouse."""
@@ -72,6 +101,7 @@ def lake_settings() -> config.Settings:
     return settings
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _drain(sink: ls.Sink) -> int:
     total = 0
     while n := sink.run_once(wait_seconds=30, stop_when_idle=True):
@@ -79,6 +109,7 @@ def _drain(sink: ls.Sink) -> int:
     return total
 
 
+# ===== Kiểm thử =====
 def test_ghi_bronze_dung_mot_lan(lake_settings):
     warehouse = f"warehouse-test/{uuid.uuid4().hex[:8]}"
     cat = ls.catalog(lake_settings, warehouse)
@@ -100,5 +131,7 @@ def test_ghi_bronze_dung_mot_lan(lake_settings):
     again = ls.Sink(lake_settings, cat=ls.catalog(lake_settings, warehouse))
     _drain(again)
     after = cat.load_table("bronze.proc_purchase_request").scan().to_arrow()
-    pairs = list(zip(after.column("kafka_partition").to_pylist(), after.column("kafka_offset").to_pylist(), strict=True))
+    pairs = list(
+        zip(after.column("kafka_partition").to_pylist(), after.column("kafka_offset").to_pylist(), strict=True)
+    )
     assert len(pairs) == len(set(pairs)) and after.num_rows >= rows.num_rows, "không ghi trùng sự kiện"

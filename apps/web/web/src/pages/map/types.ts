@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 export type CompanyKey = "phone" | "chip" | "appliance" | "hospital";
 
 /** Lớp bản đồ bật/tắt được ở cột phải. */

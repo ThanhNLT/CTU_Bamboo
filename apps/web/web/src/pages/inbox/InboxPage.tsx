@@ -6,9 +6,13 @@
 // (~65%) và cột widget (~35%: Thông tin, Gợi ý của trợ lý, Ý kiến & thao tác). Phím J/K chuyển việc.
 // ?code=PR-... trên URL chọn sẵn một việc (liên kết từ Trang chủ, trang Hồ sơ). Dữ liệu thật: ./useInboxTasks;
 // quyết định gọi Action act_on_task (như ActModal).
-import { App, Spin } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App, Spin } from "antd"; // Ant Design
+import { useCallback, useEffect, useMemo, useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ACT_ON_TASK } from "../purchase-requests/queries";
@@ -22,15 +26,18 @@ import { TaskSidebar } from "./components/TaskSidebar";
 import type { Decision, InboxScope, InboxTask } from "./types";
 import { SLA_HOURS, useInboxTasks } from "./useInboxTasks";
 
+// ===== Hằng số =====
 const DECISION_TEXT: Record<Decision, { verb: string; done: string; api: "APPROVE" | "RETURN" | "REJECT" }> = {
   approve: { verb: "Duyệt", done: "Đã duyệt", api: "APPROVE" },
   return: { verb: "Trả lại", done: "Đã trả lại", api: "RETURN" },
   reject: { verb: "Từ chối", done: "Đã từ chối", api: "REJECT" },
 };
 
+// ===== Hàm tiện ích =====
 const isTyping = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
 
+// ===== Component =====
 export const InboxPage = () => {
   const { message, modal } = App.useApp();
   const [params, setParams] = useSearchParams();
@@ -47,17 +54,23 @@ export const InboxPage = () => {
 
   // Việc đang chọn nằm trên URL (?code=) để chia sẻ/quay lại được; mặc định là việc gấp nhất.
   const code = params.get("code");
-  const index = Math.max(0, list.findIndex((t) => t.code === code));
+  const index = Math.max(
+    0,
+    list.findIndex((t) => t.code === code),
+  );
   const selected = list[index];
 
   const select = useCallback(
     (t?: InboxTask) => {
       if (!t) return;
-      setParams((p) => {
-        const next = new URLSearchParams(p);
-        next.set("code", t.code);
-        return next;
-      }, { replace: true });
+      setParams(
+        (p) => {
+          const next = new URLSearchParams(p);
+          next.set("code", t.code);
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setParams],
   );
@@ -91,7 +104,11 @@ export const InboxPage = () => {
         <div className="space-y-1.5 text-[13px]">
           <p className="font-medium text-ink">{task.title}</p>
           {comment && <p className="text-body">Ý kiến: “{comment}”</p>}
-          {task.viaDelegation && <p className="text-body">Bạn đang <b>duyệt thay {task.assignee}</b> theo ủy quyền; lịch sử sẽ ghi rõ.</p>}
+          {task.viaDelegation && (
+            <p className="text-body">
+              Bạn đang <b>duyệt thay {task.assignee}</b> theo ủy quyền; lịch sử sẽ ghi rõ.
+            </p>
+          )}
           <p className="text-muted">Quyết định được ghi nhật ký kiểm toán và không hoàn tác từ trang này.</p>
         </div>
       ),
@@ -113,19 +130,28 @@ export const InboxPage = () => {
     });
   };
 
-  const readOnly = selected && !selected.actionable
-    ? `Việc của ${selected.assignee} — bạn chỉ xem, không quyết định thay.`
-    : undefined;
+  const readOnly =
+    selected && !selected.actionable
+      ? `Việc của ${selected.assignee} — bạn chỉ xem, không quyết định thay.`
+      : undefined;
 
   if (inbox.loading && inbox.team.length === 0) {
-    return <div className="flex justify-center py-24"><Spin /></div>;
+    return (
+      <div className="flex justify-center py-24">
+        <Spin />
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <InboxHeader
-        mineCount={mine.length} teamCount={sorted.length} scope={scope} onScopeChange={setScope}
-        slaHours={SLA_HOURS} error={inbox.error}
+        mineCount={mine.length}
+        teamCount={sorted.length}
+        scope={scope}
+        onScopeChange={setScope}
+        slaHours={SLA_HOURS}
+        error={inbox.error}
       />
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(240px,3fr)_minmax(0,7fr)]">

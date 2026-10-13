@@ -5,7 +5,11 @@
 // Vùng bản đồ: nền SVG + điểm định vị tuyệt đối trong một lớp có thể kéo (pan) và phóng (zoom).
 // Ô tìm kiếm, nút nổi, chú giải và dòng ghi nguồn nằm ngoài lớp đó nên không bị phóng theo.
 // Trang cha gọi `focusSite(site)` (qua ref) để bay tới một cơ sở và mở popup của nó.
-import { forwardRef, useImperativeHandle, useRef, useState, type PointerEvent } from "react";
+
+// ===== Thư viện =====
+import { forwardRef, useImperativeHandle, useRef, useState, type PointerEvent } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { ATTRIBUTION, COMPANY_STYLE } from "../mock";
 import type { CompanyKey, MapSite, MapView } from "../types";
@@ -14,12 +18,15 @@ import { MapBackdrop } from "./MapBackdrop";
 import { MapFloatingControls, MapSearch } from "./MapFloatingControls";
 import { SiteMarker } from "./SiteMarker";
 
+// ===== Hằng số =====
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 3;
 const FOCUS_ZOOM = 1.75;
 
+// ===== Kiểu dữ liệu =====
 export type MapHandle = { focusSite: (site: MapSite) => void };
 
+// ===== Component =====
 const Legend = () => (
   <ul
     className="absolute bottom-4 left-4 z-30 m-0 flex list-none flex-wrap items-center gap-x-3.5 gap-y-1 rounded-full border border-line bg-white/95 px-3.5 py-2 text-[11.5px] text-body shadow-float backdrop-blur"
@@ -27,13 +34,16 @@ const Legend = () => (
   >
     {(Object.keys(COMPANY_STYLE) as CompanyKey[]).map((k) => (
       <li key={k} className="inline-flex items-center gap-1.5">
-        <span className="grid h-3.5 w-3.5 place-items-center"><CompanyShape company={k} size={9} /></span>
+        <span className="grid h-3.5 w-3.5 place-items-center">
+          <CompanyShape company={k} size={9} />
+        </span>
         {COMPANY_STYLE[k].name}
       </li>
     ))}
   </ul>
 );
 
+// ===== Hàm tiện ích =====
 /** Giới hạn kéo để không lộ khoảng trống ngoài bản đồ. */
 const clampPan = (v: MapView, w: number, h: number): MapView => {
   const mx = ((v.zoom - 1) * w) / 2;
@@ -41,17 +51,21 @@ const clampPan = (v: MapView, w: number, h: number): MapView => {
   return { ...v, panX: Math.max(-mx, Math.min(mx, v.panX)), panY: Math.max(-my, Math.min(my, v.panY)) };
 };
 
-export const MapContainer = forwardRef<MapHandle, {
-  /** Các điểm thuộc lớp đang bật. */
-  sites: MapSite[];
-  /** Mọi điểm (để tìm kiếm cả khi lớp đang tắt). */
-  allSites: MapSite[];
-  showBoundary: boolean;
-  /** Điểm mở popup sẵn khi vào trang. */
-  initialOpenId?: string;
-  /** Tìm thấy một điểm ở lớp đang tắt → trang cha bật lớp đó. */
-  onRevealLayer: (site: MapSite) => void;
-}>(({ sites, allSites, showBoundary, initialOpenId, onRevealLayer }, ref) => {
+// ===== Component =====
+export const MapContainer = forwardRef<
+  MapHandle,
+  {
+    /** Các điểm thuộc lớp đang bật. */
+    sites: MapSite[];
+    /** Mọi điểm (để tìm kiếm cả khi lớp đang tắt). */
+    allSites: MapSite[];
+    showBoundary: boolean;
+    /** Điểm mở popup sẵn khi vào trang. */
+    initialOpenId?: string;
+    /** Tìm thấy một điểm ở lớp đang tắt → trang cha bật lớp đó. */
+    onRevealLayer: (site: MapSite) => void;
+  }
+>(({ sites, allSites, showBoundary, initialOpenId, onRevealLayer }, ref) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -149,4 +163,6 @@ export const MapContainer = forwardRef<MapHandle, {
     </div>
   );
 });
+
+// ===== Khởi tạo =====
 MapContainer.displayName = "MapContainer";

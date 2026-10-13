@@ -5,10 +5,14 @@
 // Cơ cấu tổ chức (Quản trị, ADR #44): trái là cây đơn vị, phải là đơn vị đang chọn và các vị trí (ghế) của nó cùng
 // người đang giữ. Thêm / sửa / chuyển / ngừng đơn vị, thêm vị trí, bổ nhiệm và kết thúc bổ nhiệm; nhập hàng loạt
 // đơn vị và vị trí từ Excel. Cần quyền core.org.manage (máy chủ kiểm theo đơn vị).
-import { Alert, App, Dropdown, Spin } from "antd";
-import { ChevronDown, FileSpreadsheet, Plus } from "lucide-react";
-import { useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { Alert, App, Dropdown, Spin } from "antd"; // Ant Design
+import { ChevronDown, FileSpreadsheet, Plus } from "lucide-react"; // Lucide React
+import { useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { useSession } from "../../../auth/useSession";
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { AdminHeader, NoAccess } from "../shared/AdminHeader";
@@ -22,6 +26,7 @@ import { ORG, usePermissions } from "../shared/usePermissions";
 import { UnitDetail, type PositionAction } from "./UnitDetail";
 import { UnitTree } from "./UnitTree";
 
+// ===== Kiểu dữ liệu =====
 type Dialog =
   | { kind: "unit"; edit: boolean; parentId?: string }
   | { kind: "close-unit" }
@@ -31,8 +36,10 @@ type Dialog =
   | { kind: "close-position"; position: Position }
   | { kind: "import"; what: ImportKind };
 
+// ===== Hằng số =====
 const IMPORT_LABEL: Partial<Record<ImportKind, string>> = { org_unit: "đơn vị", position: "vị trí" };
 
+// ===== Component =====
 export const OrgPage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();
@@ -44,13 +51,22 @@ export const OrgPage = () => {
 
   const root = org.units.find((u) => !u.parent_id && u.period.active);
   const selected = org.unitById.get(params.get("unit") ?? "") ?? root;
-  const select = (id: string) => setParams((p) => {
-    const next = new URLSearchParams(p);
-    next.set("unit", id);
-    return next;
-  }, { replace: true });
+  const select = (id: string) =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        next.set("unit", id);
+        return next;
+      },
+      { replace: true },
+    );
 
-  if (!perms || (org.loading && !org.units.length)) return <div className="flex justify-center py-24"><Spin /></div>;
+  if (!perms || (org.loading && !org.units.length))
+    return (
+      <div className="flex justify-center py-24">
+        <Spin />
+      </div>
+    );
   if (!perms.has(ORG)) return <NoAccess permission={ORG} />;
 
   const close = () => setDialog(undefined);
@@ -59,24 +75,31 @@ export const OrgPage = () => {
     close();
     void org.reload();
   };
-  const onPosition = (p: Position, action: PositionAction) => setDialog(
-    action === "edit" ? { kind: "position", position: p }
-      : action === "assign" ? { kind: "assign", position: p }
-        : action === "end-assignment" ? { kind: "end-assignment", position: p }
-          : { kind: "close-position", position: p },
-  );
+  const onPosition = (p: Position, action: PositionAction) =>
+    setDialog(
+      action === "edit"
+        ? { kind: "position", position: p }
+        : action === "assign"
+          ? { kind: "assign", position: p }
+          : action === "end-assignment"
+            ? { kind: "end-assignment", position: p }
+            : { kind: "close-position", position: p },
+    );
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <AdminHeader
         title="Cơ cấu tổ chức"
         subtitle={<>Đơn vị, vị trí (ghế) và người giữ ghế của {tenant.tenant_name} · quyền gắn với vị trí</>}
-        actions={(
+        actions={
           <>
             <Dropdown
               trigger={["click"]}
               menu={{
-                items: [{ key: "org_unit", label: "Nhập đơn vị" }, { key: "position", label: "Nhập vị trí" }],
+                items: [
+                  { key: "org_unit", label: "Nhập đơn vị" },
+                  { key: "position", label: "Nhập vị trí" },
+                ],
                 onClick: ({ key }) => setDialog({ kind: "import", what: key as ImportKind }),
               }}
             >
@@ -85,11 +108,15 @@ export const OrgPage = () => {
                 <ChevronDown className="h-3.5 w-3.5 text-muted" aria-hidden />
               </button>
             </Dropdown>
-            <button type="button" className={primaryButtonClass} onClick={() => setDialog({ kind: "unit", edit: false, parentId: selected?.id })}>
+            <button
+              type="button"
+              className={primaryButtonClass}
+              onClick={() => setDialog({ kind: "unit", edit: false, parentId: selected?.id })}
+            >
               <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Thêm đơn vị
             </button>
           </>
-        )}
+        }
       />
 
       {org.error && <Alert type="error" showIcon message="Không tải được cơ cấu tổ chức" description={org.error} />}
@@ -165,7 +192,11 @@ export const OrgPage = () => {
       />
       <EndModal
         open={dialog?.kind === "end-assignment"}
-        title={dialog?.kind === "end-assignment" ? `Kết thúc bổ nhiệm ${dialog.position.holder?.person.full_name ?? ""}?` : ""}
+        title={
+          dialog?.kind === "end-assignment"
+            ? `Kết thúc bổ nhiệm ${dialog.position.holder?.person.full_name ?? ""}?`
+            : ""
+        }
         description="Việc duyệt đang chờ ở ghế này chuyển cho người giữ ghế kế tiếp (hoặc đẩy lên cấp trên nếu ghế trống); chứng từ người này lập theo hợp đồng chưa duyệt xong sẽ tự hủy (ADR #29)."
         okText="Kết thúc bổ nhiệm"
         onCancel={close}

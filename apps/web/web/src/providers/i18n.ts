@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Nhãn mặc định của Refine bằng tiếng Việt (giao diện chỉ một ngôn ngữ trong giai đoạn này).
-import type { I18nProvider } from "@refinedev/core";
 
+// ===== Thư viện =====
+import type { I18nProvider } from "@refinedev/core"; // Refine
+
+// ===== Hằng số =====
 const VI: Record<string, string> = {
   "buttons.logout": "Đăng xuất",
   "buttons.create": "Tạo mới",
@@ -21,7 +24,7 @@ const VI: Record<string, string> = {
   "actions.show": "Chi tiết",
   "pages.error.404": "Không tìm thấy trang này.",
   "pages.error.backHome": "Về trang chủ",
-  "warnWhenUnsavedChanges": "Có thay đổi chưa lưu. Rời trang?",
+  warnWhenUnsavedChanges: "Có thay đổi chưa lưu. Rời trang?",
   "notifications.success": "Thành công",
   "notifications.error": "Lỗi (mã {{statusCode}})",
   "dashboard.title": "Tổng quan",

@@ -4,10 +4,14 @@
 
 // Bản đồ (Dữ liệu số): trái ~75% vùng bản đồ (kéo/phóng, tìm kiếm, popup), phải ~25% lớp bản đồ + cảnh báo.
 // Nền là hình giả lập; khi nối thật dùng lớp nền GeoServer nội bộ (chạy được khi không có Internet).
-import { App } from "antd";
-import { Download } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { Download } from "lucide-react"; // Lucide React
+import { useMemo, useRef, useState } from "react"; // React
+import { useNavigate } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../components/ui";
 import { MapContainer, type MapHandle } from "./components/MapContainer";
 import { MapSidebar } from "./components/MapSidebar";
@@ -15,6 +19,7 @@ import { exportMapPng } from "./exportMapPng";
 import { DEFAULT_LAYERS, MOCK_SITES } from "./mock";
 import type { LayerKey, MapSite } from "./types";
 
+// ===== Component =====
 export const MapPage = () => {
   const navigate = useNavigate();
   const { message } = App.useApp();

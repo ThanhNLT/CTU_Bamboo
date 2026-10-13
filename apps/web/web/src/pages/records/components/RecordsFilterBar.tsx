@@ -2,27 +2,38 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, Select } from "antd";
+// ===== Thư viện =====
+import { Checkbox, Select } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { DOC_KIND_LABEL } from "../../../api/documents";
 import type { RecordFilters, RecordType, StatusTab, TimeRange } from "../types";
 import { STATUS_TABS, TIME_OPTIONS } from "../utils";
 
+// ===== Hằng số =====
 const TYPE_OPTIONS: Array<{ label: string; value: RecordType | "all" }> = [
   { label: "Tất cả loại hồ sơ", value: "all" },
   ...(Object.entries(DOC_KIND_LABEL) as Array<[RecordType, string]>).map(([value, label]) => ({ value, label })),
 ];
 
+// ===== Component =====
 /** Tab trạng thái dạng viên thuốc, kèm số đếm. */
 const StatusTabs = ({
-  value, counts, onChange,
+  value,
+  counts,
+  onChange,
 }: {
   value: StatusTab;
   counts: Record<StatusTab, number>;
   onChange: (t: StatusTab) => void;
 }) => (
-  <div role="tablist" aria-label="Trạng thái hồ sơ" className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1">
+  <div
+    role="tablist"
+    aria-label="Trạng thái hồ sơ"
+    className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+  >
     {STATUS_TABS.map(({ key, label }) => {
       const active = key === value;
       return (
@@ -46,7 +57,9 @@ const StatusTabs = ({
 );
 
 export const RecordsFilterBar = ({
-  filters, counts, onChange,
+  filters,
+  counts,
+  onChange,
 }: {
   filters: RecordFilters;
   counts: Record<StatusTab, number>;

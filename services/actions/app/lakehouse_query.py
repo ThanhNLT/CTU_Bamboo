@@ -11,17 +11,21 @@ tenant (platform/trino/rules.json), nên dù câu SQL ở đây có sai sót cũ
 Giá trị trả về đã che dữ liệu cá nhân như nhật ký kiểm toán (ADR #43, BI-05).
 """
 
+# ===== Thư viện chuẩn =====
 import logging
 import re
 import uuid
 
-import httpx
-import psycopg
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from .audit import mask_row
 from .common import ActionError, Context
 from .trino import Trino, TrinoError
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger(__name__)
 
 PERMISSION = "data.lakehouse.read"
@@ -29,8 +33,15 @@ PREVIEW_ROWS = 20
 DATASET_NAME = re.compile(r"^[a-z][a-z0-9_]{0,62}$")
 
 # Tên hiển thị của các tập dữ liệu (view silver <schema>_<bảng>); tập chưa có tên thì hiện <schema>.<bảng>.
-DOMAINS = {"core": "Tổ chức", "proc": "Mua sắm", "ic": "Giao dịch nội bộ", "wf": "Phê duyệt", "mdm": "Dữ liệu chủ",
-           "mfg": "Sản xuất", "collab": "Cộng tác"}
+DOMAINS = {
+    "core": "Tổ chức",
+    "proc": "Mua sắm",
+    "ic": "Giao dịch nội bộ",
+    "wf": "Phê duyệt",
+    "mdm": "Dữ liệu chủ",
+    "mfg": "Sản xuất",
+    "collab": "Cộng tác",
+}
 LABELS = {
     "collab_comment": "Trao đổi trên chứng từ",
     "collab_notification": "Thông báo",
@@ -65,6 +76,7 @@ LABELS = {
 }
 
 
+# ===== Hàm =====
 def tenant_user(tenant: str) -> str:
     """Người dùng Trino của tenant (khớp mẫu t_<uuid> trong rules.json)."""
     return f"t_{uuid.UUID(str(tenant))}"
@@ -77,7 +89,9 @@ def _require(conn: psycopg.Connection, session: dict, ctx: Context) -> tuple[str
     allowed = conn.execute(
         """SELECT core.has_permission(%s, %s, u.id) FROM core.org_unit u
            WHERE u.tenant_id = %s AND u.parent_id IS NULL AND u.valid_period @> now()
-           ORDER BY u.created_at LIMIT 1""", (person, PERMISSION, tenant)).fetchone()
+           ORDER BY u.created_at LIMIT 1""",
+        (person, PERMISSION, tenant),
+    ).fetchone()
     if not (allowed and allowed[0]):
         raise ActionError(f"Cần quyền {PERMISSION} để xem dữ liệu Lakehouse", "forbidden", 403)
     if ctx.lakehouse is None:
@@ -100,20 +114,29 @@ def _query(client: Trino, tenant: str, sql: str) -> tuple[list[dict], list[list]
 
 def _describe(name: str, columns: list[dict]) -> dict:
     schema = name.split("_", 1)[0]
-    return {"name": name, "label": LABELS.get(name, name.replace("_", ".", 1)),
-            "domain": DOMAINS.get(schema, schema), "columns": columns}
+    return {
+        "name": name,
+        "label": LABELS.get(name, name.replace("_", ".", 1)),
+        "domain": DOMAINS.get(schema, schema),
+        "columns": columns,
+    }
 
 
 def _datasets(client: Trino, tenant: str) -> dict[str, list[dict]]:
     """Các view silver người dùng tenant được đọc (information_schema đã lọc theo quyền của Trino)."""
-    _, rows = _query(client, tenant, "SELECT table_name, column_name, data_type FROM information_schema.columns "
-                                     "WHERE table_schema = 'silver' ORDER BY table_name, ordinal_position")
+    _, rows = _query(
+        client,
+        tenant,
+        "SELECT table_name, column_name, data_type FROM information_schema.columns "
+        "WHERE table_schema = 'silver' ORDER BY table_name, ordinal_position",
+    )
     out: dict[str, list[dict]] = {}
     for table, column, data_type in rows:
         out.setdefault(table, []).append({"name": column, "type": data_type})
     return out
 
 
+# ===== Hasura Action =====
 def lakehouse_datasets(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> list[dict]:
     tenant, client = _require(conn, session, ctx)
     return [_describe(name, cols) for name, cols in sorted(_datasets(client, tenant).items())]
@@ -139,6 +162,7 @@ def lakehouse_preview(conn: psycopg.Connection, session: dict, args: dict, ctx: 
     return {**_describe(name, columns), "total_rows": total[0][0], "rows": masked_rows, "masked": sorted(found)}
 
 
+# ===== Đăng ký Action =====
 HANDLERS = {
     "lakehouse_datasets": lakehouse_datasets,
     "lakehouse_preview": lakehouse_preview,

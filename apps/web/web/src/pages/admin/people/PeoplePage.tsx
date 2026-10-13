@@ -5,10 +5,14 @@
 // Người dùng (Quản trị, ADR #44): danh sách người trong tenant, vị trí đang giữ, tài khoản đăng nhập. Thêm người,
 // tạo tài khoản (mật khẩu tạm hiện một lần), bổ nhiệm / kết thúc bổ nhiệm; nhập hàng loạt nhân sự từ Excel (kèm
 // bổ nhiệm và tài khoản). Cần quyền core.org.manage.
-import { Alert, App, ConfigProvider, Form, Input, Segmented, Spin, Table } from "antd";
-import { FileSpreadsheet, Plus, ShieldCheck } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { Alert, App, ConfigProvider, Form, Input, Segmented, Spin, Table } from "antd"; // Ant Design
+import { FileSpreadsheet, Plus, ShieldCheck } from "lucide-react"; // Lucide React
+import { useMemo, useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { useSession } from "../../../auth/useSession";
 import { bambooTableTheme, primaryButtonClass, SearchInput, secondaryButtonClass } from "../../../components/ui";
 import { formatDay } from "../../../utils/format";
@@ -25,11 +29,15 @@ import { toDate } from "../shared/period";
 import { ORG, usePermissions } from "../shared/usePermissions";
 import { PersonDrawer } from "./PersonDrawer";
 
+// ===== Kiểu dữ liệu =====
 type Filter = "all" | "no-account" | "unassigned";
 type Dialog =
-  | { kind: "new" } | { kind: "import" } | { kind: "assign"; personId: string }
+  | { kind: "new" }
+  | { kind: "import" }
+  | { kind: "assign"; personId: string }
   | { kind: "end"; a: Assignment; p: Position };
 
+// ===== Component =====
 export const PeoplePage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();
@@ -41,26 +49,43 @@ export const PeoplePage = () => {
   const [dialog, setDialog] = useState<Dialog>();
   const [accounts, setAccounts] = useState<AccountResult[] | null>(null);
 
-  const rows = useMemo(() => org.people.map((p) => ({ person: p, current: assignmentsOf(org, p.id).filter((x) => x.a.period.active) })), [org]);
+  const rows = useMemo(
+    () => org.people.map((p) => ({ person: p, current: assignmentsOf(org, p.id).filter((x) => x.a.period.active) })),
+    [org],
+  );
   const counts = {
     all: rows.length,
     "no-account": rows.filter((r) => !r.person.idp_subject).length,
     unassigned: rows.filter((r) => r.current.length === 0).length,
   };
   const q = fold(query.trim());
-  const shown = rows.filter((r) =>
-    (filter === "all" || (filter === "no-account" ? !r.person.idp_subject : r.current.length === 0))
-    && (!q || fold(`${r.person.full_name} ${r.person.employee_code ?? ""} ${r.current.map((c) => c.p.name).join(" ")}`).includes(q)));
+  const shown = rows.filter(
+    (r) =>
+      (filter === "all" || (filter === "no-account" ? !r.person.idp_subject : r.current.length === 0)) &&
+      (!q ||
+        fold(
+          `${r.person.full_name} ${r.person.employee_code ?? ""} ${r.current.map((c) => c.p.name).join(" ")}`,
+        ).includes(q)),
+  );
 
   const selected = org.people.find((p) => p.id === params.get("person"));
-  const open = (id?: string) => setParams((p) => {
-    const next = new URLSearchParams(p);
-    if (id) next.set("person", id);
-    else next.delete("person");
-    return next;
-  }, { replace: true });
+  const open = (id?: string) =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        if (id) next.set("person", id);
+        else next.delete("person");
+        return next;
+      },
+      { replace: true },
+    );
 
-  if (!perms || (org.loading && !org.people.length)) return <div className="flex justify-center py-24"><Spin /></div>;
+  if (!perms || (org.loading && !org.people.length))
+    return (
+      <div className="flex justify-center py-24">
+        <Spin />
+      </div>
+    );
   if (!perms.has(ORG)) return <NoAccess permission={ORG} />;
 
   const close = () => setDialog(undefined);
@@ -71,7 +96,7 @@ export const PeoplePage = () => {
       <AdminHeader
         title="Người dùng"
         subtitle={<>Nhân sự của {tenant.tenant_name}: vị trí đang giữ và tài khoản đăng nhập</>}
-        actions={(
+        actions={
           <>
             <button type="button" className={secondaryButtonClass} onClick={() => setDialog({ kind: "import" })}>
               <FileSpreadsheet className="h-4 w-4 text-body" strokeWidth={1.75} aria-hidden /> Nhập từ Excel
@@ -80,25 +105,54 @@ export const PeoplePage = () => {
               <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Thêm người
             </button>
           </>
-        )}
+        }
       />
 
       {org.error && <Alert type="error" showIcon message="Không tải được danh sách" description={org.error} />}
 
       <div className="flex flex-wrap items-center gap-3">
-        <SearchInput className="w-full sm:w-[320px]" value={query} onChange={setQuery} placeholder="Tên, mã nhân viên, vị trí" />
+        <SearchInput
+          className="w-full sm:w-[320px]"
+          value={query}
+          onChange={setQuery}
+          placeholder="Tên, mã nhân viên, vị trí"
+        />
         <Segmented<Filter>
           value={filter}
           onChange={setFilter}
           options={[
-            { value: "all", label: <span>Tất cả <span className="tabular-nums text-muted">{counts.all}</span></span> },
-            { value: "no-account", label: <span>Chưa có tài khoản <span className="tabular-nums text-muted">{counts["no-account"]}</span></span> },
-            { value: "unassigned", label: <span>Chưa bổ nhiệm <span className="tabular-nums text-muted">{counts.unassigned}</span></span> },
+            {
+              value: "all",
+              label: (
+                <span>
+                  Tất cả <span className="tabular-nums text-muted">{counts.all}</span>
+                </span>
+              ),
+            },
+            {
+              value: "no-account",
+              label: (
+                <span>
+                  Chưa có tài khoản <span className="tabular-nums text-muted">{counts["no-account"]}</span>
+                </span>
+              ),
+            },
+            {
+              value: "unassigned",
+              label: (
+                <span>
+                  Chưa bổ nhiệm <span className="tabular-nums text-muted">{counts.unassigned}</span>
+                </span>
+              ),
+            },
           ]}
         />
       </div>
 
-      <section className="rounded-2xl border border-line bg-white px-3 pb-3 pt-1 shadow-card" aria-label="Danh sách người dùng">
+      <section
+        className="rounded-2xl border border-line bg-white px-3 pb-3 pt-1 shadow-card"
+        aria-label="Danh sách người dùng"
+      >
         <ConfigProvider theme={bambooTableTheme}>
           <Table
             rowKey={(r) => r.person.id}
@@ -120,25 +174,39 @@ export const PeoplePage = () => {
               },
               {
                 title: "Vị trí đang giữ",
-                render: (_, r) => r.current.length ? (
-                  <span className="flex flex-col gap-0.5">
-                    {r.current.map(({ a, p }) => (
-                      <span key={a.id} className="text-[12.5px] text-body">
-                        {p.name} · <span className="text-muted">{org.unitById.get(p.org_unit_id)?.name}</span>
-                        {a.assignment_type !== "PRIMARY" && <span className="text-muted"> ({ASSIGNMENT_LABEL[a.assignment_type]})</span>}
-                      </span>
-                    ))}
-                  </span>
-                ) : <span className="text-[12.5px] text-amber-700">Chưa bổ nhiệm</span>,
+                render: (_, r) =>
+                  r.current.length ? (
+                    <span className="flex flex-col gap-0.5">
+                      {r.current.map(({ a, p }) => (
+                        <span key={a.id} className="text-[12.5px] text-body">
+                          {p.name} · <span className="text-muted">{org.unitById.get(p.org_unit_id)?.name}</span>
+                          {a.assignment_type !== "PRIMARY" && (
+                            <span className="text-muted"> ({ASSIGNMENT_LABEL[a.assignment_type]})</span>
+                          )}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-[12.5px] text-amber-700">Chưa bổ nhiệm</span>
+                  ),
               },
               {
                 title: "Tài khoản",
                 width: 150,
-                render: (_, r) => r.person.idp_subject
-                  ? <span className="inline-flex items-center gap-1.5 text-[12.5px] text-body"><ShieldCheck className="h-3.5 w-3.5 text-bamboo-600" aria-hidden /> Đã có</span>
-                  : <span className="text-[12.5px] text-muted">Chưa có</span>,
+                render: (_, r) =>
+                  r.person.idp_subject ? (
+                    <span className="inline-flex items-center gap-1.5 text-[12.5px] text-body">
+                      <ShieldCheck className="h-3.5 w-3.5 text-bamboo-600" aria-hidden /> Đã có
+                    </span>
+                  ) : (
+                    <span className="text-[12.5px] text-muted">Chưa có</span>
+                  ),
               },
-              { title: "Thêm lúc", width: 120, render: (_, r) => <span className="text-muted">{formatDay(r.person.created_at)}</span> },
+              {
+                title: "Thêm lúc",
+                width: 120,
+                render: (_, r) => <span className="text-muted">{formatDay(r.person.created_at)}</span>,
+              },
             ]}
           />
         </ConfigProvider>
@@ -169,10 +237,18 @@ export const PeoplePage = () => {
       >
         {() => (
           <>
-            <Form.Item name="full_name" label="Họ tên" rules={[{ required: true, whitespace: true, message: "Nhập họ tên" }]}>
+            <Form.Item
+              name="full_name"
+              label="Họ tên"
+              rules={[{ required: true, whitespace: true, message: "Nhập họ tên" }]}
+            >
               <Input placeholder="Nguyễn Văn An" />
             </Form.Item>
-            <Form.Item name="employee_code" label="Mã nhân viên" extra="Nên có để nhập / cập nhật hàng loạt bằng Excel.">
+            <Form.Item
+              name="employee_code"
+              label="Mã nhân viên"
+              extra="Nên có để nhập / cập nhật hàng loạt bằng Excel."
+            >
               <Input className="font-mono" placeholder="NV0001" />
             </Form.Item>
           </>

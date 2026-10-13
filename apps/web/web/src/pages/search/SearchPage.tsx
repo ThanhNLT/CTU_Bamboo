@@ -6,9 +6,13 @@
 // - Đề nghị mua sắm + tệp đính kèm: tìm THẬT qua search_documents (máy chủ lọc tenant/quyền).
 // - Bản sao số, tri thức, tài liệu, dữ liệu, hồ sơ e-Office mẫu: chỉ mục mẫu ./mock (thay cho Qdrant khi tích hợp).
 // Từ khóa và cách tìm giữ trên URL (?q=…&mode=…) để chia sẻ được đường dẫn.
-import { App } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { useCallback, useEffect, useMemo, useState } from "react"; // React
+import { useNavigate, useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { AiContextBanner } from "./components/AiContextBanner";
@@ -16,16 +20,25 @@ import { SearchBar } from "./components/SearchBar";
 import { SearchFilters } from "./components/SearchFilters";
 import { SearchResultList } from "./components/SearchResultList";
 import {
-  applyFilters, defaultCompanies, detectConcepts, facetCounts, highlightTerms, permittedCompanies, searchIndex, sortResults,
+  applyFilters,
+  defaultCompanies,
+  detectConcepts,
+  facetCounts,
+  highlightTerms,
+  permittedCompanies,
+  searchIndex,
+  sortResults,
 } from "./engine";
 import { DEFAULT_QUERY, DEFAULT_TYPES, EXAMPLE_QUERIES } from "./mock";
 import type { Company, ResultType, SearchMode, SortKey, TimeRange } from "./types";
 import { useDocumentSearch } from "./useDocumentSearch";
 
+// ===== Hằng số =====
 const PAGE_SIZE = 6;
 const MORE_STEP = 10;
 const MODES: SearchMode[] = ["keyword", "semantic", "hybrid"];
 
+// ===== Component =====
 export const SearchPage = () => {
   const { message } = App.useApp();
   const navigate = useNavigate();
@@ -109,7 +122,9 @@ export const SearchPage = () => {
   const download = async (attachmentId: string) => {
     try {
       const { get_download_url } = await request<{ get_download_url: { url: string } }>(
-        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`, { a: attachmentId });
+        `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`,
+        { a: attachmentId },
+      );
       window.open(get_download_url.url, "_blank", "noopener");
     } catch (e) {
       message.error((e as Error).message);

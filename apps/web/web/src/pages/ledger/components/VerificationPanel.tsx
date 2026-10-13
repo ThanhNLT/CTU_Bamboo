@@ -2,22 +2,30 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FileText, LoaderCircle, Upload } from "lucide-react";
-import { useState, type DragEvent } from "react";
+// ===== Thư viện =====
+import { FileText, LoaderCircle, Upload } from "lucide-react"; // Lucide React
+import { useState, type DragEvent } from "react"; // React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { VerifyMode, VerifyResult } from "../types";
 import { formatBytes } from "../utils";
 import { VerificationResultCard } from "./VerificationResultCard";
 
+// ===== Hằng số =====
 const MODES: Array<{ key: VerifyMode; label: string }> = [
   { key: "code", label: "Theo mã hồ sơ" },
   { key: "file", label: "Tải tệp lên" },
 ];
 
+// ===== Component =====
 /** Vùng kéo-thả tệp. Bấm (hoặc Enter/Space khi đang focus) để mở hộp chọn tệp. */
 const Dropzone = ({
-  disabled, tall, onFile, onSampleDownload,
+  disabled,
+  tall,
+  onFile,
+  onSampleDownload,
 }: {
   disabled: boolean;
   tall: boolean;
@@ -67,7 +75,11 @@ const Dropzone = ({
       {tall && (
         <p className="mt-2 text-center text-[12px] text-muted">
           Chưa có tệp để thử?{" "}
-          <button type="button" onClick={onSampleDownload} className="font-semibold text-bamboo-700 underline-offset-2 hover:underline">
+          <button
+            type="button"
+            onClick={onSampleDownload}
+            className="font-semibold text-bamboo-700 underline-offset-2 hover:underline"
+          >
             Tải tệp mẫu HS-SEMI-2026-00125 v3
           </button>
         </p>
@@ -78,7 +90,16 @@ const Dropzone = ({
 
 /** Cột trái tab Đối soát: đối soát theo mã hồ sơ hoặc theo tệp, và khối kết quả. */
 export const VerificationPanel = ({
-  code, onCodeChange, busy, hashing, result, onVerifyCode, onVerifyFile, onSampleDownload, onCopy, onCertificate,
+  code,
+  onCodeChange,
+  busy,
+  hashing,
+  result,
+  onVerifyCode,
+  onVerifyFile,
+  onSampleDownload,
+  onCopy,
+  onCertificate,
 }: {
   code: string;
   onCodeChange: (c: string) => void;
@@ -108,7 +129,11 @@ export const VerificationPanel = ({
         <p className="mt-0.5 text-[12.5px] text-muted">So khớp tệp hoặc mã hồ sơ với bản niêm phong trên sổ cái</p>
       </header>
 
-      <div role="group" aria-label="Cách đối soát" className="inline-flex gap-0.5 self-start rounded-full bg-black/[0.045] p-1">
+      <div
+        role="group"
+        aria-label="Cách đối soát"
+        className="inline-flex gap-0.5 self-start rounded-full bg-black/[0.045] p-1"
+      >
         {MODES.map((m) => {
           const active = m.key === mode;
           return (
@@ -139,7 +164,10 @@ export const VerificationPanel = ({
         >
           <label className="relative block min-w-0 flex-1">
             <span className="sr-only">Mã hồ sơ cần đối soát</span>
-            <FileText className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
+            <FileText
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
             <input
               value={code}
               onChange={(e) => onCodeChange(e.target.value)}

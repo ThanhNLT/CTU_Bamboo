@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 export type AgentStatus = "active" | "paused" | "pending";
 
 export type GuardKey = "scope-guard" | "pii-guard" | "prompt-guard";

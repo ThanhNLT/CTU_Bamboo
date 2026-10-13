@@ -4,13 +4,16 @@
 
 """Hasura Actions gọi thẳng (không qua Hasura): kiểm tra phiên, tenant, lỗi nghiệp vụ."""
 
-import pytest
-from fastapi.testclient import TestClient
+# ===== Thư viện bên ngoài =====
+import pytest  # pytest
+from fastapi.testclient import TestClient  # FastAPI
 
+# ===== Module nội bộ =====
 from app import config, main
 from conftest import SETTINGS, ids, open_task, pr, status
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def client(database):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
@@ -18,19 +21,41 @@ def client(database):
         yield c
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant, secret=SETTINGS.actions_secret):
-    payload = {"action": {"name": name}, "input": args,
-               "session_variables": {"x-hasura-role": "user", "x-hasura-user-id": person,
-                                     "x-hasura-tenant-id": tenant}}
+    payload = {
+        "action": {"name": name},
+        "input": args,
+        "session_variables": {"x-hasura-role": "user", "x-hasura-user-id": person, "x-hasura-tenant-id": tenant},
+    }
     return client.post(f"/actions/{name}", json=payload, headers={"x-actions-secret": secret})
 
 
+# ===== Kiểm thử =====
 def test_sai_ma_bi_mat(client, conn, org):
     k = org
     i = ids(conn, "TDX", k("nv"))
-    resp = call(client, "submit_purchase_request", {"request_id": "00000000-0000-0000-0000-000000000000"},
-                i[k("nv")], i["TDX"], secret="sai")
+    resp = call(
+        client,
+        "submit_purchase_request",
+        {"request_id": "00000000-0000-0000-0000-000000000000"},
+        i[k("nv")],
+        i["TDX"],
+        secret="sai",
+    )
     assert resp.status_code == 401
+
+
+def test_payload_khong_hop_le(client):
+    """Body không phải JSON object: 400 có thông điệp, không phải lỗi 500."""
+    for body in (b"khong-phai-json", b"[1, 2]"):
+        resp = client.post(
+            "/actions/my_tenants",
+            content=body,
+            headers={"x-actions-secret": SETTINGS.actions_secret, "content-type": "application/json"},
+        )
+        assert resp.status_code == 400
+        assert resp.json()["extensions"]["code"] == "bad-request"
 
 
 def test_gui_duyet_va_duyet(client, conn, org):
@@ -62,8 +87,9 @@ def test_tu_choi_bat_buoc_ly_do(client, conn, org):
     resp = call(client, "act_on_task", {"task_id": task_id, "decision": "REJECT"}, i[k("tp")], i["TDX"])
     assert resp.status_code == 400
     assert resp.json()["extensions"]["code"] == "note-required"
-    resp = call(client, "act_on_task", {"task_id": task_id, "decision": "RETURN", "note": "Thiếu báo giá"},
-                i[k("tp")], i["TDX"])
+    resp = call(
+        client, "act_on_task", {"task_id": task_id, "decision": "RETURN", "note": "Thiếu báo giá"}, i[k("tp")], i["TDX"]
+    )
     assert resp.json()["status"] == "RETURNED"
 
 

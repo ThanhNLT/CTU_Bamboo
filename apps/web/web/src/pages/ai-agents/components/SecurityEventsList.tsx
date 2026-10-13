@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ShieldAlert, ShieldCheck } from "lucide-react";
+// ===== Thư viện =====
+import { ShieldAlert, ShieldCheck } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { GuardEvent } from "../types";
 
+// ===== Component =====
 /** Sự kiện rào chắn: chặn (đỏ) hoặc che dữ liệu nhạy cảm (vàng). */
 export const SecurityEventsList = ({ events, limit }: { events: GuardEvent[]; limit?: number }) => {
   const list = limit ? events.slice(0, limit) : events;
@@ -23,10 +27,15 @@ export const SecurityEventsList = ({ events, limit }: { events: GuardEvent[]; li
         const blocked = e.action === "blocked";
         return (
           <li key={e.id} className="flex items-start gap-2.5">
-            <ShieldAlert className={cn("mt-0.5 h-4 w-4 shrink-0", blocked ? "text-red-600" : "text-yellow-600")} aria-hidden />
+            <ShieldAlert
+              className={cn("mt-0.5 h-4 w-4 shrink-0", blocked ? "text-red-600" : "text-yellow-600")}
+              aria-hidden
+            />
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-medium text-ink">{e.title}</span>
-              <span className="block text-[11.5px] text-muted">{e.at} · {e.source}</span>
+              <span className="block text-[11.5px] text-muted">
+                {e.at} · {e.source}
+              </span>
             </span>
             <span
               className={cn(

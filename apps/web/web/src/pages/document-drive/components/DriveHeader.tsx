@@ -2,14 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Tooltip } from "antd";
-import { Upload } from "lucide-react";
-import { useRef } from "react";
+// ===== Thư viện =====
+import { Tooltip } from "antd"; // Ant Design
+import { Upload } from "lucide-react"; // Lucide React
+import { useRef } from "react"; // React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
+// ===== Component =====
 /** Tiêu đề trang + nút "Tải lên" (mở hộp chọn tệp). Tệp luôn thuộc một chứng từ: chỉ tải được khi đang mở thư mục. */
 export const DriveHeader = ({
-  onUpload, uploadDisabledReason,
+  onUpload,
+  uploadDisabledReason,
 }: {
   onUpload: (files: FileList) => void;
   uploadDisabledReason?: string;
@@ -30,7 +35,9 @@ export const DriveHeader = ({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={Boolean(uploadDisabledReason)}
-            className={uploadDisabledReason ? `${secondaryButtonClass} cursor-not-allowed opacity-60` : primaryButtonClass}
+            className={
+              uploadDisabledReason ? `${secondaryButtonClass} cursor-not-allowed opacity-60` : primaryButtonClass
+            }
           >
             <Upload className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Tải lên

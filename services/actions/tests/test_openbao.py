@@ -7,21 +7,26 @@
 Cần OpenBao đã được openbao-init khởi tạo: BAO_ADDR và BAO_KEYS_FILE (file khóa của openbao-init).
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
 
-import httpx
-import pytest
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import config, openbao_init, search
 from app.openbao import Bao, BaoError
 from conftest import _missing
 
+# ===== Hằng số & cấu hình =====
 ADDR = os.environ.get("BAO_ADDR", "")
 KEYS = pathlib.Path(os.environ.get("BAO_KEYS_FILE", "/openbao/keys/init.json"))
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def roles(tmp_path_factory) -> dict[str, pathlib.Path]:
     if not ADDR or not KEYS.exists():
@@ -31,12 +36,17 @@ def roles(tmp_path_factory) -> dict[str, pathlib.Path]:
     except httpx.HTTPError:
         _missing("OpenBao")
     out = tmp_path_factory.mktemp("bao")
-    files = {"actions": out / "actions.json", "bootstrap": out / "bootstrap.json", "search": out / "search.json",
-             "lakehouse": out / "lakehouse.json"}
+    files = {
+        "actions": out / "actions.json",
+        "bootstrap": out / "bootstrap.json",
+        "search": out / "search.json",
+        "lakehouse": out / "lakehouse.json",
+    }
     openbao_init.run(ADDR, KEYS, files, out / "s3.json", meili_config_path=out / "meili.toml")
     return {**files, "s3": out / "s3.json", "meili": out / "meili.toml"}
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def denied(fn) -> bool:
     try:
         fn()
@@ -45,13 +55,15 @@ def denied(fn) -> bool:
     return False
 
 
+# ===== Kiểm thử =====
 def test_chay_lai_khong_doi(roles):
     root = Bao(ADDR, json.loads(KEYS.read_text())["root_token"])
     before = root.request("GET", "secret/metadata/bms/seaweedfs")["data"]["current_version"]
     secret_id = json.loads(roles["actions"].read_text())["secret_id"]
     openbao_init.run(ADDR, KEYS, {"actions": roles["actions"]}, None)
-    assert root.request("GET", "secret/metadata/bms/seaweedfs")["data"]["current_version"] == before, \
+    assert root.request("GET", "secret/metadata/bms/seaweedfs")["data"]["current_version"] == before, (
         "khóa S3 chỉ sinh một lần"
+    )
     assert json.loads(roles["actions"].read_text())["secret_id"] == secret_id, "còn đăng nhập được thì giữ secret-id"
     assert oct(roles["actions"].stat().st_mode & 0o777) == "0o400"
 

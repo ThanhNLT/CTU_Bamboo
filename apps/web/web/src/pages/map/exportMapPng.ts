@@ -4,10 +4,13 @@
 
 // "Xuất ảnh": dựng lại bản đồ thành SVG (nền + điểm theo các lớp đang bật + chú giải) rồi vẽ sang PNG.
 // Không chụp DOM nên không cần thư viện ngoài; ảnh luôn ở toàn cảnh 1000×700 (2× cho màn hình nét).
+
+// ===== Module nội bộ =====
 import { BOUNDARIES, MINOR_ROADS, PARKS, RIVER, ROADS, VIEWBOX } from "./geometry";
 import { ATTRIBUTION, COMPANY_STYLE } from "./mock";
 import type { CompanyKey, MapSite } from "./types";
 
+// ===== Hàm tiện ích =====
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 const shape = (company: CompanyKey, x: number, y: number, r = 8) => {
@@ -31,19 +34,26 @@ export const buildMapSvg = (sites: MapSite[], showBoundary: boolean) => {
     const x = (s.x / 100) * w;
     const y = (s.y / 100) * h;
     const halo = s.alerts.some((a) => a.status === "critical")
-      ? `<circle cx="${x}" cy="${y}" r="20" fill="rgba(239,68,68,0.18)"/>` : "";
+      ? `<circle cx="${x}" cy="${y}" r="20" fill="rgba(239,68,68,0.18)"/>`
+      : "";
     // Điểm sát mép phải: đặt nhãn bên trái để không bị cắt.
     const left = s.x > 75;
     const label = `<text x="${left ? x - 16 : x + 16}" y="${y + 4}" font-size="13" fill="#1b231e" text-anchor="${left ? "end" : "start"}" font-family="Inter, Arial, sans-serif">${esc(s.name)}</text>`;
     if (s.cluster) {
-      return `<circle cx="${x}" cy="${y}" r="16" fill="${COMPANY_STYLE[s.company].color}" stroke="#fff" stroke-width="3"/>`
-        + `<text x="${x}" y="${y + 4}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter, Arial, sans-serif">${s.cluster.length}</text>`
-        + `<text x="${x + 22}" y="${y + 4}" font-size="13" fill="#1b231e" font-family="Inter, Arial, sans-serif">${esc(s.name)}</text>`;
+      return (
+        `<circle cx="${x}" cy="${y}" r="16" fill="${COMPANY_STYLE[s.company].color}" stroke="#fff" stroke-width="3"/>` +
+        `<text x="${x}" y="${y + 4}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter, Arial, sans-serif">${s.cluster.length}</text>` +
+        `<text x="${x + 22}" y="${y + 4}" font-size="13" fill="#1b231e" font-family="Inter, Arial, sans-serif">${esc(s.name)}</text>`
+      );
     }
     return halo + shape(s.company, x, y) + label;
   });
   const legend = (Object.keys(COMPANY_STYLE) as CompanyKey[])
-    .map((k, i) => shape(k, 34 + i * 120, h - 30, 6) + `<text x="${46 + i * 120}" y="${h - 26}" font-size="12" fill="#36413a" font-family="Inter, Arial, sans-serif">${COMPANY_STYLE[k].name}</text>`)
+    .map(
+      (k, i) =>
+        shape(k, 34 + i * 120, h - 30, 6) +
+        `<text x="${46 + i * 120}" y="${h - 26}" font-size="12" fill="#36413a" font-family="Inter, Arial, sans-serif">${COMPANY_STYLE[k].name}</text>`,
+    )
     .join("");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
