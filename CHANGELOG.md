@@ -29,6 +29,9 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - Giao diện: JavaScript, CSS nén gzip mức 9 sẵn lúc build, nginx gửi thẳng tệp `.gz` (`gzip_static`) thay vì nén lại 2 MB mỗi lượt tải.
 - Image Python biên dịch sẵn bytecode của mã dịch vụ.
 
+### Sửa
+- Trang đăng nhập thỉnh thoảng báo `403 Forbidden` (cổng API): cookie phiên của Keycloak là chuỗi ngẫu nhiên, đôi khi tình cờ chứa mẫu mà WAF coi là tấn công (tên hàm PHP, giá trị bọc nháy kép), khoảng 1/1500 lượt mở trang đăng nhập. WAF không kiểm các cookie phiên Keycloak nữa (Keycloak tự kiểm chúng); cookie khác, tham số và nội dung vẫn qua OWASP CRS như cũ.
+
 ## [0.3.0] - 2026-10-05
 
 Tìm kiếm toàn văn, mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, đăng nhập được sau khi nâng cấp. Gồm cả các sửa lỗi ghi ở mục 0.2.1 trước đây (chưa từng phát hành riêng).
