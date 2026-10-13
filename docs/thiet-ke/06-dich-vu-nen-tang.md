@@ -284,7 +284,7 @@ PostgreSQL bms (wal_level=logical, publication bms_cdc)
 
 | Dịch vụ | Image | Ghi chú |
 |---|---|---|
-| `kafka` | `apache/kafka:4.3.1` | KRaft một node (broker + controller), `kafka:9092`, chỉ mạng nội bộ, không xác thực. Giữ 7 ngày, heap 512 MB. Dữ liệu ở volume `kafka-data` |
+| `kafka` | `bamboo-kafka` (`apache/kafka:4.3.1` + JAAS, `start.sh`) | KRaft một node (broker + controller), `kafka:9092` SASL_PLAINTEXT (SCRAM-SHA-512) chỉ mạng nội bộ; controller và listener `LOCAL` (`localhost:9094`) chỉ trong container. Giữ 7 ngày, heap 512 MB. Dữ liệu ở volume `kafka-data` |
 | `debezium` | `quay.io/debezium/server:3.7.0.Final` | Connector PostgreSQL (`pgoutput`), cấu hình bằng biến `DEBEZIUM_*` trong `docker-compose.yml`. Vị trí đọc ở volume `debezium-data`; xóa volume thì chụp ảnh lại toàn bộ |
 
 ### Sự kiện
@@ -300,14 +300,27 @@ PostgreSQL bms (wal_level=logical, publication bms_cdc)
 
 - PostgreSQL: `max_slot_wal_keep_size=1GB`. Debezium dừng lâu hơn mức WAL này thì slot bị vô hiệu; xóa volume `debezium-data` và slot (`SELECT pg_drop_replication_slot('bms_debezium')`) để chụp ảnh lại.
 - Độ trễ slot: `SELECT slot_name, active, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)) FROM pg_replication_slots`.
-- Xem topic: `docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list`; đọc sự kiện: `docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic bms.proc.purchase_request --from-beginning`.
-- Kafka → Iceberg: mục 8. Còn: SASL/ACL khi ứng dụng Tầng 3 ghi vào Kafka.
+- Xem topic (listener `LOCAL` trong container, không cần mật khẩu): `docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9094 --list`; đọc sự kiện: `docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9094 --topic bms.proc.purchase_request --from-beginning`.
+- Kafka → Iceberg: mục 8.
+
+### Xác thực và ACL (ADR #45)
+
+| Tài khoản SCRAM | Mật khẩu | ACL (tiền tố topic) |
+|---|---|---|
+| `debezium` | `DEBEZIUM_KAFKA_PASSWORD` | `bms.`, `__debezium-heartbeat`: Write, Create, Describe |
+| `lakehouse` | `LAKEHOUSE_KAFKA_PASSWORD` (OpenBao `bms/kafka-lakehouse` cho `lakehouse-sink`) | `bms.`: Read, Describe (tự gán partition, không dùng consumer group) |
+
+- `allow.everyone.if.no.acl.found=false`: tài khoản mới hay topic ngoài tiền tố đều bị từ chối. `start.sh` đặt lại mật khẩu và ACL mỗi lần khởi động; đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (Kafka, Debezium, `openbao-init`, `lakehouse-sink` nhận giá trị mới).
+- Mật khẩu không được chứa `,` `[` `]` `=` `"` `\` (cú pháp của `kafka-configs` và JAAS); Kafka dừng ngay với thông báo rõ nếu vi phạm.
+- Thêm dịch vụ đọc / ghi Kafka: thêm tài khoản và ACL trong `platform/kafka/start.sh`, mật khẩu trong `.env`.
+- Xem ACL: `docker compose exec kafka /opt/kafka/bin/kafka-acls.sh --bootstrap-server localhost:9094 --list`.
 
 ### Lệnh
 
 ```bash
 make test-db T=bms_120              # publication, quyền của bamboo_cdc
-make test-actions T=tests/test_cdc.py   # nhịp tim đi hết CSDL → Debezium → Kafka; topic nghiệp vụ; không lộ audit
+make test-actions T=tests/test_cdc.py   # nhịp tim đi hết CSDL → Debezium → Kafka; topic nghiệp vụ; không lộ audit;
+                                        # client không xác thực bị từ chối, tài khoản chỉ đọc không ghi được
 ```
 
 ## 8. Lakehouse bronze – Kafka → Iceberg (ADR #39)
@@ -360,8 +373,8 @@ Trino (catalog lakehouse = JDBC catalog Iceberg của lakehouse-sink) ─► lak
 
 | Dịch vụ | Image | Ghi chú |
 |---|---|---|
-| `trino` | `bamboo-trino` (`trinodb/trino:483` + cấu hình) | Một node, heap 1 GB, `127.0.0.1:8085` (giao diện web, `trino` CLI). Catalog `/etc/trino/bms-catalog/lakehouse.properties` do `openbao-init` ghi (mật khẩu CSDL `lakehouse`, khóa S3 `bms-lakehouse`) |
-| `trino-init` | cùng image | Chạy `platform/trino/silver.sql` rồi thoát |
+| `trino` | `bamboo-trino` (`trinodb/trino:483` + cấu hình, `rules.json`) | Một node, heap 1 GB, HTTPS `trino:8443` (máy dev: `https://127.0.0.1:8085`, giao diện web). Catalog `/etc/trino/bms-catalog/lakehouse.properties` và bí mật `/etc/trino/secrets` (chứng chỉ TLS, `password.db`, khóa ký nội bộ) do `openbao-init` ghi |
+| `trino-init` | cùng image | Đăng nhập `bms-admin` qua HTTPS, chạy `platform/trino/silver.sql` rồi thoát |
 
 ### View silver
 
@@ -370,12 +383,33 @@ Trino (catalog lakehouse = JDBC catalog Iceberg của lakehouse-sink) ─► lak
 - Ánh xạ kiểu: `uuid` → `uuid`; `numeric(p,s)` → `decimal(p,s)` (không có độ chính xác → `double`); số nguyên → `smallint/integer/bigint`; `date` → `date`; `timestamptz` → `timestamp(6) with time zone`; mảng → `array(varchar)`; `jsonb`, `ltree`, khoảng thời gian (`tstzrange`), `text` → `varchar`.
 - Cột sinh tự động (`GENERATED ALWAYS … STORED`, ví dụ `proc.purchase_request_item.amount`) không có trong silver: PostgreSQL 17 không đưa cột này vào replication logic.
 - Độ trễ từ lúc ghi CSDL tới silver: khoảng 30 giây (lô của lakehouse-sink).
-- Đổi cấu trúc CSDL (migration mới): `make trino-sql` sinh lại `silver.sql`; kiểm thử `test_tep_sql_khop_csdl` báo lỗi nếu quên.
+- Đổi cấu trúc CSDL (migration mới): `make trino-sql` sinh lại `silver.sql` và `rules.json`; kiểm thử `test_tep_sql_khop_csdl`, `test_quyen_trino_khop_csdl` báo lỗi nếu quên.
+
+### Xác thực và quyền theo tenant (ADR #45)
+
+```text
+trình duyệt ─► Hasura Action lakehouse_* ─► actions (kiểm data.lakehouse.read ở đơn vị gốc của tenant)
+   └─ HTTPS 8443, đăng nhập bms-actions, X-Trino-User: t_<tenant_id> ─► Trino
+        rules.json: t_<uuid> chỉ SELECT view silver có cột tenant + row filter tenant_id = <uuid trong tên>
+```
+
+| Tài khoản | Dùng cho | Quyền |
+|---|---|---|
+| `bms-admin` | `trino-init`, quản trị trên máy dev (`make trino-password`) | Toàn quyền |
+| `bms-actions` | dịch vụ actions (OpenBao `bms/trino-actions`) | Không đọc được gì; chỉ mượn danh `t_<tenant_id>` |
+| `t_<tenant_id>` (mượn danh) | truy vấn thay người dùng của tenant | `SELECT` view silver có cột tenant, row filter theo tenant; không đọc bronze, `system`, `core_permission`, `core_tenant_relation` |
+
+- TLS: chứng chỉ `CN=trino` (SAN `trino`, `localhost`, `127.0.0.1`) do CA nội bộ của OpenBao (`pki/`) cấp, hạn 1 năm, `openbao-init` cấp lại khi còn dưới 30 ngày; client tin CA ở `/run/bms/trino-ca.pem` (actions) hoặc `/etc/trino/secrets/ca.pem`.
+- Cổng HTTP 8080 không nhận mật khẩu; chỉ giao tiếp nội bộ (khóa ký `shared-secret`) và `/v1/info` của healthcheck.
+- Mật khẩu do OpenBao sinh một lần; quay vòng: ghi mật khẩu mới vào `secret/bms/trino-actions` (hoặc `trino-admin`) rồi `docker compose up -d openbao-init` và khởi động lại `actions`. Trino tự đọc lại `password.db` sau vài giây.
 
 ### Truy vấn
 
 ```bash
-docker compose exec trino trino --catalog lakehouse --schema silver
+make trino-password     # mật khẩu bms-admin; giao diện web https://127.0.0.1:8085 (chứng chỉ của CA nội bộ)
+docker compose exec trino bash -c 'TRINO_PASSWORD=$(cat /etc/trino/secrets/admin.password) trino \
+  --server https://localhost:8443 --truststore-path /etc/trino/secrets/ca.pem --user bms-admin --password \
+  --catalog lakehouse --schema silver'
 ```
 
 ```sql
@@ -397,7 +431,8 @@ ALTER TABLE lakehouse.bronze.proc_purchase_request EXECUTE optimize;
 
 ```bash
 make trino-sql                                  # sinh lại silver.sql sau migration và áp dụng
-make test-actions T=tests/test_lakehouse_silver.py   # kiểu cột, tệp SQL khớp CSDL, silver khớp CSDL nguồn qua cả đường CDC
+make test-actions T=tests/test_lakehouse_silver.py   # kiểu cột, tệp SQL và rules.json khớp CSDL, silver khớp CSDL nguồn
+make test-actions T=tests/test_lakehouse_query.py    # đăng nhập, mượn danh, row filter theo tenant, Action Dịch vụ dữ liệu
 ```
 
 ## 10. Che dữ liệu cá nhân – Microsoft Presidio (ADR #43)

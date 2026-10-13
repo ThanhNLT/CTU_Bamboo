@@ -44,6 +44,7 @@ jobs:
           - { name: openbao, context: platform/openbao, file: platform/openbao/Dockerfile, args: "" }
           - { name: gateway, context: platform/apisix, file: platform/apisix/Dockerfile, args: "" }
           - { name: trino, context: platform/trino, file: platform/trino/Dockerfile, args: "" }
+          - { name: kafka, context: platform/kafka, file: platform/kafka/Dockerfile, args: "" }
           - { name: web, context: apps/web/web, file: apps/web/web/Dockerfile, args: "" }
     steps:
       - uses: actions/checkout@v7

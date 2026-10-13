@@ -468,6 +468,26 @@ class Seeder:
                                      str(uid("TDX", "lot", lot_no)), pr_id).fetchone()
         self.x("SELECT ic.confirm_order(%s, %s, %s)", order_id, self._holder(tenant, confirmer), json.dumps(lot_lines))
 
+    # --- Dữ liệu Lakehouse (ADR #45): chạy cả ở bản đã cài, bỏ qua phần đã có -----
+
+    def lakehouse_demo(self):
+        """Vai trò PHAN_TICH_DU_LIEU (xem tập dữ liệu Lakehouse) cho CDO của Tập đoàn X và Kế hoạch tổng hợp BVX."""
+        analysts = {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]}
+        for t in TENANTS:
+            tid = self.tenant_id(t.code)
+            role = uid(t.code, "role", "PHAN_TICH_DU_LIEU")
+            if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
+                self.x("""INSERT INTO core.role (tenant_id, id, code, name)
+                          VALUES (%s, %s, 'PHAN_TICH_DU_LIEU', 'Phân tích dữ liệu')""", tid, role)
+            self.x("""INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                      VALUES (%s, %s, 'data.lakehouse.read') ON CONFLICT DO NOTHING""", tid, role)
+            for seat in analysts.get(t.code, []):
+                position = uid(t.code, "position", seat)
+                if not self.x("SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", role,
+                              position).fetchone():
+                    self.x("""INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope, valid_period)
+                              VALUES (%s, %s, %s, 'TENANT', tstzrange(%s, NULL))""", tid, role, position, START)
+
     def run(self):
         for t in TENANTS:
             self.x("INSERT INTO core.tenant (id, code, name) VALUES (%s, %s, %s)", self.tenant_id(t.code), t.code, t.name)
@@ -489,17 +509,19 @@ class Seeder:
         self.purchase_requests()
         self.hr_demo()
         self.ic_demo()
+        self.lakehouse_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
     """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự, đơn
-    hàng nội bộ)."""
+    hàng nội bộ, vai trò xem Lakehouse)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
             seeder.x("SET CONSTRAINTS ALL IMMEDIATE")
             seeder.hr_demo()
             seeder.ic_demo()
+            seeder.lakehouse_demo()
         return False
     with conn.transaction():
         Seeder(conn).run()

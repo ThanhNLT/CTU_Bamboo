@@ -21,7 +21,8 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from psycopg_pool import ConnectionPool
 
-from . import admin, attachments, audit, auth, config, forms, hr, hr_account, ic, pii_guard, search
+from . import (admin, attachments, audit, auth, config, forms, hr, hr_account, ic, lakehouse_query, pii_guard, search,
+               trino)
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
@@ -131,6 +132,7 @@ HANDLERS = {
     **audit.HANDLERS,
     "check_pii": pii_guard.check_pii,
     **admin.HANDLERS,
+    **lakehouse_query.HANDLERS,
 }
 
 
@@ -174,7 +176,8 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
         storage=Storage(settings), clamav_host=settings.clamav_host, clamav_port=settings.clamav_port,
         search=search.Meili(settings.meili_url, settings.meili_search_key, timeout=5.0),
         search_index=settings.meili_index, gotenberg_url=settings.gotenberg_url, pii=_pii_cipher(),
-        users=_keycloak_users(settings))
+        users=_keycloak_users(settings),
+        lakehouse=trino.client(settings) if settings.trino_password else None)
     verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
                                                  set(settings.keycloak_clients))
 

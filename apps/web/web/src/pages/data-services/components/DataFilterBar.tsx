@@ -4,19 +4,18 @@
 
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
-import { DOMAIN_LABEL, DOMAIN_TOTALS } from "../mock";
 import type { DomainFilter } from "../types";
 
-const DOMAINS: DomainFilter[] = ["all", "process", "production", "health", "security"];
-
-/** Ô tìm tập dữ liệu/cột + chip lĩnh vực (kèm tổng số trong danh mục). */
+/** Ô tìm tập dữ liệu/cột + chip lĩnh vực (kèm số tập dữ liệu của tenant trong lĩnh vực đó). */
 export const DataFilterBar = ({
-  query, onQueryChange, domain, onDomainChange,
+  query, onQueryChange, domain, onDomainChange, domains, total,
 }: {
   query: string;
   onQueryChange: (q: string) => void;
   domain: DomainFilter;
   onDomainChange: (d: DomainFilter) => void;
+  domains: Array<{ key: string; count: number }>;
+  total: number;
 }) => (
   <div className="flex flex-col gap-3 md:flex-row md:items-center">
     <SearchInput
@@ -27,21 +26,21 @@ export const DataFilterBar = ({
       label="Tìm tập dữ liệu theo tên, bảng hoặc cột"
     />
     <div className="flex flex-wrap gap-2" role="group" aria-label="Lĩnh vực">
-      {DOMAINS.map((d) => {
-        const active = d === domain;
+      {[{ key: "all", count: total }, ...domains].map((d) => {
+        const active = d.key === domain;
         return (
           <button
-            key={d}
+            key={d.key}
             type="button"
             aria-pressed={active}
-            onClick={() => onDomainChange(d)}
+            onClick={() => onDomainChange(d.key)}
             className={cn(
               "h-7 rounded-full px-3 text-[12px] font-medium transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
               active ? "bg-bamboo-100 text-bamboo-800" : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
             )}
           >
-            {d === "all" ? "Tất cả" : DOMAIN_LABEL[d]} · <span className="tabular-nums">{DOMAIN_TOTALS[d]}</span>
+            {d.key === "all" ? "Tất cả" : d.key} · <span className="tabular-nums">{d.count}</span>
           </button>
         );
       })}

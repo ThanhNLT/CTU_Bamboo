@@ -5894,6 +5894,63 @@
       "comment": "Dữ liệu trước/sau của dòng nhật ký kiểm toán, đã che dữ liệu cá nhân (cần audit.read, ADR #43)"
     },
     {
+      "name": "lakehouse_datasets",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/lakehouse_datasets",
+        "arguments": [],
+        "output_type": "[LakehouseDataset!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tập dữ liệu tầng silver của tenant (cần data.lakehouse.read, ADR #45)"
+    },
+    {
+      "name": "lakehouse_preview",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/lakehouse_preview",
+        "arguments": [
+          {
+            "name": "dataset",
+            "type": "String!"
+          }
+        ],
+        "output_type": "LakehousePreview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)"
+    },
+    {
       "name": "check_pii",
       "definition": {
         "kind": "synchronous",
@@ -7092,6 +7149,73 @@
           {
             "name": "new_data",
             "type": "jsonb"
+          },
+          {
+            "name": "masked",
+            "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "LakehouseColumn",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "type",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "LakehouseDataset",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "label",
+            "type": "String!"
+          },
+          {
+            "name": "domain",
+            "type": "String!"
+          },
+          {
+            "name": "columns",
+            "type": "[LakehouseColumn!]!"
+          }
+        ]
+      },
+      {
+        "name": "LakehousePreview",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "label",
+            "type": "String!"
+          },
+          {
+            "name": "domain",
+            "type": "String!"
+          },
+          {
+            "name": "columns",
+            "type": "[LakehouseColumn!]!"
+          },
+          {
+            "name": "total_rows",
+            "type": "Int!"
+          },
+          {
+            "name": "rows",
+            "type": "[jsonb!]!"
           },
           {
             "name": "masked",
