@@ -101,7 +101,7 @@ export const IMPORT_HISTORY: ImportRecord[] = [
     template: "Biên bản bàn giao (BM-BG-01)",
     at: "Hôm nay 08:41",
     result: "HS-SEMI-2026-00123",
-    to: "/d/ledger?code=HS-SEMI-2026-00123",
+    to: "/d/ledger?doc=HS-SEMI-2026-00123",
   },
   {
     id: "ih-2",

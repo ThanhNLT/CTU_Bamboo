@@ -55,7 +55,7 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
     .getByRole("link", { name: new RegExp(TITLE) })
     .first()
     .click();
-  await expect(page).toHaveURL(/\/p\/tasks\?code=/);
+  await expect(page).toHaveURL(/\/p\/tasks\?doc=/);
   const detail = page.locator("header", { has: page.getByRole("heading", { name: TITLE }) });
   await expect(detail).toBeVisible();
   await expect(page.getByText(/Chứng từ không có tệp đính kèm/)).toBeVisible();
