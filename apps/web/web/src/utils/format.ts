@@ -17,6 +17,12 @@ export const formatAgo = (iso: string, now = dayjs()) => {
   if (now.startOf("day").diff(t.startOf("day"), "day") === 1) return "Hôm qua";
   return t.format("DD/MM/YYYY");
 };
+/**
+ * Mốc thời gian dạng văn bản của PostgreSQL ("2026-10-01 05:00:00+00", cận của tstzrange) → dayjs.
+ * Safari/Firefox không đọc được dấu cách thay cho "T" và múi giờ rút gọn "+00", nên chuẩn hóa về ISO-8601.
+ */
+export const parsePgTimestamp = (value: string) =>
+  dayjs(value.trim().replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00"));
 export const formatDay = (value?: string | null) => (value ? dayjs(value).format("DD/MM/YYYY") : "—");
 
 export const STEP_STATUS: Record<string, string> = {

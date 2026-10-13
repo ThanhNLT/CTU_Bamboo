@@ -10,6 +10,7 @@ import { LockOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
+import { parsePgTimestamp } from "../../utils/format";
 import { OB_INSERT, OB_OPTIONS, OB_SAVE_PRIVATE, OB_SUBMIT, OB_UPDATE } from "./queries";
 import { CONTRACT_TYPE, GENDER, type Onboarding } from "./types";
 import { suggestUsername } from "./username";
@@ -33,7 +34,7 @@ type Options = {
 // tstzrange dạng ["2025-01-01 00:00:00+07",) → mốc kết thúc (null: không thời hạn).
 const rangeEnd = (range: string): Dayjs | null => {
   const upper = range.slice(range.indexOf(",") + 1, -1).replace(/"/g, "").trim();
-  return upper ? dayjs(upper) : null;
+  return upper ? parsePgTimestamp(upper) : null;
 };
 
 type Props = {

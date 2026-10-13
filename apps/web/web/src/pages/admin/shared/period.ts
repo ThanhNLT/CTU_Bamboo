@@ -4,6 +4,7 @@
 
 // Khoảng hiệu lực (tstzrange của PostgreSQL, Hasura trả dạng chuỗi) → ngày bắt đầu / kết thúc.
 import dayjs from "dayjs";
+import { parsePgTimestamp } from "../../../utils/format";
 
 export type Period = { from?: string; to?: string; active: boolean; ended: boolean };
 
@@ -11,8 +12,8 @@ export type Period = { from?: string; to?: string; active: boolean; ended: boole
 export const parsePeriod = (range?: string | null): Period => {
   const m = /^[[(]"?([^",]*)"?,"?([^",)\]]*)"?[)\]]$/.exec(range ?? "");
   if (!m) return { active: true, ended: false };
-  const from = m[1] ? dayjs(m[1]) : undefined;
-  const to = m[2] ? dayjs(m[2]) : undefined;
+  const from = m[1] ? parsePgTimestamp(m[1]) : undefined;
+  const to = m[2] ? parsePgTimestamp(m[2]) : undefined;
   const now = dayjs();
   return {
     from: from?.toISOString(),

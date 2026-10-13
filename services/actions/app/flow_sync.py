@@ -109,7 +109,11 @@ def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: s
 
 
 def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50) -> int:
-    """Đối chiếu các lần gửi duyệt đang được đánh dấu. Trả về số dòng đã xử lý."""
+    """Đối chiếu các lần gửi duyệt đang được đánh dấu. Trả về số dòng đối chiếu thành công.
+
+    Dòng lỗi không được đếm: vòng `while run_once(...)` dừng lại và chờ thông báo mới hoặc `idle_seconds`
+    rồi mới thử lại, thay vì thử liên tục hết MAX_ATTEMPTS lần trong vài giây khi Flowable tạm thời không
+    truy cập được (hết lượt thử thì dòng bị bỏ dở tới lần đánh dấu sau)."""
     rows = conn.execute(
         """SELECT entity_type, entity_id, round, process_instance_id, updated_at
            FROM wf.flow_sync WHERE dirty AND attempts < %s
@@ -117,6 +121,7 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
         (MAX_ATTEMPTS, limit),
     ).fetchall()
     conn.commit()
+    done = 0
     for row in rows:
         key = (row["entity_type"], row["entity_id"], row["round"])
         try:
@@ -131,6 +136,7 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
                 (process_id, finished, row["updated_at"], *key),
             )
             conn.commit()
+            done += 1
         except Exception as exc:  # noqa: BLE001 - ghi lỗi, thử lại ở lần sau
             conn.rollback()
             log.warning("flow-sync %s lỗi: %s", key, exc)
@@ -140,7 +146,7 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
                 (str(exc)[:1000], *key),
             )
             conn.commit()
-    return len(rows)
+    return done
 
 
 def _account_service(settings: config.Settings):

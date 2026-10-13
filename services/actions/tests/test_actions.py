@@ -33,6 +33,15 @@ def test_sai_ma_bi_mat(client, conn, org):
     assert resp.status_code == 401
 
 
+def test_payload_khong_hop_le(client):
+    """Body không phải JSON object: 400 có thông điệp, không phải lỗi 500."""
+    for body in (b"khong-phai-json", b"[1, 2]"):
+        resp = client.post("/actions/my_tenants", content=body,
+                           headers={"x-actions-secret": SETTINGS.actions_secret, "content-type": "application/json"})
+        assert resp.status_code == 400
+        assert resp.json()["extensions"]["code"] == "bad-request"
+
+
 def test_gui_duyet_va_duyet(client, conn, org):
     k = org
     i = ids(conn, "TDX", k("nv"), k("tp"))

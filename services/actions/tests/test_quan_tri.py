@@ -173,6 +173,32 @@ def test_tep_mau(client, admin):
     assert sheet["A1"].value == "Mã nhà cung cấp *"
 
 
+def test_tep_mau_nhap_lai_duoc(client, conn, admin):
+    """Tệp mẫu tải về (tiêu đề cột bắt buộc có dấu " *") điền thêm dòng rồi nhập lại được ngay."""
+    k = admin["k"]
+    r = call(client, "admin_import_template", {"kind": "partner"}, admin[k("gd")], admin["TDX"]).json()
+    book = load_workbook(io.BytesIO(base64.b64decode(r["content_base64"])))
+    book.active.delete_rows(2)  # bỏ dòng ví dụ
+    book.active.append([k("NCC"), "Nhà cung cấp từ tệp mẫu", 101234567])  # mã số thuế gõ dạng số trong Excel
+    out = io.BytesIO()
+    book.save(out)
+    args = {"kind": "partner", "file_name": r["file_name"], "content_base64": base64.b64encode(out.getvalue()).decode(),
+            "dry_run": False}
+    r = call(client, "admin_import", args, admin[k("gd")], admin["TDX"]).json()
+    assert r["applied"] and r["errors"] == [], r
+    assert conn.execute("SELECT tax_code FROM mdm.partner WHERE code = %s", (k("NCC"),)).fetchone()["tax_code"] \
+        == "101234567"
+
+
+def test_nhap_csv_mot_cot(client, admin):
+    """CSV chỉ một cột (không đoán được dấu phân cách) báo thiếu cột, không lỗi máy chủ."""
+    content = base64.b64encode("Mã nhà cung cấp\nNCC1\n".encode()).decode()
+    r = call(client, "admin_import", {"kind": "partner", "file_name": "ncc.csv", "content_base64": content},
+             admin[admin["k"]("gd")], admin["TDX"])
+    assert r.status_code == 400
+    assert "Thiếu cột" in r.json()["message"]
+
+
 def test_tai_khoan_chua_cau_hinh(client, admin):
     r = call(client, "create_person_accounts",
              {"accounts": [{"person_id": admin[admin["k"]("nv")], "username": "x"}]}, admin[admin["k"]("gd")],

@@ -88,6 +88,8 @@ def _bool(value) -> bool:
 def _date(value, label: str) -> date | None:
     if value in (None, ""):
         return None
+    if isinstance(value, datetime):  # ô ngày của Excel (openpyxl trả datetime)
+        return value.date()
     if isinstance(value, date):
         return value
     text = str(value).strip()[:10]
@@ -574,8 +576,16 @@ MAX_IMPORT_BYTES = 2 * 1024 * 1024
 MAX_IMPORT_ROWS = 5000
 
 
-def _fold(text: str) -> str:
-    return " ".join(str(text or "").strip().lower().split())
+def _fold(text) -> str:
+    # Tiêu đề cột bắt buộc của tệp mẫu có dấu " *" ở cuối: bỏ đi để tệp mẫu nhập lại được.
+    return " ".join(str(text or "").strip().lower().split()).removesuffix(" *").rstrip()
+
+
+def _cell(value):
+    """Ô Excel kiểu số nguyên (mã nhân viên 1001, mã số thuế...) đọc thành float 1001.0: trả về int."""
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
 
 
 def _read_rows(kind: str, file_name: str, content: bytes) -> list[dict]:
@@ -586,10 +596,13 @@ def _read_rows(kind: str, file_name: str, content: bytes) -> list[dict]:
             sheet = load_workbook(io.BytesIO(content), read_only=True, data_only=True).worksheets[0]
         except Exception as exc:  # noqa: BLE001 - tệp hỏng, không phải Excel
             raise ActionError("Không đọc được tệp Excel") from exc
-        table = [["" if v is None else v for v in row] for row in sheet.iter_rows(values_only=True)]
+        table = [["" if v is None else _cell(v) for v in row] for row in sheet.iter_rows(values_only=True)]
     elif file_name.lower().endswith((".csv", ".txt")):
         text = content.decode("utf-8-sig", errors="replace")
-        dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t") if text.strip() else csv.excel
+        try:
+            dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t")
+        except csv.Error:  # một cột, hoặc không đoán được dấu phân cách: dùng dấu phẩy
+            dialect = csv.excel
         table = list(csv.reader(io.StringIO(text), dialect))
     else:
         raise ActionError("Chỉ nhận tệp .xlsx hoặc .csv")

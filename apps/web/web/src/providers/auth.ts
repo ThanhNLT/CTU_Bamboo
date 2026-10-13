@@ -8,8 +8,10 @@ import { keycloak } from "../auth/keycloak";
 
 export const authProvider: AuthProvider = {
   login: async () => {
+    // Chỉ nhận đường dẫn nội bộ ("/p/tasks"): "@evil.com" hay "//evil.com" ghép sau origin sẽ thành địa chỉ ngoài.
     const to = new URLSearchParams(window.location.search).get("to");
-    await keycloak.login({ redirectUri: to ? `${window.location.origin}${to}` : window.location.origin });
+    const path = to && /^\/(?![/\\])/.test(to) ? to : "";
+    await keycloak.login({ redirectUri: `${window.location.origin}${path}` });
     return { success: true };
   },
   logout: async () => {
