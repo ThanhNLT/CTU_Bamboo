@@ -5406,6 +5406,212 @@
         {
           "table": {
             "schema": "wf",
+            "name": "process_model"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "process_versions",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "process_version"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "model_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "sandbox_runs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "sandbox_run"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "model_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "wf",
+            "name": "process_version"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "model",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "process_model"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "model_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "wf",
+            "name": "sandbox_run"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "model",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "process_model"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "model_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "wf",
             "name": "task"
           },
           "object_relationships": [
@@ -5953,6 +6159,219 @@
         }
       ],
       "comment": "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)"
+    },
+    {
+      "name": "process_models",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/process_models",
+        "arguments": [],
+        "output_type": "ProcessModelList!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thiết kế quy trình: danh sách quy trình BPMN của tenant (ADR #47)"
+    },
+    {
+      "name": "process_model_get",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/process_model_get",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProcessModelDetail!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Bản nháp BPMN, biểu mẫu, kết quả kiểm tra, phiên bản phát hành, lần chạy thử"
+    },
+    {
+      "name": "process_model_validate",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/process_model_validate",
+        "arguments": [
+          {
+            "name": "bpmn_xml",
+            "type": "String!"
+          },
+          {
+            "name": "forms",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "[ProcessIssue!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Kiểm tra cú pháp và luật của một bản BPMN"
+    },
+    {
+      "name": "process_model_save",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_model_save",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid"
+          },
+          {
+            "name": "process_key",
+            "type": "String!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "description",
+            "type": "String"
+          },
+          {
+            "name": "bpmn_xml",
+            "type": "String!"
+          },
+          {
+            "name": "forms",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "ProcessSaveResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tạo / lưu bản nháp quy trình (cần wf.process.design)"
+    },
+    {
+      "name": "process_model_publish",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_model_publish",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "note",
+            "type": "String"
+          }
+        ],
+        "output_type": "ProcessPublishResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Phát hành bản nháp thành phiên bản bất biến (không còn lỗi)"
+    },
+    {
+      "name": "process_sandbox_run",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_sandbox_run",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "variables",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "SandboxRunResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 120
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chạy thử bản nháp trên Flowable với khóa sandbox riêng, ghi các bước đã đi qua"
     },
     {
       "name": "ledger_overview",
@@ -7525,6 +7944,223 @@
           {
             "name": "masked",
             "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessIssue",
+        "fields": [
+          {
+            "name": "level",
+            "type": "String!"
+          },
+          {
+            "name": "message",
+            "type": "String!"
+          },
+          {
+            "name": "element_id",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "ProcessModelSummary",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "process_key",
+            "type": "String!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "description",
+            "type": "String"
+          },
+          {
+            "name": "updated_at",
+            "type": "String!"
+          },
+          {
+            "name": "published_version",
+            "type": "Int"
+          },
+          {
+            "name": "last_run_status",
+            "type": "String"
+          },
+          {
+            "name": "runs",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessModelList",
+        "fields": [
+          {
+            "name": "can_design",
+            "type": "Boolean!"
+          },
+          {
+            "name": "models",
+            "type": "[ProcessModelSummary!]!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessVersion",
+        "fields": [
+          {
+            "name": "version",
+            "type": "Int!"
+          },
+          {
+            "name": "sha256",
+            "type": "String!"
+          },
+          {
+            "name": "note",
+            "type": "String"
+          },
+          {
+            "name": "published_by",
+            "type": "String!"
+          },
+          {
+            "name": "published_at",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "SandboxRun",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "steps",
+            "type": "jsonb!"
+          },
+          {
+            "name": "variables",
+            "type": "jsonb"
+          },
+          {
+            "name": "error",
+            "type": "String"
+          },
+          {
+            "name": "started_by",
+            "type": "String"
+          },
+          {
+            "name": "started_at",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "ProcessModelDetail",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "process_key",
+            "type": "String!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "description",
+            "type": "String"
+          },
+          {
+            "name": "bpmn_xml",
+            "type": "String!"
+          },
+          {
+            "name": "forms",
+            "type": "jsonb!"
+          },
+          {
+            "name": "issues",
+            "type": "[ProcessIssue!]!"
+          },
+          {
+            "name": "versions",
+            "type": "[ProcessVersion!]!"
+          },
+          {
+            "name": "runs",
+            "type": "[SandboxRun!]!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessSaveResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "issues",
+            "type": "[ProcessIssue!]!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessPublishResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "version",
+            "type": "Int!"
+          },
+          {
+            "name": "sha256",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "SandboxRunResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "error",
+            "type": "String"
+          },
+          {
+            "name": "steps",
+            "type": "jsonb!"
           }
         ]
       },

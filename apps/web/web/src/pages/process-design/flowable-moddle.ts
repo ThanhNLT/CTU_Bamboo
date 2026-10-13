@@ -1,0 +1,63 @@
+// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
+// Mô tả moddle tối thiểu cho thuộc tính Flowable (xmlns:flowable="http://flowable.org/bpmn") mà trang dùng: người
+// nhận, nhóm, hạn xử lý, biểu mẫu của tác vụ người dùng; cách thực thi của tác vụ dịch vụ. bpmn-js đọc / ghi các
+// thuộc tính này như thuộc tính XML của phần tử.
+
+// ===== Hằng số =====
+export const flowableModdle = {
+  name: "Flowable",
+  uri: "http://flowable.org/bpmn",
+  prefix: "flowable",
+  xml: { tagAlias: "lowerCase" },
+  types: [
+    {
+      name: "UserTaskProps",
+      extends: ["bpmn:UserTask"],
+      properties: [
+        { name: "assignee", isAttr: true, type: "String" },
+        { name: "candidateUsers", isAttr: true, type: "String" },
+        { name: "candidateGroups", isAttr: true, type: "String" },
+        { name: "dueDate", isAttr: true, type: "String" },
+        { name: "formKey", isAttr: true, type: "String" },
+      ],
+    },
+    {
+      name: "ServiceTaskProps",
+      extends: ["bpmn:ServiceTask"],
+      properties: [
+        { name: "class", isAttr: true, type: "String" },
+        { name: "expression", isAttr: true, type: "String" },
+        { name: "delegateExpression", isAttr: true, type: "String" },
+        { name: "type", isAttr: true, type: "String" },
+      ],
+    },
+  ],
+};
+
+/** Quy trình mới: bắt đầu → một tác vụ duyệt → kết thúc, kèm sơ đồ. */
+export const newProcessXml = (key: string, name: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn"
+  targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  <process id="${key}" name="${name.replace(/[<&"]/g, "")}" isExecutable="true">
+    <startEvent id="start" name="Bắt đầu"/>
+    <sequenceFlow id="toReview" sourceRef="start" targetRef="review"/>
+    <userTask id="review" name="Duyệt" flowable:candidateGroups="TRUONG_PHONG" flowable:dueDate="PT48H"/>
+    <sequenceFlow id="toEnd" sourceRef="review" targetRef="end"/>
+    <endEvent id="end" name="Hoàn tất"/>
+  </process>
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="${key}">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="152" y="182" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="review_di" bpmnElement="review"><dc:Bounds x="250" y="160" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="432" y="182" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="toReview_di" bpmnElement="toReview"><di:waypoint x="188" y="200"/><di:waypoint x="250" y="200"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEnd_di" bpmnElement="toEnd"><di:waypoint x="370" y="200"/><di:waypoint x="432" y="200"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
+`;
