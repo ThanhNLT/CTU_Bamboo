@@ -7,6 +7,10 @@
 -- migrate schema. Không dùng REASSIGN OWNED vì `bms` là superuser khởi tạo, sở hữu cả catalog hệ thống.
 -- Bỏ qua đối tượng của extension và sequence gắn với cột (đổi theo bảng).
 
+-- ---------------------------------------------------------------------------
+-- Chủ sở hữu và quyền kết nối CSDL
+-- ---------------------------------------------------------------------------
+
 SELECT format('ALTER DATABASE %I OWNER TO %I', current_database(), :'owner')
 WHERE (SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = current_database()) <> :'owner'
 \gexec
@@ -14,6 +18,10 @@ WHERE (SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = current_d
 -- Chỉ chủ sở hữu (và superuser) được kết nối.
 SELECT format('REVOKE CONNECT, TEMPORARY ON DATABASE %I FROM PUBLIC', current_database())
 \gexec
+
+-- ---------------------------------------------------------------------------
+-- Chủ sở hữu schema, bảng, hàm, kiểu
+-- ---------------------------------------------------------------------------
 
 SELECT format('ALTER SCHEMA %I OWNER TO %I', n.nspname, :'owner')
 FROM pg_namespace n

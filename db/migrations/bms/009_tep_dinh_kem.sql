@@ -11,6 +11,10 @@
 --   REJECTED  tệp tải lên không khớp khai báo (thiếu, quá cỡ), tệp đã bị xóa
 -- Dịch vụ actions là nơi duy nhất ghi bảng này (Hasura chỉ cho xem).
 
+-- ---------------------------------------------------------------------------
+-- Bảng tệp đính kèm
+-- ---------------------------------------------------------------------------
+
 CREATE TABLE core.attachment (
     tenant_id     uuid NOT NULL REFERENCES core.tenant,
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -33,6 +37,10 @@ CREATE TABLE core.attachment (
 );
 CREATE INDEX ON core.attachment (entity_type, entity_id) WHERE deleted_at IS NULL;
 CREATE INDEX ON core.attachment (tenant_id, uploaded_by);
+
+-- ---------------------------------------------------------------------------
+-- Trigger kiểm tra
+-- ---------------------------------------------------------------------------
 
 -- Chứng từ phải cùng tenant; trạng thái chỉ đi tiếp từ PENDING.
 CREATE FUNCTION core.attachment_check() RETURNS trigger
@@ -65,6 +73,10 @@ END $$;
 
 CREATE TRIGGER attachment_check BEFORE INSERT OR UPDATE ON core.attachment
 FOR EACH ROW EXECUTE FUNCTION core.attachment_check();
+
+-- ---------------------------------------------------------------------------
+-- Quyền xem (Hasura) và nhật ký kiểm toán
+-- ---------------------------------------------------------------------------
 
 -- Computed field `can_read` của Hasura: xem tệp khi xem được chứng từ gốc.
 CREATE FUNCTION core.attachment_can_read(p_row core.attachment, hasura_session json)

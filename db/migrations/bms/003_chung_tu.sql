@@ -4,8 +4,16 @@
 
 -- 003: Chứng từ tối thiểu cho luồng duyệt: đề nghị mua sắm và đơn hàng nội bộ.
 
+-- ---------------------------------------------------------------------------
+-- Schema
+-- ---------------------------------------------------------------------------
+
 CREATE SCHEMA IF NOT EXISTS proc;
 CREATE SCHEMA IF NOT EXISTS ic;
+
+-- ---------------------------------------------------------------------------
+-- Đơn hàng nội bộ
+-- ---------------------------------------------------------------------------
 
 -- Đơn hàng nội bộ giữa hai công ty trong cùng tenant.
 CREATE TABLE ic.ic_order (
@@ -27,6 +35,10 @@ CREATE TABLE ic.ic_order (
 CREATE INDEX ON ic.ic_order (tenant_id, seller_unit_id);
 CREATE INDEX ON ic.ic_order (tenant_id, buyer_unit_id);
 CREATE INDEX ON ic.ic_order (tenant_id, created_by);
+
+-- ---------------------------------------------------------------------------
+-- Đề nghị mua sắm
+-- ---------------------------------------------------------------------------
 
 -- Đề nghị mua sắm. Lập dưới một tư cách lập (vị trí của người lập); chứng từ
 -- thuộc đơn vị của vị trí đó.
@@ -55,6 +67,10 @@ CREATE INDEX ON proc.purchase_request (tenant_id, requester_id);
 CREATE INDEX ON proc.purchase_request (tenant_id, requester_position_id);
 CREATE INDEX ON proc.purchase_request (tenant_id, org_unit_id);
 CREATE INDEX ON proc.purchase_request (tenant_id, ic_order_id);
+
+-- ---------------------------------------------------------------------------
+-- Trigger kiểm tra người lập
+-- ---------------------------------------------------------------------------
 
 -- Người lập phải đang giữ vị trí dùng làm tư cách lập; đơn vị lấy từ vị trí.
 CREATE FUNCTION proc.purchase_request_before_insert() RETURNS trigger
