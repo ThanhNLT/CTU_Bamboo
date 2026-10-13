@@ -14,17 +14,21 @@ Khóa API của Meilisearch suy ra từ khóa chủ và uid cố định (HMAC-S
 openbao-init ghi sẵn vào OpenBao, job bootstrap tạo khóa với đúng uid đó.
 """
 
+# ===== Thư viện chuẩn =====
 import hashlib
 import hmac
 import html
 import time
 import uuid
 
-import httpx
-import psycopg
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from .common import ActionError, Context, session_identity
 
+# ===== Hằng số & cấu hình =====
 INDEX = "documents"
 # uid cố định của hai khóa API; khóa chỉ dùng được trên các index `documents*` (kể cả index kiểm thử).
 SEARCH_KEY_UID = "8f1d6a52-3c1e-4c55-9a43-6a0b7f5e2c01"
@@ -48,6 +52,7 @@ _PRE, _POST = "", ""
 _SNIPPET_FIELDS = ("content", "description", "items", "title", "file_name", "partner", "requester", "doc_no")
 
 
+# ===== Hàm =====
 def derive_key(master_key: str, uid: str) -> str:
     return hmac.new(master_key.encode(), uid.encode(), hashlib.sha256).hexdigest()
 
@@ -94,10 +99,12 @@ def doc_id(entity_type: str, entity_id) -> str:
     return f"{entity_type.replace('.', '_')}-{entity_id}"
 
 
+# ===== Lỗi (exception) =====
 class SearchUnavailable(Exception):
     pass
 
 
+# ===== Lớp =====
 class Meili:
     """Client HTTP tối giản cho Meilisearch (chỉ các API dự án dùng)."""
 
@@ -146,7 +153,7 @@ class Meili:
         return self.request("POST", f"/indexes/{index}/search", body)
 
 
-# --- Khởi tạo (job bootstrap, khóa chủ) ------------------------------------------
+# ===== Khởi tạo (job bootstrap, khóa chủ) =====
 
 
 def ensure_index(admin: Meili, index: str = INDEX) -> bool:
@@ -180,7 +187,7 @@ def config_toml(master_key: str) -> str:
     return f'master_key = "{master_key}"\nenv = "production"\ndb_path = "/meili_data/data.ms"\nno_analytics = true\n'
 
 
-# --- Trích chữ -------------------------------------------------------------------
+# ===== Trích chữ =====
 
 
 def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0) -> str:
@@ -205,7 +212,7 @@ def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float =
     return " ".join(resp.content.decode("utf-8", "replace").split())[:MAX_TEXT]
 
 
-# --- Hasura Action ---------------------------------------------------------------
+# ===== Hasura Action =====
 
 
 def _snippet(hit: dict) -> tuple[str | None, str]:

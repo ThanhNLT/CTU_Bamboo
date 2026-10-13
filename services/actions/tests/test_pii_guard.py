@@ -4,11 +4,14 @@
 
 """Nhận diện, che dữ liệu cá nhân tiếng Việt bằng Presidio (ADR #43): không cần CSDL."""
 
-import pytest
+# ===== Thư viện bên ngoài =====
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app.pii_guard import guard, mask_value
 
 
+# ===== Kiểm thử =====
 @pytest.mark.parametrize(
     ("text", "masked", "entities"),
     [

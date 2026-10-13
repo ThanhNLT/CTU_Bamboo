@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Cấu hình Sphinx cho tài liệu DX-OS Open-Core (Markdown qua MyST)."""
 
+# ===== Thư viện chuẩn =====
 from datetime import date
 
+# ===== Hằng số & cấu hình =====
 project = "Bamboo"
 author = "OLP OSS"
 copyright = f"{date.today().year}, {author}"
@@ -28,7 +30,7 @@ extensions = [
     "sphinx_copybutton",
 ]
 
-# --- MyST -------------------------------------------------------------------
+# ===== MyST =====
 myst_enable_extensions = [
     "colon_fence",  # ::: cho directive
     "deflist",
@@ -37,7 +39,7 @@ myst_enable_extensions = [
 myst_heading_anchors = 3  # liên kết kiểu GitHub tới tiêu đề h1–h3
 myst_fence_as_directive = ["mermaid"]  # ```mermaid hiển thị như trên GitHub
 
-# --- HTML -------------------------------------------------------------------
+# ===== HTML =====
 html_theme = "furo"
 html_title = project
 html_static_path = ["_static"]
@@ -52,6 +54,6 @@ html_theme_options = {
     # "source_directory": "docs/",
 }
 
-# --- Tiện ích ---------------------------------------------------------------
+# ===== Tiện ích =====
 copybutton_exclude = ".linenos, .gp"
 linkcheck_ignore = [r"http://localhost.*", r"https://t\.me/.*"]

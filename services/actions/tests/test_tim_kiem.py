@@ -5,18 +5,22 @@
 """Tìm kiếm toàn văn (ADR #36): CSDL → search-sync → Meilisearch, Tika trích chữ tệp đính kèm,
 Action search_documents lọc lại theo quyền xem trong CSDL."""
 
+# ===== Thư viện chuẩn =====
 import io
 import zipfile
 
-import psycopg
-import pytest
-from psycopg.rows import dict_row
-from test_tep_dinh_kem import CONFIRM, upload
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+import pytest  # pytest
+from psycopg.rows import dict_row  # psycopg
+from test_tep_dinh_kem import CONFIRM, upload  # test_tep_dinh_kem
 
+# ===== Module nội bộ =====
 from app import search, search_sync
 from app.common import ActionError
 from conftest import ids, pr
 
+# ===== Hằng số & cấu hình =====
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 SEARCH = """query($q: String!, $kind: SearchKind) {
   search_documents(query: $q, kind: $kind) {
@@ -24,6 +28,7 @@ SEARCH = """query($q: String!, $kind: SearchKind) {
     purchase_request { doc_no title } attachment { file_name } } }"""
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def docx(text: str) -> bytes:
     """Tệp DOCX tối giản một đoạn văn."""
     buf = io.BytesIO()
@@ -60,7 +65,7 @@ def sync(settings) -> None:
     assert not failed, failed
 
 
-# --- Không cần dịch vụ ngoài -----------------------------------------------------
+# ===== Không cần dịch vụ ngoài =====
 
 
 def test_doan_trich_an_toan():
@@ -99,7 +104,7 @@ def test_tu_khoa_khong_hop_le():
         assert exc.value.code == code
 
 
-# --- Meilisearch, Tika, Hasura thật ------------------------------------------------
+# ===== Meilisearch, Tika, Hasura thật =====
 
 
 def test_tim_de_nghi_va_noi_dung_tep(hasura, conn, s3, search_settings):

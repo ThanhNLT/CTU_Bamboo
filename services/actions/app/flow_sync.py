@@ -16,24 +16,29 @@ CSDL là nguồn sự thật. Mỗi lần gửi duyệt (entity, round) có mộ
       ACTIVE              → đặt người nhận theo việc duyệt đang mở, dừng
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import logging
 import os
 import time
 
-import psycopg
-from psycopg.rows import dict_row
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from psycopg.rows import dict_row  # psycopg
 
+# ===== Module nội bộ =====
 from . import config, hr_account
 from .flowable import FlowableClient
 from .keycloak_sync import PROVISIONER_ID
 from .pii import PiiCipher
 
+# ===== Hằng số & cấu hình =====
 PROCESS_KEY = "purchaseRequestApproval"
 MAX_ATTEMPTS = 20
 log = logging.getLogger("flow_sync")
 
 
+# ===== Hàm =====
 def business_key(entity_id, round_no) -> str:
     return f"{entity_id}:{round_no}"
 
@@ -203,6 +208,7 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
             pass
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)

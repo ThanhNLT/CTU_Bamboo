@@ -13,16 +13,20 @@ CSDL thì lần sau nhận lại tài khoản đó và đặt mật khẩu tạm
 lần sau cách lần trước lâu hơn 30 giây.
 """
 
+# ===== Thư viện chuẩn =====
 import logging
 import secrets
 import string
 import time
 
-import httpx
-import psycopg
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from .pii import PiiCipher
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("hr_account")
 
 REALM = "bms"
@@ -30,10 +34,12 @@ ATTRIBUTE = "bamboo_onboarding_request"
 MAX_ATTEMPTS = 5
 
 
+# ===== Lỗi (exception) =====
 class AccountConflict(Exception):
     """Tên đăng nhập hoặc email đã thuộc một tài khoản khác: cần người sửa, không tự thử lại."""
 
 
+# ===== Hàm =====
 def temporary_password(length: int = 14) -> str:
     """Mật khẩu tạm có đủ chữ hoa, chữ thường, chữ số (bỏ ký tự dễ nhầm: 0 O 1 l I)."""
     alphabet = "".join(c for c in string.ascii_letters + string.digits if c not in "0O1lI")
@@ -49,6 +55,7 @@ def split_name(full_name: str) -> tuple[str, str]:
     return first, last
 
 
+# ===== Lớp =====
 class KeycloakUsers:
     """Admin API của realm bms bằng token client_credentials của bms-provisioner."""
 
@@ -122,6 +129,7 @@ class KeycloakUsers:
         return existing["id"]
 
 
+# ===== Hàm =====
 def provision(conn: psycopg.Connection, users: KeycloakUsers, cipher: PiiCipher, request_id) -> str:
     """Tạo tài khoản cho một hồ sơ đang chờ (đã khóa dòng). Trả về trạng thái mới."""
     row = conn.execute(

@@ -21,14 +21,18 @@ view silver có cột tenant, mỗi view kèm row filter về đúng tenant đó
     DATABASE_URL=... python -m app.lakehouse_silver [--out silver.sql] [--rules-out rules.json]
 """
 
+# ===== Thư viện chuẩn =====
 import argparse
 import json
 import pathlib
 
-import psycopg
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from . import config
 
+# ===== Hằng số & cấu hình =====
 OUT = pathlib.Path(__file__).resolve().parents[3] / "platform/trino/silver.sql"
 RULES_OUT = OUT.with_name("rules.json")
 CATALOG = "lakehouse"
@@ -54,6 +58,7 @@ ORDER BY pt.schemaname, pt.tablename, a.attnum
 """
 
 
+# ===== Hàm =====
 def bronze_ddl() -> list[tuple[str, str]]:
     """Cột bronze (tên, kiểu Trino) suy từ schema Arrow của lakehouse-sink, một nguồn duy nhất."""
     from .lakehouse_sink import BRONZE_COLUMNS
@@ -199,5 +204,6 @@ def main() -> None:
     )
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

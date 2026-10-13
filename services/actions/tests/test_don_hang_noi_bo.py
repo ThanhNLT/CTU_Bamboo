@@ -4,13 +4,16 @@
 
 """Đơn hàng nội bộ (ADR #42): Action xác nhận kèm lô, từ chối, hủy; quyền xem qua Hasura thật."""
 
-import psycopg
-import pytest
-from fastapi.testclient import TestClient
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+import pytest  # pytest
+from fastapi.testclient import TestClient  # FastAPI
 
+# ===== Module nội bộ =====
 from app import config, main
 from conftest import SETTINGS, ids, open_task
 
+# ===== Hằng số & cấu hình =====
 SETUP = """
 INSERT INTO core.role (tenant_id, code, name)
 SELECT test.id('TDX'), 'BAN_HANG_NOI_BO', 'Bán hàng nội bộ'
@@ -33,6 +36,7 @@ WHERE tenant_id = test.id('TDX') AND code = 'IC-PMIC' ON CONFLICT DO NOTHING;
 """
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def setup(database):
     with psycopg.connect(database, autocommit=True) as c:
@@ -50,6 +54,7 @@ def client(database):
         yield c
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant):
     payload = {
         "action": {"name": name},
@@ -84,6 +89,7 @@ def ordered(conn, setup, title: str, quantity: int = 100) -> tuple[str, str]:
     return str(row["id"]), str(row["line_id"])
 
 
+# ===== Kiểm thử =====
 def test_xac_nhan_kem_lo(client, conn, setup):
     i = ids(conn, "TDX", "BVX", "a", "c")
     order, line = ordered(conn, setup, "ic xác nhận")

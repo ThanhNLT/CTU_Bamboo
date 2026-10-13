@@ -4,21 +4,26 @@
 
 """Dữ liệu demo: nạp đúng, chạy lại không trùng, khớp realm Keycloak (ADR #16, #23)."""
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
 from urllib.parse import urlparse, urlunparse
 
-import psycopg
-import pytest
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import realm, seed
 from app.demo import DEMO_USERS, HR_DEMO_USERS, OPEN_SEATS, account_id, uid
 
+# ===== Hằng số & cấu hình =====
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_seed_test")
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def conn():
     name = urlparse(URL).path.lstrip("/")
@@ -33,10 +38,12 @@ def conn():
         yield c
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def one(conn, sql, *args):
     return conn.execute(sql, args).fetchone()[0]
 
 
+# ===== Kiểm thử =====
 def test_chay_lai_khong_trung(conn):
     before = one(conn, "SELECT count(*) FROM core.person")
     assert seed.seed(conn) is False

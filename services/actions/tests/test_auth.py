@@ -4,27 +4,33 @@
 
 """Auth webhook (ADR #32) với khóa ký tự tạo: không cần Keycloak."""
 
+# ===== Thư viện chuẩn =====
 import time
 import uuid
 
-import jwt
-import pytest
-from cryptography.hazmat.primitives.asymmetric import rsa
-from fastapi.testclient import TestClient
+# ===== Thư viện bên ngoài =====
+import jwt  # PyJWT
+import pytest  # pytest
+from cryptography.hazmat.primitives.asymmetric import rsa  # cryptography
+from fastapi.testclient import TestClient  # FastAPI
 
+# ===== Module nội bộ =====
 from app import auth, config, main
 from conftest import SETTINGS, ids
 
+# ===== Hằng số & cấu hình =====
 ISSUER = "http://localhost:8080/realms/bms"
 KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 OTHER_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
+# ===== Lớp =====
 class StaticJwks:
     def get_signing_key_from_jwt(self, token):
         return jwt.PyJWK.from_dict(jwt.algorithms.RSAAlgorithm.to_jwk(KEY.public_key(), as_dict=True))
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def token(sub, key=KEY, **over):
     claims = {
         "sub": sub,
@@ -38,6 +44,7 @@ def token(sub, key=KEY, **over):
     return jwt.encode(claims, key, algorithm="RS256")
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def client(database):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
@@ -57,6 +64,7 @@ def account(conn):
     return sub
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def hook(client, tok=None, tenant=None, role=None):
     headers = {}
     if tok:
@@ -68,6 +76,7 @@ def hook(client, tok=None, tenant=None, role=None):
     return client.get("/auth/hasura", headers=headers)
 
 
+# ===== Kiểm thử =====
 def test_chua_chon_tenant_la_role_account(client, account):
     resp = hook(client, token(account))
     assert resp.status_code == 200

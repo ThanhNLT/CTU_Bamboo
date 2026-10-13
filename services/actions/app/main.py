@@ -9,19 +9,22 @@ từ session_variables. Lỗi trả về 400 {message, extensions.code} để Ha
 nguyên cho giao diện.
 """
 
+# ===== Thư viện chuẩn =====
 import hmac
 import logging
 import os
 import pathlib
 from contextlib import asynccontextmanager
 
-import psycopg
-from botocore.exceptions import BotoCoreError, ClientError
-from fastapi import FastAPI, Header, Request
-from fastapi.responses import JSONResponse
-from psycopg_pool import ConnectionPool
-from starlette.concurrency import run_in_threadpool
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from botocore.exceptions import BotoCoreError, ClientError  # botocore
+from fastapi import FastAPI, Header, Request  # FastAPI
+from fastapi.responses import JSONResponse  # FastAPI
+from psycopg_pool import ConnectionPool  # psycopg-pool
+from starlette.concurrency import run_in_threadpool  # Starlette
 
+# ===== Module nội bộ =====
 from . import (
     admin,
     attachments,
@@ -43,6 +46,7 @@ from .flowable import FlowableClient
 from .pii import PiiCipher
 from .storage import Storage
 
+# ===== Hằng số & cấu hình =====
 DECISIONS = {"APPROVE", "REJECT", "RETURN"}
 # Bảng của từng loại chứng từ được duyệt (trạng thái trả về sau khi xử lý việc duyệt).
 ENTITY_TABLES = {"proc.purchase_request": "proc.purchase_request", "hr.onboarding_request": "hr.onboarding_request"}
@@ -60,6 +64,7 @@ _DB_ACTIVITIES = {
 }
 
 
+# ===== Hàm =====
 def submit_purchase_request(conn: psycopg.Connection, session: dict, request_id: str) -> dict:
     row = conn.execute("SELECT tenant_id FROM proc.purchase_request WHERE id = %s", (request_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -138,6 +143,7 @@ def process_state(conn: psycopg.Connection, session: dict, request_id: str, flow
     }
 
 
+# ===== Đăng ký Action =====
 HANDLERS = {
     "my_tenants": lambda conn, session, args, _ctx: auth.my_tenants(conn, session),
     "submit_purchase_request": lambda conn, session, args, _ctx: submit_purchase_request(
@@ -165,6 +171,7 @@ HANDLERS = {
 }
 
 
+# ===== Hàm =====
 def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | None = None) -> dict:
     handler = HANDLERS.get(name)
     if handler is None:
@@ -311,4 +318,5 @@ def create_app(
     return app
 
 
+# ===== Khởi tạo =====
 app = create_app()

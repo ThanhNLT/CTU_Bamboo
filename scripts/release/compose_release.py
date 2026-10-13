@@ -10,18 +10,22 @@
 - Báo lỗi nếu còn bind mount (tệp phát hành phải tự đủ, `docker compose publish` cũng từ chối).
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
 import subprocess
 import sys
 
-import yaml
+# ===== Thư viện bên ngoài =====
+import yaml  # PyYAML
 
+# ===== Hằng số & cấu hình =====
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TAG_VAR = "${BAMBOO_TAG:-dev}"
 
 
+# ===== Hàm =====
 def build(version: str) -> dict:
     compose = os.environ.get("DOCKER_COMPOSE", "docker compose").split()
     raw = subprocess.run(
@@ -66,5 +70,6 @@ def main() -> None:
     print(f"đã ghi {out}")
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

@@ -19,6 +19,7 @@ không dịch vụ nào khởi động được với cấu hình dev.
     python -m app.openbao_init
 """
 
+# ===== Thư viện chuẩn =====
 import datetime as dt
 import hashlib
 import hmac
@@ -30,11 +31,14 @@ import secrets
 import sys
 import time
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
+# ===== Module nội bộ =====
 from . import config, search, storage
 from .openbao import Bao, BaoError
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("openbao_init")
 
 POLICIES = {
@@ -83,6 +87,7 @@ TRINO_PBKDF2_ITERATIONS = 10000
 CERT_RENEW_BEFORE = dt.timedelta(days=30)
 
 
+# ===== Hàm =====
 def env_secrets() -> dict[str, dict]:
     """Secret hạ tầng khai báo ở .env (môi trường dev); OpenBao giữ bản để dịch vụ đọc."""
     env = os.environ.get
@@ -323,7 +328,7 @@ def _trino_hash_matches(line: str, password: str) -> bool:
 
 def _cert_needs_renewal(pem_path: pathlib.Path, ca_pem: str) -> bool:
     """Chưa có, sắp hết hạn, hoặc do CA khác cấp (CA đã tạo lại) thì cấp chứng chỉ mới."""
-    from cryptography import x509
+    from cryptography import x509  # cryptography
 
     if not pem_path.exists():
         return True
@@ -466,5 +471,6 @@ def main() -> int:
     return 0
 
 
+# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     sys.exit(main())

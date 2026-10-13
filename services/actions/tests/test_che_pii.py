@@ -4,13 +4,16 @@
 
 """Che dữ liệu cá nhân (ADR #43): nhật ký kiểm toán chỉ trả bản che, kiểm tra văn bản trước khi gửi."""
 
-import pytest
-from fastapi.testclient import TestClient
+# ===== Thư viện bên ngoài =====
+import pytest  # pytest
+from fastapi.testclient import TestClient  # FastAPI
 
+# ===== Module nội bộ =====
 from app import audit, config, main
 from conftest import SETTINGS, ids, pr
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def client(database):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
@@ -18,6 +21,7 @@ def client(database):
         yield c
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant):
     payload = {
         "action": {"name": name},
@@ -54,6 +58,7 @@ def commented_log(conn, body: str) -> int:
     ).fetchone()["id"]
 
 
+# ===== Kiểm thử =====
 def test_nhat_ky_tra_ban_che(client, conn):
     i = ids(conn, "TDX", "BVX", "c", "ptgd")
     grant_auditor(conn, "P_PTGD")

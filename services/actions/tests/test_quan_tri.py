@@ -4,19 +4,23 @@
 
 """Quản trị dữ liệu của tenant (ADR #44): Action admin_save / admin_close / admin_import, kiểm quyền theo đơn vị."""
 
+# ===== Thư viện chuẩn =====
 import base64
 import io
 import uuid
 
-import psycopg
-import pytest
-from fastapi.testclient import TestClient
-from openpyxl import Workbook, load_workbook
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+import pytest  # pytest
+from fastapi.testclient import TestClient  # FastAPI
+from openpyxl import Workbook, load_workbook  # openpyxl
 
+# ===== Module nội bộ =====
 from app import config, main
 from conftest import SETTINGS, ids
 
 
+# ===== Fixture kiểm thử =====
 @pytest.fixture
 def client(database):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
@@ -46,6 +50,7 @@ def admin(conn, org):
     return ids(conn, org("gd"), org("nv"), org("PHONG"), org("CTY"), "TDX") | {"k": org}
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant):
     payload = {
         "action": {"name": name},
@@ -59,6 +64,7 @@ def save(client, admin, entity, data, who="gd"):
     return call(client, "admin_save", {"entity": entity, "data": data}, admin[admin["k"](who)], admin["TDX"])
 
 
+# ===== Kiểm thử =====
 def test_khong_co_quyen_thi_bi_chan(client, admin):
     r = save(
         client,
@@ -164,6 +170,7 @@ def test_vai_tro_va_cap_quyen(client, conn, admin):
     assert r.status_code == 400 and "gán vai trò cho vị trí" in r.json()["message"]
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _xlsx(rows: list[list]) -> str:
     wb = Workbook()
     for row in rows:
@@ -173,6 +180,7 @@ def _xlsx(rows: list[list]) -> str:
     return base64.b64encode(out.getvalue()).decode()
 
 
+# ===== Kiểm thử =====
 def test_nhap_don_vi_xem_truoc_va_ghi(client, conn, admin):
     k = admin["k"]
     a, b = k("A"), k("B")

@@ -9,24 +9,29 @@ Kiểm thử tích hợp chạy trên Trino thật (HTTPS, CA nội bộ) với 
 có cột tenant, tài khoản actions không tự đọc được dữ liệu. Chỉ đọc, không ghi CSDL nguồn.
 """
 
+# ===== Thư viện chuẩn =====
 import os
 import uuid
 from urllib.parse import urlparse, urlunparse
 
-import httpx
-import psycopg
-import pytest
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
+import pytest  # pytest
 
+# ===== Module nội bộ =====
 from app import lakehouse_query as lq
 from app import lakehouse_silver as silver
 from app.common import ActionError, Context
 from app.trino import Trino, TrinoError
 from conftest import TEST_DB_URL, _missing, root_settings, trino_admin_password, trino_reachable
 
+# ===== Hằng số & cấu hình =====
 SOURCE_URL = os.environ.get("CDC_SOURCE_DATABASE_URL") or urlunparse(urlparse(TEST_DB_URL)._replace(path="/bms"))
 SETTINGS = root_settings()
 
 
+# ===== Lớp =====
 class AllowConn:
     """Kết nối giả cho bước kiểm quyền: core.has_permission trả `allowed`."""
 
@@ -40,11 +45,12 @@ class AllowConn:
         return (self.allowed,)
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def _session(tenant) -> dict:
     return {"x-hasura-user-id": str(uuid.uuid4()), "x-hasura-tenant-id": str(tenant)}
 
 
-# --- Không cần Trino --------------------------------------------------------------------------------------
+# ===== Không cần Trino =====
 
 
 def test_nguoi_dung_trino_cua_tenant():
@@ -83,7 +89,7 @@ def test_ten_tap_du_lieu_khong_hop_le(name):
     assert err.value.status == 400
 
 
-# --- Trino thật -------------------------------------------------------------------------------------------
+# ===== Trino thật =====
 
 
 @pytest.fixture(scope="module")

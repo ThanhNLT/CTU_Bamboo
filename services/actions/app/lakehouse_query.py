@@ -11,17 +11,21 @@ tenant (platform/trino/rules.json), nên dù câu SQL ở đây có sai sót cũ
 Giá trị trả về đã che dữ liệu cá nhân như nhật ký kiểm toán (ADR #43, BI-05).
 """
 
+# ===== Thư viện chuẩn =====
 import logging
 import re
 import uuid
 
-import httpx
-import psycopg
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
+import psycopg  # psycopg
 
+# ===== Module nội bộ =====
 from .audit import mask_row
 from .common import ActionError, Context
 from .trino import Trino, TrinoError
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger(__name__)
 
 PERMISSION = "data.lakehouse.read"
@@ -72,6 +76,7 @@ LABELS = {
 }
 
 
+# ===== Hàm =====
 def tenant_user(tenant: str) -> str:
     """Người dùng Trino của tenant (khớp mẫu t_<uuid> trong rules.json)."""
     return f"t_{uuid.UUID(str(tenant))}"
@@ -131,6 +136,7 @@ def _datasets(client: Trino, tenant: str) -> dict[str, list[dict]]:
     return out
 
 
+# ===== Hasura Action =====
 def lakehouse_datasets(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> list[dict]:
     tenant, client = _require(conn, session, ctx)
     return [_describe(name, cols) for name, cols in sorted(_datasets(client, tenant).items())]
@@ -156,6 +162,7 @@ def lakehouse_preview(conn: psycopg.Connection, session: dict, args: dict, ctx: 
     return {**_describe(name, columns), "total_rows": total[0][0], "rows": masked_rows, "masked": sorted(found)}
 
 
+# ===== Đăng ký Action =====
 HANDLERS = {
     "lakehouse_datasets": lakehouse_datasets,
     "lakehouse_preview": lakehouse_preview,

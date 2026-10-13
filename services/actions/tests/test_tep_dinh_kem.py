@@ -4,21 +4,25 @@
 
 """Tệp đính kèm (ADR #26): tải lên qua link có chữ ký, kiểm tra, quét virus, tải về, phân quyền."""
 
+# ===== Thư viện chuẩn =====
 import socket
 import struct
 import threading
 
-import boto3
-import httpx
-import pytest
-from botocore.config import Config
-from botocore.exceptions import ClientError
-from fastapi.testclient import TestClient
+# ===== Thư viện bên ngoài =====
+import boto3  # boto3
+import httpx  # HTTPX
+import pytest  # pytest
+from botocore.config import Config  # botocore
+from botocore.exceptions import ClientError  # botocore
+from fastapi.testclient import TestClient  # FastAPI
 
+# ===== Module nội bộ =====
 from app import config, main, storage
 from app.common import Context
 from conftest import SETTINGS, ids, pr
 
+# ===== Hằng số & cấu hình =====
 PDF = b"%PDF-1.7\n" + b"x" * 2000 + b"\n%%EOF\n"
 
 UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!) {
@@ -29,6 +33,7 @@ CONFIRM = """mutation($a: uuid!) { confirm_upload(attachment_id: $a) {
 DOWNLOAD = """query($a: uuid!) { get_download_url(attachment_id: $a) { url } }"""
 
 
+# ===== Hàm hỗ trợ kiểm thử =====
 def upload(hasura, i, pr_id, content: bytes, *, name="bao-gia.pdf", ctype="application/pdf", size=None, person="c"):
     data = hasura(
         UPLOAD,
@@ -43,7 +48,7 @@ def upload(hasura, i, pr_id, content: bytes, *, name="bao-gia.pdf", ctype="appli
     return ticket["attachment_id"]
 
 
-# --- Không cần dịch vụ ngoài -----------------------------------------------------
+# ===== Không cần dịch vụ ngoài =====
 
 
 def test_kiem_tra_noi_dung():
@@ -94,7 +99,7 @@ def test_clamd_instream(fake_clamd):
     assert received[0] == PDF
 
 
-# --- SeaweedFS + Hasura thật ---------------------------------------------------------
+# ===== SeaweedFS + Hasura thật =====
 
 
 def test_tai_len_quet_tai_ve(hasura, conn, s3):

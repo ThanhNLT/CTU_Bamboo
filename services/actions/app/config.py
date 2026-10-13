@@ -2,12 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# ===== Thư viện chuẩn =====
 import os
 from dataclasses import dataclass, replace
 from urllib.parse import quote, urlparse, urlunparse
 
+# ===== Module nội bộ =====
 from .openbao import Bao, BaoError
 
+# ===== Hằng số & cấu hình =====
 # Secret trong OpenBao (KV v2 secret/<đường dẫn>) → trường Settings (ADR #25). Mỗi dịch vụ chỉ đọc
 # được những đường dẫn mà policy của nó cho phép; đường dẫn bị từ chối thì giữ giá trị env.
 SECRET_FIELDS = {
@@ -28,6 +31,7 @@ SECRET_FIELDS = {
 }
 
 
+# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Settings:
     database_url: str
@@ -78,6 +82,7 @@ class Settings:
     trino_password: str
 
 
+# ===== Hằng số & cấu hình =====
 # Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
 # BAMBOO_ENV=production mà còn giá trị nào trong số này thì dừng ngay, không khởi động.
 DEV_DEFAULTS = {
@@ -98,6 +103,7 @@ DEV_DEFAULTS = {
 }
 
 
+# ===== Hàm =====
 def production_problems(env: dict[str, str] | None = None) -> list[str]:
     """Biến còn giữ giá trị dev mặc định hoặc để trống."""
     env = os.environ if env is None else env

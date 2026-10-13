@@ -12,16 +12,20 @@ Link có chữ ký ký theo S3_PUBLIC_ENDPOINT (địa chỉ trình duyệt th�
 tệp qua S3_ENDPOINT (mạng nội bộ).
 """
 
+# ===== Thư viện chuẩn =====
 import socket
 import struct
 from urllib.parse import quote
 
-import boto3
-from botocore.config import Config
-from botocore.exceptions import ClientError
+# ===== Thư viện bên ngoài =====
+import boto3  # boto3
+from botocore.config import Config  # botocore
+from botocore.exceptions import ClientError  # botocore
 
+# ===== Module nội bộ =====
 from . import config
 
+# ===== Hằng số & cấu hình =====
 MAX_BYTES = 25 * 1024 * 1024
 UPLOAD_TTL = 900
 DOWNLOAD_TTL = 300
@@ -39,6 +43,7 @@ ALLOWED_TYPES: dict[str, tuple[bytes, ...] | None] = {
 }
 
 
+# ===== Hàm =====
 def content_matches(content_type: str, data: bytes) -> bool:
     magic = ALLOWED_TYPES.get(content_type)
     if magic is None:
@@ -68,6 +73,7 @@ def _client(endpoint: str, access_key: str, secret_key: str, region: str):
     )
 
 
+# ===== Lớp =====
 class Storage:
     def __init__(self, settings: config.Settings):
         self.quarantine = settings.s3_quarantine_bucket
@@ -134,6 +140,7 @@ class Storage:
             self.s3.delete_object(Bucket=bucket, Key=key)
 
 
+# ===== Hàm =====
 def scan(data: bytes, host: str, port: int = 3310, timeout: float = 30.0) -> tuple[str, str]:
     """Quét bằng clamd (lệnh INSTREAM). Trả về ("CLEAN" | "INFECTED", kết quả của clamd)."""
     with socket.create_connection((host, port), timeout=timeout) as sock:
@@ -156,7 +163,7 @@ def scan(data: bytes, host: str, port: int = 3310, timeout: float = 30.0) -> tup
     raise RuntimeError(f"ClamAV trả lời không hợp lệ: {text}")
 
 
-# --- Khởi tạo (job openbao-init ghi s3.json, job bootstrap tạo bucket) -------------
+# ===== Khởi tạo (job openbao-init ghi s3.json, job bootstrap tạo bucket) =====
 
 
 def s3_identities(settings: config.Settings) -> dict:

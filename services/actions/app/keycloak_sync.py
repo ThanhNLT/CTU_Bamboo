@@ -12,12 +12,15 @@ xuất nếu còn thiếu; không xóa giá trị có sẵn, không đụng dữ
 cũng cho cùng kết quả.
 """
 
+# ===== Thư viện chuẩn =====
 import json
 import logging
 import pathlib
 
-import httpx
+# ===== Thư viện bên ngoài =====
+import httpx  # HTTPX
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("keycloak_sync")
 
 REALM = "bms"
@@ -28,6 +31,7 @@ PROVISIONER_ROLES = ("manage-users", "view-users", "query-users")
 REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "platform/keycloak/realm/bms-realm.json"
 
 
+# ===== Hàm =====
 def admin_token(base_url: str, user: str, password: str) -> str:
     resp = httpx.post(
         f"{base_url}/realms/master/protocol/openid-connect/token",

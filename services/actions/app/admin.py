@@ -13,6 +13,7 @@ Ngày hiệu lực theo giờ Việt Nam: "từ ngày" tính từ 0 giờ ngày 
 là từ bây giờ.
 """
 
+# ===== Thư viện chuẩn =====
 import base64
 import csv
 import io
@@ -20,11 +21,14 @@ import logging
 from collections.abc import Callable
 from datetime import date, datetime
 
-import psycopg
-from psycopg import Rollback
+# ===== Thư viện bên ngoài =====
+import psycopg  # psycopg
+from psycopg import Rollback  # psycopg
 
+# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session
 
+# ===== Hằng số & cấu hình =====
 log = logging.getLogger("admin")
 
 ORG = "core.org.manage"
@@ -38,6 +42,7 @@ CATALOGS = {"UNIT_TYPE": ORG, "JOB_TITLE": ORG, "ITEM_CATEGORY": MDM}
 TZ = "Asia/Ho_Chi_Minh"
 
 
+# ===== Lớp =====
 class Admin:
     """Người gọi trong một tenant, kèm hàm kiểm quyền theo đơn vị."""
 
@@ -74,7 +79,7 @@ class Admin:
         return row
 
 
-# --- Đọc dữ liệu đầu vào ------------------------------------------------------
+# ===== Đọc dữ liệu đầu vào =====
 
 
 def _text(data: dict, key: str, label: str, required: bool = True) -> str | None:
@@ -126,7 +131,7 @@ RANGE_SQL = (
 )
 
 
-# --- Mã → id -------------------------------------------------------------------
+# ===== Mã → id =====
 
 
 def _unit_by_code(a: Admin, code: str):
@@ -175,7 +180,7 @@ def _belongs(a: Admin, table: str, row_id) -> None:
     a.one(f"SELECT 1 FROM {table} WHERE id = %s AND tenant_id = %s", (row_id, a.tenant), "Không tìm thấy bản ghi")
 
 
-# --- Ghi từng loại -------------------------------------------------------------
+# ===== Ghi từng loại =====
 
 
 def save_org_unit(a: Admin, data: dict) -> str:
@@ -629,7 +634,7 @@ def admin_close(conn: psycopg.Connection, session: dict, args: dict, _ctx: Conte
     return {"entity": entity, "id": CLOSE[entity](Admin(conn, session), args["id"], end)}
 
 
-# --- Tài khoản đăng nhập ------------------------------------------------------
+# ===== Tài khoản đăng nhập =====
 
 
 def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> list[dict]:
@@ -687,7 +692,7 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
     return results
 
 
-# --- Nhập hàng loạt -----------------------------------------------------------
+# ===== Nhập hàng loạt =====
 
 # Cột của tệp mẫu: (khóa, tiêu đề, bắt buộc, ví dụ).
 COLUMNS: dict[str, list[tuple[str, str, bool, str]]] = {
@@ -775,7 +780,7 @@ def _cell(value):
 def _read_rows(kind: str, file_name: str, content: bytes) -> list[dict]:
     """Đọc CSV (UTF-8, dấu phẩy hoặc chấm phẩy) hoặc XLSX (trang đầu); dòng 1 là tiêu đề (theo mẫu hoặc theo khóa)."""
     if file_name.lower().endswith((".xlsx", ".xlsm")):
-        from openpyxl import load_workbook
+        from openpyxl import load_workbook  # openpyxl
 
         try:
             sheet = load_workbook(io.BytesIO(content), read_only=True, data_only=True).worksheets[0]
@@ -901,8 +906,8 @@ def admin_import_template(conn: psycopg.Connection, session: dict, args: dict, _
     if kind not in COLUMNS:
         raise ActionError(f"Không có mẫu cho {kind}")
     Admin(conn, session)
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill
+    from openpyxl import Workbook  # openpyxl
+    from openpyxl.styles import Font, PatternFill  # openpyxl
 
     wb = Workbook()
     ws = wb.active
