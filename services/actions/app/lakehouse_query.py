@@ -72,6 +72,9 @@ LABELS = {
     "wf_approval_rule": "Quy tắc phê duyệt",
     "wf_approval_step": "Bước phê duyệt",
     "wf_flow_sync": "Đồng bộ Flowable",
+    "wf_process_model": "Quy trình thiết kế",
+    "wf_process_version": "Phiên bản quy trình",
+    "wf_sandbox_run": "Lần chạy thử quy trình",
     "wf_task": "Việc cần xử lý",
 }
 

@@ -3,56 +3,74 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ===== Kiểu dữ liệu =====
-export type NodeType = "start" | "userTask" | "serviceTask" | "gateway" | "end";
+export type IssueLevel = "error" | "warning";
+/** Lỗi / cảnh báo do máy chủ kiểm tra bản BPMN (ADR #47). */
+export type Issue = { level: IssueLevel; message: string; elementId: string | null };
 
-export type TaskDecision = "approve" | "return" | "reject";
+export type FormField = { label: string; type: string; required: boolean };
+/** Biểu mẫu của tác vụ người dùng; tác vụ gắn bằng thuộc tính flowable:formKey = key. */
+export type FormDef = { key: string; name: string; fields: FormField[] };
 
-export type BpmnNode = {
-  id: string;
-  type: NodeType;
-  name: string;
-  /** Tâm phần tử trong hệ tọa độ canvas (px ở mức zoom 100%). */
-  x: number;
-  y: number;
-  /** Vị trí nhãn của sự kiện (vòng tròn). */
-  labelPos?: "right" | "below";
-  /** Sự kiện kết thúc: hoàn tất (xanh) hay kết thúc bất thường (đỏ). */
-  endTone?: "success" | "danger";
-  // ——— Thuộc tính tác vụ người dùng ———
-  group?: string;
-  sla?: string;
-  form?: string;
-  decisions?: TaskDecision[];
-  // ——— Tác vụ dịch vụ ———
-  service?: string;
-};
-
-export type BpmnEdge = {
-  id: string;
-  from: string;
-  to: string;
-  label?: string;
-  dashed?: boolean;
-  /** Các điểm gấp (đã gồm điểm đầu và cuối). */
-  points: Array<[number, number]>;
-  labelAt?: [number, number];
-  /** Nhánh ra từ cổng rẽ nhánh — có gửi thông báo cho người nộp không. */
-  notifySubmitter?: boolean;
-};
-
-export type ProcessModel = { nodes: BpmnNode[]; edges: BpmnEdge[] };
-
-export type ProcessDef = {
+export type ProcessSummary = {
   id: string;
   key: string;
   name: string;
-  version: number;
-  status: "running" | "draft";
-  /** Ghi chú dưới tên ("23 hồ sơ"). */
-  note?: string;
-  model: ProcessModel;
+  description: string | null;
+  updatedAt: string;
+  publishedVersion: number | null;
+  lastRunStatus: RunStatus | null;
+  runs: number;
 };
 
-export type Issue = { level: "error" | "warning"; message: string; nodeId?: string };
+export type RunStatus = "COMPLETED" | "STOPPED" | "FAILED";
+export type RunStep = {
+  activity_id: string;
+  name: string;
+  type: string;
+  started_at: string | null;
+  ended_at: string | null;
+  decision: string | null;
+};
+export type SandboxRun = {
+  id: string;
+  status: RunStatus;
+  steps: RunStep[];
+  variables?: Record<string, unknown> | null;
+  error: string | null;
+  startedBy?: string | null;
+  startedAt?: string | null;
+};
 
-export type FormDef = { id: string; name: string; fields: Array<{ label: string; type: string; required?: boolean }> };
+export type ProcessVersion = {
+  version: number;
+  sha256: string;
+  note: string | null;
+  publishedBy: string;
+  publishedAt: string;
+};
+
+export type ProcessDetail = {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  xml: string;
+  forms: FormDef[];
+  issues: Issue[];
+  versions: ProcessVersion[];
+  runs: SandboxRun[];
+};
+
+/** Phần tử đang chọn trên sơ đồ, đọc từ businessObject của bpmn-js. */
+export type SelectedElement = {
+  id: string;
+  type: string;
+  name: string;
+  assignee?: string;
+  candidateGroups?: string;
+  dueDate?: string;
+  formKey?: string;
+  condition?: string;
+  isDefaultFlow?: boolean;
+  expression?: string;
+};
