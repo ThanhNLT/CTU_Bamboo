@@ -51,26 +51,36 @@ def client(database):
 
 
 def call(client, name, args, person, tenant):
-    payload = {"action": {"name": name}, "input": args,
-               "session_variables": {"x-hasura-role": "user", "x-hasura-user-id": person,
-                                     "x-hasura-tenant-id": tenant}}
+    payload = {
+        "action": {"name": name},
+        "input": args,
+        "session_variables": {"x-hasura-role": "user", "x-hasura-user-id": person, "x-hasura-tenant-id": tenant},
+    }
     return client.post(f"/actions/{name}", json=payload, headers={"x-actions-secret": SETTINGS.actions_secret})
 
 
 def ordered(conn, setup, title: str, quantity: int = 100) -> tuple[str, str]:
     """Chị C (Mua hàng Điện thoại X) đặt PMIC của Chip X, trưởng phòng duyệt → (id đơn nội bộ, id dòng)."""
     i = ids(conn, "TDX", "c", "tp_mh_dt")
-    pr_id = conn.execute("""INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id,
+    pr_id = conn.execute(
+        """INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id,
                                                                partner_id)
                             VALUES (%s, %s, %s, test.id('P_NV_MH_DT'), %s) RETURNING id""",
-                         (i["TDX"], title, i["c"], setup["partner"])).fetchone()["id"]
-    conn.execute("""INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
-                    VALUES (%s, %s, %s, 12000)""", (pr_id, setup["item"], quantity))
+        (i["TDX"], title, i["c"], setup["partner"]),
+    ).fetchone()["id"]
+    conn.execute(
+        """INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
+                    VALUES (%s, %s, %s, 12000)""",
+        (pr_id, setup["item"], quantity),
+    )
     conn.execute("SELECT proc.submit_purchase_request(%s, %s)", (pr_id, i["c"]))
     conn.execute("SELECT wf.act(%s, %s, 'APPROVE')", (open_task(conn, pr_id)["id"], i["tp_mh_dt"]))
-    row = conn.execute("""SELECT o.id, l.id AS line_id FROM proc.purchase_request r
+    row = conn.execute(
+        """SELECT o.id, l.id AS line_id FROM proc.purchase_request r
                           JOIN ic.ic_order o ON o.id = r.ic_order_id JOIN ic.ic_order_item l ON l.order_id = o.id
-                          WHERE r.id = %s""", (pr_id,)).fetchone()
+                          WHERE r.id = %s""",
+        (pr_id,),
+    ).fetchone()
     return str(row["id"]), str(row["line_id"])
 
 
@@ -93,13 +103,18 @@ def test_xac_nhan_kem_lo(client, conn, setup):
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["status"] == "CONFIRMED" and body["purchase_order_id"]
-    po = conn.execute("""SELECT o.doc_no, l.lot_id FROM proc.purchase_order o
+    po = conn.execute(
+        """SELECT o.doc_no, l.lot_id FROM proc.purchase_order o
                          JOIN proc.purchase_order_item l ON l.order_id = o.id WHERE o.id = %s""",
-                      (body["purchase_order_id"],)).fetchone()
+        (body["purchase_order_id"],),
+    ).fetchone()
     assert po["doc_no"].startswith("PO-") and str(po["lot_id"]) == setup["lot"]
     # Nhật ký kiểm toán ghi người xác nhận (phiên Hasura gắn vào giao dịch).
-    actor = conn.execute("""SELECT actor_id FROM audit.log WHERE table_name = 'ic.ic_order' AND row_id = %s
-                            ORDER BY id DESC LIMIT 1""", (order,)).fetchone()["actor_id"]
+    actor = conn.execute(
+        """SELECT actor_id FROM audit.log WHERE table_name = 'ic.ic_order' AND row_id = %s
+                            ORDER BY id DESC LIMIT 1""",
+        (order,),
+    ).fetchone()["actor_id"]
     assert str(actor) == i["a"]
 
     resp = call(client, "confirm_ic_order", {"order_id": order, "lots": lots}, i["a"], i["TDX"])
@@ -112,7 +127,11 @@ def test_tu_choi_va_huy(client, conn, setup):
     resp = call(client, "reject_ic_order", {"order_id": order, "reason": " "}, i["a"], i["TDX"])
     assert resp.status_code == 400 and "lý do" in resp.json()["message"]
     resp = call(client, "reject_ic_order", {"order_id": order, "reason": "Hết hàng"}, i["a"], i["TDX"])
-    assert resp.status_code == 200 and resp.json() == {"order_id": order, "status": "REJECTED", "purchase_order_id": None}
+    assert resp.status_code == 200 and resp.json() == {
+        "order_id": order,
+        "status": "REJECTED",
+        "purchase_order_id": None,
+    }
 
     order, _ = ordered(conn, setup, "ic hủy")
     # Người không xem được đơn: như không có đơn.
@@ -141,8 +160,9 @@ def test_qua_hasura(hasura, conn, setup):
 
     confirm = """mutation($id: uuid!, $lots: [IcOrderLot!]) {
                    confirm_ic_order(order_id: $id, lots: $lots) { status purchase_order { doc_no request { doc_no } } } }"""
-    data = hasura(confirm, {"id": order, "lots": [{"line_id": line, "lot_id": setup["lot"]}]},
-                  person=i["a"], tenant=i["TDX"])
+    data = hasura(
+        confirm, {"id": order, "lots": [{"line_id": line, "lot_id": setup["lot"]}]}, person=i["a"], tenant=i["TDX"]
+    )
     assert data["data"]["confirm_ic_order"]["status"] == "CONFIRMED", data
     # Bên bán không xem đơn mua của bên mua; bên mua xem được.
     assert data["data"]["confirm_ic_order"]["purchase_order"] is None

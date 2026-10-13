@@ -57,6 +57,7 @@ ORDER BY pt.schemaname, pt.tablename, a.attnum
 def bronze_ddl() -> list[tuple[str, str]]:
     """Cột bronze (tên, kiểu Trino) suy từ schema Arrow của lakehouse-sink, một nguồn duy nhất."""
     from .lakehouse_sink import BRONZE_COLUMNS
+
     return BRONZE_COLUMNS
 
 
@@ -86,8 +87,10 @@ def column_expr(name: str, typname: str, category: str, typmod: int, elem: str |
     if typname == "date":
         return f"date_add('day', CAST({scalar} AS integer), DATE '1970-01-01')", "date"
     if typname == "timestamptz":
-        return f"CAST(from_iso8601_timestamp_nanos({scalar}) AS timestamp(6) with time zone)", \
-            "timestamp(6) with time zone"
+        return (
+            f"CAST(from_iso8601_timestamp_nanos({scalar}) AS timestamp(6) with time zone)",
+            "timestamp(6) with time zone",
+        )
     if category == "A":
         return f"CAST(json_extract(after, {_path(name)}) AS array(varchar))", "array(varchar)"
     # text, varchar, enum, ltree, khoảng thời gian (tstzrange), json/jsonb: Debezium gửi dạng chuỗi.
@@ -117,18 +120,30 @@ def build_rules(conn: psycopg.Connection) -> str:
     for (schema, table), cols in _tables(conn).items():
         column = tenant_column(schema, table, {c[0] for c in cols})
         if column:
-            tenant_tables.append({"user": TENANT_USER, "catalog": CATALOG, "schema": "silver",
-                                  "table": f"{schema}_{table}", "privileges": ["SELECT"],
-                                  "filter": f"{_ident(column)} = {TENANT_OF_USER}"})
+            tenant_tables.append(
+                {
+                    "user": TENANT_USER,
+                    "catalog": CATALOG,
+                    "schema": "silver",
+                    "table": f"{schema}_{table}",
+                    "privileges": ["SELECT"],
+                    "filter": f"{_ident(column)} = {TENANT_OF_USER}",
+                }
+            )
     rules = {
         "impersonation": [{"original_user": ACTIONS_USER, "new_user": TENANT_USER}],
-        "catalogs": [{"user": ADMIN_USER, "allow": "all"},
-                     {"user": TENANT_USER, "catalog": CATALOG, "allow": "read-only"}],
-        "schemas": [{"user": ADMIN_USER, "owner": True},
-                    {"user": TENANT_USER, "catalog": CATALOG, "schema": "silver", "owner": False}],
-        "tables": [{"user": ADMIN_USER,
-                    "privileges": ["SELECT", "INSERT", "DELETE", "UPDATE", "OWNERSHIP", "GRANT_SELECT"]},
-                   *tenant_tables],
+        "catalogs": [
+            {"user": ADMIN_USER, "allow": "all"},
+            {"user": TENANT_USER, "catalog": CATALOG, "allow": "read-only"},
+        ],
+        "schemas": [
+            {"user": ADMIN_USER, "owner": True},
+            {"user": TENANT_USER, "catalog": CATALOG, "schema": "silver", "owner": False},
+        ],
+        "tables": [
+            {"user": ADMIN_USER, "privileges": ["SELECT", "INSERT", "DELETE", "UPDATE", "OWNERSHIP", "GRANT_SELECT"]},
+            *tenant_tables,
+        ],
     }
     return json.dumps(rules, ensure_ascii=False, indent=2) + "\n"
 
@@ -178,8 +193,10 @@ def main() -> None:
     for path, text in ((args.out, sql), (args.rules_out, rules)):
         pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
         pathlib.Path(path).write_text(text, encoding="utf-8")
-    print(f"đã ghi {args.out}: {sql.count('CREATE OR REPLACE VIEW')} view silver; "
-          f"{args.rules_out}: {rules.count(chr(34) + 'filter' + chr(34))} view theo tenant")
+    print(
+        f"đã ghi {args.out}: {sql.count('CREATE OR REPLACE VIEW')} view silver; "
+        f"{args.rules_out}: {rules.count(chr(34) + 'filter' + chr(34))} view theo tenant"
+    )
 
 
 if __name__ == "__main__":

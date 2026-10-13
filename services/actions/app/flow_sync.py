@@ -47,8 +47,14 @@ def _steps(conn: psycopg.Connection, entity_type: str, entity_id, round_no: int)
     ).fetchall()
 
 
-def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: str, entity_id, round_no: int,
-              process_id: str | None) -> tuple[str | None, bool]:
+def reconcile(
+    conn: psycopg.Connection,
+    flowable: FlowableClient,
+    entity_type: str,
+    entity_id,
+    round_no: int,
+    process_id: str | None,
+) -> tuple[str | None, bool]:
     """Đưa tiến trình Flowable về đúng trạng thái CSDL. Trả về (process_id, đã kết thúc)."""
     steps = _steps(conn, entity_type, entity_id, round_no)
     if not steps:
@@ -61,14 +67,18 @@ def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: s
         elif steps[0]["step_status"] == "CANCELLED":
             return None, True
         else:
-            process_id = flowable.start_process(PROCESS_KEY, business_key(entity_id, round_no), {
-                "entityType": entity_type,
-                "entityId": str(entity_id),
-                "round": round_no,
-                "stepCount": len(steps),
-                "stepIndex": 0,
-                "positions": json.dumps([str(s["position_id"]) for s in steps]),
-            })
+            process_id = flowable.start_process(
+                PROCESS_KEY,
+                business_key(entity_id, round_no),
+                {
+                    "entityType": entity_type,
+                    "entityId": str(entity_id),
+                    "round": round_no,
+                    "stepCount": len(steps),
+                    "stepIndex": 0,
+                    "positions": json.dumps([str(s["position_id"]) for s in steps]),
+                },
+            )
 
     for _ in range(len(steps) + 1):
         if not flowable.process_running(process_id):
@@ -81,20 +91,26 @@ def reconcile(conn: psycopg.Connection, flowable: FlowableClient, entity_type: s
         step = steps[index]
         status = step["step_status"]
         if status == "APPROVED":
-            flowable.complete(task["id"], {
-                "decision": "APPROVE",
-                "stepIndex": index + 1,
-                "actedBy": str(step["acted_by"]),
-                "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
-                "note": step["note"] or "",
-            })
+            flowable.complete(
+                task["id"],
+                {
+                    "decision": "APPROVE",
+                    "stepIndex": index + 1,
+                    "actedBy": str(step["acted_by"]),
+                    "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
+                    "note": step["note"] or "",
+                },
+            )
         elif status in ("REJECTED", "RETURNED"):
-            flowable.complete(task["id"], {
-                "decision": "REJECT" if status == "REJECTED" else "RETURN",
-                "actedBy": str(step["acted_by"]),
-                "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
-                "note": step["note"] or "",
-            })
+            flowable.complete(
+                task["id"],
+                {
+                    "decision": "REJECT" if status == "REJECTED" else "RETURN",
+                    "actedBy": str(step["acted_by"]),
+                    "onBehalfOf": str(step["on_behalf_of"]) if step["on_behalf_of"] else "",
+                    "note": step["note"] or "",
+                },
+            )
         elif status == "CANCELLED":
             flowable.delete_process(process_id, "Chứng từ bị hủy trong CSDL")
             return process_id, True

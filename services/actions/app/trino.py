@@ -26,12 +26,17 @@ class Trino:
     def __init__(self, url: str, user: str, password: str = "", ca_file: str = "", timeout: float = 60):
         verify: ssl.SSLContext | bool = ssl.create_default_context(cafile=ca_file) if ca_file else True
         self.user = user
-        self.http = httpx.Client(base_url=url, timeout=timeout, verify=verify,
-                                 auth=(user, password) if password else None,
-                                 headers={"X-Trino-Source": "bamboo-actions"})
+        self.http = httpx.Client(
+            base_url=url,
+            timeout=timeout,
+            verify=verify,
+            auth=(user, password) if password else None,
+            headers={"X-Trino-Source": "bamboo-actions"},
+        )
 
-    def query(self, sql: str, *, as_user: str | None = None, catalog: str = "lakehouse",
-              schema: str | None = None) -> tuple[list[dict], list[list]]:
+    def query(
+        self, sql: str, *, as_user: str | None = None, catalog: str = "lakehouse", schema: str | None = None
+    ) -> tuple[list[dict], list[list]]:
         """(cột [{name, type}], các dòng). Lỗi truy vấn hoặc quyền: TrinoError."""
         headers = {"X-Trino-User": as_user or self.user, "X-Trino-Catalog": catalog}
         if schema:

@@ -24,8 +24,13 @@ TAG_VAR = "${BAMBOO_TAG:-dev}"
 
 def build(version: str) -> dict:
     compose = os.environ.get("DOCKER_COMPOSE", "docker compose").split()
-    raw = subprocess.run([*compose, "--profile", "scan", "config", "--no-interpolate", "--format", "json"],
-                         cwd=ROOT, check=True, capture_output=True, text=True).stdout
+    raw = subprocess.run(
+        [*compose, "--profile", "scan", "config", "--no-interpolate", "--format", "json"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
     spec = json.loads(raw)
     services = {}
     for name, svc in spec["services"].items():

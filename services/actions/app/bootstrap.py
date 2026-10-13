@@ -51,8 +51,14 @@ def apply_hasura_metadata(hasura_url: str, admin_secret: str, path: pathlib.Path
     metadata = json.loads(path.read_text(encoding="utf-8"))
     headers = {"x-hasura-admin-secret": admin_secret}
     with httpx.Client(base_url=hasura_url, headers=headers, timeout=60) as http:
-        resp = http.post("/v1/metadata", json={"type": "replace_metadata", "version": 2,
-                                               "args": {"allow_inconsistent_metadata": False, "metadata": metadata}})
+        resp = http.post(
+            "/v1/metadata",
+            json={
+                "type": "replace_metadata",
+                "version": 2,
+                "args": {"allow_inconsistent_metadata": False, "metadata": metadata},
+            },
+        )
         if resp.status_code >= 400:
             raise RuntimeError(f"Hasura từ chối metadata: {resp.text[:2000]}")
     log.info("đã nạp metadata Hasura")
@@ -73,14 +79,25 @@ def main() -> int:
     search.ensure_keys(meili)
     wait_for("Hasura", lambda: httpx.get(f"{settings.hasura_url}/healthz", timeout=5).raise_for_status())
     apply_hasura_metadata(settings.hasura_url, settings.hasura_admin_secret)
-    wait_for("Keycloak", lambda: keycloak_sync.ensure_web_client(
-        settings.keycloak_url, settings.keycloak_admin_user, settings.keycloak_admin_password,
-        settings.web_origin))
+    wait_for(
+        "Keycloak",
+        lambda: keycloak_sync.ensure_web_client(
+            settings.keycloak_url, settings.keycloak_admin_user, settings.keycloak_admin_password, settings.web_origin
+        ),
+    )
     log.info("client %s chấp nhận %s", keycloak_sync.CLIENT_ID, settings.web_origin)
-    keycloak_sync.ensure_provisioner_client(settings.keycloak_url, settings.keycloak_admin_user,
-                                            settings.keycloak_admin_password, settings.keycloak_provisioner_secret)
-    keycloak_sync.ensure_demo_users(settings.keycloak_url, settings.keycloak_admin_user,
-                                    settings.keycloak_admin_password, os.environ.get("DEMO_PASSWORD", ""))
+    keycloak_sync.ensure_provisioner_client(
+        settings.keycloak_url,
+        settings.keycloak_admin_user,
+        settings.keycloak_admin_password,
+        settings.keycloak_provisioner_secret,
+    )
+    keycloak_sync.ensure_demo_users(
+        settings.keycloak_url,
+        settings.keycloak_admin_user,
+        settings.keycloak_admin_password,
+        os.environ.get("DEMO_PASSWORD", ""),
+    )
     return 0
 
 

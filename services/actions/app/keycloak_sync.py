@@ -29,9 +29,11 @@ REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "platform/keycloak/re
 
 
 def admin_token(base_url: str, user: str, password: str) -> str:
-    resp = httpx.post(f"{base_url}/realms/master/protocol/openid-connect/token", timeout=15,
-                      data={"grant_type": "password", "client_id": "admin-cli",
-                            "username": user, "password": password})
+    resp = httpx.post(
+        f"{base_url}/realms/master/protocol/openid-connect/token",
+        timeout=15,
+        data={"grant_type": "password", "client_id": "admin-cli", "username": user, "password": password},
+    )
     resp.raise_for_status()
     return resp.json()["access_token"]
 
@@ -81,10 +83,18 @@ def ensure_provisioner_client(base_url: str, user: str, password: str, secret: s
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
     changed = False
     with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
-        desired = {"clientId": PROVISIONER_ID, "name": "Tạo tài khoản nhân viên (dịch vụ nội bộ)",
-                   "enabled": True, "publicClient": False, "serviceAccountsEnabled": True,
-                   "standardFlowEnabled": False, "implicitFlowEnabled": False, "directAccessGrantsEnabled": False,
-                   "clientAuthenticatorType": "client-secret", "secret": secret}
+        desired = {
+            "clientId": PROVISIONER_ID,
+            "name": "Tạo tài khoản nhân viên (dịch vụ nội bộ)",
+            "enabled": True,
+            "publicClient": False,
+            "serviceAccountsEnabled": True,
+            "standardFlowEnabled": False,
+            "implicitFlowEnabled": False,
+            "directAccessGrantsEnabled": False,
+            "clientAuthenticatorType": "client-secret",
+            "secret": secret,
+        }
         found = http.get("/clients", params={"clientId": PROVISIONER_ID})
         found.raise_for_status()
         if not found.json():
@@ -95,7 +105,10 @@ def ensure_provisioner_client(base_url: str, user: str, password: str, secret: s
         client = found.json()[0]
         current = http.get(f"/clients/{client['id']}/client-secret")
         current.raise_for_status()
-        if any(client.get(k) != v for k, v in desired.items() if k != "secret") or current.json().get("value") != secret:
+        if (
+            any(client.get(k) != v for k, v in desired.items() if k != "secret")
+            or current.json().get("value") != secret
+        ):
             http.put(f"/clients/{client['id']}", json={**client, **desired}).raise_for_status()
             changed = True
 
@@ -120,8 +133,9 @@ def ensure_provisioner_client(base_url: str, user: str, password: str, secret: s
     return changed
 
 
-def ensure_demo_users(base_url: str, user: str, password: str, demo_password: str,
-                      realm_file: pathlib.Path = REALM_FILE) -> int:
+def ensure_demo_users(
+    base_url: str, user: str, password: str, demo_password: str, realm_file: pathlib.Path = REALM_FILE
+) -> int:
     """Thêm tài khoản demo có trong tệp realm mà Keycloak chưa có (realm chỉ import ở lần chạy đầu, nên bản đã
     cài không tự có tài khoản demo mới). Giữ nguyên id (khớp person.idp_subject, ADR #23); không đụng tài
     khoản đã có. Trả về số tài khoản đã thêm."""
@@ -130,8 +144,12 @@ def ensure_demo_users(base_url: str, user: str, password: str, demo_password: st
     users = json.loads(realm_file.read_text(encoding="utf-8").replace("${DEMO_PASSWORD}", demo_password))["users"]
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
-    resp = httpx.post(f"{base_url}/admin/realms/{REALM}/partialImport", headers=headers, timeout=30,
-                      json={"ifResourceExists": "SKIP", "users": users})
+    resp = httpx.post(
+        f"{base_url}/admin/realms/{REALM}/partialImport",
+        headers=headers,
+        timeout=30,
+        json={"ifResourceExists": "SKIP", "users": users},
+    )
     resp.raise_for_status()
     added = int(resp.json().get("added", 0))
     if added:

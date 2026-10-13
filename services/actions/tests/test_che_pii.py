@@ -19,9 +19,11 @@ def client(database):
 
 
 def call(client, name, args, person, tenant):
-    payload = {"action": {"name": name}, "input": args,
-               "session_variables": {"x-hasura-role": "user", "x-hasura-user-id": person,
-                                     "x-hasura-tenant-id": tenant}}
+    payload = {
+        "action": {"name": name},
+        "input": args,
+        "session_variables": {"x-hasura-role": "user", "x-hasura-user-id": person, "x-hasura-tenant-id": tenant},
+    }
     return client.post(f"/actions/{name}", json=payload, headers={"x-actions-secret": SETTINGS.actions_secret})
 
 
@@ -31,19 +33,25 @@ def grant_auditor(conn, position_key: str) -> None:
         ON CONFLICT (tenant_id, code) DO NOTHING;
         INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
         SELECT tenant_id, id, 'audit.read' FROM core.role WHERE code = 'KIEM_TOAN_PII' ON CONFLICT DO NOTHING;""")
-    conn.execute("""INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
+    conn.execute(
+        """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
                     SELECT r.tenant_id, r.id, test.id(%s), 'TENANT' FROM core.role r WHERE r.code = 'KIEM_TOAN_PII'
-                      AND NOT EXISTS (SELECT 1 FROM core.role_grant g WHERE g.role_id = r.id)""", (position_key,))
+                      AND NOT EXISTS (SELECT 1 FROM core.role_grant g WHERE g.role_id = r.id)""",
+        (position_key,),
+    )
 
 
 def commented_log(conn, body: str) -> int:
     """Bình luận chứa dữ liệu cá nhân trên một đề nghị → id dòng nhật ký INSERT của bình luận."""
     pr_id = pr(conn, f"pii_{abs(hash(body))}", "c", "P_NV_MH_DT", 1_000_000)
-    row = conn.execute("""INSERT INTO collab.comment (tenant_id, entity_type, entity_id, author_id, body)
+    row = conn.execute(
+        """INSERT INTO collab.comment (tenant_id, entity_type, entity_id, author_id, body)
                           VALUES (test.id('TDX'), 'proc.purchase_request', %s, test.id('c'), %s) RETURNING id""",
-                       (pr_id, body)).fetchone()
-    return conn.execute("""SELECT id FROM audit.log WHERE table_name = 'collab.comment' AND row_id = %s""",
-                        (str(row["id"]),)).fetchone()["id"]
+        (pr_id, body),
+    ).fetchone()
+    return conn.execute(
+        """SELECT id FROM audit.log WHERE table_name = 'collab.comment' AND row_id = %s""", (str(row["id"]),)
+    ).fetchone()["id"]
 
 
 def test_nhat_ky_tra_ban_che(client, conn):
@@ -65,12 +73,26 @@ def test_nhat_ky_tra_ban_che(client, conn):
 
 
 def test_che_theo_ten_cot():
-    masked, found = audit.mask_row({"full_name": "Trần Thị Thử", "date_of_birth": "1998-04-12",
-                                    "national_id_enc": "vault:v1:abc", "national_id_masked": "•••••••••789",
-                                    "phone": "+1 555 0100", "work_email": "thu.tt@dienthoai.vn", "salary": 18000000})
-    assert masked == {"full_name": "Trần Thị Thử", "date_of_birth": "••/••/1998", "national_id_enc": "[bản mã]",
-                      "national_id_masked": "•••••••••789", "phone": "••••••100",
-                      "work_email": "t***@dienthoai.vn", "salary": 18000000}
+    masked, found = audit.mask_row(
+        {
+            "full_name": "Trần Thị Thử",
+            "date_of_birth": "1998-04-12",
+            "national_id_enc": "vault:v1:abc",
+            "national_id_masked": "•••••••••789",
+            "phone": "+1 555 0100",
+            "work_email": "thu.tt@dienthoai.vn",
+            "salary": 18000000,
+        }
+    )
+    assert masked == {
+        "full_name": "Trần Thị Thử",
+        "date_of_birth": "••/••/1998",
+        "national_id_enc": "[bản mã]",
+        "national_id_masked": "•••••••••789",
+        "phone": "••••••100",
+        "work_email": "t***@dienthoai.vn",
+        "salary": 18000000,
+    }
     assert found == {"Ngày sinh", "Bản mã", "Số điện thoại", "Email"}
 
 
@@ -80,8 +102,10 @@ def test_kiem_tra_truoc_khi_gui(client, conn):
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["masked_text"] == "STK ••••••••••456, gọi 0987 *** 321"
-    assert [(e["entity"], e["label"]) for e in body["entities"]] == [("VN_BANK_ACCOUNT", "Số tài khoản"),
-                                                                     ("VN_PHONE", "Số điện thoại")]
+    assert [(e["entity"], e["label"]) for e in body["entities"]] == [
+        ("VN_BANK_ACCOUNT", "Số tài khoản"),
+        ("VN_PHONE", "Số điện thoại"),
+    ]
     resp = call(client, "check_pii", {"text": "x" * 10_001}, i["c"], i["TDX"])
     assert resp.status_code == 400
 

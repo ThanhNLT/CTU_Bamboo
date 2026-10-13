@@ -16,16 +16,29 @@ from urllib.parse import urlparse, urlunparse
 import psycopg
 import pytest
 
-from app import config, lakehouse_sink as ls
+from app import config
+from app import lakehouse_sink as ls
 from conftest import TEST_DB_URL, _missing, _reachable, root_settings
 
 pytest.importorskip("pyiceberg")
 kafka = pytest.importorskip("kafka")
 
-EVENT = {"before": None, "after": {"tenant_id": "t-1", "id": "pr-1", "title": "Tụ điện", "total_amount": "300000.00"},
-         "source": {"connector": "postgresql", "db": "bms", "schema": "proc", "table": "purchase_request",
-                    "lsn": 123456, "txId": 789, "ts_ms": 1791165722100, "ts_us": 1791165722100088},
-         "op": "u", "ts_ms": 1791165722200}
+EVENT = {
+    "before": None,
+    "after": {"tenant_id": "t-1", "id": "pr-1", "title": "Tụ điện", "total_amount": "300000.00"},
+    "source": {
+        "connector": "postgresql",
+        "db": "bms",
+        "schema": "proc",
+        "table": "purchase_request",
+        "lsn": 123456,
+        "txId": 789,
+        "ts_ms": 1791165722100,
+        "ts_us": 1791165722100088,
+    },
+    "op": "u",
+    "ts_ms": 1791165722200,
+}
 
 
 def test_ten_bang_va_topic():
@@ -44,9 +57,18 @@ def test_su_kien_thanh_dong_bronze():
     assert row["source_date"] == dt.date(2026, 10, 5) and row["record_key"] == '{"id":"pr-1"}'
     assert json.loads(row["after"])["title"] == "Tụ điện" and row["before"] is None
     assert (row["kafka_partition"], row["kafka_offset"], row["ingested_at"]) == (0, 41, now)
-    deleted = ls.to_row(0, 42, None, json.dumps({**EVENT, "op": "d", "before": {"id": "pr-1", "tenant_id": "t-1"},
-                                                  "after": None}).encode(), now)
-    assert deleted["tenant_id"] == "t-1" and deleted["after"] is None and json.loads(deleted["record_key"]) == {"id": "pr-1"}
+    deleted = ls.to_row(
+        0,
+        42,
+        None,
+        json.dumps({**EVENT, "op": "d", "before": {"id": "pr-1", "tenant_id": "t-1"}, "after": None}).encode(),
+        now,
+    )
+    assert (
+        deleted["tenant_id"] == "t-1"
+        and deleted["after"] is None
+        and json.loads(deleted["record_key"]) == {"id": "pr-1"}
+    )
 
 
 @pytest.fixture(scope="module")
@@ -100,5 +122,7 @@ def test_ghi_bronze_dung_mot_lan(lake_settings):
     again = ls.Sink(lake_settings, cat=ls.catalog(lake_settings, warehouse))
     _drain(again)
     after = cat.load_table("bronze.proc_purchase_request").scan().to_arrow()
-    pairs = list(zip(after.column("kafka_partition").to_pylist(), after.column("kafka_offset").to_pylist(), strict=True))
+    pairs = list(
+        zip(after.column("kafka_partition").to_pylist(), after.column("kafka_offset").to_pylist(), strict=True)
+    )
     assert len(pairs) == len(set(pairs)) and after.num_rows >= rows.num_rows, "không ghi trùng sự kiện"

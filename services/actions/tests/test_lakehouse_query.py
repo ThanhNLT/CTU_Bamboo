@@ -46,6 +46,7 @@ def _session(tenant) -> dict:
 
 # --- Không cần Trino --------------------------------------------------------------------------------------
 
+
 def test_nguoi_dung_trino_cua_tenant():
     tenant = uuid.uuid4()
     assert lq.tenant_user(str(tenant)) == f"t_{tenant}"
@@ -68,8 +69,10 @@ def test_chua_cau_hinh_trino():
 def test_thieu_ca_trino_khong_lam_sap_actions(tmp_path):
     """Tệp CA chưa có: actions vẫn khởi động, Action Lakehouse trả 503 thay vì cả dịch vụ không lên."""
     from app import config, main
-    settings = config.Settings(**{**SETTINGS.__dict__, "trino_password": "x",
-                                  "trino_ca_file": str(tmp_path / "khong-co.pem")})
+
+    settings = config.Settings(
+        **{**SETTINGS.__dict__, "trino_password": "x", "trino_ca_file": str(tmp_path / "khong-co.pem")}
+    )
     assert main._lakehouse(settings) is None
 
 
@@ -81,6 +84,7 @@ def test_ten_tap_du_lieu_khong_hop_le(name):
 
 
 # --- Trino thật -------------------------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def tenants() -> dict[str, str]:
@@ -111,8 +115,11 @@ def _count(client: Trino, sql: str, as_user: str | None = None) -> int:
 
 
 def test_moi_tenant_chi_thay_du_lieu_cua_minh(tenants, actions, admin):
-    by_tenant = dict(admin.query("SELECT CAST(tenant_id AS varchar), count(*) FROM proc_purchase_request "
-                                 "GROUP BY 1", schema="silver")[1])
+    by_tenant = dict(
+        admin.query(
+            "SELECT CAST(tenant_id AS varchar), count(*) FROM proc_purchase_request GROUP BY 1", schema="silver"
+        )[1]
+    )
     assert by_tenant, "silver chưa có đề nghị mua sắm"
     for code, tenant in tenants.items():
         user = lq.tenant_user(tenant)
@@ -130,12 +137,15 @@ def test_tenant_la_khong_thay_gi(tenants, actions):
     assert _count(actions, "SELECT count(*) FROM proc_purchase_request", lq.tenant_user(str(uuid.uuid4()))) == 0
 
 
-@pytest.mark.parametrize("sql", [
-    "SELECT count(*) FROM lakehouse.bronze.proc_purchase_request",
-    "SELECT count(*) FROM core_permission",
-    "SELECT count(*) FROM core_tenant_relation",
-    "SELECT count(*) FROM system.runtime.nodes",
-])
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT count(*) FROM lakehouse.bronze.proc_purchase_request",
+        "SELECT count(*) FROM core_permission",
+        "SELECT count(*) FROM core_tenant_relation",
+        "SELECT count(*) FROM system.runtime.nodes",
+    ],
+)
 def test_nguoi_dung_tenant_khong_doc_duoc_ngoai_silver_theo_tenant(tenants, actions, sql):
     with pytest.raises(TrinoError) as err:
         actions.query(sql, as_user=lq.tenant_user(next(iter(tenants.values()))), schema="silver")
@@ -144,8 +154,9 @@ def test_nguoi_dung_tenant_khong_doc_duoc_ngoai_silver_theo_tenant(tenants, acti
 
 def test_nguoi_dung_tenant_khong_ghi_duoc(tenants, actions):
     with pytest.raises(TrinoError) as err:
-        actions.query("DELETE FROM lakehouse.bronze.proc_purchase_request",
-                      as_user=lq.tenant_user(next(iter(tenants.values()))))
+        actions.query(
+            "DELETE FROM lakehouse.bronze.proc_purchase_request", as_user=lq.tenant_user(next(iter(tenants.values())))
+        )
     assert err.value.name == "PERMISSION_DENIED"
 
 
@@ -163,8 +174,12 @@ def test_dang_nhap_sai_bi_tu_choi(tenants):
     assert err.value.name == "UNAUTHENTICATED"
     # Cổng HTTP nội bộ không nhận mật khẩu.
     http_url = os.environ.get("TRINO_HTTP_URL") or f"http://{urlparse(SETTINGS.trino_url).hostname}:8080"
-    resp = httpx.post(http_url + "/v1/statement", content="SELECT 1",
-                      auth=(SETTINGS.trino_user, SETTINGS.trino_password), headers={"X-Trino-User": SETTINGS.trino_user})
+    resp = httpx.post(
+        http_url + "/v1/statement",
+        content="SELECT 1",
+        auth=(SETTINGS.trino_user, SETTINGS.trino_password),
+        headers={"X-Trino-User": SETTINGS.trino_user},
+    )
     assert resp.status_code in (401, 403)
 
 
@@ -174,7 +189,9 @@ def test_action_xem_truoc_tap_du_lieu(tenants, actions, admin):
     datasets = {d["name"]: d for d in lq.lakehouse_datasets(AllowConn(True), _session(tenant), {}, ctx)}
     assert "proc_purchase_request" in datasets and "core_permission" not in datasets
     assert datasets["proc_purchase_request"]["label"] == "Đề nghị mua sắm"
-    assert {"tenant_id", "total_amount", "_changed_at"} <= {c["name"] for c in datasets["proc_purchase_request"]["columns"]}
+    assert {"tenant_id", "total_amount", "_changed_at"} <= {
+        c["name"] for c in datasets["proc_purchase_request"]["columns"]
+    }
 
     preview = lq.lakehouse_preview(AllowConn(True), _session(tenant), {"dataset": "proc_purchase_request"}, ctx)
     expected = _count(admin, f"SELECT count(*) FROM proc_purchase_request WHERE tenant_id = uuid '{tenant}'")

@@ -16,7 +16,9 @@ from .common import ActionError, Context, bind_session, require_read, session_id
 
 log = logging.getLogger("attachments")
 
-_COLUMNS = "id, tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, status, uploaded_by"
+_COLUMNS = (
+    "id, tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, status, uploaded_by"
+)
 
 
 def _clean_name(file_name: str) -> str:
@@ -28,8 +30,10 @@ def _clean_name(file_name: str) -> str:
 
 
 def _load(conn: psycopg.Connection, session: dict, attachment_id: str, lock: bool = False) -> tuple[dict, str]:
-    row = conn.execute(f"SELECT {_COLUMNS}, deleted_at FROM core.attachment WHERE id = %s"
-                       + (" FOR UPDATE" if lock else ""), (attachment_id,)).fetchone()
+    row = conn.execute(
+        f"SELECT {_COLUMNS}, deleted_at FROM core.attachment WHERE id = %s" + (" FOR UPDATE" if lock else ""),
+        (attachment_id,),
+    ).fetchone()
     person = session_identity(session, row[1] if row else None)
     if row[-1] is not None:
         raise ActionError("Không tìm thấy tệp đính kèm", "not-found", 404)
@@ -66,14 +70,23 @@ def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
         """INSERT INTO core.attachment (tenant_id, id, entity_type, entity_id, file_name, content_type, size_bytes,
                                         storage_key, uploaded_by)
            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-        (tenant, attachment_id, entity_type, entity_id, name, content_type, size, key, person))
-    return {"attachment_id": attachment_id, "upload_url": s3.upload_url(key, content_type), "method": "PUT",
-            "content_type": content_type, "expires_in": storage.UPLOAD_TTL}
+        (tenant, attachment_id, entity_type, entity_id, name, content_type, size, key, person),
+    )
+    return {
+        "attachment_id": attachment_id,
+        "upload_url": s3.upload_url(key, content_type),
+        "method": "PUT",
+        "content_type": content_type,
+        "expires_in": storage.UPLOAD_TTL,
+    }
 
 
 def _finish(conn, attachment_id: str, status: str, scan_result: str, sha256: str | None = None) -> dict:
-    conn.execute("""UPDATE core.attachment SET status = %s, scan_result = %s, sha256 = %s, scanned_at = now()
-                    WHERE id = %s""", (status, scan_result, sha256, attachment_id))
+    conn.execute(
+        """UPDATE core.attachment SET status = %s, scan_result = %s, sha256 = %s, scanned_at = now()
+                    WHERE id = %s""",
+        (status, scan_result, sha256, attachment_id),
+    )
     return {"attachment_id": attachment_id, "status": status, "scan_result": scan_result}
 
 
@@ -85,9 +98,13 @@ def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     if att["uploaded_by"] != uuid.UUID(person):
         raise ActionError("Chỉ người tải lên được xác nhận tệp", "forbidden", 403)
     if att["status"] != "PENDING":
-        return {"attachment_id": str(att["id"]), "status": att["status"],
-                "scan_result": conn.execute("SELECT scan_result FROM core.attachment WHERE id = %s",
-                                            (att["id"],)).fetchone()[0]}
+        return {
+            "attachment_id": str(att["id"]),
+            "status": att["status"],
+            "scan_result": conn.execute(
+                "SELECT scan_result FROM core.attachment WHERE id = %s", (att["id"],)
+            ).fetchone()[0],
+        }
     key, attachment_id = att["storage_key"], str(att["id"])
     data = s3.read_quarantine(key)
     if data is None:
@@ -126,8 +143,11 @@ def get_download_url(conn: psycopg.Connection, session: dict, args: dict, ctx: C
     require_read(conn, att["entity_type"], att["entity_id"], person)
     if att["status"] != "CLEAN":
         raise ActionError(f"Tệp ở trạng thái {att['status']} không tải về được", "not-clean")
-    return {"attachment_id": str(att["id"]), "expires_in": storage.DOWNLOAD_TTL,
-            "url": s3.download_url(att["storage_key"], att["file_name"], att["content_type"])}
+    return {
+        "attachment_id": str(att["id"]),
+        "expires_in": storage.DOWNLOAD_TTL,
+        "url": s3.download_url(att["storage_key"], att["file_name"], att["content_type"]),
+    }
 
 
 def delete_attachment(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
