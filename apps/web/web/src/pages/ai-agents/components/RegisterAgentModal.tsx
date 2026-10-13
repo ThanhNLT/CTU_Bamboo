@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, Form, Input, Modal, Select } from "antd";
-import { useEffect } from "react";
+// ===== Thư viện =====
+import { Checkbox, Form, Input, Modal, Select } from "antd"; // Ant Design
+import { useEffect } from "react"; // React
+
+// ===== Module nội bộ =====
 import { GUARD_INFO, MODELS, SCOPE_OPTIONS, TOOL_CATALOG } from "../mock";
 import type { GuardKey } from "../types";
 
+// ===== Kiểu dữ liệu =====
 export type RegisterValues = {
   name: string;
   description: string;
@@ -16,8 +20,10 @@ export type RegisterValues = {
   guards: GuardKey[];
 };
 
+// ===== Hằng số =====
 const GUARDS = Object.keys(GUARD_INFO) as GuardKey[];
 
+// ===== Component =====
 /** Đăng ký tác tử mới: tác tử vào trạng thái "Chờ duyệt" cho tới khi quản trị viên duyệt. */
 export const RegisterAgentModal = ({
   open,

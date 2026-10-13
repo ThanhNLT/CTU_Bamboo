@@ -2,11 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from "react";
+// ===== Thư viện =====
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import type { SealLogRow } from "../types";
 
+// ===== Hằng số =====
 const DEFAULT_ROWS = 5;
 
+// ===== Component =====
 const ResultTag = ({ result }: { result: SealLogRow["result"] }) =>
   result === "match" ? (
     <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink">

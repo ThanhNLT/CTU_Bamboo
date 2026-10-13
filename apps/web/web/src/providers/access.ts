@@ -4,14 +4,20 @@
 
 // Ẩn menu/nút theo quyền thật của người dùng trong tenant (core_v_permission_grant chỉ trả quyền
 // của chính người gọi). Đây chỉ là lớp giao diện: quyền thật kiểm tra ở Hasura và CSDL (ADR #6).
-import type { AccessControlProvider } from "@refinedev/core";
+
+// ===== Thư viện =====
+import type { AccessControlProvider } from "@refinedev/core"; // Refine
+
+// ===== Module nội bộ =====
 import { getTenant, request } from "../api/client";
 
+// ===== Trạng thái module =====
 // Bộ nhớ đệm quyền theo TỪNG tenant. Chưa chọn tenant (ngay sau đăng nhập, TenantGate còn đang tải) thì
 // không gọi máy chủ và KHÔNG lưu đệm: nếu lưu một tập rỗng lúc đó, menu có phân quyền (Kiểm toán, Tiếp nhận
 // nhân sự) sẽ bị ẩn mãi tới khi tải lại trang — chính là lỗi kiểm thử e2e chập chờn trước đây.
 let cache: { tenant: string; promise: Promise<Set<string>> } | null = null;
 
+// ===== Hàm tiện ích =====
 export const myPermissions = (): Promise<Set<string>> => {
   const tenant = getTenant();
   if (!tenant) return Promise.resolve(new Set<string>());
@@ -34,6 +40,7 @@ export const myPermissions = (): Promise<Set<string>> => {
   return cache.promise;
 };
 
+// ===== Hằng số =====
 // Một quyền, hoặc danh sách = có MỘT trong các quyền là đủ.
 const RULES: Record<string, Partial<Record<string, string | string[]>>> = {
   audit_log: { list: "audit.read" },

@@ -2,15 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { RefreshCw, SearchX } from "lucide-react";
+// ===== Thư viện =====
+import { RefreshCw, SearchX } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { DOC_KIND_LABEL } from "../../../api/documents";
 import type { EofficeRecord } from "../types";
 import { Pagination } from "./Pagination";
 import { RecordStatusBadge } from "./RecordStatusBadge";
 
+// ===== Hằng số =====
 const TH = "px-3 pb-2 pt-1 text-left text-[12px] font-medium text-muted";
 
+// ===== Component =====
 /**
  * Bảng hồ sơ (cột trái). Phần thân cuộn độc lập; tiêu đề cột dính trên cùng khi cuộn.
  * Mũi tên lên/xuống trên một dòng chuyển hồ sơ đang chọn.

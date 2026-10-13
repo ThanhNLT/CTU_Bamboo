@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ChevronUp, Minus, X } from "lucide-react";
-import { useState } from "react";
+// ===== Thư viện =====
+import { ChevronUp, Minus, X } from "lucide-react"; // Lucide React
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { UploadItem } from "../types";
 
+// ===== Hằng số =====
 const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
   uploading: (i) => `${i.progress}%`,
   scanning: () => "Đang quét mã độc…",
@@ -14,6 +18,7 @@ const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
   blocked: () => "Bị chặn",
 };
 
+// ===== Component =====
 const ProgressBar = ({ item }: { item: UploadItem }) => {
   if (item.status === "scanning") {
     // Sọc chạy: chưa biết thời gian quét còn lại.

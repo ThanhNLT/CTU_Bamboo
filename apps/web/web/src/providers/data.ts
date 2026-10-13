@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { DataProvider } from "@refinedev/core";
-import hasuraDataProvider, { liveProvider as hasuraLiveProvider } from "@refinedev/hasura";
+// ===== Thư viện =====
+import type { DataProvider } from "@refinedev/core"; // Refine
+import hasuraDataProvider, { liveProvider as hasuraLiveProvider } from "@refinedev/hasura"; // Refine Hasura
+
+// ===== Module nội bộ =====
 import { client, toHttpError, wsClient } from "../api/client";
 
+// ===== Hằng số =====
 // Bảng dùng khóa số (bigint) thay cho uuid.
 const BIGINT_RESOURCES = new Set(["audit_log", "wf_approval_history"]);
 

@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ExternalLink, TriangleAlert } from "lucide-react";
+// ===== Thư viện =====
+import { ExternalLink, TriangleAlert } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
+// ===== Component =====
 export const DataLineageHeader = ({
   openMetadataHref,
   onReport,

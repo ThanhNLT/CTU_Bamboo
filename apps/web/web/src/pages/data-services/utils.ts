@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import type { Dataset, DomainFilter } from "./types";
 
+// ===== Khởi tạo =====
 const num = new Intl.NumberFormat("vi-VN");
+
+// ===== Hàm tiện ích =====
 export const formatInt = (n: number) => num.format(n);
 
 export const filterDatasets = (list: Dataset[], query: string, domain: DomainFilter) => {
@@ -34,4 +38,5 @@ export const cellText = (value: unknown) => {
   return String(value);
 };
 
+// ===== Xuất lại =====
 export { copyText } from "../../utils/clipboard";

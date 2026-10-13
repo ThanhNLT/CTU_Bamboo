@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { DocKind, DocStep } from "../../api/documents";
 
+// ===== Kiểu dữ liệu =====
 /** Trạng thái hiển thị, gộp từ trạng thái gốc của từng loại chứng từ. */
 export type RecordStatus = "draft" | "pending" | "returned" | "approved" | "closed";
 

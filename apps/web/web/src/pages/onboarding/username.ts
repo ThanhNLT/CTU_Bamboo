@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hàm tiện ích =====
 // "Nguyễn Văn An" → "an.nguyenvan" (bỏ dấu); người dùng sửa lại được.
 export const suggestUsername = (fullName: string) => {
   const words = fullName

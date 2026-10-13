@@ -3,16 +3,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Hộp thoại thêm / sửa đơn vị, vị trí và bổ nhiệm — dùng ở trang Cơ cấu tổ chức và trang Người dùng.
-import { DatePicker, Form, Input, Radio, Select, Switch, TreeSelect } from "antd";
-import type { Dayjs } from "dayjs";
+
+// ===== Thư viện =====
+import { DatePicker, Form, Input, Radio, Select, Switch, TreeSelect } from "antd"; // Ant Design
+import type { Dayjs } from "dayjs"; // Day.js
+
+// ===== Module nội bộ =====
 import { adminSave } from "./api";
 import { FormModal } from "./FormModal";
 import { ASSIGNMENT_LABEL, type OrgData, type Position, type Unit } from "./orgData";
 import { toDate } from "./period";
 import { useUnitTree } from "./useUnitTree";
 
+// ===== Kiểu dữ liệu =====
 type UnitValues = { code: string; name: string; unit_type_id: string; parent_id: string; is_legal_entity: boolean };
 
+// ===== Component =====
 export const UnitModal = ({
   open,
   org,

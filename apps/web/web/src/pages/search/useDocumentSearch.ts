@@ -4,12 +4,18 @@
 
 // Tìm THẬT trong đề nghị mua sắm và nội dung tệp đính kèm (Action search_documents, ADR #36).
 // Tenant và quyền xem lọc ở máy chủ; giao diện chỉ gửi chữ cần tìm.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// ===== Thư viện =====
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { SearchResult } from "./types";
 
+// ===== Hằng số =====
 const PAGE = 20;
 
+// ===== Truy vấn GraphQL =====
 const SEARCH = `
   query Search($q: String!, $kind: SearchKind, $limit: Int, $offset: Int) {
     search_documents(query: $q, kind: $kind, limit: $limit, offset: $offset) {
@@ -19,6 +25,7 @@ const SEARCH = `
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type Hit = {
   kind: "purchase_request" | "attachment";
   entity_id: string;
@@ -37,6 +44,7 @@ type Hit = {
   } | null;
 };
 
+// ===== Hằng số =====
 const FIELD: Record<string, string> = {
   doc_no: "Số chứng từ",
   title: "Tiêu đề",
@@ -49,6 +57,7 @@ const FIELD: Record<string, string> = {
   file_name: "Tên tệp",
 };
 
+// ===== Hàm tiện ích =====
 /** Kết quả thật → dòng hiển thị chung. Điểm giảm dần theo thứ tự máy chủ trả (đã xếp theo độ khớp). */
 const toResult = (h: Hit, i: number): SearchResult => {
   const pr = h.purchase_request;
@@ -73,9 +82,13 @@ const toResult = (h: Hit, i: number): SearchResult => {
   };
 };
 
+// ===== Kiểu dữ liệu =====
 type State = { hits: Hit[]; more: boolean; loading: boolean; error?: string; ms: number };
+
+// ===== Hằng số =====
 const EMPTY: State = { hits: [], more: false, loading: false, ms: 0 };
 
+// ===== Hook =====
 export const useDocumentSearch = (q: string, enabled: boolean) => {
   const [state, setState] = useState<State>(EMPTY);
   const seq = useRef(0);

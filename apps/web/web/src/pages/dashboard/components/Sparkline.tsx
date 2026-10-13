@@ -2,12 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 
+// ===== Hằng số =====
 const W = 240;
 const H = 44;
 const PAD = 4;
 
+// ===== Component =====
 /** Biểu đồ đường mini bằng SVG thuần, có thể kèm đường ngưỡng nét đứt. */
 export const Sparkline = ({
   data,

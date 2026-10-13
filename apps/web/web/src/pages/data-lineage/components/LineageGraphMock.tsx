@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { LAYERS, NODE_W, STATUS_LABEL, colLeft, edgePath, graphHeight, graphMetrics } from "../graph";
 import type { Direction, LineageEdge, LineageNode, NodeStatus } from "../types";
 
+// ===== Hằng số =====
 const NODE_CLASS: Record<NodeStatus, string> = {
   healthy: "border border-line bg-white",
   failed: "border-[1.5px] border-red-500 bg-red-50",
@@ -36,6 +38,7 @@ const DIRECTIONS: Array<{ key: Direction; label: string }> = [
   { key: "downstream", label: "Phía sau" },
 ];
 
+// ===== Component =====
 const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: Direction) => void }) => (
   <div
     role="group"

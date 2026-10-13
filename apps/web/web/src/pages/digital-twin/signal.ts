@@ -5,8 +5,11 @@
 // Sinh chuỗi dữ liệu cảm biến mẫu (cố định, không ngẫu nhiên) và các phép tính trên chuỗi:
 // gộp theo khung thời gian, tìm đoạn vượt ngưỡng, chọn miền trục Y. Khi nối Scorpio Temporal API thật,
 // chỉ cần thay `minuteSeries` bằng dữ liệu trả về; phần còn lại giữ nguyên.
+
+// ===== Module nội bộ =====
 import type { BreachSpan, SeriesPoint, SignalSpec, Threshold, TimeRange } from "./types";
 
+// ===== Hằng số =====
 /** Mốc "bây giờ" của dữ liệu mẫu: 10:42 ngày 10/10/2026 (giờ Việt Nam). */
 export const MOCK_NOW = Date.UTC(2026, 9, 10, 3, 42, 0);
 export const MINUTE = 60_000;
@@ -20,6 +23,7 @@ export const RANGES: Record<
   "7d": { minutes: 7 * 24 * 60, bucket: 120, tickEvery: 24 * 60, label: "7 ngày qua", short: "7 ngày" },
 };
 
+// ===== Hàm tiện ích =====
 /** Băm chuỗi thành số trong [0, 1) để có pha dao động khác nhau cho từng thực thể/chỉ số. */
 const hash01 = (s: string) => {
   let h = 2166136261;

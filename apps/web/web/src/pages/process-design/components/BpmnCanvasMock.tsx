@@ -4,12 +4,17 @@
 
 // Canvas BPMN giả lập: phần tử là <div> định vị tuyệt đối theo tọa độ tâm; đường nối vẽ bằng một lớp SVG
 // bên dưới (đường gấp khúc + mũi tên). Không dùng bpmn-js — khi cần chỉnh sửa thật, thay component này.
-import { Minus, Plus, Redo2, Settings, Undo2 } from "lucide-react";
-import { useRef, type DragEvent, type KeyboardEvent } from "react";
+
+// ===== Thư viện =====
+import { Minus, Plus, Redo2, Settings, Undo2 } from "lucide-react"; // Lucide React
+import { useRef, type DragEvent, type KeyboardEvent } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { DND_MIME, WORLD } from "../mock";
 import type { BpmnNode, NodeType, ProcessModel } from "../types";
 
+// ===== Hằng số =====
 const ZOOMS = [50, 75, 100, 125, 150];
 
 const TASK_W = 200;
@@ -19,6 +24,7 @@ const GW = 34;
 
 const ring = "ring-4 ring-bamboo-100";
 
+// ===== Component =====
 const NodeView = ({ node, selected, onSelect }: { node: BpmnNode; selected: boolean; onSelect: () => void }) => {
   const common =
     "absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";

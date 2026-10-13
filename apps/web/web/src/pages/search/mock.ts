@@ -5,8 +5,11 @@
 // Chỉ mục MẪU cho các phân hệ chưa nối API tìm kiếm (Bản sao số, Thư viện, Ổ đĩa, Dịch vụ dữ liệu, hồ sơ e-Office mẫu).
 // Đề nghị mua sắm và tệp đính kèm thì tìm THẬT qua Action search_documents (xem ./useDocumentSearch).
 // Điểm "khớp ý nghĩa" ở đây thay cho Qdrant; nội dung khớp số liệu các trang khác (CR-02, SMT-TN-02, TL-HD-02…).
+
+// ===== Module nội bộ =====
 import type { Company, Concept, IndexedItem, ResultType } from "./types";
 
+// ===== Hằng số =====
 export const CONCEPTS: Concept[] = [
   {
     key: "heat",

@@ -2,19 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FileText, LoaderCircle, Upload } from "lucide-react";
-import { useState, type DragEvent } from "react";
+// ===== Thư viện =====
+import { FileText, LoaderCircle, Upload } from "lucide-react"; // Lucide React
+import { useState, type DragEvent } from "react"; // React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { VerifyMode, VerifyResult } from "../types";
 import { formatBytes } from "../utils";
 import { VerificationResultCard } from "./VerificationResultCard";
 
+// ===== Hằng số =====
 const MODES: Array<{ key: VerifyMode; label: string }> = [
   { key: "code", label: "Theo mã hồ sơ" },
   { key: "file", label: "Tải tệp lên" },
 ];
 
+// ===== Component =====
 /** Vùng kéo-thả tệp. Bấm (hoặc Enter/Space khi đang focus) để mở hộp chọn tệp. */
 const Dropzone = ({
   disabled,

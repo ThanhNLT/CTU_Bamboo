@@ -4,13 +4,17 @@
 
 // Các Action tra cứu trên giao diện: tìm kiếm toàn văn (search_documents), in phiếu PDF
 // (get_purchase_request_pdf), sơ đồ quy trình bpmn-js (process_state).
-import { readFile } from "node:fs/promises";
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { readFile } from "node:fs/promises"; // Node.js
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const WORD = `Tramcuu${Date.now().toString(36)}`;
 const TITLE = `E2E ${WORD} mua ổ cứng`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -20,6 +24,7 @@ async function login(page: Page, username: string) {
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("tìm thấy đề nghị vừa gửi, in phiếu, xem sơ đồ quy trình", async ({ page }) => {
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/p/documents/create");

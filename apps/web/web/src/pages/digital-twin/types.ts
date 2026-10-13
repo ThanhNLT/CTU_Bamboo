@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 export type EntityCategory = "smt" | "cleanroom" | "medical";
 export type CategoryFilter = "all" | EntityCategory;
 

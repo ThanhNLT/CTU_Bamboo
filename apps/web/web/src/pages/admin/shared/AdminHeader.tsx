@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import type { ReactNode } from "react"; // React
 
+// ===== Component =====
 /** Tiêu đề trang quản trị (cùng cỡ chữ các trang khác) + nút thao tác bên phải. */
 export const AdminHeader = ({
   title,

@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useCallback, useState } from "react";
+// ===== Thư viện =====
+import { useCallback, useState } from "react"; // React
 
+// ===== Hằng số =====
 const LIMIT = 100;
 const COALESCE_MS = 800;
 
+// ===== Kiểu dữ liệu =====
 type State<T> = { past: T[]; present: T; future: T[]; lastKey?: string; lastAt: number };
 
+// ===== Hook =====
 /**
  * Lịch sử hoàn tác/làm lại. `set(next, key)`: các thay đổi liên tiếp cùng `key` trong 0,8 giây gộp làm một
  * bước (gõ chữ vào ô "Tên bước" không tạo một bước hoàn tác cho mỗi phím).

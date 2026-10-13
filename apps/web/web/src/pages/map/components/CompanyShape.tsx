@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { COMPANY_STYLE } from "../mock";
 import type { CompanyKey } from "../types";
 
+// ===== Component =====
 /** Hình đại diện công ty (vuông · thoi · tròn · chữ thập), tô màu nhận diện. */
 export const CompanyShape = ({ company, size = 14 }: { company: CompanyKey; size?: number }) => {
   const color = COMPANY_STYLE[company].color;

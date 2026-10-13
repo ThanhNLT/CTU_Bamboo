@@ -2,14 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { CreateButton, List, ShowButton, useTable } from "@refinedev/antd";
-import type { BaseRecord } from "@refinedev/core";
-import { Input, Segmented, Space, Table, Typography } from "antd";
+// ===== Thư viện =====
+import { CreateButton, List, ShowButton, useTable } from "@refinedev/antd"; // Refine Ant Design
+import type { BaseRecord } from "@refinedev/core"; // Refine
+import { Input, Segmented, Space, Table, Typography } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { PR_LIST } from "./queries";
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, formatMoney } from "../../utils/format";
 import { PR_STATUS_LABEL } from "../../utils/status";
 
+// ===== Kiểu dữ liệu =====
 type Row = BaseRecord & {
   doc_no: string;
   title: string;
@@ -20,8 +24,10 @@ type Row = BaseRecord & {
   org_unit?: { name: string };
 };
 
+// ===== Hằng số =====
 const STATUS_FILTERS = ["ALL", "DRAFT", "PENDING", "RETURNED", "APPROVED", "REJECTED", "CANCELLED"];
 
+// ===== Component =====
 export const PurchaseRequestList = () => {
   // Chỉ trả các đề nghị người dùng được xem (computed field can_read ở Hasura).
   const { tableProps, filters, setFilters } = useTable<Row>({

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hàm tiện ích =====
 /** Bỏ dấu tiếng Việt + chữ thường, để tìm "phong sach" vẫn ra "phòng sạch". */
 export const fold = (s: string) =>
   s

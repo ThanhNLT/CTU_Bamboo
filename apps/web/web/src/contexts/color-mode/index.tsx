@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type PropsWithChildren, useEffect, useState } from "react";
-import { ConfigProvider, theme } from "antd";
+// ===== Thư viện =====
+import { type PropsWithChildren, useEffect, useState } from "react"; // React
+import { ConfigProvider, theme } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { ColorModeContext } from "./context";
 
+// ===== Hằng số =====
 // Trùng với bộ màu trong src/styles/tailwind.css để AntD và Tailwind cùng một hệ màu.
 const BAMBOO_TOKENS = {
   colorPrimary: "#2f7a3e",
@@ -22,6 +26,7 @@ const BAMBOO_TOKENS = {
     '"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 };
 
+// ===== Component =====
 export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({ children }) => {
   // Bộ giao diện Bamboo hiện chỉ thiết kế nền sáng (xanh tre trên nền trắng), nên mặc định "light"
   // thay vì theo hệ điều hành. Giữ context để sau này bật lại chế độ tối.

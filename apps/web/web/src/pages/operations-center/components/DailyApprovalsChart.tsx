@@ -2,18 +2,23 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+// ===== Thư viện =====
+import { useState } from "react"; // React
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Company, CompanyKey, DailyPoint } from "../types";
 import { AXIS_TICK, DIM, GRID_STROKE } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget, ChipButton, DefinitionButton } from "./ChartWidget";
 
+// ===== Hằng số =====
 const DEFINITION =
   "Số hồ sơ hoàn tất toàn bộ chuỗi duyệt mỗi ngày (sự kiện COMPLETED), theo đơn vị cấp 1 của đơn vị lập. " +
   "Nguồn: wf.approval_history, trong phạm vi bạn được xem.";
 
+// ===== Component =====
 /** Nhãn trực tiếp ở cuối mỗi đường ("Chip 17"); Recharts truyền x, y, index, value cho từng điểm. */
 const EndLabel = (props: {
   x?: number | string;

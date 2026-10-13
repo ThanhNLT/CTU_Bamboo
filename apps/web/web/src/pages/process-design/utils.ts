@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { NODE_TYPE_LABEL } from "./mock";
 import type { BpmnNode, Issue, NodeType, ProcessDef, ProcessModel } from "./types";
 
+// ===== Hàm tiện ích =====
 /** "8 giờ làm việc" → "PT8H", "1 ngày" → "P1D", "30 phút" → "PT30M" (dạng Flowable hiểu). null nếu không đọc được. */
 export const slaToIso = (sla?: string): string | null => {
   const m = sla?.trim().match(/^(\d+)\s*(phút|giờ|ngày|tuần)/i);
@@ -57,6 +59,7 @@ export const validate = (model: ProcessModel): Issue[] => {
 
 const esc = (s: string) => s.replace(/[<>&"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
+// ===== Hằng số =====
 const TAG: Record<NodeType, string> = {
   start: "startEvent",
   userTask: "userTask",
@@ -65,6 +68,7 @@ const TAG: Record<NodeType, string> = {
   end: "endEvent",
 };
 
+// ===== Hàm tiện ích =====
 /** Xuất BPMN 2.0 (kèm thuộc tính Flowable) — phần logic, chưa gồm tọa độ sơ đồ (DI). */
 export const toBpmnXml = (p: ProcessDef, model: ProcessModel) => {
   const el = (n: BpmnNode) => {
@@ -104,7 +108,10 @@ export const downloadText = (filename: string, text: string, type = "application
   URL.revokeObjectURL(url);
 };
 
+// ===== Trạng thái module =====
 let seq = 0;
+
+// ===== Hàm tiện ích =====
 /** Phần tử mới khi kéo từ bảng thành phần vào canvas. */
 export const newNode = (type: NodeType, x: number, y: number): BpmnNode => {
   seq += 1;

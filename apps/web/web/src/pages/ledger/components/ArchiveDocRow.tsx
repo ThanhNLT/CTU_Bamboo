@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Eye, Lock } from "lucide-react";
+// ===== Thư viện =====
+import { Eye, Lock } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import type { ArchiveDoc } from "../types";
 
+// ===== Component =====
 /** Một hồ sơ lưu trữ: ổ khóa, tên, năm · số trang, nút "Mở chỉ đọc". */
 export const ArchiveDocRow = ({
   doc,

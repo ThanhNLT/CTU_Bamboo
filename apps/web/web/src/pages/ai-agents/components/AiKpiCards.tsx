@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ArrowUp } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { ArrowUp } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { KPI_STATIC } from "../mock";
 import { num, pct, type computeKpis } from "../utils";
 
+// ===== Component =====
 const Card = ({ label, value, unit, note }: { label: string; value: string; unit?: string; note: ReactNode }) => (
   <div className="min-w-0 rounded-2xl border border-line bg-white px-4 py-3.5 shadow-card">
     <dt className="truncate text-[12px] text-muted">{label}</dt>

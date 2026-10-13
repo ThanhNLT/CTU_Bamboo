@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Dữ liệu minh họa cho Thư viện tri thức. Khi có API, thay bằng useList của Refine trả về cùng kiểu ./types.
+
+// ===== Module nội bộ =====
 import type { CategoryFilter, DocCategory, LibraryDoc, ScopeFilter } from "./types";
 
+// ===== Hằng số =====
 export const CATEGORY_LABEL: Record<DocCategory, string> = {
   regulation: "Quy chế",
   sop: "Quy trình chuẩn (SOP)",

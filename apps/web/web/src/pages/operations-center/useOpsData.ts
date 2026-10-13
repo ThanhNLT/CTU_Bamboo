@@ -5,13 +5,18 @@
 // Dữ liệu thật cho Trung tâm điều hành, trong phạm vi tenant đang chọn và quyền xem của người dùng (Hasura lọc
 // can_read). "Công ty" = đơn vị cấp 1 dưới gốc tenant (Công ty Chip X, Khối Tài chính...); 4 đơn vị nhiều hồ sơ nhất
 // có màu riêng, còn lại gộp "Khác". Việc đang chờ tự cập nhật qua subscription; lịch sử duyệt tải theo kỳ.
-import { useList } from "@refinedev/core";
-import dayjs from "dayjs";
-import gql from "graphql-tag";
-import { useMemo } from "react";
+
+// ===== Thư viện =====
+import { useList } from "@refinedev/core"; // Refine
+import dayjs from "dayjs"; // Day.js
+import gql from "graphql-tag"; // graphql-tag
+import { useMemo } from "react"; // React
+
+// ===== Module nội bộ =====
 import { SLA_HOURS } from "../inbox/useInboxTasks";
 import type { Company, CompanyKey, DailyPoint, Kpi, MonthlyPoint, OverdueRow, PendingRow, Period } from "./types";
 
+// ===== Hằng số =====
 /** 4 ô đầu của bảng màu phân loại đã kiểm định (thứ tự cố định) + xám cho "Khác". */
 const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
 const OTHER_COLOR = "#8a948e";
@@ -20,6 +25,7 @@ export const OTHER_COMPANY = "__other__";
 export const PERIOD_DAYS: Record<Period, number> = { week: 7, month: 30, quarter: 90 };
 const HOUR = 3_600_000;
 
+// ===== Truy vấn GraphQL =====
 const UNITS = gql`
   query OpsUnits($limit: Int, $offset: Int, $order_by: [core_org_unit_order_by!], $where: core_org_unit_bool_exp) {
     core_org_unit(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -35,8 +41,10 @@ const UNITS = gql`
   }
 `;
 
+// ===== Hằng số =====
 const DOC = `purchase_request { id doc_no title org_unit_id } onboarding_request { id doc_no full_name org_unit_id }`;
 
+// ===== Truy vấn GraphQL =====
 const OPEN_TASKS = gql`
   query OpsOpen($limit: Int, $offset: Int, $order_by: [wf_task_order_by!], $where: wf_task_bool_exp) {
     wf_task(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -112,6 +120,7 @@ const COUNT_FILES = gql`
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type Unit = { id: string; name: string; path: string };
 type DocRef = {
   purchase_request: { id: string; doc_no: string; title: string; org_unit_id: string } | null;
@@ -126,6 +135,7 @@ type Completed = {
   onboarding_request: { org_unit_id: string } | null;
 };
 
+// ===== Hàm tiện ích =====
 const unitOf = (d: {
   purchase_request: { org_unit_id: string } | null;
   onboarding_request: { org_unit_id: string } | null;
@@ -139,8 +149,10 @@ const span = (ms: number) => {
   return h ? `${h} giờ` : `${Math.max(1, Math.floor(ms / 60_000))} phút`;
 };
 
+// ===== Khởi tạo =====
 const pct = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 
+// ===== Hook =====
 export const useOpsData = (period: Period) => {
   const days = PERIOD_DAYS[period];
   // Mốc thời gian chốt theo ngày để khóa truy vấn không đổi mỗi lần render.
@@ -380,4 +392,5 @@ export const useOpsData = (period: Period) => {
   };
 };
 
+// ===== Kiểu dữ liệu =====
 export type OpsData = ReturnType<typeof useOpsData>;

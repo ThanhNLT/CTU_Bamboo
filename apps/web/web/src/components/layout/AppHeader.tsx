@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useLogout } from "@refinedev/core";
-import { useKBar } from "@refinedev/kbar";
-import { Dropdown, Popover, type MenuProps } from "antd";
+// ===== Thư viện =====
+import { useLogout } from "@refinedev/core"; // Refine
+import { useKBar } from "@refinedev/kbar"; // Refine Kbar
+import { Dropdown, Popover, type MenuProps } from "antd"; // Ant Design
 import {
   Check,
   ChevronDown,
@@ -15,8 +16,10 @@ import {
   Menu,
   Search,
   Sparkles,
-} from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router";
+} from "lucide-react"; // Lucide React
+import { Link, useLocation, useNavigate } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { useSession } from "../../auth/useSession";
 import { cn } from "../../utils/cn";
 import { NotificationBell } from "../notifications/Bell";
@@ -24,14 +27,17 @@ import { EXTRA_PAGES, findActive, NAV_GROUPS } from "./nav";
 import { NavGate } from "./NavGate";
 import { iconButtonClass, pillButtonClass } from "./styles";
 
+// ===== Kiểu dữ liệu =====
 type HeaderProps = {
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   onOpenMobileNav: () => void;
 };
 
+// ===== Hằng số =====
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
 
+// ===== Hàm tiện ích =====
 /** "Nguyễn Ngọc Anh" → "NA" (hai chữ cuối, theo cách gọi tên tiếng Việt). */
 const initials = (name: string) =>
   name
@@ -42,6 +48,7 @@ const initials = (name: string) =>
     .join("")
     .toUpperCase();
 
+// ===== Component =====
 /** Hai nút ‹ › dạng viên thuốc: thu gọn / mở rộng menu trái. */
 const SiderToggle = ({ collapsed, onCollapsedChange }: Pick<HeaderProps, "collapsed" | "onCollapsedChange">) => (
   <div className="hidden h-9 items-center rounded-full border border-line bg-white p-0.5 shadow-card md:flex">

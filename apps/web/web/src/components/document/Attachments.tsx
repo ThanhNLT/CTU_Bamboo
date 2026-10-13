@@ -4,9 +4,11 @@
 
 // Tệp đính kèm (ADR #26): trình duyệt PUT thẳng lên bucket cách ly bằng link có chữ ký, rồi
 // confirm_upload kiểm tra, quét virus; chỉ tệp sạch mới tải về được.
-import type { ReactElement } from "react";
-import { useState } from "react";
-import { App, Button, List, Popconfirm, Space, Tag, Tooltip, Typography, Upload } from "antd";
+
+// ===== Thư viện =====
+import type { ReactElement } from "react"; // React
+import { useState } from "react"; // React
+import { App, Button, List, Popconfirm, Space, Tag, Tooltip, Typography, Upload } from "antd"; // Ant Design
 import {
   BugOutlined,
   CheckCircleOutlined,
@@ -15,11 +17,14 @@ import {
   DownloadOutlined,
   LoadingOutlined,
   StopOutlined,
-} from "@ant-design/icons";
+} from "@ant-design/icons"; // Ant Design Icons
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
 import type { DocumentFiles } from "./types";
 
+// ===== Hằng số =====
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt";
 const MAX = 25 * 1024 * 1024;
 
@@ -30,8 +35,10 @@ const SCAN: Record<string, { color: string; icon: ReactElement; label: string }>
   REJECTED: { color: "warning", icon: <StopOutlined />, label: "Bị loại – đã xóa" },
 };
 
+// ===== Hàm tiện ích =====
 const size = (b: number) => (b < 1024 * 1024 ? `${Math.ceil(b / 1024)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
+// ===== Kiểu dữ liệu =====
 type Props = {
   doc: DocumentFiles;
   entityType: string;
@@ -41,6 +48,7 @@ type Props = {
   hint?: string; // loại giấy tờ gợi ý đính kèm
 };
 
+// ===== Component =====
 export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "báo giá, hóa đơn" }: Props) => {
   const { message } = App.useApp();
   const [uploading, setUploading] = useState(false);

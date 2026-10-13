@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { Tone } from "../../components/ui";
 import { fold } from "../../utils/text";
 import type { CategoryFilter, EntityCategory, EntityStatus, MetricStatus, Threshold, TwinEntity } from "./types";
 
+// ===== Hằng số =====
 export const CATEGORY_TABS: Array<{ key: CategoryFilter; label: string }> = [
   { key: "all", label: "Tất cả" },
   { key: "smt", label: "Dây chuyền SMT" },
@@ -27,6 +29,7 @@ export const METRIC_TONE: Record<MetricStatus, Tone> = {
   stale: "neutral",
 };
 
+// ===== Hàm tiện ích =====
 /** Số kiểu Việt Nam: 3.120 · 21,4 · 0,42. `decimals` cố định số chữ số thập phân; bỏ trống thì tối đa 2. */
 export const formatNumber = (n: number, decimals?: number) =>
   new Intl.NumberFormat(
@@ -36,8 +39,11 @@ export const formatNumber = (n: number, decimals?: number) =>
       : { minimumFractionDigits: decimals, maximumFractionDigits: decimals },
   ).format(n);
 
+// ===== Hằng số =====
 // Giờ Việt Nam (UTC+7, không có giờ mùa hè) tính trực tiếp, để nhãn trục giống nhau trên mọi máy/trình duyệt.
 const VN_OFFSET = 7 * 3_600_000;
+
+// ===== Hàm tiện ích =====
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const vn = (t: number) => new Date(t + VN_OFFSET);
 
@@ -68,8 +74,11 @@ export const thresholdText = (th: Threshold) => {
   return "";
 };
 
+// ===== Hằng số =====
 /** Mức nghiêm trọng để sắp xếp/so sánh: số lớn hơn = nặng hơn. */
 const SEVERITY: Record<MetricStatus, number> = { stale: 0, ok: 1, warning: 2, critical: 3 };
+
+// ===== Hàm tiện ích =====
 export const worstStatus = (list: MetricStatus[]) =>
   list.reduce<MetricStatus>((w, s) => (SEVERITY[s] > SEVERITY[w] ? s : w), "ok");
 
@@ -96,12 +105,14 @@ export const countByCategory = (list: TwinEntity[]) => {
   return counts;
 };
 
+// ===== Hằng số =====
 /**
  * Chọn sẵn từ URL: `?entity=CR-02` hoặc `?site=chip-bn` (từ trang Bản đồ → thực thể nặng nhất ở địa điểm đó).
  * Trả về tab cần mở và thực thể cần chọn; không khớp thì trả về undefined.
  */
 const ENTITY_RANK: Record<EntityStatus, number> = { critical: 3, warning: 2, offline: 1, ok: 0 };
 
+// ===== Hàm tiện ích =====
 export const pickFromParams = (list: TwinEntity[], entityId: string | null, siteId: string | null) => {
   const byId = entityId ? list.find((e) => e.id.toLowerCase() === entityId.toLowerCase()) : undefined;
   const atSite = siteId ? sortEntities(list.filter((e) => e.siteId === siteId)) : [];

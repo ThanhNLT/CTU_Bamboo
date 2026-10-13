@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Copy, Download, SearchX, ShieldAlert, ShieldCheck } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { Copy, Download, SearchX, ShieldAlert, ShieldCheck } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { VerifyResult } from "../types";
 import { shortHash } from "../utils";
 
+// ===== Component =====
 const Row = ({ label, children, mono }: { label: string; children: ReactNode; mono?: boolean }) => (
   <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 py-1.5 sm:grid-cols-[110px_minmax(0,1fr)]">
     <dt className="text-[12px] text-muted">{label}</dt>
@@ -19,6 +23,7 @@ const Row = ({ label, children, mono }: { label: string; children: ReactNode; mo
   </div>
 );
 
+// ===== Hằng số =====
 const actionClass =
   "inline-flex h-8 items-center gap-1.5 rounded-full border bg-white/70 px-3 text-[12px] font-medium text-ink transition-colors hover:bg-white " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
@@ -29,6 +34,7 @@ const STYLE = {
   not_found: { box: "border-amber-200 bg-amber-50", title: "text-amber-800", action: "border-amber-200" },
 } as const;
 
+// ===== Component =====
 /** Khối kết quả đối soát: khớp (xanh), không khớp (đỏ), không tìm thấy (vàng). */
 export const VerificationResultCard = ({
   result,

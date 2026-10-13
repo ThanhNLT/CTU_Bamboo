@@ -2,5 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hàm tiện ích =====
 /** Nối className, bỏ qua giá trị rỗng/false. */
 export const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");

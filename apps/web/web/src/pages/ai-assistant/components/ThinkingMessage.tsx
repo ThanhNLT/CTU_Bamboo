@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useEffect, useState } from "react";
+// ===== Thư viện =====
+import { useEffect, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import type { ToolStep } from "../types";
 import { AiAvatar } from "./AiMessage";
 
+// ===== Component =====
 /** Trợ lý đang xử lý: lần lượt hiện công cụ đang gọi. */
 export const ThinkingMessage = ({ steps }: { steps: ToolStep[] }) => {
   const [i, setI] = useState(0);

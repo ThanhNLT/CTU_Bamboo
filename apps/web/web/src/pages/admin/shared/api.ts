@@ -4,11 +4,15 @@
 
 // Gọi các Action quản trị (ADR #44). Máy chủ kiểm quyền và luật nghiệp vụ; lỗi trả về là câu tiếng Việt
 // hiện thẳng cho người dùng.
+
+// ===== Module nội bộ =====
 import { request } from "../../../api/client";
 
+// ===== Kiểu dữ liệu =====
 export type AdminEntity =
   "org_unit" | "position" | "person" | "assignment" | "role" | "role_grant" | "catalog_item" | "partner" | "item";
 
+// ===== Hàm tiện ích =====
 export const adminSave = async (entity: AdminEntity, data: Record<string, unknown>): Promise<string> => {
   const r = await request<{ admin_save: { id: string } }>(
     `mutation AdminSave($e: AdminEntity!, $d: jsonb!) { admin_save(entity: $e, data: $d) { id } }`,

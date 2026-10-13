@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useMemo } from "react";
+// ===== Thư viện =====
+import { useMemo } from "react"; // React
 import {
   CartesianGrid,
   Line,
@@ -13,21 +14,27 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
+} from "recharts"; // Recharts
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
 import { MINUTE, RANGES, aggregationOf, breachSpans, bucketize, minuteSeries, xTicksOf, yAxisOf } from "../signal";
 import type { Metric, Threshold, TimeRange, TwinEntity } from "../types";
 import { formatDay, formatDayTime, formatDuration, formatNumber, formatTime } from "../utils";
 
+// ===== Hằng số =====
 const RED = "#dc2626";
 const RED_TEXT = "#b91c1c";
 const AGG_WORD = { max: "đỉnh", min: "đáy", mean: "trung bình" } as const;
 
+// ===== Kiểu dữ liệu =====
 type TipProps = { active?: boolean; label?: number | string; payload?: Array<{ value?: number | string | null }> };
 
+// ===== Hàm tiện ích =====
 const outside = (v: number, th: Threshold) => (th.max != null && v > th.max) || (th.min != null && v < th.min);
 
+// ===== Component =====
 /** Hộp gợi ý: thời điểm, giá trị (định dạng Việt Nam) và nhắc khi điểm đó nằm ngoài ngưỡng. */
 const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { metric: Metric; range: TimeRange }) => {
   const v = payload?.[0]?.value;
@@ -83,6 +90,7 @@ const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: Time
   </div>
 );
 
+// ===== Hàm tiện ích =====
 /** Nhãn đường ngưỡng: "Ngưỡng ISO 5 · 3.520", "Tối thiểu · 10"... */
 const limitText = (metric: Metric, side: "max" | "min") => {
   const th = metric.threshold;
@@ -96,6 +104,7 @@ const limitText = (metric: Metric, side: "max" | "min") => {
   return `${name} · ${formatNumber((side === "max" ? th.max : th.min) ?? 0)}`;
 };
 
+// ===== Component =====
 /**
  * Biểu đồ lịch sử một chỉ số: đường dữ liệu xanh đậm, ngưỡng là đường đứt đỏ (ReferenceLine),
  * các đoạn vượt ngưỡng tô nền đỏ nhạt (ReferenceArea). Đoạn vượt ngưỡng được TÍNH từ dữ liệu từng phút,

@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { App, Button, Checkbox, Drawer, Form, Input } from "antd";
-import { KeyRound, Plus, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+// ===== Thư viện =====
+import { App, Button, Checkbox, Drawer, Form, Input } from "antd"; // Ant Design
+import { KeyRound, Plus, ShieldCheck } from "lucide-react"; // Lucide React
+import { useEffect, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { Dot, smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
 import { adminSave, createAccounts, type AccountResult } from "../shared/api";
 import {
@@ -17,6 +20,7 @@ import {
 } from "../shared/orgData";
 import { periodLabel } from "../shared/period";
 
+// ===== Component =====
 const SectionTitle = ({ children }: { children: string }) => (
   <h3 className="mb-2.5 mt-6 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted first:mt-0">
     {children}

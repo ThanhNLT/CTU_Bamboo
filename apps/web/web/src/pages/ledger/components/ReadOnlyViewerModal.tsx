@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Modal } from "antd";
-import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
-import { useState } from "react";
+// ===== Thư viện =====
+import { Modal } from "antd"; // Ant Design
+import { ChevronLeft, ChevronRight, Lock } from "lucide-react"; // Lucide React
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { READING_ROOM_RULES } from "../mock";
 import type { ArchiveDoc } from "../types";
 
+// ===== Hàm tiện ích =====
 const escXml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c] ?? c);
 
@@ -23,6 +27,7 @@ const watermarkUrl = (text: string) => {
 /** Độ dài dòng giả lập (cố định theo trang) để trang trông như văn bản thật. */
 const lineWidths = (page: number) => Array.from({ length: 14 }, (_, i) => 62 + ((page * 17 + i * 29) % 38));
 
+// ===== Component =====
 const PageBody = ({ doc, page }: { doc: ArchiveDoc; page: number }) =>
   page === 1 ? (
     <div className="flex h-full flex-col items-center justify-center text-center">

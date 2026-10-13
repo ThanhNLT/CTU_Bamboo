@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Truy vấn GraphQL cho đơn hàng nội bộ (ADR #42).
-import gql from "graphql-tag";
 
+// ===== Thư viện =====
+import gql from "graphql-tag"; // graphql-tag
+
+// ===== Truy vấn GraphQL =====
 export const IC_LIST = gql`
   query IcOrders($limit: Int, $offset: Int, $order_by: [ic_ic_order_order_by!], $where: ic_ic_order_bool_exp) {
     ic_ic_order(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {

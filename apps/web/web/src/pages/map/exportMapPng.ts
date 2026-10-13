@@ -4,10 +4,13 @@
 
 // "Xuất ảnh": dựng lại bản đồ thành SVG (nền + điểm theo các lớp đang bật + chú giải) rồi vẽ sang PNG.
 // Không chụp DOM nên không cần thư viện ngoài; ảnh luôn ở toàn cảnh 1000×700 (2× cho màn hình nét).
+
+// ===== Module nội bộ =====
 import { BOUNDARIES, MINOR_ROADS, PARKS, RIVER, ROADS, VIEWBOX } from "./geometry";
 import { ATTRIBUTION, COMPANY_STYLE } from "./mock";
 import type { CompanyKey, MapSite } from "./types";
 
+// ===== Hàm tiện ích =====
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 const shape = (company: CompanyKey, x: number, y: number, r = 8) => {

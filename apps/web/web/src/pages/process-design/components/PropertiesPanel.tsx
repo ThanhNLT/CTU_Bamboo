@@ -2,19 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, Input, Select } from "antd";
-import { MousePointerClick, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { Checkbox, Input, Select } from "antd"; // Ant Design
+import { MousePointerClick, Trash2 } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import { FORMS, GROUPS, NODE_TYPE_LABEL, SERVICES } from "../mock";
 import type { BpmnEdge, BpmnNode, Issue, ProcessModel, TaskDecision } from "../types";
 
+// ===== Hằng số =====
 const DECISIONS: Array<{ value: TaskDecision; label: string }> = [
   { value: "approve", label: "Duyệt" },
   { value: "return", label: "Trả lại bổ sung" },
   { value: "reject", label: "Từ chối" },
 ];
 
+// ===== Component =====
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   <label className="block">
     <span className="mb-1 block text-[11.5px] text-muted">{label}</span>

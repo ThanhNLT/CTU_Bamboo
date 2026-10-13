@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { READING_ROOM_RULES } from "../mock";
 import type { ArchiveDoc } from "../types";
 import { ArchiveDocRow } from "./ArchiveDocRow";
 
+// ===== Component =====
 /** Thẻ Phòng đọc ảo (tab Đối soát): vài hồ sơ lưu trữ hay dùng, mở ở chế độ chỉ đọc. */
 export const VirtualReadingRoomWidget = ({
   docs,

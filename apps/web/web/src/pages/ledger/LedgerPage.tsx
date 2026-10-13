@@ -5,10 +5,14 @@
 // Sổ cái (Dữ liệu số): niêm phong bất biến trên Hyperledger Fabric. Tab "Đối soát" so mã hồ sơ hoặc tệp
 // (băm SHA-256 ngay trong trình duyệt) với bản niêm phong; tab "Phòng đọc ảo" mở hồ sơ lưu trữ ở chế độ chỉ đọc.
 // Mở thẳng một hồ sơ: /d/ledger?code=HS-SEMI-2026-00087. Dữ liệu minh họa ở ./mock.
-import { App } from "antd";
-import { Download } from "lucide-react";
-import { useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { Download } from "lucide-react"; // Lucide React
+import { useRef, useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { useSession } from "../../auth/useSession";
 import { secondaryButtonClass } from "../../components/ui";
 import { copyText } from "../../utils/clipboard";
@@ -43,10 +47,12 @@ import {
   verifyByHash,
 } from "./utils";
 
+// ===== Hằng số =====
 /** Độ trễ giả lập một lần truy vấn sổ cái (để thấy trạng thái "Đang đối soát…"). */
 const QUERY_DELAY_MS = 500;
 const FEATURED = ARCHIVE_DOCS.filter((d) => FEATURED_ARCHIVE_IDS.includes(d.id));
 
+// ===== Component =====
 export const LedgerPage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();

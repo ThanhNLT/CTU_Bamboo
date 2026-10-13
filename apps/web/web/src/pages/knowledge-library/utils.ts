@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import { CATEGORY_SHORT } from "./mock";
 import type { CategoryFilter, LibraryDoc, ScopeFilter } from "./types";
 
+// ===== Hàm tiện ích =====
 /** "Quy chế · Công ty Chip & Linh kiện · v3 · hiệu lực 01/09/2026" */
 export const docMeta = (d: LibraryDoc) =>
   [CATEGORY_SHORT[d.category], d.issuer, d.version != null ? `v${d.version}` : null, d.note]

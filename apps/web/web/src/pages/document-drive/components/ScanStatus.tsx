@@ -2,13 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { ScanResult } from "../types";
 
+// ===== Hằng số =====
 const BLOCKED: Partial<Record<ScanResult, string>> = {
   infected: "Bị chặn · mã độc",
   rejected: "Bị loại · sai định dạng",
 };
 
+// ===== Component =====
 /** Kết quả kiểm dịch: "Sạch" (chấm xanh), "Đang kiểm tra" (chấm vàng) hoặc nhãn đỏ nhạt khi bị chặn/loại. */
 export const ScanStatus = ({ result }: { result: ScanResult }) =>
   result === "clean" || result === "pending" ? (

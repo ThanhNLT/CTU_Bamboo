@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useNavigate } from "react-router";
+// ===== Thư viện =====
+import { useNavigate } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { NotificationItem } from "../types";
 import { Panel, PanelLink, TONE_DOT } from "../../../components/ui";
 
+// ===== Component =====
 /** Thông báo mới nhất; bấm vào thì đánh dấu đã đọc và mở chứng từ liên quan. */
 export const NotificationsPanel = ({
   items,

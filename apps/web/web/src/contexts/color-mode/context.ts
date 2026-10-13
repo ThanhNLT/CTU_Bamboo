@@ -2,11 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { createContext } from "react";
+// ===== Thư viện =====
+import { createContext } from "react"; // React
 
+// ===== Kiểu dữ liệu =====
 export type ColorModeContextType = {
   mode: string;
   setMode: (mode: string) => void;
 };
 
+// ===== Ngữ cảnh (Context) =====
 export const ColorModeContext = createContext<ColorModeContextType>({} as ColorModeContextType);

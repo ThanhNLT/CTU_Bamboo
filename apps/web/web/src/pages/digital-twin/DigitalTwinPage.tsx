@@ -5,9 +5,13 @@
 // Bản sao số (Dữ liệu số): master–detail. Trái ~30% danh sách thực thể NGSI-LD, phải ~70% chi tiết
 // (thẻ đầu, lưới 6 chỉ số, biểu đồ lịch sử). Trên màn hình lớn hai cột cuộn độc lập.
 // Mở thẳng một thực thể: /d/twin?entity=CR-02, hoặc từ Bản đồ: /d/twin?site=chip-bn. Dữ liệu minh họa ở ./mock.
-import { App } from "antd";
-import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { useMemo, useState } from "react"; // React
+import { useNavigate, useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { CategoryTabs } from "./components/CategoryTabs";
 import { EntityHeader } from "./components/EntityHeader";
 import { EntityList } from "./components/EntityList";
@@ -20,13 +24,16 @@ import { MOCK_NOW } from "./signal";
 import type { CategoryFilter, Metric, TimeRange } from "./types";
 import { countByCategory, filterEntities, pickFromParams, sortEntities } from "./utils";
 
+// ===== Hằng số =====
 const SORTED = sortEntities(MOCK_ENTITIES);
 const COUNTS = countByCategory(MOCK_ENTITIES);
 
+// ===== Hàm tiện ích =====
 /** Chỉ số vẽ mặc định: chỉ số nặng nhất (Nguy cấp → Cảnh báo), không có thì chỉ số đầu tiên. */
 const defaultMetric = (metrics: Metric[]) =>
   metrics.find((m) => m.status === "critical") ?? metrics.find((m) => m.status === "warning") ?? metrics[0];
 
+// ===== Component =====
 export const DigitalTwinPage = () => {
   const { message } = App.useApp();
   const navigate = useNavigate();

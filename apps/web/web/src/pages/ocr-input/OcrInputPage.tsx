@@ -4,9 +4,13 @@
 
 // Nhập liệu OCR (Trí tuệ số): tải ảnh giấy tờ → quét mã độc (ClamAV) → trích xuất trường (Tesseract + PaddleOCR)
 // → người dùng kiểm tra → tạo hồ sơ nháp. Bản demo mô phỏng các bước phía máy chủ bằng hẹn giờ và dữ liệu ./mock.
-import { App } from "antd";
-import { Camera, History } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { Camera, History } from "lucide-react"; // Lucide React
+import { useEffect, useMemo, useRef, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../components/ui";
 import { cn } from "../../utils/cn";
 import { DocumentViewer } from "./components/DocumentViewer";
@@ -17,6 +21,7 @@ import { IMPORT_COUNT, IMPORT_HISTORY, NEXT_RECORD_CODE, OCR_FIELDS, RECORD_TYPE
 import type { FieldKey, FormValues, ImportRecord, Phase, SourceDoc, Step } from "./types";
 import { formatBytes, initialValues, pendingReview, validate } from "./utils";
 
+// ===== Hằng số =====
 /** Thời gian mô phỏng từng bước phía máy chủ (ms). */
 const DURATION: Record<Exclude<Phase, "review" | "created">, number> = {
   uploading: 500,
@@ -32,6 +37,7 @@ const BUSY_LABEL: Record<Phase, string | undefined> = {
 };
 const MAX_BYTES = 20 * 1024 * 1024;
 
+// ===== Component =====
 export const OcrInputPage = () => {
   const { message, modal } = App.useApp();
   const [doc, setDoc] = useState<SourceDoc>(SAMPLE_DOC);

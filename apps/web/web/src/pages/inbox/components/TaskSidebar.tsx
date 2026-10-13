@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Inbox } from "lucide-react";
+// ===== Thư viện =====
+import { Inbox } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { InboxTask } from "../types";
 import { SLA_TONE } from "./slaStyle";
 
+// ===== Component =====
 /** Cột trái: các việc chờ, sắp theo hạn SLA. Chấm màu: đỏ quá hạn · vàng sắp đến hạn · xanh còn thời gian. */
 export const TaskSidebar = ({
   tasks,

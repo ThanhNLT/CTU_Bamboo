@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Activity } from "lucide-react";
+// ===== Thư viện =====
+import { Activity } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { Metric, MetricStatus } from "../types";
 import { METRIC_TONE, formatNumber } from "../utils";
 
+// ===== Hằng số =====
 const NOTE_CLASS: Record<MetricStatus, string> = {
   critical: "text-red-700",
   warning: "text-amber-800",
@@ -22,6 +26,7 @@ const VALUE_CLASS: Record<MetricStatus, string> = {
   stale: "text-muted",
 };
 
+// ===== Component =====
 /** Thẻ một chỉ số cảm biến. Bấm để vẽ chỉ số này ở biểu đồ bên dưới. */
 export const MetricCard = ({
   metric,

@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Drawer } from "antd";
-import { FileImage } from "lucide-react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { Drawer } from "antd"; // Ant Design
+import { FileImage } from "lucide-react"; // Lucide React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import type { ImportRecord } from "../types";
 
+// ===== Component =====
 /** Lịch sử nhập: các phiếu đã quét gần đây và hồ sơ được tạo từ đó. */
 export const ImportHistoryDrawer = ({
   open,

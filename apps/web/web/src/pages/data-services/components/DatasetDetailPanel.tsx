@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ArrowRight, CheckCircle2, Database, XCircle } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { ArrowRight, CheckCircle2, Database, XCircle } from "lucide-react"; // Lucide React
+import { useState } from "react"; // React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Dataset, DatasetPreview, DetailTab } from "../types";
 import { useLakehousePreview } from "../useLakehouse";
@@ -12,6 +15,7 @@ import { cellText, formatInt } from "../utils";
 import { CodeSnippet } from "./CodeSnippet";
 import { SchemaTable } from "./SchemaTable";
 
+// ===== Hằng số =====
 const TABS: Array<{ key: DetailTab; label: string }> = [
   { key: "schema", label: "Lược đồ" },
   { key: "sample", label: "Dữ liệu mẫu" },
@@ -20,6 +24,7 @@ const TABS: Array<{ key: DetailTab; label: string }> = [
   { key: "lineage", label: "Phả hệ" },
 ];
 
+// ===== Component =====
 const Meta = ({ label, value }: { label: string; value: string }) => (
   <div className="min-w-0">
     <dt className="text-[11.5px] text-muted">{label}</dt>

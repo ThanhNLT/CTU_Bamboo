@@ -2,14 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useEffect, useId, useState } from "react";
+// ===== Thư viện =====
+import { useEffect, useId, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Decision } from "../types";
 
+// ===== Hằng số =====
 const base =
   "inline-flex h-10 items-center justify-center rounded-full text-[13.5px] transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
+// ===== Component =====
 /**
  * Ý kiến + Duyệt / Trả lại / Từ chối. Trả lại và Từ chối bắt buộc có ý kiến.
  * `onDecide` chỉ được gọi khi hợp lệ; hộp xác nhận do trang cha mở.

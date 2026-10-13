@@ -2,12 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ArrowRight, Paperclip, Square, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+// ===== Thư viện =====
+import { ArrowRight, Paperclip, Square, X } from "lucide-react"; // Lucide React
+import { useEffect, useRef } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 
+// ===== Hằng số =====
 const MAX_HEIGHT = 140;
 
+// ===== Component =====
 /**
  * Ô nhập: Enter để gửi, Shift+Enter xuống dòng. Bỏ qua Enter khi đang gõ bộ gõ tiếng Việt (IME) chưa xong chữ.
  * Khi trợ lý đang trả lời, nút gửi thành nút dừng.

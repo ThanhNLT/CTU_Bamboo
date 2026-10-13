@@ -5,8 +5,11 @@
 // Dữ liệu mẫu cổng quản trị tác tử (thay cho API thống kê của gateway trợ lý). Các con số khớp nhau:
 // tổng phiên 24 giờ = 412 (cộng từ bảng), tỉ lệ lỗi 1,9% = 29 lỗi / 1.510 lượt gọi công cụ, hữu ích 81% = 191/236.
 // Tác tử "Phân tích & dự báo" là tác tử Trợ lý đa năng dùng để trả lời câu hỏi OEE (query_metric, forecast_metric).
+
+// ===== Module nội bộ =====
 import type { Agent, DayStat, GuardKey } from "./types";
 
+// ===== Hằng số =====
 export const DAYS = ["30/09", "01/10", "02/10", "03/10", "04/10", "05/10", "06/10"];
 export const RUNTIME_NOTE = "Ollama · máy chủ GPU nội bộ";
 export const MODELS = ["Qwen3-8B", "Qwen3-14B", "Qwen3-32B"];
@@ -47,9 +50,11 @@ export const KPI_STATIC = {
   p95Target: 8,
 };
 
+// ===== Hàm tiện ích =====
 const week = (success: number[], errors: number[]): DayStat[] =>
   DAYS.map((day, i) => ({ day, success: (success[i] ?? 0) - (errors[i] ?? 0), errors: errors[i] ?? 0 }));
 
+// ===== Hằng số =====
 const allOn = { "scope-guard": true, "pii-guard": true, "prompt-guard": true };
 
 export const AGENTS: Agent[] = [

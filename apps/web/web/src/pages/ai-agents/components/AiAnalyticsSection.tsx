@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Select, Switch } from "antd";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { Select, Switch } from "antd"; // Ant Design
+import { ThumbsDown, ThumbsUp } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { GUARD_INFO, MODELS } from "../mock";
 import type { Agent, AnalyticsTab, GuardKey } from "../types";
@@ -13,6 +16,7 @@ import { SecurityEventsList } from "./SecurityEventsList";
 import { SessionsChart } from "./SessionsChart";
 import { ToolsUsageList } from "./ToolsUsageList";
 
+// ===== Hằng số =====
 const TABS: Array<{ key: AnalyticsTab; label: string }> = [
   { key: "overview", label: "Tổng quan" },
   { key: "sessions", label: "Phiên" },
@@ -21,6 +25,7 @@ const TABS: Array<{ key: AnalyticsTab; label: string }> = [
   { key: "config", label: "Cấu hình" },
 ];
 
+// ===== Component =====
 const Card = ({ children, className }: { children: ReactNode; className?: string }) => (
   <div className={cn("min-w-0 rounded-2xl border border-line bg-white p-5 shadow-card", className)}>{children}</div>
 );
@@ -29,9 +34,11 @@ const Kicker = ({ children }: { children: string }) => (
   <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h3>
 );
 
+// ===== Hằng số =====
 const th = "border-b border-line py-2 pr-3 text-left text-[11.5px] font-medium text-muted";
 const td = "border-b border-line/70 py-2.5 pr-3 align-top";
 
+// ===== Component =====
 const Overview = ({ agent }: { agent: Agent }) => {
   const totals = weekTotals(agent);
   return (

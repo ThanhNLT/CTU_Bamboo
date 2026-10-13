@@ -2,14 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Search } from "lucide-react";
+// ===== Thư viện =====
+import { Search } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { fold } from "../../../utils/text";
 import { cn } from "../../../utils/cn";
 import { GROUP_LABEL, RETENTION_NOTE } from "../mock";
 import type { ChatSession, SessionGroup } from "../types";
 
+// ===== Hằng số =====
 const GROUPS: SessionGroup[] = ["today", "yesterday", "lastWeek"];
 
+// ===== Component =====
 /** Cột trái: tìm và chọn phiên trò chuyện, nhóm theo thời gian. */
 export const ChatSidebar = ({
   sessions,

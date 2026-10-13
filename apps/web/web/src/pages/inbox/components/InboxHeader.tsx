@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Alert, Segmented } from "antd";
+// ===== Thư viện =====
+import { Alert, Segmented } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import type { InboxScope } from "../types";
 
+// ===== Component =====
 export const InboxHeader = ({
   mineCount,
   teamCount,

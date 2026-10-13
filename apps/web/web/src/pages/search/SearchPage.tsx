@@ -6,9 +6,13 @@
 // - Đề nghị mua sắm + tệp đính kèm: tìm THẬT qua search_documents (máy chủ lọc tenant/quyền).
 // - Bản sao số, tri thức, tài liệu, dữ liệu, hồ sơ e-Office mẫu: chỉ mục mẫu ./mock (thay cho Qdrant khi tích hợp).
 // Từ khóa và cách tìm giữ trên URL (?q=…&mode=…) để chia sẻ được đường dẫn.
-import { App } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { useCallback, useEffect, useMemo, useState } from "react"; // React
+import { useNavigate, useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { AiContextBanner } from "./components/AiContextBanner";
@@ -29,10 +33,12 @@ import { DEFAULT_QUERY, DEFAULT_TYPES, EXAMPLE_QUERIES } from "./mock";
 import type { Company, ResultType, SearchMode, SortKey, TimeRange } from "./types";
 import { useDocumentSearch } from "./useDocumentSearch";
 
+// ===== Hằng số =====
 const PAGE_SIZE = 6;
 const MORE_STEP = 10;
 const MODES: SearchMode[] = ["keyword", "semantic", "hybrid"];
 
+// ===== Component =====
 export const SearchPage = () => {
   const { message } = App.useApp();
   const navigate = useNavigate();

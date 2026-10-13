@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Check } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { Check } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Dataset } from "../types";
 
+// ===== Component =====
 const Tag = ({ className, children }: { className: string; children: ReactNode }) => (
   <span
     className={cn(
@@ -18,8 +22,10 @@ const Tag = ({ className, children }: { className: string; children: ReactNode }
   </span>
 );
 
+// ===== Hằng số =====
 const TIER_LABEL = { hot: "Nóng", warm: "Ấm", cold: "Lạnh · bất biến" } as const;
 
+// ===== Component =====
 /** Nhãn của một tập dữ liệu: chất lượng (lỗi kiểm tra / đã kiểm định) · PII · tầng lưu trữ. */
 export const DatasetTags = ({ dataset }: { dataset: Dataset }) => {
   const failed = dataset.checks.filter((c) => !c.passed).length;

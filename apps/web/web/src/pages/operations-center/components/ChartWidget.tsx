@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Popover } from "antd";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { Popover } from "antd"; // Ant Design
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 
+// ===== Component =====
 /** Nút nhỏ dạng viên thuốc ở chân khối ("Xem dạng bảng", "Định nghĩa và nguồn", "Xuất CSV"). */
 export const ChipButton = ({
   children,

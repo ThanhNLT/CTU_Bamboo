@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 /** Phần props Recharts truyền cho `content` của Tooltip mà ta dùng (tương thích Recharts 2.x và 3.x). */
 export type TipProps = {
   active?: boolean;
@@ -16,6 +17,7 @@ export type TipProps = {
   }>;
 };
 
+// ===== Component =====
 /** Hộp gợi ý khi rê chuột: nhãn trục X + từng chuỗi (chấm màu, tên, giá trị). Chữ luôn màu mực, không màu chuỗi. */
 export const ChartTooltip = ({
   active,

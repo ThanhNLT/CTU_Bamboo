@@ -2,14 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { X } from "lucide-react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { X } from "lucide-react"; // Lucide React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { smallPrimaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { COMPANY_STYLE } from "../mock";
 import type { MapSite } from "../types";
 import { CompanyShape } from "./CompanyShape";
 
+// ===== Component =====
 /** Nhãn trạng thái của cơ sở trong popup. */
 const StatusTag = ({ site }: { site: MapSite }) => {
   const critical = site.alerts.filter((a) => a.status === "critical");

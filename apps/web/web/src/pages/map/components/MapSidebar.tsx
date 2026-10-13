@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox } from "antd";
+// ===== Thư viện =====
+import { Checkbox } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { LAYERS, layerCount } from "../mock";
 import type { LayerKey, MapSite, SiteAlert } from "../types";
 
+// ===== Component =====
 /** Lớp bản đồ: bật/tắt từng nhóm điểm, kèm số điểm. */
 export const LayerFilterCard = ({
   layers,

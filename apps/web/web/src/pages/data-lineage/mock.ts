@@ -4,10 +4,14 @@
 
 // Dữ liệu mẫu (thay cho API lineage của OpenMetadata + kết quả Soda). Trạng thái "Lỗi / Bị ảnh hưởng" KHÔNG ghi
 // ở đây mà tự tính trong ./graph.ts từ các kiểm tra lỗi, nên sơ đồ, banner và bảng chi tiết luôn khớp nhau.
+
+// ===== Module nội bộ =====
 import type { LineageEdge, LineageNode, RunRow } from "./types";
 
+// ===== Hàm tiện ích =====
 const ok = (rule: string, name: string, detail: string) => ({ rule, name, passed: true, detail });
 
+// ===== Hằng số =====
 export const LINEAGE_NODES: LineageNode[] = [
   // ---- Nguồn ----
   {

@@ -2,16 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, ConfigProvider, Tree } from "antd";
-import { Building2, Folder } from "lucide-react";
-import { useMemo, useState, type Key, type ReactNode } from "react";
+// ===== Thư viện =====
+import { Checkbox, ConfigProvider, Tree } from "antd"; // Ant Design
+import { Building2, Folder } from "lucide-react"; // Lucide React
+import { useMemo, useState, type Key, type ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { fold } from "../../../utils/text";
 import type { Unit } from "../shared/orgData";
 
+// ===== Kiểu dữ liệu =====
 type Node = { key: string; title: ReactNode; children: Node[]; isLeaf?: boolean };
 
+// ===== Component =====
 /** Cột trái: cây đơn vị (công ty có biểu tượng tòa nhà), ô tìm theo tên / mã, tùy chọn hiện đơn vị đã ngừng. */
 export const UnitTree = ({
   units,

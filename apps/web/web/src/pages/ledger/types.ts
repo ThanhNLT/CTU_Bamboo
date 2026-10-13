@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 /** Một bản niêm phong trên sổ cái (Hyperledger Fabric): mã băm SHA-256 của một phiên bản hồ sơ. */
 export type Seal = {
   code: string;

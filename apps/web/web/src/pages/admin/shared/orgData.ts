@@ -4,10 +4,15 @@
 
 // Cơ cấu tổ chức của tenant (đơn vị, vị trí, người giữ ghế, danh mục) — dùng chung cho trang Cơ cấu, Người dùng
 // và Vai trò. Hasura lọc theo tenant đang chọn.
-import { useMemo } from "react";
+
+// ===== Thư viện =====
+import { useMemo } from "react"; // React
+
+// ===== Module nội bộ =====
 import { parsePeriod, type Period } from "./period";
 import { useGql } from "./useGql";
 
+// ===== Truy vấn GraphQL =====
 const ORG = `
   query AdminOrg {
     core_org_unit(order_by: { name: asc }) {
@@ -24,6 +29,7 @@ const ORG = `
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type Row<T> = T & { valid_period: string };
 export type Unit = {
   id: string;
@@ -74,6 +80,7 @@ type Raw = {
   core_person: Person[];
 };
 
+// ===== Hằng số =====
 export const ASSIGNMENT_LABEL: Record<string, string> = {
   PRIMARY: "Giữ chính",
   CONCURRENT: "Kiêm nhiệm",
@@ -81,6 +88,7 @@ export const ASSIGNMENT_LABEL: Record<string, string> = {
   CONTRACT: "Hợp đồng",
 };
 
+// ===== Hook =====
 export const useOrgData = () => {
   const q = useGql<Raw>(ORG);
   const data = useMemo(() => {
@@ -120,8 +128,10 @@ export const useOrgData = () => {
   return { ...data, loading: q.loading, error: q.error, reload: q.reload };
 };
 
+// ===== Kiểu dữ liệu =====
 export type OrgData = ReturnType<typeof useOrgData>;
 
+// ===== Hàm tiện ích =====
 /** Người và các bổ nhiệm của họ (lấy từ ghế đã tải sẵn). */
 export const assignmentsOf = (org: OrgData, personId: string) =>
   org.positions
@@ -132,6 +142,7 @@ export const assignmentsOf = (org: OrgData, personId: string) =>
         (y.a.period.from ?? "").localeCompare(x.a.period.from ?? ""),
     );
 
+// ===== Hằng số =====
 export const SCOPE_LABEL: Record<string, string> = {
   TENANT: "Cả tenant",
   SUBTREE: "Nhánh (đơn vị và cấp dưới)",

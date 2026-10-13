@@ -2,12 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import type { ArchiveDoc, Seal, SealLogRow, VerifyResult, VerifyVia } from "./types";
 
+// ===== Khởi tạo =====
 const num = new Intl.NumberFormat("vi-VN");
+
+// ===== Hàm tiện ích =====
 export const formatInt = (n: number) => num.format(n);
 
+// ===== Khởi tạo =====
 const stampFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
   month: "2-digit",
@@ -17,6 +22,8 @@ const stampFmt = new Intl.DateTimeFormat("vi-VN", {
   hour12: false,
   timeZone: "Asia/Ho_Chi_Minh",
 });
+
+// ===== Hàm tiện ích =====
 /** "12/10/2026 09:01" theo giờ Việt Nam. */
 export const formatStamp = (d: Date) => {
   const p = Object.fromEntries(stampFmt.formatToParts(d).map((x) => [x.type, x.value]));
@@ -27,8 +34,10 @@ export const formatStamp = (d: Date) => {
 export const shortHash = (h: string, head = 6, tail = 7) =>
   h.length > head + tail + 1 ? `${h.slice(0, head)}…${h.slice(-tail)}` : h;
 
+// ===== Hằng số =====
 export const CODE_PATTERN = /^(HS-[A-Z]+-\d{4}-\d{5})(?:\s*(?:·|@|,)?\s*v(\d+))?$/i;
 
+// ===== Hàm tiện ích =====
 /** Tách "HS-SEMI-2026-00123" hoặc "HS-SEMI-2026-00123 v2". Sai định dạng → undefined. */
 export const parseCode = (input: string) => {
   const m = CODE_PATTERN.exec(input.trim());
@@ -67,8 +76,10 @@ export const sha256Hex = async (data: Blob) => {
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 };
 
+// ===== Hằng số =====
 export const MAX_FILE_BYTES = 200 * 1024 * 1024;
 
+// ===== Hàm tiện ích =====
 export const formatBytes = (n: number) =>
   n < 1024
     ? `${n} B`
@@ -76,6 +87,7 @@ export const formatBytes = (n: number) =>
       ? `${(n / 1024).toFixed(1).replace(".", ",")} KB`
       : `${(n / 1024 ** 2).toFixed(1).replace(".", ",")} MB`;
 
+// ===== Hằng số =====
 const VIA_LABEL: Record<VerifyVia, string> = { code: "theo mã hồ sơ", file: "theo tệp tải lên" };
 const KIND_LABEL: Record<VerifyResult["kind"], string> = {
   match: "Khớp với bản niêm phong",
@@ -83,6 +95,7 @@ const KIND_LABEL: Record<VerifyResult["kind"], string> = {
   not_found: "Không tìm thấy bản niêm phong",
 };
 
+// ===== Hàm tiện ích =====
 /** Bằng chứng dạng văn bản để dán vào hồ sơ / email. */
 export const evidenceText = (r: VerifyResult) => {
   const lines = ["Bằng chứng đối soát · Bamboo Sổ cái (Hyperledger Fabric)", `Kết quả: ${KIND_LABEL[r.kind]}`];

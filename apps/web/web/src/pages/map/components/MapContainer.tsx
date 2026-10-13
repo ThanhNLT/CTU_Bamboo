@@ -5,7 +5,11 @@
 // Vùng bản đồ: nền SVG + điểm định vị tuyệt đối trong một lớp có thể kéo (pan) và phóng (zoom).
 // Ô tìm kiếm, nút nổi, chú giải và dòng ghi nguồn nằm ngoài lớp đó nên không bị phóng theo.
 // Trang cha gọi `focusSite(site)` (qua ref) để bay tới một cơ sở và mở popup của nó.
-import { forwardRef, useImperativeHandle, useRef, useState, type PointerEvent } from "react";
+
+// ===== Thư viện =====
+import { forwardRef, useImperativeHandle, useRef, useState, type PointerEvent } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { ATTRIBUTION, COMPANY_STYLE } from "../mock";
 import type { CompanyKey, MapSite, MapView } from "../types";
@@ -14,12 +18,15 @@ import { MapBackdrop } from "./MapBackdrop";
 import { MapFloatingControls, MapSearch } from "./MapFloatingControls";
 import { SiteMarker } from "./SiteMarker";
 
+// ===== Hằng số =====
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 3;
 const FOCUS_ZOOM = 1.75;
 
+// ===== Kiểu dữ liệu =====
 export type MapHandle = { focusSite: (site: MapSite) => void };
 
+// ===== Component =====
 const Legend = () => (
   <ul
     className="absolute bottom-4 left-4 z-30 m-0 flex list-none flex-wrap items-center gap-x-3.5 gap-y-1 rounded-full border border-line bg-white/95 px-3.5 py-2 text-[11.5px] text-body shadow-float backdrop-blur"
@@ -36,6 +43,7 @@ const Legend = () => (
   </ul>
 );
 
+// ===== Hàm tiện ích =====
 /** Giới hạn kéo để không lộ khoảng trống ngoài bản đồ. */
 const clampPan = (v: MapView, w: number, h: number): MapView => {
   const mx = ((v.zoom - 1) * w) / 2;
@@ -43,6 +51,7 @@ const clampPan = (v: MapView, w: number, h: number): MapView => {
   return { ...v, panX: Math.max(-mx, Math.min(mx, v.panX)), panY: Math.max(-my, Math.min(my, v.panY)) };
 };
 
+// ===== Component =====
 export const MapContainer = forwardRef<
   MapHandle,
   {
@@ -154,4 +163,6 @@ export const MapContainer = forwardRef<
     </div>
   );
 });
+
+// ===== Khởi tạo =====
 MapContainer.displayName = "MapContainer";

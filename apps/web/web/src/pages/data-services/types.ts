@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 /** Lĩnh vực của tập dữ liệu (máy chủ trả nhãn tiếng Việt theo schema nguồn: Mua sắm, Phê duyệt...). */
 export type DomainFilter = "all" | string;
 

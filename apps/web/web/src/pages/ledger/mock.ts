@@ -4,8 +4,11 @@
 
 // Dữ liệu mẫu cho trang Sổ cái (thay cho chaincode Fabric + kho lưu trữ). Kết quả đối soát được TÍNH bằng cách
 // so mã băm, không ghi tay: sửa `storedSha256` của một bản niêm phong là trang báo "Không khớp".
+
+// ===== Module nội bộ =====
 import type { AccessLog, ArchiveDoc, Seal, SealLogRow } from "./types";
 
+// ===== Hằng số =====
 export const SEALS: Seal[] = [
   {
     code: "HS-SEMI-2026-00125",

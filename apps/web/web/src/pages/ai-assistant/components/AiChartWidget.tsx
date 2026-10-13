@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { Link } from "react-router"; // React Router
 import {
   Area,
   CartesianGrid,
@@ -13,17 +14,23 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
+} from "recharts"; // Recharts
+
+// ===== Module nội bộ =====
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
 import type { ChartPoint, ChartSpec } from "../types";
 
+// ===== Hằng số =====
 const BAND_FILL = "#98c9a0";
 const COMPARE = "#9aa49e";
 
+// ===== Kiểu dữ liệu =====
 type TipProps = { active?: boolean; label?: string | number; payload?: Array<{ payload?: ChartPoint }> };
 
+// ===== Hàm tiện ích =====
 const fmt = (n: number, d: number) => n.toLocaleString("vi-VN", { minimumFractionDigits: d, maximumFractionDigits: d });
 
+// ===== Component =====
 const ChartTip = ({ active, label, payload, spec }: TipProps & { spec: ChartSpec }) => {
   const p = payload?.[0]?.payload;
   if (!active || !p) return null;

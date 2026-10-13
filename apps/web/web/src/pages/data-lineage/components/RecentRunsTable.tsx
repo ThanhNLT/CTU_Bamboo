@@ -2,12 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from "react";
+// ===== Thư viện =====
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { RunResult, RunRow } from "../types";
 
+// ===== Hằng số =====
 const DEFAULT_ROWS = 3;
 
+// ===== Component =====
 const ResultBadge = ({ result }: { result: RunResult }) => {
   if (result === "check_failed") {
     return (

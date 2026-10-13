@@ -4,6 +4,8 @@
 
 // Bộ trả lời MẪU (thay cho API trợ lý chạy Qwen3 nội bộ): khớp từ khóa → câu trả lời dựng sẵn từ dữ liệu mẫu.
 // Không hiểu câu hỏi thì nói thật là bản demo, không bịa. Khi nối API thật chỉ cần thay `replyTo`.
+
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import {
   DEFAULT_SUGGESTIONS,
@@ -16,8 +18,7 @@ import {
 } from "./mock";
 import type { AssistantMode, Citation, Reply } from "./types";
 
-// ---------- Văn bản có đánh dấu ----------
-
+// ===== Văn bản có đánh dấu =====
 export type RichPart = { type: "text"; value: string } | { type: "bold"; value: string } | { type: "cite"; id: number };
 
 /** Tách "**đậm**" và "[1]" thành các phần để hiển thị. */
@@ -43,8 +44,7 @@ export const totalMs = (r: Reply) => (r.steps ?? []).reduce((a, s) => a + s.ms, 
 /** "1,9 giây" */
 export const formatSeconds = (ms: number) => `${(ms / 1000).toFixed(1).replace(".", ",")} giây`;
 
-// ---------- Ngữ cảnh từ URL (các trang khác mở trợ lý kèm tham số) ----------
-
+// ===== Ngữ cảnh từ URL (các trang khác mở trợ lý kèm tham số) =====
 /** ?record=HS-… · ?entity=urn:ngsi-ld:CleanRoom:semicon:CR-02 · ?source=library · ?context=… */
 export const contextFromParams = (p: URLSearchParams) => {
   const record = p.get("record");
@@ -75,8 +75,7 @@ export const titleFrom = (text: string) => {
   return t.length > 40 ? `${t.slice(0, 38)}…` : t;
 };
 
-// ---------- Bộ trả lời mẫu ----------
-
+// ===== Bộ trả lời mẫu =====
 const has = (q: string, ...words: string[]) => words.some((w) => q.includes(w));
 
 const OEE_REPLY: Reply = {

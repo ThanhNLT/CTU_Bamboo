@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { SearchX } from "lucide-react";
+// ===== Thư viện =====
+import { SearchX } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { LibraryDoc } from "../types";
 import { docMeta } from "../utils";
 import { IndexStatus } from "./IndexStatus";
 
+// ===== Component =====
 /** Cột trái: danh sách tài liệu, cuộn độc lập. Mũi tên lên/xuống chuyển tài liệu đang chọn. */
 export const DocumentList = ({
   docs,

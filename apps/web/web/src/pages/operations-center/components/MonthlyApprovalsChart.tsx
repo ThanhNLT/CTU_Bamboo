@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+// ===== Thư viện =====
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
+
+// ===== Module nội bộ =====
 import type { MonthlyPoint } from "../types";
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget } from "./ChartWidget";
 
+// ===== Component =====
 /** Hồ sơ duyệt xong theo tháng: cột năm nay + đường đứt nét năm trước (wf.approval_history, sự kiện COMPLETED). */
 export const MonthlyApprovalsChart = ({ data, year, meta }: { data: MonthlyPoint[]; year: number; meta: string }) => {
   const names: Record<string, string> = { current: String(year), previous: String(year - 1) };

@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FilePlus2, FileText, Sparkles } from "lucide-react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { FilePlus2, FileText, Sparkles } from "lucide-react"; // Lucide React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { Dot, primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { EntityStatus, TwinEntity } from "../types";
 import { ENTITY_STATUS } from "../utils";
 
+// ===== Hằng số =====
 const TAG_CLASS: Record<EntityStatus, string> = {
   critical: "bg-red-50 text-red-700",
   warning: "bg-amber-50 text-amber-800",
@@ -16,6 +20,7 @@ const TAG_CLASS: Record<EntityStatus, string> = {
   offline: "bg-gray-100 text-gray-600",
 };
 
+// ===== Component =====
 /** Thẻ đầu cột phải: loại + URN NGSI-LD, tên, trạng thái và hai thao tác chính. */
 export const EntityHeader = ({
   entity,

@@ -4,12 +4,16 @@
 
 // Ổ đĩa tài liệu và Trung tâm điều hành dùng dữ liệu thật: tải tệp vào chứng từ qua Ổ đĩa (kiểm dịch thật),
 // tệp hiện trong "Tệp tôi tải lên"; Trung tâm điều hành hiện số liệu thật.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E ổ đĩa ${Date.now()}`;
 const FILE = `bao-gia-${Date.now()}.pdf`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -19,6 +23,7 @@ async function login(page: Page, username: string) {
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("tải tệp vào chứng từ qua Ổ đĩa, xem số liệu điều hành", async ({ page }) => {
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/p/documents/create");
