@@ -1055,6 +1055,113 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+-- wf.process_model (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_model (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.wf_process_model COMMENT 'Trạng thái hiện tại của wf.process_model, dựng từ bronze.wf_process_model' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    json_extract_scalar(after, '$["process_key"]') AS "process_key",
+    json_extract_scalar(after, '$["name"]') AS "name",
+    json_extract_scalar(after, '$["description"]') AS "description",
+    json_extract_scalar(after, '$["bpmn_xml"]') AS "bpmn_xml",
+    json_extract_scalar(after, '$["forms"]') AS "forms",
+    CAST(json_extract_scalar(after, '$["created_by"]') AS uuid) AS "created_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(json_extract_scalar(after, '$["updated_by"]') AS uuid) AS "updated_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.wf_process_model
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+-- wf.process_version (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_version (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.wf_process_version COMMENT 'Trạng thái hiện tại của wf.process_version, dựng từ bronze.wf_process_version' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["model_id"]') AS uuid) AS "model_id",
+    CAST(json_extract_scalar(after, '$["version"]') AS integer) AS "version",
+    json_extract_scalar(after, '$["bpmn_xml"]') AS "bpmn_xml",
+    json_extract_scalar(after, '$["forms"]') AS "forms",
+    json_extract_scalar(after, '$["sha256"]') AS "sha256",
+    json_extract_scalar(after, '$["note"]') AS "note",
+    CAST(json_extract_scalar(after, '$["published_by"]') AS uuid) AS "published_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["published_at"]')) AS timestamp(6) with time zone) AS "published_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.wf_process_version
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+-- wf.sandbox_run (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_sandbox_run (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.wf_sandbox_run COMMENT 'Trạng thái hiện tại của wf.sandbox_run, dựng từ bronze.wf_sandbox_run' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["model_id"]') AS uuid) AS "model_id",
+    json_extract_scalar(after, '$["xml_sha256"]') AS "xml_sha256",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    json_extract_scalar(after, '$["steps"]') AS "steps",
+    json_extract_scalar(after, '$["variables"]') AS "variables",
+    json_extract_scalar(after, '$["error"]') AS "error",
+    CAST(json_extract_scalar(after, '$["started_by"]') AS uuid) AS "started_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.wf_sandbox_run
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 -- wf.task (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_task (
     "op" varchar,

@@ -34,6 +34,24 @@ class FlowableClient:
         )
         return self._check(resp).json()
 
+    def delete_deployment(self, deployment_id: str) -> None:
+        """Xóa deployment kèm mọi tiến trình và lịch sử của nó (chạy thử sandbox)."""
+        resp = self.http.delete(f"repository/deployments/{deployment_id}", params={"cascade": "true"})
+        if resp.status_code != 404:
+            self._check(resp)
+
+    def definitions_of(self, deployment_id: str) -> list[dict]:
+        return self._check(
+            self.http.get("repository/process-definitions", params={"deploymentId": deployment_id})
+        ).json()["data"]
+
+    def start_definition(self, definition_id: str, variables: dict) -> str:
+        body = {
+            "processDefinitionId": definition_id,
+            "variables": [{"name": k, "value": v} for k, v in variables.items()],
+        }
+        return self._check(self.http.post("runtime/process-instances", json=body)).json()["id"]
+
     # ===== Tiến trình =====
 
     def start_process(self, key: str, business_key: str, variables: dict) -> str:

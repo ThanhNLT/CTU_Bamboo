@@ -38,6 +38,7 @@ from . import (
     lakehouse_query,
     ledger,
     pii_guard,
+    process_design,
     search,
     trino,
 )
@@ -171,6 +172,7 @@ HANDLERS = {
     **admin.HANDLERS,
     **lakehouse_query.HANDLERS,
     **ledger.HANDLERS,
+    **process_design.HANDLERS,
 }
 
 
