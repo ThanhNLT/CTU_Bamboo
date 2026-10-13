@@ -151,3 +151,13 @@ _Tránh dùng_: chat, ghi chú duyệt (ghi chú duyệt nằm ở bước duy�
 **Thông báo** (`collab.notification`):
 Tin báo cho đúng một người, sinh tự động khi được giao việc duyệt, khi chứng từ của mình có kết quả, khi có bình luận hoặc được nhắc tên. Người gây ra sự kiện không tự nhận thông báo.
 _Tránh dùng_: alert, tin nhắn
+
+## Dữ liệu
+
+**Tập dữ liệu** (view `lakehouse.silver.<schema>_<bảng>`):
+Trạng thái hiện tại của một bảng nghiệp vụ trong Lakehouse, dựng từ lịch sử thay đổi (CDC) ở tầng bronze; mỗi bản ghi một dòng. Người có quyền `data.lakehouse.read` xem tập dữ liệu của tenant đang chọn trên trang Dịch vụ dữ liệu, dữ liệu cá nhân đã che.
+_Tránh dùng_: bảng (bảng là ở CSDL nghiệp vụ), mart (mart là bảng tổng hợp cho BI, chưa có)
+
+**Người dùng tenant của Trino** (`t_<tenant_id>`):
+Danh tính mà dịch vụ actions mượn khi truy vấn Lakehouse thay người dùng của một tenant; Trino chỉ cho danh tính này đọc tập dữ liệu có cột tenant và tự lọc về đúng tenant đó (ADR #45).
+_Tránh dùng_: tài khoản Trino (tài khoản là `bms-admin`, `bms-actions`, có mật khẩu)

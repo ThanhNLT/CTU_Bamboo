@@ -27,6 +27,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
 | 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`, `CDC_DB_PASSWORD` (Debezium), `LAKEHOUSE_DB_PASSWORD` (catalog Iceberg); superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
+| 12 | Trục dữ liệu (ADR #45) | Mật khẩu Kafka `DEBEZIUM_KAFKA_PASSWORD`, `LAKEHOUSE_KAFKA_PASSWORD` (Kafka từ chối client không có tài khoản, ACL theo tiền tố topic). Trino chỉ nhận đăng nhập qua HTTPS bằng chứng chỉ của CA nội bộ OpenBao; mật khẩu `bms-admin`, `bms-actions` do OpenBao sinh; người dùng tenant chỉ thấy dữ liệu của tenant mình (row filter). Không mở cổng 8085 của Trino ra ngoài máy chủ |
 
 ## 3. Tên miền và TLS
 
