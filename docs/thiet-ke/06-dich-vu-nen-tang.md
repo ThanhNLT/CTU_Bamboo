@@ -284,7 +284,7 @@ PostgreSQL bms (wal_level=logical, publication bms_cdc)
 
 | Dịch vụ | Image | Ghi chú |
 |---|---|---|
-| `kafka` | `bamboo-kafka` (`apache/kafka:4.3.1` + JAAS, `start.sh`) | KRaft một node (broker + controller), `kafka:9092` SASL_PLAINTEXT (SCRAM-SHA-512) chỉ mạng nội bộ; controller và listener `LOCAL` (`localhost:9094`) chỉ trong container. Giữ 7 ngày, heap 512 MB. Dữ liệu ở volume `kafka-data` |
+| `kafka` | `bamboo-kafka` (`apache/kafka:4.3.1` + JAAS, `start.sh`) | KRaft một node (broker + controller), `kafka:9092` SASL_PLAINTEXT (SCRAM-SHA-512) cho mạng nội bộ, `localhost:19092` (listener `HOST`, cùng SCRAM + ACL) cho công cụ trên máy dev; controller và listener `LOCAL` (`localhost:9094`) chỉ trong container. Giữ 7 ngày, heap 512 MB. Dữ liệu ở volume `kafka-data` |
 | `debezium` | `quay.io/debezium/server:3.7.0.Final` | Connector PostgreSQL (`pgoutput`), cấu hình bằng biến `DEBEZIUM_*` trong `docker-compose.yml`. Vị trí đọc ở volume `debezium-data`; xóa volume thì chụp ảnh lại toàn bộ |
 
 ### Sự kiện

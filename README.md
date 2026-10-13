@@ -133,7 +133,14 @@ Mật khẩu chung của mọi tài khoản demo là **`demo-password`** (biến
 | Hasura Console (API, dữ liệu) | <http://localhost:8081/console> | admin secret `dev-admin-secret` (`HASURA_GRAPHQL_ADMIN_SECRET`) |
 | OpenBao UI (secret) | <http://localhost:8200> | root token in bằng `make bao-token` |
 | Flowable REST (quy trình) | <http://localhost:8082/flowable-rest> | `rest-admin` / `test` (`FLOWABLE_ADMIN`, `FLOWABLE_ADMIN_PASSWORD`) |
-| Trino (truy vấn Lakehouse) | <http://localhost:8085> | tên người dùng tùy ý, không mật khẩu (chỉ máy dev); `docker compose exec trino trino --catalog lakehouse --schema silver` |
+| Trino (truy vấn Lakehouse) | <https://localhost:8085> | `bms-admin`, mật khẩu in bằng `make trino-password` (chứng chỉ của CA nội bộ OpenBao, trình duyệt sẽ cảnh báo; ADR #45) |
+| SeaweedFS (lưu tệp) | S3 `localhost:8333`, giao diện master <http://localhost:9333>, filer <http://localhost:8888> | S3 cần khóa trong OpenBao (`secret/bms/seaweedfs*`) |
+| Meilisearch (tìm kiếm) | <http://localhost:7700> | khóa chủ trong OpenBao (`secret/bms/meilisearch-admin`) |
+| Kafka (CDC) | `localhost:19092` (SASL_PLAINTEXT, SCRAM-SHA-512) | `lakehouse` / `lakehouse-kafka-dev` chỉ đọc, `debezium` / `debezium-kafka-dev` (`*_KAFKA_PASSWORD`) |
+| Debezium (CDC) | <http://localhost:8083/q/health> | không cần đăng nhập |
+| actions (Hasura Actions) | <http://localhost:8090/healthz> | Action chỉ nhận lời gọi từ Hasura (`ACTIONS_SECRET`) |
+| Ứng dụng web không qua cổng API | <http://localhost:8088> | chỉ để kiểm tra bản build; dùng <http://localhost:8000> như bình thường |
+| Tika, Gotenberg, ClamAV | `localhost:9998`, `localhost:3000`, `localhost:3310` (ClamAV khi bật `--profile scan`) | dịch vụ nội bộ, không cần đăng nhập |
 | PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`POSTGRES_PASSWORD`); `make psql`. Dịch vụ dùng tài khoản riêng không phải superuser: `bamboo_hasura`, `bamboo_actions`, `bamboo_keycloak`, `bamboo_flowable` (mật khẩu dev `hasura-db-dev`, `actions-db-dev`, `keycloak-db-dev`, `flowable-db-dev`; biến `*_DB_PASSWORD`; ADR #35) |
 
 Danh sách tài khoản sinh từ `services/seed/app/demo.py` (dùng chung cho dữ liệu CSDL và realm Keycloak); các vị trí còn lại có người giả lập (Faker). Bảng quyền và hạn mức đầy đủ: [thiết kế CSDL, mục Tích hợp](docs/thiet-ke/03-thiet-ke-csdl.md).

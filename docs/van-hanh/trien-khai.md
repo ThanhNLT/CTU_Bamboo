@@ -105,14 +105,23 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 | Dịch vụ | Cổng trên máy chủ | Công khai | Vai trò |
 |---|---|---|---|
 | `gateway` | 8000 (`GATEWAY_PORT`) | **Có, điểm vào duy nhất** | Cổng API APISIX: định tuyến, WAF, token tại biên, giới hạn tần suất |
-| `web` | không mở | Qua cổng (`/`) | Ứng dụng Refine (nginx) |
+| `web` | 8088, chỉ 127.0.0.1 | Qua cổng (`/`) | Ứng dụng Refine (nginx); cổng 8088 chỉ để kiểm tra bản build |
 | `keycloak` | 8080, chỉ 127.0.0.1 | Qua cổng (`/realms`, `/resources`) | Đăng nhập; cổng 8080 chỉ cho trang quản trị |
 | `hasura` | 8081, chỉ 127.0.0.1 | Qua cổng (`/graphql`) | API GraphQL; cổng 8081 chỉ cho Console (tắt ở production) |
-| `seaweedfs` | không mở | Qua cổng (`/bms-quarantine`, `/bms-documents`) | Lưu tệp, link có chữ ký |
+| `seaweedfs` | 8333 (S3), 9333 (master), 8888 (filer), chỉ 127.0.0.1 | Qua cổng (`/bms-quarantine`, `/bms-documents`) | Lưu tệp, link có chữ ký |
 | `flowable` | 8082, chỉ 127.0.0.1 | Không | Động cơ BPMN, chỉ dịch vụ `actions` gọi |
 | `openbao` | 8200, chỉ 127.0.0.1 | Không | Két secret |
 | `db` | 5432, chỉ 127.0.0.1 | Không | PostgreSQL |
-| `actions`, `flow-sync` | không mở | Không | Hasura Actions, auth webhook, kiểm token cho cổng, đồng bộ Flowable |
+| `actions` | 8090, chỉ 127.0.0.1 | Không | Hasura Actions, auth webhook, kiểm token cho cổng |
+| `meilisearch` | 7700, chỉ 127.0.0.1 | Không | Chỉ mục tìm kiếm (cần khóa API) |
+| `tika`, `gotenberg` | 9998, 3000, chỉ 127.0.0.1 | Không | Trích văn bản tệp, in phiếu PDF |
+| `kafka` | 19092 (listener `HOST`, SASL), chỉ 127.0.0.1 | Không | Trục sự kiện CDC; mạng nội bộ dùng `kafka:9092` |
+| `debezium` | 8083, chỉ 127.0.0.1 | Không | CDC, `/q/health` |
+| `trino` | 8085 (HTTPS), chỉ 127.0.0.1 | Không | Truy vấn Lakehouse |
+| `clamav` (profile `scan`) | 3310, chỉ 127.0.0.1 | Không | Quét virus |
+| `flow-sync`, `search-sync`, `lakehouse-sink` | không có (tiến trình nền, không nghe cổng) | Không | Đồng bộ Flowable, chỉ mục tìm kiếm, Lakehouse |
+
+Mọi cổng trên máy chủ trừ `gateway` chỉ nghe `127.0.0.1` (truy cập từ chính máy chủ hoặc qua SSH tunnel); triển khai thật có thể bỏ các dòng `ports` của dịch vụ không cần quản trị trực tiếp.
 
 Số liệu Prometheus của cổng: `gateway:9091/apisix/prometheus/metrics`, chỉ trong mạng nội bộ compose.
 
