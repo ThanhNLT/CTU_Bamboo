@@ -162,6 +162,18 @@ def _keycloak_users(settings: config.Settings) -> hr_account.KeycloakUsers | Non
     return hr_account.KeycloakUsers(settings.keycloak_url, "bms-provisioner", settings.keycloak_provisioner_secret)
 
 
+def _lakehouse(settings: config.Settings) -> trino.Trino | None:
+    """Client Trino cho trang Dịch vụ dữ liệu (ADR #45). Thiếu tài khoản hoặc tệp CA thì Action lakehouse_* trả 503,
+    các Action khác vẫn chạy."""
+    if not settings.trino_password:
+        return None
+    try:
+        return trino.client(settings)
+    except OSError as exc:  # gồm FileNotFoundError, ssl.SSLError khi CA chưa có hoặc hỏng
+        log.warning("không tạo được client Trino (CA %s): %s", settings.trino_ca_file, exc)
+        return None
+
+
 def _pii_cipher() -> PiiCipher | None:
     """Khóa transit `pii` đọc bằng AppRole của dịch vụ; ngoài compose (không có OpenBao) thì không mã hóa được."""
     addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
@@ -177,7 +189,7 @@ def create_app(settings: config.Settings | None = None, pool: ConnectionPool | N
         search=search.Meili(settings.meili_url, settings.meili_search_key, timeout=5.0),
         search_index=settings.meili_index, gotenberg_url=settings.gotenberg_url, pii=_pii_cipher(),
         users=_keycloak_users(settings),
-        lakehouse=trino.client(settings) if settings.trino_password else None)
+        lakehouse=_lakehouse(settings))
     verifier = verifier or auth.KeycloakVerifier(settings.keycloak_jwks_url, settings.keycloak_issuer,
                                                  set(settings.keycloak_clients))
 

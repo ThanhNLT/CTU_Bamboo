@@ -65,6 +65,14 @@ def test_chua_cau_hinh_trino():
     assert err.value.status == 503
 
 
+def test_thieu_ca_trino_khong_lam_sap_actions(tmp_path):
+    """Tệp CA chưa có: actions vẫn khởi động, Action Lakehouse trả 503 thay vì cả dịch vụ không lên."""
+    from app import config, main
+    settings = config.Settings(**{**SETTINGS.__dict__, "trino_password": "x",
+                                  "trino_ca_file": str(tmp_path / "khong-co.pem")})
+    assert main._lakehouse(settings) is None
+
+
 @pytest.mark.parametrize("name", ['proc_purchase_request" --', "../bronze", "Proc", "", "a" * 64])
 def test_ten_tap_du_lieu_khong_hop_le(name):
     with pytest.raises(ActionError) as err:

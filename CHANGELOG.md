@@ -32,7 +32,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - Giao diện: JavaScript, CSS nén gzip mức 9 sẵn lúc build, nginx gửi thẳng tệp `.gz` (`gzip_static`) thay vì nén lại 2 MB mỗi lượt tải.
 - Image Python biên dịch sẵn bytecode của mã dịch vụ.
 
+### Thay đổi
+- Mọi dịch vụ chạy lâu dài có cổng hiện trên Docker, chỉ nghe `127.0.0.1` của máy chạy compose: actions 8090, web 8088 (không qua cổng API), SeaweedFS 8333 / 9333 / 8888, Meilisearch 7700, Tika 9998, Gotenberg 3000, Debezium 8083, ClamAV 3310 (profile `scan`). Kafka thêm listener `HOST` `localhost:19092` (cùng SCRAM + ACL) cho công cụ trên máy dev. `flow-sync`, `search-sync`, `lakehouse-sink` là tiến trình nền, không nghe cổng.
+
 ### Sửa
+- Dịch vụ actions không khởi động được nếu thiếu tệp CA của Trino (chạy ngoài compose, volume chưa ghi): nay chỉ ghi cảnh báo, các Action Lakehouse trả 503, các Action khác chạy bình thường.
+- README ghi Trino không mật khẩu ở `http://localhost:8085`; đúng là `https://localhost:8085`, tài khoản `bms-admin` (`make trino-password`).
 - Trang đăng nhập thỉnh thoảng báo `403 Forbidden` (cổng API): cookie phiên của Keycloak là chuỗi ngẫu nhiên, đôi khi tình cờ chứa mẫu mà WAF coi là tấn công (tên hàm PHP, giá trị bọc nháy kép), khoảng 1/1500 lượt mở trang đăng nhập. WAF không kiểm các cookie phiên Keycloak nữa (Keycloak tự kiểm chúng); cookie khác, tham số và nội dung vẫn qua OWASP CRS như cũ.
 
 ### Bảo mật
