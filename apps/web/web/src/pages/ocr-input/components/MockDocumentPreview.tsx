@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { FieldKey, OcrField } from "../types";
 import { LEVEL_STYLE, PAPER_H, PAPER_W, formatConfidence, levelOf } from "../utils";
 
+// ===== Component =====
 const Label = ({ y, children }: { y: number; children: string }) => (
   <span className="absolute left-[18px] text-[9.5px] text-[#5b6660]" style={{ top: y + 2 }}>
     {children}

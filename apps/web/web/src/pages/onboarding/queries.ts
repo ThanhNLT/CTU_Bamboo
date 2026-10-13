@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Truy vấn GraphQL cho đề nghị tiếp nhận nhân sự (docs/thiet-ke/08-api-giao-dien.md, ADR #41).
-import gql from "graphql-tag";
 
+// ===== Thư viện =====
+import gql from "graphql-tag"; // graphql-tag
+
+// ===== Truy vấn GraphQL =====
 export const OB_LIST = gql`
   query Onboardings(
     $limit: Int

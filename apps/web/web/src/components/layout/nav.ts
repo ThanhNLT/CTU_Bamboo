@@ -6,6 +6,8 @@
 // Chữ cái nhóm trùng tiền tố đường dẫn. Mục chưa có trang sẽ rơi vào ErrorComponent cho tới khi được làm.
 // Các phân hệ nghiệp vụ đang chạy dữ liệu thật (mua sắm, đơn nội bộ, nhân sự, kiểm toán) nằm cùng nhóm,
 // ẩn theo quyền như menu cũ (accessControlProvider) — bộ kiểm thử e2e dựa vào các mục này.
+
+// ===== Thư viện =====
 import {
   ArrowLeftRight,
   Bot,
@@ -32,8 +34,9 @@ import {
   UserPlus,
   Users,
   type LucideIcon,
-} from "lucide-react";
+} from "lucide-react"; // Lucide React
 
+// ===== Kiểu dữ liệu =====
 export type NavItem = {
   key: string;
   label: string;
@@ -53,6 +56,7 @@ export type NavGroup = {
   access?: { resource: string; action: string };
 };
 
+// ===== Hằng số =====
 export const NAV_GROUPS: NavGroup[] = [
   {
     code: "H",
@@ -153,6 +157,7 @@ export const EXTRA_PAGES: Array<{ group: string; label: string; to: string }> = 
   { group: "Quy trình số", label: "Hộp việc duyệt (dữ liệu thật)", to: "/p/inbox" },
 ];
 
+// ===== Hàm tiện ích =====
 const matches = (pathname: string, to: string) =>
   to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
 

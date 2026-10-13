@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { ApprovalHistory, ApprovalStep, Attachment, Comment } from "../../components/document/types";
 
+// ===== Kiểu dữ liệu =====
 type Person = { full_name: string } | null;
 
 export type PurchaseRequest = {

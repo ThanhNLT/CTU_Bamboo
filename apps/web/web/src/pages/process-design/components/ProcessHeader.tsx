@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AlertTriangle } from "lucide-react";
+// ===== Thư viện =====
+import { AlertTriangle } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { PROCESSES_PATH } from "../mock";
 import type { ProcessDef } from "../types";
 
+// ===== Component =====
 /** Tiêu đề + Kiểm tra / Tải tệp BPMN / Chạy thử sandbox + thanh cảnh báo bản nháp. */
 export const ProcessHeader = ({
   process,

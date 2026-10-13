@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Sparkles, X } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+// ===== Thư viện =====
+import { Sparkles, X } from "lucide-react"; // Lucide React
+import { useEffect, useRef, type ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { MODEL_LABEL, MODES, SCOPE_NOTE } from "../mock";
 import type { AssistantMode, ChatSession, ToolStep } from "../types";
 import { ThinkingMessage } from "./ThinkingMessage";
 
+// ===== Component =====
 const ModeTabs = ({ value, onChange }: { value: AssistantMode; onChange: (m: AssistantMode) => void }) => (
   <div
     role="tablist"

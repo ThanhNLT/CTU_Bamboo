@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { Tone } from "../../../components/ui";
 import type { SlaLevel } from "../types";
 
+// ===== Hằng số =====
 export const SLA_TONE: Record<SlaLevel, Tone> = { overdue: "danger", urgent: "warning", ok: "success" };
 
 export const SLA_PILL: Record<SlaLevel, string> = {
@@ -13,5 +15,6 @@ export const SLA_PILL: Record<SlaLevel, string> = {
   ok: "bg-bamboo-50 text-bamboo-700",
 };
 
+// ===== Hàm tiện ích =====
 /** "còn 3 giờ 20 phút" → "Còn 3 giờ 20 phút" */
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

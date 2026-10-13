@@ -2,8 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FileSearch, Sparkles } from "lucide-react";
-import type { ReactNode } from "react";
+// ===== Thư viện =====
+import { FileSearch, Sparkles } from "lucide-react"; // Lucide React
+import type { ReactNode } from "react"; // React
+
+// ===== Module nội bộ =====
 import { DOC_KIND_LABEL } from "../../../api/documents";
 import { smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
@@ -13,6 +16,7 @@ import { buildWorkflow } from "../utils";
 import { RecordStatusBadge } from "./RecordStatusBadge";
 import { VerticalTimeline } from "./VerticalTimeline";
 
+// ===== Component =====
 const SectionTitle = ({ children }: { children: ReactNode }) => (
   <h3 className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h3>
 );

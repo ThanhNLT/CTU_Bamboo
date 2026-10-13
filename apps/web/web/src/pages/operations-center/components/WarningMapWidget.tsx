@@ -5,19 +5,25 @@
 // "Cơ sở và cảnh báo": bản đồ giả lập bằng nền lưới + điểm định vị tuyệt đối.
 // Hình dạng = công ty (vuông/thoi/tròn/chữ thập); màu = mức cảnh báo. Không dùng màu công ty ở đây vì
 // 4 màu hiện cùng lúc dạng chấm rời không đủ phân biệt (cam/vàng) — hình dạng gánh phần nhận diện.
-import { Link } from "react-router";
-import { useState } from "react";
+
+// ===== Thư viện =====
+import { Link } from "react-router"; // React Router
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { SAMPLE_COMPANIES as COMPANIES, SAMPLE_COMPANY as COMPANY } from "../sample";
 import type { SampleCompanyKey, Site, SiteStatus } from "../types";
 import { ChartWidget } from "./ChartWidget";
 
+// ===== Hằng số =====
 const STATUS: Record<SiteStatus, { label: string; bg: string; text: string }> = {
   ok: { label: "Bình thường", bg: "bg-gray-500", text: "text-gray-600" },
   warning: { label: "Cảnh báo", bg: "bg-amber-500", text: "text-amber-700" },
   critical: { label: "Nguy cấp", bg: "bg-red-500", text: "text-red-700" },
 };
 
+// ===== Component =====
 /** Hình đại diện công ty, tô theo mức cảnh báo. */
 export const SiteShape = ({
   company,

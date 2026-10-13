@@ -4,8 +4,11 @@
 
 // Dữ liệu minh họa cho Thiết kế quy trình. Quy trình thật nằm ở platform/workflow/flowable/processes/
 // (Git là nguồn sự thật); trang này chỉ soạn bản nháp rồi xuất tệp BPMN.
+
+// ===== Module nội bộ =====
 import type { BpmnNode, FormDef, NodeType, ProcessDef } from "./types";
 
+// ===== Hằng số =====
 export const PROCESSES_PATH = "platform/workflow/flowable/processes/";
 
 /** Kiểu dữ liệu kéo–thả từ bảng thành phần sang canvas. */
@@ -202,6 +205,7 @@ const TWO_LEVEL: ProcessDef = {
   },
 };
 
+// ===== Hàm tiện ích =====
 /** Quy trình thẳng đơn giản: các bước xếp dọc, nối liền. */
 const linear = (steps: Array<Omit<BpmnNode, "x" | "y">>) => {
   const gap = 100;
@@ -222,6 +226,7 @@ const linear = (steps: Array<Omit<BpmnNode, "x" | "y">>) => {
   return { nodes, edges };
 };
 
+// ===== Hằng số =====
 export const MOCK_PROCESSES: ProcessDef[] = [
   TWO_LEVEL,
   {

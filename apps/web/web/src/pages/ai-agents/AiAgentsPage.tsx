@@ -4,8 +4,12 @@
 
 // Tác tử AI (Trí tuệ số): cổng quản trị các tác tử chạy trên Ollama nội bộ. Thẻ KPI tính từ bảng tác tử;
 // bấm một dòng để xem phân tích (phiên 7 ngày, công cụ, rào chắn, cấu hình) của tác tử đó. Dữ liệu mẫu ở ./mock.
-import { App } from "antd";
-import { useMemo, useState } from "react";
+
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
+import { useMemo, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { AiAgentsHeader } from "./components/AiAgentsHeader";
 import { AiAgentsTable } from "./components/AiAgentsTable";
 import { AiAnalyticsSection } from "./components/AiAnalyticsSection";
@@ -15,6 +19,7 @@ import { AGENTS, DAYS, DEFAULT_AGENT_ID } from "./mock";
 import type { Agent, AnalyticsTab, GuardKey } from "./types";
 import { computeKpis } from "./utils";
 
+// ===== Component =====
 export const AiAgentsPage = () => {
   const { message, modal } = App.useApp();
   const [agents, setAgents] = useState<Agent[]>(AGENTS);

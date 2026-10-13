@@ -2,14 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FileImage, LoaderCircle, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+// ===== Thư viện =====
+import { FileImage, LoaderCircle, Minus, Plus } from "lucide-react"; // Lucide React
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import type { FieldKey, OcrField, SourceDoc } from "../types";
 import { PAPER_H, PAPER_W } from "../utils";
 import { MockDocumentPreview } from "./MockDocumentPreview";
 
+// ===== Hằng số =====
 const ZOOMS = [0.75, 1, 1.25, 1.5, 2];
 
+// ===== Component =====
 const LegendDot = ({ className, label }: { className: string; label: string }) => (
   <span className="inline-flex items-center gap-1.5">
     <span className={`h-2 w-2 rounded-full ${className}`} aria-hidden />

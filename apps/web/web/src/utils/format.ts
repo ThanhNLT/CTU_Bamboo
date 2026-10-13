@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
+// ===== Thư viện =====
+import dayjs from "dayjs"; // Day.js
+import relativeTime from "dayjs/plugin/relativeTime"; // Day.js
 
+// ===== Khởi tạo =====
 dayjs.extend(relativeTime);
 
 const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
+
+// ===== Hàm tiện ích =====
 export const formatMoney = (value?: number | string | null) => (value == null ? "—" : money.format(Number(value)));
 export const formatDate = (value?: string | null) => (value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "—");
 /** "5 phút trước" trong 1 ngày, sau đó "Hôm qua", rồi ngày tháng. */
@@ -30,6 +34,7 @@ export const parsePgTimestamp = (value: string) =>
   );
 export const formatDay = (value?: string | null) => (value ? dayjs(value).format("DD/MM/YYYY") : "—");
 
+// ===== Hằng số =====
 export const STEP_STATUS: Record<string, string> = {
   WAITING: "Chờ tới lượt",
   ACTIVE: "Đang chờ duyệt",

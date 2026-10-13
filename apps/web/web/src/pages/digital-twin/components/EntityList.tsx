@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { RadioTower } from "lucide-react";
+// ===== Thư viện =====
+import { RadioTower } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { Dot, SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { TwinEntity } from "../types";
 import { ENTITY_STATUS } from "../utils";
 
+// ===== Component =====
 const EntityCard = ({
   entity,
   selected,

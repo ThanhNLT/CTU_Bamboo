@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hằng số =====
 export const PR_STATUS_LABEL: Record<string, string> = {
   DRAFT: "Nháp",
   PENDING: "Chờ duyệt",

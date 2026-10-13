@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Tooltip } from "antd";
-import { Upload } from "lucide-react";
-import { useRef } from "react";
+// ===== Thư viện =====
+import { Tooltip } from "antd"; // Ant Design
+import { Upload } from "lucide-react"; // Lucide React
+import { useRef } from "react"; // React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
+// ===== Component =====
 /** Tiêu đề trang + nút "Tải lên" (mở hộp chọn tệp). Tệp luôn thuộc một chứng từ: chỉ tải được khi đang mở thư mục. */
 export const DriveHeader = ({
   onUpload,

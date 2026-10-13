@@ -4,8 +4,11 @@
 
 // Dữ liệu minh họa cho trang Bản đồ. Nền bản đồ là hình vẽ SVG giả lập; khi nối thật, thay bằng lớp WMS/WMTS
 // của GeoServer nội bộ (chạy được khi không có Internet) và lấy cơ sở/cảnh báo từ Bản sao số.
+
+// ===== Module nội bộ =====
 import type { CompanyKey, LayerKey, MapSite } from "./types";
 
+// ===== Hằng số =====
 /** Màu nhận diện công ty — trùng Trung tâm điều hành; luôn đi kèm hình dạng riêng (vuông/thoi/tròn/chữ thập). */
 export const COMPANY_STYLE: Record<CompanyKey, { name: string; color: string }> = {
   phone: { name: "Điện thoại", color: "#2a78d6" },
@@ -101,8 +104,10 @@ export const MOCK_SITES: MapSite[] = [
   },
 ];
 
+// ===== Hàm tiện ích =====
 /** Số điểm theo lớp (cụm tính theo số điểm bên trong). */
 export const layerCount = (layer: LayerKey) =>
   MOCK_SITES.filter((s) => s.layer === layer).reduce((n, s) => n + (s.cluster?.length ?? 1), 0);
 
+// ===== Hằng số =====
 export const ATTRIBUTION = "© OpenStreetMap contributors · GeoServer";

@@ -5,14 +5,15 @@
 // Dữ liệu mẫu cho trang Bản sao số: 26 thực thể NGSI-LD (8 dây chuyền SMT, 4 phòng sạch, 14 thiết bị y tế).
 // Mỗi mô hình (CleanRoom, SmtLine...) khai báo thuộc tính + ngưỡng một lần; từng thực thể chỉ ghi phần khác biệt.
 // Trạng thái thẻ (Nguy cấp / Cảnh báo / Bình thường) được TÍNH từ dữ liệu, không ghi tay, nên luôn khớp với biểu đồ.
+
+// ===== Module nội bộ =====
 import { breachSpans, latestValue, minuteSeries } from "./signal";
 import type { CategoryFilter, EntitySeed, Metric, MetricDef, MetricSeed, MetricStatus, TwinEntity } from "./types";
 import { ENTITY_STATUS, formatDuration, formatNumber, thresholdText, worstStatus } from "./utils";
 
 type Template = MetricDef & { base: number };
 
-// ---------- Mô hình dữ liệu (thuộc tính NGSI-LD + ngưỡng vận hành) ----------
-
+// ===== Mô hình dữ liệu (thuộc tính NGSI-LD + ngưỡng vận hành) =====
 const CLEANROOM: Template[] = [
   {
     key: "particles05",
@@ -287,8 +288,7 @@ const TEMPLATES: Record<string, Template[]> = {
   InfusionPump: INFUSION_PUMP,
 };
 
-// ---------- Thực thể ----------
-
+// ===== Thực thể =====
 const CHIP_BN = { site: "Nhà máy chip Bắc Ninh", siteId: "chip-bn", province: "Bắc Ninh" };
 const PHONE_BG = { site: "Nhà máy điện thoại Bắc Giang", siteId: "phone-bg", province: "Bắc Giang" };
 const PHONE_TN = { site: "Nhà máy điện thoại Thái Nguyên", siteId: "phone-tn", province: "Thái Nguyên" };
@@ -407,8 +407,7 @@ const SEEDS: EntitySeed[] = [
   device("InfusionPump", 3),
 ];
 
-// ---------- Tính trạng thái từ dữ liệu ----------
-
+// ===== Tính trạng thái từ dữ liệu =====
 const buildMetric = (entity: EntitySeed, tpl: Template): Metric => {
   const { base: defaultBase, ...def } = tpl;
   const seed = entity.metrics[tpl.key] ?? {};

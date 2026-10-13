@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Crosshair, Minus, Plus, Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+// ===== Thư viện =====
+import { Crosshair, Minus, Plus, Search, X } from "lucide-react"; // Lucide React
+import { useMemo, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { fold } from "../../../utils/text";
 import type { MapSite } from "../types";
 import { CompanyShape } from "./CompanyShape";
 
+// ===== Component =====
 /** Ô tìm cơ sở/địa chỉ nổi góc trên trái; chọn kết quả để bay tới điểm đó. */
 export const MapSearch = ({ sites, onPick }: { sites: MapSite[]; onPick: (site: MapSite) => void }) => {
   const [q, setQ] = useState("");
@@ -93,10 +97,12 @@ export const MapSearch = ({ sites, onPick }: { sites: MapSite[]; onPick: (site: 
   );
 };
 
+// ===== Hằng số =====
 const btn =
   "grid h-9 w-9 place-items-center text-body transition-colors hover:bg-canvas disabled:cursor-default disabled:opacity-40 " +
   "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-bamboo-500";
 
+// ===== Component =====
 /** Nhóm nút nổi góc trên phải: phóng to, thu nhỏ, về toàn cảnh. */
 export const MapFloatingControls = ({
   zoom,

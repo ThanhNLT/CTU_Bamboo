@@ -5,14 +5,18 @@
 // Quản trị dữ liệu tenant (ADR #44) qua giao diện thật: CDO (vai trò Quản trị tổ chức) thêm đơn vị, vị trí, người,
 // bổ nhiệm, tạo tài khoản, tạo vai trò và cấp cho vị trí; nhập đơn vị từ CSV (xem trước lỗi rồi ghi).
 // Nhân viên thường không thấy nhóm Quản trị.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now().toString().slice(-7);
 const UNIT = `E2E_${STAMP}`;
 const PERSON = `Người Thử ${STAMP}`;
 const ROLE = `E2E_VT_${STAMP}`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -46,6 +50,7 @@ async function pick(page: Page, label: string, text: string) {
     .click();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", async ({ page }) => {
   test.setTimeout(180_000);
   await login(page, "cdo");

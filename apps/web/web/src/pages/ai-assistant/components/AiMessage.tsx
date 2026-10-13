@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ChevronRight, Copy, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { ChevronRight, Copy, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react"; // Lucide React
+import { useState } from "react"; // React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { formatSeconds } from "../assistant";
 import type { AiMsg, ToolStep } from "../types";
@@ -12,6 +15,7 @@ import { AiActionCard } from "./AiActionCard";
 import { AiChartWidget } from "./AiChartWidget";
 import { RichText } from "./RichText";
 
+// ===== Component =====
 export const AiAvatar = () => (
   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-bamboo-50 text-bamboo-600" aria-hidden>
     <Sparkles className="h-4 w-4" />
@@ -53,11 +57,13 @@ const StepsAccordion = ({ steps }: { steps: ToolStep[] }) => {
   );
 };
 
+// ===== Hằng số =====
 const idle = "text-muted hover:text-ink";
 const iconBtn =
   "grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-black/[0.05] " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
+// ===== Component =====
 /** Câu trả lời của trợ lý: văn bản có trích nguồn, biểu đồ, các bước, nguồn, đề xuất tác vụ, phản hồi. */
 export const AiMessage = ({
   msg,

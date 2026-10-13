@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { FORMS } from "../mock";
 import type { ProcessModel } from "../types";
 
+// ===== Component =====
 /** Tab "Biểu mẫu": các biểu mẫu và bước nào trong quy trình đang dùng chúng (xem trước, chưa sửa được). */
 export const FormsTab = ({ model }: { model: ProcessModel }) => (
   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -5,10 +5,14 @@
 // Hồ sơ (Quy trình số): master–detail. Trái ~65% bảng hồ sơ (thân bảng cuộn riêng, có phân trang),
 // phải ~35% chi tiết hồ sơ đang chọn (cuộn riêng). Dữ liệu thật: mọi chứng từ người dùng được xem
 // (api/documents, tự cập nhật); đếm tab, lọc, phân trang tính ở giao diện.
-import { useGo } from "@refinedev/core";
-import { Alert } from "antd";
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+
+// ===== Thư viện =====
+import { useGo } from "@refinedev/core"; // Refine
+import { Alert } from "antd"; // Ant Design
+import { useMemo, useState } from "react"; // React
+import { useNavigate } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { useDocuments } from "../../api/documents";
 import { useSession } from "../../auth/useSession";
 import { formatAgo } from "../../utils/format";
@@ -20,12 +24,14 @@ import { RecordsTable } from "./components/RecordsTable";
 import type { RecordFilters } from "./types";
 import { countByTab, filterExceptTab, matchesTab, toRecord } from "./utils";
 
+// ===== Hằng số =====
 const PAGE_SIZE = 20;
 // Mỗi loại chứng từ lấy tối đa chừng này bản mới nhất; lọc/đếm trên phần đã tải.
 const FETCH_LIMIT = 500;
 
 const INITIAL_FILTERS: RecordFilters = { tab: "all", query: "", type: "all", range: "30d", mineOnly: false };
 
+// ===== Component =====
 export const RecordsPage = () => {
   const go = useGo();
   const navigate = useNavigate();

@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Paperclip } from "lucide-react";
+// ===== Thư viện =====
+import { Paperclip } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import type { UserMsg } from "../types";
 
+// ===== Component =====
 /** Tin nhắn người dùng: căn phải, bong bóng xám nhạt. */
 export const UserMessage = ({ msg }: { msg: UserMsg }) => (
   <div className="flex justify-end">

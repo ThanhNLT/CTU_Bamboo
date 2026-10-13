@@ -4,13 +4,18 @@
 
 // Dữ liệu thật cho Ổ đĩa: tệp đính kèm người dùng được xem (core.attachment, máy chủ lọc can_read), tự cập nhật.
 // Tệp luôn thuộc một chứng từ, nên "thư mục" là chứng từ; tên thư mục lấy từ api/documents.
-import { useList } from "@refinedev/core";
-import gql from "graphql-tag";
-import { useMemo } from "react";
+
+// ===== Thư viện =====
+import { useList } from "@refinedev/core"; // Refine
+import gql from "graphql-tag"; // graphql-tag
+import { useMemo } from "react"; // React
+
+// ===== Module nội bộ =====
 import { DOC_KIND_LABEL, useDocuments, type DocKind } from "../../api/documents";
 import { formatAgo } from "../../utils/format";
 import type { DriveFile, DriveFolder, DriveSection, ScanResult, StorageSegment } from "./types";
 
+// ===== Truy vấn GraphQL =====
 const FILES = gql`
   query DriveFiles(
     $limit: Int
@@ -41,6 +46,7 @@ const FILES = gql`
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type Row = {
   id: string;
   file_name: string;
@@ -55,6 +61,7 @@ type Row = {
   uploaded_by_person: { full_name: string } | null;
 };
 
+// ===== Hằng số =====
 /** Loại chứng từ nhận tệp đính kèm (storage.ENTITY_TYPES ở actions). */
 const ENTITY_TYPE: Partial<Record<DocKind, string>> = {
   purchase_request: "proc.purchase_request",
@@ -69,9 +76,11 @@ const SCAN: Record<string, ScanResult> = {
 };
 const RECENT_DAYS = 7;
 
+// ===== Hàm tiện ích =====
 const category = (contentType: string) =>
   contentType.startsWith("image/") ? "images" : /pdf|word|sheet|text|document/.test(contentType) ? "docs" : "other";
 
+// ===== Hook =====
 export const useDrive = (section: DriveSection, me: string, folderId?: string) => {
   const files = useList<Row>({
     resource: "core_attachment",

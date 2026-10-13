@@ -4,8 +4,11 @@
 
 // Dữ liệu MINH HỌA còn lại của Trung tâm điều hành: bản đồ cảnh báo thiết bị (chưa có nguồn Bản sao số / IoT).
 // Mọi khối khác dùng dữ liệu thật (./useOpsData).
+
+// ===== Module nội bộ =====
 import type { SampleCompany, SampleCompanyKey, Site } from "./types";
 
+// ===== Hằng số =====
 /**
  * Màu nhận diện công ty — 4 ô đầu của bảng màu phân loại đã kiểm định (thứ tự cố định, không đổi theo hạng).
  * Xanh ngọc và vàng có tương phản < 3:1 trên nền trắng → luôn kèm nhãn trực tiếp hoặc dạng bảng.

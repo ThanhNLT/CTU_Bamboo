@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ReactNode } from "react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import type { ReactNode } from "react"; // React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { cn } from "../../utils/cn";
 import { TONE_DOT, type Tone } from "./tone";
 
+// ===== Component =====
 /** Khung thẻ trắng bo góc dùng chung cho mọi khối nội dung. */
 export const Panel = ({
   title,

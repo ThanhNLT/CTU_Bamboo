@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 /** Chế độ chuyên môn của trợ lý. "auto" = tự chọn theo câu hỏi. */
 export type AssistantMode = "auto" | "knowledge" | "eoffice" | "analytics" | "operations" | "documents";
 

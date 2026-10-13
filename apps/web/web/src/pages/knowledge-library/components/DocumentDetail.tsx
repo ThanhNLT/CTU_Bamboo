@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { BookOpen, History, RotateCw, Sparkles } from "lucide-react";
+// ===== Thư viện =====
+import { BookOpen, History, RotateCw, Sparkles } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { Dot, smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { CATEGORY_SHORT } from "../mock";
 import type { LibraryDoc } from "../types";
 import { indexTone } from "./indexState";
 
+// ===== Component =====
 const MetaItem = ({ label, value }: { label: string; value: string }) => (
   <div className="min-w-0 truncate text-[12px] text-muted">
     {label}: <span className="text-body">{value}</span>

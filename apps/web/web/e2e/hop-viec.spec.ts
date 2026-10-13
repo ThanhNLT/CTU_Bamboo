@@ -4,11 +4,15 @@
 
 // Hộp việc (/p/tasks), Trang chủ và Hồ sơ dùng dữ liệu thật: đề nghị vừa gửi hiện trong việc của người duyệt,
 // trả lại bắt buộc ý kiến, duyệt xong thì việc biến mất và hồ sơ chuyển sang Đã duyệt.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E hộp việc ${Date.now()}`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -29,6 +33,7 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/p/documents/create");

@@ -2,14 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Segmented } from "antd";
+// ===== Thư viện =====
+import { Segmented } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { CATEGORY_LABEL, CATEGORY_TOTALS, SCOPE_OPTIONS } from "../mock";
 import type { CategoryFilter, DocCategory, ScopeFilter } from "../types";
 
+// ===== Hằng số =====
 const CATEGORIES: CategoryFilter[] = ["all", ...(Object.keys(CATEGORY_LABEL) as DocCategory[])];
 
+// ===== Component =====
 /** Ô tìm kiếm + phạm vi (Tất cả / Tập đoàn / Công ty của tôi) + chip loại tài liệu. */
 export const FilterSection = ({
   query,

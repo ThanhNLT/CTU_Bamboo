@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Truy vấn GraphQL cho đề nghị mua sắm (docs/thiet-ke/08-api-giao-dien.md).
-import gql from "graphql-tag";
 
+// ===== Thư viện =====
+import gql from "graphql-tag"; // graphql-tag
+
+// ===== Truy vấn GraphQL =====
 export const PR_LIST = gql`
   query PurchaseRequests(
     $limit: Int

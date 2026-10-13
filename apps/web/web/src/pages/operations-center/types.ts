@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 /** Khóa "công ty" = id đơn vị cấp 1 dưới gốc tenant, hoặc OTHER_COMPANY cho phần gộp "Khác". */
 export type CompanyKey = string;
 

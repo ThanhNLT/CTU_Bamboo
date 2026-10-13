@@ -2,18 +2,23 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Checkbox, Select } from "antd";
+// ===== Thư viện =====
+import { Checkbox, Select } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { DOC_KIND_LABEL } from "../../../api/documents";
 import type { RecordFilters, RecordType, StatusTab, TimeRange } from "../types";
 import { STATUS_TABS, TIME_OPTIONS } from "../utils";
 
+// ===== Hằng số =====
 const TYPE_OPTIONS: Array<{ label: string; value: RecordType | "all" }> = [
   { label: "Tất cả loại hồ sơ", value: "all" },
   ...(Object.entries(DOC_KIND_LABEL) as Array<[RecordType, string]>).map(([value, label]) => ({ value, label })),
 ];
 
+// ===== Component =====
 /** Tab trạng thái dạng viên thuốc, kèm số đếm. */
 const StatusTabs = ({
   value,

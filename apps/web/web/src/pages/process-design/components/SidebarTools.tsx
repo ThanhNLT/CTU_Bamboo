@@ -2,11 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { DND_MIME, PALETTE } from "../mock";
 import type { NodeType, ProcessDef } from "../types";
 import { NodeGlyph } from "./NodeGlyph";
 
+// ===== Component =====
 /** Cột trái: danh sách quy trình + bảng thành phần kéo thả. */
 export const SidebarTools = ({
   processes,

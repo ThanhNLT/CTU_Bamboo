@@ -3,16 +3,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Nhật ký kiểm toán nối chuỗi hash theo tenant và đối soát chuỗi (ADR #18, #33). Cần quyền audit.read.
-import { useEffect, useState } from "react";
-import { List, useTable } from "@refinedev/antd";
-import type { BaseRecord } from "@refinedev/core";
-import { Alert, App, Button, Select, Space, Spin, Table, Tag, Typography } from "antd";
-import { SafetyCertificateOutlined } from "@ant-design/icons";
-import gql from "graphql-tag";
+
+// ===== Thư viện =====
+import { useEffect, useState } from "react"; // React
+import { List, useTable } from "@refinedev/antd"; // Refine Ant Design
+import type { BaseRecord } from "@refinedev/core"; // Refine
+import { Alert, App, Button, Select, Space, Spin, Table, Tag, Typography } from "antd"; // Ant Design
+import { SafetyCertificateOutlined } from "@ant-design/icons"; // Ant Design Icons
+import gql from "graphql-tag"; // graphql-tag
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { PiiNotice } from "../../components/pii/PiiNotice";
 import { formatDate } from "../../utils/format";
 
+// ===== Truy vấn GraphQL =====
 const AUDIT = gql`
   query Audit($limit: Int, $offset: Int, $order_by: [audit_log_order_by!], $where: audit_log_bool_exp) {
     audit_log(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -37,6 +42,7 @@ const AUDIT = gql`
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type Row = BaseRecord & {
   seq: number;
   table_name: string;
@@ -57,6 +63,7 @@ type Verify = {
   problems: { seq: number | null; problem: string }[];
 };
 
+// ===== Component =====
 // Dữ liệu trước/sau chỉ lấy qua Action, đã che dữ liệu cá nhân (Hasura không trả bản gốc, ADR #43).
 const DetailView = ({ id }: { id: number }) => {
   const [detail, setDetail] = useState<Detail | null>();
@@ -82,6 +89,7 @@ const DetailView = ({ id }: { id: number }) => {
   );
 };
 
+// ===== Hằng số =====
 const OP_COLOR: Record<string, string> = { INSERT: "green", UPDATE: "blue", DELETE: "red" };
 const TABLES = [
   "proc.purchase_request",
@@ -98,6 +106,7 @@ const TABLES = [
   "core.org_unit",
 ];
 
+// ===== Component =====
 export const AuditLogList = () => {
   const { message } = App.useApp();
   const [verify, setVerify] = useState<Verify | null>(null);

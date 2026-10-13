@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Kiểu dữ liệu =====
 /** Mức hạn SLA: quá hạn · sắp đến hạn (< 1 ngày) · còn thời gian. */
 export type SlaLevel = "overdue" | "urgent" | "ok";
 

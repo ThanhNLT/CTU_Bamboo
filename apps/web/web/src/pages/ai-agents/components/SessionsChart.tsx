@@ -2,15 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+// ===== Thư viện =====
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
+
+// ===== Module nội bộ =====
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
 import type { DayStat } from "../types";
 import { num, pct } from "../utils";
 
+// ===== Hằng số =====
 const ERROR = "#dc2626";
 
+// ===== Kiểu dữ liệu =====
 type TipProps = { active?: boolean; label?: string | number; payload?: Array<{ payload?: DayStat }> };
 
+// ===== Component =====
 const Tip = ({ active, label, payload }: TipProps) => {
   const d = payload?.[0]?.payload;
   if (!active || !d) return null;

@@ -3,17 +3,27 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Chụp màn hình demo (không phải kiểm thử): DEMO_SHOTS=<thư mục> npx playwright test e2e/demo.spec.ts
-import { expect, test, type Browser, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Browser, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const OUT = process.env.DEMO_SHOTS ?? "demo-shots";
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
+
+// ===== Kịch bản kiểm thử =====
 test.use({ viewport: { width: 1440, height: 900 } });
+
+// ===== Khởi tạo =====
 test.skip(!process.env.DEMO_SHOTS, "chỉ chạy khi đặt DEMO_SHOTS");
 
+// ===== Hàm tiện ích =====
 const shot = (page: Page, name: string) => page.screenshot({ path: `${OUT}/${name}.png` });
 
+// ===== Trạng thái module =====
 let browserRef: Browser;
 
+// ===== Hàm tiện ích =====
 // Mỗi người dùng một phiên trình duyệt riêng (cookie Keycloak, tenant đã chọn không lẫn nhau).
 async function login(_old: Page | null, username: string, pick?: RegExp): Promise<Page> {
   const context = await browserRef.newContext({
@@ -33,6 +43,7 @@ async function login(_old: Page | null, username: string, pick?: RegExp): Promis
   return page;
 }
 
+// ===== Kịch bản kiểm thử =====
 test("chụp màn hình demo", async ({ browser, page: first }) => {
   test.setTimeout(300_000);
   browserRef = browser;

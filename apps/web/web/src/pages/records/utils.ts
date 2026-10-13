@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { Tone } from "../../components/ui";
 import type { DocSummary } from "../../api/documents";
 import { formatDate } from "../../utils/format";
@@ -16,6 +17,7 @@ import type {
   WorkflowStep,
 } from "./types";
 
+// ===== Hằng số =====
 export const STATUS_VIEW: Record<RecordStatus, { tone: Tone; locked?: boolean }> = {
   draft: { tone: "neutral" },
   pending: { tone: "warning" },
@@ -53,6 +55,7 @@ const STATUS_OF: Record<string, RecordStatus> = {
   CANCELLED: "closed",
 };
 
+// ===== Hàm tiện ích =====
 /** Chứng từ thật → dòng của trang Hồ sơ. Đang chờ duyệt thì ghi rõ cấp đang xử lý. */
 export const toRecord = (d: DocSummary): EofficeRecord => {
   const status = STATUS_OF[d.status] ?? "draft";
@@ -100,6 +103,7 @@ export const countByTab = (records: EofficeRecord[]) =>
     STATUS_TABS.map(({ key }) => [key, records.filter((r) => matchesTab(r.status, key)).length]),
   ) as Record<StatusTab, number>;
 
+// ===== Hằng số =====
 const STEP_STATE: Record<string, StepState> = {
   APPROVED: "done",
   ACTIVE: "current",
@@ -115,6 +119,7 @@ const STEP_SUFFIX: Record<string, string> = {
   CANCELLED: " · đã hủy",
 };
 
+// ===== Hàm tiện ích =====
 /** Nộp → các bước duyệt của lần gửi hiện tại (đơn nội bộ: bên bán xác nhận) → Kết quả. */
 export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
   const submitted = r.status !== "draft";

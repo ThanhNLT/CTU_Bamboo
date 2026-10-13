@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Search, X } from "lucide-react";
+// ===== Thư viện =====
+import { Search, X } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../utils/cn";
 
+// ===== Component =====
 /** Ô tìm kiếm Bamboo: kính lúp bên trái, nút xóa khi có chữ. Cao 40px, bo 12px. */
 export const SearchInput = ({
   value,

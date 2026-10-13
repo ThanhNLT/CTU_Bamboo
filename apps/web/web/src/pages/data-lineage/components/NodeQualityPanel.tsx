@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Bell, Check, ExternalLink, X } from "lucide-react";
-import { Link } from "react-router";
+// ===== Thư viện =====
+import { Bell, Check, ExternalLink, X } from "lucide-react"; // Lucide React
+import { Link } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { STATUS_LABEL, failedChecks, openMetadataUrl } from "../graph";
 import type { LineageNode, NodeStatus } from "../types";
 
+// ===== Hằng số =====
 const TAG_CLASS: Record<NodeStatus, string> = {
   healthy: "bg-bamboo-50 text-bamboo-800",
   failed: "bg-red-50 text-red-700",
@@ -20,14 +24,17 @@ const DOT_CLASS: Record<NodeStatus, string> = {
   affected: "bg-yellow-500",
 };
 
+// ===== Component =====
 const SectionTitle = ({ children, id }: { children: string; id?: string }) => (
   <h3 id={id} className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
     {children}
   </h3>
 );
 
+// ===== Hằng số =====
 const fullWidth = "w-full justify-center";
 
+// ===== Component =====
 /** Cột phải: chi tiết nút đang chọn — kiểm tra chất lượng (Soda), tác động phía sau, thao tác. */
 export const NodeQualityPanel = ({
   node,

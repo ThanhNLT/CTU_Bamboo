@@ -5,14 +5,20 @@
 // Danh sách chứng từ dùng chung cho Trang chủ và trang Hồ sơ: đề nghị mua sắm, đề nghị tiếp nhận nhân sự và
 // đơn hàng nội bộ gộp về một dạng. Hasura chỉ trả chứng từ người dùng được xem (can_read); `mine` lọc thêm
 // chứng từ do chính người dùng lập. Tự cập nhật qua subscription.
-import { useList, type CrudFilter } from "@refinedev/core";
-import gql from "graphql-tag";
-import { useMemo } from "react";
+
+// ===== Thư viện =====
+import { useList, type CrudFilter } from "@refinedev/core"; // Refine
+import gql from "graphql-tag"; // graphql-tag
+import { useMemo } from "react"; // React
+
+// ===== Module nội bộ =====
 import { formatMoney } from "../utils/format";
 import { IC_STATUS_LABEL, PR_STATUS_LABEL } from "../utils/status";
 
+// ===== Kiểu dữ liệu =====
 export type DocKind = "purchase_request" | "onboarding_request" | "ic_order";
 
+// ===== Hằng số =====
 export const DOC_KIND_LABEL: Record<DocKind, string> = {
   purchase_request: "Đề nghị mua sắm",
   onboarding_request: "Tiếp nhận nhân sự",
@@ -55,6 +61,7 @@ const STEPS = `
   }
 `;
 
+// ===== Truy vấn GraphQL =====
 const PR = gql`
   query DocsPr($limit: Int, $offset: Int, $order_by: [proc_purchase_request_order_by!], $where: proc_purchase_request_bool_exp) {
     proc_purchase_request(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -105,6 +112,7 @@ const IC = gql`
   }
 `;
 
+// ===== Kiểu dữ liệu =====
 type StepRow = {
   round: number;
   step_order: number;
@@ -154,6 +162,7 @@ type IcRow = {
   seller_unit: { name: string } | null;
 };
 
+// ===== Hàm tiện ích =====
 const stepsOf = (round: number, rows: StepRow[]): DocStep[] =>
   rows
     .filter((s) => s.round === round)
@@ -216,6 +225,7 @@ const fromIc = (r: IcRow): DocSummary => ({
   steps: [],
 });
 
+// ===== Kiểu dữ liệu =====
 type Options = {
   /** Chỉ chứng từ do người này lập (core.person.id). */
   mine?: string;
@@ -223,6 +233,7 @@ type Options = {
   limit?: number;
 };
 
+// ===== Hook =====
 export const useDocuments = ({ mine, limit = 100 }: Options = {}) => {
   const by = (field: string): CrudFilter[] => (mine ? [{ field, operator: "eq", value: mine }] : []);
   const common = {

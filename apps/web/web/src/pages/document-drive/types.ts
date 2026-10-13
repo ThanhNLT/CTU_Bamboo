@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { LucideIcon } from "lucide-react";
+// ===== Thư viện =====
+import type { LucideIcon } from "lucide-react"; // Lucide React
 
+// ===== Kiểu dữ liệu =====
 /** Các vùng ở cột trái: tệp tôi tải lên · mọi tệp tôi được xem · tệp 7 ngày gần đây. */
 export type DriveSection = "mine" | "all" | "recent";
 

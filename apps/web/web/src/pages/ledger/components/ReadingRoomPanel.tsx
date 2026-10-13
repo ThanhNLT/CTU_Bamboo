@@ -2,13 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Droplets, EyeOff, ScrollText } from "lucide-react";
-import { useState } from "react";
+// ===== Thư viện =====
+import { Droplets, EyeOff, ScrollText } from "lucide-react"; // Lucide React
+import { useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import type { AccessLog, ArchiveDoc } from "../types";
 import { filterArchive, formatInt } from "../utils";
 import { ArchiveDocRow } from "./ArchiveDocRow";
 
+// ===== Hằng số =====
 const RULES = [
   {
     icon: Droplets,
@@ -27,6 +31,7 @@ const RULES = [
   },
 ];
 
+// ===== Component =====
 /** Tab Phòng đọc ảo: tìm hồ sơ lưu trữ (lạnh, chỉ đọc), nhật ký truy cập, quy tắc. */
 export const ReadingRoomPanel = ({
   docs,

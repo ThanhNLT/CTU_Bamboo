@@ -2,10 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { Tone } from "../../components/ui";
 
+// ===== Xuất lại =====
 export type { Tone };
 
+// ===== Kiểu dữ liệu =====
 export type DashboardUser = { name: string; title: string; company: string };
 
 export type SummaryStat = {

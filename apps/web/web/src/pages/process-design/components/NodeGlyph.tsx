@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Settings } from "lucide-react";
+// ===== Thư viện =====
+import { Settings } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { NodeType } from "../types";
 
+// ===== Component =====
 /** Biểu tượng nhỏ của từng loại phần tử BPMN (dùng ở bảng thành phần). */
 export const NodeGlyph = ({ type, className }: { type: NodeType; className?: string }) => {
   const box = cn("grid h-4 w-4 shrink-0 place-items-center", className);

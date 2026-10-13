@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Component =====
 // Logo 3 lá tre của Bamboo.
 export const BambooLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 32 32" className={className} aria-hidden="true">

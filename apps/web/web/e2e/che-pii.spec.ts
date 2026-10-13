@@ -4,12 +4,16 @@
 
 // Che dữ liệu cá nhân (ADR #43): ô trao đổi cảnh báo trước khi gửi số điện thoại, CCCD; nhật ký kiểm toán chỉ
 // hiện bản đã che dù người dùng chọn gửi nguyên văn.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now().toString().slice(-6);
 const PHONE = `0912 ${STAMP.slice(0, 3)} ${STAMP.slice(3)}`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -32,6 +36,7 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("cảnh báo khi trao đổi có số điện thoại, nhật ký kiểm toán chỉ hiện bản che", async ({ page }) => {
   test.setTimeout(150_000);
 

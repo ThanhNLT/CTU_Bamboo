@@ -4,10 +4,13 @@
 
 // Bộ tìm kiếm phía giao diện cho chỉ mục mẫu: hiểu ý định, khớp từ khóa (không dấu), chấm điểm theo chế độ,
 // phân quyền theo công ty, đếm bộ lọc và tô sáng. Không phụ thuộc React.
+
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import { CONCEPTS, SEARCH_INDEX } from "./mock";
 import type { Company, Concept, ResultType, SearchMode, SearchResult, SortKey, TimeRange } from "./types";
 
+// ===== Hằng số =====
 /** Từ quá phổ biến, bỏ khi khớp từ khóa và tô sáng ("máy bị nóng quá" → "nóng"). */
 const STOPWORDS = new Set([
   "may",
@@ -30,6 +33,7 @@ const STOPWORDS = new Set([
   "o",
 ]);
 
+// ===== Hàm tiện ích =====
 /** Từ có nghĩa trong câu hỏi, đã bỏ dấu. Giữ "-", "_", "." để tìm được mã như HS-SEMI-2026-00125. */
 export const queryTokens = (q: string) =>
   fold(q)
@@ -91,10 +95,13 @@ export const searchIndex = (q: string, mode: SearchMode): SearchResult[] => {
   });
 };
 
+// ===== Hằng số =====
 export const TIME_DAYS: Record<TimeRange, number> = { "7d": 7, "30d": 30, "90d": 90, all: Infinity };
 
+// ===== Kiểu dữ liệu =====
 export type Filters = { types: ResultType[]; companies: Company[]; range: TimeRange };
 
+// ===== Hàm tiện ích =====
 const inTime = (r: SearchResult, range: TimeRange) => r.daysAgo == null || r.daysAgo <= TIME_DAYS[range];
 /** Kết quả thật không có `company` (máy chủ đã lọc theo tenant) → không bị bộ lọc công ty loại. */
 const inCompany = (r: SearchResult, companies: Company[]) => r.company == null || companies.includes(r.company);

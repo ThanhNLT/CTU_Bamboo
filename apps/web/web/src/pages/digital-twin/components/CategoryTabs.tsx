@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { CategoryFilter } from "../types";
 import { CATEGORY_TABS } from "../utils";
 
+// ===== Component =====
 /** Tab phân loại thực thể dạng viên thuốc, kèm số lượng. */
 export const CategoryTabs = ({
   value,

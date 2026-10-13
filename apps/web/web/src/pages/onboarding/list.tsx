@@ -3,15 +3,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Hồ sơ tiếp nhận người dùng được xem: người lập, phòng nhân sự, quản lý cây đơn vị nhận người, người duyệt.
-import { CreateButton, List, ShowButton, useTable } from "@refinedev/antd";
-import type { BaseRecord } from "@refinedev/core";
-import { Input, Segmented, Space, Table, Tag, Typography } from "antd";
+
+// ===== Thư viện =====
+import { CreateButton, List, ShowButton, useTable } from "@refinedev/antd"; // Refine Ant Design
+import type { BaseRecord } from "@refinedev/core"; // Refine
+import { Input, Segmented, Space, Table, Tag, Typography } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, formatDay } from "../../utils/format";
 import { PR_STATUS_LABEL } from "../../utils/status";
 import { OB_LIST } from "./queries";
 import { ACCOUNT_STATUS } from "./types";
 
+// ===== Kiểu dữ liệu =====
 type Row = BaseRecord & {
   doc_no: string;
   full_name: string;
@@ -23,8 +28,10 @@ type Row = BaseRecord & {
   target_position?: { name: string; org_unit: { name: string } };
 };
 
+// ===== Hằng số =====
 const STATUS_FILTERS = ["ALL", "DRAFT", "PENDING", "RETURNED", "APPROVED", "REJECTED", "CANCELLED"];
 
+// ===== Component =====
 export const OnboardingList = () => {
   const { tableProps, filters, setFilters } = useTable<Row>({
     resource: "hr_onboarding_request",

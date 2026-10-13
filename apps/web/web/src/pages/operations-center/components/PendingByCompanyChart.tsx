@@ -2,14 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+// ===== Thư viện =====
+import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
+
+// ===== Module nội bộ =====
 import type { Company, CompanyKey, PendingRow } from "../types";
 import { BAMBOO_DARK, BAMBOO_LIGHT, DIM, INK } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget } from "./ChartWidget";
 
+// ===== Hằng số =====
 const LEVEL_NAME: Record<string, string> = { l1: "Cấp 1", l2: "Cấp 2+" };
 
+// ===== Component =====
 /** Tổng ở cuối thanh xếp chồng. */
 const TotalLabel = (props: {
   x?: number | string;

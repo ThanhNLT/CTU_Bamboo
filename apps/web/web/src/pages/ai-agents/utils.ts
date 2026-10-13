@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { KPI_STATIC } from "./mock";
 import type { Agent, AgentStatus } from "./types";
 
+// ===== Hàm tiện ích =====
 export const pct = (n: number, decimals = 1) =>
   `${(n * 100).toLocaleString("vi-VN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}%`;
 
@@ -13,12 +15,14 @@ export const num = (n: number, decimals = 0) =>
 
 export const errorRate = (a: Pick<Agent, "calls24h" | "errors24h">) => (a.calls24h ? a.errors24h / a.calls24h : 0);
 
+// ===== Hằng số =====
 export const STATUS: Record<AgentStatus, { label: string; dot: string; badge?: string }> = {
   active: { label: "Hoạt động", dot: "bg-bamboo-500" },
   paused: { label: "Tạm dừng", dot: "bg-yellow-500", badge: "bg-yellow-50 text-amber-800" },
   pending: { label: "Chờ duyệt", dot: "bg-gray-400", badge: "bg-canvas text-body" },
 };
 
+// ===== Hàm tiện ích =====
 /** Thẻ KPI tính từ danh sách tác tử (trừ p95 toàn hệ thống — không cộng được từ p95 từng tác tử). */
 export const computeKpis = (agents: Agent[]) => {
   const active = agents.filter((a) => a.status === "active").length;

@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { DomainFilter } from "../types";
 
+// ===== Component =====
 /** Ô tìm tập dữ liệu/cột + chip lĩnh vực (kèm số tập dữ liệu của tenant trong lĩnh vực đó). */
 export const DataFilterBar = ({
   query,

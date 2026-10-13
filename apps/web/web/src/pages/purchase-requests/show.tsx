@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useCallback, useEffect, useState } from "react";
-import { Show } from "@refinedev/antd";
-import { useGo, useParsed } from "@refinedev/core";
+// ===== Thư viện =====
+import { useCallback, useEffect, useState } from "react"; // React
+import { Show } from "@refinedev/antd"; // Refine Ant Design
+import { useGo, useParsed } from "@refinedev/core"; // Refine
 import {
   Alert,
   App,
@@ -21,7 +22,7 @@ import {
   Tabs,
   Tag,
   Typography,
-} from "antd";
+} from "antd"; // Ant Design
 import {
   ApartmentOutlined,
   AuditOutlined,
@@ -29,7 +30,9 @@ import {
   PrinterOutlined,
   SendOutlined,
   StopOutlined,
-} from "@ant-design/icons";
+} from "@ant-design/icons"; // Ant Design Icons
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ActModal } from "../../components/approval/ActModal";
@@ -42,6 +45,7 @@ import { Comments } from "../../components/document/Comments";
 import { CANCEL_PR, MY_TASK_FOR, PR_DETAIL, PR_PDF, SUBMIT_PR } from "./queries";
 import type { PurchaseRequest } from "./types";
 
+// ===== Component =====
 export const PurchaseRequestShow = () => {
   const { id } = useParsed();
   const go = useGo();

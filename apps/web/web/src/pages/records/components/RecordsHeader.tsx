@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Plus, ScanLine } from "lucide-react";
+// ===== Thư viện =====
+import { Plus, ScanLine } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
+// ===== Component =====
 export const RecordsHeader = ({
   company,
   onOcr,

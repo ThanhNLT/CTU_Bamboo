@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ConfigProvider, Table, type TableColumnsType } from "antd";
+// ===== Thư viện =====
+import { ConfigProvider, Table, type TableColumnsType } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { bambooTableTheme, Panel } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { DriveFile } from "../types";
@@ -11,6 +14,7 @@ import type { DriveView } from "./DriveToolbar";
 import { FileTypeBadge } from "./FileTypeBadge";
 import { ScanStatus } from "./ScanStatus";
 
+// ===== Hằng số =====
 const columns: TableColumnsType<DriveFile> = [
   {
     title: "Tên",
@@ -48,6 +52,7 @@ const columns: TableColumnsType<DriveFile> = [
   { title: "Kiểm dịch", dataIndex: "scan", width: 160, render: (v: DriveFile["scan"]) => <ScanStatus result={v} /> },
 ];
 
+// ===== Component =====
 const FileCardGrid = ({ files, onOpen }: { files: DriveFile[]; onOpen: (f: DriveFile) => void }) => (
   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
     {files.map((f) => (

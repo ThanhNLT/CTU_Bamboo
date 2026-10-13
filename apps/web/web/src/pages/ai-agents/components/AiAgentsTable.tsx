@@ -2,14 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Pause, Play } from "lucide-react";
+// ===== Thư viện =====
+import { Pause, Play } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { RUNTIME_NOTE } from "../mock";
 import type { Agent } from "../types";
 import { STATUS, errorRate, num, pct } from "../utils";
 
+// ===== Hằng số =====
 const MAX_TOOLS = 2;
 
+// ===== Component =====
 /** Bảng tác tử đã đăng ký. Bấm một dòng để xem phân tích chi tiết bên dưới. */
 export const AiAgentsTable = ({
   agents,

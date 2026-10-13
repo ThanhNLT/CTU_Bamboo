@@ -2,20 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ReactElement } from "react";
-import { useState } from "react";
-import { App, Avatar, Button, Flex, Input, List, Popconfirm, Space, Typography } from "antd";
-import { EyeInvisibleOutlined } from "@ant-design/icons";
+// ===== Thư viện =====
+import type { ReactElement } from "react"; // React
+import { useState } from "react"; // React
+import { App, Avatar, Button, Flex, Input, List, Popconfirm, Space, Typography } from "antd"; // Ant Design
+import { EyeInvisibleOutlined } from "@ant-design/icons"; // Ant Design Icons
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
 import type { DocumentComments } from "./types";
 
+// ===== Kiểu dữ liệu =====
 type Comment = DocumentComments["comments"][number];
 type PiiCheck = { masked_text: string; entities: { label: string }[] };
 type Props = { doc: DocumentComments; entityType: string; me: string; onChange: () => void };
 
+// ===== Hàm tiện ích =====
 const initials = (name?: string) => (name ?? "?").split(" ").slice(-1)[0]?.[0] ?? "?";
 
+// ===== Component =====
 export const Comments = ({ doc, entityType, me, onChange }: Props) => {
   const { message, modal } = App.useApp();
   const [body, setBody] = useState("");

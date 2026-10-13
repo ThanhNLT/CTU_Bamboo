@@ -5,10 +5,14 @@
 // Người dùng (Quản trị, ADR #44): danh sách người trong tenant, vị trí đang giữ, tài khoản đăng nhập. Thêm người,
 // tạo tài khoản (mật khẩu tạm hiện một lần), bổ nhiệm / kết thúc bổ nhiệm; nhập hàng loạt nhân sự từ Excel (kèm
 // bổ nhiệm và tài khoản). Cần quyền core.org.manage.
-import { Alert, App, ConfigProvider, Form, Input, Segmented, Spin, Table } from "antd";
-import { FileSpreadsheet, Plus, ShieldCheck } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { Alert, App, ConfigProvider, Form, Input, Segmented, Spin, Table } from "antd"; // Ant Design
+import { FileSpreadsheet, Plus, ShieldCheck } from "lucide-react"; // Lucide React
+import { useMemo, useState } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { useSession } from "../../../auth/useSession";
 import { bambooTableTheme, primaryButtonClass, SearchInput, secondaryButtonClass } from "../../../components/ui";
 import { formatDay } from "../../../utils/format";
@@ -25,6 +29,7 @@ import { toDate } from "../shared/period";
 import { ORG, usePermissions } from "../shared/usePermissions";
 import { PersonDrawer } from "./PersonDrawer";
 
+// ===== Kiểu dữ liệu =====
 type Filter = "all" | "no-account" | "unassigned";
 type Dialog =
   | { kind: "new" }
@@ -32,6 +37,7 @@ type Dialog =
   | { kind: "assign"; personId: string }
   | { kind: "end"; a: Assignment; p: Position };
 
+// ===== Component =====
 export const PeoplePage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();

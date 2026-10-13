@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import type { ApprovalHistory, ApprovalStep, Attachment, Comment } from "../../components/document/types";
 
+// ===== Kiểu dữ liệu =====
 type Person = { full_name: string } | null;
 
 export type Onboarding = {
@@ -55,6 +57,7 @@ export type OnboardingPrivate = {
   initial_password: string | null;
 };
 
+// ===== Hằng số =====
 export const GENDER: Record<string, string> = { MALE: "Nam", FEMALE: "Nữ", OTHER: "Khác" };
 export const CONTRACT_TYPE: Record<string, string> = {
   PROBATION: "Thử việc",

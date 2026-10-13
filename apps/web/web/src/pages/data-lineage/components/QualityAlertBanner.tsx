@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { TriangleAlert } from "lucide-react";
+// ===== Thư viện =====
+import { TriangleAlert } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import type { LineageNode, QualityCheck } from "../types";
 
+// ===== Component =====
 /** Banner đỏ cho kiểm tra chất lượng thất bại. Có nhiều lỗi thì hiện lỗi đầu + số lỗi còn lại. */
 export const QualityAlertBanner = ({
   failures,

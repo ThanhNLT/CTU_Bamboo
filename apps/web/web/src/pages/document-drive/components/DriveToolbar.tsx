@@ -2,11 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Segmented, Select } from "antd";
+// ===== Thư viện =====
+import { Segmented, Select } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import type { SortKey } from "../types";
 
+// ===== Kiểu dữ liệu =====
 export type DriveView = "grid" | "list";
 
+// ===== Hằng số =====
 const VIEW_OPTIONS = [
   { label: "Lưới", value: "grid" },
   { label: "Danh sách", value: "list" },
@@ -18,6 +23,7 @@ const SORT_OPTIONS: Array<{ label: string; value: SortKey }> = [
   { label: "Dung lượng lớn nhất", value: "size" },
 ];
 
+// ===== Component =====
 /** Breadcrumb thư mục + chuyển Lưới/Danh sách + Sắp xếp. */
 export const DriveToolbar = ({
   path,

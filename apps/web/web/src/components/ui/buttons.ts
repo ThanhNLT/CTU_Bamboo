@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hằng số =====
 // Nút hành động cấp trang (đầu trang): cùng chiều cao 40px, bo tròn, một kiểu cho mọi trang.
 const base =
   "inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-[13.5px] transition-colors " +

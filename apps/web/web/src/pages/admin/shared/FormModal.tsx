@@ -2,10 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { MODAL_Z } from "./zIndex";
-import { App, Form, Modal, type FormInstance } from "antd";
-import { useEffect, useId, useState, type ReactNode } from "react";
+// ===== Thư viện =====
+import { App, Form, Modal, type FormInstance } from "antd"; // Ant Design
+import { useEffect, useId, useState, type ReactNode } from "react"; // React
 
+// ===== Module nội bộ =====
+import { MODAL_Z } from "./zIndex";
+
+// ===== Component =====
 /**
  * Hộp thoại form quản trị: điền sẵn khi mở, kiểm tra trường, gọi `onSubmit` (Action), báo lỗi máy chủ nguyên văn và
  * giữ hộp thoại mở để sửa.

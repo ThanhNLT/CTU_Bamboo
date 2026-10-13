@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { StorageSegment } from "../types";
 import { formatBytes } from "../utils";
 
+// ===== Component =====
 /** Dung lượng tệp sạch đã lưu (chưa có hạn mức): thanh nhiều đoạn theo loại tệp + chú thích. */
 export const StorageCard = ({ segments }: { segments: StorageSegment[] }) => {
   const used = segments.reduce((sum, s) => sum + s.bytes, 0);

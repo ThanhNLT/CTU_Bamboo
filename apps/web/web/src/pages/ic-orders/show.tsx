@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useCallback, useEffect, useState } from "react";
-import { Show } from "@refinedev/antd";
-import { useGo, useParsed } from "@refinedev/core";
+// ===== Thư viện =====
+import { useCallback, useEffect, useState } from "react"; // React
+import { Show } from "@refinedev/antd"; // Refine Ant Design
+import { useGo, useParsed } from "@refinedev/core"; // Refine
 import {
   Alert,
   App,
@@ -20,8 +21,10 @@ import {
   Table,
   Tag,
   Typography,
-} from "antd";
-import { CheckOutlined, CloseOutlined, StopOutlined } from "@ant-design/icons";
+} from "antd"; // Ant Design
+import { CheckOutlined, CloseOutlined, StopOutlined } from "@ant-design/icons"; // Ant Design Icons
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { StatusTag } from "../../components/StatusTag";
@@ -31,6 +34,7 @@ import { formatDate, formatDay, formatMoney } from "../../utils/format";
 import { IC_STATUS_LABEL } from "../../utils/status";
 import { CANCEL_IC, CONFIRM_IC, IC_DETAIL, REJECT_IC, SELLER_LOTS } from "./queries";
 
+// ===== Kiểu dữ liệu =====
 type Line = {
   id: string;
   line_no: number;
@@ -72,6 +76,7 @@ type Lot = {
   org_unit: { name: string } | null;
 };
 
+// ===== Hàm tiện ích =====
 // Hỏi lý do (bắt buộc) rồi gọi Action; lỗi giữ hộp thoại mở.
 const askReason = (
   modal: ReturnType<typeof App.useApp>["modal"],
@@ -108,6 +113,7 @@ const askReason = (
   });
 };
 
+// ===== Component =====
 export const IcOrderShow = () => {
   const { id } = useParsed();
   const go = useGo();

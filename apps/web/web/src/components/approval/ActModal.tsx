@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from "react";
-import { App, Form, Input, Modal, Radio } from "antd";
+// ===== Thư viện =====
+import { useState } from "react"; // React
+import { App, Form, Input, Modal, Radio } from "antd"; // Ant Design
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { ACT_ON_TASK } from "../../pages/purchase-requests/queries";
 
+// ===== Kiểu dữ liệu =====
 export type Decision = "APPROVE" | "REJECT" | "RETURN";
 
 type Props = {
@@ -17,6 +21,7 @@ type Props = {
   onDone: () => void;
 };
 
+// ===== Component =====
 /** Duyệt / từ chối / trả về một việc duyệt (Action act_on_task). Từ chối, trả về bắt buộc lý do. */
 export const ActModal = ({ taskId, title, viaDelegation, onClose, onDone }: Props) => {
   const { message } = App.useApp();

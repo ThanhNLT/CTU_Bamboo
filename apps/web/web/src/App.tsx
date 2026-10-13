@@ -2,19 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Authenticated, Refine } from "@refinedev/core";
-import { RefineKbarProvider } from "@refinedev/kbar";
-import { ErrorComponent, useNotificationProvider } from "@refinedev/antd";
-// Reset của AntD được nạp trong tailwind.css (layer base) để không đè class Tailwind.
-import "./styles/tailwind.css";
+// ===== Thư viện =====
+import { Authenticated, Refine } from "@refinedev/core"; // Refine
+import { RefineKbarProvider } from "@refinedev/kbar"; // Refine Kbar
+import { ErrorComponent, useNotificationProvider } from "@refinedev/antd"; // Refine Ant Design
 import routerProvider, {
   CatchAllNavigate,
   DocumentTitleHandler,
   NavigateToResource,
   UnsavedChangesNotifier,
-} from "@refinedev/react-router";
-import { App as AntdApp, ConfigProvider, Spin } from "antd";
-import viVN from "antd/locale/vi_VN";
+} from "@refinedev/react-router"; // Refine React Router
+import { App as AntdApp, ConfigProvider, Spin } from "antd"; // Ant Design
+import viVN from "antd/locale/vi_VN"; // Ant Design
 import {
   AuditOutlined,
   FileTextOutlined,
@@ -22,12 +21,16 @@ import {
   SearchOutlined,
   SwapOutlined,
   UserAddOutlined,
-} from "@ant-design/icons";
-import dayjs from "dayjs";
-import "dayjs/locale/vi";
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router";
-import { useKeycloak } from "@react-keycloak/web";
+} from "@ant-design/icons"; // Ant Design Icons
+import dayjs from "dayjs"; // Day.js
+import "dayjs/locale/vi"; // Day.js
+import { lazy, Suspense } from "react"; // React
+import { BrowserRouter, Outlet, Route, Routes } from "react-router"; // React Router
+import { useKeycloak } from "@react-keycloak/web"; // React Keycloak
+
+// ===== Module nội bộ =====
+// Reset của AntD được nạp trong tailwind.css (layer base) để không đè class Tailwind.
+import "./styles/tailwind.css";
 import { TenantGate } from "./auth/session";
 import { BambooLayout } from "./components/layout";
 import { ColorModeContextProvider } from "./contexts/color-mode";
@@ -64,11 +67,14 @@ import { authProvider } from "./providers/auth";
 import { dataProvider, liveProvider } from "./providers/data";
 import { i18nProvider } from "./providers/i18n";
 
+// ===== Khởi tạo =====
 dayjs.locale("vi");
 
+// ===== Trang tải lười =====
 // bpmn-js nặng: chỉ tải khi mở sơ đồ quy trình.
 const ProcessDiagram = lazy(() => import("./pages/process/diagram"));
 
+// ===== Component =====
 function App() {
   const { initialized } = useKeycloak();
   if (!initialized) return <div style={{ padding: 48 }}>Đang kết nối máy chủ đăng nhập...</div>;

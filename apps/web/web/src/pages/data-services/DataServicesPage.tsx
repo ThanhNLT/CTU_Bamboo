@@ -5,9 +5,13 @@
 // Dịch vụ dữ liệu (Dữ liệu số): danh mục tập dữ liệu Lakehouse dạng master–detail. Trái ~40% danh sách thẻ, phải
 // ~60% chi tiết; trên màn hình lớn hai cột cao bằng nhau và cuộn độc lập. Mở thẳng một tập: ?dataset=<tên view>.
 // Dữ liệu thật từ tầng silver qua Trino (ADR #45), chỉ của tenant đang chọn, đã che dữ liệu cá nhân.
-import { DatabaseZap, Lock } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router";
+
+// ===== Thư viện =====
+import { DatabaseZap, Lock } from "lucide-react"; // Lucide React
+import { useMemo, useState, type ReactNode } from "react"; // React
+import { useSearchParams } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import { DataFilterBar } from "./components/DataFilterBar";
 import { DatasetDetailPanel } from "./components/DatasetDetailPanel";
 import { DatasetList } from "./components/DatasetList";
@@ -15,6 +19,7 @@ import type { DomainFilter } from "./types";
 import { useLakehouseDatasets } from "./useLakehouse";
 import { domainCounts, filterDatasets } from "./utils";
 
+// ===== Component =====
 const Notice = ({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) => (
   <div
     role="status"

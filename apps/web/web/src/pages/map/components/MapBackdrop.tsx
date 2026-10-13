@@ -4,8 +4,11 @@
 
 // Nền bản đồ giả lập (SVG): đường phố, sông, công viên, ranh giới hành chính (tùy chọn).
 // Cùng một dữ liệu hình (../geometry) được dùng cho ảnh xuất để ảnh giống màn hình.
+
+// ===== Module nội bộ =====
 import { BOUNDARIES, MINOR_ROADS, PARKS, RIVER, ROADS, VIEWBOX } from "../geometry";
 
+// ===== Component =====
 export const MapBackdrop = ({ showBoundary }: { showBoundary: boolean }) => (
   <svg
     viewBox={`0 0 ${VIEWBOX.w} ${VIEWBOX.h}`}

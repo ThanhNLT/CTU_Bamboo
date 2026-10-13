@@ -2,12 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ConfigProvider, Table, type TableColumnsType } from "antd";
-import { Lock } from "lucide-react";
-import { useNavigate } from "react-router";
+// ===== Thư viện =====
+import { ConfigProvider, Table, type TableColumnsType } from "antd"; // Ant Design
+import { Lock } from "lucide-react"; // Lucide React
+import { useNavigate } from "react-router"; // React Router
+
+// ===== Module nội bộ =====
 import type { RecentRecord } from "../types";
 import { bambooTableTheme, Dot, Panel, PanelLink } from "../../../components/ui";
 
+// ===== Component =====
 // Trạng thái luôn có chữ kèm dấu hiệu (chấm/biểu tượng), không truyền nghĩa chỉ bằng màu (UI-10).
 const StatusCell = ({ r }: { r: RecentRecord }) => (
   <span className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] text-body">
@@ -22,6 +26,7 @@ const KindTag = ({ kind }: { kind: string }) => (
   </span>
 );
 
+// ===== Hằng số =====
 const columns: TableColumnsType<RecentRecord> = [
   {
     title: "Mã hồ sơ",
@@ -45,6 +50,7 @@ const columns: TableColumnsType<RecentRecord> = [
   { title: "Loại", dataIndex: "kind", width: 150, render: (v: string) => <KindTag kind={v} /> },
 ];
 
+// ===== Component =====
 export const RecentRecords = ({ records }: { records: RecentRecord[] }) => {
   const navigate = useNavigate();
   return (

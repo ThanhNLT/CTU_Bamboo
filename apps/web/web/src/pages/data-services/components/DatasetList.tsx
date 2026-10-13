@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DatabaseZap } from "lucide-react";
+// ===== Thư viện =====
+import { DatabaseZap } from "lucide-react"; // Lucide React
+
+// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Dataset } from "../types";
 import { DatasetTags } from "./DatasetTags";
 
+// ===== Component =====
 export const DatasetCard = ({
   dataset,
   selected,

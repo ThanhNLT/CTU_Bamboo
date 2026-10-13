@@ -4,11 +4,15 @@
 
 // Luồng chính của ứng dụng mua sắm qua giao diện thật: chuyên viên lập đề nghị kèm dòng hàng và
 // báo giá, gửi duyệt; trưởng phòng nhận thông báo, duyệt trong hộp việc.
-import { expect, test, type Page } from "@playwright/test";
 
+// ===== Thư viện =====
+import { expect, test, type Page } from "@playwright/test"; // Playwright
+
+// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E mua linh kiện ${Date.now()}`;
 
+// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -32,6 +36,7 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
+// ===== Kịch bản kiểm thử =====
 test("lập đề nghị, đính kèm, gửi duyệt và duyệt", async ({ page }) => {
   // Chuyên viên mua hàng Điện thoại X lập đề nghị.
   await login(page, "nv.muahang.dienthoai");

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { App } from "antd";
+// ===== Thư viện =====
+import { App } from "antd"; // Ant Design
 import {
   ChevronLeft,
   ChevronRight,
@@ -14,16 +15,21 @@ import {
   Plus,
   ShieldAlert,
   ShieldCheck,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+} from "lucide-react"; // Lucide React
+import { useEffect, useState } from "react"; // React
+
+// ===== Module nội bộ =====
 import { request } from "../../../api/client";
 import { cn } from "../../../utils/cn";
 import type { Attachment, DocPreview } from "../types";
 
+// ===== Hằng số =====
 const ZOOM_STEPS = [50, 75, 100, 125, 150];
 
+// ===== Hàm tiện ích =====
 const shortHash = (h: string) => `${h.slice(0, 4)}…${h.slice(-4)}`;
 
+// ===== Component =====
 /** Thanh chữ giả (skeleton) trên trang xem trước. */
 const Line = ({ w }: { w: string }) => <div className={cn("h-2 rounded-full bg-gray-200/80", w)} />;
 
@@ -69,10 +75,12 @@ const ImagePreview = ({ name, kind }: { name: string; kind: Attachment["kind"] }
   </div>
 );
 
+// ===== Hằng số =====
 const toolBtn =
   "grid h-7 w-7 place-items-center rounded-full text-body transition-colors hover:bg-canvas disabled:cursor-default disabled:opacity-40 " +
   "focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
+// ===== Hook =====
 /** Xin đường dẫn tải có thời hạn (máy chủ kiểm quyền xem và trạng thái kiểm dịch) rồi mở ở tab mới. */
 const useDownload = () => {
   const { message } = App.useApp();
@@ -89,6 +97,7 @@ const useDownload = () => {
   };
 };
 
+// ===== Component =====
 /**
  * Tệp đính kèm (dạng tab) + kết quả kiểm dịch + vùng xem trước có thanh zoom/trang nổi.
  * Trang đầu dựng từ thông tin chứng từ (máy chủ chưa dựng ảnh trang); nội dung thật mở bằng nút Tải tệp.

@@ -4,6 +4,8 @@
 
 // Phép tính trên đồ thị phả hệ: trạng thái nút, phạm vi theo hướng + độ sâu, tác động phía sau, tìm kiếm,
 // và toạ độ để vẽ sơ đồ. Không phụ thuộc React, dễ kiểm thử.
+
+// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import type { Direction, Layer, LineageEdge, LineageNode, NodeStatus, QualityCheck } from "./types";
 
@@ -110,7 +112,7 @@ export const matchesQuery = (n: LineageNode, query: string) => {
 export const failureSummaries = (nodes: LineageNode[], edges: LineageEdge[]) =>
   nodes.flatMap((n) => failedChecks(n).map((check) => ({ node: n, check, impacted: reach(edges, n.id, "down").size })));
 
-// ---------- Toạ độ sơ đồ ----------
+// ===== Toạ độ sơ đồ =====
 // Trục ngang tính theo % bề rộng (co giãn theo thẻ), trục dọc theo px.
 // 5 cột: mỗi nút rộng NODE_W%, khoảng cách giữa hai cột GAP% → 5 × 17,2 + 4 × 3,5 = 100.
 export const NODE_W = 17.2;

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// ===== Hằng số =====
 // Hình nền bản đồ giả lập (hệ tọa độ 1000×700) — dùng chung cho màn hình (MapBackdrop) và ảnh xuất.
 export const VIEWBOX = { w: 1000, h: 700 };
 

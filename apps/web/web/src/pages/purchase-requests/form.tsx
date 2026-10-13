@@ -2,15 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { useEffect, useState } from "react";
-import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space, Table, Typography } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import dayjs, { type Dayjs } from "dayjs";
+// ===== Thư viện =====
+import { useEffect, useState } from "react"; // React
+import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space, Table, Typography } from "antd"; // Ant Design
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons"; // Ant Design Icons
+import dayjs, { type Dayjs } from "dayjs"; // Day.js
+
+// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { formatMoney } from "../../utils/format";
 import { FORM_OPTIONS, INSERT_PR, SUBMIT_PR, UPDATE_PR } from "./queries";
 
+// ===== Kiểu dữ liệu =====
 type Item = {
   item_id?: string | null;
   description: string;
@@ -46,6 +50,7 @@ type Options = {
   core_catalog_item: { code: string; name: string }[];
 };
 
+// ===== Hằng số =====
 const ASSIGNMENT: Record<string, string> = {
   PRIMARY: "giữ chính",
   CONCURRENT: "kiêm nhiệm",
@@ -53,12 +58,14 @@ const ASSIGNMENT: Record<string, string> = {
   CONTRACT: "hợp đồng",
 };
 
+// ===== Kiểu dữ liệu =====
 type Props = {
   id?: string; // có id: sửa đề nghị nháp / bị trả về
   initial?: Partial<PrFormValues>;
   onSaved: (id: string) => void;
 };
 
+// ===== Component =====
 export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
   const { message } = App.useApp();
   const { tenant } = useSession();

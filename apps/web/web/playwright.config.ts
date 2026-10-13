@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Kiểm thử đầu–cuối trên stack đang chạy (`docker compose up -d`): giao diện, Keycloak, Hasura, Action.
-import { defineConfig, devices } from "@playwright/test";
+
+// ===== Thư viện =====
+import { defineConfig, devices } from "@playwright/test"; // Playwright
 
 export default defineConfig({
   testDir: "./e2e",
