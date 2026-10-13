@@ -66,6 +66,11 @@ check "không liệt kê bucket" "$(curl -s "$GW/bms-documents/" | grep -c ListB
 check "WAF chặn XSS" "$(code "$GW/?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E")" "403"
 check "WAF chặn SQL injection" "$(code "$GW/realms/bms/account?id=1%27%20OR%20%271%27%3D%271")" "403"
 check "WAF chặn duyệt thư mục" "$(code "$GW/?f=../../../../etc/passwd")" "403"
+# Cookie phiên Keycloak lấy từ lần E2E bị 403 (base64 chứa "strrev", giá trị bọc nháy kép): không được chặn.
+KC_COOKIE='AUTH_SESSION_ID=N2xlaGxpOXVndWhGSWd2ekZqMEtKcUxMLkZqcThtWThuWGlMdHFTcmZ0WTdNU0ZpdW5xMG03RG9fXzdISTRreVkyakMxa1hMekRfLWVsNU5fTTdmck1pZ2Qza1BuaWc3X19iejBZOTlQT0p0dUtR; KC_AUTH_SESSION_HASH="4nTSu0fHIIedXAO358+2ZJJCuIVFrr2q/lXsWYLXM/lLIqZQM64D+KT+QB2HJ1Wr"'
+check "WAF không chặn cookie phiên Keycloak" \
+    "$(code -H "Cookie: $KC_COOKIE" "$GW/realms/bms/protocol/openid-connect/auth?client_id=bms-web&response_type=code&scope=openid&redirect_uri=$GW")" "200"
+check "WAF vẫn kiểm cookie khác" "$(code -H 'Cookie: q=<script>alert(1)</script>' "$GW/")" "403"
 
 # Giới hạn tần suất đăng nhập (60/phút/IP): bước cuối vì khóa đăng nhập trong một phút.
 limited=0
