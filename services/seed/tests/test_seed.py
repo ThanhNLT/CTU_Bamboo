@@ -157,6 +157,13 @@ def test_don_hang_noi_bo(conn):
                         WHERE title = 'Linh kiện thay thế cho lô điện thoại bị ảnh hưởng'""") is None
 
 
+def test_xem_lakehouse(conn):
+    """CDO xem được tập dữ liệu Lakehouse của Tập đoàn X; nhân viên thường thì không (ADR #45)."""
+    root = uid("TDX", "unit", "TDX")
+    assert one(conn, "SELECT core.has_permission(%s, 'data.lakehouse.read', %s)", account_id("cdo"), root)
+    assert not one(conn, "SELECT core.has_permission(%s, 'data.lakehouse.read', %s)", account_id("ns.chip"), root)
+
+
 def test_bo_sung_ban_da_cai(conn):
     """Bản đã cài trước khi có nhân sự: chạy seed lại thì bổ sung phòng nhân sự, không đổi dữ liệu cũ."""
     with conn.transaction():
@@ -167,6 +174,9 @@ def test_bo_sung_ban_da_cai(conn):
         conn.execute("DELETE FROM core.role_grant WHERE role_id IN (SELECT id FROM core.role WHERE code = 'BAN_HANG_NOI_BO')")
         conn.execute("DELETE FROM core.role_permission WHERE permission_code LIKE 'ic.%'")
         conn.execute("DELETE FROM core.role WHERE code = 'BAN_HANG_NOI_BO'")
+        conn.execute("DELETE FROM core.role_grant WHERE role_id IN (SELECT id FROM core.role WHERE code = 'PHAN_TICH_DU_LIEU')")
+        conn.execute("DELETE FROM core.role_permission WHERE permission_code = 'data.lakehouse.read'")
+        conn.execute("DELETE FROM core.role WHERE code = 'PHAN_TICH_DU_LIEU'")
         orders = one(conn, "SELECT count(*) FROM ic.ic_order")
         before = one(conn, "SELECT count(*) FROM core.person")
         assert seed.seed(conn) is False
@@ -177,3 +187,5 @@ def test_bo_sung_ban_da_cai(conn):
         assert one(conn, "SELECT core.has_permission(%s, 'ic.order.confirm', %s)",
                    account_id("kd.chip"), uid("TDX", "unit", "CHIP"))
         assert one(conn, "SELECT count(*) FROM ic.ic_order") == orders, "không tạo lại đơn demo"
+        assert one(conn, "SELECT core.has_permission(%s, 'data.lakehouse.read', %s)",
+                   account_id("cdo"), uid("TDX", "unit", "TDX"))
