@@ -8,27 +8,33 @@
 #   - seaweedfs-data.tgz: tệp đính kèm
 # Dùng: scripts/ops/backup.sh [thư mục đích]   (mặc định backups/<thời điểm>)
 # Không cần mã nguồn: chạy được với hệ thống dựng bằng `docker compose -f oci://...`.
+# Công cụ: Docker Compose, pg_dumpall, tar
+
+# ===== Thiết lập =====
 set -euo pipefail
 
+# ===== Tham số =====
 PROJECT="${COMPOSE_PROJECT_NAME:-bamboo}"
 OUT="${1:-backups/$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 dc() { docker compose -p "$PROJECT" "$@"; }
 
+# ===== Sao lưu CSDL =====
 echo "==> CSDL (pg_dumpall)"
 dc exec -T db sh -c 'pg_dumpall -U "${POSTGRES_USER:-bms}" -f /tmp/bamboo-backup.sql'
 dc cp db:/tmp/bamboo-backup.sql "$OUT/postgres.sql"
 dc exec -T db rm -f /tmp/bamboo-backup.sql
 
+# ===== Sao lưu volume =====
 echo "==> Volume (tạm dừng OpenBao, SeaweedFS trong lúc chép)"
-dc pause openbao seaweedfs >/dev/null
+dc pause openbao seaweedfs > /dev/null
 trap 'dc unpause openbao seaweedfs >/dev/null 2>&1 || true' EXIT
 for vol in openbao-data openbao-keys seaweedfs-data; do
-  docker run --rm -v "${PROJECT}_${vol}:/v:ro" -v "$OUT:/backup" alpine:3.22 \
-    tar czf "/backup/${vol}.tgz" -C /v .
+    docker run --rm -v "${PROJECT}_${vol}:/v:ro" -v "$OUT:/backup" alpine:3.22 \
+        tar czf "/backup/${vol}.tgz" -C /v .
 done
-dc unpause openbao seaweedfs >/dev/null
+dc unpause openbao seaweedfs > /dev/null
 trap - EXIT
 
 ls -lh "$OUT"
