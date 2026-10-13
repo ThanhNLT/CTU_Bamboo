@@ -10,7 +10,16 @@ import { request } from "../../../api/client";
 
 // ===== Kiểu dữ liệu =====
 export type AdminEntity =
-  "org_unit" | "position" | "person" | "assignment" | "role" | "role_grant" | "catalog_item" | "partner" | "item";
+  | "org_unit"
+  | "position"
+  | "person"
+  | "assignment"
+  | "role"
+  | "role_grant"
+  | "catalog_item"
+  | "partner"
+  | "item"
+  | "storage_quota";
 
 // ===== Hàm tiện ích =====
 export const adminSave = async (entity: AdminEntity, data: Record<string, unknown>): Promise<string> => {
@@ -46,7 +55,7 @@ export const createAccounts = async (accounts: AccountInput[]): Promise<AccountR
   return r.create_person_accounts;
 };
 
-export type ImportKind = Exclude<AdminEntity, "assignment" | "role">;
+export type ImportKind = Exclude<AdminEntity, "assignment" | "role" | "storage_quota">;
 export type ImportResult = {
   total: number;
   valid: number;

@@ -23,6 +23,8 @@ export type PurchaseRequest = {
   requester_id: string;
   requester_position_id: string;
   partner_id: string | null;
+  proposed_partner_name: string | null;
+  proposed_partner_tax_code: string | null;
   requester: Person;
   requester_position: { name: string } | null;
   org_unit: { name: string } | null;

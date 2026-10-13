@@ -45,6 +45,10 @@ def _load(conn: psycopg.Connection, session: dict, attachment_id: str, lock: boo
     return dict(zip(_COLUMNS.split(", "), row[:-1], strict=True)), person
 
 
+def _gb(n: int) -> str:
+    return f"{n / 1024**3:.2f}".replace(".", ",") + " GB"
+
+
 def _require_storage(ctx: Context) -> storage.Storage:
     if ctx.storage is None:
         raise ActionError("Chưa cấu hình lưu trữ tệp", "unavailable", 503)
@@ -68,6 +72,15 @@ def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     tenant = conn.execute("SELECT collab.entity_tenant(%s, %s)", (entity_type, entity_id)).fetchone()[0]
     person = session_identity(session, tenant)
     require_read(conn, entity_type, entity_id, person)
+    # Hạn mức dung lượng của tenant: khóa dòng tenant để các lần tải lên đồng thời không cùng vượt hạn mức.
+    quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE id = %s FOR UPDATE", (tenant,)).fetchone()[
+        0
+    ]
+    used = conn.execute("SELECT core.storage_used(%s)", (tenant,)).fetchone()[0]
+    if used + size > quota:
+        raise ActionError(
+            f"Vượt hạn mức dung lượng của đơn vị: còn {_gb(max(quota - used, 0))} trên {_gb(quota)}", "file-quota"
+        )
 
     attachment_id = str(uuid.uuid4())
     key = f"{tenant}/{entity_type}/{entity_id}/{attachment_id}"
@@ -167,3 +180,23 @@ def delete_attachment(conn: psycopg.Connection, session: dict, args: dict, ctx: 
     conn.execute("UPDATE core.attachment SET deleted_at = now() WHERE id = %s", (att["id"],))
     s3.delete(att["storage_key"])
     return {"attachment_id": str(att["id"]), "status": "DELETED", "scan_result": None}
+
+
+def drive_usage(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
+    """Dung lượng tệp của cả tenant: đã dùng, hạn mức, theo loại tệp (Ổ đĩa tài liệu)."""
+    tenant = session.get("x-hasura-tenant-id")
+    session_identity(session, tenant)
+    quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE id = %s", (tenant,)).fetchone()[0]
+    used = conn.execute("SELECT core.storage_used(%s)", (tenant,)).fetchone()[0]
+    rows = conn.execute(
+        """SELECT content_type, sum(size_bytes)::bigint, count(*) FROM core.attachment
+           WHERE tenant_id = %s AND deleted_at IS NULL AND status = 'CLEAN'
+           GROUP BY content_type ORDER BY 2 DESC""",
+        (tenant,),
+    ).fetchall()
+    return {
+        "quota_bytes": quota,
+        "used_bytes": used,
+        "available_bytes": max(quota - used, 0),
+        "by_type": [{"content_type": r[0], "bytes": r[1], "files": r[2]} for r in rows],
+    }

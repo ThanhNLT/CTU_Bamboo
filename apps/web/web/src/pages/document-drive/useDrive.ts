@@ -173,7 +173,11 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
     /** Trạng thái gốc của chứng từ đang mở (tệp chỉ thêm được khi chứng từ chưa có kết quả). */
     folderStatus: doc?.status,
     storage,
-    loading: files.query.isLoading,
+    /** Chứng từ nhận thêm tệp được (loại nhận tệp đính kèm, chưa có kết quả): đích khi tải lên ở thư mục gốc. */
+    targets: docs.documents
+      .filter((d) => ENTITY_TYPE[d.kind] && !["APPROVED", "REJECTED", "CANCELLED"].includes(d.status))
+      .map((d) => ({ id: d.id, entityType: ENTITY_TYPE[d.kind]!, label: `${d.code} · ${d.title}` })),
+    loading: files.query.isLoading || docs.loading,
     error: files.query.error?.message ?? docs.error,
   };
 };

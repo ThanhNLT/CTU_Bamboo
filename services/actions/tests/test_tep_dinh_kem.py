@@ -242,3 +242,32 @@ def test_khoa_ung_dung_dac_quyen_toi_thieu(s3):
         app.create_bucket(Bucket="bms-khong-duoc-tao")
     with pytest.raises(ClientError):
         app.delete_bucket(Bucket=SETTINGS.s3_documents_bucket)
+
+
+def test_han_muc_dung_luong(hasura, conn, s3):
+    i = ids(conn, "TDX", "c")
+    pr_id = pr(conn, "tep_han_muc", "c", "P_NV_MH_DT", 10_000_000)
+    usage = """query { drive_usage { quota_bytes used_bytes available_bytes by_type { content_type bytes files } } }"""
+    before = hasura(usage, person=i["c"], tenant=i["TDX"])["data"]["drive_usage"]
+    assert before["quota_bytes"] == before["used_bytes"] + before["available_bytes"]
+
+    conn.execute(
+        "UPDATE core.tenant SET storage_quota_bytes = core.storage_used(id) + %s WHERE id = %s", (len(PDF), i["TDX"])
+    )
+    try:
+        att = upload(hasura, i, pr_id, PDF)  # vừa đủ hạn mức
+        assert (
+            hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]["status"] == "CLEAN"
+        )
+        data = hasura(
+            UPLOAD,
+            {"id": pr_id, "name": "them.pdf", "type": "application/pdf", "size": 10},
+            person=i["c"],
+            tenant=i["TDX"],
+        )
+        assert data["errors"][0]["extensions"]["code"] == "file-quota", data
+        after = hasura(usage, person=i["c"], tenant=i["TDX"])["data"]["drive_usage"]
+        assert after["available_bytes"] == 0
+        assert any(t["content_type"] == "application/pdf" and t["files"] >= 1 for t in after["by_type"])
+    finally:
+        conn.execute("UPDATE core.tenant SET storage_quota_bytes = DEFAULT WHERE id = %s", (i["TDX"],))

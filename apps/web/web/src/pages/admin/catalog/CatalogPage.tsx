@@ -25,6 +25,7 @@ import { useState } from "react"; // React
 import { useSearchParams } from "react-router"; // React Router
 
 // ===== Module nội bộ =====
+import { ProposedPartners } from "./ProposedPartners";
 import { bambooTableTheme, Dot, primaryButtonClass, SearchInput, secondaryButtonClass } from "../../../components/ui";
 import { formatMoney } from "../../../utils/format";
 import { fold } from "../../../utils/text";
@@ -193,6 +194,8 @@ export const CatalogPage = () => {
           <span className="text-[12.5px] text-muted">{tab.hint}</span>
         </div>
       </div>
+
+      {tab.key === "partner" && <ProposedPartners onAdopted={() => void q.reload()} />}
 
       <section className="rounded-2xl border border-line bg-white px-3 pb-3 pt-1 shadow-card" aria-label={tab.label}>
         <div className="px-2 pb-1 pt-2 text-[12px] tabular-nums text-muted">{count} mục</div>
