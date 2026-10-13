@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ===== Module nội bộ =====
-import { READING_ROOM_RULES } from "../mock";
 import type { ArchiveDoc } from "../types";
+import { READING_ROOM_RULES } from "../utils";
 import { ArchiveDocRow } from "./ArchiveDocRow";
 
 // ===== Component =====
@@ -25,6 +25,9 @@ export const VirtualReadingRoomWidget = ({
         Chỉ đọc
       </span>
     </div>
+    {docs.length === 0 && (
+      <p className="py-4 text-[12.5px] text-muted">Chưa có chứng từ đã kết thúc nào có tệp đính kèm.</p>
+    )}
     <div className="mt-1 divide-y divide-line">
       {docs.map((d) => (
         <ArchiveDocRow key={d.id} doc={d} onOpen={() => onOpen(d)} />

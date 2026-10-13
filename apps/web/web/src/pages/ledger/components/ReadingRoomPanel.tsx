@@ -21,13 +21,13 @@ const RULES = [
   },
   {
     icon: EyeOff,
-    title: "Không tải xuống",
-    text: "Máy chủ chỉ trả ảnh trang đã đóng dấu; không có tệp gốc trên trình duyệt.",
+    title: "Xem trong trang, link ngắn hạn",
+    text: "Tệp mở ngay trong trình xem; link do máy chủ cấp hết hạn sau 60 giây, mỗi lần mở cấp link mới.",
   },
   {
     icon: ScrollText,
     title: "Ghi nhật ký truy cập",
-    text: "Mọi lần mở đều được ghi lại và niêm phong định kỳ lên sổ cái.",
+    text: "Mọi lần mở đều được ghi lại (chỉ ghi thêm, không sửa, không xóa).",
   },
 ];
 
@@ -59,7 +59,7 @@ export const ReadingRoomPanel = ({
           <div>
             <h2 className="text-[15px] font-semibold text-ink">Hồ sơ lưu trữ</h2>
             <p className="mt-0.5 text-[12.5px] text-muted">
-              {formatInt(totalArchived)} hồ sơ lạnh · đang hiển thị {visible.length} hồ sơ minh họa
+              {formatInt(totalArchived)} tệp của chứng từ đã kết thúc · đang hiển thị {visible.length}
             </p>
           </div>
         </div>
@@ -78,12 +78,15 @@ export const ReadingRoomPanel = ({
       <div className="flex min-w-0 flex-col gap-4">
         <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Nhật ký truy cập">
           <h2 className="text-[15px] font-semibold text-ink">Nhật ký truy cập</h2>
+          {logs.length === 0 && <p className="py-4 text-[12.5px] text-muted">Chưa có ai mở hồ sơ lưu trữ.</p>}
           <ul className="m-0 mt-2 list-none divide-y divide-line p-0">
             {logs.map((l) => (
               <li key={l.id} className="flex items-start justify-between gap-3 py-2.5">
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] font-medium text-ink">{l.docTitle}</span>
-                  <span className="block truncate text-[11.5px] text-muted">{l.viewer}</span>
+                  <span className="block truncate text-[11.5px] text-muted">
+                    {l.viewer} · {l.fileName}
+                  </span>
                 </span>
                 <span className="shrink-0 text-[11.5px] tabular-nums text-muted">{l.at}</span>
               </li>

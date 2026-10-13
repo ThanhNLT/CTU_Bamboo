@@ -94,7 +94,7 @@ export const RecordsPage = () => {
         <RecordDetailPanel
           record={selected}
           canReview={selected ? myTasks.has(selected.code) : false}
-          onReview={(r) => navigate(`/p/tasks?code=${encodeURIComponent(r.code)}`)}
+          onReview={(r) => navigate(`/p/tasks?doc=${encodeURIComponent(r.code)}`)}
           onOpen={(r) => navigate(r.to)}
           onAsk={(r) => navigate(`/i/assistant?record=${encodeURIComponent(r.code)}`)}
         />

@@ -109,7 +109,7 @@ export const replyTo = (question: string, opts: { mode: AssistantMode; context?:
         `Bản demo chưa nối API hồ sơ nên tôi chưa đọc được nội dung **${record}**. Bạn có thể đối soát toàn vẹn của hồ sơ ` +
         "này trên Sổ cái [1].",
       steps: [{ name: "get_record", args: `code="${record}"`, ms: 300 }],
-      sources: [{ id: 1, label: `Sổ cái · ${record}`, to: `/d/ledger?code=${record}` }],
+      sources: [{ id: 1, label: `Sổ cái · ${record}`, to: `/d/ledger?doc=${record}` }],
     };
   }
 

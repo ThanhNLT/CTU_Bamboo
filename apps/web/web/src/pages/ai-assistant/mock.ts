@@ -131,7 +131,7 @@ export const SESSIONS: ChatSession[] = [
           "ECR-88 (hồ sơ HS-MOB-2026-00311) đề nghị đổi vật liệu khung trong từ nhôm 6061 sang 6013 để giảm **8%** khối lượng. " +
           "Hồ sơ đang chờ duyệt cấp 2 và đã quá hạn 5 giờ; đã niêm phong phiên bản 2 trên sổ cái [1].",
         steps: [{ name: "get_record", args: 'code="HS-MOB-2026-00311"', ms: 300 }],
-        sources: [{ id: 1, label: "Sổ cái · HS-MOB-2026-00311 v2", to: "/d/ledger?code=HS-MOB-2026-00311" }],
+        sources: [{ id: 1, label: "Sổ cái · HS-MOB-2026-00311 v2", to: "/d/ledger?doc=HS-MOB-2026-00311" }],
       },
     ],
   },

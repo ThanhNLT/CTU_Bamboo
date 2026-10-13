@@ -63,14 +63,14 @@ export const VerificationResultCard = ({
         <div className="mt-2 text-[12.5px] text-body">
           {result.via === "code" ? (
             <p>
-              Không có bản niêm phong nào cho <b className="font-mono font-semibold">{result.query}</b>. Kiểm tra lại mã
-              (dạng HS-SEMI-2026-00123, có thể thêm “v2”).
+              Không có bản niêm phong nào cho <b className="font-mono font-semibold">{result.query}</b> trong các chứng
+              từ bạn được xem. Kiểm tra lại số chứng từ (dạng PR-2026-000012, có thể thêm “v2” để chọn tệp thứ hai).
             </p>
           ) : (
             <>
               <p>
-                Mã băm của tệp <b className="font-semibold">{result.fileName}</b> chưa từng được niêm phong. Tệp có thể
-                đã bị chỉnh sửa, hoặc chưa được niêm phong.
+                Mã băm của tệp <b className="font-semibold">{result.fileName}</b> không khớp tệp nào đã được nhận vào hệ
+                thống (trong các chứng từ bạn được xem). Tệp có thể đã bị chỉnh sửa, hoặc chưa từng được tải lên.
               </p>
               {result.sha256 && (
                 <p className="mt-2 break-all font-mono text-[11.5px] text-muted">SHA-256 {result.sha256}</p>
@@ -82,22 +82,29 @@ export const VerificationResultCard = ({
         <>
           <dl className="m-0 mt-2">
             <Row label="Hồ sơ" mono>{`${result.seal.code} · v${result.seal.version}`}</Row>
-            <Row label="Niêm phong">{`${result.seal.sealedAt} · kênh ${result.seal.channel}`}</Row>
-            <Row label="Giao dịch" mono>
-              <span title={result.seal.txId}>tx {shortHash(result.seal.txId)}</span>
+            <Row label="Tệp">{result.seal.fileName}</Row>
+            <Row label="Niêm phong">{`${result.seal.sealedAt} · chuỗi ${result.seal.channel}`}</Row>
+            <Row label="Nhật ký" mono>
+              {result.seal.txId ? (
+                <span title={result.seal.txId}>
+                  #{result.seal.block} · {shortHash(result.seal.txId)}
+                </span>
+              ) : (
+                "—"
+              )}
             </Row>
-            <Row label={result.kind === "mismatch" ? "SHA-256 sổ cái" : "SHA-256"} mono>
+            <Row label={result.kind === "mismatch" ? "SHA-256 niêm phong" : "SHA-256"} mono>
               {result.seal.sha256}
             </Row>
             {result.kind === "mismatch" && (
               <Row label="SHA-256 tệp lưu" mono>
-                <span className="text-red-700">{result.actualSha256}</span>
+                <span className="text-red-700">{result.actualSha256 ?? "—"}</span>
               </Row>
             )}
-            {result.fileName && <Row label="Tệp">{result.fileName}</Row>}
+            {result.fileName && <Row label="Tệp đối soát">{result.fileName}</Row>}
           </dl>
-          {result.kind === "mismatch" && result.seal.resolution && (
-            <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[12px] text-body">{result.seal.resolution}</p>
+          {result.kind === "mismatch" && result.problem && (
+            <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[12px] text-body">{result.problem}</p>
           )}
         </>
       )}

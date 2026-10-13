@@ -5951,6 +5951,142 @@
       "comment": "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)"
     },
     {
+      "name": "ledger_overview",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ledger_overview",
+        "arguments": [
+          {
+            "name": "limit",
+            "type": "Int"
+          }
+        ],
+        "output_type": "LedgerOverview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Sổ cái: số liệu và bản niêm phong mới nhất của tệp người gọi xem được (ADR #46)"
+    },
+    {
+      "name": "ledger_verify",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ledger_verify",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String"
+          },
+          {
+            "name": "version",
+            "type": "Int"
+          },
+          {
+            "name": "sha256",
+            "type": "String"
+          },
+          {
+            "name": "file_name",
+            "type": "String"
+          }
+        ],
+        "output_type": "LedgerVerifyResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đối soát tệp với bản niêm phong theo mã hồ sơ (đọc lại tệp trong kho) hoặc theo SHA-256 (ADR #46)"
+    },
+    {
+      "name": "ledger_archive",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ledger_archive",
+        "arguments": [
+          {
+            "name": "limit",
+            "type": "Int"
+          }
+        ],
+        "output_type": "LedgerArchive!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Phòng đọc: hồ sơ lưu trữ (tệp của chứng từ đã kết thúc) và nhật ký truy cập (ADR #46)"
+    },
+    {
+      "name": "ledger_open_archive",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ledger_open_archive",
+        "arguments": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "LedgerArchiveView!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Mở hồ sơ ở phòng đọc: ghi nhật ký truy cập, link xem trực tiếp hạn 60 giây (ADR #46)"
+    },
+    {
       "name": "check_pii",
       "definition": {
         "kind": "synchronous",
@@ -7220,6 +7356,273 @@
           {
             "name": "masked",
             "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "LedgerSeal",
+        "fields": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "entity_type",
+            "type": "String!"
+          },
+          {
+            "name": "entity_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "code",
+            "type": "String!"
+          },
+          {
+            "name": "version",
+            "type": "Int!"
+          },
+          {
+            "name": "title",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "unit",
+            "type": "String!"
+          },
+          {
+            "name": "sealed_at",
+            "type": "String!"
+          },
+          {
+            "name": "channel",
+            "type": "String!"
+          },
+          {
+            "name": "block",
+            "type": "Int"
+          },
+          {
+            "name": "tx_id",
+            "type": "String"
+          },
+          {
+            "name": "sha256",
+            "type": "String!"
+          },
+          {
+            "name": "last_result",
+            "type": "String"
+          },
+          {
+            "name": "last_checked_at",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "LedgerOverview",
+        "fields": [
+          {
+            "name": "channel",
+            "type": "String!"
+          },
+          {
+            "name": "sealed",
+            "type": "Int!"
+          },
+          {
+            "name": "sealed_this_week",
+            "type": "Int!"
+          },
+          {
+            "name": "archived",
+            "type": "Int!"
+          },
+          {
+            "name": "checked_today",
+            "type": "Int!"
+          },
+          {
+            "name": "matched_today",
+            "type": "Int!"
+          },
+          {
+            "name": "mismatched_today",
+            "type": "Int!"
+          },
+          {
+            "name": "mismatch_30d",
+            "type": "Int!"
+          },
+          {
+            "name": "chain_reader",
+            "type": "Boolean!"
+          },
+          {
+            "name": "recent",
+            "type": "[LedgerSeal!]!"
+          }
+        ]
+      },
+      {
+        "name": "LedgerVerifyResult",
+        "fields": [
+          {
+            "name": "kind",
+            "type": "String!"
+          },
+          {
+            "name": "via",
+            "type": "String!"
+          },
+          {
+            "name": "query",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String"
+          },
+          {
+            "name": "checked_at",
+            "type": "String!"
+          },
+          {
+            "name": "actual_sha256",
+            "type": "String"
+          },
+          {
+            "name": "problem",
+            "type": "String"
+          },
+          {
+            "name": "seal",
+            "type": "LedgerSeal"
+          }
+        ]
+      },
+      {
+        "name": "LedgerArchiveDoc",
+        "fields": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "code",
+            "type": "String!"
+          },
+          {
+            "name": "title",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "content_type",
+            "type": "String!"
+          },
+          {
+            "name": "size_bytes",
+            "type": "Int!"
+          },
+          {
+            "name": "unit",
+            "type": "String!"
+          },
+          {
+            "name": "restricted",
+            "type": "Boolean!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "archived_year",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "LedgerAccess",
+        "fields": [
+          {
+            "name": "id",
+            "type": "String!"
+          },
+          {
+            "name": "doc_title",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "viewer",
+            "type": "String!"
+          },
+          {
+            "name": "opened_at",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "LedgerArchive",
+        "fields": [
+          {
+            "name": "docs",
+            "type": "[LedgerArchiveDoc!]!"
+          },
+          {
+            "name": "access",
+            "type": "[LedgerAccess!]!"
+          }
+        ]
+      },
+      {
+        "name": "LedgerArchiveView",
+        "fields": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "title",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "content_type",
+            "type": "String!"
+          },
+          {
+            "name": "viewer",
+            "type": "String!"
+          },
+          {
+            "name": "opened_at",
+            "type": "String!"
+          },
+          {
+            "name": "expires_in",
+            "type": "Int!"
+          },
+          {
+            "name": "url",
+            "type": "String!"
           }
         ]
       },
