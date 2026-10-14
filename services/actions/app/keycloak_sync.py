@@ -61,6 +61,25 @@ def ensure_web_client(base_url: str, user: str, password: str, web_origin: str) 
     return True
 
 
+def ensure_admin_console_url(base_url: str, user: str, password: str, admin_url: str) -> bool:
+    # Bảng quản trị lấy URL đăng nhập từ KC_HOSTNAME (cổng API), mà cổng chặn /realms/master
+    # → iframe kiểm tra cookie không trả lời. Gắn realm master vào địa chỉ quản trị riêng.
+    if not admin_url:
+        return False
+    admin_url = admin_url.rstrip("/")
+    base_url = base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
+    with httpx.Client(base_url=f"{base_url}/admin/realms/master", headers=headers, timeout=15) as http:
+        realm = http.get("")
+        realm.raise_for_status()
+        attrs = dict(realm.json().get("attributes") or {})
+        if attrs.get("frontendUrl") == admin_url:
+            return False
+        http.put("", json={"attributes": {**attrs, "frontendUrl": admin_url}}).raise_for_status()
+    log.info("realm master dùng địa chỉ quản trị %s", admin_url)
+    return True
+
+
 def ensure_provisioner_client(base_url: str, user: str, password: str, secret: str) -> bool:
     if not secret:
         raise RuntimeError("Thiếu secret bms/keycloak-provisioner (chạy openbao-init trước)")

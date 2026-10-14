@@ -53,6 +53,7 @@ class Settings:
     keycloak_admin_user: str
     keycloak_admin_password: str
     web_origin: str
+    keycloak_admin_url: str
     keycloak_provisioner_secret: str
     s3_search_access_key: str
     s3_search_secret_key: str
@@ -192,6 +193,7 @@ def _from_env() -> Settings:
         keycloak_admin_user=env("KEYCLOAK_ADMIN", "kcadmin"),
         keycloak_admin_password=env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"),
         web_origin=env("WEB_ORIGIN", "http://localhost:8000"),
+        keycloak_admin_url=env("KEYCLOAK_ADMIN_URL", ""),
         keycloak_provisioner_secret=env("KEYCLOAK_PROVISIONER_SECRET", ""),
         s3_search_access_key=env("S3_SEARCH_ACCESS_KEY", "bms-search"),
         s3_search_secret_key=env("S3_SEARCH_SECRET_KEY", "bms-search-dev-secret"),

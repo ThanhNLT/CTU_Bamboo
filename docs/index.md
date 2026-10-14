@@ -13,6 +13,7 @@ Nền tảng trung lập ngành; đặc thù ngành chỉ nằm ở Tầng 3.
 | Biết vì sao chọn công nghệ X | [Nhật ký quyết định kiến trúc](quan-ly-du-an/05-quyet-dinh-kien-truc.md) |
 | Biết tuần này làm gì | [Timeline](quan-ly-du-an/04-timeline.md) |
 | Triển khai thật, sao lưu, nâng cấp | [Triển khai production](van-hanh/trien-khai.md) |
+| Dùng cho công ty của mình, bắt đầu từ hệ thống trống | [Khởi tạo cho một công ty mới](van-hanh/cong-ty-moi.md) |
 
 ```{toctree}
 :maxdepth: 2
