@@ -157,11 +157,22 @@ def get_download_url(conn: psycopg.Connection, session: dict, args: dict, ctx: C
     }
 
 
+EDITABLE_STATUSES = ("DRAFT", "PENDING", "RETURNED")
+
+
 def delete_attachment(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
-    s3 = _require_storage(ctx)
     att, person = _load(conn, session, args["attachment_id"], lock=True)
     if att["uploaded_by"] != uuid.UUID(person):
         raise ActionError("Chỉ người tải lên được xóa tệp", "forbidden", 403)
+    if att["entity_type"] in storage.ENTITY_TYPES:
+        row = conn.execute(f"SELECT status FROM {att['entity_type']} WHERE id = %s", (att["entity_id"],)).fetchone()
+        if row and row[0] not in EDITABLE_STATUSES:
+            raise ActionError(
+                "Chứng từ đã kết thúc (đã duyệt, từ chối hoặc hủy): tệp đính kèm được giữ làm bằng chứng, không xóa được",
+                "locked",
+                409,
+            )
+    s3 = _require_storage(ctx)
     bind_session(conn, session)
     conn.execute("UPDATE core.attachment SET deleted_at = now() WHERE id = %s", (att["id"],))
     s3.delete(att["storage_key"])
