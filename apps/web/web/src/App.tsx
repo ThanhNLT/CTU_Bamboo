@@ -25,7 +25,7 @@ import {
 import dayjs from "dayjs"; // Day.js
 import "dayjs/locale/vi"; // Day.js
 import { lazy, Suspense } from "react"; // React
-import { BrowserRouter, Outlet, Route, Routes } from "react-router"; // React Router
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router"; // React Router
 import { useKeycloak } from "@react-keycloak/web"; // React Keycloak
 
 // ===== Module nội bộ =====
@@ -46,7 +46,6 @@ import { LedgerPage } from "./pages/ledger";
 import { AiAssistantPage } from "./pages/ai-assistant";
 import { OcrInputPage } from "./pages/ocr-input";
 import { AiAgentsPage } from "./pages/ai-agents";
-import { MapPage } from "./pages/map";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { ProcessDesignPage } from "./pages/process-design";
 import { RecordsPage } from "./pages/records";
@@ -101,7 +100,6 @@ function App() {
                   { name: "tasks", list: "/p/tasks", meta: { label: "Hộp việc" } },
                   { name: "process_design", list: "/p/process", meta: { label: "Thiết kế quy trình" } },
                   { name: "operations", list: "/d/ops", meta: { label: "Trung tâm điều hành" } },
-                  { name: "map", list: "/d/map", meta: { label: "Bản đồ" } },
                   { name: "data_services", list: "/d/services", meta: { label: "Dịch vụ dữ liệu" } },
                   { name: "digital_twin", list: "/d/twin", meta: { label: "Bản sao số" } },
                   { name: "data_lineage", list: "/d/lineage", meta: { label: "Phả hệ dữ liệu" } },
@@ -171,7 +169,7 @@ function App() {
                     <Route path="/p/tasks" element={<InboxPage />} />
                     <Route path="/p/process" element={<ProcessDesignPage />} />
                     <Route path="/d/ops" element={<OperationsCenterPage />} />
-                    <Route path="/d/map" element={<MapPage />} />
+                    <Route path="/d/map" element={<Navigate to="/d/ops" replace />} />
                     <Route path="/d/services" element={<DataServicesPage />} />
                     <Route path="/d/twin" element={<DigitalTwinPage />} />
                     <Route path="/d/lineage" element={<DataLineagePage />} />

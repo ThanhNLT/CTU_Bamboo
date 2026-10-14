@@ -668,6 +668,15 @@ def build(conn: psycopg.Connection) -> dict:
                 "Thư viện tri thức: tài liệu đang hiệu lực người gọi đọc được, trạng thái chỉ mục, phiên bản trước",
             ),
             _action(
+                "ops_dashboard",
+                "query",
+                [("tab", "String!"), ("days", "Int")],
+                "OpsDashboard!",
+                [ROLE, ADMIN_ROLE],
+                "Số liệu Trung tâm điều hành: process | production | hospital | quality | sites (ADR #49)",
+                timeout=60,
+            ),
+            _action(
                 "process_models",
                 "query",
                 [],
@@ -1230,6 +1239,15 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "total_rows", "type": "Int!"},
                         {"name": "rows", "type": "[jsonb!]!"},
                         {"name": "masked", "type": "[String!]!"},
+                    ],
+                },
+                {
+                    "name": "OpsDashboard",
+                    "fields": [
+                        {"name": "tab", "type": "String!"},
+                        {"name": "days", "type": "Int!"},
+                        {"name": "sla_hours", "type": "Int!"},
+                        {"name": "data", "type": "jsonb!"},
                     ],
                 },
                 {

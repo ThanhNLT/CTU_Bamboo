@@ -6834,6 +6834,41 @@
       "comment": "Thư viện tri thức: tài liệu đang hiệu lực người gọi đọc được, trạng thái chỉ mục, phiên bản trước"
     },
     {
+      "name": "ops_dashboard",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ops_dashboard",
+        "arguments": [
+          {
+            "name": "tab",
+            "type": "String!"
+          },
+          {
+            "name": "days",
+            "type": "Int"
+          }
+        ],
+        "output_type": "OpsDashboard!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Số liệu Trung tâm điều hành: process | production | hospital | quality | sites (ADR #49)"
+    },
+    {
       "name": "process_models",
       "definition": {
         "kind": "synchronous",
@@ -8632,6 +8667,27 @@
           {
             "name": "masked",
             "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "OpsDashboard",
+        "fields": [
+          {
+            "name": "tab",
+            "type": "String!"
+          },
+          {
+            "name": "days",
+            "type": "Int!"
+          },
+          {
+            "name": "sla_hours",
+            "type": "Int!"
+          },
+          {
+            "name": "data",
+            "type": "jsonb!"
           }
         ]
       },
