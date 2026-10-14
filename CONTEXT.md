@@ -152,6 +152,14 @@ _Tránh dùng_: chat, ghi chú duyệt (ghi chú duyệt nằm ở bước duy�
 Tin báo cho đúng một người, sinh tự động khi được giao việc duyệt, khi chứng từ của mình có kết quả, khi có bình luận hoặc được nhắc tên. Người gây ra sự kiện không tự nhận thông báo.
 _Tránh dùng_: alert, tin nhắn
 
+**Tài liệu thư viện** (`collab.kb_document`):
+Quy chế, quy trình chuẩn, hướng dẫn hoặc hỏi đáp đã được duyệt và xuất bản vào Thư viện tri thức; có phiên bản, đơn vị ban hành và phạm vi đọc (**tập đoàn**: cả tenant; **công ty**: người làm việc trong công ty của đơn vị ban hành). Mỗi lúc chỉ một phiên bản của một tài liệu đang hiệu lực.
+_Tránh dùng_: văn bản (khi nói tệp đính kèm), tài liệu (khi nói tệp bất kỳ trên Ổ đĩa)
+
+**Đề xuất tài liệu**:
+Chứng từ xin đưa một tài liệu (hoặc bản thay thế một tài liệu đang hiệu lực) vào thư viện, số dạng `TL-2026-000001`, đi qua chuỗi duyệt như các chứng từ khác; duyệt xong là **xuất bản**, bản bị thay thế **ngừng hiệu lực**.
+_Tránh dùng_: đăng tài liệu, upload tài liệu
+
 ## Dữ liệu
 
 **Tập dữ liệu** (view `lakehouse.silver.<schema>_<bảng>`):

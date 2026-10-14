@@ -32,6 +32,11 @@ const DOC_FIELDS = `
     requester { full_name } target_position { name org_unit { name } }
     attachments(order_by: { created_at: asc }) { id file_name content_type sha256 status }
   }
+  kb_document {
+    id doc_no title version created_at
+    requester { full_name } org_unit { name }
+    attachments(order_by: { created_at: asc }) { id file_name content_type sha256 status }
+  }
 `;
 
 // ===== Truy vấn GraphQL =====
@@ -78,6 +83,16 @@ type Docs = {
     created_at: string;
     requester: { full_name: string } | null;
     target_position: { name: string; org_unit: { name: string } } | null;
+    attachments: AttachmentRow[];
+  } | null;
+  kb_document: {
+    id: string;
+    doc_no: string;
+    title: string;
+    version: number;
+    created_at: string;
+    requester: { full_name: string } | null;
+    org_unit: { name: string } | null;
     attachments: AttachmentRow[];
   } | null;
 };
@@ -179,6 +194,23 @@ const toTask = (b: Base, d: Docs, org: string, now: number): InboxTask | null =>
         org: [org, unit].filter(Boolean).join(" · "),
         heading: `ĐỀ NGHỊ TIẾP NHẬN NHÂN SỰ · ${o.full_name.toLocaleUpperCase("vi")}`,
         subline: `Vị trí: ${o.target_position?.name ?? "—"} · ${formatDate(o.created_at)}`,
+      },
+    };
+  }
+  if (d.kb_document) {
+    const k = d.kb_document;
+    const unit = k.org_unit?.name ?? "";
+    return {
+      ...common,
+      code: k.doc_no,
+      title: `Đề xuất tài liệu: ${k.title}`,
+      to: `/h/library/proposals/${k.id}`,
+      attachments: k.attachments.map(toAttachment),
+      info: { submitter: k.requester?.full_name ?? "—", unit: unit || "—" },
+      preview: {
+        org: [org, unit].filter(Boolean).join(" · "),
+        heading: `ĐỀ XUẤT TÀI LIỆU · ${k.title.toLocaleUpperCase("vi")}`,
+        subline: `Phiên bản ${k.version} · ${formatDate(k.created_at)}`,
       },
     };
   }
