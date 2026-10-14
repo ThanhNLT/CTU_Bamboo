@@ -26,7 +26,7 @@ const PERIODS: Array<{ value: Period; label: string }> = [
 ];
 
 // ===== Component =====
-/** Một hàng bộ lọc phía trên mọi biểu đồ: tab · Kỳ · Cơ sở; dưới là các bộ lọc đang bật (có nút gỡ). */
+/** Một hàng bộ lọc phía trên mọi biểu đồ: tab · Kỳ · Cơ sở (lọc bản đồ, chỉ ở Tổng quan); dưới là các bộ lọc đang bật. */
 export const DashboardFilterBar = ({
   tab,
   onTabChange,
@@ -87,16 +87,18 @@ export const DashboardFilterBar = ({
               aria-label="Kỳ"
             />
           </label>
-          <label className="flex items-center gap-2 text-[12.5px] text-muted">
-            Cơ sở
-            <Select<string>
-              value={province}
-              onChange={onProvinceChange}
-              options={[{ value: "all", label: "Tất cả" }, ...provinces.map((p) => ({ value: p, label: p }))]}
-              style={{ width: 150 }}
-              aria-label="Cơ sở"
-            />
-          </label>
+          {tab === "overview" && (
+            <label className="flex items-center gap-2 text-[12.5px] text-muted">
+              Cơ sở
+              <Select<string>
+                value={province}
+                onChange={onProvinceChange}
+                options={[{ value: "all", label: "Tất cả" }, ...provinces.map((p) => ({ value: p, label: p }))]}
+                style={{ width: 150 }}
+                aria-label="Cơ sở"
+              />
+            </label>
+          )}
         </div>
       </div>
 
