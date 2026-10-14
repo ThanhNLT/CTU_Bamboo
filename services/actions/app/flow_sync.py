@@ -166,6 +166,7 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
     while True:
         if time.monotonic() - last_refresh >= refresh_seconds:
             work.execute("SELECT wf.refresh_all()")
+            work.execute("SELECT kpi.refresh()")
             work.commit()
             last_refresh = time.monotonic()
         while run_once(work, flowable):
