@@ -157,17 +157,28 @@ def _ref(a: Admin, data: dict, id_key: str, code_key: str, resolve: Callable[[st
     return None
 
 
-def _position_ref(a: Admin, ref: str):
+HELD_FROM_NOW = "(upper_inf(x.valid_period) OR upper(x.valid_period) > now())"
+
+
+def _position_candidates(a: Admin, ref: str) -> list:
     unit_code, sep, name = ref.partition("/")
     if not sep or not name.strip():
         raise ActionError(f"Vị trí phải ghi dạng MÃ_ĐƠN_VỊ/Tên vị trí: {ref}")
     unit = _unit_by_code(a, unit_code.strip())
-    return a.one(
-        """SELECT id FROM core.position
-                    WHERE tenant_id = %s AND org_unit_id = %s AND name = %s AND valid_period @> now()""",
+    rows = a.conn.execute(
+        f"""SELECT p.id FROM core.position p
+            WHERE p.tenant_id = %s AND p.org_unit_id = %s AND p.name = %s AND p.valid_period @> now()
+            ORDER BY EXISTS (SELECT 1 FROM core.assignment x WHERE x.position_id = p.id AND {HELD_FROM_NOW}),
+                     p.created_at, p.id""",
         (a.tenant, unit, name.strip()),
-        f"Không có vị trí {ref}",
-    )[0]
+    ).fetchall()
+    if not rows:
+        raise ActionError(f"Không có vị trí {ref}", "not-found", 404)
+    return [r[0] for r in rows]
+
+
+def _position_ref(a: Admin, ref: str):
+    return _position_candidates(a, ref)[0]
 
 
 def _belongs(a: Admin, table: str, row_id) -> None:
@@ -864,14 +875,32 @@ def _order_units(rows: list[tuple[int, dict]]) -> list[tuple[int, dict]]:
 def _import_person(a: Admin, row: dict) -> str:
     person_id = save_person(a, row)
     if row.get("position"):
-        current = a.conn.execute(
-            """SELECT 1 FROM core.assignment x WHERE x.person_id = %s AND x.position_id = %s
-                 AND x.valid_period @> now()""",
-            (person_id, _position_ref(a, str(row["position"]))),
+        held = a.conn.execute(
+            f"""SELECT 1 FROM core.assignment x WHERE x.person_id = %s AND x.position_id = ANY(%s)
+                  AND {HELD_FROM_NOW}""",
+            (person_id, _position_candidates(a, str(row["position"]))),
         ).fetchone()
-        if not current:
+        if not held:
             save_assignment(a, {**row, "person_id": person_id})
     return person_id
+
+
+CONSTRAINT_MESSAGES = {
+    "assignment_one_primary_per_person": "Người này đã giữ chính một vị trí khác trong thời gian này: "
+    "kết thúc bổ nhiệm cũ trước, hoặc chọn loại Kiêm nhiệm",
+    "assignment_one_occupant_per_position": "Vị trí đã có người giữ trong thời gian này",
+    "position_one_head_per_unit": "Đơn vị đã có vị trí trưởng",
+}
+
+
+def _db_message(exc: psycopg.Error) -> str:
+    known = CONSTRAINT_MESSAGES.get(exc.diag.constraint_name or "")
+    return known or exc.diag.message_primary or str(exc)
+
+
+def _has_account(conn: psycopg.Connection, person_id) -> bool:
+    row = conn.execute("SELECT idp_subject FROM core.person WHERE id = %s", (person_id,)).fetchone()
+    return bool(row and row[0])
 
 
 def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
@@ -897,7 +926,7 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
             try:
                 with conn.transaction():
                     row_id = handler(a, row)
-                if kind == "person" and row.get("username"):
+                if kind == "person" and row.get("username") and not _has_account(conn, row_id):
                     created.append(
                         {
                             "row": line,
@@ -910,7 +939,7 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
             except ActionError as exc:
                 errors.append({"row": line, "message": exc.message})
             except psycopg.Error as exc:
-                errors.append({"row": line, "message": exc.diag.message_primary or str(exc)})
+                errors.append({"row": line, "message": _db_message(exc)})
         applied = not dry_run and not errors
         if not applied:
             raise Rollback(tx)
