@@ -124,6 +124,9 @@ services:
     environment:
       DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
       SEED_DEMO: ${SEED_DEMO:-true}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
     command: ["python", "-m", "app.seed"]
     restart: "no"
 
@@ -338,6 +341,7 @@ services:
     environment:
       <<: *actions-env
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_URL: ${KEYCLOAK_ADMIN_URL:-http://localhost:8080}
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
     volumes:

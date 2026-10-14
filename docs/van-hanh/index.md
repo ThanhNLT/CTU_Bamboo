@@ -6,4 +6,5 @@ Triển khai môi trường thật, nâng cấp, sao lưu và khôi phục.
 :maxdepth: 2
 
 trien-khai
+cong-ty-moi
 ```
