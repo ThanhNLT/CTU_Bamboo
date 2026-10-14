@@ -87,6 +87,20 @@ const COMPLETED = gql`
   }
 `;
 
+const KPI_ON_TIME = gql`
+  query OpsOnTime($limit: Int, $offset: Int, $order_by: [kpi_value_order_by!], $where: kpi_value_bool_exp) {
+    kpi_value(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+      period_start
+      value
+    }
+    kpi_value_aggregate(where: $where) {
+      aggregate {
+        count
+      }
+    }
+  }
+`;
+
 const COUNT_IC = gql`
   query OpsIc($limit: Int, $offset: Int, $order_by: [ic_ic_order_order_by!], $where: ic_ic_order_bool_exp) {
     ic_ic_order(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -179,6 +193,14 @@ export const useOpsData = (period: Period) => {
     pagination: { pageSize: 10000 },
     meta: { gqlQuery: COMPLETED },
   });
+  const onTimeKpi = useList<{ period_start: string; value: number }>({
+    resource: "kpi_value",
+    filters: [{ field: "kpi_key", operator: "eq", value: "on-time" }],
+    sorters: [{ field: "period_start", order: "desc" }],
+    pagination: { pageSize: 2 },
+    meta: { gqlQuery: KPI_ON_TIME },
+    liveMode: "auto",
+  });
   const icPending = useList({
     resource: "ic_ic_order",
     filters: [{ field: "status", operator: "eq", value: "PENDING" }],
@@ -200,6 +222,7 @@ export const useOpsData = (period: Period) => {
   const openRows = open.result.data;
   const doneRows = done.result.data;
   const completedRows = completed.result.data;
+  const onTimeRows = onTimeKpi.result.data;
 
   const data = useMemo(() => {
     const now = Date.now();
@@ -296,9 +319,8 @@ export const useOpsData = (period: Period) => {
         };
       });
 
-    const onTime = doneRows.filter(
-      (t) => t.closed_at && Date.parse(t.closed_at) - Date.parse(t.created_at) <= SLA_HOURS * HOUR,
-    ).length;
+    const [onTimeNow, onTimePrev] = onTimeRows;
+    const onTimeDiff = onTimeNow && onTimePrev ? onTimeNow.value - onTimePrev.value : null;
     const inPeriod = completedRows.filter((h) => !dayjs(h.created_at).isBefore(since)).length;
     const prevSince = since.subtract(days, "day");
     const prevPeriod = completedRows.filter((h) => {
@@ -320,11 +342,18 @@ export const useOpsData = (period: Period) => {
       },
       {
         key: "ontime",
-        label: "Duyệt đúng hạn",
-        value: doneRows.length ? `${pct.format((onTime / doneRows.length) * 100)}%` : "—",
-        delta: { dir: "none", tone: "neutral", text: `${doneRows.length} bước duyệt trong kỳ` },
+        label: "Duyệt đúng hạn · 30 ngày",
+        value: onTimeNow ? `${pct.format(onTimeNow.value)}%` : "—",
+        delta:
+          onTimeDiff == null || onTimeDiff === 0
+            ? { dir: "none", tone: "neutral", text: "Cùng số liệu với KPI Trang chủ" }
+            : {
+                dir: onTimeDiff > 0 ? "up" : "down",
+                tone: onTimeDiff > 0 ? "good" : "bad",
+                text: `${pct.format(Math.abs(onTimeDiff))} điểm so với ngày trước`,
+              },
         freshness: hot,
-        definition: `Tỷ lệ bước duyệt hoàn tất trong vòng ${SLA_HOURS} giờ kể từ lúc giao, trong kỳ đang chọn.`,
+        definition: `Tỷ lệ bước duyệt hoàn tất trong vòng ${SLA_HOURS} giờ kể từ lúc giao, trên toàn đơn vị trong 30 ngày gần nhất. Cùng nguồn với KPI “Duyệt đúng hạn” ghim ở Trang chủ.`,
       },
       {
         key: "completed",
@@ -371,7 +400,16 @@ export const useOpsData = (period: Period) => {
       rangeLabel: `${since.format("DD/MM")} – ${today.format("DD/MM")}`,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unitRows, openRows, doneRows, completedRows, icPending.result.total, blockedFiles.result.total, days]);
+  }, [
+    unitRows,
+    openRows,
+    doneRows,
+    completedRows,
+    onTimeRows,
+    icPending.result.total,
+    blockedFiles.result.total,
+    days,
+  ]);
 
   const queries = [units, open, done, completed, icPending, blockedFiles].map((q) => q.query);
   return {
