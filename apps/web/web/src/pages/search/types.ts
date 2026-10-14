@@ -22,24 +22,7 @@ export type Concept = {
   highlights: string[];
 };
 
-/** Tài liệu trong chỉ mục mẫu (các phân hệ chưa nối API thật). */
-export type IndexedItem = {
-  id: string;
-  type: ResultType;
-  company: Company;
-  title: string;
-  breadcrumb: string;
-  snippet: string;
-  to: string;
-  /** Độ khớp ý nghĩa với từng ý định (0–1). */
-  concepts: Record<string, number>;
-  daysAgo: number;
-  /** Nhãn thời gian (ví dụ dữ liệu thời gian thực "Cập nhật 10:42"). */
-  updatedLabel?: string;
-  mono?: boolean;
-};
-
-/** Một dòng kết quả đã chuẩn hóa để hiển thị (mẫu hoặc thật). */
+/** Một dòng kết quả đã chuẩn hóa để hiển thị. */
 export type SearchResult = {
   key: string;
   type: ResultType;

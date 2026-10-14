@@ -11,7 +11,7 @@ cd services/seed
 python -m app.demo_files            # ghi vào services/seed/data/demo/
 ```
 
-Kiểm thử `tests/test_demo_files.py` báo lỗi khi tệp đã commit khác kết quả của script.
+Kiểm thử `tests/test_demo_files.py` báo lỗi khi tệp đã commit khác kết quả của script. Nạp vào CSDL: `app.demo_load` (seed tự gọi; `python -m app.demo_load --refresh` để nạp lại theo giờ hiện tại), xem ADR #50.
 
 ## Mốc thời gian
 

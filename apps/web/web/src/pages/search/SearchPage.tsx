@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Tìm kiếm (Trí tuệ số): một ô tìm cho mọi thứ người dùng được xem.
-// - Đề nghị mua sắm + tệp đính kèm: tìm THẬT qua search_documents (máy chủ lọc tenant/quyền).
-// - Bản sao số, tri thức, tài liệu, dữ liệu, hồ sơ e-Office mẫu: chỉ mục mẫu ./mock (thay cho Qdrant khi tích hợp).
+// - Đề nghị mua sắm, tài liệu thư viện, nội dung tệp: tìm toàn văn qua search_documents (máy chủ lọc tenant/quyền).
+// - Thiết bị Bản sao số, hồ sơ tiếp nhận / đơn nội bộ, tài sản dữ liệu: tìm theo tên / mã qua Hasura (./useEntitySearch).
+// Chế độ "Ngữ nghĩa" (Qdrant) chờ phần trợ lý AI: hiện mọi chế độ đều tìm theo từ khóa.
 // Từ khóa và cách tìm giữ trên URL (?q=…&mode=…) để chia sẻ được đường dẫn.
 
 // ===== Thư viện =====
@@ -14,24 +15,19 @@ import { useNavigate, useSearchParams } from "react-router"; // React Router
 
 // ===== Module nội bộ =====
 import { request } from "../../api/client";
-import { useSession } from "../../auth/useSession";
 import { AiContextBanner } from "./components/AiContextBanner";
 import { SearchBar } from "./components/SearchBar";
 import { SearchFilters } from "./components/SearchFilters";
 import { SearchResultList } from "./components/SearchResultList";
-import {
-  applyFilters,
-  defaultCompanies,
-  detectConcepts,
-  facetCounts,
-  highlightTerms,
-  permittedCompanies,
-  searchIndex,
-  sortResults,
-} from "./engine";
-import { DEFAULT_QUERY, DEFAULT_TYPES, EXAMPLE_QUERIES } from "./mock";
+import { applyFilters, facetCounts, highlightTerms, sortResults } from "./engine";
+import { DEFAULT_TYPES, EXAMPLE_QUERIES } from "./labels";
 import type { Company, ResultType, SearchMode, SortKey, TimeRange } from "./types";
 import { useDocumentSearch } from "./useDocumentSearch";
+import { useEntitySearch } from "./useEntitySearch";
+
+// ===== Hằng số =====
+/** Kết quả thật đã lọc theo tenant ở máy chủ: không còn bộ lọc công ty của chỉ mục mẫu. */
+const NO_COMPANIES: Company[] = [];
 
 // ===== Hằng số =====
 const PAGE_SIZE = 6;
@@ -42,14 +38,13 @@ const MODES: SearchMode[] = ["keyword", "semantic", "hybrid"];
 export const SearchPage = () => {
   const { message } = App.useApp();
   const navigate = useNavigate();
-  const { tenant } = useSession();
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const modeParam = params.get("mode") as SearchMode | null;
   const mode: SearchMode = modeParam && MODES.includes(modeParam) ? modeParam : "hybrid";
 
   // Mở trang không có ?q= thì điền sẵn câu ví dụ (như thiết kế); xóa ô là xóa hẳn.
-  const [text, setText] = useState(() => params.get("q") ?? DEFAULT_QUERY);
+  const [text, setText] = useState(() => params.get("q") ?? "");
   const [seenQ, setSeenQ] = useState(q);
   if (seenQ !== q) {
     // URL đổi từ nơi khác (Back/Forward, liên kết) → cập nhật ô nhập.
@@ -57,16 +52,8 @@ export const SearchPage = () => {
     if (q !== text.trim()) setText(q);
   }
 
-  const permitted = useMemo(() => permittedCompanies(tenant.tenant_name), [tenant.tenant_name]);
   const [types, setTypes] = useState<ResultType[]>(DEFAULT_TYPES);
-  const [companies, setCompanies] = useState<Company[]>(() => defaultCompanies(permitted));
-  // Đổi đơn vị (tenant) → phạm vi công ty đổi → chọn lại mặc định.
-  const [seenPermitted, setSeenPermitted] = useState(permitted);
-  if (seenPermitted !== permitted) {
-    setSeenPermitted(permitted);
-    setCompanies(defaultCompanies(permitted));
-  }
-  const [range, setRange] = useState<TimeRange>("30d");
+  const [range, setRange] = useState<TimeRange>("all");
   const [sort, setSort] = useState<SortKey>("relevance");
 
   const setUrl = useCallback(
@@ -91,25 +78,21 @@ export const SearchPage = () => {
     return () => window.clearTimeout(t);
   }, [text, q, setUrl]);
 
-  // Tìm thật chỉ khớp từ khóa → bỏ qua ở chế độ "Ngữ nghĩa".
-  const docs = useDocumentSearch(q, mode !== "semantic");
+  const docs = useDocumentSearch(q, true);
+  const entities = useEntitySearch(q);
 
-  const concepts = useMemo(() => detectConcepts(q), [q]);
-  const terms = useMemo(() => highlightTerms(q, mode), [q, mode]);
+  const terms = useMemo(() => highlightTerms(q), [q]);
 
   const computed = useMemo(() => {
     const t0 = performance.now();
-    const all = q ? searchIndex(q, mode) : [];
-    const visible = all.filter((r) => r.company == null || permitted.includes(r.company));
-    const hidden = all.length - visible.length;
-    const rows = [...visible, ...docs.results];
-    const filters = { types, companies, range };
+    const rows = [...docs.results, ...entities.results];
+    const filters = { types, companies: NO_COMPANIES, range };
     const filtered = sortResults(applyFilters(rows, filters), sort);
-    return { filtered, hidden, counts: facetCounts(rows, filters), ms: performance.now() - t0 };
-  }, [q, mode, permitted, docs.results, types, companies, range, sort]);
+    return { filtered, counts: facetCounts(rows, filters), ms: performance.now() - t0 };
+  }, [docs.results, entities.results, types, range, sort]);
 
   // Số kết quả đang hiện: về lại trang đầu mỗi khi đổi câu hỏi / bộ lọc.
-  const pageKey = `${q}|${mode}|${types.join()}|${companies.join()}|${range}|${sort}`;
+  const pageKey = `${q}|${mode}|${types.join()}|${range}|${sort}`;
   const [page, setPage] = useState({ key: pageKey, size: PAGE_SIZE });
   const size = page.key === pageKey ? page.size : PAGE_SIZE;
   const shown = computed.filtered.slice(0, size);
@@ -136,7 +119,7 @@ export const SearchPage = () => {
       <div>
         <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Tìm kiếm</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Tìm trong hồ sơ, tài liệu, tri thức và dữ liệu bạn được phép xem · ngữ nghĩa (Qdrant) + từ khóa
+          Tìm trong hồ sơ, tài liệu, tri thức, thiết bị và dữ liệu bạn được phép xem · từ khóa, gõ không dấu cũng được
         </p>
       </div>
 
@@ -154,7 +137,7 @@ export const SearchPage = () => {
           <AiContextBanner
             query={q}
             mode={mode}
-            concepts={concepts}
+            concepts={[]}
             onAsk={() => navigate(`/i/assistant?context=${encodeURIComponent(`Tìm kiếm · “${q}”`)}`)}
           />
 
@@ -163,13 +146,13 @@ export const SearchPage = () => {
               className="lg:sticky lg:top-4"
               types={types}
               onTypesChange={setTypes}
-              companies={companies}
-              onCompaniesChange={setCompanies}
-              permitted={permitted}
+              companies={NO_COMPANIES}
+              onCompaniesChange={() => undefined}
+              permitted={NO_COMPANIES}
               range={range}
               onRangeChange={setRange}
               counts={computed.counts}
-              hiddenCount={computed.hidden}
+              hiddenCount={0}
             />
             <SearchResultList
               query={q}
@@ -181,7 +164,7 @@ export const SearchPage = () => {
               onSortChange={setSort}
               onShowMore={showMore}
               loading={docs.loading}
-              error={docs.error}
+              error={docs.error ?? entities.error}
               terms={terms}
               onDownload={(id) => void download(id)}
             />
