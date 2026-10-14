@@ -19,7 +19,8 @@ import {
 // ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
-import { MINUTE, RANGES, aggregationOf, breachSpans, bucketize, minuteSeries, xTicksOf, yAxisOf } from "../signal";
+import { useSeries } from "../api";
+import { MINUTE, RANGES, aggregationOf, breachSpans, bucketize, xTicksOf, yAxisOf } from "../signal";
 import type { Metric, Threshold, TimeRange, TwinEntity } from "../types";
 import { formatDay, formatDayTime, formatDuration, formatNumber, formatTime } from "../utils";
 
@@ -106,9 +107,9 @@ const limitText = (metric: Metric, side: "max" | "min") => {
 
 // ===== Component =====
 /**
- * Biểu đồ lịch sử một chỉ số: đường dữ liệu xanh đậm, ngưỡng là đường đứt đỏ (ReferenceLine),
- * các đoạn vượt ngưỡng tô nền đỏ nhạt (ReferenceArea). Đoạn vượt ngưỡng được TÍNH từ dữ liệu từng phút,
- * nên vẫn đúng khi đổi khoảng thời gian hay đổi chỉ số.
+ * Biểu đồ lịch sử một chỉ số (iot.measurement): đường dữ liệu xanh đậm, ngưỡng là đường đứt đỏ (ReferenceLine),
+ * các đoạn vượt ngưỡng tô nền đỏ nhạt (ReferenceArea). Đoạn vượt ngưỡng TÍNH từ chuỗi đo gốc (chưa gộp), nên vẫn
+ * đúng khi đổi khoảng thời gian hay đổi chỉ số. Trục X kết thúc ở bây giờ: thiết bị mất tín hiệu thấy khoảng trống.
  */
 export const SensorChart = ({
   entity,
@@ -125,11 +126,12 @@ export const SensorChart = ({
   const th = metric.threshold;
   const agg = aggregationOf(th);
 
+  const series = useSeries(entity.uuid, metric.key, r.minutes);
   const chart = useMemo(() => {
-    const minutes = minuteSeries(metric.signal, r.minutes);
+    const minutes = series.points;
     const data = bucketize(minutes, r.bucket, agg, metric.decimals);
-    const start = data[0]?.t ?? 0;
-    const end = data[data.length - 1]?.t ?? 0;
+    const end = Date.now();
+    const start = end - r.minutes * MINUTE;
     // Đoạn ngắn trên trục 7 ngày chỉ rộng vài pixel → nới tối thiểu bằng một khung (hoặc 0,8% trục) cho dễ thấy.
     const minWidth = Math.max(r.bucket * MINUTE, (end - start) * 0.008);
     const areas = breachSpans(minutes, th).map((s) => {
@@ -143,12 +145,12 @@ export const SensorChart = ({
       return { ...s, x1: Math.max(start, x1), x2: Math.min(end, x2) };
     });
     return { data, start, end, areas, y: yAxisOf(data, th), xTicks: xTicksOf(start, end, r.tickEvery) };
-  }, [metric.signal, metric.decimals, th, r, agg]);
+  }, [series.points, metric.decimals, th, r, agg]);
 
   const lastArea = chart.areas[chart.areas.length - 1];
   const totalMinutes = chart.areas.reduce((a, s) => a + s.minutes, 0);
   const summary =
-    `${metric.label}, ${r.label}: hiện tại ${formatNumber(metric.value, metric.decimals)} ${metric.unitLong ?? metric.unit}. ` +
+    `${metric.label}, ${r.label}: ${chart.data.length} điểm đo, hiện tại ${formatNumber(metric.value, metric.decimals)} ${metric.unitLong ?? metric.unit}. ` +
     (chart.areas.length
       ? `${chart.areas.length} lần ra ngoài ngưỡng, tổng ${formatDuration(totalMinutes)}.`
       : "Luôn trong ngưỡng.");
@@ -245,8 +247,8 @@ export const SensorChart = ({
       </figure>
 
       <p className="mt-3 text-[11.5px] text-muted">
-        Nguồn: Scorpio Temporal API · thuộc tính <span className="font-mono">{metric.key}</span> của mô hình{" "}
-        {entity.type}
+        Nguồn: iot.measurement · thuộc tính <span className="font-mono">{metric.key}</span> của mô hình {entity.type}
+        {series.loading ? " · đang tải…" : chart.data.length === 0 ? " · chưa có số đo trong khoảng này" : ""}
         {r.bucket > 1 && ` · giá trị ${AGG_WORD[agg]} mỗi ${formatDuration(r.bucket)}`}
         {entity.offlineMinutes ? ` · mất tín hiệu ${entity.offlineMinutes} phút gần nhất` : ""}
       </p>

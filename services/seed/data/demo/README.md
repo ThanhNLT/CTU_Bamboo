@@ -11,8 +11,6 @@ cd services/seed
 python -m app.demo_files            # ghi vào services/seed/data/demo/
 ```
 
-Kiểm thử `tests/test_demo_files.py` báo lỗi khi tệp đã commit khác kết quả của script.
-
 ## Mốc thời gian
 
 Mọi mốc thời gian tính quanh **REF = 2026-10-14T10:30:00+07:00** ("bây giờ" của bộ dữ liệu). Khi nạp, bộ nạp cộng

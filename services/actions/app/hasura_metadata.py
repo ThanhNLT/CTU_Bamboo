@@ -24,7 +24,7 @@ import psycopg  # psycopg
 from . import config
 
 # ===== Hằng số & cấu hình =====
-SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr")
+SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr", "iot", "meta", "kpi")
 # hr.private_access: chỉ xem qua nhật ký kiểm toán (audit.log), không mở cho giao diện.
 HIDDEN = {
     ("wf", "flow_sync"),
@@ -120,6 +120,14 @@ SELECT_FILTER = {
     ("audit", "log"): {"_and": [TENANT, {"readers": {"person_id": {"_eq": ME}}}]},
     ("audit", "v_reader"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "v_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    # Bản sao số, phả hệ, KPI (ADR #50): mô hình thiết bị và siêu dữ liệu pipeline chung cho nền tảng; KPI ghim của
+    # chính người gọi.
+    ("iot", "model"): {},
+    ("meta", "lineage_node"): {},
+    ("meta", "lineage_edge"): {},
+    ("meta", "quality_check"): {},
+    ("meta", "pipeline_run"): {},
+    ("kpi", "pin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     **{key: {"_and": [TENANT, IS_ADMIN]} for key in ADMIN_READ},
     ("proc", "purchase_request_item"): {"_and": [TENANT, {"request": {"can_read": {"_eq": True}}}]},
     ("ic", "ic_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
@@ -429,6 +437,38 @@ def build(conn: psycopg.Connection) -> dict:
         for r in (ROLE, ADMIN_ROLE)
     ]
 
+    # KPI ghim (ADR #50): mỗi người tự ghim / bỏ ghim / đổi thứ tự KPI của mình.
+    own_pin = {"_and": [TENANT, {"person_id": {"_eq": ME}}]}
+    pin = entries[("kpi", "pin")]
+    pin["insert_permissions"] = [
+        {
+            "role": r,
+            "permission": {
+                "check": {},
+                "set": {"tenant_id": "X-Hasura-Tenant-Id", "person_id": ME},
+                "columns": ["kpi_key", "position"],
+            },
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    pin["update_permissions"] = [
+        {"role": r, "permission": {"filter": own_pin, "check": own_pin, "columns": ["position"]}}
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    pin["delete_permissions"] = [{"role": r, "permission": {"filter": own_pin}} for r in (ROLE, ADMIN_ROLE)]
+    # Báo sự cố dữ liệu từ trang Phả hệ: ai trong tenant cũng báo được.
+    entries[("meta", "data_issue")]["insert_permissions"] = [
+        {
+            "role": r,
+            "permission": {
+                "check": {},
+                "set": {"tenant_id": "X-Hasura-Tenant-Id", "reported_by": ME},
+                "columns": ["node_id", "severity", "description"],
+            },
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+
     # Dòng hàng: người lập sửa khi đề nghị còn nháp hoặc bị trả về (CSDL cũng chặn).
     item = entries[("proc", "purchase_request_item")]
     own_item = {"_and": [TENANT, {"request": own_draft}]}
@@ -675,6 +715,14 @@ def build(conn: psycopg.Connection) -> dict:
                 [ROLE, ADMIN_ROLE],
                 "Số liệu Trung tâm điều hành: process | production | hospital | quality | sites (ADR #49)",
                 timeout=60,
+            ),
+            _action(
+                "iot_acknowledge",
+                "mutation",
+                [("id", "uuid!"), ("note", "String!")],
+                "IotAckResult!",
+                [ROLE, ADMIN_ROLE],
+                "Ghi nhận một sự cố thiết bị của Bản sao số kèm hướng xử lý (ADR #50)",
             ),
             _action(
                 "process_models",
@@ -1285,6 +1333,13 @@ def build(conn: psycopg.Connection) -> dict:
                     "fields": [
                         {"name": "can_propose", "type": "Boolean!"},
                         {"name": "documents", "type": "[KbDocument!]!"},
+                    ],
+                },
+                {
+                    "name": "IotAckResult",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "acknowledged_at", "type": "String!"},
                     ],
                 },
                 {

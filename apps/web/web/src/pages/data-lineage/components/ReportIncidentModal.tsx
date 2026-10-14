@@ -34,7 +34,7 @@ export const ReportIncidentModal = ({
   nodes: LineageNode[];
   defaultId: string;
   onCancel: () => void;
-  onSubmit: (v: Values) => void;
+  onSubmit: (v: Values) => void | Promise<void>;
 }) => {
   const [form] = Form.useForm<Values>();
 

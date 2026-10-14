@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Bộ tìm kiếm phía giao diện cho chỉ mục mẫu: hiểu ý định, khớp từ khóa (không dấu), chấm điểm theo chế độ,
-// phân quyền theo công ty, đếm bộ lọc và tô sáng. Không phụ thuộc React.
+// Phép tính phía giao diện trên kết quả tìm kiếm: lọc, đếm bộ lọc, sắp xếp, tô sáng (khớp không dấu).
+// Không phụ thuộc React.
 
 // ===== Module nội bộ =====
 import { fold } from "../../utils/text";
-import { CONCEPTS, SEARCH_INDEX } from "./mock";
-import type { Company, Concept, ResultType, SearchMode, SearchResult, SortKey, TimeRange } from "./types";
+import type { Company, ResultType, SearchResult, SortKey, TimeRange } from "./types";
 
 // ===== Hằng số =====
 /** Từ quá phổ biến, bỏ khi khớp từ khóa và tô sáng ("máy bị nóng quá" → "nóng"). */
@@ -41,60 +40,6 @@ export const queryTokens = (q: string) =>
     .map((t) => t.replace(/^[-_.]+|[-_.]+$/g, ""))
     .filter((t) => t.length >= 2 && !STOPWORDS.has(t));
 
-export const detectConcepts = (q: string): Concept[] => {
-  const f = fold(q);
-  return CONCEPTS.filter((c) => c.triggers.some((t) => f.includes(t)));
-};
-
-/** Công ty được xem theo tenant đang chọn. Bệnh viện là tenant riêng (dữ liệu người bệnh). */
-export const permittedCompanies = (tenantName: string): Company[] => {
-  const n = fold(tenantName);
-  if (n.includes("benh vien")) return ["hospital"];
-  if (n.includes("chip")) return ["chip"];
-  if (n.includes("dien thoai")) return ["phone"];
-  if (n.includes("gia dung")) return ["appliance"];
-  return ["chip", "phone", "appliance"];
-};
-
-/** Chọn sẵn như thiết kế: bỏ "Gia dụng" khi được xem nhiều công ty. */
-export const defaultCompanies = (permitted: Company[]) =>
-  permitted.length > 1 ? permitted.filter((c) => c !== "appliance") : permitted;
-
-/** Tìm trong chỉ mục mẫu (chưa áp quyền / bộ lọc). */
-export const searchIndex = (q: string, mode: SearchMode): SearchResult[] => {
-  const tokens = queryTokens(q);
-  const concepts = mode === "keyword" ? [] : detectConcepts(q);
-  // Không nhận ra ý định thì "Ngữ nghĩa" quay về khớp từ khóa thay vì trả về rỗng.
-  const useKeyword = mode !== "semantic" || concepts.length === 0;
-  if (!tokens.length && !concepts.length) return [];
-
-  return SEARCH_INDEX.flatMap((item): SearchResult[] => {
-    const hay = fold(`${item.title} ${item.breadcrumb} ${item.snippet}`);
-    const keyword = useKeyword && tokens.length > 0 && tokens.every((t) => hay.includes(t));
-    const sem = Math.max(0, ...concepts.map((c) => item.concepts[c.key] ?? 0));
-    const semantic = sem >= 0.5 ? sem : undefined;
-    if (!keyword && semantic == null) return [];
-    const score = Math.min(0.99, Math.max(semantic ?? 0, keyword ? 0.6 : 0) + (keyword && semantic != null ? 0.05 : 0));
-    return [
-      {
-        key: `idx:${item.id}`,
-        type: item.type,
-        company: item.company,
-        title: item.title,
-        breadcrumb: item.breadcrumb,
-        snippet: item.snippet,
-        to: item.to,
-        semantic,
-        keyword,
-        score,
-        daysAgo: item.daysAgo,
-        updatedLabel: item.updatedLabel,
-        mono: item.mono,
-      },
-    ];
-  });
-};
-
 // ===== Hằng số =====
 export const TIME_DAYS: Record<TimeRange, number> = { "7d": 7, "30d": 30, "90d": 90, all: Infinity };
 
@@ -126,10 +71,9 @@ export const sortResults = (rows: SearchResult[], sort: SortKey) =>
     sort === "newest" ? (a.daysAgo ?? -1) - (b.daysAgo ?? -1) || b.score - a.score : b.score - a.score,
   );
 
-/** Cụm từ để tô sáng: từ trong câu hỏi + cụm của các ý định nhận ra. */
-export const highlightTerms = (q: string, mode: SearchMode) => {
+/** Cụm từ để tô sáng: các từ có nghĩa trong câu hỏi. */
+export const highlightTerms = (q: string) => {
   const terms = new Set(queryTokens(q));
-  if (mode !== "keyword") for (const c of detectConcepts(q)) for (const h of c.highlights) terms.add(fold(h));
   // Cụm dài trước để "quá nhiệt" thắng "nhiệt".
   return [...terms].sort((a, b) => b.length - a.length);
 };

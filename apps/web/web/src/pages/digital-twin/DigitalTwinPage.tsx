@@ -4,29 +4,25 @@
 
 // Bản sao số (Dữ liệu số): master–detail. Trái ~30% danh sách thực thể NGSI-LD, phải ~70% chi tiết
 // (thẻ đầu, lưới 6 chỉ số, biểu đồ lịch sử). Trên màn hình lớn hai cột cuộn độc lập.
-// Mở thẳng một thực thể: /d/twin?entity=CR-02, hoặc từ Bản đồ: /d/twin?site=chip-bn. Dữ liệu minh họa ở ./mock.
+// Mở thẳng một thực thể: /d/twin?entity=CR-02, hoặc theo cơ sở: /d/twin?site=chip-bn. Dữ liệu: bảng iot.* (./api,
+// ADR #50), nạp từ tệp demo; ghi nhận sự cố qua Action iot_acknowledge.
 
 // ===== Thư viện =====
-import { App } from "antd"; // Ant Design
+import { Alert, App, Input, Spin } from "antd"; // Ant Design
 import { useMemo, useState } from "react"; // React
 import { useNavigate, useSearchParams } from "react-router"; // React Router
 
 // ===== Module nội bộ =====
+import { acknowledgeIncident, useTwinEntities } from "./api";
 import { CategoryTabs } from "./components/CategoryTabs";
 import { EntityHeader } from "./components/EntityHeader";
 import { EntityList } from "./components/EntityList";
+import { IncidentList } from "./components/IncidentList";
 import { MetricCard } from "./components/MetricCard";
 import { SensorChart } from "./components/SensorChart";
 import { TwinPageHeader } from "./components/TwinPageHeader";
-import { useLiveClock } from "./hooks";
-import { DEFAULT_CATEGORY, DEFAULT_ENTITY_ID, MOCK_ENTITIES } from "./mock";
-import { MOCK_NOW } from "./signal";
-import type { CategoryFilter, Metric, TimeRange } from "./types";
+import type { CategoryFilter, Incident, Metric, TimeRange } from "./types";
 import { countByCategory, filterEntities, pickFromParams, sortEntities } from "./utils";
-
-// ===== Hằng số =====
-const SORTED = sortEntities(MOCK_ENTITIES);
-const COUNTS = countByCategory(MOCK_ENTITIES);
 
 // ===== Hàm tiện ích =====
 /** Chỉ số vẽ mặc định: chỉ số nặng nhất (Nguy cấp → Cảnh báo), không có thì chỉ số đầu tiên. */
@@ -35,24 +31,29 @@ const defaultMetric = (metrics: Metric[]) =>
 
 // ===== Component =====
 export const DigitalTwinPage = () => {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const updatedAt = useLiveClock(MOCK_NOW + 7_000);
+  const twin = useTwinEntities();
+  const sorted = useMemo(() => sortEntities(twin.entities), [twin.entities]);
+  const counts = useMemo(() => countByCategory(twin.entities), [twin.entities]);
+  const updatedAt = useMemo(
+    () => Math.max(0, ...twin.entities.map((e) => (e.lastSeenAt ? Date.parse(e.lastSeenAt) : 0))) || twin.at,
+    [twin.entities, twin.at],
+  );
 
-  const paramKey = `${params.get("entity") ?? ""}|${params.get("site") ?? ""}`;
-  const fromUrl = () => pickFromParams(MOCK_ENTITIES, params.get("entity"), params.get("site"));
+  const paramKey = `${params.get("entity") ?? ""}|${params.get("site") ?? ""}|${twin.entities.length > 0}`;
+  const fromUrl = () => pickFromParams(twin.entities, params.get("entity"), params.get("site"));
 
-  const [category, setCategory] = useState<CategoryFilter>(() => fromUrl()?.category ?? DEFAULT_CATEGORY);
-  const [selectedId, setSelectedId] = useState<string>(() => fromUrl()?.id ?? DEFAULT_ENTITY_ID);
+  const [category, setCategory] = useState<CategoryFilter>("all");
+  const [selectedId, setSelectedId] = useState<string>();
   const [query, setQuery] = useState("");
   const [range, setRange] = useState<TimeRange>("1h");
   const [chartPick, setChartPick] = useState<{ entityId: string; key: string }>();
-  const [incidents, setIncidents] = useState<Record<string, string>>({});
 
-  // Đang ở trang mà URL đổi (vd. bấm "Bản sao số" trên Bản đồ lần nữa) → chọn lại theo URL.
-  const [seenParamKey, setSeenParamKey] = useState(paramKey);
-  if (seenParamKey !== paramKey) {
+  // Dữ liệu về lần đầu hoặc URL đổi → chọn theo URL (mặc định: thực thể nặng nhất).
+  const [seenParamKey, setSeenParamKey] = useState("");
+  if (twin.entities.length > 0 && seenParamKey !== paramKey) {
     setSeenParamKey(paramKey);
     const hit = fromUrl();
     if (hit) {
@@ -62,7 +63,7 @@ export const DigitalTwinPage = () => {
     }
   }
 
-  const visible = useMemo(() => filterEntities(SORTED, category, query), [category, query]);
+  const visible = useMemo(() => filterEntities(sorted, category, query), [sorted, category, query]);
   // Thực thể đang chọn bị lọc mất thì chọn thực thể đầu tiên còn hiển thị.
   const selected = visible.find((e) => e.id === selectedId) ?? visible[0];
   const chartMetric = selected
@@ -70,18 +71,49 @@ export const DigitalTwinPage = () => {
       defaultMetric(selected.metrics)
     : undefined;
 
-  const createIncident = () => {
-    if (!selected) return;
-    const code = `HS-SC-2026-${String(42 + Object.keys(incidents).length).padStart(5, "0")}`;
-    setIncidents((prev) => ({ ...prev, [selected.id]: code }));
-    message.success(`Đã tạo ${code} cho ${selected.id} · đính kèm dữ liệu cảm biến 1 giờ qua.`);
+  const pending = selected?.metrics.find((m) => m.incident)?.incident;
+
+  const acknowledge = (i: Incident) => {
+    let note = "";
+    modal.confirm({
+      title: `Ghi nhận sự cố ${i.code}`,
+      content: (
+        <Input.TextArea
+          rows={3}
+          aria-label="Hướng xử lý"
+          placeholder="Hướng xử lý (bắt buộc), ví dụ: đã kiểm tra bộ lọc HEPA, theo dõi thêm 30 phút"
+          onChange={(e) => (note = e.target.value)}
+        />
+      ),
+      okText: "Ghi nhận",
+      cancelText: "Hủy",
+      onOk: async () => {
+        if (!note.trim()) {
+          message.error("Ghi hướng xử lý trước khi ghi nhận");
+          throw new Error("missing note");
+        }
+        try {
+          await acknowledgeIncident(i.id, note.trim());
+          message.success(`Đã ghi nhận ${i.code}`);
+          await twin.reload();
+        } catch (e) {
+          message.error((e as Error).message);
+          throw e;
+        }
+      },
+    });
   };
+
+  if (twin.loading && twin.entities.length === 0) return <Spin className="m-10" />;
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <TwinPageHeader updatedAt={updatedAt} />
+      {twin.error && (
+        <Alert type="error" showIcon message="Không tải được dữ liệu Bản sao số" description={twin.error} />
+      )}
 
-      <CategoryTabs value={category} counts={COUNTS} onChange={setCategory} />
+      <CategoryTabs value={category} counts={counts} onChange={setCategory} />
 
       <div className="grid grid-cols-1 gap-5 lg:h-[calc(100dvh-250px)] lg:min-h-[520px] lg:grid-cols-[minmax(240px,3fr)_minmax(0,7fr)]">
         <EntityList
@@ -101,9 +133,9 @@ export const DigitalTwinPage = () => {
           >
             <EntityHeader
               entity={selected}
-              incidentCode={incidents[selected.id]}
+              pending={pending}
               onAsk={() => navigate(`/i/assistant?entity=${encodeURIComponent(selected.urn)}`)}
-              onCreateIncident={createIncident}
+              onAcknowledge={acknowledge}
             />
 
             <div
@@ -122,6 +154,7 @@ export const DigitalTwinPage = () => {
             </div>
 
             <SensorChart entity={selected} metric={chartMetric} range={range} onRangeChange={setRange} />
+            <IncidentList incidents={selected.incidents} metrics={selected.metrics} onAcknowledge={acknowledge} />
           </section>
         ) : (
           <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-white text-[13px] text-muted shadow-card">

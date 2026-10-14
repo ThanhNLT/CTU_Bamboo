@@ -7,7 +7,7 @@ import { Checkbox, Select } from "antd"; // Ant Design
 import { Lock } from "lucide-react"; // Lucide React
 
 // ===== Module nội bộ =====
-import { COMPANY_LABEL, TYPE_LABEL } from "../mock";
+import { COMPANY_LABEL, TYPE_LABEL } from "../labels";
 import type { Company, ResultType, TimeRange } from "../types";
 
 // ===== Hằng số =====

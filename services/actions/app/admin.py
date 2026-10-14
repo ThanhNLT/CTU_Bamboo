@@ -620,7 +620,7 @@ def _end(a: Admin, table: str, row_id, end: date | None) -> None:
     """Kết thúc hiệu lực: hết ngày `end` (giờ Việt Nam) hoặc ngay bây giờ; không sớm hơn lúc bắt đầu."""
     a.conn.execute(
         f"""UPDATE {table} SET valid_period = tstzrange(lower(valid_period),
-                 greatest(lower(valid_period) + interval '1 second',
+                 greatest(lower(valid_period) + interval '1 millisecond',
                           coalesce(((%s::date + 1)::timestamp AT TIME ZONE '{TZ}'), now())))
             WHERE id = %s AND upper_inf(valid_period)""",
         (end, row_id),

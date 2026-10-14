@@ -68,7 +68,7 @@ const toResult = (h: Hit, i: number): SearchResult => {
     const file = h.kind === "attachment";
     return {
       key: `doc:${h.kind}:${h.attachment_id ?? h.entity_id}`,
-      type: file ? "document" : "record",
+      type: file ? "document" : "knowledge",
       title: file && h.file_name ? h.file_name : (kb?.title ?? h.entity_id),
       code: kb?.doc_no,
       breadcrumb: file
