@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from openpyxl import Workbook, load_workbook
 
 from app import config, main
+from app.common import Context
 from conftest import SETTINGS, ids, pr
 
 
@@ -402,3 +403,90 @@ def test_nhap_lai_khong_tao_lai_tai_khoan(client, conn, admin):
     conn.execute("UPDATE core.person SET idp_subject = 'sub-co-tk' WHERE id = %s", (first["created"][0]["person_id"],))
     again = call(client, "admin_import", args, admin[k("gd")], admin["TDX"]).json()
     assert again["applied"] and again["created"] == [], again
+
+
+class FakeUsers:
+    def __init__(self):
+        self.disabled = []
+
+    def disable(self, subject):
+        self.disabled.append(subject)
+        return True
+
+
+@pytest.fixture
+def users():
+    return FakeUsers()
+
+
+@pytest.fixture
+def client_users(database, users):
+    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
+    with TestClient(main.create_app(settings, ctx=Context(users=users))) as c:
+        yield c
+
+
+def delete(client, admin, person, who="gd"):
+    return call(client, "delete_person", {"id": person}, admin[admin["k"](who)], admin["TDX"])
+
+
+def _end_assignments(client, conn, admin, person):
+    for row in conn.execute(
+        "SELECT id FROM core.assignment WHERE person_id = %s AND upper_inf(valid_period)", (person,)
+    ).fetchall():
+        r = call(
+            client, "admin_close", {"entity": "assignment", "id": str(row["id"])}, admin[admin["k"]("gd")], admin["TDX"]
+        )
+        assert r.status_code == 200, r.text
+
+
+def test_xoa_nguoi_chua_co_du_lieu(client_users, conn, admin, users):
+    k = admin["k"]
+    person = save(client_users, admin, "person", {"full_name": "Nhập nhầm", "employee_code": k("NHAM")}).json()["id"]
+    pos = save(client_users, admin, "position", {"org_unit_id": admin[k("PHONG")], "name": "Ghế thử"}).json()["id"]
+    assert (
+        save(
+            client_users, admin, "assignment", {"person_id": person, "position_id": pos, "assignment_type": "PRIMARY"}
+        ).status_code
+        == 200
+    )
+    conn.execute("UPDATE core.person SET idp_subject = %s WHERE id = %s", (f"kc-{k('x')}", person))
+
+    assert delete(client_users, admin, person, who="nv").status_code == 403
+    r = delete(client_users, admin, person)
+    assert r.status_code == 400 and "còn giữ vị trí" in r.json()["message"]
+
+    _end_assignments(client_users, conn, admin, person)
+    r = delete(client_users, admin, person)
+    assert r.status_code == 200, r.text
+    assert r.json()["account"] == "disabled" and users.disabled == [f"kc-{k('x')}"]
+    assert conn.execute("SELECT 1 FROM core.person WHERE id = %s", (person,)).fetchone() is None
+    assert conn.execute("SELECT 1 FROM core.assignment WHERE person_id = %s", (person,)).fetchone() is None
+    assert conn.execute(
+        "SELECT 1 FROM audit.log WHERE table_name = 'core.person' AND row_id::text = %s AND op = 'DELETE'", (person,)
+    ).fetchone()
+    assert delete(client_users, admin, person).status_code == 404
+
+
+def test_xoa_nguoi_giu_tai_khoan_dung_chung(client_users, conn, admin, users):
+    k = admin["k"]
+    subject = f"kc-{k('chung')}"
+    first = save(client_users, admin, "person", {"full_name": "Một", "employee_code": k("A")}).json()["id"]
+    conn.execute("UPDATE core.person SET idp_subject = %s WHERE id = %s", (subject, first))
+    conn.execute(
+        "INSERT INTO core.person (tenant_id, full_name, idp_subject) VALUES (test.id('BVX'), 'Hai', %s)", (subject,)
+    )
+    r = delete(client_users, admin, first)
+    assert r.status_code == 200, r.text
+    assert r.json()["account"] == "kept" and users.disabled == []
+
+
+def test_khong_xoa_nguoi_da_co_chung_tu(client_users, conn, admin):
+    k = admin["k"]
+    nv = admin[k("nv")]
+    pr(conn, k("de_nghi"), k("nv"), k("P_NV"), 1_000_000, submit=False)
+    _end_assignments(client_users, conn, admin, nv)
+    r = delete(client_users, admin, nv)
+    assert r.status_code == 400 and "đề nghị mua sắm" in r.json()["message"], r.text
+    assert conn.execute("SELECT 1 FROM core.assignment WHERE person_id = %s", (nv,)).fetchone()
+    assert delete(client_users, admin, admin[k("gd")]).status_code == 400

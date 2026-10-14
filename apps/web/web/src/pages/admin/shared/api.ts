@@ -31,6 +31,16 @@ export const adminClose = async (entity: AdminEntity, id: string, endDate?: stri
   );
 };
 
+export type DeletedAccount = "none" | "kept" | "disabled";
+
+export const deletePerson = async (id: string): Promise<DeletedAccount> => {
+  const r = await request<{ delete_person: { account: DeletedAccount } }>(
+    `mutation DeletePerson($id: uuid!) { delete_person(id: $id) { account } }`,
+    { id },
+  );
+  return r.delete_person.account;
+};
+
 export type AccountInput = { person_id: string; username: string; email?: string | null; link_existing?: boolean };
 export type AccountResult = {
   person_id: string;
