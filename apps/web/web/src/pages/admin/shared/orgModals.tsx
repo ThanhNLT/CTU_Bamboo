@@ -5,7 +5,7 @@
 // Hộp thoại thêm / sửa đơn vị, vị trí và bổ nhiệm — dùng ở trang Cơ cấu tổ chức và trang Người dùng.
 
 // ===== Thư viện =====
-import { DatePicker, Form, Input, Radio, Select, Switch, TreeSelect } from "antd"; // Ant Design
+import { DatePicker, Form, Input, InputNumber, Radio, Select, Switch, TreeSelect } from "antd"; // Ant Design
 import type { Dayjs } from "dayjs"; // Day.js
 
 // ===== Module nội bộ =====
@@ -16,7 +16,16 @@ import { toDate } from "./period";
 import { useUnitTree } from "./useUnitTree";
 
 // ===== Kiểu dữ liệu =====
-type UnitValues = { code: string; name: string; unit_type_id: string; parent_id: string; is_legal_entity: boolean };
+type UnitValues = {
+  code: string;
+  name: string;
+  unit_type_id: string;
+  parent_id: string;
+  is_legal_entity: boolean;
+  province?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+};
 
 // ===== Component =====
 export const UnitModal = ({
@@ -49,11 +58,24 @@ export const UnitModal = ({
               unit_type_id: unit.unit_type_id,
               parent_id: unit.parent_id ?? undefined,
               is_legal_entity: unit.is_legal_entity,
+              province: unit.province,
+              lat: unit.lat,
+              lng: unit.lng,
             }
           : { parent_id: parentId, is_legal_entity: false }
       }
       onCancel={onClose}
-      onSubmit={async (v) => onSaved(await adminSave("org_unit", { id: unit?.id, ...v }))}
+      onSubmit={async (v) =>
+        onSaved(
+          await adminSave("org_unit", {
+            id: unit?.id,
+            ...v,
+            province: v.province ?? null,
+            lat: v.lat ?? null,
+            lng: v.lng ?? null,
+          }),
+        )
+      }
     >
       {() => (
         <>
@@ -104,6 +126,17 @@ export const UnitModal = ({
           >
             <Switch />
           </Form.Item>
+          <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
+            <Form.Item name="province" label="Tỉnh / thành của cơ sở">
+              <Input placeholder="Bắc Ninh" />
+            </Form.Item>
+            <Form.Item name="lat" label="Vĩ độ">
+              <InputNumber min={-90} max={90} step={0.0001} className="w-full" placeholder="21.1861" />
+            </Form.Item>
+            <Form.Item name="lng" label="Kinh độ" extra="Có tọa độ thì đơn vị hiện trên bản đồ Trung tâm điều hành.">
+              <InputNumber min={-180} max={180} step={0.0001} className="w-full" placeholder="106.0763" />
+            </Form.Item>
+          </div>
         </>
       )}
     </FormModal>

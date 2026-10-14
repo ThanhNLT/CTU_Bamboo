@@ -182,6 +182,24 @@ LOTS = [
     ("PMIC-2609-B", "LK-PMIC", "CHIP_PX", 150_000, "2026-09-19", "RELEASED"),
     ("SOC-2609-A", "LK-SOC-MAU", "CHIP_PS", 2_000, "2026-09-15", "RELEASED"),
 ]
+# Lô gần đây cho bảng Sản xuất của Trung tâm điều hành (ADR #49): (số lô, vật tư, đơn vị, số lượng, cách hôm nay
+# bao nhiêu ngày, trạng thái, ghi chú). Ngày tính lúc nạp nên lần đầu cài luôn có số liệu trong kỳ.
+RECENT_LOTS = [
+    ("PMIC-R-01", "LK-PMIC", "CHIP_PX", 180_000, 20, "RELEASED", None),
+    ("PMIC-R-02", "LK-PMIC", "CHIP_PX", 160_000, 12, "RELEASED", None),
+    ("PMIC-R-03", "LK-PMIC", "CHIP_PX", 90_000, 6, "ON_HOLD", "Chờ kết quả kiểm tra điện áp ngưỡng"),
+    ("SOC-R-01", "LK-SOC-MAU", "CHIP_PS", 1_500, 9, "RELEASED", None),
+    ("SOC-R-02", "LK-SOC-MAU", "CHIP_PS", 800, 3, "SCRAPPED", "Lỗi quang khắc lớp kim loại 2"),
+]
+# Vị trí cơ sở (tỉnh, vĩ độ, kinh độ) của các công ty để hiện trên bản đồ điều hành.
+SITES = {
+    "TDX": [
+        ("DT", "Thái Nguyên", 21.59422, 105.84817),
+        ("CHIP", "Bắc Ninh", 21.18612, 106.07631),
+        ("GD", "Hải Dương", 20.93734, 106.31455),
+    ],
+    "BVX": [("BVX", "Hà Nội", 20.97136, 105.77876)],
+}
 # Khối kinh doanh xác nhận đơn hàng nội bộ bán ra từ công ty mình: đơn vị → công ty.
 SALES_SCOPE = {"CHIP_KD": "CHIP", "DT_KD": "DT", "GD_PP": "GD"}
 # Đơn đã giao xong: Điện thoại X mua PMIC của Chip X (lô PMIC-2609-A), trưởng phòng mua hàng duyệt, kinh doanh
@@ -886,6 +904,42 @@ class Seeder:
                 owner[0],
             )
 
+    def ops_demo(self):
+        """Trung tâm điều hành (ADR #49): vai trò xem số liệu tổng hợp của tenant con, tọa độ cơ sở, lô gần đây.
+        Chạy lại không tạo trùng, không ghi đè tọa độ đã sửa."""
+        self.seat_role(
+            "DIEU_HANH_TAP_DOAN",
+            "Điều hành tập đoàn",
+            "ops.group.read",
+            {"TDX": ["TDX.HEAD", "TDX_CDS.HEAD"], "BVX": ["BVX.HEAD", "BVX_KHTH.HEAD"]},
+        )
+        for code, sites in SITES.items():
+            for unit, province, lat, lng in sites:
+                self.x(
+                    "UPDATE core.org_unit SET province = %s, lat = %s, lng = %s WHERE id = %s AND lat IS NULL",
+                    province,
+                    lat,
+                    lng,
+                    uid(code, "unit", unit),
+                )
+        tdx = self.tenant_id("TDX")
+        for lot_no, item, unit, quantity, ago, status, note in RECENT_LOTS:
+            self.x(
+                """INSERT INTO mfg.lot (tenant_id, id, lot_no, item_id, org_unit_id, quantity, uom, produced_on, status,
+                                        note)
+                      SELECT %s, %s, %s, i.id, %s, %s, i.uom, current_date - %s, %s, %s FROM mdm.item i WHERE i.id = %s
+                      ON CONFLICT DO NOTHING""",
+                tdx,
+                uid("TDX", "lot", lot_no),
+                lot_no,
+                uid("TDX", "unit", unit),
+                quantity,
+                ago,
+                status,
+                note,
+                uid("TDX", "item", item),
+            )
+
     def library_demo(self):
         """Thư viện tri thức (ADR #48): vai trò đề xuất / quản lý, quy tắc duyệt KB_DOCUMENT (trưởng đơn vị của người
         lập), vài tài liệu đã xuất bản. Chạy lại không tạo trùng."""
@@ -1016,11 +1070,12 @@ class Seeder:
         self.master_data_admin_demo()
         self.process_design_demo()
         self.library_demo()
+        self.ops_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
     """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự, đơn
-    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ, thiết kế quy trình, thư viện)."""
+    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ, thiết kế quy trình, thư viện, điều hành)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
@@ -1031,6 +1086,7 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.master_data_admin_demo()
             seeder.process_design_demo()
             seeder.library_demo()
+            seeder.ops_demo()
         return False
     with conn.transaction():
         Seeder(conn).run()

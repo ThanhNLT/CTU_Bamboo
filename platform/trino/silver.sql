@@ -316,6 +316,9 @@ SELECT
     json_extract_scalar(after, '$["path"]') AS "path",
     json_extract_scalar(after, '$["valid_period"]') AS "valid_period",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    json_extract_scalar(after, '$["province"]') AS "province",
+    CAST(json_extract_scalar(after, '$["lat"]') AS decimal(8, 5)) AS "lat",
+    CAST(json_extract_scalar(after, '$["lng"]') AS decimal(8, 5)) AS "lng",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (

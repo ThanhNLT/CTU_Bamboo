@@ -162,6 +162,14 @@ _Tránh dùng_: đăng tài liệu, upload tài liệu
 
 ## Dữ liệu
 
+**Cơ sở** (đơn vị có tọa độ):
+Đơn vị (thường là công ty, nhà máy, bệnh viện) có tỉnh và tọa độ, hiện trên bản đồ của Trung tâm điều hành cùng số việc duyệt đang chờ, quá hạn và lô đang giữ trong nhánh của nó.
+_Tránh dùng_: site, địa điểm (khi nói đơn vị)
+
+**Số tổng hợp của tenant con**:
+Số đếm và tổng tiền (không có chứng từ, không có tên người) của một tenant con như Bệnh viện X mà người có quyền điều hành tập đoàn ở công ty mẹ được xem.
+_Tránh dùng_: dữ liệu bệnh viện (khi chỉ là số tổng hợp)
+
 **Tập dữ liệu** (view `lakehouse.silver.<schema>_<bảng>`):
 Trạng thái hiện tại của một bảng nghiệp vụ trong Lakehouse, dựng từ lịch sử thay đổi (CDC) ở tầng bronze; mỗi bản ghi một dòng. Người có quyền `data.lakehouse.read` xem tập dữ liệu của tenant đang chọn trên trang Dịch vụ dữ liệu, dữ liệu cá nhân đã che.
 _Tránh dùng_: bảng (bảng là ở CSDL nghiệp vụ), mart (mart là bảng tổng hợp cho BI, chưa có)

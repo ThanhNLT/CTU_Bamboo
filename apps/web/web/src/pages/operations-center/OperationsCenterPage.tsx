@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Trung tâm điều hành (Dữ liệu số): 5 KPI · 4 khối biểu đồ (2×2) · bảng quá hạn SLA.
+// Trung tâm điều hành (Dữ liệu số). Tổng quan: 5 KPI · 4 khối biểu đồ (2×2, có bản đồ cơ sở) · bảng quá hạn SLA.
 // Tô sáng chéo: bấm thanh/chú giải/dòng của một công ty → cả trang làm nổi công ty đó; Esc để bỏ.
-// Dữ liệu thật qua ./useOpsData (trong phạm vi tenant và quyền xem); riêng bản đồ cảnh báo thiết bị còn minh họa (./sample).
+// Tổng quan tính ở trình duyệt (./useOpsData); bản đồ và các bảng Quy trình, Sản xuất, Bệnh viện, Chất lượng dữ liệu
+// tính ở máy chủ (Action ops_dashboard, ./api, ADR #49). Mọi số liệu trong phạm vi tenant và quyền xem.
 
 // ===== Thư viện =====
 import { Alert } from "antd"; // Ant Design
@@ -19,14 +20,15 @@ import { MonthlyApprovalsChart } from "./components/MonthlyApprovalsChart";
 import { OpsHeader } from "./components/OpsHeader";
 import { OverdueTable } from "./components/OverdueTable";
 import { PendingByCompanyChart } from "./components/PendingByCompanyChart";
-import { WarningMapWidget } from "./components/WarningMapWidget";
-import { SITES } from "./sample";
+import { HospitalBoard } from "./components/HospitalBoard";
+import { ProcessBoard } from "./components/ProcessBoard";
+import { ProductionBoard } from "./components/ProductionBoard";
+import { QualityBoard } from "./components/QualityBoard";
+import { SiteMapWidget } from "./components/SiteMapWidget";
+import { useOpsTab } from "./api";
 import type { CompanyKey, DashTab, Period } from "./types";
-import { useOpsData } from "./useOpsData";
+import { PERIOD_DAYS, useOpsData } from "./useOpsData";
 import { SLA_HOURS } from "../inbox/useInboxTasks";
-
-// ===== Hằng số =====
-const PROVINCES = [...new Set(SITES.map((s) => s.province))];
 
 // ===== Component =====
 export const OperationsCenterPage = () => {
@@ -59,7 +61,17 @@ export const OperationsCenterPage = () => {
     else void rootRef.current?.requestFullscreen?.();
   };
 
-  const sites = useMemo(() => (province === "all" ? SITES : SITES.filter((s) => s.province === province)), [province]);
+  const days = PERIOD_DAYS[period];
+  const sitesQ = useOpsTab(tab === "overview" ? "sites" : null, days);
+  const allSites = useMemo(() => sitesQ.data?.sites ?? [], [sitesQ.data]);
+  const provinces = useMemo(
+    () => [...new Set(allSites.map((s) => s.province).filter((p): p is string => Boolean(p)))].sort(),
+    [allSites],
+  );
+  const sites = useMemo(
+    () => (province === "all" ? allSites : allSites.filter((s) => s.province === province)),
+    [allSites, province],
+  );
 
   return (
     <div
@@ -74,7 +86,7 @@ export const OperationsCenterPage = () => {
         period={period}
         onPeriodChange={setPeriod}
         province={province}
-        provinces={PROVINCES}
+        provinces={provinces}
         onProvinceChange={setProvince}
         highlightLabel={highlight ? ops.company[highlight]?.name : undefined}
         onClearHighlight={() => setHighlight(undefined)}
@@ -84,11 +96,11 @@ export const OperationsCenterPage = () => {
         }}
       />
 
-      {tab !== "overview" ? (
-        <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-16 text-center text-[13px] text-muted">
-          Bảng điều hành này sẽ có khi nối dịch vụ dữ liệu. Hiện chỉ có “Tổng quan”.
-        </div>
-      ) : (
+      {tab === "process" && <ProcessBoard days={days} sla={SLA_HOURS} />}
+      {tab === "production" && <ProductionBoard days={days} />}
+      {tab === "hospital" && <HospitalBoard days={days} />}
+      {tab === "quality" && <QualityBoard />}
+      {tab === "overview" && (
         <>
           {ops.error && (
             <Alert type="error" showIcon message="Không tải được một phần số liệu" description={ops.error} />
@@ -116,7 +128,7 @@ export const OperationsCenterPage = () => {
               highlight={highlight}
               onHighlight={setHighlight}
             />
-            <WarningMapWidget sites={sites} />
+            <SiteMapWidget sites={sites} loading={sitesQ.loading} />
             <MonthlyApprovalsChart data={ops.monthly} year={dayjs().year()} meta={meta} />
           </div>
 
