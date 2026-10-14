@@ -25,7 +25,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.2.0
       - name: Giấy phép từng tệp (REUSE 3.3)
-        run: uvx --from 'reuse[charset-normalizer]' reuse lint
+        # reuse 6.x đoán bảng mã từ 2 KB đầu tệp; khi mốc 2 KB cắt giữa một ký tự tiếng Việt thì
+        # đoán thất bại, bỏ qua cả tệp và báo thiếu giấy phép. Ghim 5.1.1 (đọc cả tệp) đến khi upstream sửa.
+        run: uvx --from 'reuse[charset-normalizer]==5.1.1' reuse lint
       - name: Python (ruff)
         run: |
           uvx ruff check services --select E,F,W,B --ignore E501
