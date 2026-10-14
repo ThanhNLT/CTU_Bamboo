@@ -2,16 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 018: Nhà cung cấp đề xuất ngoài danh mục; hạn mức dung lượng tệp theo tenant.
---
--- Người lập đề nghị mua sắm gõ được nhà cung cấp chưa có trong danh mục (tên, mã số thuế): ghi trên đề nghị,
--- người có quyền mdm.manage thêm vào danh mục dùng chung (mdm.adopt_proposed_partner). Hạn mức dung lượng tệp
--- đính kèm tính cho cả tenant (mặc định 10 GB, quản trị tổ chức sửa được), chặn cấp link tải lên khi vượt.
-
--- ---------------------------------------------------------------------------
--- Nhà cung cấp đề xuất
--- ---------------------------------------------------------------------------
-
 ALTER TABLE proc.purchase_request
     ADD COLUMN proposed_partner_name text
         CHECK (proposed_partner_name IS NULL OR length(btrim(proposed_partner_name)) BETWEEN 2 AND 200),
@@ -21,13 +11,9 @@ ALTER TABLE proc.purchase_request
     ADD CONSTRAINT purchase_request_tax_needs_name
         CHECK (proposed_partner_tax_code IS NULL OR proposed_partner_name IS NOT NULL);
 
--- Đề nghị đang đề xuất nhà cung cấp ngoài danh mục (màn hình dữ liệu chủ, tính cả đề nghị đã kết thúc).
 CREATE INDEX purchase_request_proposed_partner ON proc.purchase_request (tenant_id)
     WHERE proposed_partner_name IS NOT NULL;
 
--- Thêm nhà cung cấp đề xuất của một đề nghị vào danh mục. Đã có nhà cung cấp cùng mã số thuế thì dùng lại.
--- Mọi đề nghị cùng tenant đề xuất cùng mã số thuế (hoặc cùng tên khi không có mã số thuế) chuyển sang nhà cung
--- cấp trong danh mục. Trả về id nhà cung cấp.
 CREATE FUNCTION mdm.adopt_proposed_partner(p_request uuid, p_person uuid, p_code text) RETURNS uuid
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -69,7 +55,6 @@ BEGIN
     RETURN v_id;
 END $$;
 
--- Tài liệu tìm kiếm của đề nghị: tên nhà cung cấp đề xuất cũng tìm được.
 CREATE OR REPLACE FUNCTION search.purchase_request_doc(p_id uuid) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
     SELECT jsonb_build_object(
@@ -94,15 +79,9 @@ LANGUAGE sql STABLE AS $$
     WHERE r.id = p_id
 $$;
 
--- ---------------------------------------------------------------------------
--- Hạn mức dung lượng tệp theo tenant
--- ---------------------------------------------------------------------------
-
 ALTER TABLE core.tenant
     ADD COLUMN storage_quota_bytes bigint NOT NULL DEFAULT 10737418240 CHECK (storage_quota_bytes > 0);
 
--- Dung lượng đang dùng: tệp sạch chưa xóa, cộng tệp vừa cấp link tải lên trong 1 giờ qua (đang tải, chờ quét).
--- Link tải lên hết hạn sau 15 phút nên tệp PENDING cũ hơn không còn giữ chỗ.
 CREATE FUNCTION core.storage_used(p_tenant uuid) RETURNS bigint
 LANGUAGE sql STABLE AS $$
     SELECT coalesce(sum(size_bytes), 0)::bigint FROM core.attachment

@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Prettier (định dạng mã giao diện): bỏ qua tệp sinh ra và tệp khóa phụ thuộc.
 dist/
 node_modules/
 playwright-report/

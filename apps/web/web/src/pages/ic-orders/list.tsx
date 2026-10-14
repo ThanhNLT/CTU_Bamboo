@@ -2,18 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { List, ShowButton, useTable } from "@refinedev/antd"; // Refine Ant Design
-import type { BaseRecord } from "@refinedev/core"; // Refine
-import { Segmented, Space, Table, Typography } from "antd"; // Ant Design
+import { List, ShowButton, useTable } from "@refinedev/antd";
+import type { BaseRecord } from "@refinedev/core";
+import { Segmented, Space, Table, Typography } from "antd";
 
-// ===== Module nội bộ =====
 import { IC_LIST } from "./queries";
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, formatMoney } from "../../utils/format";
 import { IC_STATUS_LABEL } from "../../utils/status";
 
-// ===== Kiểu dữ liệu =====
 type Row = BaseRecord & {
   doc_no: string;
   status: string;
@@ -25,12 +22,9 @@ type Row = BaseRecord & {
   created_by_person?: { full_name: string };
 };
 
-// ===== Hằng số =====
 const FILTERS = ["ALL", "MINE", "PENDING", "CONFIRMED", "REJECTED", "CANCELLED"];
 
-// ===== Component =====
 export const IcOrderList = () => {
-  // Bên mua thấy đơn mình đặt (và đơn của đề nghị mình xem được), bên bán thấy đơn bán ra (can_read ở Hasura).
   const { tableProps, filters, setFilters } = useTable<Row>({
     resource: "ic_ic_order",
     syncWithLocation: true,

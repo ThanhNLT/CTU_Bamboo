@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import type { ReactElement } from "react"; // React
-import { Tag } from "antd"; // Ant Design
+import type { ReactElement } from "react";
+import { Tag } from "antd";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -12,13 +11,10 @@ import {
   EditOutlined,
   RollbackOutlined,
   StopOutlined,
-} from "@ant-design/icons"; // Ant Design Icons
+} from "@ant-design/icons";
 
-// ===== Module nội bộ =====
 import { PR_STATUS_LABEL } from "../utils/status";
 
-// ===== Hằng số =====
-// Trạng thái luôn có chữ và biểu tượng, không truyền nghĩa chỉ bằng màu (UI-10).
 const STYLE: Record<string, { color: string; icon: ReactElement }> = {
   DRAFT: { color: "default", icon: <EditOutlined /> },
   PENDING: { color: "processing", icon: <ClockCircleOutlined /> },
@@ -30,7 +26,6 @@ const STYLE: Record<string, { color: string; icon: ReactElement }> = {
   CANCELLED: { color: "default", icon: <StopOutlined /> },
 };
 
-// ===== Component =====
 export const StatusTag = ({
   status,
   labels = PR_STATUS_LABEL,

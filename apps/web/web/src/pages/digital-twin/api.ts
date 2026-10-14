@@ -2,25 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dữ liệu Bản sao số (ADR #50): thực thể NGSI-LD, mô hình (ngưỡng), giá trị mới nhất, sự cố (bảng iot.*, Hasura lọc
-// tenant) và chuỗi đo theo khoảng thời gian. Trạng thái thẻ TÍNH từ dữ liệu: Nguy cấp khi có sự cố nghiêm trọng chưa
-// ghi nhận (đang mở hoặc vừa kết thúc trong 60 phút), Cảnh báo khi giá trị ngoài ngưỡng.
+import { useCallback, useEffect, useState } from "react";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { EntityCategory, EntityStatus, Incident, Metric, MetricStatus, SeriesPoint, TwinEntity } from "./types";
 import { ENTITY_STATUS, formatDuration, formatNumber, thresholdText, worstStatus } from "./utils";
 
-// ===== Hằng số =====
 const REFRESH_MS = 60_000;
 const MINUTE = 60_000;
-/** Sự cố nghiêm trọng đã kết thúc vẫn giữ "Nguy cấp" trong khoảng này nếu chưa ai ghi nhận. */
 const RECENT_MINUTES = 60;
 
-// ===== Truy vấn GraphQL =====
 const ENTITIES = `query TwinEntities {
   iot_entity(order_by: {code: asc}) {
     id code urn type name site_code connection_state last_seen_at state
@@ -38,7 +29,6 @@ const SERIES = `query TwinSeries($e: uuid!, $a: String!, $since: timestamptz!) {
                   order_by: {observed_at: asc}) { observed_at value }
 }`;
 
-// ===== Kiểu dữ liệu =====
 type Attr = {
   key: string;
   label: string;
@@ -79,7 +69,6 @@ type EntityRow = {
   incidents: IncidentRow[];
 };
 
-// ===== Hàm tiện ích =====
 const toIncident = (r: IncidentRow): Incident => ({
   id: r.id,
   code: r.code,
@@ -97,7 +86,6 @@ const toIncident = (r: IncidentRow): Incident => ({
   ackNote: r.ack_note,
 });
 
-/** Sự cố nghiêm trọng chưa ghi nhận, đang mở hoặc vừa kết thúc. */
 const pressing = (i: Incident, now: number) =>
   i.severity === "critical" &&
   !i.acknowledgedAt &&
@@ -168,8 +156,6 @@ export const toEntity = (r: EntityRow, now: number): TwinEntity => {
   };
 };
 
-// ===== Hook =====
-/** Thực thể của tenant, tự làm mới mỗi phút. */
 export const useTwinEntities = () => {
   const [state, setState] = useState<{ entities: TwinEntity[]; loading: boolean; error?: string; at: number }>({
     entities: [],
@@ -193,7 +179,6 @@ export const useTwinEntities = () => {
   return { ...state, reload: load };
 };
 
-/** Chuỗi đo của một thuộc tính trong `minutes` phút gần nhất. */
 export const useSeries = (entityUuid: string | undefined, attribute: string | undefined, minutes: number) => {
   const [state, setState] = useState<{ key: string; points: SeriesPoint[]; loading: boolean }>({
     key: "",
@@ -226,7 +211,6 @@ export const useSeries = (entityUuid: string | undefined, attribute: string | un
   return state.key === key ? state : { key, points: [], loading: true };
 };
 
-/** Ghi nhận sự cố kèm hướng xử lý (Action iot_acknowledge). */
 export const acknowledgeIncident = (id: string, note: string) =>
   request(`mutation Ack($id: uuid!, $note: String!) { iot_acknowledge(id: $id, note: $note) { id acknowledged_at } }`, {
     id,

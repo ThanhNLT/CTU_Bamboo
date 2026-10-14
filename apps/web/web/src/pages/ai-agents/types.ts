@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Kiểu dữ liệu =====
 export type AgentStatus = "active" | "paused" | "pending";
 
 export type GuardKey = "scope-guard" | "pii-guard" | "prompt-guard";
@@ -15,7 +14,6 @@ export type GuardEvent = {
   id: string;
   title: string;
   at: string;
-  /** Người dùng (đã rút gọn) hoặc tên rào chắn phát hiện. */
   source: string;
   guard: GuardKey;
   action: "blocked" | "masked";
@@ -39,9 +37,7 @@ export type Agent = {
   model: string;
   tools: string[];
   status: AgentStatus;
-  /** Phiên trong 24 giờ. */
   sessions24h: number;
-  /** Lượt gọi công cụ / lỗi trong 24 giờ: "Lỗi" = errors / calls. */
   calls24h: number;
   errors24h: number;
   p95: number;

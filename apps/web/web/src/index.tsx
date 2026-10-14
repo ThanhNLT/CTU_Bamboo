@@ -2,16 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { createRoot } from "react-dom/client"; // React DOM
-import { ReactKeycloakProvider } from "@react-keycloak/web"; // React Keycloak
+import { createRoot } from "react-dom/client";
+import { ReactKeycloakProvider } from "@react-keycloak/web";
 
-// ===== Module nội bộ =====
 import App from "./App";
 import { setToken } from "./api/client";
 import { keycloak } from "./auth/keycloak";
 
-// ===== Khởi tạo =====
 const root = createRoot(document.getElementById("root") as HTMLElement);
 
 root.render(

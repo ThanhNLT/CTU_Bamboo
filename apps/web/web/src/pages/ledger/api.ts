@@ -2,13 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Gọi các Action Sổ cái (ADR #46). Máy chủ chỉ trả tệp của chứng từ người dùng xem được.
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { AccessLog, ArchiveDoc, ArchiveView, LedgerOverview, Seal, VerifyResult } from "./types";
 
-// ===== Truy vấn GraphQL =====
 const SEAL = `attachment_id entity_type entity_id code version title file_name unit sealed_at channel block tx_id
   sha256 last_result last_checked_at`;
 
@@ -27,7 +23,6 @@ const ARCHIVE = `query LedgerArchive { ledger_archive {
 const OPEN = `mutation LedgerOpen($id: uuid!) { ledger_open_archive(attachment_id: $id) {
   attachment_id title file_name content_type viewer opened_at url } }`;
 
-// ===== Kiểu dữ liệu =====
 type SealRow = {
   attachment_id: string;
   entity_type: string;
@@ -46,7 +41,6 @@ type SealRow = {
   last_checked_at: string | null;
 };
 
-// ===== Hàm tiện ích =====
 const toSeal = (r: SealRow): Seal => ({
   attachmentId: r.attachment_id,
   entityType: r.entity_type,
@@ -94,7 +88,6 @@ export const fetchOverview = async (limit = 20): Promise<LedgerOverview> => {
   };
 };
 
-/** Đối soát theo mã hồ sơ (`code`) hoặc theo SHA-256 của tệp đã băm trên máy (`sha256`). */
 export const verify = async (input: { code: string } | { sha256: string; fileName: string }): Promise<VerifyResult> => {
   const { ledger_verify: r } = await request<{
     ledger_verify: {
@@ -157,7 +150,6 @@ export const fetchArchive = async (): Promise<{ docs: ArchiveDoc[]; access: Acce
   };
 };
 
-/** Mở hồ sơ ở phòng đọc: máy chủ ghi nhật ký truy cập, trả link xem trực tiếp hạn 60 giây. */
 export const openArchive = async (attachmentId: string): Promise<ArchiveView> => {
   const { ledger_open_archive: v } = await request<{
     ledger_open_archive: {

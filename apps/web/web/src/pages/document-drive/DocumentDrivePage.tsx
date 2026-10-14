@@ -2,17 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Ổ đĩa tài liệu (Con người số): cột trái chọn vùng + dung lượng; cột phải là thư mục (mỗi chứng từ có tệp là một
-// thư mục) và tệp. Dữ liệu thật qua ./useDrive; tải lên thật qua ./useUploadQueue vào chứng từ đang mở.
-// ?folder=<id chứng từ> trên URL mở sẵn một thư mục.
+import { Alert, App } from "antd";
+import { ExternalLink } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { Alert, App } from "antd"; // Ant Design
-import { ExternalLink } from "lucide-react"; // Lucide React
-import { useMemo, useState } from "react"; // React
-import { Link, useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { UploadTargetModal } from "./components/UploadTargetModal";
 import { useDriveUsage } from "./useDriveUsage";
 import { request } from "../../api/client";
@@ -30,11 +24,8 @@ import { useDrive } from "./useDrive";
 import { useUploadQueue } from "./useUploadQueue";
 import { sortFiles } from "./utils";
 
-// ===== Hằng số =====
-// Chứng từ đã có kết quả thì không nhận thêm tệp (máy chủ cũng chặn).
 const LOCKED = new Set(["APPROVED", "REJECTED", "CANCELLED"]);
 
-// ===== Component =====
 export const DocumentDrivePage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();

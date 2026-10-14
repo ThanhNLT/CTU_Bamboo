@@ -2,29 +2,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Đối chiếu CSDL → Flowable thật (ADR #31)."""
+import psycopg
+import pytest
+from psycopg.rows import dict_row
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-import pytest  # pytest
-from psycopg.rows import dict_row  # psycopg
-
-# ===== Module nội bộ =====
 from app import flow_sync
 from conftest import ids, open_task, pr
 
-# ===== Hằng số & cấu hình =====
 PROCESS = flow_sync.PROCESS_KEY
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture
 def work(database):
     with psycopg.connect(database, row_factory=dict_row) as c:
         yield c
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def sync(work, flowable):
     while flow_sync.run_once(work, flowable):
         pass
@@ -47,7 +40,6 @@ def approve(conn, pr_id, person_key):
     conn.execute("SELECT wf.act(%s, test.id(%s), 'APPROVE')", (open_task(conn, pr_id)["id"], person_key))
 
 
-# ===== Kiểm thử =====
 def test_hai_buoc_den_khi_duyet_xong(flowable, conn, work, org):
     k = org
     i = ids(conn, k("gd"), "tgd")
@@ -67,7 +59,7 @@ def test_hai_buoc_den_khi_duyet_xong(flowable, conn, work, org):
     proc = process(flowable, pr_id)
     assert proc["endTime"] is not None and proc["endActivityId"] == "approved"
 
-    sync(work, flowable)  # chạy lại không đổi gì
+    sync(work, flowable)
     assert process(flowable, pr_id)["endActivityId"] == "approved"
 
 

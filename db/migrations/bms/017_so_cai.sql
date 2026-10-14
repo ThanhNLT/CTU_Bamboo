@@ -2,17 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 017: Sổ cái đối soát toàn vẹn tài liệu (ADR #46).
---
--- "Bản niêm phong" của một tệp đính kèm là dòng nhật ký kiểm toán ghi lúc tệp được nhận (trạng thái CLEAN, kèm
--- SHA-256 tính trên đúng nội dung đã quét): dòng đó nằm trong chuỗi hash của tenant (ADR #18, #33) nên không sửa
--- được mà không lộ. Đối soát = đọc lại tệp trong kho, tính lại SHA-256 và so với bản niêm phong.
--- Lịch sử đối soát và nhật ký phòng đọc chỉ ghi thêm, qua hàm của dịch vụ actions; schema `audit` nằm ngoài CDC.
-
--- ---------------------------------------------------------------------------
--- Lịch sử đối soát và nhật ký phòng đọc
--- ---------------------------------------------------------------------------
-
 CREATE TABLE audit.ledger_check (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
     id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -37,7 +26,6 @@ CREATE TABLE audit.archive_access (
 );
 CREATE INDEX ON audit.archive_access (tenant_id, opened_at DESC);
 
--- Chỉ ghi thêm (như audit.log).
 CREATE FUNCTION audit.append_only() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -48,10 +36,6 @@ CREATE TRIGGER append_only BEFORE UPDATE OR DELETE ON audit.ledger_check
 FOR EACH ROW EXECUTE FUNCTION audit.append_only();
 CREATE TRIGGER append_only BEFORE UPDATE OR DELETE ON audit.archive_access
 FOR EACH ROW EXECUTE FUNCTION audit.append_only();
-
--- ---------------------------------------------------------------------------
--- Hàm ghi (ứng dụng chỉ có quyền đọc schema audit, ADR #35)
--- ---------------------------------------------------------------------------
 
 CREATE FUNCTION audit.add_ledger_check(p_tenant uuid, p_attachment uuid, p_via text, p_query text, p_result text,
                                        p_expected text, p_actual text, p_person uuid)
@@ -74,11 +58,6 @@ $$;
 REVOKE EXECUTE ON FUNCTION audit.add_ledger_check(uuid, uuid, text, text, text, text, text, uuid) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION audit.add_archive_access(uuid, uuid, uuid) FROM PUBLIC;
 
--- ---------------------------------------------------------------------------
--- Bản niêm phong của tệp và kiểm tra một mắt xích của chuỗi hash
--- ---------------------------------------------------------------------------
-
--- Dòng nhật ký ghi lúc tệp được nhận (lần đầu chuyển sang CLEAN). NULL nếu tệp chưa từng sạch.
 CREATE FUNCTION audit.attachment_seal(p_attachment uuid) RETURNS audit.log
 LANGUAGE sql STABLE AS $$
     SELECT l.* FROM audit.log l
@@ -89,8 +68,6 @@ LANGUAGE sql STABLE AS $$
     LIMIT 1
 $$;
 
--- Một dòng nhật ký còn nguyên và còn nằm trong chuỗi: hash tính lại khớp, dòng kế tiếp trỏ về đúng hash này
--- (hoặc đây là đầu chuỗi). Kiểm tra cả chuỗi: audit.verify_chain.
 CREATE FUNCTION audit.entry_intact(p_log bigint) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT audit.compute_hash(l) = l.hash

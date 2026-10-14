@@ -2,13 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Bảng "Quy trình": thông lượng và thời gian xử lý của chuỗi duyệt, theo loại chứng từ, điểm nghẽn theo vị trí duyệt.
-// Số liệu: wf.approval_history, wf.task của chứng từ người dùng được xem (Action ops_dashboard).
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-// ===== Thư viện =====
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
-
-// ===== Module nội bộ =====
 import { useOpsTab } from "../api";
 import { BAMBOO_DARK, BAMBOO_LIGHT, AXIS_TICK, GRID_STROKE } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
@@ -16,7 +11,6 @@ import { ChartWidget, DefinitionButton } from "./ChartWidget";
 import { fmtBucket, fmtHours, fmtNum, kpi } from "../boardFormat";
 import { BoardState, KpiRow, NumTable } from "./BoardParts";
 
-// ===== Hằng số =====
 const SERIES: Record<string, string> = {
   submitted: "Gửi duyệt",
   completed: "Duyệt xong",
@@ -24,7 +18,6 @@ const SERIES: Record<string, string> = {
 };
 const OTHER_COLOR = "#eb6834";
 
-// ===== Component =====
 export const ProcessBoard = ({ days, sla }: { days: number; sla: number }) => {
   const { data, error, loading, at } = useOpsTab("process", days);
   const t = data?.totals;

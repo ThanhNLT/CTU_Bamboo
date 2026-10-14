@@ -2,35 +2,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""CDC (ADR #38): Debezium đọc WAL của CSDL bms và ghi vào Kafka. Kiểm thử chỉ đọc Kafka, không ghi dữ liệu
-nghiệp vụ: nhịp tim Debezium tự ghi mỗi 10 giây đi hết đường CSDL → Debezium → Kafka. Đọc bằng tài khoản SCRAM
-`lakehouse` (ADR #45) lấy từ OpenBao; kiểm thêm Kafka từ chối client không xác thực và tài khoản chỉ đọc không ghi được.
-
-Biến môi trường: KAFKA_BOOTSTRAP (mặc định kafka:9092). Không truy cập được thì bỏ qua (REQUIRE_SERVICES=1: lỗi).
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 import os
 import time
 
-# ===== Thư viện bên ngoài =====
-import pytest  # pytest
+import pytest
 
-# ===== Module nội bộ =====
 from app import config
 from conftest import _missing, root_settings
 
-# ===== Khởi tạo =====
 kafka = pytest.importorskip("kafka")
 
-# ===== Hằng số & cấu hình =====
 SETTINGS = root_settings()
 OPTIONS = config.kafka_options(SETTINGS)
 PREFIX = "bms"
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def topics() -> set[str]:
     deadline = time.monotonic() + float(os.environ.get("WAIT_FOR_SERVICES", "180"))
@@ -48,7 +35,6 @@ def topics() -> set[str]:
         time.sleep(3)
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def _messages(topic: str, *, from_end: bool, timeout: float, limit: int = 50) -> list[dict]:
     consumer = kafka.KafkaConsumer(**OPTIONS, enable_auto_commit=False, consumer_timeout_ms=int(timeout * 1000))
     parts = [kafka.TopicPartition(topic, p) for p in consumer.partitions_for_topic(topic)]
@@ -56,7 +42,7 @@ def _messages(topic: str, *, from_end: bool, timeout: float, limit: int = 50) ->
     (consumer.seek_to_end if from_end else consumer.seek_to_beginning)(*parts)
     out = []
     for msg in consumer:
-        if msg.value is not None:  # bỏ tombstone sau thao tác xóa
+        if msg.value is not None:
             out.append(json.loads(msg.value))
         if len(out) >= limit:
             break
@@ -64,9 +50,7 @@ def _messages(topic: str, *, from_end: bool, timeout: float, limit: int = 50) ->
     return out
 
 
-# ===== Kiểm thử =====
 def test_nhip_tim_di_het_duong_cdc(topics):
-    """Debezium ghi cdc.heartbeat mỗi 10 giây; thay đổi đó phải quay lại Kafka qua WAL."""
     events = _messages(f"{PREFIX}.cdc.heartbeat", from_end=True, timeout=45, limit=1)
     assert events, "không nhận được nhịp tim mới trong 45 giây"
     event = events[0]
@@ -89,17 +73,15 @@ def test_khong_day_nhat_ky_va_hang_doi(topics):
     assert leaked == [], "nhật ký kiểm toán, hàng đợi tìm kiếm không đi vào Kafka"
 
 
-# ===== Khởi tạo =====
 needs_sasl = pytest.mark.skipif(not SETTINGS.kafka_password, reason="Kafka chạy không xác thực (native)")
 
 
-# ===== Kiểm thử =====
 @needs_sasl
 @pytest.mark.parametrize(
     "options",
     [
-        {"bootstrap_servers": SETTINGS.kafka_bootstrap},  # không SASL
-        {**OPTIONS, "sasl_plain_password": SETTINGS.kafka_password + "-sai"},  # sai mật khẩu
+        {"bootstrap_servers": SETTINGS.kafka_bootstrap},
+        {**OPTIONS, "sasl_plain_password": SETTINGS.kafka_password + "-sai"},
     ],
     ids=["khong-sasl", "sai-mat-khau"],
 )

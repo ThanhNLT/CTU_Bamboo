@@ -2,15 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Bảng "Bệnh viện": chỉ số hành chính TỔNG HỢP của bệnh viện (tenant con, hoặc chính tenant đang chọn nếu là bệnh
-// viện): nhân sự, vị trí trống, mua sắm, tiếp nhận nhân sự, việc duyệt; theo khối / khoa. Không có chứng từ hay dữ liệu
-// cá nhân (ADR #22, #49). Cần quyền ops.group.read.
+import { Alert } from "antd";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-// ===== Thư viện =====
-import { Alert } from "antd"; // Ant Design
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
-
-// ===== Module nội bộ =====
 import { formatMoney } from "../../../utils/format";
 import { useOpsTab, type HospitalTenant } from "../api";
 import { AXIS_TICK, BAMBOO_DARK, BAMBOO_LIGHT, GRID_STROKE } from "./chartTheme";
@@ -19,14 +13,12 @@ import { ChartWidget, DefinitionButton } from "./ChartWidget";
 import { fmtMoneyShort, fmtNum, kpi } from "../boardFormat";
 import { BoardState, KpiRow, NumTable } from "./BoardParts";
 
-// ===== Hằng số =====
 const SERIES: Record<string, string> = {
   headcount: "Nhân sự",
   vacant: "Vị trí trống",
   pr_approved: "Đề nghị duyệt xong",
 };
 
-// ===== Component =====
 const TenantBoard = ({ t, days, at }: { t: HospitalTenant; days: number; at?: Date }) => (
   <section className="flex flex-col gap-4" aria-label={t.tenant}>
     <h2 className="m-0 text-[17px] font-semibold text-ink">{t.tenant}</h2>

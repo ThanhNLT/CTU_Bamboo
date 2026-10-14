@@ -1,19 +1,7 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Quản trị dữ liệu của tenant qua giao diện (ADR #44): cơ cấu tổ chức, người dùng, bổ nhiệm, vai trò, cấp quyền,
-danh mục và dữ liệu chủ.
 
-Một Action ghi chung `admin_save(entity, data)` và `admin_close(entity, id, end_date)`; nhập hàng loạt
-(`admin_import`) gọi đúng các hàm này cho từng dòng nên luật kiểm tra là một. Ở đây chỉ kiểm quyền (hàm
-core.has_permission theo đơn vị đích) và đổi mã ↔ id; ràng buộc nghiệp vụ (một trưởng mỗi đơn vị, một người mỗi
-ghế, hợp đồng không giữ ghế trưởng, gán vai trò cho vị trí thay vì người...) nằm ở trigger và ràng buộc CSDL.
-
-Ngày hiệu lực theo giờ Việt Nam: "từ ngày" tính từ 0 giờ ngày đó, "đến ngày" tính hết ngày đó; bỏ trống "từ ngày"
-là từ bây giờ.
-"""
-
-# ===== Thư viện chuẩn =====
 import base64
 import csv
 import io
@@ -21,14 +9,11 @@ import logging
 from collections.abc import Callable
 from datetime import date, datetime
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from psycopg import Rollback  # psycopg
+import psycopg
+from psycopg import Rollback
 
-# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session
 
-# ===== Hằng số & cấu hình =====
 log = logging.getLogger("admin")
 
 ORG = "core.org.manage"
@@ -42,10 +27,7 @@ CATALOGS = {"UNIT_TYPE": ORG, "JOB_TITLE": ORG, "ITEM_CATEGORY": MDM}
 TZ = "Asia/Ho_Chi_Minh"
 
 
-# ===== Lớp =====
 class Admin:
-    """Người gọi trong một tenant, kèm hàm kiểm quyền theo đơn vị."""
-
     def __init__(self, conn: psycopg.Connection, session: dict):
         self.conn = conn
         self.person = session.get("x-hasura-user-id")
@@ -79,9 +61,6 @@ class Admin:
         return row
 
 
-# ===== Đọc dữ liệu đầu vào =====
-
-
 def _text(data: dict, key: str, label: str, required: bool = True) -> str | None:
     value = data.get(key)
     value = str(value).strip() if value is not None else ""
@@ -111,7 +90,6 @@ def _coord(value, label: str, limit: int) -> float | None:
 
 
 def _location(data: dict) -> dict | None:
-    """Tỉnh và tọa độ cơ sở (ADR #49); None khi dữ liệu không nhắc tới (tệp nhập cũ không xóa vị trí đã có)."""
     if not any(k in data for k in ("province", "lat", "lng")):
         return None
     lat, lng = _coord(data.get("lat"), "Vĩ độ", 90), _coord(data.get("lng"), "Kinh độ", 180)
@@ -123,7 +101,7 @@ def _location(data: dict) -> dict | None:
 def _date(value, label: str) -> date | None:
     if value in (None, ""):
         return None
-    if isinstance(value, datetime):  # ô ngày của Excel (openpyxl trả datetime)
+    if isinstance(value, datetime):
         return value.date()
     if isinstance(value, date):
         return value
@@ -146,14 +124,10 @@ def _period(data: dict, end_required: bool = False) -> tuple[date | None, date |
     return start, end
 
 
-# tstzrange theo ngày Việt Nam; start NULL = bây giờ, end NULL = vô thời hạn.
 RANGE_SQL = (
     f"tstzrange(coalesce((%s::date)::timestamp AT TIME ZONE '{TZ}', now()), "
     f"((%s::date + 1)::timestamp AT TIME ZONE '{TZ}'))"
 )
-
-
-# ===== Mã → id =====
 
 
 def _unit_by_code(a: Admin, code: str):
@@ -173,7 +147,6 @@ def _catalog_by_code(a: Admin, catalog: str, code: str):
 
 
 def _ref(a: Admin, data: dict, id_key: str, code_key: str, resolve: Callable[[str], object], required=True):
-    """Tham chiếu theo id (giao diện) hoặc theo mã (tệp nhập)."""
     if data.get(id_key):
         return data[id_key]
     code = _text(data, code_key, code_key, required=False)
@@ -185,7 +158,6 @@ def _ref(a: Admin, data: dict, id_key: str, code_key: str, resolve: Callable[[st
 
 
 def _position_ref(a: Admin, ref: str):
-    """ "MÃ_ĐƠN_VỊ/Tên vị trí" → id vị trí đang hiệu lực."""
     unit_code, sep, name = ref.partition("/")
     if not sep or not name.strip():
         raise ActionError(f"Vị trí phải ghi dạng MÃ_ĐƠN_VỊ/Tên vị trí: {ref}")
@@ -202,9 +174,6 @@ def _belongs(a: Admin, table: str, row_id) -> None:
     a.one(f"SELECT 1 FROM {table} WHERE id = %s AND tenant_id = %s", (row_id, a.tenant), "Không tìm thấy bản ghi")
 
 
-# ===== Ghi từng loại =====
-
-
 def save_org_unit(a: Admin, data: dict) -> str:
     unit_id = data.get("id")
     code = _text(data, "code", "mã đơn vị")
@@ -214,7 +183,6 @@ def save_org_unit(a: Admin, data: dict) -> str:
     legal = _bool(data.get("is_legal_entity"))
     location = _location(data)
     if unit_id is None and code:
-        # Nhập lại cùng mã = cập nhật (tệp nhập chạy lại được).
         row = a.conn.execute(
             "SELECT id FROM core.org_unit WHERE tenant_id = %s AND code = %s", (a.tenant, code)
         ).fetchone()
@@ -243,7 +211,7 @@ def save_org_unit(a: Admin, data: dict) -> str:
     if str(parent or "") != str(old_parent or ""):
         if old_parent is None:
             raise ActionError("Không chuyển được đơn vị gốc của tenant")
-        a.require(ORG, parent)  # chuyển sang nhánh mới: cần quyền ở cả nơi đến
+        a.require(ORG, parent)
     a.conn.execute(
         """UPDATE core.org_unit SET parent_id = %s, unit_type_id = %s, code = %s, name = %s,
                              is_legal_entity = %s WHERE id = %s""",
@@ -475,7 +443,6 @@ def save_role_grant(a: Admin, data: dict) -> str:
         raise ActionError(f"Phạm vi không hợp lệ: {scope}")
     scope_unit = _ref(a, data, "scope_unit_id", "scope_unit_code", lambda c: _unit_by_code(a, c), required=False)
     start, end = _period(data, end_required="person_id" in chosen)
-    # Cấp phạm vi cả tenant cần quyền ở gốc; còn lại cần quyền ở đơn vị neo của phạm vi.
     if scope == "TENANT":
         a.require(PERM)
     else:
@@ -617,7 +584,6 @@ def save_item(a: Admin, data: dict) -> str:
 
 
 def _end(a: Admin, table: str, row_id, end: date | None) -> None:
-    """Kết thúc hiệu lực: hết ngày `end` (giờ Việt Nam) hoặc ngay bây giờ; không sớm hơn lúc bắt đầu."""
     a.conn.execute(
         f"""UPDATE {table} SET valid_period = tstzrange(lower(valid_period),
                  greatest(lower(valid_period) + interval '1 millisecond',
@@ -628,7 +594,6 @@ def _end(a: Admin, table: str, row_id, end: date | None) -> None:
 
 
 def save_storage_quota(a: Admin, data: dict) -> str:
-    """Hạn mức dung lượng tệp của tenant (GB), cần core.org.manage ở đơn vị gốc."""
     a.require(ORG)
     try:
         gb = float(str(data.get("quota_gb") or "").replace(",", "."))
@@ -679,7 +644,6 @@ def admin_close(conn: psycopg.Connection, session: dict, args: dict, _ctx: Conte
 
 
 def adopt_proposed_partner(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
-    """Thêm nhà cung cấp người lập đề nghị gõ tự do vào danh mục (cần mdm.manage, migration 018)."""
     a = Admin(conn, session)
     a.one(
         "SELECT 1 FROM proc.purchase_request WHERE id = %s AND tenant_id = %s",
@@ -693,7 +657,6 @@ def adopt_proposed_partner(conn: psycopg.Connection, session: dict, args: dict, 
 
 
 def proposed_partners(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> list[dict]:
-    """Nhà cung cấp người lập đề nghị gõ tự do, chờ thêm vào danh mục (cần mdm.manage)."""
     a = Admin(conn, session)
     a.require(MDM)
     rows = conn.execute(
@@ -708,14 +671,7 @@ def proposed_partners(conn: psycopg.Connection, session: dict, _args: dict, _ctx
     return [{**dict(zip(keys, r, strict=True)), "request_id": str(r[0])} for r in rows]
 
 
-# ===== Tài khoản đăng nhập =====
-
-
 def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> list[dict]:
-    """Tạo (hoặc liên kết) tài khoản Keycloak cho từng người; mật khẩu tạm chỉ trả về một lần.
-
-    Mỗi người một kết quả: lỗi của người này không chặn người khác (tài khoản Keycloak không rollback được).
-    """
     a = Admin(conn, session)
     a.require(ORG)
     if ctx.users is None:
@@ -749,7 +705,6 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
                         str(person_id), username, row[0], email, password, attribute="bamboo_person"
                     )
                     result["temporary_password"] = password
-                # Trigger core.person_check_account chặn dùng chung tài khoản giữa hai công ty mẹ khác nhau.
                 conn.execute("UPDATE core.person SET idp_subject = %s WHERE id = %s", (subject, person_id))
         except hr_account.AccountConflict as exc:
             result["error"] = str(exc)
@@ -757,7 +712,7 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
             result["error"] = exc.message
         except psycopg.Error as exc:
             result["error"] = exc.diag.message_primary or str(exc)
-        except Exception as exc:  # noqa: BLE001 - lỗi mạng tới Keycloak: báo cho người dùng thử lại
+        except Exception as exc:  # noqa: BLE001
             log.warning("tạo tài khoản %s lỗi: %s", username, exc)
             result["error"] = "Không kết nối được máy chủ đăng nhập, thử lại sau"
         if result["error"]:
@@ -766,9 +721,6 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
     return results
 
 
-# ===== Nhập hàng loạt =====
-
-# Cột của tệp mẫu: (khóa, tiêu đề, bắt buộc, ví dụ).
 COLUMNS: dict[str, list[tuple[str, str, bool, str]]] = {
     "org_unit": [
         ("code", "Mã đơn vị", True, "PHONG_KT"),
@@ -843,32 +795,29 @@ MAX_IMPORT_ROWS = 5000
 
 
 def _fold(text) -> str:
-    # Tiêu đề cột bắt buộc của tệp mẫu có dấu " *" ở cuối: bỏ đi để tệp mẫu nhập lại được.
     return " ".join(str(text or "").strip().lower().split()).removesuffix(" *").rstrip()
 
 
 def _cell(value):
-    """Ô Excel kiểu số nguyên (mã nhân viên 1001, mã số thuế...) đọc thành float 1001.0: trả về int."""
     if isinstance(value, float) and value.is_integer():
         return int(value)
     return value
 
 
 def _read_rows(kind: str, file_name: str, content: bytes) -> list[dict]:
-    """Đọc CSV (UTF-8, dấu phẩy hoặc chấm phẩy) hoặc XLSX (trang đầu); dòng 1 là tiêu đề (theo mẫu hoặc theo khóa)."""
     if file_name.lower().endswith((".xlsx", ".xlsm")):
-        from openpyxl import load_workbook  # openpyxl
+        from openpyxl import load_workbook
 
         try:
             sheet = load_workbook(io.BytesIO(content), read_only=True, data_only=True).worksheets[0]
-        except Exception as exc:  # noqa: BLE001 - tệp hỏng, không phải Excel
+        except Exception as exc:  # noqa: BLE001
             raise ActionError("Không đọc được tệp Excel") from exc
         table = [["" if v is None else _cell(v) for v in row] for row in sheet.iter_rows(values_only=True)]
     elif file_name.lower().endswith((".csv", ".txt")):
         text = content.decode("utf-8-sig", errors="replace")
         try:
             dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t")
-        except csv.Error:  # một cột, hoặc không đoán được dấu phân cách: dùng dấu phẩy
+        except csv.Error:
             dialect = csv.excel
         table = list(csv.reader(io.StringIO(text), dialect))
     else:
@@ -894,7 +843,6 @@ def _read_rows(kind: str, file_name: str, content: bytes) -> list[dict]:
 
 
 def _order_units(rows: list[tuple[int, dict]]) -> list[tuple[int, dict]]:
-    """Đơn vị cha trong cùng tệp được tạo trước đơn vị con."""
     by_code = {str(r.get("code") or "").strip(): (n, r) for n, r in rows}
     done: set[str] = set()
     ordered: list[tuple[int, dict]] = []
@@ -936,7 +884,7 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
         raise ActionError("Nội dung tệp không hợp lệ") from exc
     if len(content) > MAX_IMPORT_BYTES:
         raise ActionError("Tệp tối đa 2 MB")
-    rows = list(enumerate(_read_rows(kind, args["file_name"], content), start=2))  # dòng 1 là tiêu đề
+    rows = list(enumerate(_read_rows(kind, args["file_name"], content), start=2))
     dry_run = bool(args.get("dry_run", True))
     a = Admin(conn, session)
     handler = _import_person if kind == "person" else SAVE[kind]
@@ -947,7 +895,7 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
     with conn.transaction() as tx:
         for line, row in rows:
             try:
-                with conn.transaction():  # savepoint: dòng lỗi không làm hỏng các dòng khác
+                with conn.transaction():
                     row_id = handler(a, row)
                 if kind == "person" and row.get("username"):
                     created.append(
@@ -965,7 +913,7 @@ def admin_import(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
                 errors.append({"row": line, "message": exc.diag.message_primary or str(exc)})
         applied = not dry_run and not errors
         if not applied:
-            raise Rollback(tx)  # xem trước, hoặc có lỗi: không ghi dòng nào
+            raise Rollback(tx)
     errors.sort(key=lambda e: e["row"])
     return {
         "kind": kind,
@@ -983,10 +931,9 @@ def admin_import_template(conn: psycopg.Connection, session: dict, args: dict, _
     if kind not in COLUMNS:
         raise ActionError(f"Không có mẫu cho {kind}")
     Admin(conn, session)
-    from openpyxl import Workbook  # openpyxl
-    from openpyxl.styles import Font, PatternFill  # openpyxl
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
 
-    # Trang "Dữ liệu" (trang đầu, được nhập) chỉ có tiêu đề; dòng ví dụ ở trang "Ví dụ" để không bị nhập nhầm.
     wb = Workbook()
     data = wb.active
     data.title = "Dữ liệu"

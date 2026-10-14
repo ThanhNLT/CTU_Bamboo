@@ -1,32 +1,20 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-#
-# Sao lưu toàn bộ dữ liệu của hệ thống đang chạy (project compose "bamboo"):
-#   - postgres.sql      : pg_dumpall (CSDL nghiệp vụ, Keycloak, Flowable)
-#   - openbao-data.tgz  : két secret (raft)        - openbao-keys.tgz : khóa unseal, token root
-#   - seaweedfs-data.tgz: tệp đính kèm
-# Dùng: scripts/ops/backup.sh [thư mục đích]   (mặc định backups/<thời điểm>)
-# Không cần mã nguồn: chạy được với hệ thống dựng bằng `docker compose -f oci://...`.
-# Công cụ: Docker Compose, pg_dumpall, tar
 
-# ===== Thiết lập =====
 set -euo pipefail
 
-# ===== Tham số =====
 PROJECT="${COMPOSE_PROJECT_NAME:-bamboo}"
 OUT="${1:-backups/$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 dc() { docker compose -p "$PROJECT" "$@"; }
 
-# ===== Sao lưu CSDL =====
 echo "==> CSDL (pg_dumpall)"
 dc exec -T db sh -c 'pg_dumpall -U "${POSTGRES_USER:-bms}" -f /tmp/bamboo-backup.sql'
 dc cp db:/tmp/bamboo-backup.sql "$OUT/postgres.sql"
 dc exec -T db rm -f /tmp/bamboo-backup.sql
 
-# ===== Sao lưu volume =====
 echo "==> Volume (tạm dừng OpenBao, SeaweedFS trong lúc chép)"
 dc pause openbao seaweedfs > /dev/null
 trap 'dc unpause openbao seaweedfs >/dev/null 2>&1 || true' EXIT

@@ -2,24 +2,13 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 022: Bản sao số, Phả hệ dữ liệu, KPI ghim Trang chủ dùng dữ liệu trong CSDL (ADR #50).
---
--- Chưa có context broker NGSI-LD, pipeline OpenMetadata / Soda hay kho KPI: ba trang đọc các bảng dưới đây, nạp từ tệp
--- demo (services/seed/data/demo, app.demo_load). Khi nối nguồn thật chỉ thay bộ nạp, giữ nguyên bảng và giao diện.
--- Không đưa vào CDC: chuỗi đo nhiều dòng, phả hệ là siêu dữ liệu của chính pipeline.
-
 CREATE SCHEMA iot;
 CREATE SCHEMA meta;
 CREATE SCHEMA kpi;
 
--- ---------------------------------------------------------------------------
--- Bản sao số (NGSI-LD)
--- ---------------------------------------------------------------------------
-
--- Mô hình một loại thực thể: thuộc tính và ngưỡng vận hành (dùng chung mọi tenant).
 CREATE TABLE iot.model (
-    type        text PRIMARY KEY,              -- CleanRoom, SmtLine, Ventilator...
-    kind        text NOT NULL,                 -- "Phòng sạch"
+    type        text PRIMARY KEY,
+    kind        text NOT NULL,
     category    text NOT NULL CHECK (category IN ('cleanroom', 'smt', 'medical')),
     grade       text NOT NULL,
     attributes  jsonb NOT NULL CHECK (jsonb_typeof(attributes) = 'array')
@@ -40,15 +29,14 @@ CREATE TABLE iot.site (
 CREATE TABLE iot.entity (
     tenant_id         uuid NOT NULL REFERENCES core.tenant,
     id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    code              text NOT NULL,           -- CR-02
-    urn               text NOT NULL UNIQUE,    -- urn:ngsi-ld:CleanRoom:bamboo:CR-02
+    code              text NOT NULL,
+    urn               text NOT NULL UNIQUE,
     type              text NOT NULL REFERENCES iot.model,
     name              text NOT NULL,
     site_code         text NOT NULL,
     org_unit_id       uuid NOT NULL,
     connection_state  text NOT NULL DEFAULT 'online' CHECK (connection_state IN ('online', 'offline')),
     last_seen_at      timestamptz,
-    -- Giá trị mới nhất theo thuộc tính: {"particles05": {"value": 3120, "observed_at": "..."}}; trigger giữ.
     state             jsonb NOT NULL DEFAULT '{}',
     UNIQUE (tenant_id, id),
     UNIQUE (tenant_id, code),
@@ -67,8 +55,6 @@ CREATE TABLE iot.measurement (
 );
 CREATE INDEX ON iot.measurement (tenant_id, observed_at);
 
--- Số đo mới hơn giá trị đang giữ thì cập nhật iot.entity.state. Trigger theo câu lệnh (bảng chuyển tiếp): nạp hàng
--- chục nghìn số đo bằng COPY chỉ cập nhật mỗi thực thể một lần.
 CREATE FUNCTION iot.measurement_latest() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -96,7 +82,7 @@ FOR EACH STATEMENT EXECUTE FUNCTION iot.measurement_latest();
 CREATE TABLE iot.incident (
     tenant_id        uuid NOT NULL,
     id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    code             text NOT NULL,             -- SC-0014
+    code             text NOT NULL,
     entity_id        uuid NOT NULL,
     attribute        text NOT NULL,
     side             text NOT NULL CHECK (side IN ('above', 'below')),
@@ -116,7 +102,6 @@ CREATE TABLE iot.incident (
 );
 CREATE INDEX ON iot.incident (tenant_id, entity_id, started_at DESC);
 
--- Ghi nhận sự cố: người trong tenant xác nhận đã biết và ghi hướng xử lý (một lần).
 CREATE FUNCTION iot.acknowledge(p_id uuid, p_person uuid, p_note text) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -138,10 +123,6 @@ END $$;
 
 CALL audit.enable('iot.incident');
 
--- ---------------------------------------------------------------------------
--- Phả hệ dữ liệu (siêu dữ liệu pipeline, chung cho nền tảng)
--- ---------------------------------------------------------------------------
-
 CREATE TABLE meta.lineage_node (
     id        text PRIMARY KEY,
     layer     text NOT NULL CHECK (layer IN ('source', 'stream', 'lake', 'serving', 'consumer')),
@@ -157,7 +138,7 @@ CREATE TABLE meta.lineage_node (
 CREATE TABLE meta.lineage_edge (
     from_node  text NOT NULL REFERENCES meta.lineage_node ON DELETE CASCADE,
     to_node    text NOT NULL REFERENCES meta.lineage_node ON DELETE CASCADE,
-    columns    text[] NOT NULL DEFAULT '{}',  -- "nguồn→đích"
+    columns    text[] NOT NULL DEFAULT '{}',
     PRIMARY KEY (from_node, to_node),
     CHECK (from_node <> to_node)
 );
@@ -183,7 +164,6 @@ CREATE TABLE meta.pipeline_run (
     result      text NOT NULL CHECK (result IN ('success', 'check_failed', 'failed', 'running'))
 );
 
--- Báo sự cố dữ liệu từ trang Phả hệ: người dùng mô tả, gắn nút; nhóm dữ liệu xử lý.
 CREATE TABLE meta.data_issue (
     tenant_id    uuid NOT NULL REFERENCES core.tenant,
     id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -196,10 +176,6 @@ CREATE TABLE meta.data_issue (
     FOREIGN KEY (tenant_id, reported_by) REFERENCES core.person (tenant_id, id)
 );
 CALL audit.enable('meta.data_issue');
-
--- ---------------------------------------------------------------------------
--- KPI ghim Trang chủ
--- ---------------------------------------------------------------------------
 
 CREATE TABLE kpi.definition (
     tenant_id       uuid NOT NULL REFERENCES core.tenant,
@@ -223,7 +199,6 @@ CREATE TABLE kpi.value (
     FOREIGN KEY (tenant_id, kpi_key) REFERENCES kpi.definition (tenant_id, key) ON DELETE CASCADE
 );
 
--- KPI một người ghim lên Trang chủ (tự ghim / bỏ ghim qua Hasura), tối đa 6.
 CREATE TABLE kpi.pin (
     tenant_id   uuid NOT NULL,
     person_id   uuid NOT NULL,

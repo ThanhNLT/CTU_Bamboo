@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import type { Tone } from "../../components/ui";
 import type { DocSummary } from "../../api/documents";
 import { formatDate } from "../../utils/format";
@@ -17,7 +16,6 @@ import type {
   WorkflowStep,
 } from "./types";
 
-// ===== Hằng số =====
 export const STATUS_VIEW: Record<RecordStatus, { tone: Tone; locked?: boolean }> = {
   draft: { tone: "neutral" },
   pending: { tone: "warning" },
@@ -56,8 +54,6 @@ const STATUS_OF: Record<string, RecordStatus> = {
   RETIRED: "closed",
 };
 
-// ===== Hàm tiện ích =====
-/** Chứng từ thật → dòng của trang Hồ sơ. Đang chờ duyệt thì ghi rõ cấp đang xử lý. */
 export const toRecord = (d: DocSummary): EofficeRecord => {
   const status = STATUS_OF[d.status] ?? "draft";
   const active = d.steps.find((s) => s.status === "ACTIVE");
@@ -82,7 +78,6 @@ export const toRecord = (d: DocSummary): EofficeRecord => {
 export const matchesTab = (status: RecordStatus, tab: StatusTab) =>
   tab === "all" || (tab === "reviewing" ? status === "pending" : status === tab);
 
-/** Lọc mọi điều kiện TRỪ tab trạng thái — để đếm số trên từng tab. "Của tôi" = tôi lập hoặc đang chờ tôi duyệt. */
 export const filterExceptTab = (
   records: EofficeRecord[],
   { query, type, range, mineOnly }: Omit<RecordFilters, "tab">,
@@ -104,7 +99,6 @@ export const countByTab = (records: EofficeRecord[]) =>
     STATUS_TABS.map(({ key }) => [key, records.filter((r) => matchesTab(r.status, key)).length]),
   ) as Record<StatusTab, number>;
 
-// ===== Hằng số =====
 const STEP_STATE: Record<string, StepState> = {
   APPROVED: "done",
   ACTIVE: "current",
@@ -120,8 +114,6 @@ const STEP_SUFFIX: Record<string, string> = {
   CANCELLED: " · đã hủy",
 };
 
-// ===== Hàm tiện ích =====
-/** Nộp → các bước duyệt của lần gửi hiện tại (đơn nội bộ: bên bán xác nhận) → Kết quả. */
 export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
   const submitted = r.status !== "draft";
   const submit: WorkflowStep = {
@@ -163,7 +155,6 @@ export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
   ];
 };
 
-/** Danh sách nút trang gọn: 1 2 3 … 7 (null = dấu …). */
 export const pageList = (current: number, total: number): Array<number | null> => {
   if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
   const pages = new Set([1, total, current, current - 1, current + 1].filter((p) => p >= 1 && p <= total));

@@ -2,17 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { LedgerTab } from "../types";
 
-// ===== Hằng số =====
 const TABS: Array<{ key: LedgerTab; label: string }> = [
   { key: "verify", label: "Đối soát" },
   { key: "reading", label: "Phòng đọc ảo" },
 ];
 
-// ===== Component =====
 export const LedgerTabs = ({ value, onChange }: { value: LedgerTab; onChange: (t: LedgerTab) => void }) => (
   <div role="tablist" aria-label="Sổ cái" className="inline-flex gap-0.5 self-start rounded-full bg-black/[0.045] p-1">
     {TABS.map((t) => {

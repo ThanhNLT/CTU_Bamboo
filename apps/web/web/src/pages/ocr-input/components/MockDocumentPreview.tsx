@@ -2,19 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { FieldKey, OcrField } from "../types";
 import { LEVEL_STYLE, PAPER_H, PAPER_W, formatConfidence, levelOf } from "../utils";
 
-// ===== Component =====
 const Label = ({ y, children }: { y: number; children: string }) => (
   <span className="absolute left-[18px] text-[9.5px] text-[#5b6660]" style={{ top: y + 2 }}>
     {children}
   </span>
 );
 
-/** Chữ trên giấy tại đúng vị trí khung nhận diện của trường. */
 const Value = ({ field, className }: { field?: OcrField; className?: string }) =>
   field ? (
     <span
@@ -28,10 +25,6 @@ const Value = ({ field, className }: { field?: OcrField; className?: string }) =
     </span>
   ) : null;
 
-/**
- * Tờ "Phiếu yêu cầu bảo trì" vẽ bằng HTML/CSS (khổ 320 × 350), và lớp khung nhận diện OCR đặt tuyệt đối đè lên.
- * Màu khung theo độ tin cậy: xanh ≥ 0,8 · vàng 0,5–0,8 · đỏ < 0,5. Bấm khung để nhảy tới ô tương ứng trong form.
- */
 export const MockDocumentPreview = ({
   fields,
   activeKey,
@@ -49,7 +42,6 @@ export const MockDocumentPreview = ({
       className="relative select-none rounded-md bg-white shadow-[0_8px_24px_-8px_rgb(16_24_20/0.18),0_1px_3px_rgb(16_24_20/0.08)]"
       style={{ width: PAPER_W, height: PAPER_H }}
     >
-      {/* Đầu phiếu */}
       <span className="absolute left-[18px] top-[16px] text-[8px] font-medium uppercase tracking-[0.12em] text-[#5b6660]">
         Công ty Chip &amp; Linh kiện
       </span>
@@ -72,11 +64,9 @@ export const MockDocumentPreview = ({
       <Label y={188}>Mức ưu tiên</Label>
       <Value field={f("priority")} />
 
-      {/* Ô ghi chú để trống */}
       <span className="absolute left-[18px] right-[18px] top-[214px] h-[40px] rounded-sm border border-[#d8ddd9] bg-[#fafbfa]" />
 
       <Label y={270}>Người đề nghị</Label>
-      {/* Chữ viết tay khó đọc: nét nghiêng + gạch lượn sóng đỏ */}
       {f("requester") && (
         <span
           className="absolute px-1 text-[12px] italic text-[#2b3a8f] underline decoration-red-500 decoration-wavy underline-offset-2"
@@ -95,7 +85,6 @@ export const MockDocumentPreview = ({
       <span className="absolute left-[18px] top-[324px] h-1.5 w-[70%] rounded bg-[#eef1ee]" />
       <span className="absolute left-[18px] top-[334px] h-1.5 w-[45%] rounded bg-[#eef1ee]" />
 
-      {/* Lớp khung nhận diện */}
       {showBoxes &&
         fields.map((fd) => {
           const lv = levelOf(fd.confidence);

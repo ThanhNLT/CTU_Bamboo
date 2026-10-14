@@ -2,14 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Info } from "lucide-react"; // Lucide React
+import { Info } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
-// ===== Component =====
-/** Tiêu đề + Lưu / Kiểm tra / Chạy thử / Phát hành / Tải BPMN. */
 export const ProcessHeader = ({
   subtitle,
   canDesign,

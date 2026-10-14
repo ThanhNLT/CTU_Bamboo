@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Link } from "react-router"; // React Router
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { SummaryStat } from "../types";
 import { Dot } from "../../../components/ui";
 
-// ===== Component =====
 const StatCard = ({ stat }: { stat: SummaryStat }) => {
   const danger = stat.tone === "danger";
   const body = (

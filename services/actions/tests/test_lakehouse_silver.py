@@ -2,35 +2,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tầng silver và Trino (ADR #40): kiểu cột suy từ PostgreSQL, tệp SQL và quyền Trino sinh sẵn khớp CSDL, và
-đường đầy đủ CSDL → Debezium → Kafka → lakehouse-sink → Iceberg → Trino cho đúng trạng thái hiện tại.
-
-Biến môi trường: TRINO_URL, TRINO_CA_FILE (cấu hình actions); đăng nhập bms-admin (conftest.trino_admin_password).
-CDC_SOURCE_DATABASE_URL là CSDL Debezium đọc (mặc định CSDL `bms` cùng máy chủ với TEST_DATABASE_URL). Kiểm thử chỉ
-đọc, không ghi CSDL nguồn.
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 import os
 import time
 from decimal import Decimal
 from urllib.parse import urlparse, urlunparse
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-import pytest  # pytest
+import psycopg
+import pytest
 
-# ===== Module nội bộ =====
 from app import lakehouse_silver as silver
 from app.trino import Trino
 from conftest import ROOT, TEST_DB_URL, _missing, root_settings, trino_admin_password, trino_reachable
 
-# ===== Hằng số & cấu hình =====
 SOURCE_URL = os.environ.get("CDC_SOURCE_DATABASE_URL") or urlunparse(urlparse(TEST_DB_URL)._replace(path="/bms"))
 
 
-# ===== Kiểm thử =====
 @pytest.mark.parametrize(
     "typname, category, typmod, expected_type, fragment",
     [
@@ -56,7 +43,6 @@ def test_ten_cot_duoc_trich_dan():
 
 
 def test_tep_sql_khop_csdl(database):
-    """platform/trino/silver.sql phải được sinh lại khi đổi cấu trúc CSDL (make trino-sql)."""
     with psycopg.connect(database) as conn:
         expected = silver.build(conn)
     committed = (ROOT / "platform/trino/silver.sql").read_text(encoding="utf-8")
@@ -65,8 +51,6 @@ def test_tep_sql_khop_csdl(database):
 
 
 def test_quyen_trino_khop_csdl(database):
-    """platform/trino/rules.json sinh cùng silver.sql (ADR #45): view có tenant_id được row filter, bảng không có
-    cột tenant (danh mục quyền chung, quan hệ tenant) không có quy tắc nên người dùng tenant không đọc được."""
     with psycopg.connect(database) as conn:
         expected = silver.build_rules(conn)
     committed = (ROOT / "platform/trino/rules.json").read_text(encoding="utf-8")
@@ -77,13 +61,11 @@ def test_quyen_trino_khop_csdl(database):
     assert "core_permission" not in tables and "core_tenant_relation" not in tables
 
 
-# ===== Lớp =====
 class AdminTrino(Trino):
     def rows(self, sql: str) -> list[list]:
         return self.query(sql)[1]
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def trino() -> AdminTrino:
     settings = root_settings()
@@ -100,7 +82,6 @@ def trino() -> AdminTrino:
     return client
 
 
-# ===== Kiểm thử =====
 def test_view_silver_co_kieu(trino):
     columns = dict(
         trino.rows(
@@ -114,8 +95,6 @@ def test_view_silver_co_kieu(trino):
 
 
 def test_silver_khop_csdl_nguon(trino):
-    """Mọi đề nghị trong CSDL nguồn có trong silver với cùng tiêu đề, tổng tiền, trạng thái (chờ tối đa
-    2 phút cho Debezium và lakehouse-sink theo kịp)."""
     try:
         with psycopg.connect(SOURCE_URL) as conn:
             source = {

@@ -2,6 +2,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Xuất lại =====
 export { KnowledgeLibraryPage } from "./KnowledgeLibraryPage";
 export { ProposalPage } from "./ProposalPage";

@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Kiểu dữ liệu =====
 export type IssueLevel = "error" | "warning";
-/** Lỗi / cảnh báo do máy chủ kiểm tra bản BPMN (ADR #47). */
 export type Issue = { level: IssueLevel; message: string; elementId: string | null };
 
 export type FormField = { label: string; type: string; required: boolean };
-/** Biểu mẫu của tác vụ người dùng; tác vụ gắn bằng thuộc tính flowable:formKey = key. */
 export type FormDef = { key: string; name: string; fields: FormField[] };
 
 export type ProcessSummary = {
@@ -61,7 +58,6 @@ export type ProcessDetail = {
   runs: SandboxRun[];
 };
 
-/** Phần tử đang chọn trên sơ đồ, đọc từ businessObject của bpmn-js. */
 export type SelectedElement = {
   id: string;
   type: string;

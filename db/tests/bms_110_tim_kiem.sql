@@ -2,8 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Tìm kiếm (ADR #36): thay đổi chứng từ, dòng hàng, tệp, tên liên quan đều đánh dấu tài liệu cần phải
--- đưa lại vào chỉ mục; tài liệu của đề nghị lấy đúng nội dung hiện tại.
 SELECT test.fixture();
 
 CREATE FUNCTION pg_temp.dirty(p_type text, p_key text) RETURNS boolean
@@ -33,7 +31,6 @@ SELECT pg_temp.clear();
 UPDATE core.person SET full_name = full_name || ' (mới)' WHERE id = test.id('c');
 SELECT test.ok(pg_temp.dirty('proc.purchase_request', 'pr'), 'Đổi tên người lập thì đánh dấu đề nghị');
 
--- Tệp: chỉ đánh dấu khi sạch hoặc khi tệp sạch bị xóa.
 INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, uploaded_by)
 VALUES (test.id('TDX'), 'proc.purchase_request', test.id('pr'), 'bao-gia.pdf', 'application/pdf', 10, 'k-search', test.id('c'))
 RETURNING test.put('f', id);
@@ -57,7 +54,6 @@ SELECT test.ok(NOT EXISTS (
                    WHERE NOT EXISTS (SELECT 1 FROM search.pending p WHERE p.entity_id = r.id AND p.dirty)),
                'mark_all đánh dấu mọi đề nghị');
 
--- Tài khoản ứng dụng (trigger chạy dưới quyền người gọi) ghi được hàng đợi.
 SELECT set_config('test.tenant', test.id('TDX')::text, true);
 SET LOCAL ROLE bamboo_actions;
 SELECT search.mark(current_setting('test.tenant')::uuid, 'proc.purchase_request', gen_random_uuid());

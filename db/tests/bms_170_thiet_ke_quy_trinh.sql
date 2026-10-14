@@ -2,7 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Thiết kế quy trình (ADR #47): mã quy trình duy nhất trong tenant, phiên bản phát hành bất biến, có nhật ký.
 SELECT test.fixture();
 
 INSERT INTO wf.process_model (tenant_id, process_key, name, bpmn_xml, created_by)

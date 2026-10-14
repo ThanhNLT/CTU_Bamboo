@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Logs
-
 logs
 _.log
 npm-debug.log_
@@ -17,11 +15,8 @@ dist
 dist-ssr
 *.local
 
-# Environment variables
 .env
 .env.local
-
-# Editor directories and files
 
 .vscode/_
 !.vscode/extensions.json
@@ -32,7 +27,6 @@ _.ntvs_
 _.njsproj
 _.sln
 \*.sw?
-#node-modules files
 node_modules/
 dist/
 .env

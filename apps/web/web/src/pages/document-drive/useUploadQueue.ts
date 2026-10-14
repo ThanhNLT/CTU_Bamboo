@@ -2,24 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Hàng đợi tải lên thật (ADR #26): xin link có chữ ký (get_upload_url) → PUT lên bucket cách ly, theo dõi tiến độ
-// → confirm_upload kiểm tra định dạng, quét mã độc → sạch thì nhận, không thì loại.
+import { useCallback, useState } from "react";
 
-// ===== Thư viện =====
-import { useCallback, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { UploadItem } from "./types";
 
-// ===== Hằng số =====
 const MAX_BYTES = 25 * 1024 * 1024;
 
-// ===== Kiểu dữ liệu =====
 type Target = { entityType: string; entityId: string };
 
-// ===== Hàm tiện ích =====
-/** PUT bằng XMLHttpRequest để có sự kiện tiến độ (fetch chưa có cho phần tải lên). */
 const put = (url: string, file: File, contentType: string, onProgress: (pct: number) => void) =>
   new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -34,7 +25,6 @@ const put = (url: string, file: File, contentType: string, onProgress: (pct: num
     xhr.send(file);
   });
 
-// ===== Hook =====
 export const useUploadQueue = () => {
   const [items, setItems] = useState<UploadItem[]>([]);
   const patch = (id: string, p: Partial<UploadItem>) =>

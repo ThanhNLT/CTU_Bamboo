@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ChevronUp, Minus, X } from "lucide-react"; // Lucide React
-import { useState } from "react"; // React
+import { ChevronUp, Minus, X } from "lucide-react";
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { UploadItem } from "../types";
 
-// ===== Hằng số =====
 const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
   uploading: (i) => `${i.progress}%`,
   scanning: () => "Đang quét mã độc…",
@@ -18,10 +15,8 @@ const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
   blocked: () => "Bị chặn",
 };
 
-// ===== Component =====
 const ProgressBar = ({ item }: { item: UploadItem }) => {
   if (item.status === "scanning") {
-    // Sọc chạy: chưa biết thời gian quét còn lại.
     return (
       <div className="h-1.5 overflow-hidden rounded-full bg-bamboo-100">
         <div className="h-full w-full bg-[linear-gradient(45deg,var(--color-bamboo-300)_25%,var(--color-bamboo-200)_25%,var(--color-bamboo-200)_50%,var(--color-bamboo-300)_50%,var(--color-bamboo-300)_75%,var(--color-bamboo-200)_75%)] bg-[length:16px_16px] motion-safe:animate-stripes" />
@@ -46,7 +41,6 @@ const ProgressBar = ({ item }: { item: UploadItem }) => {
   );
 };
 
-/** Khối nổi góc dưới phải: tiến trình tải lên + quét mã độc. Ẩn khi không có tệp. */
 export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClose: () => void }) => {
   const [collapsed, setCollapsed] = useState(false);
   if (items.length === 0) return null;

@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Input, Select } from "antd"; // Ant Design
-import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react"; // Lucide React
+import { Input, Select } from "antd";
+import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { FormDef, Issue, SelectedElement } from "../types";
 
-// ===== Hằng số =====
 const TYPE_LABEL: Record<string, string> = {
   StartEvent: "Sự kiện bắt đầu",
   EndEvent: "Sự kiện kết thúc",
@@ -24,7 +21,6 @@ const TYPE_LABEL: Record<string, string> = {
   SequenceFlow: "Luồng",
 };
 
-// ===== Component =====
 const Field = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
   <label className="block">
     <span className="block text-[12px] font-medium text-body">{label}</span>
@@ -33,10 +29,6 @@ const Field = ({ label, hint, children }: { label: string; hint?: string; childr
   </label>
 );
 
-/**
- * Cột phải: thuộc tính phần tử đang chọn (sửa trực tiếp vào BPMN) và kết quả kiểm tra của máy chủ. Bấm một lỗi để
- * chọn phần tử trên sơ đồ.
- */
 export const PropertiesPanel = ({
   element,
   forms,

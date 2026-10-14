@@ -2,16 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { RadioTower } from "lucide-react"; // Lucide React
+import { RadioTower } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { Dot, SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { TwinEntity } from "../types";
 import { ENTITY_STATUS } from "../utils";
 
-// ===== Component =====
 const EntityCard = ({
   entity,
   selected,
@@ -54,7 +51,6 @@ const EntityCard = ({
   </button>
 );
 
-/** Cột trái: ô lọc + danh sách thực thể (cuộn độc lập). Mũi tên lên/xuống để chuyển thực thể. */
 export const EntityList = ({
   entities,
   selectedId,
@@ -67,7 +63,6 @@ export const EntityList = ({
   entities: TwinEntity[];
   selectedId?: string;
   query: string;
-  /** Hiện loại thiết bị trên thẻ (hữu ích ở tab "Tất cả"). */
   showKind: boolean;
   onQueryChange: (q: string) => void;
   onSelect: (id: string) => void;

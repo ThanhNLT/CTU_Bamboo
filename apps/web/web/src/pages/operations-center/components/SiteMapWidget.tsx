@@ -2,34 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// "Cơ sở và cảnh báo": các đơn vị có tọa độ (quản trị nhập ở Cơ cấu tổ chức) trên nền bản đồ Việt Nam đóng gói sẵn
-// (chạy được khi không có Internet). Màu = mức cảnh báo tính ở máy chủ: đỏ khi có việc duyệt quá hạn, vàng khi có
-// việc đang chờ hoặc lô đang giữ. Mặc định phóng vào vùng có cơ sở; "Toàn quốc" để xem cả nước (ADR #49).
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
 
-// ===== Thư viện =====
-import { useEffect, useMemo, useRef, useState } from "react"; // React
-import { Link } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { OpsSite } from "../api";
 import { ARCHIPELAGOS, project, VN_HEIGHT, VN_PATH, VN_WIDTH } from "../vietnam";
 import { ChartWidget, ChipButton } from "./ChartWidget";
 
-// ===== Hằng số =====
 const STATUS: Record<OpsSite["status"], { label: string; bg: string; text: string }> = {
   ok: { label: "Bình thường", bg: "bg-bamboo-600", text: "text-bamboo-700" },
   warning: { label: "Cần chú ý", bg: "bg-amber-500", text: "text-amber-700" },
   critical: { label: "Quá hạn", bg: "bg-red-500", text: "text-red-700" },
 };
 const HEIGHT = 280;
-const PAD = 26; // khoảng đệm quanh cơ sở khi phóng (đơn vị khung, ~1,3 độ)
+const PAD = 26;
 
-// ===== Kiểu dữ liệu =====
 type Box = { x: number; y: number; w: number; h: number };
 
-// ===== Hàm tiện ích =====
-/** Khung nhìn cùng tỉ lệ với khối: ôm các cơ sở (hoặc cả nước), giữ tâm. */
 const fitBox = (points: { x: number; y: number }[], aspect: number, whole: boolean): Box => {
   let b: Box = { x: 0, y: 0, w: VN_WIDTH, h: VN_HEIGHT };
   if (!whole && points.length > 0) {
@@ -46,7 +36,6 @@ const fitBox = (points: { x: number; y: number }[], aspect: number, whole: boole
   return { x: cx - w / 2, y: cy - h / 2, w, h };
 };
 
-// ===== Component =====
 const Marker = ({
   site,
   left,
@@ -93,7 +82,6 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
   const boxRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
   const [whole, setWhole] = useState(false);
-  /** undefined: tự chọn cơ sở đáng chú ý nhất; "": người dùng đã đóng. */
   const [selectedId, setSelectedId] = useState<string>();
 
   useEffect(() => {

@@ -2,17 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Sparkles, X } from "lucide-react"; // Lucide React
-import { useEffect, useRef, type ReactNode } from "react"; // React
+import { Sparkles, X } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { MODEL_LABEL, MODES, SCOPE_NOTE } from "../mock";
 import type { AssistantMode, ChatSession, ToolStep } from "../types";
 import { ThinkingMessage } from "./ThinkingMessage";
 
-// ===== Component =====
 const ModeTabs = ({ value, onChange }: { value: AssistantMode; onChange: (m: AssistantMode) => void }) => (
   <div
     role="tablist"
@@ -41,10 +38,6 @@ const ModeTabs = ({ value, onChange }: { value: AssistantMode; onChange: (m: Ass
   </div>
 );
 
-/**
- * Khung chat: thanh chế độ + mô hình, băng ngữ cảnh, vùng tin nhắn cuộn được, gợi ý và ô nhập cố định ở đáy.
- * `children` là danh sách tin nhắn đã dựng sẵn.
- */
 export const ChatArea = ({
   session,
   mode,
@@ -61,7 +54,6 @@ export const ChatArea = ({
   mode: AssistantMode;
   onModeChange: (m: AssistantMode) => void;
   onClearContext: () => void;
-  /** Có giá trị = trợ lý đang xử lý (đối với phiên này). */
   thinking?: { key: string; steps: ToolStep[] };
   suggestions: string[];
   onSuggestion: (s: string) => void;
@@ -72,7 +64,6 @@ export const ChatArea = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const count = session.messages.length;
 
-  // Có tin nhắn mới / đổi phiên / bắt đầu xử lý → cuộn xuống cuối.
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });

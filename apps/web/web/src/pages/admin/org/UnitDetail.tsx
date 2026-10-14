@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ConfigProvider, Dropdown, Table, Tag, Tooltip } from "antd"; // Ant Design
-import { Building2, Crown, MoreHorizontal, Pencil, Plus, Power, UserPlus } from "lucide-react"; // Lucide React
+import { ConfigProvider, Dropdown, Table, Tag, Tooltip } from "antd";
+import { Building2, Crown, MoreHorizontal, Pencil, Plus, Power, UserPlus } from "lucide-react";
 
-// ===== Module nội bộ =====
 import {
   bambooTableTheme,
   Dot,
@@ -17,15 +15,11 @@ import {
 import { ASSIGNMENT_LABEL, type OrgData, type Position, type Unit } from "../shared/orgData";
 import { periodLabel } from "../shared/period";
 
-// ===== Hằng số =====
 const iconBtn =
   "grid h-8 w-8 place-items-center rounded-full text-body hover:bg-canvas focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
-// ===== Kiểu dữ liệu =====
 export type PositionAction = "edit" | "assign" | "end-assignment" | "close";
 
-// ===== Component =====
-/** Cột phải: thông tin đơn vị + bảng vị trí (ghế) trong đơn vị và người đang giữ. */
 export const UnitDetail = ({
   unit,
   org,

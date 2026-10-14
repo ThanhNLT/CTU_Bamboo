@@ -2,24 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Checkbox, Select } from "antd"; // Ant Design
-import { Check, CheckCircle2, RotateCcw } from "lucide-react"; // Lucide React
-import type { ReactNode } from "react"; // React
-import { Link } from "react-router"; // React Router
+import { Checkbox, Select } from "antd";
+import { Check, CheckCircle2, RotateCcw } from "lucide-react";
+import type { ReactNode } from "react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { PRIORITIES, RECORD_TYPES } from "../mock";
 import type { FieldKey, FormValues, OcrField } from "../types";
 import { LEVEL_STYLE, formatConfidence, levelOf } from "../utils";
 
-// ===== Hàm tiện ích =====
 const fieldId = (k: FieldKey) => `ocr-field-${k}`;
 
-// ===== Component =====
-/** Thẻ độ tin cậy cạnh nhãn. Trường cần xem: bấm để xác nhận "đã xem" mà không cần sửa. */
 const ConfidenceTag = ({
   field,
   reviewed,
@@ -98,7 +93,6 @@ const Field = ({
   </div>
 );
 
-// ===== Hàm tiện ích =====
 const inputClass = (invalid: boolean, mono = false) =>
   cn(
     "w-full rounded-xl border px-3 text-ink outline-none transition-colors",
@@ -108,8 +102,6 @@ const inputClass = (invalid: boolean, mono = false) =>
       : "border-transparent bg-canvas placeholder:text-muted hover:border-line focus:border-bamboo-600 focus:bg-white focus:ring-3 focus:ring-bamboo-100",
   );
 
-// ===== Component =====
-/** Cột phải: các trường đã trích xuất, độ tin cậy từng trường, và thao tác tạo hồ sơ / quét lại. */
 export const ExtractedFieldsForm = ({
   fields,
   values,

@@ -2,16 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Vai trò & phân quyền (Quản trị, ADR #44): vai trò = gói quyền; cấp vai trò cho vị trí / đơn vị (hoặc ngoại lệ cho
-// người ngoài cây tổ chức) với phạm vi theo cây đơn vị và thời hạn. Cần quyền core.permission.manage.
+import { Alert, App, Checkbox, ConfigProvider, Form, Input, Spin, Table } from "antd";
+import { FileSpreadsheet, KeyRound, Plus, Save, ShieldPlus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { Alert, App, Checkbox, ConfigProvider, Form, Input, Spin, Table } from "antd"; // Ant Design
-import { FileSpreadsheet, KeyRound, Plus, Save, ShieldPlus } from "lucide-react"; // Lucide React
-import { useEffect, useMemo, useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { useSession } from "../../../auth/useSession";
 import {
   bambooTableTheme,
@@ -34,7 +29,6 @@ import { useGql } from "../shared/useGql";
 import { PERM, usePermissions } from "../shared/usePermissions";
 import { GrantModal } from "./GrantModal";
 
-// ===== Truy vấn GraphQL =====
 const ROLES = `
   query AdminRoles {
     core_role(order_by: { name: asc }) {
@@ -46,7 +40,6 @@ const ROLES = `
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Grant = {
   id: string;
   scope: string;
@@ -65,8 +58,6 @@ type Role = {
 };
 type Data = { core_role: Role[]; core_permission: { code: string; description: string }[] };
 
-// ===== Hằng số =====
-/** Nhóm quyền theo tiền tố mã. */
 const MODULE: Record<string, string> = {
   core: "Tổ chức & phân quyền",
   proc: "Mua sắm",
@@ -77,11 +68,9 @@ const MODULE: Record<string, string> = {
   audit: "Kiểm toán",
 };
 
-// ===== Kiểu dữ liệu =====
 type Dialog =
   { kind: "role"; edit: boolean } | { kind: "grant" } | { kind: "revoke"; grant: Grant } | { kind: "import" };
 
-// ===== Component =====
 export const RolesPage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();

@@ -2,7 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Bản sao số, KPI ghim (ADR #50): giá trị mới nhất theo số đo, ghi nhận sự cố một lần kèm hướng xử lý, ghim tối đa 6.
 SELECT test.fixture();
 
 INSERT INTO iot.model (type, kind, category, grade, attributes)

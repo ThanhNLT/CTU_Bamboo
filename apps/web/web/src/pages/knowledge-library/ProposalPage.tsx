@@ -2,16 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Trang một đề xuất tài liệu (ADR #48): nội dung, tệp (kiểm dịch), gửi duyệt / hủy (người lập), xử lý duyệt (người
-// nhận việc), chuỗi duyệt, trao đổi.
+import { Alert, App, Button, Card, Col, Descriptions, Input, Row, Space, Spin, Tabs, Tag } from "antd";
+import { AuditOutlined, EditOutlined, SendOutlined, StopOutlined } from "@ant-design/icons";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router";
 
-// ===== Thư viện =====
-import { Alert, App, Button, Card, Col, Descriptions, Input, Row, Space, Spin, Tabs, Tag } from "antd"; // Ant Design
-import { AuditOutlined, EditOutlined, SendOutlined, StopOutlined } from "@ant-design/icons"; // Ant Design Icons
-import { useCallback, useEffect, useState } from "react"; // React
-import { Link, useParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ActModal } from "../../components/approval/ActModal";
@@ -24,10 +19,8 @@ import { ProposeModal } from "./components/ProposeModal";
 import { CATEGORY_LABEL, PROPOSAL_STATUS, SCOPE_LABEL } from "./labels";
 import type { DocCategory, DocScope } from "./types";
 
-// ===== Hằng số =====
 const ENTITY = "collab.kb_document";
 
-// ===== Truy vấn GraphQL =====
 const DETAIL = `query KbDoc($id: uuid!) {
   collab_kb_document_by_pk(id: $id) {
     id doc_no title category scope summary toc effective_date version supersedes_id status approval_round
@@ -47,7 +40,6 @@ const DETAIL = `query KbDoc($id: uuid!) {
   wf_v_inbox(where: {entity_id: {_eq: $id}}) { task_id via_delegation }
 }`;
 
-// ===== Kiểu dữ liệu =====
 type Doc = {
   id: string;
   doc_no: string;
@@ -71,7 +63,6 @@ type Doc = {
   attachments: Attachment[];
 };
 
-// ===== Component =====
 export const ProposalPage = () => {
   const { id } = useParams();
   const { message, modal } = App.useApp();
@@ -207,7 +198,6 @@ export const ProposalPage = () => {
                   label: `Tệp tài liệu (${doc.attachments.filter((a) => !["REJECTED", "INFECTED"].includes(a.status)).length})`,
                   children: (
                     <Attachments
-                      // Attachments khóa xóa tệp theo trạng thái kiểu đề nghị mua sắm: ngoài lúc soạn thì coi như đã có kết quả.
                       doc={{ id: doc.id, status: editable ? "DRAFT" : "APPROVED", attachments: doc.attachments }}
                       entityType={ENTITY}
                       me={tenant.person_id}

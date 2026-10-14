@@ -2,20 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Tiếp nhận nhân sự (ADR #41): phòng nhân sự lập hồ sơ, trưởng phòng nhận người rồi giám đốc công ty duyệt;
-// người duyệt chỉ thấy dữ liệu nhạy cảm đã che; duyệt xong có tài khoản, nhân viên mới đăng nhập đổi mật khẩu.
-// Dùng một ghế tuyển mới của Phòng Mua hàng Điện thoại X (dữ liệu demo), nên chạy trên CSDL mới seed.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now().toString(36);
 const NAME = `Trần Thị Thử ${STAMP}`;
 const USERNAME = `e2e.${STAMP}`;
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string, password = PASSWORD) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -25,10 +18,7 @@ async function login(page: Page, username: string, password = PASSWORD) {
 }
 
 async function logout(page: Page) {
-  // Chờ Keycloak xóa phiên SSO: nút đăng nhập có thể hiện trước khi trình duyệt gọi endpoint đăng xuất; điều hướng
-  // sớm sẽ cắt ngang, phiên cũ còn nên check-sso đăng nhập lại người cũ và không còn trang đăng nhập.
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
-  // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
   await page
     .locator("header")
     .getByRole("button", { name: /^Tài khoản:/ })
@@ -47,11 +37,9 @@ async function approveFromInbox(page: Page) {
   await expect(page.locator("tr", { hasText: `Tiếp nhận ${NAME}` })).toHaveCount(0);
 }
 
-// ===== Kịch bản kiểm thử =====
 test("lập hồ sơ tiếp nhận, duyệt hai cấp, tạo tài khoản, nhân viên mới đăng nhập", async ({ page }) => {
   test.setTimeout(240_000);
 
-  // Chuyên viên nhân sự Điện thoại X lập hồ sơ.
   await login(page, "ns.dienthoai");
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
   await page.getByRole("navigation", { name: "Điều hướng chính" }).getByText("Tiếp nhận nhân sự").click();
@@ -75,13 +63,11 @@ test("lập hồ sơ tiếp nhận, duyệt hai cấp, tạo tài khoản, nhân
   await expect(page.getByText(/Giám đốc – Công ty Điện thoại X/)).toBeVisible();
   const detail = page.url();
 
-  // Phòng nhân sự xem được bản đầy đủ.
   await page.getByRole("button", { name: "Xem đầy đủ" }).click();
   await expect(page.getByRole("dialog").getByText("079203456789")).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Đóng" }).click();
   await logout(page);
 
-  // Trưởng phòng Mua hàng (quản lý trực tiếp của vị trí): chỉ thấy bản che, duyệt.
   await login(page, "tp.muahang.dienthoai");
   await page.goto(detail);
   await expect(page.getByText("•••••••••789")).toBeVisible();
@@ -89,12 +75,10 @@ test("lập hồ sơ tiếp nhận, duyệt hai cấp, tạo tài khoản, nhân
   await approveFromInbox(page);
   await logout(page);
 
-  // Giám đốc Điện thoại X duyệt bước cuối.
   await login(page, "gd.dienthoai");
   await approveFromInbox(page);
   await logout(page);
 
-  // Phòng nhân sự: đã tiếp nhận, tài khoản được tạo ở nền, xem mật khẩu tạm để bàn giao.
   await login(page, "ns.dienthoai");
   await page.goto(detail);
   await expect(page.getByText(/mã nhân viên NV-\d{4}-\d{6}/)).toBeVisible();
@@ -105,11 +89,9 @@ test("lập hồ sơ tiếp nhận, duyệt hai cấp, tạo tài khoản, nhân
   await page.getByRole("dialog").getByRole("button", { name: "Đóng" }).click();
   await logout(page);
 
-  // Nhân viên mới đăng nhập bằng mật khẩu tạm, Keycloak bắt đổi mật khẩu.
   await login(page, USERNAME, temp);
   await page.locator("#password-new").fill(`${PASSWORD}-${STAMP}`);
   await page.locator("#password-confirm").fill(`${PASSWORD}-${STAMP}`);
   await page.locator("input[type=submit], button[type=submit]").first().click();
-  // Header hiện chữ viết tắt trong avatar; tên đầy đủ nằm ở nhãn của nút tài khoản.
   await expect(page.locator("header").getByRole("button", { name: `Tài khoản: ${NAME}` })).toBeVisible();
 });

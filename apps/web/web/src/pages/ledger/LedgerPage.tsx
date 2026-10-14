@@ -2,18 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Sổ cái (Dữ liệu số, ADR #46): bản niêm phong của mỗi tệp đính kèm là SHA-256 ghi lúc tệp được nhận, nằm trong
-// chuỗi hash của nhật ký kiểm toán. Tab "Đối soát" so số chứng từ (máy chủ đọc lại tệp trong kho) hoặc tệp (băm
-// SHA-256 ngay trong trình duyệt) với bản niêm phong; tab "Phòng đọc ảo" mở tệp của chứng từ đã kết thúc ở chế độ
-// chỉ đọc. Mở thẳng một hồ sơ: /d/ledger?doc=PR-2026-000012.
+import { App } from "antd";
+import { Download, Link2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { App } from "antd"; // Ant Design
-import { Download, Link2 } from "lucide-react"; // Lucide React
-import { useCallback, useEffect, useRef, useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { secondaryButtonClass } from "../../components/ui";
 import { copyText } from "../../utils/clipboard";
@@ -37,11 +30,8 @@ import {
   sha256Hex,
 } from "./utils";
 
-// ===== Hằng số =====
-/** Số hồ sơ lưu trữ hiện trong thẻ "Phòng đọc ảo" ở tab Đối soát. */
 const FEATURED = 3;
 
-// ===== Component =====
 export const LedgerPage = () => {
   const { message } = App.useApp();
   const [params] = useSearchParams();
@@ -71,7 +61,6 @@ export const LedgerPage = () => {
     [message],
   );
 
-  /** Gửi một lần đối soát; kết quả của lần bấm cũ hơn bị bỏ qua. */
   const run = useCallback(
     async (input: Parameters<typeof verify>[0]) => {
       const id = ++runId.current;
@@ -102,7 +91,6 @@ export const LedgerPage = () => {
   useEffect(() => {
     void loadOverview();
     void loadArchive();
-    // Mở từ liên kết ?doc=...: đối soát ngay (không dùng ?code=: trùng tham số OAuth mà keycloak-js đọc).
     const initial = params.get("doc");
     if (initial) void verifyCode(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi mở trang
@@ -160,7 +148,6 @@ export const LedgerPage = () => {
     }
   };
 
-  /** Người có quyền audit.read: đối soát cả chuỗi hash kiểm toán của tenant. */
   const verifyChain = async () => {
     try {
       const r = await request<{ verify_audit_chain: { ok: boolean; checked: number; problems: unknown[] } }>(

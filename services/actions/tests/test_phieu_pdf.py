@@ -2,27 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Phiếu PDF (ADR #37): số tiền bằng chữ, mẫu HTML escape, Gotenberg in PDF, lưu và tái dùng theo nội dung."""
-
-# ===== Thư viện chuẩn =====
 import threading
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
-import pytest  # pytest
+import httpx
+import pytest
 
-# ===== Module nội bộ =====
 from app import forms
 from conftest import SETTINGS, ids, pr
 
-# ===== Hằng số & cấu hình =====
 PDF_QUERY = """query($id: uuid!) { get_purchase_request_pdf(request_id: $id) {
   url file_name check_code status cached expires_in } }"""
 
 
-# ===== Kiểm thử =====
 @pytest.mark.parametrize(
     "amount, words",
     [
@@ -56,7 +49,6 @@ def test_dinh_dang_so():
     assert forms.number(Decimal("0.125"), 3) == "0,125"
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def _sample(**over) -> dict:
     pr_ = {
         "id": "x",
@@ -96,7 +88,6 @@ def _sample(**over) -> dict:
     return {**pr_, **over}
 
 
-# ===== Kiểm thử =====
 def test_mau_escape_du_lieu_nguoi_dung():
     html = forms.render_purchase_request(
         _sample(title='<img src="http://evil/x"><script>alert(1)</script>', description="A & B")
@@ -142,13 +133,11 @@ def test_in_phieu_qua_hasura(hasura, conn, s3, gotenberg):
         ):
             assert expected in text, (expected, text)
 
-    # Cùng nội dung: dùng lại tệp đã in. Người duyệt in được; người không xem được chứng từ thì không.
     again = hasura(PDF_QUERY, {"id": pr_id}, person=i["tp_mh_dt"], tenant=i["TDX"])["data"]["get_purchase_request_pdf"]
     assert again["cached"] and again["check_code"] == first["check_code"]
     denied = hasura(PDF_QUERY, {"id": pr_id}, person=i["a"], tenant=i["TDX"])
     assert denied["errors"][0]["extensions"]["code"] == "not-found"
 
-    # Duyệt xong: nội dung đổi nên in bản mới, có người duyệt và không còn chữ chìm.
     conn.execute("SELECT test.approve('phieu_pdf', 'tp_mh_dt')")
     approved = hasura(PDF_QUERY, {"id": pr_id}, person=i["c"], tenant=i["TDX"])["data"]["get_purchase_request_pdf"]
     assert approved["status"] == "APPROVED" and not approved["cached"]
@@ -159,7 +148,6 @@ def test_in_phieu_qua_hasura(hasura, conn, s3, gotenberg):
 
 
 def test_gotenberg_khong_tai_tai_nguyen_ngoai(gotenberg):
-    """Trang có ảnh trỏ vào dịch vụ nội bộ vẫn in được nhưng Gotenberg không gọi tới địa chỉ đó."""
     hits = []
 
     class Handler(BaseHTTPRequestHandler):
@@ -183,7 +171,6 @@ def test_gotenberg_khong_tai_tai_nguyen_ngoai(gotenberg):
         server.shutdown()
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def _reachable_tika() -> bool:
     try:
         return httpx.get(SETTINGS.tika_url + "/version", timeout=3).status_code == 200
@@ -199,5 +186,4 @@ def _pdf_text(data: bytes) -> str:
         headers={"Content-Type": "application/pdf", "Accept": "text/plain; charset=UTF-8"},
     )
     resp.raise_for_status()
-    # Tika 4 thêm "\\" trước ký tự đặc biệt (<, >) trong văn bản trích ra.
     return " ".join(resp.content.decode("utf-8").replace("\\", "").split())

@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import js from "@eslint/js"; // ESLint
-import reactHooks from "eslint-plugin-react-hooks"; // eslint-plugin-react-hooks
-import reactRefresh from "eslint-plugin-react-refresh"; // eslint-plugin-react-refresh
-import globals from "globals"; // globals
-import tseslint from "typescript-eslint"; // typescript-eslint
+import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   { ignores: ["dist"] },
@@ -25,6 +24,7 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "no-empty": ["error", { allowEmptyCatch: true }],
     },
   },
 );

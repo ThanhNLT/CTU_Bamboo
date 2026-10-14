@@ -2,18 +2,7 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 008: Bình luận trên chứng từ và thông báo sinh bằng trigger (ADR #20; thiết kế CSDL mục 4.8).
---
--- Thông báo không phụ thuộc ứng dụng nào ghi dữ liệu: trigger trên wf.task,
--- proc.purchase_request và collab.comment tự sinh, rồi phát pg_notify('bms_notification')
--- cho dịch vụ realtime. Giao diện đọc qua Hasura (query + subscription).
--- Thêm loại chứng từ mới: bổ sung nhánh vào collab.entity_label và collab.entity_owner.
-
 CREATE SCHEMA IF NOT EXISTS collab;
-
--- ---------------------------------------------------------------------------
--- Chứng từ đa hình (entity_type, entity_id)
--- ---------------------------------------------------------------------------
 
 CREATE FUNCTION collab.entity_tenant(p_type text, p_id uuid) RETURNS uuid
 LANGUAGE plpgsql STABLE AS $$
@@ -37,7 +26,6 @@ BEGIN
     END CASE;
 END $$;
 
--- Chủ chứng từ: người nhận thông báo khi có bình luận.
 CREATE FUNCTION collab.entity_owner(p_type text, p_id uuid) RETURNS uuid
 LANGUAGE plpgsql STABLE AS $$
 BEGIN
@@ -48,10 +36,6 @@ BEGIN
         RETURN NULL;
     END CASE;
 END $$;
-
--- ---------------------------------------------------------------------------
--- Thông báo
--- ---------------------------------------------------------------------------
 
 CREATE TABLE collab.notification (
     tenant_id     uuid NOT NULL REFERENCES core.tenant,
@@ -75,7 +59,6 @@ CREATE INDEX ON collab.notification (tenant_id, recipient_id, created_at DESC);
 CREATE INDEX ON collab.notification (tenant_id, actor_id);
 CREATE INDEX ON collab.notification (entity_type, entity_id);
 
--- Gửi một thông báo; bỏ qua khi người nhận chính là người gây ra sự kiện.
 CREATE FUNCTION collab.notify(p_tenant uuid, p_recipient uuid, p_kind text, p_type text, p_id uuid,
                               p_title text, p_body text DEFAULT NULL, p_actor uuid DEFAULT NULL)
 RETURNS void
@@ -93,8 +76,6 @@ BEGIN
         'tenant_id', p_tenant, 'recipient_id', p_recipient, 'id', v_id, 'kind', p_kind)::text);
 END $$;
 
--- Đánh dấu đã đọc thông báo của chính người gọi (Hasura track làm mutation).
--- p_ids NULL: đánh dấu tất cả.
 CREATE FUNCTION collab.mark_notifications_read(hasura_session json, ids uuid[] DEFAULT NULL)
 RETURNS SETOF collab.notification
 LANGUAGE sql VOLATILE AS $$
@@ -107,7 +88,6 @@ LANGUAGE sql VOLATILE AS $$
     RETURNING *
 $$;
 
--- Việc duyệt được giao (kể cả chuyển việc): người nhận và người đang nhận ủy quyền của họ.
 CREATE FUNCTION collab.task_notify() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -137,8 +117,6 @@ END $$;
 CREATE TRIGGER task_notify AFTER INSERT ON wf.task
 FOR EACH ROW EXECUTE FUNCTION collab.task_notify();
 
--- Đề nghị có kết quả: báo người lập, kèm người xử lý bước cuối và ghi chú
--- (bị hủy: người hủy ghi ở lịch sử, NULL khi hệ thống tự hủy).
 CREATE FUNCTION collab.purchase_request_notify() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -172,10 +150,6 @@ CREATE TRIGGER purchase_request_notify AFTER UPDATE OF status ON proc.purchase_r
 FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION collab.purchase_request_notify();
 
--- ---------------------------------------------------------------------------
--- Bình luận
--- ---------------------------------------------------------------------------
-
 CREATE TABLE collab.comment (
     tenant_id    uuid NOT NULL REFERENCES core.tenant,
     id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -197,9 +171,6 @@ CREATE INDEX ON collab.comment (entity_type, entity_id, created_at);
 CREATE INDEX ON collab.comment (tenant_id, parent_id);
 CREATE INDEX ON collab.comment (tenant_id, author_id);
 
--- Bình luận phải gắn với chứng từ cùng tenant mà người viết xem được; người được
--- nhắc tên phải cùng tenant và xem được chứng từ. Sửa: chỉ nội dung; xóa mềm thì
--- xóa nội dung.
 CREATE FUNCTION collab.comment_before_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -258,7 +229,6 @@ END $$;
 CREATE TRIGGER comment_before_write BEFORE INSERT OR UPDATE ON collab.comment
 FOR EACH ROW EXECUTE FUNCTION collab.comment_before_write();
 
--- Người được nhắc tên (MENTION), chủ chứng từ và người viết bình luận gốc (COMMENT).
 CREATE FUNCTION collab.comment_notify() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -286,7 +256,6 @@ END $$;
 CREATE TRIGGER comment_notify AFTER INSERT ON collab.comment
 FOR EACH ROW EXECUTE FUNCTION collab.comment_notify();
 
--- Computed field `can_read` của Hasura: xem bình luận khi xem được chứng từ.
 CREATE FUNCTION collab.comment_can_read(p_row collab.comment, hasura_session json)
 RETURNS boolean
 LANGUAGE sql STABLE AS $$

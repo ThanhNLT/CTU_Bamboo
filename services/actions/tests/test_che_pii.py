@@ -2,18 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Che dữ liệu cá nhân (ADR #43): nhật ký kiểm toán chỉ trả bản che, kiểm tra văn bản trước khi gửi."""
+import pytest
+from fastapi.testclient import TestClient
 
-# ===== Thư viện bên ngoài =====
-import pytest  # pytest
-from fastapi.testclient import TestClient  # FastAPI
-
-# ===== Module nội bộ =====
 from app import audit, config, main
 from conftest import SETTINGS, ids, pr
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture
 def client(database):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
@@ -21,7 +16,6 @@ def client(database):
         yield c
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant):
     payload = {
         "action": {"name": name},
@@ -46,7 +40,6 @@ def grant_auditor(conn, position_key: str) -> None:
 
 
 def commented_log(conn, body: str) -> int:
-    """Bình luận chứa dữ liệu cá nhân trên một đề nghị → id dòng nhật ký INSERT của bình luận."""
     pr_id = pr(conn, f"pii_{abs(hash(body))}", "c", "P_NV_MH_DT", 1_000_000)
     row = conn.execute(
         """INSERT INTO collab.comment (tenant_id, entity_type, entity_id, author_id, body)
@@ -58,7 +51,6 @@ def commented_log(conn, body: str) -> int:
     ).fetchone()["id"]
 
 
-# ===== Kiểm thử =====
 def test_nhat_ky_tra_ban_che(client, conn):
     i = ids(conn, "TDX", "BVX", "c", "ptgd")
     grant_auditor(conn, "P_PTGD")
@@ -73,7 +65,6 @@ def test_nhat_ky_tra_ban_che(client, conn):
     assert row["new_data"]["body"] == "Liên hệ chị Hương 0912 *** 678, CCCD •••••••••789"
     assert row["old_data"] is None and row["table_name"] == "collab.comment"
     assert row["masked"] == ["Số CCCD", "Số điện thoại"]
-    # Phiên ở tenant khác: không phải người đọc nhật ký của tenant đó.
     assert call(client, "audit_log_detail", {"log_ids": [log_id]}, i["ptgd"], i["BVX"]).status_code == 403
 
 

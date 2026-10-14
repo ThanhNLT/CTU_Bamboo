@@ -2,18 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Plus } from "lucide-react"; // Lucide React
+import { Plus } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { ProcessSummary } from "../types";
 
-// ===== Hằng số =====
 const RUN_LABEL = { COMPLETED: "chạy thử đạt", STOPPED: "chạy thử dừng", FAILED: "chạy thử lỗi" } as const;
 
-// ===== Component =====
-/** Cột trái: các quy trình của tenant (phiên bản phát hành, lần chạy thử gần nhất) và nút tạo quy trình. */
 export const SidebarTools = ({
   processes,
   activeId,

@@ -2,15 +2,11 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 006: Dữ liệu chủ (nhà cung cấp, vật tư), số chứng từ, dòng hàng của đề nghị
--- mua sắm, người lập hủy đề nghị (thiết kế CSDL mục 4.3).
-
 CREATE SCHEMA IF NOT EXISTS mdm;
 
 INSERT INTO core.permission (code, description) VALUES
     ('mdm.manage', 'Quản trị dữ liệu chủ (nhà cung cấp, vật tư)');
 
--- Cập nhật updated_at mỗi khi sửa dòng.
 CREATE FUNCTION core.touch_updated_at() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -18,11 +14,6 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Dữ liệu chủ
--- ---------------------------------------------------------------------------
-
--- Nhà cung cấp. internal_unit_id: công ty (pháp nhân) cùng tenant, dùng cho giao dịch nội bộ.
 CREATE TABLE mdm.partner (
     tenant_id         uuid NOT NULL REFERENCES core.tenant,
     id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -58,8 +49,6 @@ FOR EACH ROW EXECUTE FUNCTION mdm.partner_check();
 CREATE TRIGGER partner_touch BEFORE UPDATE ON mdm.partner
 FOR EACH ROW EXECUTE FUNCTION core.touch_updated_at();
 
--- Vật tư, hàng hóa, dịch vụ. category_code khớp wf.approval_rule.category_code và
--- danh mục ITEM_CATEGORY trong core.catalog_item.
 CREATE TABLE mdm.item (
     tenant_id      uuid NOT NULL REFERENCES core.tenant,
     id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,11 +67,6 @@ CREATE INDEX ON mdm.item (tenant_id, category_code);
 
 CREATE TRIGGER item_touch BEFORE UPDATE ON mdm.item
 FOR EACH ROW EXECUTE FUNCTION core.touch_updated_at();
-
--- ---------------------------------------------------------------------------
--- Số chứng từ: <tiền tố>-<năm>-<6 chữ số>, theo tenant, loại, năm (giờ Việt Nam).
--- Bộ đếm là một dòng khóa theo giao dịch nên không nhảy số khi rollback.
--- ---------------------------------------------------------------------------
 
 CREATE TABLE core.doc_sequence (
     tenant_id  uuid NOT NULL REFERENCES core.tenant,
@@ -106,10 +90,6 @@ BEGIN
     RETURN format('%s-%s-%s', p_prefix, v_year, lpad(v_no::text, 6, '0'));
 END $$;
 
--- ---------------------------------------------------------------------------
--- Đề nghị mua sắm: số chứng từ, mô tả, ngày cần, nhà cung cấp đề xuất
--- ---------------------------------------------------------------------------
-
 ALTER TABLE proc.purchase_request
     ADD COLUMN doc_no      text,
     ADD COLUMN description text,
@@ -126,7 +106,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Lập bằng dòng hàng thì không cần nhập tổng tiền.
 ALTER TABLE proc.purchase_request
     ALTER COLUMN doc_no SET NOT NULL,
     ALTER COLUMN total_amount SET DEFAULT 0,
@@ -142,7 +121,6 @@ END $$;
 CREATE TRIGGER purchase_request_doc_no BEFORE INSERT ON proc.purchase_request
 FOR EACH ROW EXECUTE FUNCTION proc.purchase_request_doc_no();
 
--- Đề nghị có dòng hàng thì tổng tiền luôn bằng tổng các dòng (sửa tay bị ghi đè).
 CREATE FUNCTION proc.purchase_request_before_update() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -155,10 +133,6 @@ BEGIN
     NEW.updated_at := now();
     RETURN NEW;
 END $$;
-
--- ---------------------------------------------------------------------------
--- Dòng hàng: chỉ sửa được khi đề nghị còn nháp hoặc bị trả về
--- ---------------------------------------------------------------------------
 
 CREATE TABLE proc.purchase_request_item (
     tenant_id    uuid NOT NULL REFERENCES core.tenant,
@@ -180,7 +154,6 @@ CREATE TABLE proc.purchase_request_item (
 CREATE INDEX ON proc.purchase_request_item (tenant_id, request_id);
 CREATE INDEX ON proc.purchase_request_item (tenant_id, item_id);
 
--- Điền tenant, số dòng, mô tả và đơn vị tính (lấy từ vật tư); chặn sửa sau khi gửi duyệt.
 CREATE FUNCTION proc.purchase_request_item_before_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -189,7 +162,6 @@ DECLARE
 BEGIN
     SELECT status INTO v_status FROM proc.purchase_request
     WHERE id = CASE WHEN TG_OP = 'DELETE' THEN OLD.request_id ELSE NEW.request_id END;
-    -- Không thấy đề nghị: đang bị xóa cùng câu lệnh (ON DELETE CASCADE).
     IF v_status IS NOT NULL AND v_status NOT IN ('DRAFT', 'RETURNED') THEN
         RAISE EXCEPTION 'Đề nghị đang ở trạng thái % nên không sửa được dòng hàng', v_status
             USING ERRCODE = 'data_exception';
@@ -219,8 +191,6 @@ END $$;
 CREATE TRIGGER purchase_request_item_before_write BEFORE INSERT OR UPDATE OR DELETE ON proc.purchase_request_item
 FOR EACH ROW EXECUTE FUNCTION proc.purchase_request_item_before_write();
 
--- Tính lại tổng tiền đầu phiếu (trigger BEFORE UPDATE của đề nghị cộng các dòng).
--- Trigger có bảng chuyển tiếp chỉ gắn được một sự kiện nên tách ba trigger.
 CREATE FUNCTION proc.purchase_request_item_recalc() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -243,14 +213,8 @@ CREATE TRIGGER purchase_request_item_recalc_delete AFTER DELETE ON proc.purchase
 REFERENCING OLD TABLE AS old_rows
 FOR EACH STATEMENT EXECUTE FUNCTION proc.purchase_request_item_recalc();
 
--- Đề nghị không còn dòng hàng nào thì giữ tổng tiền 0 (sum trả về NULL).
 CREATE TRIGGER purchase_request_before_update BEFORE UPDATE ON proc.purchase_request
 FOR EACH ROW EXECUTE FUNCTION proc.purchase_request_before_update();
-
--- ---------------------------------------------------------------------------
--- Hủy chứng từ: ghi người hủy; lịch sử ghi trước khi đổi trạng thái để trigger
--- (thông báo) đọc được người hủy.
--- ---------------------------------------------------------------------------
 
 DROP FUNCTION wf.cancel_entity(text, uuid, text, timestamptz);
 
@@ -272,7 +236,6 @@ BEGIN
     PERFORM wf.set_entity_status(p_type, p_id, 'CANCELLED');
 END $$;
 
--- Người lập hủy đề nghị chưa duyệt xong (nháp, chờ duyệt, bị trả về).
 CREATE FUNCTION proc.cancel_purchase_request(p_id uuid, p_actor uuid, p_reason text, p_at timestamptz DEFAULT now())
 RETURNS void
 LANGUAGE plpgsql AS $$

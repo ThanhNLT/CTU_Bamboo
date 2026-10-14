@@ -2,26 +2,12 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Chuyển mọi đối tượng trong CSDL hiện tại sang chủ mới (:owner). Dùng khi nâng cấp từ bản mà
--- Keycloak, Flowable, Hasura còn đăng nhập bằng `bms`: dịch vụ phải là chủ bảng của mình để tự
--- migrate schema. Không dùng REASSIGN OWNED vì `bms` là superuser khởi tạo, sở hữu cả catalog hệ thống.
--- Bỏ qua đối tượng của extension và sequence gắn với cột (đổi theo bảng).
-
--- ---------------------------------------------------------------------------
--- Chủ sở hữu và quyền kết nối CSDL
--- ---------------------------------------------------------------------------
-
 SELECT format('ALTER DATABASE %I OWNER TO %I', current_database(), :'owner')
 WHERE (SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = current_database()) <> :'owner'
 \gexec
 
--- Chỉ chủ sở hữu (và superuser) được kết nối.
 SELECT format('REVOKE CONNECT, TEMPORARY ON DATABASE %I FROM PUBLIC', current_database())
 \gexec
-
--- ---------------------------------------------------------------------------
--- Chủ sở hữu schema, bảng, hàm, kiểu
--- ---------------------------------------------------------------------------
 
 SELECT format('ALTER SCHEMA %I OWNER TO %I', n.nspname, :'owner')
 FROM pg_namespace n

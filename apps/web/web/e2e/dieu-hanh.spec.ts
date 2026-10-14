@@ -2,17 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Trung tâm điều hành (ADR #49): bản đồ cơ sở có số thật, các bảng Quy trình / Sản xuất / Bệnh viện / Chất lượng dữ
-// liệu có dữ liệu; số liệu bệnh viện (tenant con) chỉ cho người có quyền điều hành tập đoàn; trang Bản đồ cũ chuyển
-// về Trung tâm điều hành.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -33,13 +26,11 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("các bảng điều hành và bản đồ cơ sở dùng số liệu thật", async ({ page }) => {
   await login(page, "tgd");
   await page.goto("/d/map");
   await expect(page).toHaveURL(/\/d\/ops$/);
 
-  // Bản đồ: các công ty có tọa độ, Chip X có lô đang giữ.
   const map = page.getByRole("region", { name: "Cơ sở và cảnh báo" });
   const sites = map.getByRole("list", { name: "Danh sách cơ sở" });
   await expect(sites.getByText("Công ty Chip X")).toBeVisible();
@@ -67,7 +58,6 @@ test("các bảng điều hành và bản đồ cơ sở dùng số liệu thậ
   await expect(page.getByRole("region", { name: "Kiểm tra dữ liệu" }).getByText("Vị trí đang trống")).toBeVisible();
   await logout(page);
 
-  // Chuyên viên: không có quyền điều hành tập đoàn nên không xem số liệu bệnh viện.
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/d/ops");
   await tab("Bệnh viện");

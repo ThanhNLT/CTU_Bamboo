@@ -2,15 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Check, Copy } from "lucide-react"; // Lucide React
-import { useEffect, useRef, useState } from "react"; // React
+import { Check, Copy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-// ===== Module nội bộ =====
 import { copyText } from "../utils";
 
-// ===== Component =====
-/** Khối code có tiêu đề và nút "Sao chép" (đổi thành "Đã chép" trong 1,5 giây). */
 export const CodeSnippet = ({ title, code, language }: { title: string; code: string; language: string }) => {
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | undefined>(undefined);

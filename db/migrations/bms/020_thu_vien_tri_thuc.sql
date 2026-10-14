@@ -2,25 +2,9 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 020: Thư viện tri thức (ADR #48).
---
--- Tài liệu (quy chế, quy trình chuẩn, hướng dẫn, hỏi đáp) vào thư viện qua một đề xuất: loại chứng từ mới
--- `collab.kb_document` đi qua chuỗi duyệt có sẵn (quy trình KB_DOCUMENT), duyệt xong là xuất bản; bản thay thế
--- (supersedes_id) xuất bản thì bản cũ ngừng hiệu lực. Phạm vi "tập đoàn" ai trong tenant cũng đọc; "công ty" chỉ
--- người làm việc trong công ty (pháp nhân) của đơn vị ban hành. Nội dung và tệp của tài liệu đã xuất bản vào chỉ mục
--- tìm kiếm toàn văn. Kèm sửa: search.mark_all không đánh dấu tệp của hồ sơ nhân sự (có dữ liệu cá nhân).
-
--- ---------------------------------------------------------------------------
--- Quyền
--- ---------------------------------------------------------------------------
-
 INSERT INTO core.permission (code, description) VALUES
     ('kb.document.create', 'Đề xuất tài liệu vào thư viện tri thức'),
     ('kb.document.manage', 'Quản lý thư viện tri thức: xem mọi đề xuất, ngừng hiệu lực, nạp lại chỉ mục');
-
--- ---------------------------------------------------------------------------
--- Tài liệu (đề xuất → xuất bản)
--- ---------------------------------------------------------------------------
 
 CREATE TABLE collab.kb_document (
     tenant_id              uuid NOT NULL REFERENCES core.tenant,
@@ -36,7 +20,7 @@ CREATE TABLE collab.kb_document (
     supersedes_id          uuid,
     requester_id           uuid NOT NULL,
     requester_position_id  uuid NOT NULL,
-    org_unit_id            uuid NOT NULL,          -- đơn vị ban hành = đơn vị của tư cách lập
+    org_unit_id            uuid NOT NULL,
     status                 text NOT NULL DEFAULT 'DRAFT'
                            CHECK (status IN ('DRAFT', 'PENDING', 'RETURNED', 'APPROVED', 'REJECTED', 'CANCELLED',
                                              'RETIRED')),
@@ -56,7 +40,6 @@ CREATE INDEX ON collab.kb_document (tenant_id, status);
 CREATE INDEX ON collab.kb_document (tenant_id, requester_id);
 CREATE INDEX ON collab.kb_document (tenant_id, supersedes_id);
 
--- Số chứng từ TL-<năm>-<số>, đơn vị ban hành, số phiên bản (bản thay thế = bản cũ + 1); chỉ sửa khi nháp / bị trả về.
 CREATE FUNCTION collab.kb_document_before_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -85,7 +68,6 @@ END $$;
 CREATE TRIGGER kb_document_before_write BEFORE INSERT OR UPDATE ON collab.kb_document
 FOR EACH ROW EXECUTE FUNCTION collab.kb_document_before_write();
 
--- Ghi qua Hasura: người lập là người gọi, có quyền đề xuất ở đơn vị; chỉ sửa nội dung khi còn nháp / bị trả về.
 CREATE FUNCTION collab.kb_document_check_session() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -110,13 +92,11 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- Chỉ khi ghi nội dung: đổi trạng thái (duyệt, xuất bản, ngừng hiệu lực) đi qua hàm CSDL dưới phiên người duyệt.
 CREATE TRIGGER z_kb_document_check_session
 BEFORE INSERT OR UPDATE OF title, category, scope, summary, toc, effective_date, supersedes_id, requester_position_id
 ON collab.kb_document
 FOR EACH ROW EXECUTE FUNCTION collab.kb_document_check_session();
 
--- Đọc tài liệu đã xuất bản: tập đoàn = cả tenant; công ty = người đang giữ vị trí trong công ty của đơn vị ban hành.
 CREATE FUNCTION collab.kb_can_read_published(p_doc collab.kb_document, p_person uuid, p_at timestamptz DEFAULT now())
 RETURNS boolean
 LANGUAGE sql STABLE AS $$
@@ -128,10 +108,6 @@ LANGUAGE sql STABLE AS $$
             JOIN core.org_unit c ON c.id = core.company_of(p_doc.org_unit_id)
             WHERE a.person_id = p_person AND a.valid_period @> p_at AND u.path <@ c.path))
 $$;
-
--- ---------------------------------------------------------------------------
--- Đăng ký loại chứng từ với bộ máy duyệt, quyền xem, bình luận, tệp, thông báo
--- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION wf.entity_requester(p_type text, p_id uuid,
                                                OUT tenant_id uuid, OUT requester_id uuid,
@@ -156,7 +132,6 @@ BEGIN
     END CASE;
 END $$;
 
--- Duyệt xong: xuất bản; bản bị thay thế ngừng hiệu lực.
 CREATE FUNCTION collab.kb_publish(p_id uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -303,7 +278,6 @@ BEGIN
     END CASE;
 END $$;
 
--- Có kết quả: báo người lập.
 CREATE FUNCTION collab.kb_document_notify() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -330,7 +304,6 @@ CREATE TRIGGER kb_document_notify AFTER UPDATE OF status ON collab.kb_document
 FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION collab.kb_document_notify();
 
--- Tệp: tài liệu đã có kết quả thì giữ nguyên tệp.
 CREATE OR REPLACE FUNCTION core.attachment_check() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -338,7 +311,6 @@ BEGIN
         IF collab.entity_tenant(NEW.entity_type, NEW.entity_id) IS DISTINCT FROM NEW.tenant_id THEN
             RAISE EXCEPTION 'Không tìm thấy chứng từ' USING ERRCODE = 'data_exception';
         END IF;
-        -- Tệp của tài liệu thư viện vào chỉ mục khi xuất bản: chỉ người lập thêm, lúc còn soạn.
         IF NEW.entity_type = 'collab.kb_document' AND NOT EXISTS (
             SELECT 1 FROM collab.kb_document WHERE id = NEW.entity_id AND requester_id = NEW.uploaded_by
                                                   AND status IN ('DRAFT', 'RETURNED')) THEN
@@ -370,15 +342,10 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Tìm kiếm toàn văn: tài liệu đã xuất bản và tệp của nó
--- ---------------------------------------------------------------------------
-
 ALTER TABLE search.pending DROP CONSTRAINT pending_entity_type_check;
 ALTER TABLE search.pending ADD CONSTRAINT pending_entity_type_check
     CHECK (entity_type IN ('proc.purchase_request', 'core.attachment', 'collab.kb_document'));
 
--- Loại chứng từ có tệp được đưa vào chỉ mục (tệp hồ sơ nhân sự có dữ liệu cá nhân: không).
 CREATE FUNCTION search.attachment_indexable(p_entity_type text) RETURNS boolean
 LANGUAGE sql IMMUTABLE AS $$ SELECT p_entity_type IN ('proc.purchase_request', 'collab.kb_document') $$;
 
@@ -397,7 +364,6 @@ DECLARE
     a record;
 BEGIN
     PERFORM search.mark(coalesce(NEW.tenant_id, OLD.tenant_id), 'collab.kb_document', coalesce(NEW.id, OLD.id));
-    -- Xuất bản / ngừng hiệu lực: tệp của tài liệu vào / ra khỏi chỉ mục theo.
     IF TG_OP = 'UPDATE' AND NEW.status IS DISTINCT FROM OLD.status THEN
         FOR a IN SELECT id FROM core.attachment WHERE entity_type = 'collab.kb_document' AND entity_id = NEW.id LOOP
             PERFORM search.mark(NEW.tenant_id, 'core.attachment', a.id);
@@ -409,7 +375,6 @@ END $$;
 CREATE TRIGGER search_mark AFTER INSERT OR UPDATE OR DELETE ON collab.kb_document
 FOR EACH ROW EXECUTE FUNCTION search.kb_document_changed();
 
--- Nội dung một tài liệu để đưa vào chỉ mục; NULL khi chưa xuất bản / đã ngừng hiệu lực (xóa khỏi chỉ mục).
 CREATE FUNCTION search.kb_document_doc(p_id uuid) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
     SELECT jsonb_build_object(
@@ -429,7 +394,6 @@ LANGUAGE sql STABLE AS $$
     WHERE d.id = p_id AND d.status = 'APPROVED'
 $$;
 
--- Tệp chỉ vào chỉ mục khi tài liệu của nó đang hiệu lực (đề nghị mua sắm: mọi trạng thái như trước).
 CREATE FUNCTION search.attachment_visible(p_entity_type text, p_entity_id uuid) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT CASE p_entity_type
@@ -457,10 +421,6 @@ BEGIN
     PERFORM pg_notify('search_sync', 'all');
     RETURN n;
 END $$;
-
--- ---------------------------------------------------------------------------
--- Gửi duyệt, hủy, ngừng hiệu lực
--- ---------------------------------------------------------------------------
 
 CREATE FUNCTION collab.submit_kb_document(p_id uuid, p_actor uuid, p_at timestamptz DEFAULT now()) RETURNS void
 LANGUAGE plpgsql AS $$
@@ -529,7 +489,6 @@ BEGIN
     PERFORM wf.cancel_entity('collab.kb_document', p_id, p_reason, p_at, p_actor);
 END $$;
 
--- Người quản lý thư viện ngừng hiệu lực một tài liệu đang xuất bản (không có bản thay thế).
 CREATE FUNCTION collab.retire_kb_document(p_id uuid, p_actor uuid, p_reason text) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE

@@ -2,15 +2,8 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 004: Hạn mức duyệt, chuỗi duyệt theo vị trí, việc duyệt, lịch sử duyệt.
--- ADR #17 (hạn mức theo loại đơn vị), ADR #28 (chuỗi duyệt chốt theo vị trí,
--- tìm người khi đến bước), ADR #29 (bổ nhiệm hợp đồng).
-
 CREATE SCHEMA IF NOT EXISTS wf;
 
--- Mỗi dòng là một bước duyệt, áp dụng khi min_amount <= số tiền < max_amount.
--- approver_unit_type_id NULL: quản lý trực tiếp của tư cách lập.
--- Quy tắc có scope_unit_id sâu hơn, rồi quy tắc theo category_code, thay thế quy tắc chung.
 CREATE TABLE wf.approval_rule (
     tenant_id              uuid NOT NULL REFERENCES core.tenant,
     id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,7 +24,6 @@ CREATE INDEX ON wf.approval_rule (tenant_id, process_code);
 CREATE INDEX ON wf.approval_rule (tenant_id, approver_unit_type_id);
 CREATE INDEX ON wf.approval_rule (tenant_id, scope_unit_id);
 
--- Chuỗi duyệt của một lần gửi (round): danh sách vị trí chốt lúc gửi.
 CREATE TABLE wf.approval_step (
     tenant_id     uuid NOT NULL REFERENCES core.tenant,
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -59,10 +51,6 @@ CREATE INDEX ON wf.approval_step (tenant_id, position_id);
 CREATE INDEX ON wf.approval_step (tenant_id, acted_by);
 CREATE INDEX ON wf.approval_step (tenant_id, on_behalf_of);
 
--- Việc duyệt: một bước đã giao cho một người cụ thể (hộp việc, ADR #20).
--- assigned_position_id là vị trí mà người nhận đang giữ; khác vị trí của bước
--- nghĩa là việc đã được đẩy lên cấp trên. assignee_id NULL: không còn ai hợp lệ
--- để duyệt (kể cả cấp cao nhất), việc nằm chờ tại vị trí cho đến khi có người.
 CREATE TABLE wf.task (
     tenant_id             uuid NOT NULL REFERENCES core.tenant,
     id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -109,11 +97,6 @@ CREATE INDEX ON wf.approval_history (tenant_id, step_id);
 CREATE INDEX ON wf.approval_history (tenant_id, person_id);
 CREATE INDEX ON wf.approval_history (tenant_id, on_behalf_of);
 
--- ---------------------------------------------------------------------------
--- Chứng từ được duyệt: các hàm phân nhánh theo entity_type.
--- Thêm loại chứng từ mới: bổ sung nhánh vào ba hàm dưới đây.
--- ---------------------------------------------------------------------------
-
 CREATE FUNCTION wf.entity_requester(p_type text, p_id uuid,
                                     OUT tenant_id uuid, OUT requester_id uuid, OUT requester_position_id uuid)
 LANGUAGE plpgsql STABLE AS $$
@@ -128,8 +111,6 @@ BEGIN
     END CASE;
 END $$;
 
--- Người đứng ở phía bên kia của cùng một giao dịch nội bộ: người lập và người
--- đã duyệt đơn hàng nội bộ gắn với chứng từ.
 CREATE FUNCTION wf.conflict_persons(p_type text, p_id uuid) RETURNS uuid[]
 LANGUAGE plpgsql STABLE AS $$
 DECLARE
@@ -163,11 +144,6 @@ BEGIN
     END CASE;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Chuỗi duyệt (chốt lúc gửi) và người duyệt (tìm khi đến bước)
--- ---------------------------------------------------------------------------
-
--- Danh sách vị trí duyệt theo quy tắc hạn mức hiệu lực tại p_at.
 CREATE FUNCTION wf.resolve_approval_chain(p_tenant uuid, p_process text, p_requester_position uuid,
                                           p_amount numeric, p_category text,
                                           p_at timestamptz DEFAULT now())
@@ -232,11 +208,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Người duyệt cho một vị trí tại p_at: người đang ngồi ghế; nếu ghế trống, người
--- ngồi là hợp đồng, là người lập, hoặc đứng ở phía bên kia của giao dịch nội bộ
--- thì đẩy lên vị trí cấp trên (CONTEXT.md "Đẩy lên cấp trên").
--- p_allow_none: hết cấp trên mà vẫn không có ai thì trả về người NULL tại p_position
--- thay vì báo lỗi.
 CREATE FUNCTION wf.resolve_assignee(p_position uuid, p_requester uuid, p_conflicts uuid[],
                                     p_at timestamptz DEFAULT now(), p_allow_none boolean DEFAULT false)
 RETURNS TABLE (person_id uuid, position_id uuid, escalation_reason text)
@@ -286,7 +257,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Giao việc cho một bước, ghi lịch sử.
 CREATE FUNCTION wf.assign_step(p_step wf.approval_step, p_person uuid, p_position uuid,
                                p_reason text, p_event text, p_at timestamptz)
 RETURNS uuid
@@ -308,8 +278,6 @@ BEGIN
     RETURN v_task;
 END $$;
 
--- Kích hoạt bước chờ tiếp theo; hết bước thì chứng từ được duyệt.
--- Bước rơi vào đúng người vừa duyệt bước liền trước thì gộp (ADR #28).
 CREATE FUNCTION wf.activate_next(p_type text, p_id uuid, p_round int, p_at timestamptz DEFAULT now())
 RETURNS void
 LANGUAGE plpgsql AS $$
@@ -356,7 +324,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Hủy chứng từ đang duyệt dở: hủy các bước và việc còn mở.
 CREATE FUNCTION wf.cancel_entity(p_type text, p_id uuid, p_reason text, p_at timestamptz DEFAULT now())
 RETURNS void
 LANGUAGE plpgsql AS $$
@@ -374,8 +341,6 @@ BEGIN
     VALUES (v_req.tenant_id, p_type, p_id, 'CANCELLED', jsonb_build_object('reason', p_reason), p_at);
 END $$;
 
--- Xử lý một việc duyệt: APPROVE, REJECT hoặc RETURN. Người được ủy quyền xử lý
--- thay được (lịch sử ghi "duyệt thay").
 CREATE FUNCTION wf.act(p_task uuid, p_actor uuid, p_action text, p_note text DEFAULT NULL,
                        p_at timestamptz DEFAULT now())
 RETURNS void
@@ -398,7 +363,6 @@ BEGIN
     IF v_task.assignee_id IS NULL THEN
         RAISE EXCEPTION 'Việc duyệt đang chờ có người giữ vị trí';
     END IF;
-    -- Người nhận phải còn ngồi ghế (bổ nhiệm có thể hết hạn trước khi wf.refresh_all chạy).
     IF NOT EXISTS (SELECT 1 FROM core.position_holder(v_task.assigned_position_id, p_at) h
                    WHERE h.person_id = v_task.assignee_id) THEN
         RAISE EXCEPTION 'Người nhận việc không còn giữ vị trí: chạy wf.refresh_position trước';
@@ -444,12 +408,6 @@ BEGIN
     END IF;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Khi người ngồi ghế thay đổi (ADR #28, #29)
--- ---------------------------------------------------------------------------
-
--- Tìm lại người nhận cho một việc đang mở, bắt đầu từ vị trí đang giữ việc.
--- Việc đã đẩy lên cấp trên ở lại cấp trên: không kéo về vị trí gốc.
 CREATE FUNCTION wf.reassign_task(p_task uuid, p_at timestamptz DEFAULT now())
 RETURNS void
 LANGUAGE plpgsql AS $$
@@ -481,10 +439,6 @@ BEGIN
     WHERE id = (SELECT max(id) FROM wf.approval_history WHERE step_id = v_step.id);
 END $$;
 
--- Cập nhật mọi thứ gắn với một vị trí theo người đang ngồi ghế tại p_at:
--- 1. Chứng từ chưa duyệt xong của người lập đã rời vị trí: hợp đồng thì tự hủy,
---    bổ nhiệm khác thì chuyển cho người ngồi ghế kế tiếp (ADR #29).
--- 2. Việc duyệt đang mở tại vị trí: chuyển cho người ngồi ghế mới (ADR #28).
 CREATE FUNCTION wf.refresh_position(p_position uuid, p_at timestamptz DEFAULT now())
 RETURNS void
 LANGUAGE plpgsql AS $$
@@ -514,7 +468,6 @@ BEGIN
             INSERT INTO wf.approval_history (tenant_id, entity_type, entity_id, event, person_id, detail, created_at)
             VALUES (d.tenant_id, 'proc.purchase_request', d.id, 'OWNER_TRANSFERRED', v_holder,
                     jsonb_build_object('from_person_id', d.requester_id), p_at);
-            -- Người lập mới có thể đang là người nhận việc duyệt của chính chứng từ này.
             FOR t IN
                 SELECT tk.id FROM wf.task tk JOIN wf.approval_step s ON s.id = tk.step_id
                 WHERE s.entity_type = 'proc.purchase_request' AND s.entity_id = d.id AND tk.status = 'OPEN'
@@ -543,14 +496,10 @@ BEGIN
     RETURN NULL;
 END $$;
 
--- Chạy lúc commit: kết thúc người cũ và bổ nhiệm người mới trong cùng giao dịch
--- không đi qua trạng thái ghế trống.
 CREATE CONSTRAINT TRIGGER assignment_after_change AFTER INSERT OR UPDATE OR DELETE ON core.assignment
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION wf.assignment_after_change();
 
--- Bổ nhiệm có ngày bắt đầu/kết thúc trong tương lai không kích hoạt trigger
--- đúng lúc: chạy hàm này định kỳ (ví dụ mỗi 5 phút) để cập nhật theo thời gian.
 CREATE FUNCTION wf.refresh_all(p_at timestamptz DEFAULT now())
 RETURNS int
 LANGUAGE plpgsql AS $$
@@ -568,10 +517,6 @@ BEGIN
     END LOOP;
     RETURN v_count;
 END $$;
-
--- ---------------------------------------------------------------------------
--- Gửi duyệt đề nghị mua sắm
--- ---------------------------------------------------------------------------
 
 CREATE FUNCTION proc.submit_purchase_request(p_id uuid, p_actor uuid, p_at timestamptz DEFAULT now())
 RETURNS void
@@ -612,10 +557,6 @@ BEGIN
             jsonb_build_object('round', v_round, 'amount', v_pr.total_amount), p_at);
     PERFORM wf.activate_next('proc.purchase_request', v_pr.id, v_round, p_at);
 END $$;
-
--- ---------------------------------------------------------------------------
--- Hộp việc: việc của chính mình và việc nhận qua ủy quyền
--- ---------------------------------------------------------------------------
 
 CREATE VIEW wf.v_inbox AS
 SELECT t.tenant_id, t.assignee_id AS person_id, false AS via_delegation, NULL::uuid AS on_behalf_of,

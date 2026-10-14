@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useMemo } from "react"; // React
+import { useMemo } from "react";
 import {
   CartesianGrid,
   Line,
@@ -14,9 +13,8 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts"; // Recharts
+} from "recharts";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
 import { useSeries } from "../api";
@@ -24,19 +22,14 @@ import { MINUTE, RANGES, aggregationOf, breachSpans, bucketize, xTicksOf, yAxisO
 import type { Metric, Threshold, TimeRange, TwinEntity } from "../types";
 import { formatDay, formatDayTime, formatDuration, formatNumber, formatTime } from "../utils";
 
-// ===== Hằng số =====
 const RED = "#dc2626";
 const RED_TEXT = "#b91c1c";
 const AGG_WORD = { max: "đỉnh", min: "đáy", mean: "trung bình" } as const;
 
-// ===== Kiểu dữ liệu =====
 type TipProps = { active?: boolean; label?: number | string; payload?: Array<{ value?: number | string | null }> };
 
-// ===== Hàm tiện ích =====
 const outside = (v: number, th: Threshold) => (th.max != null && v > th.max) || (th.min != null && v < th.min);
 
-// ===== Component =====
-/** Hộp gợi ý: thời điểm, giá trị (định dạng Việt Nam) và nhắc khi điểm đó nằm ngoài ngưỡng. */
 const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { metric: Metric; range: TimeRange }) => {
   const v = payload?.[0]?.value;
   if (!active || typeof v !== "number" || typeof label !== "number") return null;
@@ -91,8 +84,6 @@ const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: Time
   </div>
 );
 
-// ===== Hàm tiện ích =====
-/** Nhãn đường ngưỡng: "Ngưỡng ISO 5 · 3.520", "Tối thiểu · 10"... */
 const limitText = (metric: Metric, side: "max" | "min") => {
   const th = metric.threshold;
   const both = th.min != null && th.max != null;
@@ -105,12 +96,6 @@ const limitText = (metric: Metric, side: "max" | "min") => {
   return `${name} · ${formatNumber((side === "max" ? th.max : th.min) ?? 0)}`;
 };
 
-// ===== Component =====
-/**
- * Biểu đồ lịch sử một chỉ số (iot.measurement): đường dữ liệu xanh đậm, ngưỡng là đường đứt đỏ (ReferenceLine),
- * các đoạn vượt ngưỡng tô nền đỏ nhạt (ReferenceArea). Đoạn vượt ngưỡng TÍNH từ chuỗi đo gốc (chưa gộp), nên vẫn
- * đúng khi đổi khoảng thời gian hay đổi chỉ số. Trục X kết thúc ở bây giờ: thiết bị mất tín hiệu thấy khoảng trống.
- */
 export const SensorChart = ({
   entity,
   metric,
@@ -132,7 +117,6 @@ export const SensorChart = ({
     const data = bucketize(minutes, r.bucket, agg, metric.decimals);
     const end = Date.now();
     const start = end - r.minutes * MINUTE;
-    // Đoạn ngắn trên trục 7 ngày chỉ rộng vài pixel → nới tối thiểu bằng một khung (hoặc 0,8% trục) cho dễ thấy.
     const minWidth = Math.max(r.bucket * MINUTE, (end - start) * 0.008);
     const areas = breachSpans(minutes, th).map((s) => {
       let x1 = s.start - MINUTE / 2;
