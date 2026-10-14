@@ -86,6 +86,7 @@ export const NotificationBell = () => {
     await markRead([n.id]);
     const resource = n.entity_type ? RESOURCE[n.entity_type] : undefined;
     if (n.entity_id && resource) go({ to: { resource, action: "show", id: n.entity_id } });
+    else if (n.entity_id && n.entity_type === "collab.kb_document") go({ to: `/h/library/proposals/${n.entity_id}` });
   };
 
   const content = (

@@ -152,7 +152,23 @@ _Tránh dùng_: chat, ghi chú duyệt (ghi chú duyệt nằm ở bước duy�
 Tin báo cho đúng một người, sinh tự động khi được giao việc duyệt, khi chứng từ của mình có kết quả, khi có bình luận hoặc được nhắc tên. Người gây ra sự kiện không tự nhận thông báo.
 _Tránh dùng_: alert, tin nhắn
 
+**Tài liệu thư viện** (`collab.kb_document`):
+Quy chế, quy trình chuẩn, hướng dẫn hoặc hỏi đáp đã được duyệt và xuất bản vào Thư viện tri thức; có phiên bản, đơn vị ban hành và phạm vi đọc (**tập đoàn**: cả tenant; **công ty**: người làm việc trong công ty của đơn vị ban hành). Mỗi lúc chỉ một phiên bản của một tài liệu đang hiệu lực.
+_Tránh dùng_: văn bản (khi nói tệp đính kèm), tài liệu (khi nói tệp bất kỳ trên Ổ đĩa)
+
+**Đề xuất tài liệu**:
+Chứng từ xin đưa một tài liệu (hoặc bản thay thế một tài liệu đang hiệu lực) vào thư viện, số dạng `TL-2026-000001`, đi qua chuỗi duyệt như các chứng từ khác; duyệt xong là **xuất bản**, bản bị thay thế **ngừng hiệu lực**.
+_Tránh dùng_: đăng tài liệu, upload tài liệu
+
 ## Dữ liệu
+
+**Cơ sở** (đơn vị có tọa độ):
+Đơn vị (thường là công ty, nhà máy, bệnh viện) có tỉnh và tọa độ, hiện trên bản đồ của Trung tâm điều hành cùng số việc duyệt đang chờ, quá hạn và lô đang giữ trong nhánh của nó.
+_Tránh dùng_: site, địa điểm (khi nói đơn vị)
+
+**Số tổng hợp của tenant con**:
+Số đếm và tổng tiền (không có chứng từ, không có tên người) của một tenant con như Bệnh viện X mà người có quyền điều hành tập đoàn ở công ty mẹ được xem.
+_Tránh dùng_: dữ liệu bệnh viện (khi chỉ là số tổng hợp)
 
 **Tập dữ liệu** (view `lakehouse.silver.<schema>_<bảng>`):
 Trạng thái hiện tại của một bảng nghiệp vụ trong Lakehouse, dựng từ lịch sử thay đổi (CDC) ở tầng bronze; mỗi bản ghi một dòng. Người có quyền `data.lakehouse.read` xem tập dữ liệu của tenant đang chọn trên trang Dịch vụ dữ liệu, dữ liệu cá nhân đã che.

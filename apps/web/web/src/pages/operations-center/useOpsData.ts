@@ -42,7 +42,8 @@ const UNITS = gql`
 `;
 
 // ===== Hằng số =====
-const DOC = `purchase_request { id doc_no title org_unit_id } onboarding_request { id doc_no full_name org_unit_id }`;
+const DOC = `purchase_request { id doc_no title org_unit_id } onboarding_request { id doc_no full_name org_unit_id }
+  kb_document { id doc_no title org_unit_id }`;
 
 // ===== Truy vấn GraphQL =====
 const OPEN_TASKS = gql`
@@ -85,6 +86,9 @@ const COMPLETED = gql`
       onboarding_request {
         org_unit_id
       }
+      kb_document {
+        org_unit_id
+      }
     }
     wf_approval_history_aggregate(where: $where) {
       aggregate {
@@ -125,6 +129,7 @@ type Unit = { id: string; name: string; path: string };
 type DocRef = {
   purchase_request: { id: string; doc_no: string; title: string; org_unit_id: string } | null;
   onboarding_request: { id: string; doc_no: string; full_name: string; org_unit_id: string } | null;
+  kb_document: { id: string; doc_no: string; title: string; org_unit_id: string } | null;
 };
 type OpenTask = { id: string; created_at: string; step: DocRef & { step_order: number } };
 type DoneTask = { id: string; created_at: string; closed_at: string | null };
@@ -133,13 +138,15 @@ type Completed = {
   created_at: string;
   purchase_request: { org_unit_id: string } | null;
   onboarding_request: { org_unit_id: string } | null;
+  kb_document: { org_unit_id: string } | null;
 };
 
 // ===== Hàm tiện ích =====
 const unitOf = (d: {
   purchase_request: { org_unit_id: string } | null;
   onboarding_request: { org_unit_id: string } | null;
-}) => d.purchase_request?.org_unit_id ?? d.onboarding_request?.org_unit_id;
+  kb_document: { org_unit_id: string } | null;
+}) => d.purchase_request?.org_unit_id ?? d.onboarding_request?.org_unit_id ?? d.kb_document?.org_unit_id;
 
 /** "1 ngày 3 giờ" / "5 giờ" / "20 phút". */
 const span = (ms: number) => {
@@ -294,11 +301,18 @@ export const useOpsData = (period: Period) => {
       .map(({ t, late }) => {
         const pr = t.step.purchase_request;
         const ob = t.step.onboarding_request;
+        const kb = t.step.kb_document;
         return {
-          code: pr?.doc_no ?? ob?.doc_no ?? t.id,
-          to: pr ? `/p/documents/show/${pr.id}` : ob ? `/h/onboarding/show/${ob.id}` : "/p/tasks",
+          code: pr?.doc_no ?? ob?.doc_no ?? kb?.doc_no ?? t.id,
+          to: pr
+            ? `/p/documents/show/${pr.id}`
+            : ob
+              ? `/h/onboarding/show/${ob.id}`
+              : kb
+                ? `/h/library/proposals/${kb.id}`
+                : "/p/tasks",
           company: keyOf(unitOf(t.step)),
-          type: pr ? `Mua sắm: ${pr.title}` : ob ? `Tiếp nhận ${ob.full_name}` : "—",
+          type: pr ? `Mua sắm: ${pr.title}` : ob ? `Tiếp nhận ${ob.full_name}` : kb ? `Tài liệu: ${kb.title}` : "—",
           step: `Cấp ${t.step.step_order}`,
           overdueMinutes: Math.round(late / 60_000),
           overdueLabel: span(late),

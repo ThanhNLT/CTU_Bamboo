@@ -23,7 +23,6 @@ import {
   LibraryBig,
   ListTree,
   Lock,
-  Map as MapIcon,
   Network,
   Route,
   ScanText,
@@ -91,7 +90,6 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Dữ liệu số",
     items: [
       { key: "ops", label: "Trung tâm điều hành", to: "/d/ops", icon: Gauge },
-      { key: "map", label: "Bản đồ", to: "/d/map", icon: MapIcon },
       { key: "twin", label: "Bản sao số", to: "/d/twin", icon: Cpu },
       { key: "data-services", label: "Dịch vụ dữ liệu", to: "/d/services", icon: Database },
       { key: "lineage", label: "Phả hệ dữ liệu", to: "/d/lineage", icon: GitFork },

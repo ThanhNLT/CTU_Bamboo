@@ -71,6 +71,7 @@ CAN_READ = {
     ("hr", "onboarding_request"): ("hr", "onboarding_request_can_read"),
     ("ic", "ic_order"): ("ic", "ic_order_can_read"),
     ("proc", "purchase_order"): ("proc", "purchase_order_can_read"),
+    ("collab", "kb_document"): ("collab", "kb_document_can_read"),
 }
 
 # Computed field thêm (tên → hàm), cùng tham số phiên Hasura.
@@ -162,6 +163,16 @@ MANUAL_RELATIONSHIPS = [
     ("object", ("collab", "comment"), "ic_order", ("ic", "ic_order"), {"entity_id": "id"}),
     ("array", ("ic", "ic_order"), "comments", ("collab", "comment"), {"id": "entity_id"}),
     ("object", ("collab", "notification"), "ic_order", ("ic", "ic_order"), {"entity_id": "id"}),
+    # Thư viện tri thức (ADR #48): đề xuất tài liệu đi qua chuỗi duyệt như các chứng từ khác.
+    ("object", ("wf", "approval_step"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
+    ("object", ("wf", "approval_history"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
+    ("array", ("collab", "kb_document"), "approval_steps", ("wf", "approval_step"), {"id": "entity_id"}),
+    ("array", ("collab", "kb_document"), "approval_history", ("wf", "approval_history"), {"id": "entity_id"}),
+    ("object", ("wf", "v_inbox"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
+    ("object", ("collab", "comment"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
+    ("array", ("collab", "kb_document"), "comments", ("collab", "comment"), {"id": "entity_id"}),
+    ("object", ("collab", "notification"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
+    ("array", ("collab", "kb_document"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
 ]
 
 # ic_order_id do CSDL gắn khi đề nghị mua nội bộ được duyệt (ADR #42), người lập không sửa.
@@ -176,6 +187,7 @@ PR_EDITABLE = [
     "proposed_partner_name",
     "proposed_partner_tax_code",
 ]
+KB_EDITABLE = ["title", "category", "scope", "summary", "toc", "effective_date", "supersedes_id"]
 ITEM_EDITABLE = ["item_id", "line_no", "description", "uom", "quantity", "unit_price", "note"]
 OB_EDITABLE = [
     "full_name",
@@ -390,6 +402,39 @@ def build(conn: psycopg.Connection) -> dict:
                 "filter": {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_eq": "DRAFT"}}]},
             },
         }
+    ]
+
+    # Đề xuất tài liệu thư viện (ADR #48): người lập soạn nháp; gửi duyệt / hủy qua Action.
+    kb = entries[("collab", "kb_document")]
+    own_kb = {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_in": ["DRAFT", "RETURNED"]}}]}
+    kb["insert_permissions"] = [
+        {
+            "role": r,
+            "permission": {
+                "check": {},
+                "set": {"tenant_id": "X-Hasura-Tenant-Id", "requester_id": ME},
+                "columns": ["requester_position_id", *KB_EDITABLE],
+            },
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    kb["update_permissions"] = [
+        {
+            "role": r,
+            "permission": {
+                "filter": own_kb,
+                "check": {"status": {"_in": ["DRAFT", "RETURNED"]}},
+                "columns": KB_EDITABLE,
+            },
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    kb["delete_permissions"] = [
+        {
+            "role": r,
+            "permission": {"filter": {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_eq": "DRAFT"}}]}},
+        }
+        for r in (ROLE, ADMIN_ROLE)
     ]
 
     # KPI ghim (ADR #50): mỗi người tự ghim / bỏ ghim / đổi thứ tự KPI của mình.
@@ -620,6 +665,55 @@ def build(conn: psycopg.Connection) -> dict:
                 "LakehousePreview!",
                 [ROLE, ADMIN_ROLE],
                 "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)",
+                timeout=60,
+            ),
+            _action(
+                "submit_kb_document",
+                "mutation",
+                [("id", "uuid!")],
+                "KbActionResult!",
+                [ROLE, ADMIN_ROLE],
+                "Gửi duyệt đề xuất tài liệu thư viện (người lập, ADR #48)",
+            ),
+            _action(
+                "cancel_kb_document",
+                "mutation",
+                [("id", "uuid!"), ("reason", "String!")],
+                "KbActionResult!",
+                [ROLE, ADMIN_ROLE],
+                "Người lập hủy đề xuất tài liệu chưa duyệt xong",
+            ),
+            _action(
+                "retire_kb_document",
+                "mutation",
+                [("id", "uuid!"), ("reason", "String!")],
+                "KbActionResult!",
+                [ROLE, ADMIN_ROLE],
+                "Ngừng hiệu lực tài liệu đang xuất bản (cần kb.document.manage)",
+            ),
+            _action(
+                "kb_reindex",
+                "mutation",
+                [("id", "uuid!")],
+                "KbActionResult!",
+                [ROLE, ADMIN_ROLE],
+                "Nạp lại chỉ mục tìm kiếm cho tài liệu và tệp của nó (cần kb.document.manage)",
+            ),
+            _action(
+                "kb_library",
+                "query",
+                [],
+                "KbLibrary!",
+                [ROLE, ADMIN_ROLE],
+                "Thư viện tri thức: tài liệu đang hiệu lực người gọi đọc được, trạng thái chỉ mục, phiên bản trước",
+            ),
+            _action(
+                "ops_dashboard",
+                "query",
+                [("tab", "String!"), ("days", "Int")],
+                "OpsDashboard!",
+                [ROLE, ADMIN_ROLE],
+                "Số liệu Trung tâm điều hành: process | production | hospital | quality | sites (ADR #49)",
                 timeout=60,
             ),
             _action(
@@ -948,7 +1042,10 @@ def build(conn: psycopg.Connection) -> dict:
                     "name": "ApprovalDecision",
                     "values": [{"value": "APPROVE"}, {"value": "REJECT"}, {"value": "RETURN"}],
                 },
-                {"name": "SearchKind", "values": [{"value": "purchase_request"}, {"value": "attachment"}]},
+                {
+                    "name": "SearchKind",
+                    "values": [{"value": "purchase_request"}, {"value": "attachment"}, {"value": "kb_document"}],
+                },
                 {
                     "name": "AdminEntity",
                     "values": [
@@ -1083,6 +1180,13 @@ def build(conn: psycopg.Connection) -> dict:
                             "remote_table": {"schema": "proc", "name": "purchase_request"},
                             "field_mapping": {"entity_id": "id"},
                         },
+                        {
+                            "name": "kb_document",
+                            "type": "object",
+                            "source": "bms",
+                            "remote_table": {"schema": "collab", "name": "kb_document"},
+                            "field_mapping": {"entity_id": "id"},
+                        },
                         _attachment_rel(),
                     ],
                 },
@@ -1183,6 +1287,52 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "total_rows", "type": "Int!"},
                         {"name": "rows", "type": "[jsonb!]!"},
                         {"name": "masked", "type": "[String!]!"},
+                    ],
+                },
+                {
+                    "name": "OpsDashboard",
+                    "fields": [
+                        {"name": "tab", "type": "String!"},
+                        {"name": "days", "type": "Int!"},
+                        {"name": "sla_hours", "type": "Int!"},
+                        {"name": "data", "type": "jsonb!"},
+                    ],
+                },
+                {
+                    "name": "KbActionResult",
+                    "fields": [{"name": "id", "type": "uuid!"}, {"name": "status", "type": "String!"}],
+                },
+                {
+                    "name": "KbDocument",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "doc_no", "type": "String!"},
+                        {"name": "title", "type": "String!"},
+                        {"name": "category", "type": "String!"},
+                        {"name": "scope", "type": "String!"},
+                        {"name": "summary", "type": "String"},
+                        {"name": "toc", "type": "[String!]!"},
+                        {"name": "version", "type": "Int!"},
+                        {"name": "supersedes_id", "type": "uuid"},
+                        {"name": "effective_date", "type": "String"},
+                        {"name": "published_at", "type": "String"},
+                        {"name": "unit", "type": "String!"},
+                        {"name": "issuer", "type": "String!"},
+                        {"name": "requester", "type": "String!"},
+                        {"name": "my_company", "type": "Boolean"},
+                        {"name": "index_status", "type": "String!"},
+                        {"name": "indexed_at", "type": "String"},
+                        {"name": "index_error", "type": "String"},
+                        {"name": "can_manage", "type": "Boolean!"},
+                        {"name": "files", "type": "jsonb!"},
+                        {"name": "previous", "type": "jsonb!"},
+                    ],
+                },
+                {
+                    "name": "KbLibrary",
+                    "fields": [
+                        {"name": "can_propose", "type": "Boolean!"},
+                        {"name": "documents", "type": "[KbDocument!]!"},
                     ],
                 },
                 {
