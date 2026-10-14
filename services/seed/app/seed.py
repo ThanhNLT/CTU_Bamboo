@@ -20,6 +20,7 @@ import psycopg  # psycopg
 from faker import Faker  # Faker
 
 # ===== Module nội bộ =====
+from . import demo_load
 from .demo import (
     CONTRACT_SEATS,
     DEMO_USERS,
@@ -1087,9 +1088,11 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.process_design_demo()
             seeder.library_demo()
             seeder.ops_demo()
+            demo_load.load(conn)
         return False
     with conn.transaction():
         Seeder(conn).run()
+        demo_load.load(conn)
     return True
 
 

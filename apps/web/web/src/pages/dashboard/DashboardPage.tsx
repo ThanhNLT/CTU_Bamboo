@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Trang chủ (Con người số): lời chào, 4 thẻ thống kê, cột trái 70% (Việc của tôi, Hồ sơ gần đây),
-// cột phải 30% (Thông báo, KPI đã ghim). Dữ liệu thật qua ./useDashboard; KPI còn là số minh họa (./mock).
+// cột phải 30% (Thông báo, KPI đã ghim). Dữ liệu thật qua ./useDashboard; KPI ghim qua ./useKpis (ADR #50).
 
 // ===== Thư viện =====
-import { Alert } from "antd"; // Ant Design
+import { Alert, App } from "antd"; // Ant Design
 
 // ===== Module nội bộ =====
 import { DashboardFooter } from "./components/DashboardFooter";
@@ -16,12 +16,23 @@ import { NotificationsPanel } from "./components/NotificationsPanel";
 import { PinnedKpis } from "./components/PinnedKpis";
 import { RecentRecords } from "./components/RecentRecords";
 import { SummaryCards } from "./components/SummaryCards";
-import { MOCK_KPIS } from "./mock";
+import { useKpis } from "./useKpis";
 import { useDashboard } from "./useDashboard";
 
 // ===== Component =====
 export const DashboardPage = () => {
   const d = useDashboard();
+  const { message } = App.useApp();
+  const kpi = useKpis();
+  const saveKpis = async (keys: string[]) => {
+    try {
+      await kpi.save(keys);
+      message.success(keys.length ? `Đã ghim ${keys.length} KPI` : "Đã bỏ ghim mọi KPI");
+    } catch (e) {
+      message.error((e as Error).message);
+      throw e;
+    }
+  };
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <HeroSection user={d.user} />
@@ -41,7 +52,7 @@ export const DashboardPage = () => {
           aria-label="Thông báo và chỉ số"
         >
           <NotificationsPanel items={d.notifications} unread={d.unread} onRead={d.markRead} />
-          <PinnedKpis kpis={MOCK_KPIS} sample />
+          <PinnedKpis kpis={kpi.pinned} options={kpi.options} pinnedKeys={kpi.pinnedKeys} onSave={saveKpis} />
         </aside>
       </div>
 

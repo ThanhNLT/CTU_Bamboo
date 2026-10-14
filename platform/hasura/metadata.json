@@ -1603,6 +1603,36 @@
               }
             },
             {
+              "name": "entitys",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "entity"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "sites",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "site"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "partners",
               "using": {
                 "manual_configuration": {
@@ -2003,6 +2033,51 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "decided_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "incidents",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "incident"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "acknowledged_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "pins",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "kpi",
+                    "name": "pin"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "data_issues",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "data_issue"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "reported_by"
                   }
                 }
               }
@@ -4110,6 +4185,732 @@
         },
         {
           "table": {
+            "schema": "iot",
+            "name": "entity"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "site",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "site"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "site_code": "code"
+                  }
+                }
+              }
+            },
+            {
+              "name": "type_model",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "model"
+                  },
+                  "column_mapping": {
+                    "type": "type"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "incidents",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "incident"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "measurements",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "measurement"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "iot",
+            "name": "incident"
+          },
+          "object_relationships": [
+            {
+              "name": "acknowledged_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "acknowledged_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "entity",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "entity"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "entity_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "iot",
+            "name": "measurement"
+          },
+          "object_relationships": [
+            {
+              "name": "entity",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "entity"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "entity_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "iot",
+            "name": "model"
+          },
+          "array_relationships": [
+            {
+              "name": "entitys",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "entity"
+                  },
+                  "column_mapping": {
+                    "type": "type"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "iot",
+            "name": "site"
+          },
+          "array_relationships": [
+            {
+              "name": "entitys",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "entity"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "code": "site_code"
+                  }
+                }
+              }
+            }
+          ],
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "kpi",
+            "name": "definition"
+          },
+          "object_relationships": [
+            {
+              "name": "lineage_node_lineage_node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_node"
+                  },
+                  "column_mapping": {
+                    "lineage_node": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "pins",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "kpi",
+                    "name": "pin"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "key": "kpi_key"
+                  }
+                }
+              }
+            },
+            {
+              "name": "values",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "kpi",
+                    "name": "value"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "key": "kpi_key"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "kpi",
+            "name": "pin"
+          },
+          "object_relationships": [
+            {
+              "name": "kpi_key_definition",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "kpi",
+                    "name": "definition"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "kpi_key": "key"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "person_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "kpi_key",
+                  "position"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "person_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "kpi_key",
+                  "position"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "columns": [
+                  "position"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "columns": [
+                  "position"
+                ]
+              }
+            }
+          ],
+          "delete_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "kpi",
+            "name": "value"
+          },
+          "object_relationships": [
+            {
+              "name": "kpi_key_definition",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "kpi",
+                    "name": "definition"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "kpi_key": "key"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
             "schema": "mdm",
             "name": "item"
           },
@@ -4393,6 +5194,359 @@
                   "internal_unit_id",
                   "is_active"
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "meta",
+            "name": "data_issue"
+          },
+          "object_relationships": [
+            {
+              "name": "node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_node"
+                  },
+                  "column_mapping": {
+                    "node_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "reported_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "reported_by": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "reported_by": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "node_id",
+                  "severity",
+                  "description"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "reported_by": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "node_id",
+                  "severity",
+                  "description"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "meta",
+            "name": "lineage_edge"
+          },
+          "object_relationships": [
+            {
+              "name": "from_node_lineage_node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_node"
+                  },
+                  "column_mapping": {
+                    "from_node": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "to_node_lineage_node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_node"
+                  },
+                  "column_mapping": {
+                    "to_node": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "meta",
+            "name": "lineage_node"
+          },
+          "array_relationships": [
+            {
+              "name": "definitions",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "kpi",
+                    "name": "definition"
+                  },
+                  "column_mapping": {
+                    "id": "lineage_node"
+                  }
+                }
+              }
+            },
+            {
+              "name": "data_issues",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "data_issue"
+                  },
+                  "column_mapping": {
+                    "id": "node_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "lineage_edges_by_from_node_lineage_node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_edge"
+                  },
+                  "column_mapping": {
+                    "id": "from_node"
+                  }
+                }
+              }
+            },
+            {
+              "name": "lineage_edges_by_to_node_lineage_node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_edge"
+                  },
+                  "column_mapping": {
+                    "id": "to_node"
+                  }
+                }
+              }
+            },
+            {
+              "name": "pipeline_runs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "pipeline_run"
+                  },
+                  "column_mapping": {
+                    "id": "node_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "quality_checks",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "quality_check"
+                  },
+                  "column_mapping": {
+                    "id": "node_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "meta",
+            "name": "pipeline_run"
+          },
+          "object_relationships": [
+            {
+              "name": "node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_node"
+                  },
+                  "column_mapping": {
+                    "node_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "meta",
+            "name": "quality_check"
+          },
+          "object_relationships": [
+            {
+              "name": "node",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "meta",
+                    "name": "lineage_node"
+                  },
+                  "column_mapping": {
+                    "node_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {},
+                "allow_aggregations": true
               }
             }
           ]
@@ -6869,6 +8023,41 @@
       "comment": "Số liệu Trung tâm điều hành: process | production | hospital | quality | sites (ADR #49)"
     },
     {
+      "name": "iot_acknowledge",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/iot_acknowledge",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "note",
+            "type": "String!"
+          }
+        ],
+        "output_type": "IotAckResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Ghi nhận một sự cố thiết bị của Bản sao số kèm hướng xử lý (ADR #50)"
+    },
+    {
       "name": "process_models",
       "definition": {
         "kind": "synchronous",
@@ -8803,6 +9992,19 @@
           {
             "name": "documents",
             "type": "[KbDocument!]!"
+          }
+        ]
+      },
+      {
+        "name": "IotAckResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "acknowledged_at",
+            "type": "String!"
           }
         ]
       },

@@ -14,7 +14,7 @@ const LiveBadge = ({ updatedAt }: { updatedAt: number }) => (
       <span className="relative inline-flex h-2 w-2 rounded-full bg-bamboo-500" />
     </span>
     <span>
-      Trực tiếp · cập nhật{" "}
+      Số đo mới nhất{" "}
       <time className="tabular-nums" dateTime={new Date(updatedAt).toISOString()}>
         {formatClock(updatedAt)}
       </time>
@@ -26,7 +26,9 @@ export const TwinPageHeader = ({ updatedAt }: { updatedAt: number }) => (
   <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Bản sao số</h1>
-      <p className="mt-1 text-[13px] text-muted">Dữ liệu cảm biến thời gian thực theo chuẩn NGSI-LD · hội tụ IT/OT</p>
+      <p className="mt-1 text-[13px] text-muted">
+        Dữ liệu cảm biến theo chuẩn NGSI-LD · hội tụ IT/OT · tự làm mới mỗi phút
+      </p>
     </div>
     <LiveBadge updatedAt={updatedAt} />
   </div>
