@@ -1,0 +1,33 @@
+node_id,layer,tech,name,fqn,title,owner,used_by,app_link
+pg-purchase-request,source,PostgreSQL,proc.purchase_request,postgres.bms.proc.purchase_request,Đề nghị mua sắm,Nhóm quy trình,,/p/documents
+pg-approval-history,source,PostgreSQL,wf.approval_history,postgres.bms.wf.approval_history,Lịch sử duyệt,Nhóm quy trình,,
+pg-task,source,PostgreSQL,wf.task,postgres.bms.wf.task,Việc duyệt,Nhóm quy trình,,/p/tasks
+pg-lot,source,PostgreSQL,mfg.lot,postgres.bms.mfg.lot,Lô sản xuất,Nhóm sản xuất,,
+pg-org-unit,source,PostgreSQL,core.org_unit,postgres.bms.core.org_unit,Cơ cấu tổ chức,Nhóm nền tảng,,/admin/org
+ngsi-cleanroom,source,NGSI-LD,CleanRoom,ngsi-ld.bamboo.CleanRoom,Phòng sạch (bản sao số),Nhóm OT · Chip X,,/d/twin?entity=CR-02
+ngsi-smt,source,NGSI-LD,SmtLine,ngsi-ld.bamboo.SmtLine,Dây chuyền SMT (bản sao số),Nhóm OT · Điện thoại X,,/d/twin?entity=SMT-BG-03
+ngsi-cold,source,NGSI-LD,ColdStorage,ngsi-ld.bamboo.ColdStorage,Tủ vắc-xin (bản sao số),Khoa Dược · Bệnh viện X,,/d/twin?entity=TL-02
+kafka-purchase-request,stream,Kafka,bms.proc.purchase_request,kafka.bms.proc.purchase_request,CDC đề nghị mua sắm,Nhóm dữ liệu,,
+kafka-approval-history,stream,Kafka,bms.wf.approval_history,kafka.bms.wf.approval_history,CDC lịch sử duyệt,Nhóm dữ liệu,,
+kafka-task,stream,Kafka,bms.wf.task,kafka.bms.wf.task,CDC việc duyệt,Nhóm dữ liệu,,
+kafka-lot,stream,Kafka,bms.mfg.lot,kafka.bms.mfg.lot,CDC lô sản xuất,Nhóm dữ liệu,,
+kafka-org-unit,stream,Kafka,bms.core.org_unit,kafka.bms.core.org_unit,CDC cơ cấu tổ chức,Nhóm dữ liệu,,
+kafka-iot,stream,Kafka,iot.telemetry,kafka.iot.telemetry,Đo lường thiết bị,Nhóm OT,,
+ice-purchase-request,lake,Iceberg,silver.proc_purchase_request,lakehouse.silver.proc_purchase_request,Đề nghị mua sắm (silver),Nhóm dữ liệu,,/d/services
+ice-approval-history,lake,Iceberg,silver.wf_approval_history,lakehouse.silver.wf_approval_history,Lịch sử duyệt (silver),Nhóm dữ liệu,,/d/services
+ice-task,lake,Iceberg,silver.wf_task,lakehouse.silver.wf_task,Việc duyệt (silver),Nhóm dữ liệu,,/d/services
+ice-lot,lake,Iceberg,silver.mfg_lot,lakehouse.silver.mfg_lot,Lô sản xuất (silver),Nhóm dữ liệu,,/d/services
+ice-org-unit,lake,Iceberg,silver.core_org_unit,lakehouse.silver.core_org_unit,Cơ cấu tổ chức (silver),Nhóm dữ liệu,,/d/services
+ice-telemetry,lake,Iceberg,silver.iot_telemetry_5m,lakehouse.silver.iot_telemetry_5m,Đo lường 5 phút (silver),Nhóm OT,,
+gold-approval-daily,serving,Trino,gold.approval_daily,lakehouse.gold.approval_daily,"Duyệt theo ngày, đơn vị",Nhóm dữ liệu,,
+gold-smt-oee,serving,Trino,gold.smt_oee_daily,lakehouse.gold.smt_oee_daily,OEE dây chuyền SMT,Nhóm OT · Điện thoại X,,
+gold-cleanroom,serving,Trino,gold.cleanroom_hourly,lakehouse.gold.cleanroom_hourly,Phòng sạch theo giờ,Nhóm OT · Chip X,,
+gold-cold-chain,serving,Trino,gold.cold_chain_daily,lakehouse.gold.cold_chain_daily,Chuỗi lạnh theo ngày (tổng hợp),Khoa Dược · Bệnh viện X,,
+kpi-on-time,consumer,KPI,Duyệt đúng hạn,kpi.on_time_rate,Tỷ lệ duyệt đúng hạn,Ban điều hành,"KPI · Trang chủ, Trung tâm điều hành",/d/ops
+kpi-pr-value,consumer,KPI,Giá trị mua sắm đã duyệt,kpi.pr_approved_value,Giá trị mua sắm đã duyệt,Ban điều hành,KPI · Trang chủ,/d/ops
+kpi-oee,consumer,KPI,OEE dây chuyền,kpi.smt_oee,OEE dây chuyền SMT,Điện thoại X,KPI · Trang chủ,/d/twin?entity=SMT-BG-03
+kpi-particles,consumer,KPI,Hạt bụi CR-02,kpi.cleanroom_particles,"Hạt bụi ≥0,5 µm phòng CR-02",Chip X,KPI · Trang chủ,/d/twin?entity=CR-02
+kpi-lots-on-hold,consumer,KPI,Lô đang giữ,kpi.lots_on_hold,Số lô đang giữ,Chip X,"KPI · Trang chủ, Trung tâm điều hành",/d/ops
+kpi-cold-chain,consumer,KPI,Tủ vắc-xin đạt nhiệt,kpi.cold_chain_ok,Tỷ lệ thời gian tủ đạt 2–8 °C,Bệnh viện X,KPI · Trang chủ,/d/twin?entity=TL-02
+app-ops,consumer,Ứng dụng,Trung tâm điều hành,app.ops_dashboard,Trung tâm điều hành,Nhóm nền tảng,Trang · Trung tâm điều hành,/d/ops
+app-data-services,consumer,Ứng dụng,Dịch vụ dữ liệu,app.lakehouse_datasets,Dịch vụ dữ liệu,Nhóm dữ liệu,Trang · Dịch vụ dữ liệu,/d/services

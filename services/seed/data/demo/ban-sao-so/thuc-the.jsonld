@@ -1,0 +1,2017 @@
+{
+  "@context": [
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "https://bamboo.local/context/ban-sao-so.jsonld"
+  ],
+  "@graph": [
+    {
+      "id": "urn:ngsi-ld:CleanRoom:bamboo:CR-01",
+      "type": "CleanRoom",
+      "code": {
+        "type": "Property",
+        "value": "CR-01"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Phòng sạch CR-01"
+      },
+      "category": {
+        "type": "Property",
+        "value": "cleanroom"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "ISO 5"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "CHIP_PS"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:chip-bn"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "particles05": {
+        "type": "Property",
+        "value": 1374,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "particles5": {
+        "type": "Property",
+        "value": 11,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "differentialPressure": {
+        "type": "Property",
+        "value": 13,
+        "unitCode": "PAL",
+        "unitText": "Pa",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "temperature": {
+        "type": "Property",
+        "value": 20.5,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "relativeHumidity": {
+        "type": "Property",
+        "value": 43,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "airVelocity": {
+        "type": "Property",
+        "value": 0.44,
+        "unitCode": "MTS",
+        "unitText": "m/s",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:CleanRoom:bamboo:CR-02",
+      "type": "CleanRoom",
+      "code": {
+        "type": "Property",
+        "value": "CR-02"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Phòng sạch CR-02"
+      },
+      "category": {
+        "type": "Property",
+        "value": "cleanroom"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "ISO 5"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "CHIP_PS"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:chip-bn"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "particles05": {
+        "type": "Property",
+        "value": 3120,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "particles5": {
+        "type": "Property",
+        "value": 18,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "differentialPressure": {
+        "type": "Property",
+        "value": 8,
+        "unitCode": "PAL",
+        "unitText": "Pa",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "temperature": {
+        "type": "Property",
+        "value": 21.4,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "relativeHumidity": {
+        "type": "Property",
+        "value": 48,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "airVelocity": {
+        "type": "Property",
+        "value": 0.42,
+        "unitCode": "MTS",
+        "unitText": "m/s",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:CleanRoom:bamboo:CR-03",
+      "type": "CleanRoom",
+      "code": {
+        "type": "Property",
+        "value": "CR-03"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Phòng sạch CR-03"
+      },
+      "category": {
+        "type": "Property",
+        "value": "cleanroom"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "ISO 5"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "CHIP_PS"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:chip-bn"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "particles05": {
+        "type": "Property",
+        "value": 2473,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "particles5": {
+        "type": "Property",
+        "value": 11,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "differentialPressure": {
+        "type": "Property",
+        "value": 14,
+        "unitCode": "PAL",
+        "unitText": "Pa",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "temperature": {
+        "type": "Property",
+        "value": 21.3,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "relativeHumidity": {
+        "type": "Property",
+        "value": 52,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "airVelocity": {
+        "type": "Property",
+        "value": 0.42,
+        "unitCode": "MTS",
+        "unitText": "m/s",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:CleanRoom:bamboo:CR-04",
+      "type": "CleanRoom",
+      "code": {
+        "type": "Property",
+        "value": "CR-04"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Phòng sạch CR-04"
+      },
+      "category": {
+        "type": "Property",
+        "value": "cleanroom"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "ISO 5"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "CHIP_PS"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:chip-bn"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "offline",
+        "observedAt": "2026-10-14T10:28:00+07:00"
+      },
+      "particles05": {
+        "type": "Property",
+        "value": 1700,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:25:00+07:00"
+      },
+      "particles5": {
+        "type": "Property",
+        "value": 12,
+        "unitText": "hạt/m³",
+        "observedAt": "2026-10-14T10:25:00+07:00"
+      },
+      "differentialPressure": {
+        "type": "Property",
+        "value": 14,
+        "unitCode": "PAL",
+        "unitText": "Pa",
+        "observedAt": "2026-10-14T10:25:00+07:00"
+      },
+      "temperature": {
+        "type": "Property",
+        "value": 20.9,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:25:00+07:00"
+      },
+      "relativeHumidity": {
+        "type": "Property",
+        "value": 46,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:25:00+07:00"
+      },
+      "airVelocity": {
+        "type": "Property",
+        "value": 0.44,
+        "unitCode": "MTS",
+        "unitText": "m/s",
+        "observedAt": "2026-10-14T10:25:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-BG-01",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-BG-01"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-BG-01"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-bg"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 240,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 91,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.18,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 73,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 43,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 23.9,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-BG-02",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-BG-02"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-BG-02"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-bg"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 238,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 92,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.21,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 76,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 45,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 24.2,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-BG-03",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-BG-03"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-BG-03"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-bg"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 244,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 90,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.41,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 74,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 43,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 23.6,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-BG-04",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-BG-04"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-BG-04"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-bg"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 239,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 90,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.18,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 73,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 46,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 23.8,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-BG-05",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-BG-05"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-BG-05"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-bg"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 240,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 89,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.12,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 69,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 45,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 23.8,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-TN-01",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-TN-01"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-TN-01"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-tn"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 243,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 92,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.25,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 74,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 45,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 24.3,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-TN-02",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-TN-02"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-TN-02"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-tn"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 252,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 91,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.16,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 70,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 45,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 24.1,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:SmtLine:bamboo:SMT-TN-03",
+      "type": "SmtLine",
+      "code": {
+        "type": "Property",
+        "value": "SMT-TN-03"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Dây chuyền SMT SMT-TN-03"
+      },
+      "category": {
+        "type": "Property",
+        "value": "smt"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "IPC-A-610 loại 2"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "TDX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "DT_NM"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:phone-tn"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "reflowPeakTemperature": {
+        "type": "Property",
+        "value": 244,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "conveyorSpeed": {
+        "type": "Property",
+        "value": 91,
+        "unitText": "cm/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "aoiDefectRate": {
+        "type": "Property",
+        "value": 0.17,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "placementRate": {
+        "type": "Property",
+        "value": 75,
+        "unitText": "nghìn linh kiện/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorHumidity": {
+        "type": "Property",
+        "value": 42,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "floorTemperature": {
+        "type": "Property",
+        "value": 23.9,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:Ventilator:bamboo:MT-01",
+      "type": "Ventilator",
+      "code": {
+        "type": "Property",
+        "value": "MT-01"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy thở MT-01"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại C"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_CC"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-cc"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "airwayPressure": {
+        "type": "Property",
+        "value": 18,
+        "unitText": "cmH₂O",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "oxygenFlow": {
+        "type": "Property",
+        "value": 5.8,
+        "unitCode": "L2",
+        "unitText": "L/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "gasTemperature": {
+        "type": "Property",
+        "value": 34.4,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "leakRate": {
+        "type": "Property",
+        "value": 3,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 95,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 40,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:Ventilator:bamboo:MT-02",
+      "type": "Ventilator",
+      "code": {
+        "type": "Property",
+        "value": "MT-02"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy thở MT-02"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại C"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_CC"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-cc"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "airwayPressure": {
+        "type": "Property",
+        "value": 18,
+        "unitText": "cmH₂O",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "oxygenFlow": {
+        "type": "Property",
+        "value": 6.6,
+        "unitCode": "L2",
+        "unitText": "L/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "gasTemperature": {
+        "type": "Property",
+        "value": 34.6,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "leakRate": {
+        "type": "Property",
+        "value": 5,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 95,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 43,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:Ventilator:bamboo:MT-03",
+      "type": "Ventilator",
+      "code": {
+        "type": "Property",
+        "value": "MT-03"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy thở MT-03"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại C"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_NOI"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-noi"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "airwayPressure": {
+        "type": "Property",
+        "value": 18,
+        "unitText": "cmH₂O",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "oxygenFlow": {
+        "type": "Property",
+        "value": 6.0,
+        "unitCode": "L2",
+        "unitText": "L/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "gasTemperature": {
+        "type": "Property",
+        "value": 34.5,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "leakRate": {
+        "type": "Property",
+        "value": 4,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 95,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 42,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:Ventilator:bamboo:MT-04",
+      "type": "Ventilator",
+      "code": {
+        "type": "Property",
+        "value": "MT-04"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy thở MT-04"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại C"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_NOI"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-noi"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "airwayPressure": {
+        "type": "Property",
+        "value": 18,
+        "unitText": "cmH₂O",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "oxygenFlow": {
+        "type": "Property",
+        "value": 6.5,
+        "unitCode": "L2",
+        "unitText": "L/phút",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "gasTemperature": {
+        "type": "Property",
+        "value": 34.5,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "leakRate": {
+        "type": "Property",
+        "value": 3,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 24,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 39,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:PatientMonitor:bamboo:MON-01",
+      "type": "PatientMonitor",
+      "code": {
+        "type": "Property",
+        "value": "MON-01"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy theo dõi bệnh nhân MON-01"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại B"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_CC"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-cc"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 96,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 41,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "wifiSignal": {
+        "type": "Property",
+        "value": -57,
+        "unitText": "dBm",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "syncLatency": {
+        "type": "Property",
+        "value": 238,
+        "unitCode": "C26",
+        "unitText": "ms",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "sensorErrorRate": {
+        "type": "Property",
+        "value": 2,
+        "unitText": "lần/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "cpuLoad": {
+        "type": "Property",
+        "value": 43,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:PatientMonitor:bamboo:MON-02",
+      "type": "PatientMonitor",
+      "code": {
+        "type": "Property",
+        "value": "MON-02"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy theo dõi bệnh nhân MON-02"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại B"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_NOI"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-noi"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 95,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 38,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "wifiSignal": {
+        "type": "Property",
+        "value": -56,
+        "unitText": "dBm",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "syncLatency": {
+        "type": "Property",
+        "value": 212,
+        "unitCode": "C26",
+        "unitText": "ms",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "sensorErrorRate": {
+        "type": "Property",
+        "value": 0,
+        "unitText": "lần/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "cpuLoad": {
+        "type": "Property",
+        "value": 31,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:PatientMonitor:bamboo:MON-03",
+      "type": "PatientMonitor",
+      "code": {
+        "type": "Property",
+        "value": "MON-03"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy theo dõi bệnh nhân MON-03"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại B"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_NOI"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-noi"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 94,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 42,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "wifiSignal": {
+        "type": "Property",
+        "value": -79,
+        "unitText": "dBm",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "syncLatency": {
+        "type": "Property",
+        "value": 199,
+        "unitCode": "C26",
+        "unitText": "ms",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "sensorErrorRate": {
+        "type": "Property",
+        "value": 0,
+        "unitText": "lần/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "cpuLoad": {
+        "type": "Property",
+        "value": 42,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:PatientMonitor:bamboo:MON-04",
+      "type": "PatientMonitor",
+      "code": {
+        "type": "Property",
+        "value": "MON-04"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Máy theo dõi bệnh nhân MON-04"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại B"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_NGOAI"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-ngoai"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 95,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 41,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "wifiSignal": {
+        "type": "Property",
+        "value": -60,
+        "unitText": "dBm",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "syncLatency": {
+        "type": "Property",
+        "value": 210,
+        "unitCode": "C26",
+        "unitText": "ms",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "sensorErrorRate": {
+        "type": "Property",
+        "value": 1,
+        "unitText": "lần/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "cpuLoad": {
+        "type": "Property",
+        "value": 37,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:ColdStorage:bamboo:TL-01",
+      "type": "ColdStorage",
+      "code": {
+        "type": "Property",
+        "value": "TL-01"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Tủ bảo quản vắc-xin TL-01"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại B"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_DUOC"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-duoc"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "temperature": {
+        "type": "Property",
+        "value": 4.4,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "relativeHumidity": {
+        "type": "Property",
+        "value": 53,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "doorOpenings": {
+        "type": "Property",
+        "value": 3,
+        "unitText": "lần/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "supplyVoltage": {
+        "type": "Property",
+        "value": 227,
+        "unitCode": "VLT",
+        "unitText": "V",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 94,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "compressorDuty": {
+        "type": "Property",
+        "value": 39,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:ColdStorage:bamboo:TL-02",
+      "type": "ColdStorage",
+      "code": {
+        "type": "Property",
+        "value": "TL-02"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Tủ bảo quản vắc-xin TL-02"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại B"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_DUOC"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-duoc"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "temperature": {
+        "type": "Property",
+        "value": 7.4,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "relativeHumidity": {
+        "type": "Property",
+        "value": 55,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "doorOpenings": {
+        "type": "Property",
+        "value": 5,
+        "unitText": "lần/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "supplyVoltage": {
+        "type": "Property",
+        "value": 224,
+        "unitCode": "VLT",
+        "unitText": "V",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 94,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "compressorDuty": {
+        "type": "Property",
+        "value": 44,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:ColdStorage:bamboo:TL-03",
+      "type": "ColdStorage",
+      "code": {
+        "type": "Property",
+        "value": "TL-03"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Tủ bảo quản vắc-xin TL-03"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại B"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_DUOC"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-duoc"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "temperature": {
+        "type": "Property",
+        "value": 4.3,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "relativeHumidity": {
+        "type": "Property",
+        "value": 52,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "doorOpenings": {
+        "type": "Property",
+        "value": 1,
+        "unitText": "lần/giờ",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "supplyVoltage": {
+        "type": "Property",
+        "value": 225,
+        "unitCode": "VLT",
+        "unitText": "V",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 94,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "compressorDuty": {
+        "type": "Property",
+        "value": 40,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:InfusionPump:bamboo:BT-01",
+      "type": "InfusionPump",
+      "code": {
+        "type": "Property",
+        "value": "BT-01"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Bơm tiêm điện BT-01"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại C"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_NGOAI"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-ngoai"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "occlusionPressure": {
+        "type": "Property",
+        "value": 111,
+        "unitText": "mmHg",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "flowDeviation": {
+        "type": "Property",
+        "value": 1.6,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 76,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 38,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "wifiSignal": {
+        "type": "Property",
+        "value": -62,
+        "unitText": "dBm",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "syncLatency": {
+        "type": "Property",
+        "value": 215,
+        "unitCode": "C26",
+        "unitText": "ms",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:InfusionPump:bamboo:BT-02",
+      "type": "InfusionPump",
+      "code": {
+        "type": "Property",
+        "value": "BT-02"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Bơm tiêm điện BT-02"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại C"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_NGOAI"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-ngoai"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "offline",
+        "observedAt": "2026-10-14T10:24:00+07:00"
+      },
+      "occlusionPressure": {
+        "type": "Property",
+        "value": 98,
+        "unitText": "mmHg",
+        "observedAt": "2026-10-14T10:20:00+07:00"
+      },
+      "flowDeviation": {
+        "type": "Property",
+        "value": 1.4,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:20:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 75,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:20:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 38,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:20:00+07:00"
+      },
+      "wifiSignal": {
+        "type": "Property",
+        "value": -59,
+        "unitText": "dBm",
+        "observedAt": "2026-10-14T10:20:00+07:00"
+      },
+      "syncLatency": {
+        "type": "Property",
+        "value": 219,
+        "unitCode": "C26",
+        "unitText": "ms",
+        "observedAt": "2026-10-14T10:20:00+07:00"
+      }
+    },
+    {
+      "id": "urn:ngsi-ld:InfusionPump:bamboo:BT-03",
+      "type": "InfusionPump",
+      "code": {
+        "type": "Property",
+        "value": "BT-03"
+      },
+      "name": {
+        "type": "Property",
+        "value": "Bơm tiêm điện BT-03"
+      },
+      "category": {
+        "type": "Property",
+        "value": "medical"
+      },
+      "grade": {
+        "type": "Property",
+        "value": "TTBYT loại C"
+      },
+      "tenant": {
+        "type": "Property",
+        "value": "BVX"
+      },
+      "orgUnit": {
+        "type": "Property",
+        "value": "BVX_CC"
+      },
+      "site": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Site:bamboo:bv-cc"
+      },
+      "connectionState": {
+        "type": "Property",
+        "value": "online",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "occlusionPressure": {
+        "type": "Property",
+        "value": 108,
+        "unitText": "mmHg",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "flowDeviation": {
+        "type": "Property",
+        "value": 1.4,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "batteryLevel": {
+        "type": "Property",
+        "value": 76,
+        "unitCode": "P1",
+        "unitText": "%",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "boardTemperature": {
+        "type": "Property",
+        "value": 38,
+        "unitCode": "CEL",
+        "unitText": "°C",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "wifiSignal": {
+        "type": "Property",
+        "value": -59,
+        "unitText": "dBm",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      },
+      "syncLatency": {
+        "type": "Property",
+        "value": 212,
+        "unitCode": "C26",
+        "unitText": "ms",
+        "observedAt": "2026-10-14T10:30:00+07:00"
+      }
+    }
+  ]
+}

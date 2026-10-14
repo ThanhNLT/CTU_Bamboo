@@ -6,7 +6,8 @@
 version = 1
 
 [[annotations]]
-path = ["**.json", "**.md", "**.MD", "**/.npmrc", "**/.gitkeep", "NOTICE", "platform/trino/jvm.config"]
+path = ["**.json", "**.md", "**.MD", "**/.npmrc", "**/.gitkeep", "NOTICE", "platform/trino/jvm.config",
+        "services/seed/data/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 DX-OS Open-Core contributors"
 SPDX-License-Identifier = "Apache-2.0"

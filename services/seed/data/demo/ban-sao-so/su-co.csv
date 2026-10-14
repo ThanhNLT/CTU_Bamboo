@@ -1,0 +1,18 @@
+incident_id,entity_id,attribute,label,side,threshold,started_at,ended_at,minutes,peak,severity,status
+SC-0001,TL-02,doorOpenings,Số lần mở cửa,above,6,2026-10-13T13:25:00+07:00,2026-10-13T13:30:00+07:00,5,7,warning,closed
+SC-0002,TL-02,doorOpenings,Số lần mở cửa,above,6,2026-10-13T16:40:00+07:00,2026-10-13T16:45:00+07:00,5,7,warning,closed
+SC-0003,TL-02,doorOpenings,Số lần mở cửa,above,6,2026-10-13T16:55:00+07:00,2026-10-13T17:00:00+07:00,5,7,warning,closed
+SC-0004,TL-02,doorOpenings,Số lần mở cửa,above,6,2026-10-13T20:40:00+07:00,2026-10-13T20:45:00+07:00,5,7,warning,closed
+SC-0005,CR-02,particles05,"Hạt bụi ≥0,5 µm",above,3520,2026-10-14T00:25:00+07:00,2026-10-14T00:35:00+07:00,10,3669,critical,closed
+SC-0006,SMT-TN-02,reflowPeakTemperature,Nhiệt độ đỉnh lò reflow,above,250,2026-10-14T00:35:00+07:00,2026-10-14T00:40:00+07:00,5,251,warning,closed
+SC-0007,SMT-TN-02,reflowPeakTemperature,Nhiệt độ đỉnh lò reflow,above,250,2026-10-14T01:20:00+07:00,2026-10-14T01:25:00+07:00,5,251,warning,closed
+SC-0008,TL-02,doorOpenings,Số lần mở cửa,above,6,2026-10-14T04:30:00+07:00,2026-10-14T04:40:00+07:00,10,7,warning,closed
+SC-0009,TL-02,doorOpenings,Số lần mở cửa,above,6,2026-10-14T06:50:00+07:00,2026-10-14T07:00:00+07:00,10,7,warning,closed
+SC-0010,CR-03,relativeHumidity,Độ ẩm,above,50,2026-10-14T09:45:00+07:00,,45,53,warning,open
+SC-0011,TL-02,temperature,Nhiệt độ tủ,above,8,2026-10-14T09:50:00+07:00,2026-10-14T10:10:00+07:00,20,9.1,critical,closed
+SC-0012,MT-04,batteryLevel,Pin dự phòng,below,30,2026-10-14T09:55:00+07:00,,35,24,warning,open
+SC-0013,CR-02,differentialPressure,Chênh áp,below,10,2026-10-14T10:00:00+07:00,,30,7,warning,open
+SC-0014,CR-02,particles05,"Hạt bụi ≥0,5 µm",above,3520,2026-10-14T10:05:00+07:00,2026-10-14T10:20:00+07:00,15,3690,critical,closed
+SC-0015,SMT-BG-03,aoiDefectRate,Tỷ lệ lỗi AOI,above,0.5,2026-10-14T10:10:00+07:00,2026-10-14T10:25:00+07:00,15,0.73,critical,closed
+SC-0016,MON-03,wifiSignal,Tín hiệu Wi-Fi,below,-75,2026-10-14T10:15:00+07:00,,15,-79,warning,open
+SC-0017,SMT-TN-02,reflowPeakTemperature,Nhiệt độ đỉnh lò reflow,above,250,2026-10-14T10:20:00+07:00,,10,252,warning,open

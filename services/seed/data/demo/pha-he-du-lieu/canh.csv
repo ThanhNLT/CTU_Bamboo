@@ -1,0 +1,32 @@
+from_node,to_node,columns
+pg-purchase-request,kafka-purchase-request,id→after.id; total_amount→after.total_amount
+pg-approval-history,kafka-approval-history,event→after.event; created_at→after.created_at
+pg-task,kafka-task,created_at→after.created_at; closed_at→after.closed_at
+pg-lot,kafka-lot,status→after.status
+pg-org-unit,kafka-org-unit,id→after.id; path→after.path
+ngsi-cleanroom,kafka-iot,particles05→value
+ngsi-smt,kafka-iot,aoiDefectRate→value; placementRate→value
+ngsi-cold,kafka-iot,temperature→value
+kafka-purchase-request,ice-purchase-request,after.total_amount→total_amount
+kafka-approval-history,ice-approval-history,after.event→event
+kafka-task,ice-task,after.closed_at→closed_at
+kafka-lot,ice-lot,after.status→status
+kafka-org-unit,ice-org-unit,after.path→path
+kafka-iot,ice-telemetry,value→avg_value
+ice-approval-history,gold-approval-daily,event→completed
+ice-task,gold-approval-daily,closed_at→on_time
+ice-purchase-request,gold-approval-daily,total_amount→approved_value
+ice-org-unit,gold-approval-daily,path→company
+ice-telemetry,gold-smt-oee,avg_value→oee
+ice-telemetry,gold-cleanroom,avg_value→particles05_p95
+ice-telemetry,gold-cold-chain,avg_value→minutes_in_range
+ice-lot,kpi-lots-on-hold,status→value
+gold-approval-daily,kpi-on-time,on_time→value
+gold-approval-daily,kpi-pr-value,approved_value→value
+gold-smt-oee,kpi-oee,oee→value
+gold-cleanroom,kpi-particles,particles05_p95→value
+gold-cold-chain,kpi-cold-chain,minutes_in_range→value
+kpi-on-time,app-ops,
+kpi-lots-on-hold,app-ops,
+ice-purchase-request,app-data-services,
+ice-lot,app-data-services,
