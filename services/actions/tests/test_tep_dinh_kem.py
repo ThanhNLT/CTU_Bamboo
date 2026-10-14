@@ -252,3 +252,34 @@ def test_han_muc_dung_luong(hasura, conn, s3):
         assert any(t["content_type"] == "application/pdf" and t["files"] >= 1 for t in after["by_type"])
     finally:
         conn.execute("UPDATE core.tenant SET storage_quota_bytes = DEFAULT WHERE id = %s", (i["TDX"],))
+
+
+@pytest.mark.parametrize(
+    ("doc_status", "code"), [("APPROVED", "locked"), ("CANCELLED", "locked"), ("DRAFT", "unavailable")]
+)
+def test_chi_xoa_tep_khi_chung_tu_chua_ket_thuc(conn, database, org, doc_status, code):
+    import psycopg
+
+    from app import attachments
+    from app.common import ActionError
+
+    k = org
+    i = ids(conn, k("nv"), "TDX")
+    pr_id = pr(conn, k("PR"), k("nv"), k("P_NV"), 1000, submit=False)
+    att = conn.execute(
+        """INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes,
+                                        storage_key, status, sha256, uploaded_by)
+           VALUES (test.id('TDX'), 'proc.purchase_request', %s, 'nham.pdf', 'application/pdf', 10, %s, 'CLEAN',
+                   repeat('0', 64), %s)
+           RETURNING id""",
+        (pr_id, f"thu/{pr_id}/nham.pdf", i[k("nv")]),
+    ).fetchone()["id"]
+    conn.execute("ALTER TABLE proc.purchase_request DISABLE TRIGGER USER")
+    try:
+        conn.execute("UPDATE proc.purchase_request SET status = %s WHERE id = %s", (doc_status, pr_id))
+    finally:
+        conn.execute("ALTER TABLE proc.purchase_request ENABLE TRIGGER USER")
+    session = {"x-hasura-role": "user", "x-hasura-user-id": i[k("nv")], "x-hasura-tenant-id": i["TDX"]}
+    with psycopg.connect(database) as plain, pytest.raises(ActionError) as err:
+        attachments.delete_attachment(plain, session, {"attachment_id": str(att)}, Context())
+    assert err.value.code == code, err.value.message

@@ -232,7 +232,7 @@ export const LineageGraphMock = ({
           <LegendDot className="bg-red-500" label="Kiểm tra lỗi" />
           <LegendDot className="bg-yellow-500" label="Bị ảnh hưởng" />
         </div>
-        <span>Cập nhật {updatedAt} · OpenMetadata</span>
+        <span>Cập nhật {updatedAt}</span>
       </div>
     </section>
   );

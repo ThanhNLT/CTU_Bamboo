@@ -14,15 +14,7 @@ import { NodeQualityPanel } from "./components/NodeQualityPanel";
 import { QualityAlertBanner } from "./components/QualityAlertBanner";
 import { RecentRunsTable } from "./components/RecentRunsTable";
 import { ReportIncidentModal } from "./components/ReportIncidentModal";
-import {
-  computeStatuses,
-  failedChecks,
-  failureSummaries,
-  matchesQuery,
-  openMetadataUrl,
-  reach,
-  scopeOf,
-} from "./graph";
+import { computeStatuses, failedChecks, failureSummaries, matchesQuery, reach, scopeOf } from "./graph";
 import type { Direction, LineageNode } from "./types";
 
 const PREFERRED = "gold-approval-daily";
@@ -128,7 +120,7 @@ const LineageView = ({ data }: { data: LineageData }) => {
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
-      <DataLineageHeader openMetadataHref={openMetadataUrl(node.fqn)} onReport={() => setReporting(true)} />
+      <DataLineageHeader onReport={() => setReporting(true)} />
 
       <QualityAlertBanner failures={failures} onView={viewChecks} />
 

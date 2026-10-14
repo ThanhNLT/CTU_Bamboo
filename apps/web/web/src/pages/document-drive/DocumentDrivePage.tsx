@@ -60,6 +60,17 @@ export const DocumentDrivePage = () => {
     }
   };
 
+  const remove = async (f: DriveFile) => {
+    try {
+      await request(`mutation Del($a: uuid!) { delete_attachment(attachment_id: $a) { status } }`, { a: f.id });
+      message.success(`Đã xóa ${f.name}`);
+      drive.reload();
+      void usage.reload();
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
+
   const uploadDisabledReason =
     drive.folder && drive.folderStatus && LOCKED.has(drive.folderStatus)
       ? "Chứng từ đã có kết quả, không thêm tệp được"
@@ -138,6 +149,8 @@ export const DocumentDrivePage = () => {
             files={files}
             view={view}
             onOpen={(f) => void download(f)}
+            me={tenant.person_id}
+            onDelete={(f) => void remove(f)}
             emptyText={drive.loading ? "Đang tải…" : section === "mine" ? "Bạn chưa tải lên tệp nào." : "Không có tệp."}
           />
         </div>
