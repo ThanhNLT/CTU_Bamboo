@@ -67,6 +67,7 @@ const SCAN: Record<string, ScanResult> = {
   PENDING: "pending",
 };
 const RECENT_DAYS = 7;
+const EDITABLE = new Set(["DRAFT", "PENDING", "RETURNED"]);
 
 const category = (contentType: string) =>
   contentType.startsWith("image/") ? "images" : /pdf|word|sheet|text|document/.test(contentType) ? "docs" : "other";
@@ -82,6 +83,7 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
   const docs = useDocuments({ limit: 500 });
 
   const rows = files.result.data;
+  const docById = useMemo(() => new Map(docs.documents.map((d) => [d.id, d])), [docs.documents]);
   const all = useMemo(
     () =>
       rows.map((r): DriveFile => ({
@@ -95,8 +97,9 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
         updatedLabel: formatAgo(r.created_at),
         bytes: r.size_bytes,
         scan: SCAN[r.status] ?? "pending",
+        locked: Boolean(docById.get(r.entity_id)?.status && !EDITABLE.has(docById.get(r.entity_id)!.status)),
       })),
-    [rows],
+    [rows, docById],
   );
   const entityTypes = useMemo(() => new Map(rows.map((r) => [r.entity_id, r.entity_type])), [rows]);
 
@@ -106,8 +109,6 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
       section === "mine" ? f.ownerId === me : section === "recent" ? Date.parse(f.updatedAt) >= since : true,
     );
   }, [all, section, me]);
-
-  const docById = useMemo(() => new Map(docs.documents.map((d) => [d.id, d])), [docs.documents]);
 
   const folders = useMemo(() => {
     const byDoc = new Map<string, DriveFolder>();
@@ -163,6 +164,7 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
     targets: docs.documents
       .filter((d) => ENTITY_TYPE[d.kind] && !["APPROVED", "REJECTED", "CANCELLED"].includes(d.status))
       .map((d) => ({ id: d.id, entityType: ENTITY_TYPE[d.kind]!, label: `${d.code} · ${d.title}` })),
+    reload: () => void files.query.refetch(),
     loading: files.query.isLoading || docs.loading,
     error: files.query.error?.message ?? docs.error,
   };
