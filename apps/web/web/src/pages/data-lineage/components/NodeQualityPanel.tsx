@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Bell, Check, ExternalLink, X } from "lucide-react";
+import { Bell, Check, X } from "lucide-react";
 import { Link } from "react-router";
 
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
-import { STATUS_LABEL, failedChecks, openMetadataUrl } from "../graph";
+import { STATUS_LABEL, failedChecks } from "../graph";
 import type { LineageNode, NodeStatus } from "../types";
 
 const TAG_CLASS: Record<NodeStatus, string> = {
@@ -178,17 +178,7 @@ export const NodeQualityPanel = ({
           <Link to={node.appLink} className={cn(secondaryButtonClass, fullWidth)}>
             Mở trong ứng dụng
           </Link>
-        ) : (
-          <a
-            href={openMetadataUrl(node.fqn)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(secondaryButtonClass, fullWidth)}
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden />
-            Xem trong OpenMetadata
-          </a>
-        )}
+        ) : null}
       </div>
     </aside>
   );

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { ConfigProvider, Table, type TableColumnsType } from "antd";
+import { ConfigProvider, Popconfirm, Table, type TableColumnsType } from "antd";
+import { Trash2 } from "lucide-react";
 
 import { bambooTableTheme, Panel } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
@@ -12,7 +13,32 @@ import type { DriveView } from "./DriveToolbar";
 import { FileTypeBadge } from "./FileTypeBadge";
 import { ScanStatus } from "./ScanStatus";
 
-const columns: TableColumnsType<DriveFile> = [
+type DeleteProps = { me: string; onDelete: (f: DriveFile) => void };
+
+const canDelete = (f: DriveFile, me: string) => f.ownerId === me && !f.locked;
+
+const DeleteButton = ({ file, onDelete }: { file: DriveFile; onDelete: (f: DriveFile) => void }) => (
+  <Popconfirm
+    title="Xóa tệp này?"
+    description="Tệp bị xóa khỏi chứng từ và kho lưu trữ."
+    okText="Xóa"
+    okButtonProps={{ danger: true }}
+    cancelText="Không"
+    onConfirm={() => onDelete(file)}
+  >
+    <button
+      type="button"
+      aria-label={`Xóa ${file.name}`}
+      title="Xóa tệp"
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-red-50 hover:text-red-600"
+    >
+      <Trash2 className="h-4 w-4" aria-hidden />
+    </button>
+  </Popconfirm>
+);
+
+const baseColumns: TableColumnsType<DriveFile> = [
   {
     title: "Tên",
     dataIndex: "name",
@@ -49,30 +75,51 @@ const columns: TableColumnsType<DriveFile> = [
   { title: "Kiểm dịch", dataIndex: "scan", width: 160, render: (v: DriveFile["scan"]) => <ScanStatus result={v} /> },
 ];
 
-const FileCardGrid = ({ files, onOpen }: { files: DriveFile[]; onOpen: (f: DriveFile) => void }) => (
+const columnsFor = ({ me, onDelete }: DeleteProps): TableColumnsType<DriveFile> => [
+  ...baseColumns,
+  {
+    key: "actions",
+    width: 52,
+    align: "center",
+    render: (_, f) => (canDelete(f, me) ? <DeleteButton file={f} onDelete={onDelete} /> : null),
+  },
+];
+
+const FileCardGrid = ({
+  files,
+  onOpen,
+  me,
+  onDelete,
+}: { files: DriveFile[]; onOpen: (f: DriveFile) => void } & DeleteProps) => (
   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
     {files.map((f) => (
-      <button
-        type="button"
-        key={f.id}
-        onClick={() => onOpen(f)}
-        disabled={f.scan !== "clean"}
-        title={f.scan === "clean" ? `Tải ${f.name}` : undefined}
-        className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 text-left hover:border-bamboo-200 hover:bg-bamboo-50/30 disabled:cursor-not-allowed"
-      >
-        <div className="flex items-start justify-between gap-2">
-          <FileTypeBadge name={f.name} size="lg" />
-          <ScanStatus result={f.scan} />
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-[13px] font-medium text-ink" title={f.name}>
-            {f.name}
+      <div key={f.id} className="relative">
+        <button
+          type="button"
+          onClick={() => onOpen(f)}
+          disabled={f.scan !== "clean"}
+          title={f.scan === "clean" ? `Tải ${f.name}` : undefined}
+          className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 text-left hover:border-bamboo-200 hover:bg-bamboo-50/30 disabled:cursor-not-allowed"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <FileTypeBadge name={f.name} size="lg" />
+            <ScanStatus result={f.scan} />
           </div>
-          <div className="mt-0.5 truncate text-[11.5px] text-muted">
-            {f.owner} · {f.updatedLabel} · {formatBytes(f.bytes)}
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-medium text-ink" title={f.name}>
+              {f.name}
+            </div>
+            <div className="mt-0.5 truncate pr-8 text-[11.5px] text-muted">
+              {f.owner} · {f.updatedLabel} · {formatBytes(f.bytes)}
+            </div>
           </div>
-        </div>
-      </button>
+        </button>
+        {canDelete(f, me) && (
+          <div className="absolute bottom-2 right-2">
+            <DeleteButton file={f} onDelete={onDelete} />
+          </div>
+        )}
+      </div>
     ))}
   </div>
 );
@@ -82,12 +129,14 @@ export const FileTable = ({
   view,
   onOpen,
   emptyText,
+  me,
+  onDelete,
 }: {
   files: DriveFile[];
   view: DriveView;
   onOpen: (f: DriveFile) => void;
   emptyText: string;
-}) => {
+} & DeleteProps) => {
   const total = files.reduce((sum, f) => sum + (f.bytes ?? 0), 0);
   return (
     <Panel
@@ -104,7 +153,7 @@ export const FileTable = ({
           <Table<DriveFile>
             size="small"
             rowKey="id"
-            columns={columns}
+            columns={columnsFor({ me, onDelete })}
             dataSource={files}
             pagination={false}
             scroll={{ x: 720 }}
@@ -114,7 +163,7 @@ export const FileTable = ({
           />
         </ConfigProvider>
       ) : files.length ? (
-        <FileCardGrid files={files} onOpen={onOpen} />
+        <FileCardGrid files={files} onOpen={onOpen} me={me} onDelete={onDelete} />
       ) : (
         <p className="py-6 text-center text-[13px] text-muted">{emptyText}</p>
       )}

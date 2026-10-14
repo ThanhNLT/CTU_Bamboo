@@ -19,9 +19,6 @@ export const STATUS_LABEL: Record<NodeStatus, string> = {
   affected: "Bị ảnh hưởng",
 };
 
-const OM_BASE: string = import.meta.env.VITE_OPENMETADATA_URL ?? "http://localhost:8585";
-export const openMetadataUrl = (fqn: string) => `${OM_BASE}/table/${encodeURIComponent(fqn)}/lineage`;
-
 const adjacency = (edges: LineageEdge[], dir: "down" | "up") => {
   const m = new Map<string, string[]>();
   for (const e of edges) {

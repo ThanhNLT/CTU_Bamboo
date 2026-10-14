@@ -33,6 +33,7 @@ export type DriveFile = {
   updatedLabel: string;
   bytes: number | null;
   scan: ScanResult;
+  locked: boolean;
 };
 
 export type SortKey = "updated" | "name" | "size";
