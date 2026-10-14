@@ -1,0 +1,8 @@
+site_id,tenant,org_unit_code,name,province,lat,lng
+chip-bn,TDX,CHIP_PS,Phòng sạch nhà máy chip Bắc Ninh,Bắc Ninh,21.18612,106.07631
+phone-tn,TDX,DT_NM,Nhà máy lắp ráp Thái Nguyên,Thái Nguyên,21.59422,105.84817
+phone-bg,TDX,DT_NM,Xưởng SMT Bắc Giang (Nhà máy lắp ráp),Bắc Giang,21.27307,106.1946
+bv-cc,BVX,BVX_CC,Khoa Cấp cứu – Bệnh viện X,Hà Nội,20.97136,105.77876
+bv-noi,BVX,BVX_NOI,Khoa Nội – Bệnh viện X,Hà Nội,20.97136,105.77876
+bv-ngoai,BVX,BVX_NGOAI,Khoa Ngoại – Bệnh viện X,Hà Nội,20.97136,105.77876
+bv-duoc,BVX,BVX_DUOC,Kho vắc-xin Khoa Dược – Bệnh viện X,Hà Nội,20.97136,105.77876

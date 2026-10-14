@@ -1,0 +1,404 @@
+{
+  "CleanRoom": {
+    "kind": "Phòng sạch",
+    "category": "cleanroom",
+    "grade": "ISO 5",
+    "attributes": [
+      {
+        "key": "particles05",
+        "label": "Hạt bụi ≥0,5 µm",
+        "unit": "hạt/m³",
+        "unit_code": null,
+        "decimals": 0,
+        "min": null,
+        "max": 3520,
+        "limit_label": "Ngưỡng ISO 5"
+      },
+      {
+        "key": "particles5",
+        "label": "Hạt bụi ≥5 µm",
+        "unit": "hạt/m³",
+        "unit_code": null,
+        "decimals": 0,
+        "min": null,
+        "max": 29,
+        "limit_label": "Ngưỡng ISO 5"
+      },
+      {
+        "key": "differentialPressure",
+        "label": "Chênh áp",
+        "unit": "Pa",
+        "unit_code": "PAL",
+        "decimals": 0,
+        "min": 10,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "temperature",
+        "label": "Nhiệt độ",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 1,
+        "min": 20,
+        "max": 22,
+        "limit_label": null
+      },
+      {
+        "key": "relativeHumidity",
+        "label": "Độ ẩm",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": 40,
+        "max": 50,
+        "limit_label": null
+      },
+      {
+        "key": "airVelocity",
+        "label": "Tốc độ gió",
+        "unit": "m/s",
+        "unit_code": "MTS",
+        "decimals": 2,
+        "min": 0.36,
+        "max": 0.54,
+        "limit_label": null
+      }
+    ]
+  },
+  "SmtLine": {
+    "kind": "Dây chuyền SMT",
+    "category": "smt",
+    "grade": "IPC-A-610 loại 2",
+    "attributes": [
+      {
+        "key": "reflowPeakTemperature",
+        "label": "Nhiệt độ đỉnh lò reflow",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 0,
+        "min": 235,
+        "max": 250,
+        "limit_label": null
+      },
+      {
+        "key": "conveyorSpeed",
+        "label": "Tốc độ băng tải",
+        "unit": "cm/phút",
+        "unit_code": null,
+        "decimals": 0,
+        "min": 80,
+        "max": 100,
+        "limit_label": null
+      },
+      {
+        "key": "aoiDefectRate",
+        "label": "Tỷ lệ lỗi AOI",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 2,
+        "min": null,
+        "max": 0.5,
+        "limit_label": null
+      },
+      {
+        "key": "placementRate",
+        "label": "Tốc độ gắp đặt",
+        "unit": "nghìn linh kiện/giờ",
+        "unit_code": null,
+        "decimals": 0,
+        "min": 60,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "floorHumidity",
+        "label": "Độ ẩm xưởng",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": 30,
+        "max": 60,
+        "limit_label": null
+      },
+      {
+        "key": "floorTemperature",
+        "label": "Nhiệt độ xưởng",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 1,
+        "min": 22,
+        "max": 26,
+        "limit_label": null
+      }
+    ]
+  },
+  "Ventilator": {
+    "kind": "Máy thở",
+    "category": "medical",
+    "grade": "TTBYT loại C",
+    "attributes": [
+      {
+        "key": "airwayPressure",
+        "label": "Áp lực đường thở",
+        "unit": "cmH₂O",
+        "unit_code": null,
+        "decimals": 0,
+        "min": 5,
+        "max": 30,
+        "limit_label": null
+      },
+      {
+        "key": "oxygenFlow",
+        "label": "Lưu lượng O₂",
+        "unit": "L/phút",
+        "unit_code": "L2",
+        "decimals": 1,
+        "min": 2,
+        "max": 15,
+        "limit_label": null
+      },
+      {
+        "key": "gasTemperature",
+        "label": "Nhiệt độ khí thở",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 1,
+        "min": 32,
+        "max": 37,
+        "limit_label": null
+      },
+      {
+        "key": "leakRate",
+        "label": "Tỷ lệ rò rỉ",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": null,
+        "max": 10,
+        "limit_label": null
+      },
+      {
+        "key": "batteryLevel",
+        "label": "Pin dự phòng",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": 30,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "boardTemperature",
+        "label": "Nhiệt độ bo mạch",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 0,
+        "min": null,
+        "max": 60,
+        "limit_label": null
+      }
+    ]
+  },
+  "PatientMonitor": {
+    "kind": "Máy theo dõi bệnh nhân",
+    "category": "medical",
+    "grade": "TTBYT loại B",
+    "attributes": [
+      {
+        "key": "batteryLevel",
+        "label": "Pin dự phòng",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": 30,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "boardTemperature",
+        "label": "Nhiệt độ bo mạch",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 0,
+        "min": null,
+        "max": 60,
+        "limit_label": null
+      },
+      {
+        "key": "wifiSignal",
+        "label": "Tín hiệu Wi-Fi",
+        "unit": "dBm",
+        "unit_code": null,
+        "decimals": 0,
+        "min": -75,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "syncLatency",
+        "label": "Độ trễ đồng bộ",
+        "unit": "ms",
+        "unit_code": "C26",
+        "decimals": 0,
+        "min": null,
+        "max": 500,
+        "limit_label": null
+      },
+      {
+        "key": "sensorErrorRate",
+        "label": "Lỗi cảm biến",
+        "unit": "lần/giờ",
+        "unit_code": null,
+        "decimals": 0,
+        "min": null,
+        "max": 3,
+        "limit_label": null
+      },
+      {
+        "key": "cpuLoad",
+        "label": "Tải CPU",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": null,
+        "max": 85,
+        "limit_label": null
+      }
+    ]
+  },
+  "ColdStorage": {
+    "kind": "Tủ bảo quản vắc-xin",
+    "category": "medical",
+    "grade": "TTBYT loại B",
+    "attributes": [
+      {
+        "key": "temperature",
+        "label": "Nhiệt độ tủ",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 1,
+        "min": 2,
+        "max": 8,
+        "limit_label": null
+      },
+      {
+        "key": "relativeHumidity",
+        "label": "Độ ẩm",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": null,
+        "max": 70,
+        "limit_label": null
+      },
+      {
+        "key": "doorOpenings",
+        "label": "Số lần mở cửa",
+        "unit": "lần/giờ",
+        "unit_code": null,
+        "decimals": 0,
+        "min": null,
+        "max": 6,
+        "limit_label": null
+      },
+      {
+        "key": "supplyVoltage",
+        "label": "Điện áp nguồn",
+        "unit": "V",
+        "unit_code": "VLT",
+        "decimals": 0,
+        "min": 207,
+        "max": 242,
+        "limit_label": null
+      },
+      {
+        "key": "batteryLevel",
+        "label": "Pin dự phòng",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": 30,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "compressorDuty",
+        "label": "Tải máy nén",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": null,
+        "max": 80,
+        "limit_label": null
+      }
+    ]
+  },
+  "InfusionPump": {
+    "kind": "Bơm tiêm điện",
+    "category": "medical",
+    "grade": "TTBYT loại C",
+    "attributes": [
+      {
+        "key": "occlusionPressure",
+        "label": "Áp lực tắc nghẽn",
+        "unit": "mmHg",
+        "unit_code": null,
+        "decimals": 0,
+        "min": null,
+        "max": 300,
+        "limit_label": null
+      },
+      {
+        "key": "flowDeviation",
+        "label": "Sai lệch lưu lượng",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 1,
+        "min": null,
+        "max": 5,
+        "limit_label": null
+      },
+      {
+        "key": "batteryLevel",
+        "label": "Pin dự phòng",
+        "unit": "%",
+        "unit_code": "P1",
+        "decimals": 0,
+        "min": 30,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "boardTemperature",
+        "label": "Nhiệt độ bo mạch",
+        "unit": "°C",
+        "unit_code": "CEL",
+        "decimals": 0,
+        "min": null,
+        "max": 60,
+        "limit_label": null
+      },
+      {
+        "key": "wifiSignal",
+        "label": "Tín hiệu Wi-Fi",
+        "unit": "dBm",
+        "unit_code": null,
+        "decimals": 0,
+        "min": -75,
+        "max": null,
+        "limit_label": null
+      },
+      {
+        "key": "syncLatency",
+        "label": "Độ trễ đồng bộ",
+        "unit": "ms",
+        "unit_code": "C26",
+        "decimals": 0,
+        "min": null,
+        "max": 500,
+        "limit_label": null
+      }
+    ]
+  }
+}

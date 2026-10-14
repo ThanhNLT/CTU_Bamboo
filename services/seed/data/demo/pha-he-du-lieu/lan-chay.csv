@@ -1,0 +1,9 @@
+run_id,task,engine,node_id,started_at,duration_s,result
+R-001,cdc → bronze.wf_task,lakehouse-sink,ice-task,2026-10-14T10:14:00+07:00,42,success
+R-002,kiểm tra silver.wf_task,Soda,ice-task,2026-10-14T10:15:00+07:00,9,check_failed
+R-003,build gold.approval_daily,Trino,gold-approval-daily,2026-10-14T10:20:00+07:00,74,success
+R-004,iot.telemetry → silver.iot_telemetry_5m,lakehouse-sink,ice-telemetry,2026-10-14T10:25:00+07:00,18,success
+R-005,build gold.smt_oee_daily,Trino,gold-smt-oee,2026-10-14T10:26:00+07:00,33,success
+R-006,build gold.cleanroom_hourly,Trino,gold-cleanroom,2026-10-14T10:26:00+07:00,21,success
+R-007,build gold.cold_chain_daily,Trino,gold-cold-chain,2026-10-14T10:27:00+07:00,12,success
+R-008,build gold.approval_daily,Trino,gold-approval-daily,2026-10-14T10:29:00+07:00,0,running
