@@ -4,7 +4,6 @@
 
 fastapi
 uvicorn
-# Vòng lặp sự kiện và bộ phân tích HTTP viết bằng C cho uvicorn (tự dùng khi có cài).
 uvloop
 httptools
 psycopg[binary]
@@ -13,7 +12,6 @@ httpx
 pyjwt[crypto]
 boto3
 jinja2
-# Che dữ liệu cá nhân (ADR #43): chỉ bộ nhận diện theo mẫu, không tải mô hình spaCy.
 presidio-analyzer
 presidio-anonymizer
 openpyxl

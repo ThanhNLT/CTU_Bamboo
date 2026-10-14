@@ -2,12 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Toàn bộ hệ thống (lõi + giao diện) chạy bằng một lệnh `docker compose up -d` (ADR #13), build image từ
-# mã nguồn. Không cần mã nguồn: dùng image dựng sẵn trên GHCR (compose.release.yml, xem README).
-# Kiểm thử tích hợp: `make test-actions` (profile test: Hasura riêng trỏ vào bms_hasura_test).
 name: bamboo
 
-# Xoay vòng log của mọi container (mặc định json-file không giới hạn, có thể làm đầy đĩa).
 x-logging: &logging
   driver: json-file
   options:
@@ -20,9 +16,7 @@ x-db-env: &db-env
   PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
 
 x-actions-env: &actions-env
-  # production: từ chối khởi động nếu còn mật khẩu/secret mặc định của môi trường dev.
   BAMBOO_ENV: ${BAMBOO_ENV:-development}
-  # Tài khoản ứng dụng đặc quyền tối thiểu (ADR #35); không phải superuser `bms`.
   DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms
   ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
   FLOWABLE_URL: http://flowable:8080/flowable-rest/service
@@ -30,23 +24,16 @@ x-actions-env: &actions-env
   FLOWABLE_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
   HASURA_URL: http://hasura:8080
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
-  # Webhook lấy JWKS qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME, qua cổng API).
   KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
   KEYCLOAK_ISSUER: ${KEYCLOAK_URL:-http://localhost:8000}/realms/bms
-  # Tệp đính kèm (ADR #26). Link có chữ ký dùng địa chỉ trình duyệt thấy.
   S3_ENDPOINT: http://seaweedfs:8333
   S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8000}
-  # Secret (CSDL, Flowable, khóa S3, actions) đọc từ OpenBao bằng AppRole của từng dịch vụ (ADR #25);
-  # giá trị env ở trên chỉ là dự phòng khi chạy ngoài compose.
   BAO_ADDR: http://openbao:8200
   BAO_APPROLE_FILE: /run/bms/approle.json
-  # Bỏ trống: chưa quét virus. Bật ClamAV: `docker compose --profile scan up -d` và CLAMAV_HOST=clamav.
   CLAMAV_HOST: ${CLAMAV_HOST:-}
-  # Lakehouse qua Trino (ADR #45): HTTPS, CA nội bộ do openbao-init ghi cạnh file AppRole.
   TRINO_URL: https://trino:8443
   TRINO_CA_FILE: /run/bms/trino-ca.pem
 
-# Secret hạ tầng openbao-init chép vào OpenBao (môi trường dev khai báo ở .env).
 x-bao-sync-env: &bao-sync-env
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
   ACTIONS_DB_PASSWORD: ${ACTIONS_DB_PASSWORD:-actions-db-dev}
@@ -61,7 +48,6 @@ x-bao-sync-env: &bao-sync-env
   KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
   FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
   FLOWABLE_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
-  # Không chép vào OpenBao; chỉ để openbao-init kiểm tra khi BAMBOO_ENV=production.
   DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
 
 x-actions-image: &actions-image
@@ -74,29 +60,21 @@ x-actions-image: &actions-image
 
 x-hasura-env: &hasura-env
   HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
-  # Production: HASURA_ENABLE_CONSOLE=false (quản trị bằng metadata trong Git, ADR #24).
   HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
-  # Chỉ ứng dụng web (qua cổng API) và dev server `npm run dev` được gọi GraphQL từ trình duyệt.
   HASURA_GRAPHQL_CORS_DOMAIN: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
   HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log
   ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
-  # Xác thực bằng webhook (ADR #32): token Keycloak + tenant đã chọn (header x-bamboo-tenant).
   HASURA_GRAPHQL_AUTH_HOOK_MODE: GET
 
 services:
   db:
     logging: *logging
     image: postgis/postgis:17-3.5
-    # Image PostGIS chỉ có bản amd64; máy arm64 (Mac chip M) chạy qua giả lập, các image khác chạy native.
     platform: linux/amd64
     environment:
       POSTGRES_DB: bms
       POSTGRES_USER: bms
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
-    # WAL logic cho CDC (ADR #38). Slot của Debezium giữ WAL tối đa 1 GB khi Debezium dừng lâu; vượt mức
-    # thì slot bị vô hiệu (Debezium chụp ảnh lại) thay vì làm đầy đĩa của CSDL.
-    # jit=off: câu GraphQL của Hasura là một câu SQL lớn, ước lượng chi phí cao dễ kích hoạt JIT; biên dịch JIT
-    # tốn hàng trăm ms CPU cho truy vấn chỉ chạy vài ms (khuyến nghị của Hasura cho tải OLTP).
     command: ["postgres", "-c", "wal_level=logical", "-c", "max_wal_senders=10", "-c", "max_replication_slots=10",
               "-c", "max_slot_wal_keep_size=1GB", "-c", "jit=off"]
     ports:
@@ -105,16 +83,12 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      # Kiểm tra qua TCP: lúc khởi tạo volume mới, image chạy một server tạm chỉ nghe unix socket
-      # rồi khởi động lại; kiểm tra qua socket sẽ báo sẵn sàng quá sớm.
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bms -d bms"]
       interval: 2s
       timeout: 3s
       retries: 30
       start_period: 10s
 
-  # Tạo database phụ, chạy các migration chưa chạy, đặt tài khoản đặc quyền tối thiểu cho từng dịch vụ
-  # (ADR #35, db/roles) rồi thoát. Chỉ job này và seed dùng superuser `bms`.
   migrate:
     logging: *logging
     build:
@@ -136,7 +110,6 @@ services:
       LAKEHOUSE_DB_PASSWORD: ${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}
     restart: "no"
 
-  # Dữ liệu demo Tập đoàn X (ADR #16): bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
   seed:
     logging: *logging
     build:
@@ -154,7 +127,6 @@ services:
     command: ["python", "-m", "app.seed"]
     restart: "no"
 
-  # Chỉ xác thực (ADR #6, #32). Realm sinh bằng `make realm`, đóng gói vào image, import lần đầu.
   keycloak:
     logging: *logging
     build:
@@ -163,34 +135,26 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    # start-dev cho máy dev; production: KEYCLOAK_MODE=start sau reverse proxy TLS (docs/van-hanh).
     command: ["${KEYCLOAK_MODE:-start-dev}", "--import-realm"]
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://db:5432/keycloak
       KC_DB_USERNAME: bamboo_keycloak
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
-      # Địa chỉ trình duyệt thấy (qua cổng API); phải khớp issuer mà actions kiểm tra và cấu hình của web.
       KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8000}
-      # Trang quản trị không đi qua cổng công khai (cổng chặn realm master): dùng cổng riêng 127.0.0.1:8080.
       KC_HOSTNAME_ADMIN: ${KEYCLOAK_ADMIN_URL:-http://localhost:8080}
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
-      # Mặc định trong container Keycloak lấy heap ban đầu 50%, tối đa 70% RAM (container không giới hạn bộ nhớ
-      # thì là RAM của cả máy). Một realm vài chục người dùng chỉ cần vài trăm MB.
       JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms128m -Xmx768m}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
-      # Redirect URI của client bms-web khi import realm (platform/keycloak/realm).
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
-    # Chỉ dành cho trang quản trị Keycloak; người dùng đăng nhập qua cổng API.
     ports:
       - "127.0.0.1:8080:8080"
     restart: unless-stopped
-    # Image không có curl: hỏi cổng quản trị 9000 bằng /dev/tcp của bash.
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3 && grep -q UP <&3"]
       interval: 5s
@@ -214,8 +178,6 @@ services:
     ports:
       - "127.0.0.1:8082:8080"
     restart: unless-stopped
-    # Image dựng trên Alpine (không có bash, image tự đặt -Xmx512M): dùng nc của busybox.
-    # Tomcat chỉ mở cổng sau khi Spring khởi động xong.
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 8080"]
       interval: 5s
@@ -235,7 +197,6 @@ services:
       BMS_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/bms
       ACTIONS_URL: http://actions:8000
       HASURA_GRAPHQL_AUTH_HOOK: http://actions:8000/auth/hasura
-    # Chỉ dành cho Hasura Console và công cụ quản trị trên máy dev; ứng dụng gọi qua cổng API (/graphql).
     ports:
       - "127.0.0.1:8081:8080"
     restart: unless-stopped
@@ -245,28 +206,23 @@ services:
       timeout: 3s
       retries: 60
 
-  # Két secret lưu bền (raft một node, ADR #2, #25). Khởi động lại thì sealed tới khi openbao-init chạy lại.
   openbao:
     logging: *logging
     build:
       context: ./platform/openbao
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-openbao:${BAMBOO_TAG:-dev}
-    # Entrypoint của image tự thêm -config=/openbao/config.
     command: ["server"]
     volumes:
       - openbao-data:/openbao/file
     ports:
       - "127.0.0.1:8200:8200"
     restart: unless-stopped
-    # Sẵn sàng nhận lệnh (kể cả khi chưa khởi tạo hoặc đang sealed: openbao-init lo phần đó).
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null 'http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200&standbycode=200'"]
       interval: 2s
       timeout: 3s
       retries: 30
 
-  # Khởi tạo/unseal, policy, AppRole, đồng bộ secret từ .env, sinh khóa S3; ghi s3.json cho SeaweedFS
-  # và file AppRole vào volume riêng của từng dịch vụ (dịch vụ này không thấy secret của dịch vụ kia).
   openbao-init:
     logging: *logging
     <<: *actions-image
@@ -277,20 +233,15 @@ services:
       <<: [*actions-env, *bao-sync-env]
       BAO_APPROLE_FILE: ""
       BAO_KEYS_FILE: /openbao/keys/init.json
-      # File AppRole thuộc người dùng chạy dịch vụ (uid 10001 trong image Python).
       APPROLE_UID: "10001"
       APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json,search=/run/bms-search/approle.json,lakehouse=/run/bms-lakehouse/approle.json
       S3_CONFIG_PATH: /etc/bms/s3.json
-      # Khóa chủ Meilisearch do OpenBao sinh, ghi vào tệp cấu hình (ADR #36).
       MEILI_CONFIG_PATH: /etc/meilisearch/config.toml
-      # Catalog Iceberg của Trino (mật khẩu CSDL lakehouse, khóa S3), thuộc uid 1000 của image Trino (ADR #40).
       TRINO_CATALOG_PATH: /etc/trino/bms-catalog/lakehouse.properties
       TRINO_UID: "1000"
-      # Chứng chỉ TLS, tệp mật khẩu, khóa ký nội bộ của Trino; CA nội bộ cho actions gọi Trino (ADR #45).
       TRINO_SECRETS_DIR: /etc/trino/secrets
       INTERNAL_CA_OUTPUTS: /run/bms-actions/trino-ca.pem
     command: ["python", "-m", "app.openbao_init"]
-    # Ghi vào các volume secret (sở hữu bởi root).
     user: "0"
     volumes:
       - openbao-keys:/openbao/keys
@@ -304,7 +255,6 @@ services:
       - trino-secrets:/etc/trino/secrets
     restart: "no"
 
-  # Lưu trữ đối tượng S3 (ADR #2, #26). Không cho truy cập ẩn danh; CORS cho ứng dụng Refine.
   seaweedfs:
     logging: *logging
     image: chrislusf/seaweedfs:4.48
@@ -318,31 +268,24 @@ services:
     volumes:
       - seaweedfs-data:/data
       - seaweedfs-config:/etc/bms:ro
-    # Không mở cổng ra ngoài: trình duyệt tải tệp qua cổng API (/bms-quarantine, /bms-documents).
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
-      - "127.0.0.1:8333:8333"     # S3 (yêu cầu khóa hoặc link có chữ ký)
-      - "127.0.0.1:9333:9333"     # giao diện master (trạng thái volume)
-      - "127.0.0.1:8888:8888"     # giao diện filer
+      - "127.0.0.1:8333:8333"
+      - "127.0.0.1:9333:9333"
+      - "127.0.0.1:8888:8888"
     restart: unless-stopped
-    # Healthcheck còn nạp lại định danh S3 (SIGHUP cho weed, PID 1) khi openbao-init ghi s3.json mới,
-    # ví dụ khi nâng cấp thêm định danh: không phải khởi động lại SeaweedFS.
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333 && { [ ! /etc/bms/s3.json -nt /tmp/s3.json.loaded ] || { touch /tmp/s3.json.loaded && kill -HUP 1; }; }"]
       interval: 3s
       timeout: 3s
       retries: 40
 
-  # Quét virus cho tệp đính kèm (tùy chọn, cần khoảng 1,5 GB RAM, tải chữ ký lần đầu mất vài phút).
   clamav:
     logging: *logging
     profiles: [scan]
     image: clamav/clamav:1.4
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
       - "127.0.0.1:3310:3310"
 
-  # Hasura Actions bọc hàm CSDL.
   actions:
     logging: *logging
     <<: *actions-image
@@ -354,12 +297,9 @@ services:
     environment: *actions-env
     volumes:
       - actions-secrets:/run/bms:ro
-    # Không ghi access log: mỗi request GraphQL gọi /auth/gateway và /auth/hasura (hai dòng log mỗi request);
-    # Hasura (http-log, webhook-log) và cổng API đã ghi nhật ký truy cập.
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
-      - "127.0.0.1:8090:8000"     # Hasura Actions, webhook (chỉ để xem /healthz, /docs khi dev)
+      - "127.0.0.1:8090:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
@@ -367,7 +307,6 @@ services:
       timeout: 3s
       retries: 40
 
-  # Đối chiếu CSDL → Flowable (ADR #31); chạy wf.refresh_all() mỗi phút.
   flow-sync:
     logging: *logging
     <<: *actions-image
@@ -380,7 +319,6 @@ services:
     command: ["python", "-m", "app.flow_sync"]
     restart: unless-stopped
 
-  # Tạo bucket S3, deploy BPMN, nạp metadata Hasura, đồng bộ client Keycloak rồi thoát.
   bootstrap:
     logging: *logging
     <<: *actions-image
@@ -399,19 +337,14 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *actions-env
-      # Bổ sung địa chỉ ứng dụng vào redirect URI của client bms-web nếu thiếu (realm chỉ import
-      # ở lần chạy đầu; đổi WEB_ORIGIN hoặc nâng cấp từ 0.1.0 vẫn đăng nhập được, không mất dữ liệu).
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
-      # Tài khoản demo mới (ví dụ chuyên viên nhân sự) thêm vào realm đã có, cùng mật khẩu với lần import đầu.
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
     volumes:
       - bootstrap-secrets:/run/bms:ro
     command: ["python", "-m", "app.bootstrap"]
     restart: "no"
 
-  # Tìm kiếm toàn văn (ADR #36): chỉ mục Meilisearch bản Community (MIT, image không có hậu tố -enterprise).
-  # Chỉ mạng nội bộ; giao diện tìm qua Action search_documents. Khóa chủ trong tệp cấu hình do openbao-init ghi.
   meilisearch:
     logging: *logging
     image: getmeili/meilisearch:v1.54.3
@@ -422,9 +355,8 @@ services:
     volumes:
       - meilisearch-data:/meili_data
       - meilisearch-config:/etc/meilisearch:ro
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
-      - "127.0.0.1:7700:7700"     # cần khóa API
+      - "127.0.0.1:7700:7700"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7700/health"]
@@ -432,19 +364,14 @@ services:
       timeout: 3s
       retries: 40
 
-  # Trích chữ từ tệp đính kèm (PDF, DOCX, XLSX) cho chỉ mục tìm kiếm. Chỉ search-sync gọi, không mở cổng.
   tika:
     logging: *logging
     image: apache/tika:4.1.0-1
-    # JVM mặc định lấy tối đa 1/4 RAM máy cho cả tiến trình chính và tiến trình con Tika tự fork (biến
-    # JAVA_TOOL_OPTIONS áp cho cả hai). Tệp đính kèm giới hạn kích thước nên 512 MB đủ.
     environment:
       JAVA_TOOL_OPTIONS: ${TIKA_JAVA_OPTS:--Xmx512m}
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
       - "127.0.0.1:9998:9998"
     restart: unless-stopped
-    # Image không có curl: hỏi /version bằng /dev/tcp của bash.
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9998 && printf 'GET /version HTTP/1.0\r\n\r\n' >&3 && grep -q Tika <&3"]
       interval: 5s
@@ -452,15 +379,11 @@ services:
       retries: 30
       start_period: 10s
 
-  # In phiếu PDF (ADR #37): Chromium của Gotenberg chuyển HTML do actions sinh sang PDF. Chỉ actions gọi, không
-  # mở cổng. Trang không cần tải gì từ ngoài: tắt JavaScript, chặn mọi địa chỉ mạng (riêng và công khai) và
-  # tính năng tải tệp từ URL, webhook (chống SSRF).
   gotenberg:
     logging: *logging
     image: gotenberg/gotenberg:8.37.0-chromium
     command: ["gotenberg", "--chromium-auto-start", "--chromium-disable-javascript", "--chromium-deny-private-ips",
               "--chromium-deny-public-ips", "--api-disable-download-from", "--webhook-disable", "--api-timeout=60s"]
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
       - "127.0.0.1:3000:3000"
     restart: unless-stopped
@@ -470,7 +393,6 @@ services:
       timeout: 3s
       retries: 30
 
-  # Đồng bộ CSDL → chỉ mục (ADR #36): nghe kênh search_sync, đọc tệp đã kiểm tra, trích chữ bằng Tika.
   search-sync:
     logging: *logging
     <<: *actions-image
@@ -485,10 +407,6 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
-  # Trục sự kiện (ADR #2, #38, #45): Kafka KRaft một node, chỉ mạng nội bộ, giữ sự kiện 7 ngày. Dịch vụ khác chỉ
-  # tới được listener SASL_PLAINTEXT :9092 (SCRAM-SHA-512, mỗi dịch vụ một tài khoản, ACL theo tiền tố topic, không
-  # có ACL thì từ chối). Controller và listener LOCAL chỉ nghe localhost trong container: start.sh của image dùng
-  # LOCAL (ANONYMOUS là super user) để đặt mật khẩu SCRAM và ACL mỗi lần khởi động.
   kafka:
     logging: *logging
     build:
@@ -498,7 +416,6 @@ services:
       CLUSTER_ID: b5T4hzPsQrOmfv9Kr38lIg
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      # HOST: cùng SCRAM + ACL, quảng bá localhost:19092 để công cụ trên máy dev kết nối được (cổng publish bên dưới).
       KAFKA_LISTENERS: SASL_PLAINTEXT://:9092,HOST://:19092,CONTROLLER://localhost:9093,LOCAL://localhost:9094
       KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092,HOST://localhost:19092,LOCAL://localhost:9094
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -517,26 +434,20 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_HEAP_OPTS: -Xmx512m -Xms256m
-      # Không có tiền tố KAFKA_ để image không chép vào server.properties.
       DEBEZIUM_KAFKA_PASSWORD: ${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}
       LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
     volumes:
       - kafka-data:/var/lib/kafka/data
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
-      - "127.0.0.1:19092:19092"   # listener HOST (SASL), cho công cụ trên máy dev
+      - "127.0.0.1:19092:19092"
     restart: unless-stopped
     healthcheck:
-      # Sẵn sàng khi start.sh đã đặt xong tài khoản và ACL.
       test: ["CMD-SHELL", "test -f /tmp/bamboo-kafka-ready && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9094 > /dev/null 2>&1"]
       interval: 10s
       timeout: 15s
       retries: 30
       start_period: 15s
 
-  # CDC (ADR #22, #38): Debezium Server đọc WAL logic của CSDL bms (publication bms_cdc, tài khoản bamboo_cdc)
-  # và ghi mỗi thay đổi vào topic bms.<schema>.<bảng> dạng JSON. Lần đầu chụp ảnh toàn bộ; vị trí đọc lưu ở
-  # volume debezium-data. Cấu hình bằng biến môi trường (Quarkus), không cần tệp.
   debezium:
     logging: *logging
     image: quay.io/debezium/server:3.7.0.Final
@@ -577,15 +488,12 @@ services:
       DEBEZIUM_FORMAT_VALUE: json
       DEBEZIUM_FORMAT_KEY_SCHEMAS_ENABLE: "false"
       DEBEZIUM_FORMAT_VALUE_SCHEMAS_ENABLE: "false"
-      # Heap cố định thay vì 1/4 RAM máy: một connector, lô nhỏ.
       JAVA_OPTS: ${DEBEZIUM_JAVA_OPTS:--Xms64m -Xmx384m}
     volumes:
       - debezium-data:/debezium/data
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
-      - "127.0.0.1:8083:8080"     # /q/health
+      - "127.0.0.1:8083:8080"
     restart: unless-stopped
-    # Hỏi /q/health bằng /dev/tcp của bash (không phụ thuộc curl trong image); Quarkus trả 503 khi có kiểm tra DOWN.
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health HTTP/1.0\r\n\r\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
       interval: 10s
@@ -593,8 +501,6 @@ services:
       retries: 30
       start_period: 20s
 
-  # Lakehouse (ADR #39): đọc các topic CDC, ghi lịch sử thay đổi vào bảng Iceberg bronze.<schema>_<bảng> trên
-  # bucket bms-lakehouse; catalog ở CSDL `lakehouse` (JDBC catalog của Iceberg). Image riêng vì có pyarrow.
   lakehouse-sink:
     logging: *logging
     build:
@@ -617,10 +523,6 @@ services:
     command: ["python", "-m", "app.lakehouse_sink"]
     restart: unless-stopped
 
-  # Truy vấn Lakehouse (ADR #40): Trino một node, catalog `lakehouse` là catalog Iceberg mà lakehouse-sink ghi.
-  # Xác thực (ADR #45): HTTPS 8443, tài khoản dịch vụ bms-admin (trino-init) và bms-actions (chỉ mượn danh người
-  # dùng tenant, row filter theo tenant trong rules.json). Giao diện web cho máy dev: https://127.0.0.1:8085
-  # (đăng nhập bms-admin, mật khẩu: `make trino-password`).
   trino:
     logging: *logging
     build:
@@ -646,8 +548,6 @@ services:
       retries: 30
       start_period: 20s
 
-  # Tạo bảng bronze còn thiếu và view silver (platform/trino/silver.sql, sinh bằng app.lakehouse_silver) rồi thoát.
-  # Đăng nhập bms-admin qua HTTPS; mật khẩu và CA đọc từ volume bí mật của Trino.
   trino-init:
     logging: *logging
     build:
@@ -661,8 +561,6 @@ services:
     entrypoint: ["bash", "-c", "TRINO_PASSWORD=$$(cat /etc/trino/secrets/admin.password) exec trino --server https://trino:8443 --truststore-path /etc/trino/secrets/ca.pem --user bms-admin --password --file /etc/trino/bms/silver.sql"]
     restart: "no"
 
-  # Cổng API (ADR #34): điểm vào duy nhất từ trình duyệt. APISIX standalone, route trong
-  # platform/apisix/apisix.yaml; WAF Coraza (OWASP CRS); token kiểm tại biên (forward-auth → actions).
   gateway:
     logging: *logging
     build:
@@ -682,27 +580,22 @@ services:
     ports:
       - "127.0.0.1:${GATEWAY_PORT:-8000}:9080"
     restart: unless-stopped
-    # Image không có curl: hỏi route /healthz bằng /dev/tcp của bash.
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9080 && printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3 && grep -q ok <&3"]
       interval: 3s
       timeout: 3s
       retries: 40
 
-  # Ứng dụng Refine (Tầng 2), build tĩnh phục vụ bằng nginx, chỉ truy cập qua cổng API.
   web:
     logging: *logging
     build:
       context: ./apps/web/web
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-web:${BAMBOO_TAG:-dev}
     environment:
-      # Cấu hình lúc chạy (docker/40-bamboo-config.sh): cùng một image chạy được trên mọi tên miền.
       BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}
       BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8000/graphql}
-    # Không mở cổng ra ngoài: phục vụ qua cổng API (cổng 5173 để trống cho `npm run dev`).
-    # Chỉ nghe 127.0.0.1 trên máy chạy compose, không mở ra mạng; dịch vụ khác gọi qua mạng nội bộ.
     ports:
-      - "127.0.0.1:8088:8080"     # ứng dụng web trực tiếp, không qua cổng API (dev)
+      - "127.0.0.1:8088:8080"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
@@ -710,7 +603,6 @@ services:
       timeout: 3s
       retries: 10
 
-  # --- profile test ---------------------------------------------------------
   hasura-test:
     logging: *logging
     profiles: [test]
@@ -722,7 +614,6 @@ services:
       <<: *hasura-env
       HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/hasura_meta_test
       BMS_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/bms_hasura_test
-      # Container chạy kiểm thử (`make test-actions` đặt --name bamboo-actions-test).
       ACTIONS_URL: http://bamboo-actions-test:8090
       HASURA_GRAPHQL_AUTH_HOOK: http://bamboo-actions-test:8090/auth/hasura
 
@@ -751,10 +642,8 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *actions-env
-      # Kiểm thử tải tệp lên/xuống từ trong container nên link có chữ ký trỏ vào mạng nội bộ.
       S3_PUBLIC_ENDPOINT: http://seaweedfs:8333
       BAO_KEYS_FILE: /openbao/keys/init.json
-      # Kiểm thử dựng dữ liệu bằng superuser; dịch vụ actions chạy trong lúc kiểm thử dùng tài khoản ứng dụng.
       TEST_DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
       TEST_APP_DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms_hasura_test
       HASURA_URL: http://hasura-test:8080

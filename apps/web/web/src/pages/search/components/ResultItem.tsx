@@ -2,17 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { BookOpen, Cpu, Database, Download, FileText, FolderClosed, type LucideIcon } from "lucide-react"; // Lucide React
-import { Link } from "react-router"; // React Router
+import { BookOpen, Cpu, Database, Download, FileText, FolderClosed, type LucideIcon } from "lucide-react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { StatusTag } from "../../../components/StatusTag";
 import { cn } from "../../../utils/cn";
 import { highlight } from "../engine";
 import type { ResultType, SearchResult } from "../types";
 
-// ===== Hằng số =====
 const ICON: Record<ResultType, { icon: LucideIcon; className: string }> = {
   twin: { icon: Cpu, className: "bg-bamboo-50 text-bamboo-700" },
   record: { icon: FileText, className: "bg-canvas text-body" },
@@ -23,8 +20,6 @@ const ICON: Record<ResultType, { icon: LucideIcon; className: string }> = {
 
 const MARK = "rounded-[3px] bg-yellow-100 text-ink";
 
-// ===== Component =====
-/** Văn bản có các cụm khớp được bọc <mark> nền vàng nhạt. */
 const Highlighted = ({ text, terms }: { text: string; terms: string[] }) => (
   <>
     {highlight(text, terms).map((s, i) =>
@@ -39,11 +34,8 @@ const Highlighted = ({ text, terms }: { text: string; terms: string[] }) => (
   </>
 );
 
-// ===== Hàm tiện ích =====
 const fmtScore = (n: number) => n.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// ===== Component =====
-/** Một kết quả: biểu tượng theo loại, tiêu đề (liên kết), đường dẫn, đoạn trích tô sáng, thẻ độ khớp. */
 export const ResultItem = ({
   result,
   terms,
@@ -78,7 +70,6 @@ export const ResultItem = ({
         <div className="mt-0.5 truncate text-[11.5px] text-muted">{result.breadcrumb}</div>
 
         {result.snippetHtml ? (
-          // Máy chủ đã escape HTML, chỉ thêm thẻ <mark> quanh chữ khớp (ADR #36).
           <p
             className="mt-1.5 text-[13px] leading-relaxed text-body [&_mark]:rounded-[3px] [&_mark]:bg-yellow-100 [&_mark]:text-ink"
             dangerouslySetInnerHTML={{ __html: result.snippetHtml }}

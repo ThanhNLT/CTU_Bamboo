@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import type { ReactNode } from "react"; // React
+import type { ReactNode } from "react";
 
-// ===== Component =====
-/** Tiêu đề trang quản trị (cùng cỡ chữ các trang khác) + nút thao tác bên phải. */
 export const AdminHeader = ({
   title,
   subtitle,
@@ -25,7 +22,6 @@ export const AdminHeader = ({
   </div>
 );
 
-/** Ô "không có quyền" thay cho trang khi người dùng thiếu quyền quản trị tương ứng. */
 export const NoAccess = ({ permission }: { permission: string }) => (
   <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-16 text-center">
     <p className="text-[13.5px] font-medium text-ink">Bạn chưa có quyền quản trị mục này.</p>

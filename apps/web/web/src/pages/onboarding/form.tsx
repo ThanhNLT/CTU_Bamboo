@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Hồ sơ tiếp nhận nhân sự: thông tin ứng viên, dữ liệu nhạy cảm (ghi qua Action, mã hóa ở OpenBao), đề xuất
-// bổ nhiệm và tên đăng nhập. Danh sách vị trí chỉ là gợi ý: CSDL kiểm tra lại quyền lập và ghế còn trống.
-
-// ===== Thư viện =====
-import { useEffect, useMemo, useState } from "react"; // React
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   App,
@@ -21,11 +17,10 @@ import {
   Select,
   Space,
   Typography,
-} from "antd"; // Ant Design
-import { LockOutlined } from "@ant-design/icons"; // Ant Design Icons
-import dayjs, { type Dayjs } from "dayjs"; // Day.js
+} from "antd";
+import { LockOutlined } from "@ant-design/icons";
+import dayjs, { type Dayjs } from "dayjs";
 
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { parsePgTimestamp } from "../../utils/format";
@@ -33,7 +28,6 @@ import { OB_INSERT, OB_OPTIONS, OB_SAVE_PRIVATE, OB_SUBMIT, OB_UPDATE } from "./
 import { CONTRACT_TYPE, GENDER, type Onboarding } from "./types";
 import { suggestUsername } from "./username";
 
-// ===== Kiểu dữ liệu =====
 export type ObFormValues = {
   full_name: string;
   gender?: string | null;
@@ -73,8 +67,6 @@ type Options = {
   }[];
 };
 
-// ===== Hàm tiện ích =====
-// tstzrange dạng ["2025-01-01 00:00:00+07",) → mốc kết thúc (null: không thời hạn).
 const rangeEnd = (range: string): Dayjs | null => {
   const upper = range
     .slice(range.indexOf(",") + 1, -1)
@@ -83,13 +75,11 @@ const rangeEnd = (range: string): Dayjs | null => {
   return upper ? parsePgTimestamp(upper) : null;
 };
 
-// ===== Kiểu dữ liệu =====
 type Props = {
-  record?: Onboarding; // có record: sửa hồ sơ nháp / bị trả về
+  record?: Onboarding;
   onSaved: (id: string) => void;
 };
 
-// ===== Component =====
 export const OnboardingForm = ({ record, onSaved }: Props) => {
   const { message } = App.useApp();
   const { tenant } = useSession();
@@ -132,7 +122,6 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
     });
   }, [record, form]);
 
-  // Vị trí còn trống từ ngày vào làm, trong đơn vị người dùng được lập hồ sơ (gợi ý; CSDL kiểm tra lại).
   const positions = useMemo(() => {
     if (!options) return [];
     const units = new Map(options.core_org_unit.map((u) => [u.id, u]));
@@ -194,7 +183,6 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
         });
         id = r.insert_hr_onboarding_request_one.id;
       }
-      // Trường nhạy cảm để trống khi sửa: giữ bản đã lưu.
       const secret = {
         national_id: v.national_id?.trim() || null,
         bank_account: v.bank_account?.trim() || null,

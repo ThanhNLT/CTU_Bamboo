@@ -2,19 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { DatePicker, Modal, Radio } from "antd"; // Ant Design
-import type { Dayjs } from "dayjs"; // Day.js
-import { useState } from "react"; // React
+import { DatePicker, Modal, Radio } from "antd";
+import type { Dayjs } from "dayjs";
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import { MODAL_Z } from "./zIndex";
 
-// ===== Component =====
-/**
- * Xác nhận kết thúc hiệu lực (ngừng đơn vị / vị trí, kết thúc bổ nhiệm, thu hồi quyền): ngay bây giờ hoặc hết một
- * ngày chọn trước. Không xóa — lịch sử vẫn còn cho chuỗi duyệt và nhật ký kiểm toán.
- */
 export const EndModal = ({
   open,
   title,

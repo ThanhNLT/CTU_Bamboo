@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-import { Show } from "@refinedev/antd"; // Refine Ant Design
-import { useGo, useParsed } from "@refinedev/core"; // Refine
+import { useCallback, useEffect, useState } from "react";
+import { Show } from "@refinedev/antd";
+import { useGo, useParsed } from "@refinedev/core";
 import {
   Alert,
   App,
@@ -21,7 +20,7 @@ import {
   Tabs,
   Tag,
   Typography,
-} from "antd"; // Ant Design
+} from "antd";
 import {
   ApartmentOutlined,
   AuditOutlined,
@@ -29,9 +28,8 @@ import {
   PrinterOutlined,
   SendOutlined,
   StopOutlined,
-} from "@ant-design/icons"; // Ant Design Icons
+} from "@ant-design/icons";
 
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ActModal } from "../../components/approval/ActModal";
@@ -44,11 +42,9 @@ import { Comments } from "../../components/document/Comments";
 import { CANCEL_PR, MY_TASK_FOR, PR_DETAIL, PR_PDF, SUBMIT_PR } from "./queries";
 import type { PurchaseRequest } from "./types";
 
-// ===== Component =====
 export const PurchaseRequestShow = () => {
   const { id } = useParsed();
   const go = useGo();
-  // modal của App.useApp(): Modal.confirm tĩnh của antd v5 không hiển thị trên React 19.
   const { message, modal } = App.useApp();
   const { tenant } = useSession();
   const [pr, setPr] = useState<PurchaseRequest | null>();
@@ -97,7 +93,6 @@ export const PurchaseRequestShow = () => {
     }
   };
 
-  // Link có chữ ký trả PDF dạng tệp tải về (Content-Disposition: attachment) nên trang hiện tại không rời đi.
   const print = async () => {
     setPrinting(true);
     try {

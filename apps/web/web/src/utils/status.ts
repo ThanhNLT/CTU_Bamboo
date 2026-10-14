@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Hằng số =====
 export const PR_STATUS_LABEL: Record<string, string> = {
   DRAFT: "Nháp",
   PENDING: "Chờ duyệt",
@@ -12,7 +11,6 @@ export const PR_STATUS_LABEL: Record<string, string> = {
   CANCELLED: "Đã hủy",
 };
 
-// Đơn hàng nội bộ (ADR #42): chờ bên bán xác nhận.
 export const IC_STATUS_LABEL: Record<string, string> = {
   DRAFT: "Nháp",
   PENDING: "Chờ xác nhận",

@@ -2,16 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho Bản sao số (ADR #50): ghi nhận sự cố thiết bị kèm hướng xử lý."""
+import psycopg
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-
-# ===== Module nội bộ =====
 from .common import Context, bind_session, session_identity
 
 
-# ===== Hasura Action =====
 def iot_acknowledge(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
     row = conn.execute("SELECT tenant_id FROM iot.incident WHERE id = %s", (args["id"],)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -24,5 +19,4 @@ def iot_acknowledge(conn: psycopg.Connection, session: dict, args: dict, _ctx: C
     return {"id": args["id"], "acknowledged_at": at}
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {"iot_acknowledge": iot_acknowledge}

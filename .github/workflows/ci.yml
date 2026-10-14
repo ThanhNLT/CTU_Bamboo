@@ -1,8 +1,5 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-#
-# Kiểm tra mỗi pull request: giấy phép từng tệp, lint, build giao diện, tài liệu; rồi dựng toàn bộ
-# hệ thống bằng đúng một lệnh `docker compose up -d` (ADR #13) và chạy mọi bộ kiểm thử trên đó.
 name: CI
 
 on:
@@ -25,8 +22,6 @@ jobs:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.2.0
       - name: Giấy phép từng tệp (REUSE 3.3)
-        # reuse 6.x đoán bảng mã từ 2 KB đầu tệp; khi mốc 2 KB cắt giữa một ký tự tiếng Việt thì
-        # đoán thất bại, bỏ qua cả tệp và báo thiếu giấy phép. Ghim 5.1.1 (đọc cả tệp) đến khi upstream sửa.
         run: uvx --from 'reuse[charset-normalizer]==5.1.1' reuse lint
       - name: Python (ruff)
         run: |
@@ -49,8 +44,6 @@ jobs:
           npm run build
       - name: Giấy phép phụ thuộc production của giao diện
         working-directory: apps/web/web
-        # bpmn-js: giấy phép bpmn.io (MIT kèm điều kiện giữ watermark, license-checker báo `MIT*`), đã xét
-        # tay và ghi ở NOTICE; chỉ loại đúng phiên bản đang khóa, các gói khác vẫn kiểm như cũ.
         run: |
           npx --yes license-checker@25 --production --excludePrivatePackages \
             --excludePackages "bpmn-js@$(node -p "require('./node_modules/bpmn-js/package.json').version")" \
@@ -63,8 +56,6 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
-      # Runner ubuntu-latest chỉ còn vài GB trống; cả hệ thống (image, Playwright, dữ liệu SeaweedFS) làm đĩa đầy 100%
-      # và SeaweedFS ngừng cấp volume (ghi S3 lỗi InternalError). Bỏ bộ công cụ cài sẵn không dùng tới.
       - name: Giải phóng đĩa runner
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
@@ -106,7 +97,6 @@ jobs:
           docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'
           df -h / /var/lib/docker 2>/dev/null || df -h /
           docker system df
-          # Trạng thái volume của SeaweedFS (hết chỗ cấp volume làm ghi S3 lỗi InternalError).
           docker compose exec -T seaweedfs wget -qO- http://localhost:9333/dir/status || true
       - name: Nhật ký khi lỗi
         if: failure()

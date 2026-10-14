@@ -2,17 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Trung tâm điều hành (Dữ liệu số). Tổng quan: 5 KPI · 4 khối biểu đồ (2×2, có bản đồ cơ sở) · bảng quá hạn SLA.
-// Tô sáng chéo: bấm thanh/chú giải/dòng của một công ty → cả trang làm nổi công ty đó; Esc để bỏ.
-// Tổng quan tính ở trình duyệt (./useOpsData); bản đồ và các bảng Quy trình, Sản xuất, Bệnh viện, Chất lượng dữ liệu
-// tính ở máy chủ (Action ops_dashboard, ./api, ADR #49). Mọi số liệu trong phạm vi tenant và quyền xem.
+import { Alert } from "antd";
+import dayjs from "dayjs";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-// ===== Thư viện =====
-import { Alert } from "antd"; // Ant Design
-import dayjs from "dayjs"; // Day.js
-import { useEffect, useMemo, useRef, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { DailyApprovalsChart } from "./components/DailyApprovalsChart";
 import { DashboardFilterBar } from "./components/DashboardFilterBar";
 import { KpiCard } from "./components/KpiCard";
@@ -30,7 +23,6 @@ import type { CompanyKey, DashTab, Period } from "./types";
 import { PERIOD_DAYS, useOpsData } from "./useOpsData";
 import { SLA_HOURS } from "../inbox/useInboxTasks";
 
-// ===== Component =====
 export const OperationsCenterPage = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<DashTab>("overview");
@@ -41,7 +33,6 @@ export const OperationsCenterPage = () => {
   const meta = `Nóng · ${ops.updatedAt}`;
   const [presenting, setPresenting] = useState(false);
 
-  // Esc bỏ tô sáng (khi không ở chế độ toàn màn hình — Esc lúc đó dành cho trình duyệt thoát trình chiếu).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !document.fullscreenElement) setHighlight(undefined);

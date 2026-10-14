@@ -2,22 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Khung ứng dụng Bamboo: menu trái + header + vùng nội dung. Thay cho ThemedLayout của @refinedev/antd.
+import { RefineKbar } from "@refinedev/kbar";
+import { Drawer } from "antd";
+import { useEffect, useState, type PropsWithChildren } from "react";
+import { useLocation } from "react-router";
 
-// ===== Thư viện =====
-import { RefineKbar } from "@refinedev/kbar"; // Refine Kbar
-import { Drawer } from "antd"; // Ant Design
-import { useEffect, useState, type PropsWithChildren } from "react"; // React
-import { useLocation } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { AppHeader } from "./AppHeader";
 import { AppSider, SiderContent } from "./AppSider";
 
-// ===== Hằng số =====
 const COLLAPSED_KEY = "bamboo.sider.collapsed";
 
-// ===== Hàm tiện ích =====
 const readCollapsed = () => {
   try {
     return localStorage.getItem(COLLAPSED_KEY) === "1";
@@ -26,7 +20,6 @@ const readCollapsed = () => {
   }
 };
 
-// ===== Component =====
 export const BambooLayout = ({ children }: PropsWithChildren) => {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -35,12 +28,9 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     try {
       localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
-    } catch {
-      /* bộ nhớ trình duyệt bị chặn: chỉ mất ghi nhớ trạng thái */
-    }
+    } catch {}
   }, [collapsed]);
 
-  // Đổi trang thì đóng menu mobile.
   useEffect(() => setMobileOpen(false), [pathname]);
 
   return (
@@ -63,7 +53,6 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
         <main className="min-w-0 flex-1 px-4 py-5 md:px-6 md:py-6">{children}</main>
       </div>
 
-      {/* Bảng lệnh ⌘K đặt trong layout (đã qua TenantGate) để chỉ kiểm tra quyền khi đã có tenant. */}
       <RefineKbar />
     </div>
   );

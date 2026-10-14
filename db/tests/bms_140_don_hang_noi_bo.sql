@@ -2,11 +2,8 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Đơn hàng nội bộ (ADR #42): đề nghị mua từ nhà cung cấp nội bộ duyệt xong sinh đơn hàng nội bộ; bên bán
--- xác nhận kèm lô xuất (kiểm tra lô) thì sinh đơn mua cho bên mua; từ chối, hủy; quyền xem; thông báo.
 SELECT test.fixture();
 
--- Bên bán: cả Phòng Kinh doanh B2B của Chip X xác nhận được đơn bán ra từ Chip X.
 INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), 'BAN_HANG_NOI_BO', 'Bán hàng nội bộ');
 INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
 SELECT tenant_id, id, p FROM core.role, unnest(ARRAY['ic.order.read', 'ic.order.confirm']) p
@@ -24,7 +21,6 @@ INSERT INTO mdm.item (tenant_id, code, name, uom, ref_price) VALUES
     (test.id('TDX'), 'VC', 'Vận chuyển', 'chuyến', NULL);
 INSERT INTO test.ids SELECT code, id FROM mdm.item WHERE code IN ('PMIC', 'SOC', 'VC');
 
--- Lô của Chip X (PMIC, SoC) và một lô PMIC của Điện thoại X (không phải bên bán).
 INSERT INTO mfg.lot (tenant_id, lot_no, item_id, org_unit_id, quantity, uom, produced_on, status) VALUES
     (test.id('TDX'), 'PMIC-A', test.id('PMIC'), test.id('CHIP'), 1000, 'cái', current_date - 10, 'RELEASED'),
     (test.id('TDX'), 'PMIC-GIU', test.id('PMIC'), test.id('CHIP'), 1000, 'cái', current_date - 9, 'ON_HOLD'),
@@ -32,7 +28,6 @@ INSERT INTO mfg.lot (tenant_id, lot_no, item_id, org_unit_id, quantity, uom, pro
     (test.id('TDX'), 'PMIC-DT', test.id('PMIC'), test.id('DT'), 1000, 'cái', current_date - 7, 'RELEASED');
 INSERT INTO test.ids SELECT lot_no, id FROM mfg.lot;
 
--- Đề nghị của chị C (Phòng Mua hàng Điện thoại X) với dòng hàng; gửi duyệt nếu p_submit.
 CREATE FUNCTION pg_temp.ipr(p_key text, p_partner text, p_pmic numeric, p_with_vc boolean DEFAULT true,
                             p_submit boolean DEFAULT true) RETURNS uuid
 LANGUAGE plpgsql AS $$
@@ -54,7 +49,6 @@ BEGIN
     RETURN v;
 END $$;
 
--- Đơn hàng nội bộ sinh từ đề nghị (sau khi trưởng phòng mua hàng duyệt).
 CREATE FUNCTION pg_temp.ic(p_pr text) RETURNS ic.ic_order
 LANGUAGE sql STABLE AS $$
     SELECT o.* FROM ic.ic_order o JOIN proc.purchase_request r ON r.ic_order_id = o.id WHERE r.id = test.id(p_pr)
@@ -65,7 +59,6 @@ LANGUAGE sql STABLE AS $$
     SELECT i.id::text FROM ic.ic_order_item i WHERE i.order_id = (pg_temp.ic(p_pr)).id AND i.item_id = test.id(p_item)
 $$;
 
--- Gửi duyệt: không mua nội bộ từ chính công ty mình; phải có dòng hàng.
 SELECT pg_temp.ipr('pr_cung_cty', 'NB_DT', 10, true, false);
 SELECT test.throws($$SELECT proc.submit_purchase_request(test.id('pr_cung_cty'), test.id('c'))$$,
                    '%chính công ty%', 'Không đặt hàng nội bộ từ chính công ty của mình');
@@ -74,7 +67,6 @@ UPDATE proc.purchase_request SET total_amount = 1000000 WHERE id = test.id('pr_k
 SELECT test.throws($$SELECT proc.submit_purchase_request(test.id('pr_khong_dong'), test.id('c'))$$,
                    '%cần có dòng hàng%', 'Đề nghị mua nội bộ phải có dòng hàng');
 
--- Duyệt xong: sinh đơn hàng nội bộ chờ xác nhận, chép dòng hàng, gắn vào đề nghị.
 SELECT pg_temp.ipr('pr1', 'NB_CHIP', 600);
 SELECT test.eq(test.assignee('pr1'), 'tp_mh_dt', 'Đề nghị nội bộ đi chuỗi duyệt như thường');
 SELECT test.ok(pg_temp.ic('pr1') IS NULL, 'Chưa duyệt thì chưa có đơn hàng nội bộ');
@@ -89,19 +81,16 @@ SELECT test.eq((pg_temp.ic('pr1')).total_amount, 7700000.00, 'Tổng tiền theo
 SELECT test.eq((SELECT count(*) FROM ic.ic_order_item WHERE order_id = (pg_temp.ic('pr1')).id), 2::bigint,
                'Chép đủ dòng hàng');
 
--- Thông báo: cả phòng kinh doanh Chip X nhận, người đặt không nhận.
 SELECT test.eq((SELECT array_agg(test.key(recipient_id) ORDER BY test.key(recipient_id)) FROM collab.notification
                 WHERE kind = 'IC_ORDER_NEW' AND entity_id = (pg_temp.ic('pr1')).id),
                ARRAY['a', 'tp_kd_chip'], 'Người xác nhận được của bên bán nhận thông báo đơn mới');
 
--- Quyền xem: bên mua (người đặt, người duyệt đề nghị), bên bán; công ty khác không xem.
 SELECT test.ok(wf.entity_can_read('ic.ic_order', (pg_temp.ic('pr1')).id, test.id('c')), 'Người đặt xem được');
 SELECT test.ok(wf.entity_can_read('ic.ic_order', (pg_temp.ic('pr1')).id, test.id('tp_mh_dt')), 'Người duyệt đề nghị xem được');
 SELECT test.ok(wf.entity_can_read('ic.ic_order', (pg_temp.ic('pr1')).id, test.id('a')), 'Bên bán xem được');
 SELECT test.ok(NOT wf.entity_can_read('ic.ic_order', (pg_temp.ic('pr1')).id, test.id('gd_gd')),
                'Công ty không liên quan không xem được');
 
--- Xác nhận: quyền, lô bắt buộc với mặt hàng có lô, kiểm tra lô.
 SELECT test.throws(format($$SELECT ic.confirm_order(%L, test.id('c'))$$, (pg_temp.ic('pr1')).id),
                    '%Không có quyền xác nhận%', 'Bên mua không xác nhận được');
 SELECT test.throws(format($$SELECT ic.confirm_order(%L, test.id('a'))$$, (pg_temp.ic('pr1')).id),
@@ -145,14 +134,12 @@ SELECT test.ok(NOT proc.purchase_order_can_read((SELECT o FROM proc.purchase_ord
 SELECT test.throws(format($$SELECT ic.confirm_order(%L, test.id('a'))$$, (pg_temp.ic('pr1')).id),
                    '%trạng thái CONFIRMED%', 'Không xác nhận lại');
 
--- Lô không đủ: PMIC-A còn 400 sau đơn 600.
 SELECT pg_temp.ipr('pr2', 'NB_CHIP', 500, false);
 SELECT test.approve('pr2', 'tp_mh_dt');
 SELECT test.throws(format($$SELECT ic.confirm_order(%L, test.id('tp_kd_chip'), %L)$$, (pg_temp.ic('pr2')).id,
                           jsonb_build_object(pg_temp.line('pr2', 'PMIC'), test.id('PMIC-A'))),
                    '%PMIC-A không đủ số lượng: cần 1100%', 'Không xuất quá số lượng lô');
 
--- Từ chối: phải có lý do; báo người đặt kèm lý do.
 SELECT test.throws(format($$SELECT ic.reject_order(%L, test.id('tp_kd_chip'), ' ')$$, (pg_temp.ic('pr2')).id),
                    '%phải ghi lý do%', 'Từ chối phải ghi lý do');
 SELECT ic.reject_order((pg_temp.ic('pr2')).id, test.id('tp_kd_chip'), 'Hết hàng PMIC tháng này');
@@ -162,7 +149,6 @@ SELECT test.eq((SELECT body FROM collab.notification WHERE kind = 'IC_ORDER_REJE
 SELECT test.eq((SELECT count(*) FROM proc.purchase_order WHERE request_id = test.id('pr2')), 0::bigint,
                'Đơn bị từ chối không sinh đơn mua');
 
--- Hủy: chỉ người đặt, khi đơn còn chờ; báo bên bán.
 SELECT pg_temp.ipr('pr3', 'NB_CHIP', 10, false);
 SELECT test.approve('pr3', 'tp_mh_dt');
 SELECT test.throws(format($$SELECT ic.cancel_order(%L, test.id('a'), 'x')$$, (pg_temp.ic('pr3')).id),
@@ -174,14 +160,12 @@ SELECT test.eq((SELECT count(*) FROM collab.notification WHERE kind = 'IC_ORDER_
 SELECT test.throws(format($$SELECT ic.reject_order(%L, test.id('a'), 'x')$$, (pg_temp.ic('pr3')).id),
                    '%trạng thái CANCELLED%', 'Đơn đã hủy không xử lý tiếp');
 
--- Đề nghị mua từ nhà cung cấp ngoài: không sinh đơn hàng nội bộ.
 INSERT INTO mdm.partner (tenant_id, code, name) VALUES (test.id('TDX'), 'NCC_A', 'Nhà cung cấp A');
 INSERT INTO test.ids SELECT code, id FROM mdm.partner WHERE code = 'NCC_A';
 SELECT pg_temp.ipr('pr_ngoai', 'NCC_A', 10);
 SELECT test.approve('pr_ngoai', 'tp_mh_dt');
 SELECT test.ok(pg_temp.ic('pr_ngoai') IS NULL, 'Nhà cung cấp ngoài: không có đơn hàng nội bộ');
 
--- Bình luận trên đơn hàng nội bộ (bên bán), nhãn chứng từ.
 SELECT test.ok(collab.entity_label('ic.ic_order', (pg_temp.ic('pr1')).id) ~ '^IC-\d{4}-000001 – Công ty Điện thoại X đặt Công ty Chip X$',
                'Nhãn đơn hàng nội bộ');
 INSERT INTO collab.comment (tenant_id, entity_type, entity_id, author_id, body)

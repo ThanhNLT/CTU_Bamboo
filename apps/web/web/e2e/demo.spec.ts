@@ -2,29 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Chụp màn hình demo (không phải kiểm thử): DEMO_SHOTS=<thư mục> npx playwright test e2e/demo.spec.ts
+import { expect, test, type Browser, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Browser, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const OUT = process.env.DEMO_SHOTS ?? "demo-shots";
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 
-// ===== Kịch bản kiểm thử =====
 test.use({ viewport: { width: 1440, height: 900 } });
 
-// ===== Khởi tạo =====
 test.skip(!process.env.DEMO_SHOTS, "chỉ chạy khi đặt DEMO_SHOTS");
 
-// ===== Hàm tiện ích =====
 const shot = (page: Page, name: string) => page.screenshot({ path: `${OUT}/${name}.png` });
 
-// ===== Trạng thái module =====
 let browserRef: Browser;
 
-// ===== Hàm tiện ích =====
-// Mỗi người dùng một phiên trình duyệt riêng (cookie Keycloak, tenant đã chọn không lẫn nhau).
 async function login(_old: Page | null, username: string, pick?: RegExp): Promise<Page> {
   const context = await browserRef.newContext({
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8000",
@@ -43,7 +33,6 @@ async function login(_old: Page | null, username: string, pick?: RegExp): Promis
   return page;
 }
 
-// ===== Kịch bản kiểm thử =====
 test("chụp màn hình demo", async ({ browser, page: first }) => {
   test.setTimeout(300_000);
   browserRef = browser;
@@ -56,7 +45,6 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   await expect(page.locator("#username")).toBeVisible();
   await shot(page, "02-keycloak");
 
-  // Tổng giám đốc: thấy đề nghị toàn tập đoàn, hộp việc có đề nghị vượt hạn mức.
   page = await login(page, "tgd");
   await page.goto("/p/documents");
   await expect(page.locator("tr.ant-table-row").first()).toBeVisible();
@@ -88,14 +76,12 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   await expect(page.getByText(/Đẩy lên cấp trên/).first()).toBeVisible();
   await shot(page, "08-day-len-cap-tren");
 
-  // Phó giám đốc Chip X duyệt thay theo ủy quyền.
   page = await login(page, "pgd.chip");
   await page.goto("/p/inbox");
   await expect(page.getByText("Duyệt thay (ủy quyền)")).toBeVisible();
   await page.waitForTimeout(1000);
   await shot(page, "09-duyet-thay");
 
-  // Chuyên viên lập đề nghị.
   page = await login(page, "nv.muahang.dienthoai");
   await page.goto("/p/documents/create");
   await page.getByLabel("Tiêu đề").fill("Chip nguồn thay thế cho dây chuyền SMT");
@@ -122,12 +108,10 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   await page.waitForTimeout(400);
   await shot(page, "11-bi-tra-ve-trao-doi");
 
-  // Một tài khoản, hai tenant.
   page = await login(page, "kiemnhiem");
   await expect(page.getByText("Chọn đơn vị làm việc")).toBeVisible();
   await shot(page, "12-chon-tenant");
 
-  // Kiểm toán viên.
   page = await login(page, "gd.taichinh");
   await page.goto("/admin/audit-logs");
   await expect(page.locator("tr.ant-table-row").first()).toBeVisible();

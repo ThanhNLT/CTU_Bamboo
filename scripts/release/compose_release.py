@@ -1,31 +1,18 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Sinh compose.release.yml từ docker-compose.yml: chạy bằng image dựng sẵn, không cần mã nguồn.
 
-    python scripts/release/compose_release.py <phiên bản> [tệp ra]
-
-- Bỏ khóa `build` (image lấy từ GHCR, mặc định đúng phiên bản phát hành) và dịch vụ chỉ dùng
-  cho kiểm thử (profile `test`).
-- Giữ nguyên biến `${...}` (không nội suy): người chạy vẫn đổi mật khẩu được bằng .env.
-- Báo lỗi nếu còn bind mount (tệp phát hành phải tự đủ, `docker compose publish` cũng từ chối).
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
 import subprocess
 import sys
 
-# ===== Thư viện bên ngoài =====
-import yaml  # PyYAML
+import yaml
 
-# ===== Hằng số & cấu hình =====
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TAG_VAR = "${BAMBOO_TAG:-dev}"
 
 
-# ===== Hàm =====
 def build(version: str) -> dict:
     compose = os.environ.get("DOCKER_COMPOSE", "docker compose").split()
     raw = subprocess.run(
@@ -56,7 +43,7 @@ def build(version: str) -> dict:
 def main() -> None:
     version = sys.argv[1]
     out = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "compose.release.yml"
-    # REUSE-IgnoreStart (header dưới đây là của tệp được sinh ra, không phải của script này)
+    # REUSE-IgnoreStart
     header = (
         "# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors\n"
         "# SPDX-License-Identifier: Apache-2.0\n"
@@ -70,6 +57,5 @@ def main() -> None:
     print(f"đã ghi {out}")
 
 
-# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

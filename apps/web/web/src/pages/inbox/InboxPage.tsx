@@ -2,17 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Hộp việc (Quy trình số): trái ~30% danh sách việc theo hạn SLA; phải ~70% gồm đầu việc, trình xem tệp
-// (~65%) và cột widget (~35%: Thông tin, Gợi ý của trợ lý, Ý kiến & thao tác). Phím J/K chuyển việc.
-// ?doc=PR-... trên URL chọn sẵn một việc (liên kết từ Trang chủ, trang Hồ sơ). Dữ liệu thật: ./useInboxTasks;
-// quyết định gọi Action act_on_task (như ActModal).
+import { App, Spin } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { App, Spin } from "antd"; // Ant Design
-import { useCallback, useEffect, useMemo, useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ACT_ON_TASK } from "../purchase-requests/queries";
@@ -26,25 +19,21 @@ import { TaskSidebar } from "./components/TaskSidebar";
 import type { Decision, InboxScope, InboxTask } from "./types";
 import { SLA_HOURS, useInboxTasks } from "./useInboxTasks";
 
-// ===== Hằng số =====
 const DECISION_TEXT: Record<Decision, { verb: string; done: string; api: "APPROVE" | "RETURN" | "REJECT" }> = {
   approve: { verb: "Duyệt", done: "Đã duyệt", api: "APPROVE" },
   return: { verb: "Trả lại", done: "Đã trả lại", api: "RETURN" },
   reject: { verb: "Từ chối", done: "Đã từ chối", api: "REJECT" },
 };
 
-// ===== Hàm tiện ích =====
 const isTyping = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
 
-// ===== Component =====
 export const InboxPage = () => {
   const { message, modal } = App.useApp();
   const [params, setParams] = useSearchParams();
   const { tenant } = useSession();
   const inbox = useInboxTasks();
   const [scope, setScope] = useState<InboxScope>("mine");
-  // Việc vừa quyết định: ẩn ngay, không chờ subscription cập nhật danh sách.
   const [done, setDone] = useState<Set<string>>(() => new Set());
 
   const byDue = (a: InboxTask, b: InboxTask) => a.dueAt.localeCompare(b.dueAt);
@@ -52,7 +41,6 @@ export const InboxPage = () => {
   const sorted = useMemo(() => inbox.team.filter((t) => !done.has(t.taskId)).sort(byDue), [inbox.team, done]);
   const list = scope === "mine" ? mine : sorted;
 
-  // Việc đang chọn nằm trên URL (?doc=; không dùng ?code= vì trùng tham số OAuth keycloak-js đọc) để chia sẻ/quay lại được; mặc định là việc gấp nhất.
   const code = params.get("doc");
   const index = Math.max(
     0,
@@ -78,7 +66,6 @@ export const InboxPage = () => {
   const goPrev = useCallback(() => select(list[index - 1]), [list, index, select]);
   const goNext = useCallback(() => select(list[index + 1]), [list, index, select]);
 
-  // Phím tắt J (kế tiếp) / K (trước) — bỏ qua khi đang gõ chữ hoặc có hộp thoại đang mở.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
@@ -122,7 +109,6 @@ export const InboxPage = () => {
           message.error((e as Error).message);
           return;
         }
-        // Chuyển sang việc kế tiếp (hoặc việc trước nếu đang ở cuối) rồi bỏ việc đã xử lý khỏi danh sách.
         select(list[index + 1] ?? list[index - 1]);
         setDone((prev) => new Set(prev).add(task.taskId));
         message.success(`${t.done} ${task.code}.`);

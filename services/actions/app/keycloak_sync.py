@@ -2,36 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Đồng bộ client của realm `bms` (job bootstrap): `bms-web` theo địa chỉ ứng dụng, `bms-provisioner` để tạo
-tài khoản nhân viên mới.
-
-Keycloak chỉ import realm ở lần chạy đầu, nên khi địa chỉ ứng dụng đổi (nâng cấp 0.1.0 → 0.2.0
-chuyển sang cổng API, hoặc đổi tên miền) client vẫn giữ redirect URI cũ và đăng nhập báo lỗi.
-Mỗi lần khởi động, bootstrap bổ sung `WEB_ORIGIN` vào redirect URI, web origin và URI sau đăng
-xuất nếu còn thiếu; không xóa giá trị có sẵn, không đụng dữ liệu khác. Chạy lại bao nhiêu lần
-cũng cho cùng kết quả.
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 import logging
 import pathlib
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
+import httpx
 
-# ===== Hằng số & cấu hình =====
 log = logging.getLogger("keycloak_sync")
 
 REALM = "bms"
 CLIENT_ID = "bms-web"
 PROVISIONER_ID = "bms-provisioner"
-# Quyền tối thiểu của client tạo tài khoản (ADR #41): quản lý người dùng realm bms, không phải admin master.
 PROVISIONER_ROLES = ("manage-users", "view-users", "query-users")
 REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "platform/keycloak/realm/bms-realm.json"
 
 
-# ===== Hàm =====
 def admin_token(base_url: str, user: str, password: str) -> str:
     resp = httpx.post(
         f"{base_url}/realms/master/protocol/openid-connect/token",
@@ -43,7 +28,6 @@ def admin_token(base_url: str, user: str, password: str) -> str:
 
 
 def desired_changes(client: dict, web_origin: str) -> dict:
-    """Các trường cần cập nhật để client chấp nhận `web_origin` (rỗng nếu đã đủ)."""
     origin = web_origin.rstrip("/")
     changes = {}
     redirects = list(client.get("redirectUris") or [])
@@ -61,7 +45,6 @@ def desired_changes(client: dict, web_origin: str) -> dict:
 
 
 def ensure_web_client(base_url: str, user: str, password: str, web_origin: str) -> bool:
-    """Trả về True nếu đã cập nhật client, False nếu không cần."""
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
     with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
@@ -79,8 +62,6 @@ def ensure_web_client(base_url: str, user: str, password: str, web_origin: str) 
 
 
 def ensure_provisioner_client(base_url: str, user: str, password: str, secret: str) -> bool:
-    """Client bí mật `bms-provisioner` (chỉ service account) với secret từ OpenBao và quyền quản lý người dùng
-    của realm. Trả về True nếu đã tạo hoặc sửa. Chạy lại bao nhiêu lần cũng cho cùng kết quả."""
     if not secret:
         raise RuntimeError("Thiếu secret bms/keycloak-provisioner (chạy openbao-init trước)")
     base_url = base_url.rstrip("/")
@@ -140,9 +121,6 @@ def ensure_provisioner_client(base_url: str, user: str, password: str, secret: s
 def ensure_demo_users(
     base_url: str, user: str, password: str, demo_password: str, realm_file: pathlib.Path = REALM_FILE
 ) -> int:
-    """Thêm tài khoản demo có trong tệp realm mà Keycloak chưa có (realm chỉ import ở lần chạy đầu, nên bản đã
-    cài không tự có tài khoản demo mới). Giữ nguyên id (khớp person.idp_subject, ADR #23); không đụng tài
-    khoản đã có. Trả về số tài khoản đã thêm."""
     if not demo_password:
         return 0
     users = json.loads(realm_file.read_text(encoding="utf-8").replace("${DEMO_PASSWORD}", demo_password))["users"]

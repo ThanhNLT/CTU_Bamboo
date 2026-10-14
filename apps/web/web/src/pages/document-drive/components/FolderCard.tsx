@@ -2,14 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Folder, Users } from "lucide-react"; // Lucide React
+import { Folder, Users } from "lucide-react";
 
-// ===== Module nội bộ =====
 import type { DriveFolder } from "../types";
 import { formatBytes } from "../utils";
 
-// ===== Component =====
 export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (f: DriveFolder) => void }) => (
   <button
     type="button"

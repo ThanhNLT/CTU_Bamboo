@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { App, InputNumber, Modal } from "antd"; // Ant Design
-import { useState } from "react"; // React
+import { App, InputNumber, Modal } from "antd";
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { adminSave } from "../../admin/shared/api";
 import { usePermissions } from "../../admin/shared/usePermissions";
@@ -14,14 +12,8 @@ import type { StorageSegment } from "../types";
 import type { DriveUsage } from "../useDriveUsage";
 import { formatBytes } from "../utils";
 
-// ===== Hằng số =====
 const GB = 1024 ** 3;
 
-// ===== Component =====
-/**
- * Dung lượng của tenant: đã dùng / hạn mức / còn lại (Action drive_usage), thanh theo loại tệp của các tệp bạn
- * xem được. Người có core.org.manage đổi được hạn mức.
- */
 export const StorageCard = ({
   segments,
   usage,

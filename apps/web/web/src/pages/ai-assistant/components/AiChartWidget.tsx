@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Link } from "react-router"; // React Router
+import { Link } from "react-router";
 import {
   Area,
   CartesianGrid,
@@ -14,23 +13,18 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts"; // Recharts
+} from "recharts";
 
-// ===== Module nội bộ =====
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
 import type { ChartPoint, ChartSpec } from "../types";
 
-// ===== Hằng số =====
 const BAND_FILL = "#98c9a0";
 const COMPARE = "#9aa49e";
 
-// ===== Kiểu dữ liệu =====
 type TipProps = { active?: boolean; label?: string | number; payload?: Array<{ payload?: ChartPoint }> };
 
-// ===== Hàm tiện ích =====
 const fmt = (n: number, d: number) => n.toLocaleString("vi-VN", { minimumFractionDigits: d, maximumFractionDigits: d });
 
-// ===== Component =====
 const ChartTip = ({ active, label, payload, spec }: TipProps & { spec: ChartSpec }) => {
   const p = payload?.[0]?.payload;
   if (!active || !p) return null;
@@ -76,7 +70,6 @@ const LegendItem = ({ kind, label }: { kind: "solid" | "dashed" | "band" | "mute
   </span>
 );
 
-/** Biểu đồ nhúng trong câu trả lời: thực tế (liền), dự báo (đứt), khoảng tin cậy (vùng nhạt), so sánh (xám). */
 export const AiChartWidget = ({ spec }: { spec: ChartSpec }) => {
   const lastActual = [...spec.data].reverse().find((d) => d.actual != null);
   return (

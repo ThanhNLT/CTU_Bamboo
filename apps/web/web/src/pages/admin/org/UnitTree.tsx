@@ -2,22 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Checkbox, ConfigProvider, Tree } from "antd"; // Ant Design
-import { Building2, Folder } from "lucide-react"; // Lucide React
-import { useMemo, useState, type Key, type ReactNode } from "react"; // React
+import { Checkbox, ConfigProvider, Tree } from "antd";
+import { Building2, Folder } from "lucide-react";
+import { useMemo, useState, type Key, type ReactNode } from "react";
 
-// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { fold } from "../../../utils/text";
 import type { Unit } from "../shared/orgData";
 
-// ===== Kiểu dữ liệu =====
 type Node = { key: string; title: ReactNode; children: Node[]; isLeaf?: boolean };
 
-// ===== Component =====
-/** Cột trái: cây đơn vị (công ty có biểu tượng tòa nhà), ô tìm theo tên / mã, tùy chọn hiện đơn vị đã ngừng. */
 export const UnitTree = ({
   units,
   selectedId,
@@ -41,7 +36,6 @@ export const UnitTree = ({
     const visible = units.filter((u) => showEnded || !u.period.ended);
     const byId = new Map(visible.map((u) => [u.id, u]));
     const hit = new Set(visible.filter((u) => !q || fold(`${u.name} ${u.code}`).includes(q)).map((u) => u.id));
-    // Giữ tổ tiên của đơn vị khớp để cây không bị đứt.
     const keep = new Set<string>();
     for (const id of hit) {
       for (let u = byId.get(id); u && !keep.has(u.id); u = u.parent_id ? byId.get(u.parent_id) : undefined)
@@ -73,7 +67,6 @@ export const UnitTree = ({
       (parent ? parent.children : roots).push(node);
     }
     for (const n of nodes.values()) n.isLeaf = n.children.length === 0;
-    // Mặc định mở hai tầng đầu; khi tìm thì mở hết nhánh có kết quả.
     const open = q ? [...keep] : roots.flatMap((r) => [r.key, ...r.children.map((c) => c.key)]);
     return { tree: roots, matches: hit.size, defaultExpanded: open };
   }, [units, query, showEnded]);

@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-import { Show } from "@refinedev/antd"; // Refine Ant Design
-import { useGo, useParsed } from "@refinedev/core"; // Refine
+import { useCallback, useEffect, useState } from "react";
+import { Show } from "@refinedev/antd";
+import { useGo, useParsed } from "@refinedev/core";
 import {
   Alert,
   App,
@@ -21,10 +20,9 @@ import {
   Table,
   Tag,
   Typography,
-} from "antd"; // Ant Design
-import { CheckOutlined, CloseOutlined, StopOutlined } from "@ant-design/icons"; // Ant Design Icons
+} from "antd";
+import { CheckOutlined, CloseOutlined, StopOutlined } from "@ant-design/icons";
 
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { StatusTag } from "../../components/StatusTag";
@@ -34,7 +32,6 @@ import { formatDate, formatDay, formatMoney } from "../../utils/format";
 import { IC_STATUS_LABEL } from "../../utils/status";
 import { CANCEL_IC, CONFIRM_IC, IC_DETAIL, REJECT_IC, SELLER_LOTS } from "./queries";
 
-// ===== Kiểu dữ liệu =====
 type Line = {
   id: string;
   line_no: number;
@@ -76,8 +73,6 @@ type Lot = {
   org_unit: { name: string } | null;
 };
 
-// ===== Hàm tiện ích =====
-// Hỏi lý do (bắt buộc) rồi gọi Action; lỗi giữ hộp thoại mở.
 const askReason = (
   modal: ReturnType<typeof App.useApp>["modal"],
   title: string,
@@ -113,7 +108,6 @@ const askReason = (
   });
 };
 
-// ===== Component =====
 export const IcOrderShow = () => {
   const { id } = useParsed();
   const go = useGo();
@@ -134,7 +128,6 @@ export const IcOrderShow = () => {
         const items = o.ic_order_items.map((l) => l.item_id).filter((x): x is string => !!x);
         const r = await request<{ mfg_lot: Lot[] }>(SELLER_LOTS, { items, seller: o.seller_unit.path });
         setLots(r.mfg_lot);
-        // Mặt hàng chỉ có một lô thì chọn sẵn.
         setChosen(
           Object.fromEntries(
             o.ic_order_items.flatMap((l) => {
@@ -262,7 +255,6 @@ export const IcOrderShow = () => {
             <Descriptions.Item label="Tổng tiền">
               <Typography.Text strong>{formatMoney(order.total_amount)}</Typography.Text>
             </Descriptions.Item>
-            {/* Bên bán không xem đề nghị của bên mua: ẩn dòng thay vì hiện trống. */}
             {pr && (
               <Descriptions.Item label="Đề nghị nguồn">
                 <Typography.Link

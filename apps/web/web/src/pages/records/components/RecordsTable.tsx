@@ -2,24 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { RefreshCw, SearchX } from "lucide-react"; // Lucide React
+import { RefreshCw, SearchX } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { DOC_KIND_LABEL } from "../../../api/documents";
 import type { EofficeRecord } from "../types";
 import { Pagination } from "./Pagination";
 import { RecordStatusBadge } from "./RecordStatusBadge";
 
-// ===== Hằng số =====
 const TH = "px-3 pb-2 pt-1 text-left text-[12px] font-medium text-muted";
 
-// ===== Component =====
-/**
- * Bảng hồ sơ (cột trái). Phần thân cuộn độc lập; tiêu đề cột dính trên cùng khi cuộn.
- * Mũi tên lên/xuống trên một dòng chuyển hồ sơ đang chọn.
- */
 export const RecordsTable = ({
   rows,
   total,
@@ -39,7 +31,6 @@ export const RecordsTable = ({
   page: number;
   pageSize: number;
   onPageChange: (p: number) => void;
-  /** ISO → "10 phút trước". */
   formatUpdated: (iso: string) => string;
   loading?: boolean;
   className?: string;
@@ -95,7 +86,6 @@ export const RecordsTable = ({
             <tbody>
               {rows.map((r, i) => {
                 const selected = r.id === selectedId;
-                // Đường kẻ dưới mỗi dòng; ẩn quanh dòng đang chọn để nền xanh bo góc liền mạch.
                 const divider = !selected && rows[i + 1]?.id !== selectedId && i < rows.length - 1;
                 const td = cn(
                   "px-3 py-2.5 align-middle transition-colors",

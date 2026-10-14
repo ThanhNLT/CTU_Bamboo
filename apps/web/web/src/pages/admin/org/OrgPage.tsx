@@ -2,17 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Cơ cấu tổ chức (Quản trị, ADR #44): trái là cây đơn vị, phải là đơn vị đang chọn và các vị trí (ghế) của nó cùng
-// người đang giữ. Thêm / sửa / chuyển / ngừng đơn vị, thêm vị trí, bổ nhiệm và kết thúc bổ nhiệm; nhập hàng loạt
-// đơn vị và vị trí từ Excel. Cần quyền core.org.manage (máy chủ kiểm theo đơn vị).
+import { Alert, App, Dropdown, Spin } from "antd";
+import { ChevronDown, FileSpreadsheet, Plus } from "lucide-react";
+import { useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { Alert, App, Dropdown, Spin } from "antd"; // Ant Design
-import { ChevronDown, FileSpreadsheet, Plus } from "lucide-react"; // Lucide React
-import { useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { useSession } from "../../../auth/useSession";
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { AdminHeader, NoAccess } from "../shared/AdminHeader";
@@ -26,7 +20,6 @@ import { ORG, usePermissions } from "../shared/usePermissions";
 import { UnitDetail, type PositionAction } from "./UnitDetail";
 import { UnitTree } from "./UnitTree";
 
-// ===== Kiểu dữ liệu =====
 type Dialog =
   | { kind: "unit"; edit: boolean; parentId?: string }
   | { kind: "close-unit" }
@@ -36,10 +29,8 @@ type Dialog =
   | { kind: "close-position"; position: Position }
   | { kind: "import"; what: ImportKind };
 
-// ===== Hằng số =====
 const IMPORT_LABEL: Partial<Record<ImportKind, string>> = { org_unit: "đơn vị", position: "vị trí" };
 
-// ===== Component =====
 export const OrgPage = () => {
   const { message } = App.useApp();
   const { tenant } = useSession();

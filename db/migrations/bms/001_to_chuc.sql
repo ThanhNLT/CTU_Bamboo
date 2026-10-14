@@ -2,21 +2,10 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 001: Tenant, cây tổ chức, vị trí, người, bổ nhiệm (CONTEXT.md mục "Tổ chức").
--- Khóa kép (tenant_id, id) chặn tham chiếu chéo tenant (ADR #14).
-
--- ---------------------------------------------------------------------------
--- Tiện ích mở rộng PostgreSQL (ltree, btree_gist) và schema
--- ---------------------------------------------------------------------------
-
 CREATE EXTENSION IF NOT EXISTS ltree;
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE SCHEMA IF NOT EXISTS core;
-
--- ---------------------------------------------------------------------------
--- Tenant
--- ---------------------------------------------------------------------------
 
 CREATE TABLE core.tenant (
     id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -25,7 +14,6 @@ CREATE TABLE core.tenant (
     created_at  timestamptz NOT NULL DEFAULT now()
 );
 
--- Quan hệ mẹ – con giữa các tenant; mỗi tenant có tối đa một tenant mẹ.
 CREATE TABLE core.tenant_relation (
     parent_tenant_id  uuid NOT NULL REFERENCES core.tenant,
     child_tenant_id   uuid NOT NULL UNIQUE REFERENCES core.tenant,
@@ -35,7 +23,6 @@ CREATE TABLE core.tenant_relation (
 );
 CREATE INDEX ON core.tenant_relation (child_tenant_id);
 
--- Tenant gốc của nhóm (công ty mẹ cao nhất); tenant không có mẹ là gốc của chính nó.
 CREATE FUNCTION core.tenant_root(p_tenant uuid) RETURNS uuid
 LANGUAGE sql STABLE AS $$
     WITH RECURSIVE up(id, depth) AS (
@@ -48,23 +35,15 @@ LANGUAGE sql STABLE AS $$
     SELECT id FROM up ORDER BY depth DESC LIMIT 1
 $$;
 
--- ---------------------------------------------------------------------------
--- Danh mục tự định nghĩa (loại đơn vị, chức danh...)
--- ---------------------------------------------------------------------------
-
 CREATE TABLE core.catalog_item (
     tenant_id   uuid NOT NULL REFERENCES core.tenant,
     id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    catalog     text NOT NULL,          -- 'UNIT_TYPE', 'JOB_TITLE'...
+    catalog     text NOT NULL,
     code        text NOT NULL,
     name        text NOT NULL,
     UNIQUE (tenant_id, id),
     UNIQUE (tenant_id, catalog, code)
 );
-
--- ---------------------------------------------------------------------------
--- Đơn vị: cây không giới hạn độ sâu bằng ltree
--- ---------------------------------------------------------------------------
 
 CREATE TABLE core.org_unit (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
@@ -73,7 +52,7 @@ CREATE TABLE core.org_unit (
     unit_type_id     uuid NOT NULL,
     code             text NOT NULL,
     name             text NOT NULL,
-    is_legal_entity  boolean NOT NULL DEFAULT false,   -- đơn vị là một công ty (pháp nhân)
+    is_legal_entity  boolean NOT NULL DEFAULT false,
     path             ltree NOT NULL,
     valid_period     tstzrange NOT NULL DEFAULT tstzrange(now(), NULL),
     created_at       timestamptz NOT NULL DEFAULT now(),
@@ -91,7 +70,6 @@ CREATE INDEX ON core.org_unit (tenant_id, unit_type_id);
 CREATE FUNCTION core.org_unit_label(p_id uuid) RETURNS text
 LANGUAGE sql IMMUTABLE AS $$ SELECT 'u' || replace(p_id::text, '-', '') $$;
 
--- Tự tính path, chặn vòng lặp, kiểm tra loại đơn vị.
 CREATE FUNCTION core.org_unit_before_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -122,7 +100,6 @@ FOR EACH ROW EXECUTE FUNCTION core.org_unit_before_write();
 CREATE TRIGGER org_unit_before_update BEFORE UPDATE OF parent_id, unit_type_id ON core.org_unit
 FOR EACH ROW EXECUTE FUNCTION core.org_unit_before_write();
 
--- Tái cấu trúc: kéo theo cây con.
 CREATE FUNCTION core.org_unit_after_move() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -136,7 +113,6 @@ CREATE TRIGGER org_unit_after_move AFTER UPDATE OF parent_id ON core.org_unit
 FOR EACH ROW WHEN (OLD.path IS DISTINCT FROM NEW.path)
 EXECUTE FUNCTION core.org_unit_after_move();
 
--- Công ty (pháp nhân) gần nhất chứa đơn vị.
 CREATE FUNCTION core.company_of(p_unit uuid) RETURNS uuid
 LANGUAGE sql STABLE AS $$
     SELECT c.id
@@ -147,18 +123,14 @@ LANGUAGE sql STABLE AS $$
     LIMIT 1
 $$;
 
--- ---------------------------------------------------------------------------
--- Vị trí: một ghế cụ thể trong đơn vị
--- ---------------------------------------------------------------------------
-
 CREATE TABLE core.position (
     tenant_id      uuid NOT NULL REFERENCES core.tenant,
     id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     org_unit_id    uuid NOT NULL,
     job_title_id   uuid,
     name           text NOT NULL,
-    is_head        boolean NOT NULL DEFAULT false,      -- vị trí trưởng của đơn vị
-    reports_to_id  uuid,                                -- quan hệ "báo cáo cho"
+    is_head        boolean NOT NULL DEFAULT false,
+    reports_to_id  uuid,
     valid_period   tstzrange NOT NULL DEFAULT tstzrange(now(), NULL),
     created_at     timestamptz NOT NULL DEFAULT now(),
     UNIQUE (tenant_id, id),
@@ -167,7 +139,6 @@ CREATE TABLE core.position (
     FOREIGN KEY (tenant_id, reports_to_id) REFERENCES core.position (tenant_id, id),
     CHECK (reports_to_id IS DISTINCT FROM id),
     CHECK (NOT isempty(valid_period)),
-    -- Mỗi đơn vị có đúng một vị trí trưởng tại một thời điểm.
     CONSTRAINT position_one_head_per_unit
         EXCLUDE USING gist (tenant_id WITH =, org_unit_id WITH =, valid_period WITH &&)
         WHERE (is_head)
@@ -176,14 +147,10 @@ CREATE INDEX ON core.position (tenant_id, org_unit_id);
 CREATE INDEX ON core.position (tenant_id, job_title_id);
 CREATE INDEX ON core.position (tenant_id, reports_to_id);
 
--- ---------------------------------------------------------------------------
--- Người: hồ sơ của một cá nhân trong một tenant (ADR #30)
--- ---------------------------------------------------------------------------
-
 CREATE TABLE core.person (
     tenant_id      uuid NOT NULL REFERENCES core.tenant,
     id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    idp_subject    text,                -- `sub` của tài khoản Keycloak
+    idp_subject    text,
     full_name      text NOT NULL,
     employee_code  text,
     created_at     timestamptz NOT NULL DEFAULT now(),
@@ -193,7 +160,6 @@ CREATE TABLE core.person (
 );
 CREATE INDEX ON core.person (idp_subject);
 
--- Một tài khoản chỉ dùng chung cho các tenant cùng công ty mẹ (ADR #30).
 CREATE FUNCTION core.person_check_account() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -211,7 +177,6 @@ END $$;
 CREATE TRIGGER person_check_account BEFORE INSERT OR UPDATE OF idp_subject, tenant_id ON core.person
 FOR EACH ROW EXECUTE FUNCTION core.person_check_account();
 
--- Các tenant mà một tài khoản được vào (màn hình chọn tenant khi đăng nhập).
 CREATE FUNCTION core.account_tenants(p_subject text)
 RETURNS TABLE (tenant_id uuid, tenant_code text, person_id uuid)
 LANGUAGE sql STABLE AS $$
@@ -220,10 +185,6 @@ LANGUAGE sql STABLE AS $$
     WHERE p.idp_subject = p_subject
     ORDER BY t.code
 $$;
-
--- ---------------------------------------------------------------------------
--- Bổ nhiệm: giữ chính, kiêm nhiệm, quyền trưởng, hợp đồng (ADR #29)
--- ---------------------------------------------------------------------------
 
 CREATE TABLE core.assignment (
     tenant_id         uuid NOT NULL REFERENCES core.tenant,
@@ -242,11 +203,9 @@ CREATE TABLE core.assignment (
     CONSTRAINT assignment_contract_fields CHECK (
         assignment_type <> 'CONTRACT' OR (contract_no IS NOT NULL AND NOT upper_inf(valid_period))
     ),
-    -- Mỗi người một vị trí giữ chính tại một thời điểm.
     CONSTRAINT assignment_one_primary_per_person
         EXCLUDE USING gist (tenant_id WITH =, person_id WITH =, valid_period WITH &&)
         WHERE (assignment_type = 'PRIMARY'),
-    -- Mỗi ghế có tối đa một người ngồi tại một thời điểm; quyền trưởng chỉ vào ghế trống.
     CONSTRAINT assignment_one_occupant_per_position
         EXCLUDE USING gist (tenant_id WITH =, position_id WITH =, valid_period WITH &&)
 );
@@ -269,7 +228,6 @@ BEGIN
         END IF;
     END IF;
 
-    -- Hợp đồng chỉ ở công ty khác với công ty giữ chính.
     IF NEW.assignment_type IN ('CONTRACT', 'PRIMARY') AND EXISTS (
         SELECT 1
         FROM core.assignment o
@@ -290,7 +248,6 @@ END $$;
 CREATE TRIGGER assignment_check BEFORE INSERT OR UPDATE ON core.assignment
 FOR EACH ROW EXECUTE FUNCTION core.assignment_check();
 
--- Người đang ngồi ghế tại thời điểm p_at (tối đa một dòng).
 CREATE FUNCTION core.position_holder(p_position uuid, p_at timestamptz DEFAULT now())
 RETURNS TABLE (person_id uuid, assignment_type text)
 LANGUAGE sql STABLE AS $$
@@ -299,8 +256,6 @@ LANGUAGE sql STABLE AS $$
     WHERE a.position_id = p_position AND a.valid_period @> p_at
 $$;
 
--- Vị trí cấp trên: vị trí được báo cáo cho; nếu không có thì vị trí trưởng của
--- đơn vị gần nhất (đơn vị cha nếu chính nó là vị trí trưởng). NULL khi đã ở gốc.
 CREATE FUNCTION core.manager_position(p_position uuid, p_at timestamptz DEFAULT now())
 RETURNS uuid
 LANGUAGE plpgsql STABLE AS $$

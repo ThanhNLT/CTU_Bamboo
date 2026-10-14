@@ -2,25 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Quản trị dữ liệu của tenant (ADR #44): Action admin_save / admin_close / admin_import, kiểm quyền theo đơn vị."""
-
-# ===== Thư viện chuẩn =====
 import base64
 import io
 import uuid
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-import pytest  # pytest
-from fastapi.testclient import TestClient  # FastAPI
-from openpyxl import Workbook, load_workbook  # openpyxl
+import psycopg
+import pytest
+from fastapi.testclient import TestClient
+from openpyxl import Workbook, load_workbook
 
-# ===== Module nội bộ =====
 from app import config, main
 from conftest import SETTINGS, ids, pr
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture
 def client(database):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
@@ -30,7 +24,6 @@ def client(database):
 
 @pytest.fixture
 def admin(conn, org):
-    """Giám đốc công ty con của kiểm thử giữ vai trò quản trị cả tenant (gán cho vị trí, ADR #5)."""
     role = f"QT_{uuid.uuid4().hex[:8]}"
     params = {"r": role, "p": org("P_GD")}
     conn.execute("INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), %(r)s, 'Quản trị thử')", params)
@@ -50,7 +43,6 @@ def admin(conn, org):
     return ids(conn, org("gd"), org("nv"), org("PHONG"), org("CTY"), "TDX") | {"k": org}
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant):
     payload = {
         "action": {"name": name},
@@ -64,7 +56,6 @@ def save(client, admin, entity, data, who="gd"):
     return call(client, "admin_save", {"entity": entity, "data": data}, admin[admin["k"](who)], admin["TDX"])
 
 
-# ===== Kiểm thử =====
 def test_khong_co_quyen_thi_bi_chan(client, admin):
     r = save(
         client,
@@ -95,7 +86,6 @@ def test_them_don_vi_vi_tri_nguoi_bo_nhiem(client, conn, admin):
     assert path["p"].startswith(path["pp"] + ".")
 
     head = save(client, admin, "position", {"org_unit_id": unit, "name": "Tổ trưởng", "is_head": True}).json()["id"]
-    # Đơn vị chỉ có một vị trí trưởng (ràng buộc CSDL, thông báo trả nguyên văn).
     r = save(client, admin, "position", {"org_unit_id": unit, "name": "Tổ trưởng 2", "is_head": True})
     assert r.status_code == 400 and r.json()["extensions"]["code"] == "rejected"
 
@@ -106,7 +96,6 @@ def test_them_don_vi_vi_tri_nguoi_bo_nhiem(client, conn, admin):
         person
     )
 
-    # Còn người giữ ghế thì không ngừng được vị trí; kết thúc bổ nhiệm rồi ngừng.
     r = call(client, "admin_close", {"entity": "position", "id": head}, admin[k("gd")], admin["TDX"])
     assert r.status_code == 400 and "còn người giữ" in r.json()["message"]
     assignment = conn.execute("SELECT id FROM core.assignment WHERE position_id = %s", (head,)).fetchone()["id"]
@@ -145,7 +134,6 @@ def test_vai_tro_va_cap_quyen(client, conn, admin):
         for x in conn.execute("SELECT permission_code FROM core.role_permission WHERE role_id = %s", (role,))
     }
     assert perms == {"proc.purchase_request.create", "proc.purchase_request.read"}
-    # Sửa vai trò: bộ quyền thay hẳn.
     save(
         client,
         admin,
@@ -160,7 +148,6 @@ def test_vai_tro_va_cap_quyen(client, conn, admin):
     assert conn.execute(
         "SELECT core.has_permission(test.id(%s), 'proc.purchase_request.read', test.id(%s)) ok", (k("nv"), k("PHONG"))
     ).fetchone()["ok"]
-    # Người đang có ghế: gán thẳng cho người bị CSDL chặn (ADR #5).
     r = save(
         client,
         admin,
@@ -170,7 +157,6 @@ def test_vai_tro_va_cap_quyen(client, conn, admin):
     assert r.status_code == 400 and "gán vai trò cho vị trí" in r.json()["message"]
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def _xlsx(rows: list[list]) -> str:
     wb = Workbook()
     for row in rows:
@@ -180,11 +166,9 @@ def _xlsx(rows: list[list]) -> str:
     return base64.b64encode(out.getvalue()).decode()
 
 
-# ===== Kiểm thử =====
 def test_nhap_don_vi_xem_truoc_va_ghi(client, conn, admin):
     k = admin["k"]
     a, b = k("A"), k("B")
-    # Con đứng trước cha trong tệp vẫn nhập được; dòng 4 sai loại đơn vị.
     content = _xlsx(
         [
             ["Mã đơn vị", "Tên đơn vị", "Mã đơn vị cha", "Mã loại đơn vị"],
@@ -197,7 +181,6 @@ def test_nhap_don_vi_xem_truoc_va_ghi(client, conn, admin):
     r = call(client, "admin_import", args, admin[k("gd")], admin["TDX"]).json()
     assert r["total"] == 3 and r["valid"] == 2 and not r["applied"]
     assert r["errors"] == [{"row": 4, "message": "Không có mục KHONG_CO trong danh mục UNIT_TYPE"}]
-    # Có lỗi thì không ghi dòng nào, kể cả khi không phải xem trước.
     r = call(client, "admin_import", {**args, "dry_run": False}, admin[k("gd")], admin["TDX"]).json()
     assert not r["applied"]
     assert conn.execute("SELECT count(*) n FROM core.org_unit WHERE code IN (%s, %s)", (a, b)).fetchone()["n"] == 0
@@ -256,13 +239,12 @@ def test_tep_mau(client, admin):
 
 
 def test_tep_mau_nhap_lai_duoc(client, conn, admin):
-    """Tệp mẫu tải về (tiêu đề cột bắt buộc có dấu " *") điền thêm dòng rồi nhập lại được ngay."""
     k = admin["k"]
     r = call(client, "admin_import_template", {"kind": "partner"}, admin[k("gd")], admin["TDX"]).json()
     book = load_workbook(io.BytesIO(base64.b64decode(r["content_base64"])))
     assert book.active.max_row == 1, "trang Dữ liệu chỉ có tiêu đề"
     assert book["Ví dụ"]["A2"].value == "NCC001"
-    book.active.append([k("NCC"), "Nhà cung cấp từ tệp mẫu", 101234567])  # mã số thuế gõ dạng số trong Excel
+    book.active.append([k("NCC"), "Nhà cung cấp từ tệp mẫu", 101234567])
     out = io.BytesIO()
     book.save(out)
     args = {
@@ -280,7 +262,6 @@ def test_tep_mau_nhap_lai_duoc(client, conn, admin):
 
 
 def test_nhap_csv_mot_cot(client, admin):
-    """CSV chỉ một cột (không đoán được dấu phân cách) báo thiếu cột, không lỗi máy chủ."""
     content = base64.b64encode("Mã nhà cung cấp\nNCC1\n".encode()).decode()
     r = call(
         client,
@@ -301,7 +282,6 @@ def test_tai_khoan_chua_cau_hinh(client, admin):
         admin[admin["k"]("gd")],
         admin["TDX"],
     )
-    # Môi trường kiểm thử không có client bms-provisioner.
     assert r.status_code in (200, 400, 503)
     if r.status_code == 200:
         assert r.json()[0]["error"] == "Người này đã có tài khoản"

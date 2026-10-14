@@ -2,26 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Một client GraphQL dùng chung cho dataProvider của Refine và các thao tác gọi Action.
-// Hasura xác thực bằng webhook (ADR #32): mỗi request kèm token Keycloak và tenant đã chọn
-// (header x-bamboo-tenant). Chưa chọn tenant thì chỉ gọi được query my_tenants.
+import { GraphQLClient, graphqlWS } from "@refinedev/hasura";
+import type { HttpError } from "@refinedev/core";
 
-// ===== Thư viện =====
-import { GraphQLClient, graphqlWS } from "@refinedev/hasura"; // Refine Hasura
-import type { HttpError } from "@refinedev/core"; // Refine
-
-// ===== Module nội bộ =====
 import { config } from "../config";
 
-// ===== Hằng số =====
 export const API_URL = config.hasuraUrl;
 const WS_URL = API_URL.replace(/^http/, "ws");
 const TENANT_KEY = "bamboo.tenant";
 
-// ===== Trạng thái module =====
 let token: string | undefined;
 
-// ===== Hàm tiện ích =====
 export const getTenant = (): string | null => {
   try {
     return localStorage.getItem(TENANT_KEY);
@@ -38,7 +29,6 @@ const headers = (withTenant = true): Record<string, string> => {
   return h;
 };
 
-// ===== Khởi tạo =====
 export const client = new GraphQLClient(API_URL, { headers: () => headers() });
 
 export const wsClient = graphqlWS.createClient({
@@ -47,25 +37,20 @@ export const wsClient = graphqlWS.createClient({
   connectionParams: () => ({ headers: headers() }),
 });
 
-// ===== Hàm tiện ích =====
 export const setToken = (value: string | undefined) => {
   token = value;
 };
 
-/** Đổi tenant: lưu lựa chọn và đóng websocket để subscription mở lại với header mới. */
 export const setTenant = (tenantId: string | null) => {
   try {
     if (tenantId) localStorage.setItem(TENANT_KEY, tenantId);
     else localStorage.removeItem(TENANT_KEY);
-  } catch {
-    // Trình duyệt chặn localStorage: tenant chỉ giữ trong phiên hiện tại.
-  }
+  } catch {}
   wsClient.terminate();
 };
 
 type GqlErrorShape = { response?: { errors?: { message: string; extensions?: { code?: string } }[] } };
 
-/** Lỗi GraphQL → HttpError của Refine với thông điệp tiếng Việt từ backend. */
 export const toHttpError = (error: unknown): HttpError => {
   const first = (error as GqlErrorShape)?.response?.errors?.[0];
   const code = first?.extensions?.code;
@@ -77,7 +62,6 @@ export const toHttpError = (error: unknown): HttpError => {
   } as HttpError;
 };
 
-/** Gọi GraphQL trực tiếp (Action, insert lồng nhau...). Ném HttpError khi lỗi. */
 export async function request<T = Record<string, unknown>>(
   document: string,
   variables?: Record<string, unknown>,

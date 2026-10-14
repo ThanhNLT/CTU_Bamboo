@@ -2,20 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Hộp thoại thêm / sửa đơn vị, vị trí và bổ nhiệm — dùng ở trang Cơ cấu tổ chức và trang Người dùng.
+import { DatePicker, Form, Input, InputNumber, Radio, Select, Switch, TreeSelect } from "antd";
+import type { Dayjs } from "dayjs";
 
-// ===== Thư viện =====
-import { DatePicker, Form, Input, InputNumber, Radio, Select, Switch, TreeSelect } from "antd"; // Ant Design
-import type { Dayjs } from "dayjs"; // Day.js
-
-// ===== Module nội bộ =====
 import { adminSave } from "./api";
 import { FormModal } from "./FormModal";
 import { ASSIGNMENT_LABEL, type OrgData, type Position, type Unit } from "./orgData";
 import { toDate } from "./period";
 import { useUnitTree } from "./useUnitTree";
 
-// ===== Kiểu dữ liệu =====
 type UnitValues = {
   code: string;
   name: string;
@@ -27,7 +22,6 @@ type UnitValues = {
   lng?: number | null;
 };
 
-// ===== Component =====
 export const UnitModal = ({
   open,
   org,
@@ -38,13 +32,11 @@ export const UnitModal = ({
 }: {
   open: boolean;
   org: OrgData;
-  /** Có = sửa; không = thêm mới dưới `parentId`. */
   unit?: Unit;
   parentId?: string;
   onClose: () => void;
   onSaved: (id: string) => void;
 }) => {
-  // Không cho chọn chính nó (hay cây con của nó — CSDL cũng chặn) làm đơn vị cha.
   const tree = useUnitTree(org, unit?.id);
   return (
     <FormModal<UnitValues>
@@ -258,7 +250,6 @@ export const AssignModal = ({
 }: {
   open: boolean;
   org: OrgData;
-  /** Bổ nhiệm vào ghế này (từ trang Cơ cấu) hoặc cho người này (từ trang Người dùng). */
   positionId?: string;
   personId?: string;
   onClose: () => void;

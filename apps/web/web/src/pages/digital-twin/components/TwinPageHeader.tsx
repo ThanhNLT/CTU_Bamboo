@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { formatClock } from "../utils";
 
-// ===== Component =====
-/** Huy hiệu "Trực tiếp": chấm xanh nhấp nháy (tắt hiệu ứng khi người dùng chọn giảm chuyển động). */
 const LiveBadge = ({ updatedAt }: { updatedAt: number }) => (
   <span className="inline-flex h-8 shrink-0 items-center gap-2 self-start rounded-full bg-black/[0.045] px-3 text-[12.5px] text-body sm:self-auto">
     <span className="relative flex h-2 w-2" aria-hidden>

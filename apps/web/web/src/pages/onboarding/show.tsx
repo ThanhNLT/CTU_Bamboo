@@ -2,13 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Chi tiết hồ sơ tiếp nhận: người duyệt thấy thông tin công việc và dữ liệu nhạy cảm đã che; phòng nhân sự
-// bấm "Xem đầy đủ" (Action reveal_onboarding_private, mỗi lần xem ghi nhật ký kiểm toán).
-
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-import { Show } from "@refinedev/antd"; // Refine Ant Design
-import { useGo, useParsed } from "@refinedev/core"; // Refine
+import { useCallback, useEffect, useState } from "react";
+import { Show } from "@refinedev/antd";
+import { useGo, useParsed } from "@refinedev/core";
 import {
   Alert,
   App,
@@ -24,7 +20,7 @@ import {
   Tabs,
   Tag,
   Typography,
-} from "antd"; // Ant Design
+} from "antd";
 import {
   AuditOutlined,
   EditOutlined,
@@ -33,9 +29,8 @@ import {
   RedoOutlined,
   SendOutlined,
   StopOutlined,
-} from "@ant-design/icons"; // Ant Design Icons
+} from "@ant-design/icons";
 
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ActModal } from "../../components/approval/ActModal";
@@ -47,13 +42,10 @@ import { formatDate, formatDay, formatMoney } from "../../utils/format";
 import { MY_TASK_FOR, OB_CANCEL, OB_DETAIL, OB_RETRY, OB_REVEAL, OB_SUBMIT } from "./queries";
 import { ACCOUNT_STATUS, CONTRACT_TYPE, GENDER, type Onboarding, type OnboardingPrivate } from "./types";
 
-// ===== Hằng số =====
 const ENTITY = "hr.onboarding_request";
-// Thiếu khóa nào thì antd dùng 3 cột cho cỡ màn hình đó: khai báo đủ để giữ 2 cột trên màn hình rộng.
 const COLUMNS = { xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 };
 const nowrap = { whiteSpace: "nowrap" } as const;
 
-// ===== Component =====
 export const OnboardingShow = () => {
   const { id } = useParsed();
   const go = useGo();
@@ -82,7 +74,6 @@ export const OnboardingShow = () => {
     void load();
   }, [load]);
 
-  // Tài khoản đang được tạo ở nền: tải lại vài giây một lần tới khi có kết quả.
   useEffect(() => {
     if (ob?.account_status !== "PENDING") return;
     const t = setInterval(() => {

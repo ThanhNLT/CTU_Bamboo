@@ -2,15 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Thiết kế quy trình (Quy trình số, ADR #47): soạn BPMN bằng bpmn-js, biểu mẫu của tác vụ, kiểm tra ở máy chủ,
-// chạy thử trên Flowable với khóa sandbox riêng, phát hành phiên bản bất biến. Dữ liệu qua ./api.
+import { App, Input, Modal, Segmented, Spin } from "antd";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { App, Input, Modal, Segmented, Spin } from "antd"; // Ant Design
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { getProcess, listProcesses, publishProcess, runSandbox, saveProcess, validateProcess } from "./api";
 import type { BpmnEditorHandle } from "./components/BpmnEditor";
 import { FormsTab } from "./components/FormsTab";
@@ -22,14 +17,10 @@ import { newProcessXml } from "./flowable-moddle";
 import type { FormDef, Issue, ProcessDetail, ProcessSummary, SelectedElement } from "./types";
 import { downloadText, keyFromName } from "./utils";
 
-// ===== Trang tải lười =====
-// bpmn-js nặng: chỉ tải khi mở trang.
 const BpmnEditor = lazy(() => import("./components/BpmnEditor"));
 
-// ===== Kiểu dữ liệu =====
 type Tab = "process" | "forms" | "runs";
 
-// ===== Component =====
 export const ProcessDesignPage = () => {
   const { message, modal } = App.useApp();
   const [params, setParams] = useSearchParams();

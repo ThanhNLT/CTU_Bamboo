@@ -2,15 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ShieldAlert, ShieldCheck } from "lucide-react"; // Lucide React
+import { ShieldAlert, ShieldCheck } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { GuardEvent } from "../types";
 
-// ===== Component =====
-/** Sự kiện rào chắn: chặn (đỏ) hoặc che dữ liệu nhạy cảm (vàng). */
 export const SecurityEventsList = ({ events, limit }: { events: GuardEvent[]; limit?: number }) => {
   const list = limit ? events.slice(0, limit) : events;
   if (!list.length) {

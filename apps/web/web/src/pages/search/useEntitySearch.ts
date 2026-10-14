@@ -2,18 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Tìm THẬT theo tên / mã trong các phân hệ chưa vào chỉ mục toàn văn: thiết bị Bản sao số (iot.entity), hồ sơ tiếp
-// nhận nhân sự và đơn hàng nội bộ (Hasura lọc theo quyền xem), tài sản dữ liệu trong phả hệ (meta.lineage_node).
-// Đề nghị mua sắm, tài liệu thư viện và nội dung tệp tìm qua ./useDocumentSearch.
+import { useEffect, useState } from "react";
 
-// ===== Thư viện =====
-import { useEffect, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { SearchResult } from "./types";
 
-// ===== Truy vấn GraphQL =====
 const QUERY = `query EntitySearch($p: String!) {
   iot_entity(where: {_or: [{code: {_ilike: $p}}, {name: {_ilike: $p}}]}, limit: 10, order_by: {code: asc}) {
     code name last_seen_at site { name province } type_model { kind }
@@ -30,7 +23,6 @@ const QUERY = `query EntitySearch($p: String!) {
   }
 }`;
 
-// ===== Kiểu dữ liệu =====
 type Rows = {
   iot_entity: {
     code: string;
@@ -58,10 +50,8 @@ type Rows = {
   meta_lineage_node: { id: string; fqn: string; title: string; tech: string; owner: string; layer: string }[];
 };
 
-// ===== Hàm tiện ích =====
 const DAY = 86_400_000;
 const ago = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / DAY)) : undefined);
-/** Ký tự đặc biệt của ILIKE được thoát để tìm đúng chữ người dùng gõ. */
 const pattern = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 const toResults = (r: Rows): SearchResult[] => [
@@ -114,7 +104,6 @@ const toResults = (r: Rows): SearchResult[] => [
   })),
 ];
 
-// ===== Hook =====
 export const useEntitySearch = (q: string) => {
   const [state, setState] = useState<{ q: string; results: SearchResult[]; error?: string }>({ q: "", results: [] });
   useEffect(() => {

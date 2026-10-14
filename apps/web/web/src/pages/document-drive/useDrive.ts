@@ -2,20 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dữ liệu thật cho Ổ đĩa: tệp đính kèm người dùng được xem (core.attachment, máy chủ lọc can_read), tự cập nhật.
-// Tệp luôn thuộc một chứng từ, nên "thư mục" là chứng từ; tên thư mục lấy từ api/documents.
+import { useList } from "@refinedev/core";
+import gql from "graphql-tag";
+import { useMemo } from "react";
 
-// ===== Thư viện =====
-import { useList } from "@refinedev/core"; // Refine
-import gql from "graphql-tag"; // graphql-tag
-import { useMemo } from "react"; // React
-
-// ===== Module nội bộ =====
 import { DOC_KIND_LABEL, useDocuments, type DocKind } from "../../api/documents";
 import { formatAgo } from "../../utils/format";
 import type { DriveFile, DriveFolder, DriveSection, ScanResult, StorageSegment } from "./types";
 
-// ===== Truy vấn GraphQL =====
 const FILES = gql`
   query DriveFiles(
     $limit: Int
@@ -46,7 +40,6 @@ const FILES = gql`
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Row = {
   id: string;
   file_name: string;
@@ -61,8 +54,6 @@ type Row = {
   uploaded_by_person: { full_name: string } | null;
 };
 
-// ===== Hằng số =====
-/** Loại chứng từ nhận tệp đính kèm (storage.ENTITY_TYPES ở actions). */
 const ENTITY_TYPE: Partial<Record<DocKind, string>> = {
   purchase_request: "proc.purchase_request",
   onboarding_request: "hr.onboarding_request",
@@ -77,11 +68,9 @@ const SCAN: Record<string, ScanResult> = {
 };
 const RECENT_DAYS = 7;
 
-// ===== Hàm tiện ích =====
 const category = (contentType: string) =>
   contentType.startsWith("image/") ? "images" : /pdf|word|sheet|text|document/.test(contentType) ? "docs" : "other";
 
-// ===== Hook =====
 export const useDrive = (section: DriveSection, me: string, folderId?: string) => {
   const files = useList<Row>({
     resource: "core_attachment",
@@ -150,7 +139,6 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
   }, [all]);
 
   const doc = folderId ? docById.get(folderId) : undefined;
-  // Chứng từ chưa có tệp vẫn mở được làm thư mục (để tải tệp đầu tiên), nếu loại chứng từ nhận tệp đính kèm.
   const folder = folderId
     ? (folders.find((f) => f.id === folderId) ??
       (doc && ENTITY_TYPE[doc.kind]
@@ -169,12 +157,9 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
     folders,
     files: folderId ? inSection.filter((f) => f.entityId === folderId) : inSection,
     folder,
-    /** Mô tả ngắn của thư mục đang mở ("Đề nghị mua sắm · Chờ duyệt"). */
     folderHint: doc ? `${DOC_KIND_LABEL[doc.kind]} · ${doc.statusLabel}` : undefined,
-    /** Trạng thái gốc của chứng từ đang mở (tệp chỉ thêm được khi chứng từ chưa có kết quả). */
     folderStatus: doc?.status,
     storage,
-    /** Chứng từ nhận thêm tệp được (loại nhận tệp đính kèm, chưa có kết quả): đích khi tải lên ở thư mục gốc. */
     targets: docs.documents
       .filter((d) => ENTITY_TYPE[d.kind] && !["APPROVED", "REJECTED", "CANCELLED"].includes(d.status))
       .map((d) => ({ id: d.id, entityType: ENTITY_TYPE[d.kind]!, label: `${d.code} · ${d.title}` })),

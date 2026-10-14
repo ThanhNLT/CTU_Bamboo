@@ -2,20 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ChevronLeft, ChevronRight } from "lucide-react"; // Lucide React
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { pageList } from "../utils";
 
-// ===== Hằng số =====
 const btn =
   "grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-[12px] tabular-nums transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500 disabled:cursor-default disabled:opacity-40";
 
-// ===== Component =====
-/** "1–20 trên 128 hồ sơ" + nút trang tròn. */
 export const Pagination = ({
   page,
   pageSize,

@@ -2,15 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Phép tính phía giao diện trên kết quả tìm kiếm: lọc, đếm bộ lọc, sắp xếp, tô sáng (khớp không dấu).
-// Không phụ thuộc React.
-
-// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import type { Company, ResultType, SearchResult, SortKey, TimeRange } from "./types";
 
-// ===== Hằng số =====
-/** Từ quá phổ biến, bỏ khi khớp từ khóa và tô sáng ("máy bị nóng quá" → "nóng"). */
 const STOPWORDS = new Set([
   "may",
   "bi",
@@ -32,29 +26,22 @@ const STOPWORDS = new Set([
   "o",
 ]);
 
-// ===== Hàm tiện ích =====
-/** Từ có nghĩa trong câu hỏi, đã bỏ dấu. Giữ "-", "_", "." để tìm được mã như HS-SEMI-2026-00125. */
 export const queryTokens = (q: string) =>
   fold(q)
     .split(/[^\p{L}\p{N}\-_.]+/u)
     .map((t) => t.replace(/^[-_.]+|[-_.]+$/g, ""))
     .filter((t) => t.length >= 2 && !STOPWORDS.has(t));
 
-// ===== Hằng số =====
 export const TIME_DAYS: Record<TimeRange, number> = { "7d": 7, "30d": 30, "90d": 90, all: Infinity };
 
-// ===== Kiểu dữ liệu =====
 export type Filters = { types: ResultType[]; companies: Company[]; range: TimeRange };
 
-// ===== Hàm tiện ích =====
 const inTime = (r: SearchResult, range: TimeRange) => r.daysAgo == null || r.daysAgo <= TIME_DAYS[range];
-/** Kết quả thật không có `company` (máy chủ đã lọc theo tenant) → không bị bộ lọc công ty loại. */
 const inCompany = (r: SearchResult, companies: Company[]) => r.company == null || companies.includes(r.company);
 
 export const applyFilters = (rows: SearchResult[], f: Filters) =>
   rows.filter((r) => f.types.includes(r.type) && inCompany(r, f.companies) && inTime(r, f.range));
 
-/** Số đếm cạnh mỗi lựa chọn: tính với các bộ lọc KHÁC đang áp (kiểu tìm kiếm có mặt cắt). */
 export const facetCounts = (rows: SearchResult[], f: Filters) => {
   const types = {} as Record<ResultType, number>;
   const companies = {} as Record<Company, number>;
@@ -71,19 +58,13 @@ export const sortResults = (rows: SearchResult[], sort: SortKey) =>
     sort === "newest" ? (a.daysAgo ?? -1) - (b.daysAgo ?? -1) || b.score - a.score : b.score - a.score,
   );
 
-/** Cụm từ để tô sáng: các từ có nghĩa trong câu hỏi. */
 export const highlightTerms = (q: string) => {
   const terms = new Set(queryTokens(q));
-  // Cụm dài trước để "quá nhiệt" thắng "nhiệt".
   return [...terms].sort((a, b) => b.length - a.length);
 };
 
 export type Segment = { text: string; mark: boolean };
 
-/**
- * Tách văn bản thành đoạn thường / đoạn tô sáng, khớp không dấu nhưng giữ nguyên chữ gốc.
- * Chỉ khớp khi cụm bắt đầu ở đầu một từ (tránh tô "on" giữa "phòng").
- */
 export const highlight = (text: string, terms: string[]): Segment[] => {
   if (!terms.length || !text) return [{ text, mark: false }];
   let folded = "";
@@ -119,5 +100,4 @@ export const highlight = (text: string, terms: string[]): Segment[] => {
   return out;
 };
 
-/** "0,12 giây" */
 export const formatSeconds = (ms: number) => `${(Math.max(ms, 10) / 1000).toFixed(2).replace(".", ",")} giây`;

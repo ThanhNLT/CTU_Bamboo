@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Clock, Files, User } from "lucide-react"; // Lucide React
+import { Clock, Files, User } from "lucide-react";
 
-// ===== Module nội bộ =====
 import type { DriveNavItem } from "./types";
 
-// ===== Hằng số =====
 export const DRIVE_NAV: DriveNavItem[] = [
   { key: "mine", label: "Tệp tôi tải lên", icon: User },
   { key: "all", label: "Mọi tệp tôi được xem", icon: Files },

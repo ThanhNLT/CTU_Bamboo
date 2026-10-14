@@ -2,32 +2,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Trung tâm điều hành (ADR #49): Action ops_dashboard tính số liệu theo quyền xem; bệnh viện (tenant con) chỉ số tổng
-hợp cho người có ops.group.read; khối bản đồ đếm việc quá hạn và lô đang giữ trong nhánh đơn vị có tọa độ."""
-
-# ===== Thư viện chuẩn =====
 import uuid
 
-# ===== Thư viện bên ngoài =====
-import pytest  # pytest
+import pytest
 
-# ===== Module nội bộ =====
 from app import admin
 from app.common import ActionError
 from conftest import ids, pr
 
-# ===== Hằng số & cấu hình =====
 OPS = """query($t: String!, $d: Int) { ops_dashboard(tab: $t, days: $d) { tab days sla_hours data } }"""
 
 
-# ===== Hàm tiện ích =====
 def ops(hasura, tab: str, person: str, tenant: str, days: int = 30) -> dict:
     r = hasura(OPS, {"t": tab, "d": days}, person=person, tenant=tenant)
     assert "errors" not in r, r
     return r["data"]["ops_dashboard"]["data"]
 
 
-# ===== Kịch bản kiểm thử =====
 def test_quy_trinh_ban_do_theo_quyen_xem(hasura, conn, org):
     k = org
     i = ids(conn, "TDX", "a", k("nv"), k("CTY"), k("PHONG"))
@@ -50,7 +41,6 @@ def test_quy_trinh_ban_do_theo_quyen_xem(hasura, conn, org):
         (i["TDX"], f"LOT-{k('x')}", item, i[k("PHONG")]),
     )
 
-    # Người lập thấy đề nghị của mình: quá hạn ở bảng Quy trình và ở cơ sở trên bản đồ (kèm lô đang giữ).
     data = ops(hasura, "process", i[k("nv")], i["TDX"])
     row = next(r for r in data["by_type"] if r["entity_type"] == "proc.purchase_request")
     assert row["submitted"] >= 1 and row["open"] >= 1 and row["overdue"] >= 1
@@ -59,11 +49,9 @@ def test_quy_trinh_ban_do_theo_quyen_xem(hasura, conn, org):
     assert site["status"] == "critical" and site["overdue_tasks"] == 1 and site["held_lots"] == 1
     assert any("LOT-" in a for a in site["alerts"])
 
-    # Người ở công ty khác không được xem đề nghị: cơ sở chỉ còn lô đang giữ (lô ai trong tenant cũng xem).
     other = next(s for s in ops(hasura, "sites", i["a"], i["TDX"])["sites"] if s["id"] == i[k("CTY")])
     assert other["open_tasks"] == 0 and other["status"] == "warning"
 
-    # Sản xuất: lô đang giữ hiện trong danh sách; kỳ 90 ngày gom theo tuần.
     prod = ops(hasura, "production", i["a"], i["TDX"], days=90)
     assert any(h["lot_no"] == f"LOT-{k('x')}" for h in prod["held"])
     assert prod["totals"]["lots_on_hold"] >= 1 and len(prod["trend"]) <= 14
@@ -91,7 +79,6 @@ def test_benh_vien_chi_so_tong_hop_can_quyen(hasura, conn, org):
     bv = data["tenants"][0]
     assert bv["tenant"] == "Bệnh viện X" and len(bv["monthly"]) == 6
     assert {"headcount", "positions", "vacant", "pr_submitted", "open_tasks", "units"} <= bv.keys()
-    # Chỉ có số tổng hợp: không có số chứng từ, tên người.
     assert "doc_no" not in str(bv) and "full_name" not in str(bv)
 
 

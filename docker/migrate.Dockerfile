@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-# Job migrate: PostgreSQL client + migration và kiểm thử CSDL đóng gói sẵn (không cần mã nguồn khi chạy).
-# Chỉ cần client psql + bash (PostGIS nằm ở server db); image postgres chính thức có cả amd64 lẫn arm64.
 FROM postgres:17
 LABEL org.opencontainers.image.title="bamboo-migrate" \
       org.opencontainers.image.description="Bamboo DX-OS: migration và kiểm thử CSDL (chạy một lần rồi thoát)" \

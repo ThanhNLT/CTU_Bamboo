@@ -2,20 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Thư viện tri thức (ADR #48): đề xuất tài liệu qua Hasura, tệp, gửi duyệt, duyệt xong xuất bản, thư viện, ngừng."""
-
-# ===== Thư viện chuẩn =====
 import uuid
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
-import pytest  # pytest
+import httpx
+import pytest
 from test_tep_dinh_kem import PDF
 
-# ===== Module nội bộ =====
 from conftest import ids, open_task
 
-# ===== Hằng số & cấu hình =====
 INSERT = (
     """mutation($o: collab_kb_document_insert_input!) { insert_collab_kb_document_one(object: $o) { id doc_no } }"""
 )
@@ -30,10 +24,8 @@ LIBRARY = """query { kb_library { can_propose documents { id doc_no title scope 
 RETIRE = """mutation($id: uuid!, $r: String!) { retire_kb_document(id: $id, reason: $r) { status } }"""
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture
 def library(conn):
-    """Chuyên viên mua hàng Điện thoại X (người c) được đề xuất; quy tắc KB_DOCUMENT một bước (trưởng đơn vị)."""
     role = f"TL_{uuid.uuid4().hex[:8]}"
     conn.execute(
         "INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), %s, 'Đề xuất tài liệu')", (role,)
@@ -59,7 +51,6 @@ def library(conn):
     return ids(conn, "TDX", "c", "a", "tp_mh_dt", "P_NV_MH_DT")
 
 
-# ===== Kiểm thử =====
 def test_de_xuat_duyet_xuat_ban(hasura, conn, s3, library):
     i = library
     title = f"Quy chế thử {uuid.uuid4().hex[:6]}"
@@ -82,7 +73,6 @@ def test_de_xuat_duyet_xuat_ban(hasura, conn, s3, library):
     doc_id = data["data"]["insert_collab_kb_document_one"]["id"]
     assert data["data"]["insert_collab_kb_document_one"]["doc_no"].startswith("TL-")
 
-    # Người không có quyền đề xuất thì Hasura / CSDL chặn.
     denied = hasura(
         INSERT,
         {"o": {"title": "X", "category": "faq", "requester_position_id": i["P_NV_MH_DT"]}},
@@ -108,7 +98,6 @@ def test_de_xuat_duyet_xuat_ban(hasura, conn, s3, library):
     approved = hasura(ACT, {"t": str(task["id"])}, person=i["tp_mh_dt"], tenant=i["TDX"])
     assert approved["data"]["act_on_task"]["status"] == "APPROVED", approved
 
-    # Phạm vi tập đoàn: người ở công ty khác cũng thấy trong thư viện, kèm tệp và trạng thái chỉ mục.
     lib = hasura(LIBRARY, person=i["a"], tenant=i["TDX"])["data"]["kb_library"]
     doc = next(d for d in lib["documents"] if d["id"] == doc_id)
     assert doc["title"] == title and doc["version"] == 1 and doc["files"][0]["id"] == att
@@ -121,6 +110,5 @@ def test_de_xuat_duyet_xuat_ban(hasura, conn, s3, library):
     kept = hasura(delete, {"a": att}, person=i["c"], tenant=i["TDX"])
     assert "đã có kết quả" in kept["errors"][0]["message"], "tệp của tài liệu đã xuất bản được giữ nguyên"
 
-    # Người đọc tài liệu đã xuất bản không thêm tệp được (tệp sẽ vào chỉ mục tìm kiếm).
     late = hasura(UPLOAD, {"id": doc_id, "size": len(PDF)}, person=i["a"], tenant=i["TDX"])
     assert "Chỉ người lập thêm tệp" in late["errors"][0]["message"]

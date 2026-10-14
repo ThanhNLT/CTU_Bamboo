@@ -2,8 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Thư viện tri thức (ADR #48): đề xuất tài liệu đi qua chuỗi duyệt KB_DOCUMENT, duyệt xong xuất bản, bản thay thế
--- làm bản cũ ngừng hiệu lực; phạm vi đọc tập đoàn / công ty; chỉ mục tìm kiếm chỉ có tài liệu đang hiệu lực.
 SELECT test.fixture();
 
 INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), 'DE_XUAT_TL', 'Đề xuất tài liệu')
@@ -55,14 +53,12 @@ SELECT test.throws($$SELECT pg_temp.attach('d1')$$, '%Chỉ người lập thêm
                    'Tài liệu đã xuất bản không nhận thêm tệp (tệp sẽ vào chỉ mục)');
 SELECT test.ok((SELECT published_at FROM collab.kb_document WHERE id = test.id('d1')) IS NOT NULL, 'Có thời điểm xuất bản');
 
--- Phạm vi công ty: người cùng công ty Điện thoại X đọc được, người Chip X thì không.
 SELECT test.ok(wf.entity_can_read('collab.kb_document', test.id('d1'), test.id('gd_dt')), 'Cùng công ty đọc được');
 SELECT test.ok(NOT wf.entity_can_read('collab.kb_document', test.id('d1'), test.id('a')), 'Công ty khác không đọc');
 SELECT test.ok(EXISTS (SELECT 1 FROM search.pending WHERE entity_type = 'collab.kb_document'
                                                        AND entity_id = test.id('d1')), 'Vào hàng đợi chỉ mục');
 SELECT test.ok(search.kb_document_doc(test.id('d1')) ->> 'doc_no' LIKE 'TL-%', 'Tài liệu hiệu lực có nội dung chỉ mục');
 
--- Bản thay thế, phạm vi tập đoàn: xuất bản thì bản cũ ngừng hiệu lực, ra khỏi chỉ mục.
 SELECT pg_temp.doc('d2', 'group', 'd1');
 SELECT test.eq((SELECT version FROM collab.kb_document WHERE id = test.id('d2')), 2, 'Bản thay thế là v2');
 SELECT pg_temp.attach('d2');
@@ -74,14 +70,12 @@ SELECT test.ok(wf.entity_can_read('collab.kb_document', test.id('d2'), test.id('
 SELECT test.ok(NOT wf.entity_can_read('collab.kb_document', test.id('d2'), (SELECT id FROM core.person
                                        WHERE tenant_id = test.id('BVX') LIMIT 1)), 'Tenant khác không đọc');
 
--- Hủy, ngừng hiệu lực cần quyền quản lý.
 SELECT pg_temp.doc('d3', 'company');
 SELECT collab.cancel_kb_document(test.id('d3'), test.id('c'), 'Không cần nữa');
 SELECT test.eq(pg_temp.st('d3'), 'CANCELLED', 'Người lập hủy được');
 SELECT test.throws($$SELECT collab.retire_kb_document(test.id('d2'), test.id('c'), 'x')$$,
                    '%kb.document.manage%', 'Ngừng hiệu lực cần quyền quản lý');
 
--- Tệp hồ sơ nhân sự không vào chỉ mục khi dựng lại toàn bộ.
 SELECT search.mark_all();
 SELECT test.ok(NOT EXISTS (SELECT 1 FROM search.pending p JOIN core.attachment a ON a.id = p.entity_id
                            WHERE p.entity_type = 'core.attachment' AND a.entity_type = 'hr.onboarding_request'),

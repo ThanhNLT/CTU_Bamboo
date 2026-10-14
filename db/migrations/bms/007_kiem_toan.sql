@@ -2,13 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 007: Nhật ký kiểm toán nối chuỗi hash, chỉ ghi thêm (ADR #18; thiết kế CSDL mục 4.7).
---
--- Mỗi tenant một chuỗi: dòng thứ n có hash = sha256(hash dòng n-1 || nội dung dòng n).
--- audit.chain_head giữ đầu chuỗi và khóa theo giao dịch, nên các giao dịch ghi
--- cùng tenant xếp hàng ở bước ghi nhật ký (đổi lại chuỗi không bao giờ rẽ nhánh).
--- Đối soát bằng audit.verify_chain(tenant); cột sealed_at dành cho bước đẩy sang immudb.
-
 CREATE SCHEMA IF NOT EXISTS audit;
 
 INSERT INTO core.permission (code, description) VALUES
@@ -20,7 +13,6 @@ CREATE TABLE audit.chain_head (
     hash       bytea NOT NULL
 );
 
--- actor_id không có khóa ngoại: nhật ký phải còn nguyên khi dữ liệu gốc bị xóa.
 CREATE TABLE audit.log (
     tenant_id     uuid NOT NULL REFERENCES core.tenant,
     id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -43,7 +35,6 @@ CREATE INDEX ON audit.log (tenant_id, table_name, row_id);
 CREATE INDEX ON audit.log (tenant_id, actor_id);
 CREATE INDEX ON audit.log (tenant_id, created_at DESC);
 
--- Nội dung được băm: mọi cột trừ hash và sealed_at, dạng jsonb (thứ tự khóa cố định).
 CREATE FUNCTION audit.compute_hash(l audit.log) RETURNS bytea
 LANGUAGE sql IMMUTABLE AS $$
     SELECT sha256(coalesce(l.prev_hash, '\x'::bytea) || convert_to(jsonb_build_array(
@@ -53,9 +44,6 @@ LANGUAGE sql IMMUTABLE AS $$
     )::text, 'UTF8'))
 $$;
 
--- Trigger gắn vào bảng nghiệp vụ. Tham số: các cột khóa chính (mặc định 'id').
--- Người thực hiện lấy từ phiên Hasura (hasura.user, dịch vụ actions cũng đặt biến
--- này); không có phiên thì ghi tên role PostgreSQL.
 CREATE FUNCTION audit.log_change() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -103,7 +91,6 @@ BEGIN
     RETURN NULL;
 END $$;
 
--- Bật nhật ký cho một bảng có cột tenant_id.
 CREATE PROCEDURE audit.enable(p_table regclass, VARIADIC p_pk text[] DEFAULT ARRAY['id'])
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -112,7 +99,6 @@ BEGIN
                    p_table, (SELECT string_agg(quote_literal(c), ', ') FROM unnest(p_pk) c));
 END $$;
 
--- Chỉ ghi thêm: không sửa, không xóa; riêng sealed_at được đặt một lần.
 CREATE FUNCTION audit.log_append_only() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -128,11 +114,6 @@ FOR EACH ROW EXECUTE FUNCTION audit.log_append_only();
 CREATE TRIGGER log_no_truncate BEFORE TRUNCATE ON audit.log
 FOR EACH STATEMENT EXECUTE FUNCTION audit.log_append_only();
 
--- Đối soát chuỗi của một tenant. Trả về các dòng có vấn đề (rỗng: chuỗi nguyên vẹn):
---   MISSING        thiếu dòng trước dòng này (seq không liên tục)
---   PREV_MISMATCH  prev_hash không khớp hash dòng trước
---   HASH_MISMATCH  nội dung dòng đã bị sửa
---   HEAD_MISMATCH  dòng cuối không khớp đầu chuỗi (mất dòng ở cuối)
 CREATE FUNCTION audit.verify_chain(p_tenant uuid)
 RETURNS TABLE (seq bigint, log_id bigint, problem text)
 LANGUAGE plpgsql STABLE AS $$
@@ -163,16 +144,10 @@ BEGIN
     END IF;
 END $$;
 
--- Người được xem nhật ký của tenant (quyền audit.read, không xét phạm vi đơn vị).
--- Hasura dùng làm điều kiện xem audit.log qua quan hệ theo tenant_id.
 CREATE VIEW audit.v_reader AS
 SELECT DISTINCT tenant_id, person_id
 FROM core.v_permission_grant
 WHERE permission_code = 'audit.read' AND valid_period @> now();
-
--- ---------------------------------------------------------------------------
--- Bảng được ghi nhật ký
--- ---------------------------------------------------------------------------
 
 CALL audit.enable('core.org_unit');
 CALL audit.enable('core.position');

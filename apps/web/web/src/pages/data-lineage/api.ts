@@ -2,19 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dữ liệu Phả hệ (ADR #50): nút, cạnh (kèm ánh xạ cột), kiểm tra chất lượng, lần chạy pipeline từ bảng meta.* qua
-// Hasura; báo sự cố dữ liệu ghi meta.data_issue. Hàng của nút trên sơ đồ tính theo tầng: tầng nguồn theo thứ tự tên,
-// tầng sau theo trung bình hàng của các nút phía trước (ít cạnh cắt nhau).
+import { useCallback, useEffect, useState } from "react";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { LAYERS } from "./graph";
 import type { LineageEdge, LineageNode, RunResult, RunRow } from "./types";
 
-// ===== Truy vấn GraphQL =====
 const LINEAGE = `query Lineage {
   meta_lineage_node { id layer tech name fqn title owner used_by app_link
     quality_checks(order_by: {checked_at: desc}) { rule name passed detail checked_at } }
@@ -22,7 +15,6 @@ const LINEAGE = `query Lineage {
   meta_pipeline_run(order_by: {started_at: desc}, limit: 12) { id task engine node_id started_at duration_s result }
 }`;
 
-// ===== Kiểu dữ liệu =====
 type NodeRow = {
   id: string;
   layer: LineageNode["layer"];
@@ -48,13 +40,11 @@ type RunRowDb = {
 
 export type LineageData = { nodes: LineageNode[]; edges: LineageEdge[]; runs: RunRow[]; updatedAt: string };
 
-// ===== Hàm tiện ích =====
 const HHMM = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Ho_Chi_Minh" });
 const hhmm = (iso: string) => HHMM.format(new Date(iso));
 const duration = (s: number) => (s >= 60 ? `${Math.floor(s / 60)} phút ${s % 60} giây` : `${s} giây`);
 const TECH_MONO = new Set(["PostgreSQL", "Kafka", "Iceberg", "Trino"]);
 
-/** Hàng của từng nút: tầng đầu theo thứ tự đọc, tầng sau theo trung bình hàng của nút phía trước. */
 const layout = (rows: NodeRow[], edges: EdgeRow[]) => {
   const row = new Map<string, number>();
   for (const { key } of LAYERS) {
@@ -121,7 +111,6 @@ const toData = (nodes: NodeRow[], edges: EdgeRow[], runs: RunRowDb[]): LineageDa
   };
 };
 
-// ===== Hook =====
 export const useLineage = () => {
   const [state, setState] = useState<{ data?: LineageData; error?: string; loading: boolean }>({ loading: true });
   const load = useCallback(async () => {
@@ -142,7 +131,6 @@ export const useLineage = () => {
   return { ...state, reload: load };
 };
 
-/** Ghi một sự cố dữ liệu (meta.data_issue); trả về mã ngắn để hiện cho người báo. */
 export const reportIssue = async (nodeId: string, severity: "low" | "medium" | "high", description: string) => {
   const r = await request<{ insert_meta_data_issue_one: { id: string } }>(
     `mutation Issue($o: meta_data_issue_insert_input!) { insert_meta_data_issue_one(object: $o) { id } }`,

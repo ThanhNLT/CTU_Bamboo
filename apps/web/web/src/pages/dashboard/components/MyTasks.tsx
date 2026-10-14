@@ -2,20 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Segmented } from "antd"; // Ant Design
-import { useState } from "react"; // React
-import { Link } from "react-router"; // React Router
+import { Segmented } from "antd";
+import { useState } from "react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { DueLevel, TaskItem } from "../types";
 import { Panel, PanelLink } from "../../../components/ui";
 
-// ===== Kiểu dữ liệu =====
 type View = "list" | "kanban" | "calendar";
 
-// ===== Hằng số =====
 const VIEW_OPTIONS: Array<{ label: string; value: View }> = [
   { label: "Danh sách", value: "list" },
   { label: "Kanban", value: "kanban" },
@@ -28,7 +24,6 @@ const DUE_STYLE: Record<DueLevel, { pill: string; dot: string; column: string }>
   ok: { pill: "bg-bamboo-50 text-bamboo-700", dot: "bg-bamboo-500", column: "Trong hạn" },
 };
 
-// ===== Component =====
 const DueTag = ({ task }: { task: TaskItem }) => {
   const s = DUE_STYLE[task.dueLevel];
   return (

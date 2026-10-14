@@ -2,50 +2,33 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Sinh metadata Hasura từ CSDL (ADR #24).
-
-Quan hệ suy ra từ khóa ngoại; phân quyền khai báo ở đây; quyền chi tiết là hàm
-SQL dùng làm computed field `can_read`. Kết quả ghi vào platform/hasura/metadata.json
-(commit vào Git); job bootstrap nạp bằng replace_metadata.
-
-    python -m app.hasura_metadata [--out đường_dẫn]   # cần DATABASE_URL trỏ tới CSDL đã migrate
-"""
-
-# ===== Thư viện chuẩn =====
 import argparse
 import json
 import pathlib
 from collections import defaultdict
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
+import psycopg
 
-# ===== Module nội bộ =====
 from . import config
 
-# ===== Hằng số & cấu hình =====
 SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr", "iot", "meta", "kpi")
-# hr.private_access: chỉ xem qua nhật ký kiểm toán (audit.log), không mở cho giao diện.
 HIDDEN = {
     ("wf", "flow_sync"),
     ("wf", "v_flow_state"),
     ("core", "doc_sequence"),
     ("audit", "chain_head"),
     ("hr", "private_access"),
-    # Sổ cái (ADR #46): lịch sử đối soát và nhật ký phòng đọc chỉ đọc qua Action ledger_*.
     ("audit", "ledger_check"),
     ("audit", "archive_access"),
 }
 ROLE = "user"
-ADMIN_ROLE = "platform_admin"  # realm role Keycloak, bắt buộc OTP (ADR #32)
-ACCOUNT_ROLE = "account"  # đã đăng nhập, chưa chọn tenant: chỉ gọi my_tenants
+ADMIN_ROLE = "platform_admin"
+ACCOUNT_ROLE = "account"
 ME = "X-Hasura-User-Id"
 TENANT = {"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}
 
-# Bảng chỉ dành cho quản trị nền tảng (chưa mở cho role user).
 ADMIN_ONLY = {("core", "tenant_relation")}
 
-# Người có quyền quản trị trong tenant (core.v_admin, ADR #44) xem được vai trò, cấp quyền, nhóm.
 IS_ADMIN = {
     "_exists": {
         "_table": {"schema": "core", "name": "v_admin"},
@@ -60,7 +43,6 @@ ADMIN_READ = {
     ("core", "team_member"),
 }
 
-# Computed field can_read: bảng -> hàm (schema, name).
 CAN_READ = {
     ("proc", "purchase_request"): ("proc", "purchase_request_can_read"),
     ("wf", "approval_step"): ("wf", "approval_step_can_read"),
@@ -74,7 +56,6 @@ CAN_READ = {
     ("collab", "kb_document"): ("collab", "kb_document_can_read"),
 }
 
-# Computed field thêm (tên → hàm), cùng tham số phiên Hasura.
 EXTRA_COMPUTED = {
     ("hr", "onboarding_request"): [
         (
@@ -92,10 +73,8 @@ EXTRA_COMPUTED = {
     ],
 }
 
-# Cột nội bộ không trả cho giao diện.
 HIDDEN_COLUMNS = {
     ("core", "attachment"): {"storage_key"},
-    # Bản mã dữ liệu nhạy cảm chỉ Action đọc (ADR #41); giao diện thấy bản che.
     ("hr", "onboarding_request"): {
         "national_id_enc",
         "bank_account_enc",
@@ -103,25 +82,19 @@ HIDDEN_COLUMNS = {
         "initial_password_enc",
         "account_attempts",
     },
-    # Dữ liệu trước/sau có thể chứa dữ liệu cá nhân: chỉ đọc bản đã che qua Action audit_log_detail (ADR #43).
     ("audit", "log"): {"old_data", "new_data"},
 }
 
-# Bộ lọc xem riêng cho một số bảng (mặc định: cùng tenant).
 SELECT_FILTER = {
     ("core", "tenant"): {"id": {"_eq": "X-Hasura-Tenant-Id"}},
     ("core", "permission"): {},
     ("core", "delegation"): {"_and": [TENANT, {"_or": [{"delegator_id": {"_eq": ME}}, {"delegate_id": {"_eq": ME}}]}]},
     ("wf", "v_inbox"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
-    # Quyền của chính người gọi (giao diện dựng luật CASL), không xem quyền của người khác.
     ("core", "v_permission_grant"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("collab", "notification"): {"_and": [TENANT, {"recipient_id": {"_eq": ME}}]},
-    # Nhật ký: người có quyền audit.read trong tenant (audit.v_reader).
     ("audit", "log"): {"_and": [TENANT, {"readers": {"person_id": {"_eq": ME}}}]},
     ("audit", "v_reader"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "v_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
-    # Bản sao số, phả hệ, KPI (ADR #50): mô hình thiết bị và siêu dữ liệu pipeline chung cho nền tảng; KPI ghim của
-    # chính người gọi.
     ("iot", "model"): {},
     ("meta", "lineage_node"): {},
     ("meta", "lineage_edge"): {},
@@ -134,7 +107,6 @@ SELECT_FILTER = {
     ("proc", "purchase_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
 }
 
-# Quan hệ không có khóa ngoại (chứng từ được duyệt là đa hình: entity_type + entity_id).
 MANUAL_RELATIONSHIPS = [
     ("object", ("wf", "approval_step"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
     ("object", ("wf", "approval_history"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
@@ -149,7 +121,6 @@ MANUAL_RELATIONSHIPS = [
     ("object", ("audit", "log"), "actor", ("core", "person"), {"actor_id": "id"}),
     ("array", ("proc", "purchase_request"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
     ("array", ("audit", "log"), "readers", ("audit", "v_reader"), {"tenant_id": "tenant_id"}),
-    # Đề nghị tiếp nhận nhân sự (ADR #41): cùng các bảng đa hình như đề nghị mua sắm.
     ("object", ("wf", "approval_step"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
     ("object", ("wf", "approval_history"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
     ("array", ("hr", "onboarding_request"), "approval_steps", ("wf", "approval_step"), {"id": "entity_id"}),
@@ -159,11 +130,9 @@ MANUAL_RELATIONSHIPS = [
     ("array", ("hr", "onboarding_request"), "comments", ("collab", "comment"), {"id": "entity_id"}),
     ("object", ("collab", "notification"), "onboarding_request", ("hr", "onboarding_request"), {"entity_id": "id"}),
     ("array", ("hr", "onboarding_request"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
-    # Đơn hàng nội bộ (ADR #42): bình luận, thông báo.
     ("object", ("collab", "comment"), "ic_order", ("ic", "ic_order"), {"entity_id": "id"}),
     ("array", ("ic", "ic_order"), "comments", ("collab", "comment"), {"id": "entity_id"}),
     ("object", ("collab", "notification"), "ic_order", ("ic", "ic_order"), {"entity_id": "id"}),
-    # Thư viện tri thức (ADR #48): đề xuất tài liệu đi qua chuỗi duyệt như các chứng từ khác.
     ("object", ("wf", "approval_step"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
     ("object", ("wf", "approval_history"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
     ("array", ("collab", "kb_document"), "approval_steps", ("wf", "approval_step"), {"id": "entity_id"}),
@@ -175,7 +144,6 @@ MANUAL_RELATIONSHIPS = [
     ("array", ("collab", "kb_document"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
 ]
 
-# ic_order_id do CSDL gắn khi đề nghị mua nội bộ được duyệt (ADR #42), người lập không sửa.
 PR_EDITABLE = [
     "title",
     "description",
@@ -183,7 +151,6 @@ PR_EDITABLE = [
     "total_amount",
     "needed_by",
     "partner_id",
-    # Nhà cung cấp chưa có trong danh mục (migration 018).
     "proposed_partner_name",
     "proposed_partner_tax_code",
 ]
@@ -211,7 +178,6 @@ MDM_EDITABLE = {
 }
 
 
-# ===== Hàm =====
 def _action(
     name: str, kind: str, args: list[tuple[str, str]], output: str, roles: list[str], comment: str, timeout: int = 30
 ) -> dict:
@@ -309,7 +275,6 @@ def build(conn: psycopg.Connection) -> dict:
             }
         )
 
-    # Tên quan hệ mảng: <bảng con>s, hoặc <bảng con>s_by_<cột> khi một bảng con có nhiều khóa tới cùng bảng cha.
     fk_count = defaultdict(int)
     for s, t, ts, tt, *_ in fks:
         fk_count[(s, t, ts, tt)] += 1
@@ -317,12 +282,12 @@ def build(conn: psycopg.Connection) -> dict:
     for s, t, ts, tt, _name, src_cols, dst_cols in fks:
         own = [c for c in src_cols if c != "tenant_id"] or list(src_cols)
         obj_name = _strip(own[0])
-        if obj_name in columns[(s, t)]:  # cột không có hậu tố _id, ví dụ acted_by → acted_by_person
+        if obj_name in columns[(s, t)]:
             obj_name = f"{obj_name}_{tt}"
         mapping = dict(zip(src_cols, dst_cols, strict=True))
         add_rel("object", (s, t), obj_name, (ts, tt), mapping)
         if (ts, tt) == ("core", "tenant"):
-            continue  # không sinh quan hệ mảng từ tenant (quá rộng)
+            continue
         arr = _plural(t) if fk_count[(s, t, ts, tt)] == 1 else f"{_plural(t)}_by_{obj_name}"
         if (s, t) == (ts, tt):
             arr = "children" if obj_name == "parent" else f"{_plural(t)}_by_{obj_name}"
@@ -370,7 +335,6 @@ def build(conn: psycopg.Connection) -> dict:
             if "deleted_at" in columns[key] and key != ("collab", "comment"):
                 perm["filter"]["_and"].append({"deleted_at": {"_is_null": True}})
             perm["computed_fields"] = [f["name"] for f in entry["computed_fields"]]
-        # platform_admin xem như người dùng thường, cộng thêm các bảng phân quyền.
         entry["select_permissions"] = [{"role": ROLE, "permission": perm}, {"role": ADMIN_ROLE, "permission": perm}]
 
     pr = entries[("proc", "purchase_request")]
@@ -404,7 +368,6 @@ def build(conn: psycopg.Connection) -> dict:
         }
     ]
 
-    # Đề xuất tài liệu thư viện (ADR #48): người lập soạn nháp; gửi duyệt / hủy qua Action.
     kb = entries[("collab", "kb_document")]
     own_kb = {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_in": ["DRAFT", "RETURNED"]}}]}
     kb["insert_permissions"] = [
@@ -437,7 +400,6 @@ def build(conn: psycopg.Connection) -> dict:
         for r in (ROLE, ADMIN_ROLE)
     ]
 
-    # KPI ghim (ADR #50): mỗi người tự ghim / bỏ ghim / đổi thứ tự KPI của mình.
     own_pin = {"_and": [TENANT, {"person_id": {"_eq": ME}}]}
     pin = entries[("kpi", "pin")]
     pin["insert_permissions"] = [
@@ -456,7 +418,6 @@ def build(conn: psycopg.Connection) -> dict:
         for r in (ROLE, ADMIN_ROLE)
     ]
     pin["delete_permissions"] = [{"role": r, "permission": {"filter": own_pin}} for r in (ROLE, ADMIN_ROLE)]
-    # Báo sự cố dữ liệu từ trang Phả hệ: ai trong tenant cũng báo được.
     entries[("meta", "data_issue")]["insert_permissions"] = [
         {
             "role": r,
@@ -469,7 +430,6 @@ def build(conn: psycopg.Connection) -> dict:
         for r in (ROLE, ADMIN_ROLE)
     ]
 
-    # Dòng hàng: người lập sửa khi đề nghị còn nháp hoặc bị trả về (CSDL cũng chặn).
     item = entries[("proc", "purchase_request_item")]
     own_item = {"_and": [TENANT, {"request": own_draft}]}
     item["insert_permissions"] = [
@@ -494,7 +454,6 @@ def build(conn: psycopg.Connection) -> dict:
     ]
     item["delete_permissions"] = [{"role": ROLE, "permission": {"filter": own_item}}]
 
-    # Bình luận: người viết là người gọi; CSDL kiểm tra quyền xem chứng từ và người được nhắc tên.
     comment = entries[("collab", "comment")]
     comment["insert_permissions"] = [
         {
@@ -519,7 +478,6 @@ def build(conn: psycopg.Connection) -> dict:
         for r in (ROLE, ADMIN_ROLE)
     ]
 
-    # Đề nghị tiếp nhận: người lập sửa khi còn nháp hoặc bị trả về; dữ liệu nhạy cảm chỉ ghi qua Action.
     ob = entries[("hr", "onboarding_request")]
     own_ob = {"_and": [TENANT, {"requester_id": {"_eq": ME}}, {"status": {"_in": ["DRAFT", "RETURNED"]}}]}
     ob["insert_permissions"] = [
@@ -554,7 +512,6 @@ def build(conn: psycopg.Connection) -> dict:
         for r in (ROLE, ADMIN_ROLE)
     ]
 
-    # Dữ liệu chủ: đội nền tảng nhập (người dùng thường chỉ xem).
     for key, cols in MDM_EDITABLE.items():
         entries[key]["insert_permissions"] = [
             {
@@ -1616,6 +1573,5 @@ def main() -> None:
     print(f"đã ghi {args.out}: {len(metadata['sources'][0]['tables'])} bảng")
 
 
-# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

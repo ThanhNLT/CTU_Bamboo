@@ -2,23 +2,11 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 005: Phục vụ Hasura (quyền xem, kiểm tra khi ghi nháp) và đồng bộ sang Flowable (ADR #31).
-
--- ---------------------------------------------------------------------------
--- Người gọi từ phiên Hasura. Hasura v2 đặt `hasura.user` cho mutation, không
--- đặt cho query; quyền xem dùng tham số hasura_session của computed field.
--- ---------------------------------------------------------------------------
-
 CREATE FUNCTION core.session_person(p_session json) RETURNS uuid
 LANGUAGE sql IMMUTABLE AS $$ SELECT nullif(p_session ->> 'x-hasura-user-id', '')::uuid $$;
 
 CREATE FUNCTION core.mutation_session() RETURNS json
 LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('hasura.user', true), '')::json $$;
-
--- ---------------------------------------------------------------------------
--- Quyền xem chứng từ: người lập, người đang/đã nhận việc duyệt (kể cả qua ủy
--- quyền), hoặc người có quyền xem trên đơn vị của chứng từ.
--- ---------------------------------------------------------------------------
 
 CREATE FUNCTION wf.entity_can_read(p_type text, p_id uuid, p_person uuid, p_at timestamptz DEFAULT now())
 RETURNS boolean
@@ -51,7 +39,6 @@ BEGIN
     );
 END $$;
 
--- Computed field `can_read` của Hasura (ADR #24).
 CREATE FUNCTION proc.purchase_request_can_read(p_row proc.purchase_request, hasura_session json)
 RETURNS boolean
 LANGUAGE sql STABLE AS $$
@@ -76,14 +63,6 @@ LANGUAGE sql STABLE AS $$
     SELECT wf.entity_can_read(s.entity_type, s.entity_id, core.session_person(hasura_session))
     FROM wf.approval_step s WHERE s.id = p_row.step_id
 $$;
-
--- ---------------------------------------------------------------------------
--- Lập nháp qua Hasura: người lập là người gọi và phải có quyền lập trên đơn vị.
--- Ghi từ dịch vụ nội bộ (không có phiên Hasura) không bị kiểm tra ở đây.
--- ---------------------------------------------------------------------------
--- Lỗi nghiệp vụ trong trigger mà Hasura ghi thẳng chạm tới dùng ERRCODE
--- data_exception (22000): Hasura chỉ chuyển nguyên thông báo cho mã nhóm 22,
--- còn RAISE EXCEPTION mặc định (P0001) bị che thành "database query error".
 
 CREATE OR REPLACE FUNCTION proc.purchase_request_before_insert() RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -116,14 +95,8 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- Tên bắt đầu bằng "z" để chạy sau purchase_request_before_insert (đã điền org_unit_id).
 CREATE TRIGGER z_purchase_request_check_session BEFORE INSERT ON proc.purchase_request
 FOR EACH ROW EXECUTE FUNCTION proc.purchase_request_check_session();
-
--- ---------------------------------------------------------------------------
--- Đồng bộ sang Flowable (ADR #31): đánh dấu lần gửi duyệt cần đối chiếu; dịch vụ
--- flow-sync nghe kênh `wf_flow_sync` và đối chiếu theo trạng thái trong CSDL.
--- ---------------------------------------------------------------------------
 
 CREATE TABLE wf.flow_sync (
     tenant_id            uuid NOT NULL REFERENCES core.tenant,
@@ -175,7 +148,6 @@ END $$;
 CREATE TRIGGER task_flow_sync AFTER INSERT OR UPDATE OF status, assignee_id ON wf.task
 FOR EACH ROW EXECUTE FUNCTION wf.task_flow_sync();
 
--- Trạng thái mong muốn của một lần gửi duyệt, cho flow-sync đối chiếu.
 CREATE VIEW wf.v_flow_state AS
 SELECT s.tenant_id, s.entity_type, s.entity_id, s.round, s.step_order, s.status AS step_status,
        s.position_id, s.acted_by, s.on_behalf_of, s.note,

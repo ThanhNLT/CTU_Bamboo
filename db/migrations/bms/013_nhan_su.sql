@@ -2,17 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 013: Đề nghị tiếp nhận nhân sự (Hire-to-Retire, ADR #41).
---
--- Phòng nhân sự lập hồ sơ ứng viên kèm đề xuất bổ nhiệm (vị trí, ngày vào, loại hợp đồng, lương) rồi gửi
--- duyệt. Chuỗi duyệt dùng bộ máy duyệt chung (quy trình ONBOARDING trong wf.approval_rule) nhưng tính từ
--- vị trí được bổ nhiệm, không từ người lập: bước "quản lý trực tiếp" là quản lý của vị trí đó. Duyệt xong
--- thì tự tạo người và bổ nhiệm giữ chính; tài khoản đăng nhập do dịch vụ hr-account tạo sau (Keycloak).
---
--- Dữ liệu cá nhân nhạy cảm (CCCD, số tài khoản, địa chỉ) chỉ lưu bản mã của khóa transit `pii` trong
--- OpenBao và bản che (•••6789); bản rõ chỉ đi qua Action, mỗi lần xem ghi hr.private_access (có nhật ký
--- kiểm toán). Hồ sơ không vào chỉ mục tìm kiếm, không vào CDC/Lakehouse (schema hr ngoài publication).
-
 CREATE SCHEMA hr;
 
 INSERT INTO core.permission (code, description) VALUES
@@ -26,8 +15,7 @@ CREATE TABLE hr.onboarding_request (
     doc_no                 text NOT NULL,
     requester_id           uuid NOT NULL,
     requester_position_id  uuid NOT NULL,
-    org_unit_id            uuid NOT NULL,          -- đơn vị của người lập (phòng nhân sự)
-    -- Ứng viên
+    org_unit_id            uuid NOT NULL,
     full_name              text NOT NULL CHECK (length(btrim(full_name)) BETWEEN 2 AND 200),
     gender                 text CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     date_of_birth          date,
@@ -35,15 +23,13 @@ CREATE TABLE hr.onboarding_request (
     phone                  text CHECK (phone ~ '^\+?[0-9 .-]{8,20}$'),
     education              text,
     major                  text,
-    -- Đề xuất bổ nhiệm
     target_position_id     uuid NOT NULL,
-    target_unit_id         uuid NOT NULL,          -- đơn vị của vị trí (tự điền)
+    target_unit_id         uuid NOT NULL,
     start_date             date NOT NULL,
     contract_type          text NOT NULL DEFAULT 'PROBATION'
                            CHECK (contract_type IN ('PROBATION', 'FIXED_TERM', 'INDEFINITE')),
     salary                 numeric(18, 2) CHECK (salary >= 0),
     note                   text,
-    -- Dữ liệu nhạy cảm: bản mã (vault:v1:...) và bản che; chỉ Action ghi.
     national_id_enc        text,
     national_id_masked     text,
     bank_name              text,
@@ -51,14 +37,13 @@ CREATE TABLE hr.onboarding_request (
     bank_account_masked    text,
     address_enc            text,
     address_masked         text,
-    -- Tài khoản đăng nhập tạo sau khi duyệt
     username               text CHECK (username ~ '^[a-z0-9][a-z0-9._-]{2,49}$'),
     account_status         text NOT NULL DEFAULT 'NONE'
                            CHECK (account_status IN ('NONE', 'PENDING', 'CREATED', 'FAILED')),
     account_error          text,
     account_attempts       int NOT NULL DEFAULT 0,
     initial_password_enc   text,
-    person_id              uuid,                   -- người được tạo khi duyệt xong
+    person_id              uuid,
     status                 text NOT NULL DEFAULT 'DRAFT'
                            CHECK (status IN ('DRAFT', 'PENDING', 'RETURNED', 'APPROVED', 'REJECTED', 'CANCELLED')),
     approval_round         int NOT NULL DEFAULT 0,
@@ -81,11 +66,9 @@ CREATE INDEX ON hr.onboarding_request (tenant_id, target_position_id);
 CREATE INDEX ON hr.onboarding_request (tenant_id, target_unit_id);
 CREATE INDEX ON hr.onboarding_request (tenant_id, person_id);
 CREATE INDEX onboarding_request_account_pending ON hr.onboarding_request (updated_at) WHERE account_status = 'PENDING';
--- Tài khoản dùng chung toàn realm Keycloak: hai hồ sơ còn hiệu lực không xin cùng tên đăng nhập.
 CREATE UNIQUE INDEX onboarding_request_username ON hr.onboarding_request (username)
     WHERE status NOT IN ('REJECTED', 'CANCELLED');
 
--- Mỗi lần xem bản rõ dữ liệu nhạy cảm (Action reveal_onboarding_private) là một dòng; có nhật ký kiểm toán.
 CREATE TABLE hr.private_access (
     tenant_id   uuid NOT NULL REFERENCES core.tenant,
     id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,10 +82,6 @@ CREATE TABLE hr.private_access (
 );
 CREATE INDEX ON hr.private_access (tenant_id, request_id);
 CREATE INDEX ON hr.private_access (tenant_id, person_id);
-
--- ---------------------------------------------------------------------------
--- Ghi hồ sơ: số chứng từ, đơn vị tự điền, chỉ sửa khi còn nháp hoặc bị trả về
--- ---------------------------------------------------------------------------
 
 CREATE FUNCTION hr.onboarding_request_before_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -129,8 +108,6 @@ END $$;
 CREATE TRIGGER onboarding_request_before_write BEFORE INSERT OR UPDATE ON hr.onboarding_request
 FOR EACH ROW EXECUTE FUNCTION hr.onboarding_request_before_write();
 
--- Ghi qua Hasura: người lập là người gọi và có quyền lập trên đơn vị của vị trí được bổ nhiệm.
--- Ghi từ dịch vụ nội bộ (không có phiên Hasura) không bị kiểm tra ở đây.
 CREATE FUNCTION hr.onboarding_request_check_session() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -148,14 +125,9 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- Tên bắt đầu bằng "z" để chạy sau onboarding_request_before_write (đã điền target_unit_id).
 CREATE TRIGGER z_onboarding_request_check_session
 BEFORE INSERT OR UPDATE OF target_position_id ON hr.onboarding_request
 FOR EACH ROW EXECUTE FUNCTION hr.onboarding_request_check_session();
-
--- ---------------------------------------------------------------------------
--- Đăng ký loại chứng từ với bộ máy duyệt, quyền xem, bình luận, thông báo
--- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION wf.entity_requester(p_type text, p_id uuid,
                                                OUT tenant_id uuid, OUT requester_id uuid,
@@ -192,8 +164,6 @@ BEGIN
     END CASE;
 END $$;
 
--- Xem hồ sơ: người lập, người có quyền xem trên đơn vị của vị trí được bổ nhiệm (phòng nhân sự, quản lý
--- cây đơn vị đó), người đang/đã nhận việc duyệt (kể cả qua ủy quyền).
 CREATE OR REPLACE FUNCTION wf.entity_can_read(p_type text, p_id uuid, p_person uuid, p_at timestamptz DEFAULT now())
 RETURNS boolean
 LANGUAGE plpgsql STABLE AS $$
@@ -236,7 +206,6 @@ LANGUAGE sql STABLE AS $$
     SELECT wf.entity_can_read('hr.onboarding_request', p_row.id, core.session_person(hasura_session))
 $$;
 
--- Được xem bản rõ dữ liệu nhạy cảm không (Action reveal_onboarding_private kiểm tra).
 CREATE FUNCTION hr.can_read_private(p_id uuid, p_person uuid, p_at timestamptz DEFAULT now()) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT EXISTS (SELECT 1 FROM hr.onboarding_request r
@@ -244,7 +213,6 @@ LANGUAGE sql STABLE AS $$
                      AND core.has_permission(p_person, 'hr.onboarding.private.read', r.target_unit_id, p_at))
 $$;
 
--- Computed field cho giao diện: hiện nút "Xem đầy đủ" khi người gọi được xem.
 CREATE FUNCTION hr.onboarding_request_can_read_private(p_row hr.onboarding_request, hasura_session json)
 RETURNS boolean
 LANGUAGE sql STABLE AS $$
@@ -290,7 +258,6 @@ BEGIN
     END CASE;
 END $$;
 
--- Có kết quả: báo người lập, kèm người xử lý bước cuối và ghi chú.
 CREATE FUNCTION collab.onboarding_request_notify() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -323,7 +290,6 @@ CREATE TRIGGER onboarding_request_notify AFTER UPDATE OF status ON hr.onboarding
 FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION collab.onboarding_request_notify();
 
--- Tệp của hồ sơ nhân sự (CV, bằng cấp) có dữ liệu cá nhân: không đưa vào chỉ mục tìm kiếm.
 CREATE OR REPLACE FUNCTION search.attachment_changed() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -333,7 +299,6 @@ BEGIN
     RETURN NULL;
 END $$;
 
--- Hồ sơ đã có kết quả thì giữ nguyên tệp làm chứng cứ (như đề nghị mua sắm).
 CREATE OR REPLACE FUNCTION core.attachment_check() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -364,18 +329,12 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Gửi duyệt, hủy, hoàn tất
--- ---------------------------------------------------------------------------
-
--- Ghế có người ngồi (hoặc đã có người được hẹn ngồi) từ ngày p_from trở đi không.
 CREATE FUNCTION hr.position_taken_from(p_position uuid, p_from timestamptz) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT EXISTS (SELECT 1 FROM core.assignment a
                    WHERE a.position_id = p_position AND a.valid_period && tstzrange(p_from, NULL))
 $$;
 
--- Đầu ngày (giờ Việt Nam): bổ nhiệm có hiệu lực theo ngày (ADR #29).
 CREATE FUNCTION hr.day_start(p_day date) RETURNS timestamptz
 LANGUAGE sql IMMUTABLE AS $$ SELECT (p_day::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh') $$;
 
@@ -461,8 +420,6 @@ BEGIN
     PERFORM wf.cancel_entity('hr.onboarding_request', p_id, p_reason, p_at, p_actor);
 END $$;
 
--- Duyệt xong: tạo người (mã nhân viên NV-<năm>-<số>), bổ nhiệm giữ chính từ ngày vào làm, đưa tài khoản
--- vào hàng đợi của dịch vụ hr-account (kênh hr_account).
 CREATE FUNCTION hr.complete_onboarding(p_id uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -495,7 +452,6 @@ BEGIN
     END IF;
 END $$;
 
--- Thử tạo lại tài khoản sau khi sửa nguyên nhân lỗi (ví dụ đổi tên đăng nhập bị trùng).
 CREATE FUNCTION hr.retry_onboarding_account(p_id uuid, p_actor uuid, p_username text DEFAULT NULL) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE

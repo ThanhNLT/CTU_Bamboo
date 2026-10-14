@@ -2,14 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Đề nghị mua sắm với nhà cung cấp gõ tự do (chưa có trong danh mục), người quản lý dữ liệu chủ thêm vào danh mục;
-// Ổ đĩa: tải lên từ thư mục gốc bằng cách chọn chứng từ, dung lượng hiện hạn mức và phần còn khả dụng.
-// Tài khoản cdo (Giám đốc chuyển đổi số) vừa lập đề nghị, vừa giữ vai trò Quản lý dữ liệu chủ.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now();
 const TITLE = `E2E NCC mới ${STAMP}`;
@@ -18,7 +12,6 @@ const TAX = `0${String(STAMP).slice(-9)}`;
 const CODE = `NCC-E2E-${String(STAMP).slice(-6)}`;
 const FILE = `bao-gia-ncc-${STAMP}.txt`;
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -28,11 +21,9 @@ async function login(page: Page, username: string) {
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("CDO lập đề nghị với nhà cung cấp mới, thêm vào danh mục, tải báo giá từ Ổ đĩa", async ({ page }) => {
   await login(page, "cdo");
 
-  // Lập đề nghị: gõ nhà cung cấp chưa có, chọn "Dùng nhà cung cấp mới", ghi mã số thuế; nhóm hàng gõ để tìm.
   await page.goto("/p/documents/create");
   await page.getByLabel("Tiêu đề").fill(TITLE);
   await page.getByLabel("Nhà cung cấp đề xuất").fill(SUPPLIER);
@@ -58,7 +49,6 @@ test("CDO lập đề nghị với nhà cung cấp mới, thêm vào danh mục,
         .textContent()
     )?.trim() ?? "";
 
-  // Danh mục: nhà cung cấp đề xuất chờ thêm; đặt mã rồi thêm vào danh mục.
   await page.goto("/admin/catalog?tab=partner");
   const proposed = page.getByRole("region", { name: "Nhà cung cấp đề xuất" });
   await proposed.getByLabel(`Mã nhà cung cấp cho ${SUPPLIER}`).fill(CODE);
@@ -70,7 +60,6 @@ test("CDO lập đề nghị với nhà cung cấp mới, thêm vào danh mục,
   await expect(page.getByText(`Đã thêm “${SUPPLIER}” vào danh mục nhà cung cấp.`)).toBeVisible();
   await expect(page.getByRole("cell", { name: CODE })).toBeVisible();
 
-  // Ổ đĩa ở thư mục gốc: Tải lên → chọn chứng từ → chọn tệp.
   await page.goto("/h/drive");
   await expect(page.getByText(/Còn khả dụng/)).toBeVisible();
   await page.getByRole("button", { name: "Tải lên", exact: true }).click();
@@ -85,7 +74,6 @@ test("CDO lập đề nghị với nhà cung cấp mới, thêm vào danh mục,
   await expect(page.getByLabel("Tiến trình tải lên").getByText("Sạch · đã lưu")).toBeVisible();
   await expect(page.getByRole("row", { name: new RegExp(FILE) })).toBeVisible();
 
-  // Đề nghị giờ dùng nhà cung cấp trong danh mục.
   await page.goto("/p/documents");
   await page.getByPlaceholder("Tìm theo số hoặc tiêu đề").fill(docNo);
   await page.getByPlaceholder("Tìm theo số hoặc tiêu đề").press("Enter");

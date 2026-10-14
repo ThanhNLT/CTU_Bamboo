@@ -2,25 +2,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tìm kiếm toàn văn (ADR #36): CSDL → search-sync → Meilisearch, Tika trích chữ tệp đính kèm,
-Action search_documents lọc lại theo quyền xem trong CSDL."""
-
-# ===== Thư viện chuẩn =====
 import io
 import zipfile
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-import pytest  # pytest
-from psycopg.rows import dict_row  # psycopg
-from test_tep_dinh_kem import CONFIRM, upload  # test_tep_dinh_kem
+import psycopg
+import pytest
+from psycopg.rows import dict_row
+from test_tep_dinh_kem import CONFIRM, upload
 
-# ===== Module nội bộ =====
 from app import search, search_sync
 from app.common import ActionError
 from conftest import ids, pr
 
-# ===== Hằng số & cấu hình =====
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 SEARCH = """query($q: String!, $kind: SearchKind) {
   search_documents(query: $q, kind: $kind) {
@@ -28,9 +21,7 @@ SEARCH = """query($q: String!, $kind: SearchKind) {
     purchase_request { doc_no title } attachment { file_name } } }"""
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def docx(text: str) -> bytes:
-    """Tệp DOCX tối giản một đoạn văn."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as z:
         z.writestr(
@@ -54,7 +45,6 @@ def docx(text: str) -> bytes:
 
 
 def sync(settings) -> None:
-    """Đồng bộ hết các tài liệu đang được đánh dấu (thay cho dịch vụ search-sync)."""
     meili = search.Meili(settings.meili_url, settings.meili_indexer_key)
     with psycopg.connect(settings.database_url, row_factory=dict_row) as conn:
         while search_sync.run_once(conn, meili, settings, limit=200):
@@ -63,9 +53,6 @@ def sync(settings) -> None:
             "SELECT entity_type, entity_id, last_error FROM search.pending WHERE dirty AND last_error IS NOT NULL"
         ).fetchall()
     assert not failed, failed
-
-
-# ===== Không cần dịch vụ ngoài =====
 
 
 def test_doan_trich_an_toan():
@@ -82,7 +69,6 @@ def test_doan_trich_an_toan():
 
 
 def test_khoa_suy_ra_tu_khoa_chu():
-    # Giá trị Meilisearch v1 tự tính cho uid này với khóa chủ trên (đã đối chiếu với API /keys).
     assert (
         search.derive_key("dev-meili-master-key-0123456789", "6062abda-a5aa-4414-ac91-ecd7944c0f8d")
         == "adb6f2d0dfcee69cdad21fa1aba3f850feaa0340529677b849ab7dce1a93536c"
@@ -104,9 +90,6 @@ def test_tu_khoa_khong_hop_le():
         assert exc.value.code == code
 
 
-# ===== Meilisearch, Tika, Hasura thật =====
-
-
 def test_tim_de_nghi_va_noi_dung_tep(hasura, conn, s3, search_settings):
     i = ids(conn, "TDX", "c", "tp_mh_dt", "a")
     pr_id = pr(conn, "tim_kiem_hasura", "c", "P_NV_MH_DT", 0, submit=False)
@@ -123,13 +106,11 @@ def test_tim_de_nghi_va_noi_dung_tep(hasura, conn, s3, search_settings):
     conn.execute("SELECT proc.submit_purchase_request(%s, %s)", (pr_id, i["c"]))
     sync(search_settings)
 
-    # Gõ không dấu vẫn tìm được; chữ khớp trong dòng hàng được đánh dấu.
     hits = hasura(SEARCH, {"q": "tu dien gom"}, person=i["c"], tenant=i["TDX"])["data"]["search_documents"]
     mine = [h for h in hits if h["entity_id"] == pr_id]
     assert mine and mine[0]["kind"] == "purchase_request" and mine[0]["matched_field"] == "items", hits
     assert "<mark>" in mine[0]["snippet"] and mine[0]["purchase_request"]["title"] == "Linh kiện dây chuyền SMT"
 
-    # Nội dung tệp (Tika trích chữ từ DOCX).
     hits = hasura(SEARCH, {"q": "wafer silicon", "kind": "attachment"}, person=i["tp_mh_dt"], tenant=i["TDX"])["data"][
         "search_documents"
     ]
@@ -137,12 +118,10 @@ def test_tim_de_nghi_va_noi_dung_tep(hasura, conn, s3, search_settings):
     assert hits[0]["matched_field"] == "content" and hits[0]["attachment"]["file_name"] == "hop-dong.docx"
     assert hits[0]["purchase_request"]["title"] == "Linh kiện dây chuyền SMT"
 
-    # Người không xem được chứng từ thì không thấy cả đề nghị lẫn tệp, dù chỉ mục có tài liệu.
     for q in ("tu dien gom", "wafer silicon"):
         hits = hasura(SEARCH, {"q": q}, person=i["a"], tenant=i["TDX"])["data"]["search_documents"]
         assert pr_id not in {h["entity_id"] for h in hits}, (q, hits)
 
-    # Sửa tiêu đề (đề nghị bị trả về) → chỉ mục cập nhật; xóa tệp → gỡ khỏi chỉ mục.
     conn.execute(
         "SELECT wf.act((SELECT t.id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id "
         "WHERE s.entity_id = %s AND t.status = 'OPEN'), %s, 'RETURN', 'Bổ sung báo giá')",

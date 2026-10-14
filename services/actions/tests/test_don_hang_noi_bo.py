@@ -2,18 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Đơn hàng nội bộ (ADR #42): Action xác nhận kèm lô, từ chối, hủy; quyền xem qua Hasura thật."""
+import psycopg
+import pytest
+from fastapi.testclient import TestClient
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-import pytest  # pytest
-from fastapi.testclient import TestClient  # FastAPI
-
-# ===== Module nội bộ =====
 from app import config, main
 from conftest import SETTINGS, ids, open_task
 
-# ===== Hằng số & cấu hình =====
 SETUP = """
 INSERT INTO core.role (tenant_id, code, name)
 SELECT test.id('TDX'), 'BAN_HANG_NOI_BO', 'Bán hàng nội bộ'
@@ -36,7 +31,6 @@ WHERE tenant_id = test.id('TDX') AND code = 'IC-PMIC' ON CONFLICT DO NOTHING;
 """
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def setup(database):
     with psycopg.connect(database, autocommit=True) as c:
@@ -54,7 +48,6 @@ def client(database):
         yield c
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def call(client, name, args, person, tenant):
     payload = {
         "action": {"name": name},
@@ -65,7 +58,6 @@ def call(client, name, args, person, tenant):
 
 
 def ordered(conn, setup, title: str, quantity: int = 100) -> tuple[str, str]:
-    """Chị C (Mua hàng Điện thoại X) đặt PMIC của Chip X, trưởng phòng duyệt → (id đơn nội bộ, id dòng)."""
     i = ids(conn, "TDX", "c", "tp_mh_dt")
     pr_id = conn.execute(
         """INSERT INTO proc.purchase_request (tenant_id, title, requester_id, requester_position_id,
@@ -89,7 +81,6 @@ def ordered(conn, setup, title: str, quantity: int = 100) -> tuple[str, str]:
     return str(row["id"]), str(row["line_id"])
 
 
-# ===== Kiểm thử =====
 def test_xac_nhan_kem_lo(client, conn, setup):
     i = ids(conn, "TDX", "BVX", "a", "c")
     order, line = ordered(conn, setup, "ic xác nhận")
@@ -101,7 +92,6 @@ def test_xac_nhan_kem_lo(client, conn, setup):
     lots = [{"line_id": line, "lot_id": setup["lot"]}]
     resp = call(client, "confirm_ic_order", {"order_id": order, "lots": lots * 2}, i["a"], i["TDX"])
     assert resp.status_code == 400 and "một lô" in resp.json()["message"]
-    # Phiên tenant khác không thấy đơn.
     resp = call(client, "confirm_ic_order", {"order_id": order, "lots": lots}, i["a"], i["BVX"])
     assert resp.status_code == 404
 
@@ -115,7 +105,6 @@ def test_xac_nhan_kem_lo(client, conn, setup):
         (body["purchase_order_id"],),
     ).fetchone()
     assert po["doc_no"].startswith("PO-") and str(po["lot_id"]) == setup["lot"]
-    # Nhật ký kiểm toán ghi người xác nhận (phiên Hasura gắn vào giao dịch).
     actor = conn.execute(
         """SELECT actor_id FROM audit.log WHERE table_name = 'ic.ic_order' AND row_id = %s
                             ORDER BY id DESC LIMIT 1""",
@@ -140,7 +129,6 @@ def test_tu_choi_va_huy(client, conn, setup):
     }
 
     order, _ = ordered(conn, setup, "ic hủy")
-    # Người không xem được đơn: như không có đơn.
     resp = call(client, "cancel_ic_order", {"order_id": order, "reason": "x"}, i["gd_gd"], i["TDX"])
     assert resp.status_code == 404
     resp = call(client, "cancel_ic_order", {"order_id": order, "reason": "x"}, i["a"], i["TDX"])
@@ -170,7 +158,6 @@ def test_qua_hasura(hasura, conn, setup):
         confirm, {"id": order, "lots": [{"line_id": line, "lot_id": setup["lot"]}]}, person=i["a"], tenant=i["TDX"]
     )
     assert data["data"]["confirm_ic_order"]["status"] == "CONFIRMED", data
-    # Bên bán không xem đơn mua của bên mua; bên mua xem được.
     assert data["data"]["confirm_ic_order"]["purchase_order"] is None
     po = """query($id: uuid!) { proc_purchase_order(where: {ic_order_id: {_eq: $id}}) {
               doc_no purchase_order_items { lot { lot_no } } } }"""

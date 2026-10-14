@@ -2,15 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { Dot, type Tone } from "../../../components/ui";
 import { formatInt } from "../utils";
 
-// ===== Kiểu dữ liệu =====
 export type LedgerStat = { key: string; label: string; value: number; note: string; tone?: Tone };
 
-// ===== Component =====
-/** Hàng 4 thẻ thống kê. `tone` thêm chấm màu trước dòng ghi chú. */
 export const LedgerStats = ({ items }: { items: LedgerStat[] }) => (
   <dl className="m-0 grid grid-cols-2 gap-3 lg:grid-cols-4">
     {items.map((s) => (

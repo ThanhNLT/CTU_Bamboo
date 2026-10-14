@@ -4,25 +4,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Tạo database kiểm thử sạch, chạy migration, rồi chạy từng file db/tests/bms_*.sql
-# trong một transaction tự rollback.
-#   scripts/db/test.sh [mẫu tên file, ví dụ bms_030]
-# Công cụ: psql
-
-# ===== Thiết lập =====
 set -euo pipefail
 export PGOPTIONS="${PGOPTIONS:--c client_min_messages=warning}"
 
-# ===== Tham số =====
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 DB="${TEST_DB:-bms_test}"
 FILTER="${1:-}"
 
-# ===== Tạo CSDL kiểm thử sạch =====
 psql -X -q -d postgres -c "DROP DATABASE IF EXISTS $DB" -c "CREATE DATABASE $DB"
 "$ROOT/scripts/db/migrate.sh" "$DB" "$ROOT/db/migrations/bms" > /dev/null
 psql -X -q -v ON_ERROR_STOP=1 -d "$DB" -1 -f "$ROOT/db/tests/helpers.sql"
-# Tài khoản ứng dụng (ADR #35): máy chưa chạy job migrate thì tạo role với mật khẩu dev.
 if [[ -z "$(psql -X -At -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = 'bamboo_lakehouse'")" ]]; then
     psql -X -q -v ON_ERROR_STOP=1 -d postgres -f "$ROOT/db/roles/roles.sql" -v hasura_password=hasura-db-dev \
         -v actions_password=actions-db-dev -v keycloak_password=keycloak-db-dev -v flowable_password=flowable-db-dev \
@@ -30,7 +21,6 @@ if [[ -z "$(psql -X -At -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = '
 fi
 psql -X -q -v ON_ERROR_STOP=1 -d "$DB" -f "$ROOT/db/roles/grants.sql"
 
-# ===== Chạy từng tệp kiểm thử =====
 pass=0
 fail=0
 for file in "$ROOT"/db/tests/bms_*.sql; do

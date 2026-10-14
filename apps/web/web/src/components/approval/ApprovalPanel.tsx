@@ -2,24 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Chuỗi duyệt của lần gửi gần nhất và lịch sử duyệt, dùng cho mọi loại chứng từ (wf.approval_step,
-// wf.approval_history là bảng đa hình).
+import { Card, Space, Steps, Tag, Timeline, Typography } from "antd";
 
-// ===== Thư viện =====
-import { Card, Space, Steps, Tag, Timeline, Typography } from "antd"; // Ant Design
-
-// ===== Module nội bộ =====
 import type { ApprovalHistory, ApprovalStep } from "../document/types";
 import { ESCALATION_REASON, formatDate, HISTORY_EVENT, STEP_STATUS } from "../../utils/format";
 
-// ===== Hàm tiện ích =====
 const stepState = (s: string): "wait" | "process" | "finish" | "error" =>
   s === "ACTIVE" ? "process" : s === "APPROVED" ? "finish" : s === "REJECTED" || s === "RETURNED" ? "error" : "wait";
 
-// ===== Kiểu dữ liệu =====
 type Props = { round: number; steps: ApprovalStep[]; history: ApprovalHistory[]; emptyHint: string };
 
-// ===== Component =====
 export const ApprovalPanel = ({ round, steps, history, emptyHint }: Props) => {
   const current = steps.filter((s) => s.round === round);
   return (

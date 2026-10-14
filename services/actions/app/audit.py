@@ -2,25 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho nhật ký kiểm toán (ADR #33, #43): đối soát chuỗi hash, xem dữ liệu trước/sau đã che.
+import psycopg
 
-Người có quyền audit.read đọc được thay đổi của mọi bảng nghiệp vụ trong tenant, kể cả hồ sơ ứng viên. Họ cần
-biết ai sửa gì, khi nào, không cần số điện thoại hay CCCD của người khác: Hasura không trả old_data/new_data,
-giao diện lấy qua Action này, đã che bằng pii_guard (Presidio) và theo tên cột.
-"""
-
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-
-# ===== Module nội bộ =====
 from .common import ActionError, Context, session_identity
 from .pii import mask_tail
 from .pii_guard import LABELS, guard
 
-# ===== Hằng số & cấu hình =====
 MAX_IDS = 100
 CIPHERTEXT = "[bản mã]"
-# Theo tên cột: giá trị có cấu trúc mà bộ nhận diện văn bản không bắt được (ngày sinh), hoặc chuỗi lạ vẫn phải che.
 KEY_LABELS = {
     "date_of_birth": "Ngày sinh",
     "phone": "Số điện thoại",
@@ -30,7 +19,6 @@ KEY_LABELS = {
 }
 
 
-# ===== Hàm =====
 def _require_reader(conn: psycopg.Connection, session: dict) -> str:
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)
@@ -41,7 +29,6 @@ def _require_reader(conn: psycopg.Connection, session: dict) -> str:
     return tenant
 
 
-# ===== Hasura Action =====
 def verify_audit_chain(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
     tenant = _require_reader(conn, session)
     problems = conn.execute("SELECT seq, log_id, problem FROM audit.verify_chain(%s)", (tenant,)).fetchall()
@@ -59,9 +46,7 @@ def verify_audit_chain(conn: psycopg.Connection, session: dict, _args: dict, _ct
     }
 
 
-# ===== Hàm =====
 def _mask_column(key: str, value, found: set[str]):
-    """Che theo tên cột trước, phần còn lại qua Presidio."""
     if value is None or value == "":
         return value
     if key.endswith("_enc"):
@@ -85,9 +70,7 @@ def mask_row(data: dict | None) -> tuple[dict | None, set[str]]:
     return {k: _mask_column(k, v, found) for k, v in data.items()}, found
 
 
-# ===== Hasura Action =====
 def audit_log_detail(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> list[dict]:
-    """Dữ liệu trước/sau của các dòng nhật ký (cùng tenant), đã che dữ liệu cá nhân."""
     tenant = _require_reader(conn, session)
     ids = list(dict.fromkeys(args.get("log_ids") or []))
     if len(ids) > MAX_IDS:
@@ -113,7 +96,6 @@ def audit_log_detail(conn: psycopg.Connection, session: dict, args: dict, _ctx: 
     return result
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {
     "verify_audit_chain": verify_audit_chain,
     "audit_log_detail": audit_log_detail,

@@ -2,21 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ArrowRight, Paperclip, Square, X } from "lucide-react"; // Lucide React
-import { useEffect, useRef } from "react"; // React
+import { ArrowRight, Paperclip, Square, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 
-// ===== Hằng số =====
 const MAX_HEIGHT = 140;
 
-// ===== Component =====
-/**
- * Ô nhập: Enter để gửi, Shift+Enter xuống dòng. Bỏ qua Enter khi đang gõ bộ gõ tiếng Việt (IME) chưa xong chữ.
- * Khi trợ lý đang trả lời, nút gửi thành nút dừng.
- */
 export const ChatInput = ({
   value,
   onChange,
@@ -39,11 +31,9 @@ export const ChatInput = ({
   const ref = useRef<HTMLTextAreaElement>(null);
   const canSend = !responding && (value.trim().length > 0 || files.length > 0);
 
-  // Tự giãn chiều cao theo nội dung (tối đa ~5 dòng); gửi xong thì thu về một dòng.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // Ô trống: giữ một dòng (đừng để placeholder dài trên màn hình hẹp kéo giãn ô).
     if (!value) {
       el.style.height = "";
       return;

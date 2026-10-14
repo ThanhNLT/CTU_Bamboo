@@ -2,17 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// KPI ghim Trang chủ (ADR #50): định nghĩa và chuỗi giá trị KPI của tenant (kpi.definition, kpi.value), KPI người
-// dùng đã ghim (kpi.pin, chỉ của chính mình). Ghi chú dưới số so với kỳ trước, tô màu theo hướng tốt và ngưỡng.
+import { useCallback, useEffect, useState } from "react";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { PinnedKpi, Tone } from "./types";
 
-// ===== Truy vấn GraphQL =====
 const KPIS = `query Kpis {
   kpi_definition(order_by: {label: asc}) {
     key label unit good_direction threshold grain definition
@@ -26,7 +20,6 @@ const SAVE = `mutation SavePins($pins: [kpi_pin_insert_input!]!) {
   insert_kpi_pin(objects: $pins) { affected_rows }
 }`;
 
-// ===== Kiểu dữ liệu =====
 type DefRow = {
   key: string;
   label: string;
@@ -40,18 +33,15 @@ type DefRow = {
 
 export type KpiOption = { key: string; label: string; definition: string; grain: DefRow["grain"] };
 
-// ===== Hằng số =====
 export const MAX_PINS = 6;
 const PERIOD: Record<DefRow["grain"], string> = { hour: "giờ", day: "ngày", week: "tuần", month: "tháng" };
 
-// ===== Hàm tiện ích =====
 const num = (v: number, unit: string) =>
   new Intl.NumberFormat("vi-VN", { maximumFractionDigits: unit === "%" || unit === "tỷ đồng" ? 1 : 0 }).format(v);
 
 const withUnit = (v: number, unit: string) =>
   unit === "%" ? `${num(v, unit)}%` : unit === "hạt/m³" ? `${num(v, unit)}/m³` : `${num(v, unit)} ${unit}`;
 
-/** KPI → thẻ trên Trang chủ: giá trị kỳ mới nhất, chênh lệch với kỳ trước, chuỗi tối đa 12 kỳ. */
 export const toPinned = (d: DefRow): PinnedKpi | null => {
   const series = [...d.values].reverse().slice(-12);
   const last = series.at(-1);
@@ -79,7 +69,6 @@ export const toPinned = (d: DefRow): PinnedKpi | null => {
   };
 };
 
-// ===== Hook =====
 export const useKpis = () => {
   const [state, setState] = useState<{
     pinned: PinnedKpi[];
@@ -114,7 +103,6 @@ export const useKpis = () => {
     void load();
   }, [load]);
 
-  /** Lưu danh sách ghim theo thứ tự chọn (thay toàn bộ ghim cũ trong một giao dịch). */
   const save = async (keys: string[]) => {
     await request(SAVE, { pins: keys.slice(0, MAX_PINS).map((k, i) => ({ kpi_key: k, position: i + 1 })) });
     await load();

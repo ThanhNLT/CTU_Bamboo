@@ -2,9 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 002: Vai trò, quyền, nhóm, ủy quyền; quyền hiệu lực của từng người.
--- Quyền gắn với vị trí (ADR #5); gán thẳng cho người chỉ là ngoại lệ có thời hạn.
-
 CREATE TABLE core.permission (
     code         text PRIMARY KEY,
     description  text NOT NULL
@@ -55,8 +52,6 @@ CREATE TABLE core.team_member (
 CREATE INDEX ON core.team_member (tenant_id, team_id);
 CREATE INDEX ON core.team_member (tenant_id, person_id);
 
--- Gán vai trò cho đúng một đối tượng: vị trí, đơn vị, nhóm, hoặc (ngoại lệ) người.
--- Phạm vi neo tại scope_unit_id; nếu bỏ trống thì neo tại đơn vị của vị trí/đơn vị được gán.
 CREATE TABLE core.role_grant (
     tenant_id      uuid NOT NULL REFERENCES core.tenant,
     id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -89,7 +84,6 @@ CREATE INDEX ON core.role_grant (tenant_id, org_unit_id);
 CREATE INDEX ON core.role_grant (tenant_id, team_id);
 CREATE INDEX ON core.role_grant (tenant_id, scope_unit_id);
 
--- Gán thẳng cho người chỉ dành cho người không nằm trong cây tổ chức (ghi chú ADR #5).
 CREATE FUNCTION core.role_grant_check() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -106,17 +100,13 @@ END $$;
 CREATE TRIGGER role_grant_check BEFORE INSERT OR UPDATE ON core.role_grant
 FOR EACH ROW EXECUTE FUNCTION core.role_grant_check();
 
--- ---------------------------------------------------------------------------
--- Ủy quyền: người giữ vị trí tạm giao một phần quyền của vị trí khi vắng mặt
--- ---------------------------------------------------------------------------
-
 CREATE TABLE core.delegation (
     tenant_id         uuid NOT NULL REFERENCES core.tenant,
     id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     delegator_id      uuid NOT NULL,
     delegate_id       uuid NOT NULL,
     position_id       uuid NOT NULL,
-    permission_codes  text[],            -- NULL: toàn bộ quyền của vị trí
+    permission_codes  text[],
     valid_period      tstzrange NOT NULL,
     reason            text,
     created_at        timestamptz NOT NULL DEFAULT now(),
@@ -145,8 +135,6 @@ BEGIN
         RAISE EXCEPTION 'Người ủy quyền phải giữ vị trí trong suốt thời gian ủy quyền';
     END IF;
 
-    -- Người làm hợp đồng không được duyệt (ADR #29): người nhận ủy quyền phải có
-    -- bổ nhiệm không phải hợp đồng ở cùng công ty với vị trí được ủy quyền.
     SELECT core.company_of(p.org_unit_id) INTO v_company FROM core.position p WHERE p.id = NEW.position_id;
     IF NOT EXISTS (
         SELECT 1 FROM core.assignment a
@@ -164,13 +152,8 @@ END $$;
 CREATE TRIGGER delegation_check BEFORE INSERT OR UPDATE ON core.delegation
 FOR EACH ROW EXECUTE FUNCTION core.delegation_check();
 
--- ---------------------------------------------------------------------------
--- Quyền hiệu lực: mỗi dòng là một quyền của một người kèm phạm vi và thời hạn
--- ---------------------------------------------------------------------------
-
 CREATE VIEW core.v_permission_grant AS
 WITH position_grant AS (
-    -- Vai trò gán cho vị trí, hoặc cho đơn vị chứa vị trí.
     SELECT p.tenant_id, p.id AS position_id, g.role_id, g.scope,
            coalesce(g.scope_unit_id, g.org_unit_id, p.org_unit_id) AS anchor_unit_id,
            g.valid_period * p.valid_period AS valid_period
@@ -213,7 +196,6 @@ FROM person_grant pg
 JOIN core.role_permission rp ON rp.tenant_id = pg.tenant_id AND rp.role_id = pg.role_id
 WHERE pg.permission_filter IS NULL OR rp.permission_code = ANY (pg.permission_filter);
 
--- Người có quyền trên đơn vị tại thời điểm p_at không. Phạm vi SELF kiểm tra ở tầng nghiệp vụ.
 CREATE FUNCTION core.has_permission(p_person uuid, p_permission text, p_unit uuid,
                                     p_at timestamptz DEFAULT now())
 RETURNS boolean

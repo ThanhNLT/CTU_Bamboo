@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Tag } from "antd"; // Ant Design
+import { Tag } from "antd";
 
-// ===== Module nội bộ =====
 import type { ProcessVersion, SandboxRun } from "../types";
 
-// ===== Hằng số =====
 const STATUS = {
   COMPLETED: { color: "green", label: "Đạt – đi tới kết thúc" },
   STOPPED: { color: "orange", label: "Dừng" },
@@ -24,8 +21,6 @@ const STEP_TYPE: Record<string, string> = {
   inclusiveGateway: "Rẽ nhánh",
 };
 
-// ===== Component =====
-/** Tab "Phiên bản & chạy thử": các phiên bản đã phát hành và 10 lần chạy thử gần nhất (từng bước). */
 export const RunsTab = ({ runs, versions }: { runs: SandboxRun[]; versions: ProcessVersion[] }) => (
   <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
     <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Lần chạy thử">

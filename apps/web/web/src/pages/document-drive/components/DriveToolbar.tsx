@@ -2,16 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Segmented, Select } from "antd"; // Ant Design
+import { Segmented, Select } from "antd";
 
-// ===== Module nội bộ =====
 import type { SortKey } from "../types";
 
-// ===== Kiểu dữ liệu =====
 export type DriveView = "grid" | "list";
 
-// ===== Hằng số =====
 const VIEW_OPTIONS = [
   { label: "Lưới", value: "grid" },
   { label: "Danh sách", value: "list" },
@@ -23,8 +19,6 @@ const SORT_OPTIONS: Array<{ label: string; value: SortKey }> = [
   { label: "Dung lượng lớn nhất", value: "size" },
 ];
 
-// ===== Component =====
-/** Breadcrumb thư mục + chuyển Lưới/Danh sách + Sắp xếp. */
 export const DriveToolbar = ({
   path,
   onCrumb,
@@ -34,7 +28,6 @@ export const DriveToolbar = ({
   onSortChange,
 }: {
   path: string[];
-  /** Bấm một mục (không phải mục cuối) của đường dẫn để quay lại. */
   onCrumb?: (index: number) => void;
   view: DriveView;
   onViewChange: (v: DriveView) => void;

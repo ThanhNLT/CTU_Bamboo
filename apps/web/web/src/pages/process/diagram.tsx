@@ -2,27 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Sơ đồ quy trình duyệt của một đề nghị (Action process_state): tô sáng bước đang chạy và bước đã
-// qua của lần gửi duyệt gần nhất. Trang tải lười (React.lazy) nên bpmn-js không vào bundle chính.
-// Giấy phép bpmn.io: PHẢI giữ nguyên watermark bpmn.io, không che, không ẩn.
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useGo } from "@refinedev/core";
+import { Alert, Button, Card, Col, Descriptions, Row, Space, Spin, Tag, Typography } from "antd";
+import { ArrowLeftOutlined, ReloadOutlined } from "@ant-design/icons";
+import { useParams } from "react-router";
+import NavigatedViewer from "bpmn-js/lib/NavigatedViewer";
+import "bpmn-js/dist/assets/diagram-js.css";
+import "bpmn-js/dist/assets/bpmn-js.css";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useRef, useState } from "react"; // React
-import { useGo } from "@refinedev/core"; // Refine
-import { Alert, Button, Card, Col, Descriptions, Row, Space, Spin, Tag, Typography } from "antd"; // Ant Design
-import { ArrowLeftOutlined, ReloadOutlined } from "@ant-design/icons"; // Ant Design Icons
-import { useParams } from "react-router"; // React Router
-import NavigatedViewer from "bpmn-js/lib/NavigatedViewer"; // bpmn-js
-import "bpmn-js/dist/assets/diagram-js.css"; // bpmn-js
-import "bpmn-js/dist/assets/bpmn-js.css"; // bpmn-js
-
-// ===== Module nội bộ =====
 import "./diagram.css";
 import { request } from "../../api/client";
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, STEP_STATUS } from "../../utils/format";
 
-// ===== Truy vấn GraphQL =====
 const PROCESS_STATE = `
   query ProcessState($id: uuid!) {
     process_state(request_id: $id) {
@@ -39,7 +32,6 @@ const PROCESS_STATE = `
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type State = {
   round: number;
   status: string;
@@ -70,11 +62,8 @@ type EventBus = {
   ) => void;
 };
 
-// ===== Hằng số =====
-// Nhãn task trong BPMN là biểu thức Flowable (`Duyệt bước ${stepIndex + 1}/${stepCount}`): thay bằng số bước thật.
 const STEP_LABEL = /\$\{stepIndex \+ 1\}\/\$\{stepCount\}/g;
 
-// ===== Hàm tiện ích =====
 const stepLabel = (steps: Step[]) => {
   const active = steps.find((x) => x.status === "ACTIVE");
   if (active) return `${active.step_order}/${steps.length}`;
@@ -84,7 +73,6 @@ const stepLabel = (steps: Step[]) => {
 const state = (s: State, id: string) =>
   s.active_activity_ids.includes(id) ? "Đang chạy" : s.completed_activity_ids.includes(id) ? "Đã qua" : "Chưa tới";
 
-// ===== Component =====
 export const ProcessDiagram = () => {
   const { id } = useParams();
   const go = useGo();

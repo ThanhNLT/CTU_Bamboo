@@ -2,21 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dung lượng tệp của cả tenant (Action drive_usage): đã dùng, hạn mức, còn lại.
+import { useCallback, useEffect, useState } from "react";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 
-// ===== Kiểu dữ liệu =====
 export type DriveUsage = { quotaBytes: number; usedBytes: number; availableBytes: number };
 
-// ===== Truy vấn GraphQL =====
 const USAGE = `query DriveUsage { drive_usage { quota_bytes used_bytes available_bytes } }`;
 
-// ===== Hook =====
 export const useDriveUsage = () => {
   const [data, setData] = useState<DriveUsage>();
   const reload = useCallback(

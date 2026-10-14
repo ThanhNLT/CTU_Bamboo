@@ -2,18 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Quyền của nhóm bamboo_app (Hasura, actions) trên CSDL nghiệp vụ hiện tại (ADR #35). Chạy sau mỗi
--- lần migrate nên bảng, schema mới tự được cấp; chạy lại bao nhiêu lần cũng được.
---
--- Cấp: đọc/ghi bảng, dùng sequence, gọi hàm trong mọi schema nghiệp vụ. Không cấp: tạo hay sửa
--- cấu trúc (không phải chủ sở hữu), TRUNCATE, REFERENCES, TRIGGER, bảng public.schema_migration.
--- Nhật ký kiểm toán chỉ được đọc: trigger audit.log_change chạy bằng quyền chủ sở hữu
--- (SECURITY DEFINER, migration 010), nên ứng dụng không tự ghi, sửa hay xóa được chuỗi hash.
-
--- ---------------------------------------------------------------------------
--- Cấp quyền cho bamboo_app
--- ---------------------------------------------------------------------------
-
 DO $$
 DECLARE
     s text;
@@ -39,7 +27,6 @@ BEGIN
         END IF;
     END LOOP;
 
-    -- Debezium (ADR #38): đọc các schema trong publication bms_cdc (chụp ảnh ban đầu) và ghi nhịp tim.
     IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'bamboo_cdc') THEN
         EXECUTE format('GRANT CONNECT ON DATABASE %I TO bamboo_cdc', current_database());
         FOR s IN

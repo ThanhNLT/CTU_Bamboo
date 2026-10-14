@@ -2,16 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ListChecks, Plus } from "lucide-react"; // Lucide React
-import { Link } from "react-router"; // React Router
+import { ListChecks, Plus } from "lucide-react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { NavGate } from "../../../components/layout/NavGate";
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
-// ===== Component =====
-/** Đầu trang. "Nhật ký kiểm toán" chỉ hiện với người có quyền audit.read. */
 export const AiAgentsHeader = ({ onRegister }: { onRegister: () => void }) => (
   <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">

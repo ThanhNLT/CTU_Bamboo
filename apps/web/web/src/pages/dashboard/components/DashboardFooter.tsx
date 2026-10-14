@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Hằng số =====
-// Đặt VITE_SOURCE_URL (đường dẫn kho mã nguồn) trong .env để liên kết "Mã nguồn" trỏ đúng chỗ.
 const SOURCE_URL: string | undefined = import.meta.env.VITE_SOURCE_URL;
 
-// ===== Component =====
 export const DashboardFooter = () => (
   <footer className="flex flex-wrap items-center gap-x-5 gap-y-1 pt-1 text-[11.5px] text-muted">
     <span>BAMBOO v0.x · Apache-2.0</span>

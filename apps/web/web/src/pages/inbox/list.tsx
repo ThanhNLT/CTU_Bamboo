@@ -2,20 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Hộp việc: việc duyệt của mình và việc nhận qua ủy quyền (wf.v_inbox), tự cập nhật (ADR #20).
+import { useState } from "react";
+import { List, useTable } from "@refinedev/antd";
+import { useGo, useInvalidate, type BaseRecord } from "@refinedev/core";
+import { Button, Space, Table, Tag, Typography } from "antd";
+import gql from "graphql-tag";
 
-// ===== Thư viện =====
-import { useState } from "react"; // React
-import { List, useTable } from "@refinedev/antd"; // Refine Ant Design
-import { useGo, useInvalidate, type BaseRecord } from "@refinedev/core"; // Refine
-import { Button, Space, Table, Tag, Typography } from "antd"; // Ant Design
-import gql from "graphql-tag"; // graphql-tag
-
-// ===== Module nội bộ =====
 import { ActModal } from "../../components/approval/ActModal";
 import { ESCALATION_REASON, formatDate, formatMoney } from "../../utils/format";
 
-// ===== Truy vấn GraphQL =====
 const INBOX = gql`
   query Inbox($limit: Int, $offset: Int, $order_by: [wf_v_inbox_order_by!], $where: wf_v_inbox_bool_exp) {
     wf_v_inbox(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -76,7 +71,6 @@ const INBOX = gql`
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Row = BaseRecord & {
   task_id: string;
   via_delegation: boolean;
@@ -109,8 +103,6 @@ type Row = BaseRecord & {
   } | null;
 };
 
-// ===== Hàm tiện ích =====
-// Hộp việc có nhiều loại chứng từ: mỗi việc hiện số, tiêu đề, người lập, số tiền và trang chi tiết.
 const describe = (r: Row) => {
   if (r.kb_document) {
     const k = r.kb_document;
@@ -146,7 +138,6 @@ const describe = (r: Row) => {
   };
 };
 
-// ===== Component =====
 export const InboxList = () => {
   const go = useGo();
   const invalidate = useInvalidate();

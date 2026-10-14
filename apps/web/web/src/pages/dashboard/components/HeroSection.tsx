@@ -2,24 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useGo } from "@refinedev/core"; // Refine
-import dayjs from "dayjs"; // Day.js
-import { Plus, ScanLine } from "lucide-react"; // Lucide React
+import { useGo } from "@refinedev/core";
+import dayjs from "dayjs";
+import { Plus, ScanLine } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import type { DashboardUser } from "../types";
 
-// ===== Hàm tiện ích =====
 const greeting = (hour: number) =>
   hour < 11 ? "Chào buổi sáng" : hour < 13 ? "Chào buổi trưa" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
 
-/** "thứ tư, 07/10/2026" → "Thứ Tư, 07/10/2026" */
 const formatToday = (d: dayjs.Dayjs) =>
   d.format("dddd, DD/MM/YYYY").replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
 
-// ===== Component =====
 export const HeroSection = ({ user, now = dayjs() }: { user: DashboardUser; now?: dayjs.Dayjs }) => {
   const go = useGo();
   return (

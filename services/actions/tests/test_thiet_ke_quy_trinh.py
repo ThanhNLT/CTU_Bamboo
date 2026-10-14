@@ -2,21 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Thiết kế quy trình (ADR #47): kiểm tra BPMN, lưu bản nháp, phát hành phiên bản, chạy thử sandbox trên Flowable."""
-
-# ===== Thư viện chuẩn =====
 import pathlib
 import uuid
 
-# ===== Thư viện bên ngoài =====
-import pytest  # pytest
-from fastapi.testclient import TestClient  # FastAPI
+import pytest
+from fastapi.testclient import TestClient
 
-# ===== Module nội bộ =====
 from app import config, main, process_design
 from conftest import SETTINGS, ids
 
-# ===== Hằng số & cấu hình =====
 SAMPLE = (pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml").read_text(
     encoding="utf-8"
 )
@@ -25,9 +19,6 @@ NS = 'xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http:/
 
 def bpmn(body: str) -> str:
     return f'<definitions {NS}><process id="p" isExecutable="true">{body}</process></definitions>'
-
-
-# ===== Không cần dịch vụ ngoài =====
 
 
 def test_kiem_tra_luat():
@@ -66,12 +57,8 @@ def test_ban_sandbox_khong_goi_ma_that():
     assert "scriptTask" not in xml
 
 
-# ===== Flowable + CSDL thật =====
-
-
 @pytest.fixture
 def designer(conn, org):
-    """Giám đốc công ty con của kiểm thử giữ vai trò thiết kế quy trình cả tenant."""
     role = f"TKQT_{uuid.uuid4().hex[:8]}"
     params = {"r": role, "p": org("P_GD")}
     conn.execute("INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), %(r)s, 'Thiết kế')", params)
