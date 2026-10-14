@@ -73,6 +73,7 @@ export const FORM_OPTIONS = `
     mdm_partner(where: {is_active: {_eq: true}}, order_by: {name: asc}) { id code name internal_unit_id }
     mdm_item(where: {is_active: {_eq: true}}, order_by: {code: asc}) { id code name uom category_code ref_price }
     core_catalog_item(where: {catalog: {_eq: "ITEM_CATEGORY"}}, order_by: {name: asc}) { code name }
+    core_v_permission_grant(where: {permission_code: {_eq: "mdm.manage"}}, limit: 1) { permission_code }
   }
 `;
 
