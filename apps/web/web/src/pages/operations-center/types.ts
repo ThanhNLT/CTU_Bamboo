@@ -8,10 +8,6 @@ export type CompanyKey = string;
 
 export type Company = { key: CompanyKey; name: string; short: string; color: string };
 
-/** Công ty trong dữ liệu minh họa của bản đồ cảnh báo. */
-export type SampleCompanyKey = "phone" | "chip" | "appliance" | "hospital";
-export type SampleCompany = { key: SampleCompanyKey; name: string; short: string; color: string };
-
 /** Độ tươi dữ liệu: nóng (gần thời gian thực) · ấm (theo lô) · lạnh. */
 export type Freshness = { tier: "Nóng" | "Ấm" | "Lạnh"; at: string };
 
@@ -28,20 +24,6 @@ export type Kpi = {
 export type DashTab = "overview" | "process" | "production" | "hospital" | "quality";
 
 export type Period = "week" | "month" | "quarter";
-
-export type SiteStatus = "ok" | "warning" | "critical";
-
-export type Site = {
-  id: string;
-  company: SampleCompanyKey;
-  name: string;
-  province: string;
-  /** Vị trí trên bản đồ, % theo chiều ngang/dọc. */
-  x: number;
-  y: number;
-  status: SiteStatus;
-  alert?: string;
-};
 
 export type OverdueRow = {
   code: string;

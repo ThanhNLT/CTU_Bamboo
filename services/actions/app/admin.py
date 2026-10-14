@@ -98,6 +98,28 @@ def _bool(value) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "x", "có", "co", "yes", "y", "đúng"}
 
 
+def _coord(value, label: str, limit: int) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        number = float(str(value).strip().replace(",", "."))
+    except ValueError as exc:
+        raise ActionError(f"{label} phải là số thập phân") from exc
+    if not -limit <= number <= limit:
+        raise ActionError(f"{label} phải trong khoảng ±{limit}")
+    return round(number, 5)
+
+
+def _location(data: dict) -> dict | None:
+    """Tỉnh và tọa độ cơ sở (ADR #49); None khi dữ liệu không nhắc tới (tệp nhập cũ không xóa vị trí đã có)."""
+    if not any(k in data for k in ("province", "lat", "lng")):
+        return None
+    lat, lng = _coord(data.get("lat"), "Vĩ độ", 90), _coord(data.get("lng"), "Kinh độ", 180)
+    if (lat is None) != (lng is None):
+        raise ActionError("Nhập đủ cả vĩ độ và kinh độ (hoặc bỏ trống cả hai)")
+    return {"province": _text(data, "province", "tỉnh / thành", required=False), "lat": lat, "lng": lng}
+
+
 def _date(value, label: str) -> date | None:
     if value in (None, ""):
         return None
@@ -190,6 +212,7 @@ def save_org_unit(a: Admin, data: dict) -> str:
     unit_type = _ref(a, data, "unit_type_id", "unit_type_code", lambda c: _catalog_by_code(a, "UNIT_TYPE", c))
     parent = _ref(a, data, "parent_id", "parent_code", lambda c: _unit_by_code(a, c), required=False)
     legal = _bool(data.get("is_legal_entity"))
+    location = _location(data)
     if unit_id is None and code:
         # Nhập lại cùng mã = cập nhật (tệp nhập chạy lại được).
         row = a.conn.execute(
@@ -200,11 +223,13 @@ def save_org_unit(a: Admin, data: dict) -> str:
         if parent is None:
             raise ActionError("Đơn vị mới phải có đơn vị cha")
         a.require(ORG, parent)
+        loc = location or {"province": None, "lat": None, "lng": None}
         return str(
             a.conn.execute(
-                """INSERT INTO core.org_unit (tenant_id, parent_id, unit_type_id, code, name, is_legal_entity)
-               VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-                (a.tenant, parent, unit_type, code, name, legal),
+                """INSERT INTO core.org_unit (tenant_id, parent_id, unit_type_id, code, name, is_legal_entity,
+                                              province, lat, lng)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                (a.tenant, parent, unit_type, code, name, legal, loc["province"], loc["lat"], loc["lng"]),
             ).fetchone()[0]
         )
     old_parent = a.one(
@@ -224,6 +249,11 @@ def save_org_unit(a: Admin, data: dict) -> str:
                              is_legal_entity = %s WHERE id = %s""",
         (parent, unit_type, code, name, legal, unit_id),
     )
+    if location is not None:
+        a.conn.execute(
+            "UPDATE core.org_unit SET province = %s, lat = %s, lng = %s WHERE id = %s",
+            (location["province"], location["lat"], location["lng"], unit_id),
+        )
     return str(unit_id)
 
 
@@ -746,6 +776,9 @@ COLUMNS: dict[str, list[tuple[str, str, bool, str]]] = {
         ("parent_code", "Mã đơn vị cha", True, "CTY_A"),
         ("unit_type_code", "Mã loại đơn vị", True, "PHONG"),
         ("is_legal_entity", "Là pháp nhân (Có/Không)", False, "Không"),
+        ("province", "Tỉnh / thành của cơ sở", False, "Bắc Ninh"),
+        ("lat", "Vĩ độ", False, "21.18612"),
+        ("lng", "Kinh độ", False, "106.07631"),
     ],
     "position": [
         ("unit_code", "Mã đơn vị", True, "PHONG_KT"),
