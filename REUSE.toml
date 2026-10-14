@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Giấy phép cho các tệp không chứa được chú thích (JSON, ảnh, PDF...) hoặc lấy từ dự án khác
-# (REUSE 3.3, https://reuse.software). Kiểm tra: `uvx --from 'reuse[charset-normalizer]' reuse lint`.
+# (REUSE 3.3, https://reuse.software). Kiểm tra: `uvx --from 'reuse[charset-normalizer]==5.1.1' reuse lint`.
 version = 1
 
 [[annotations]]
