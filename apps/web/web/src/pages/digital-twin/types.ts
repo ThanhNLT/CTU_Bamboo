@@ -16,13 +16,7 @@ export type TimeRange = "1h" | "24h" | "7d";
 /** Ngưỡng vận hành. Chỉ có `max` (hạt bụi), chỉ có `min` (chênh áp) hoặc cả hai (nhiệt độ). */
 export type Threshold = { min?: number; max?: number };
 
-/**
- * Một lần lệch khỏi trạng thái nền (dùng để sinh chuỗi dữ liệu mẫu).
- * Tính bằng phút so với "bây giờ": `from: 30` là 30 phút trước; không có `to` nghĩa là vẫn đang diễn ra.
- */
-export type Excursion = { from: number; to?: number; level: number };
-
-/** Khai báo thuộc tính NGSI-LD của một mô hình (dùng chung cho mọi thực thể cùng loại). */
+/** Khai báo thuộc tính NGSI-LD của một mô hình (bảng iot.model, dùng chung cho mọi thực thể cùng loại). */
 export type MetricDef = {
   /** Tên thuộc tính NGSI-LD, ví dụ `particles05`. */
   key: string;
@@ -35,35 +29,41 @@ export type MetricDef = {
   threshold: Threshold;
   /** Tên ngưỡng trên biểu đồ, ví dụ "Ngưỡng ISO 5". */
   limitLabel?: string;
-  /** Biên độ dao động tự nhiên quanh giá trị nền. */
-  noise: number;
 };
 
-/** Cấu hình chỉ số của một thực thể trong dữ liệu mẫu: giá trị nền, giá trị hiện tại, các lần lệch. */
-export type MetricSeed = {
-  base?: number;
-  /** Giá trị đọc gần nhất (điểm cuối của chuỗi được "ghim" vào giá trị này). */
-  value?: number;
-  excursions?: Excursion[];
-  /** Có sự cố vượt ngưỡng chưa đóng → thẻ chỉ số chuyển "Nguy cấp". */
-  incident?: boolean;
-};
-
-/** Đủ thông tin để dựng lại chuỗi dữ liệu lịch sử (thay cho lời gọi Scorpio Temporal API). */
-export type SignalSpec = {
-  seed: string;
-  base: number;
-  noise: number;
-  decimals: number;
-  excursions: Excursion[];
-  /** Giá trị ghim tại điểm dữ liệu cuối cùng. */
-  pin?: number;
-  /** Số phút không có dữ liệu ở cuối chuỗi (thiết bị mất tín hiệu). */
-  gapMinutes: number;
-};
-
-export type EntitySeed = {
+/** Một lần vượt ngưỡng (iot.incident). */
+export type Incident = {
   id: string;
+  code: string;
+  attribute: string;
+  side: "above" | "below";
+  threshold: number;
+  startedAt: string;
+  endedAt: string | null;
+  minutes: number;
+  peak: number;
+  severity: "critical" | "warning";
+  open: boolean;
+  acknowledgedAt: string | null;
+  acknowledgedBy: string | null;
+  ackNote: string | null;
+};
+
+/** Một chỉ số đã tính sẵn trạng thái, sẵn sàng hiển thị trên thẻ. */
+export type Metric = MetricDef & {
+  value: number;
+  observedAt: string | null;
+  status: MetricStatus;
+  note: string;
+  /** Sự cố nghiêm trọng chưa ghi nhận làm chỉ số "Nguy cấp". */
+  incident?: Incident;
+};
+
+export type TwinEntity = {
+  /** Mã thực thể (CR-02), dùng trên URL `?entity=`. */
+  id: string;
+  /** Khóa iot.entity.id. */
+  uuid: string;
   category: EntityCategory;
   /** Loại thực thể NGSI-LD (CleanRoom, SmtLine, Ventilator...). */
   type: string;
@@ -72,29 +72,19 @@ export type EntitySeed = {
   kind: string;
   name: string;
   site: string;
-  /** Mã địa điểm trên trang Bản đồ (/d/map), để mở thẳng từ bản đồ. */
+  /** Mã cơ sở (iot.site.code), mở thẳng bằng `?site=`. */
   siteId: string;
   province: string;
   /** Hạng / phân loại hiển thị cạnh trạng thái, ví dụ "ISO 5". */
   grade: string;
   /** Mất tín hiệu bao nhiêu phút (không có = đang trực tuyến). */
   offlineMinutes?: number;
-  metrics: Record<string, MetricSeed>;
-};
-
-/** Một chỉ số đã tính sẵn trạng thái, sẵn sàng hiển thị trên thẻ. */
-export type Metric = MetricDef & {
-  value: number;
-  status: MetricStatus;
-  note: string;
-  signal: SignalSpec;
-};
-
-export type TwinEntity = Omit<EntitySeed, "metrics"> & {
+  lastSeenAt: string | null;
   status: EntityStatus;
   /** Dòng phụ trên thẻ danh sách, ví dụ "Nguy cấp · Bắc Ninh". */
   subtitle: string;
   metrics: Metric[];
+  incidents: Incident[];
 };
 
 export type SeriesPoint = { t: number; v: number | null };

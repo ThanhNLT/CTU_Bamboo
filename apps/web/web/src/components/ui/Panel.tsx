@@ -25,7 +25,10 @@ export const Panel = ({
   className?: string;
   bodyClassName?: string;
 }) => (
-  <section className={cn("min-w-0 rounded-2xl border border-line bg-white shadow-card", className)}>
+  <section
+    className={cn("min-w-0 rounded-2xl border border-line bg-white shadow-card", className)}
+    aria-label={typeof title === "string" ? title : undefined}
+  >
     {(title || extra) && (
       <header className="flex min-h-[56px] items-center justify-between gap-3 px-5 pt-3">
         {title && <h2 className="text-[15px] font-semibold text-ink">{title}</h2>}

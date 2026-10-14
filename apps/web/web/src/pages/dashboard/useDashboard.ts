@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Dữ liệu thật cho Trang chủ: việc chờ tôi (wf.v_inbox), chứng từ tôi lập, thông báo của tôi, chức danh.
-// KPI đã ghim chưa có nguồn (Trung tâm điều hành/IOC chưa nối) nên vẫn lấy từ ./mock.
+// KPI đã ghim lấy riêng qua ./useKpis.
 
 // ===== Thư viện =====
 import { useInvalidate, useList } from "@refinedev/core"; // Refine

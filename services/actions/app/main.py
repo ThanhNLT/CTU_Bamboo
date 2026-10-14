@@ -41,6 +41,7 @@ from . import (
     process_design,
     search,
     trino,
+    twin,
 )
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
@@ -168,6 +169,7 @@ HANDLERS = {
     **hr.HANDLERS,
     **ic.HANDLERS,
     **audit.HANDLERS,
+    **twin.HANDLERS,
     "check_pii": pii_guard.check_pii,
     **admin.HANDLERS,
     **lakehouse_query.HANDLERS,

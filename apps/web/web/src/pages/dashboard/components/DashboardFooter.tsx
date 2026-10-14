@@ -22,6 +22,6 @@ export const DashboardFooter = () => (
     ) : (
       <span className="underline underline-offset-2">Mã nguồn</span>
     )}
-    <span>Dữ liệu minh họa</span>
+    <span>Dữ liệu demo</span>
   </footer>
 );
