@@ -103,6 +103,16 @@ class KeycloakUsers:
         ).raise_for_status()
         return existing["id"]
 
+    def disable(self, subject: str) -> bool:
+        found = self.http.get(f"/users/{subject}", headers=self._headers())
+        if found.status_code == 404:
+            return False
+        found.raise_for_status()
+        self.http.put(
+            f"/users/{subject}", json={**found.json(), "enabled": False}, headers=self._headers()
+        ).raise_for_status()
+        return True
+
 
 def provision(conn: psycopg.Connection, users: KeycloakUsers, cipher: PiiCipher, request_id) -> str:
     row = conn.execute(

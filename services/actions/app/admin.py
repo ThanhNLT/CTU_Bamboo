@@ -732,6 +732,93 @@ def create_person_accounts(conn: psycopg.Connection, session: dict, args: dict, 
     return results
 
 
+PERSON_TRACES = {
+    "ic.ic_order": "đơn hàng nội bộ",
+    "proc.purchase_request": "đề nghị mua sắm",
+    "proc.purchase_order": "đơn mua",
+    "wf.approval_step": "bước duyệt",
+    "wf.task": "việc cần duyệt",
+    "wf.approval_history": "lịch sử duyệt",
+    "collab.notification": "thông báo",
+    "collab.comment": "trao đổi",
+    "collab.kb_document": "đề xuất tài liệu",
+    "core.attachment": "tệp đính kèm",
+    "hr.onboarding_request": "hồ sơ tiếp nhận nhân sự",
+    "hr.private_access": "lượt xem dữ liệu cá nhân",
+    "iot.incident": "sự cố thiết bị",
+    "meta.data_issue": "báo lỗi dữ liệu",
+}
+UNTRACKED_TRACES = (
+    ("audit.log", "actor_id", "nhật ký kiểm toán"),
+    ("audit.archive_access", "person_id", "lượt xem kho lưu trữ"),
+    ("audit.ledger_check", "checked_by", "lượt đối soát nhật ký"),
+    ("wf.process_model", "created_by", "thiết kế quy trình"),
+    ("wf.process_model", "updated_by", "thiết kế quy trình"),
+    ("wf.process_version", "published_by", "phiên bản quy trình"),
+    ("wf.sandbox_run", "started_by", "lượt chạy thử quy trình"),
+)
+
+
+def _refuse_delete(what: str) -> ActionError:
+    return ActionError(
+        f"Người này đã có {what} nên không xóa hẳn được (cần giữ cho lịch sử); kết thúc bổ nhiệm để ngừng hoạt động"
+    )
+
+
+def delete_person(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
+    a = Admin(conn, session)
+    a.require(ORG)
+    person_id = args["id"]
+    subject = a.one(
+        "SELECT idp_subject FROM core.person WHERE id = %s AND tenant_id = %s FOR UPDATE",
+        (person_id, a.tenant),
+        "Không tìm thấy người",
+    )[0]
+    if str(person_id) == str(a.person):
+        raise ActionError("Không tự xóa chính mình được")
+    if conn.execute(
+        """SELECT 1 FROM core.assignment
+           WHERE person_id = %s AND (upper_inf(valid_period) OR upper(valid_period) > now()) LIMIT 1""",
+        (person_id,),
+    ).fetchone():
+        raise ActionError("Người này còn giữ vị trí: kết thúc bổ nhiệm trước")
+    for table, column, what in UNTRACKED_TRACES:
+        if conn.execute(
+            f"SELECT 1 FROM {table} WHERE tenant_id = %s AND {column} = %s LIMIT 1", (a.tenant, person_id)
+        ).fetchone():
+            raise _refuse_delete(what)
+    try:
+        with conn.transaction():
+            for table, where in (
+                ("core.assignment", "person_id = %(p)s"),
+                ("core.role_grant", "person_id = %(p)s"),
+                ("core.team_member", "person_id = %(p)s"),
+                ("core.delegation", "delegator_id = %(p)s OR delegate_id = %(p)s"),
+            ):
+                conn.execute(
+                    f"DELETE FROM {table} WHERE tenant_id = %(t)s AND ({where})", {"t": a.tenant, "p": person_id}
+                )
+            conn.execute("DELETE FROM core.person WHERE id = %s", (person_id,))
+    except psycopg.errors.ForeignKeyViolation as exc:
+        table = f"{exc.diag.schema_name}.{exc.diag.table_name}"
+        raise _refuse_delete(PERSON_TRACES.get(table, "dữ liệu nghiệp vụ")) from exc
+
+    account = "none"
+    if subject:
+        account = "kept"
+        if not conn.execute("SELECT 1 FROM core.person WHERE idp_subject = %s LIMIT 1", (subject,)).fetchone():
+            if ctx.users is None:
+                raise ActionError("Chưa cấu hình máy chủ đăng nhập (client bms-provisioner)", "unavailable", 503)
+            try:
+                ctx.users.disable(subject)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("vô hiệu hóa tài khoản %s lỗi: %s", subject, exc)
+                raise ActionError("Không kết nối được máy chủ đăng nhập, thử lại sau", "unavailable", 503) from exc
+            account = "disabled"
+    log.info("đã xóa người %s (tài khoản: %s)", person_id, account)
+    return {"entity": "person", "id": str(person_id), "account": account}
+
+
 COLUMNS: dict[str, list[tuple[str, str, bool, str]]] = {
     "org_unit": [
         ("code", "Mã đơn vị", True, "PHONG_KT"),
@@ -989,6 +1076,7 @@ HANDLERS = {
     "admin_save": admin_save,
     "admin_close": admin_close,
     "create_person_accounts": create_person_accounts,
+    "delete_person": delete_person,
     "admin_import": admin_import,
     "admin_import_template": admin_import_template,
     "adopt_proposed_partner": adopt_proposed_partner,
