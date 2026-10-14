@@ -9041,6 +9041,37 @@
       "comment": "Tạo hoặc liên kết tài khoản đăng nhập cho người; mật khẩu tạm chỉ trả về một lần"
     },
     {
+      "name": "delete_person",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/delete_person",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "AdminDeleteResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xóa hẳn người chưa có dữ liệu nghiệp vụ; vô hiệu hóa tài khoản nếu không còn dùng ở tenant khác"
+    },
+    {
       "name": "admin_import",
       "definition": {
         "kind": "synchronous",
@@ -10536,6 +10567,23 @@
           {
             "name": "id",
             "type": "uuid!"
+          }
+        ]
+      },
+      {
+        "name": "AdminDeleteResult",
+        "fields": [
+          {
+            "name": "entity",
+            "type": "AdminEntity!"
+          },
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "account",
+            "type": "String!"
           }
         ]
       },

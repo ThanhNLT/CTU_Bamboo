@@ -212,6 +212,10 @@ export const PeoplePage = () => {
         onAssign={(personId) => setDialog({ kind: "assign", personId })}
         onEndAssignment={(a, p) => setDialog({ kind: "end", a, p })}
         onAccounts={setAccounts}
+        onDeleted={() => {
+          open();
+          void org.reload();
+        }}
       />
 
       <FormModal<{ full_name: string; employee_code?: string }>
