@@ -263,6 +263,32 @@ def test_bo_sung_ban_da_cai(conn):
         )
 
 
+def test_bo_sung_du_lieu_chu_con_thieu(conn):
+    def drop_unused(table):
+        removed = []
+        for (row_id,) in conn.execute(f"SELECT id FROM {table}").fetchall():
+            try:
+                with conn.transaction():
+                    conn.execute(f"DELETE FROM {table} WHERE id = %s", (row_id,))
+                removed.append(row_id)
+            except psycopg.errors.ForeignKeyViolation:
+                pass
+        return removed
+
+    with conn.transaction():
+        conn.execute(
+            "DELETE FROM core.role_grant WHERE role_id IN (SELECT id FROM core.role WHERE code = 'QUAN_LY_DU_LIEU_CHU')"
+        )
+        partners, items = drop_unused("mdm.partner"), drop_unused("mdm.item")
+        assert partners
+        assert seed.seed(conn) is False
+        assert one(conn, "SELECT count(*) FROM mdm.partner WHERE id = ANY(%s)", partners) == len(partners)
+        assert one(conn, "SELECT count(*) FROM mdm.item WHERE id = ANY(%s)", items) == len(items)
+        assert one(
+            conn, "SELECT core.has_permission(%s, 'mdm.manage', %s)", account_id("cdo"), uid("TDX", "unit", "TDX")
+        )
+
+
 def test_du_lieu_nhom5(conn):
     from app import demo_load
 
