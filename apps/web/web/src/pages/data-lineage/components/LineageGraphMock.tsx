@@ -2,12 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { LAYERS, NODE_W, STATUS_LABEL, colLeft, edgePath, graphHeight, graphMetrics } from "../graph";
 import type { Direction, LineageEdge, LineageNode, NodeStatus } from "../types";
 
-// ===== Hằng số =====
 const NODE_CLASS: Record<NodeStatus, string> = {
   healthy: "border border-line bg-white",
   failed: "border-[1.5px] border-red-500 bg-red-50",
@@ -38,7 +36,6 @@ const DIRECTIONS: Array<{ key: Direction; label: string }> = [
   { key: "downstream", label: "Phía sau" },
 ];
 
-// ===== Component =====
 const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: Direction) => void }) => (
   <div
     role="group"
@@ -127,10 +124,6 @@ const NodeCard = ({
   </button>
 );
 
-/**
- * Sơ đồ phả hệ dựng bằng div + SVG (không cần thư viện đồ thị): nút đặt tuyệt đối theo cột/hàng,
- * đường nối là một lớp SVG phía dưới, co giãn theo bề rộng thẻ. Màn hình hẹp thì cuộn ngang.
- */
 export const LineageGraphMock = ({
   focus,
   nodes,
@@ -175,7 +168,6 @@ export const LineageGraphMock = ({
 
       <div className="-mx-1 mt-4 overflow-x-auto px-1 pb-1">
         <div className="relative min-w-[680px]">
-          {/* Tiêu đề 5 cột, thẳng hàng với các nút. */}
           <div className="relative h-5">
             {LAYERS.map((l) => (
               <span

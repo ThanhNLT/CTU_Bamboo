@@ -6,13 +6,6 @@ SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 SPDX-License-Identifier: Apache-2.0
 -->
 
-<!--
-  Duyệt đề nghị mua sắm: bản phản chiếu luồng duyệt trong CSDL (ADR #31).
-  Mỗi vòng của user task là một bước của chuỗi duyệt (wf.approval_step).
-  Dịch vụ flow-sync đặt người nhận theo wf.task và hoàn thành task với biến
-  `decision` (APPROVE / REJECT / RETURN) và `stepIndex` của bước kế tiếp.
-  Chứng từ bị hủy: flow-sync xóa tiến trình.
--->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xmlns:flowable="http://flowable.org/bpmn"

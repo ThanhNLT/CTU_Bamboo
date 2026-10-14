@@ -2,30 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Client tối thiểu cho OpenBao (ADR #25): KV v2 ở `secret/`, transit ở `transit/`, đăng nhập AppRole.
-
-bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")
-bao.read("bms/flowable")          # {"username": ..., "password": ...}
-bao.encrypt("079123456789")       # "vault:v1:..."
-"""
-
-# ===== Thư viện chuẩn =====
 import base64
 import json
 import pathlib
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
+import httpx
 
 
-# ===== Lỗi (exception) =====
 class BaoError(RuntimeError):
     def __init__(self, status: int, message: str):
         super().__init__(f"OpenBao {status}: {message}")
         self.status = status
 
 
-# ===== Lớp =====
 class Bao:
     def __init__(self, addr: str, token: str | None = None, timeout: float = 10.0):
         self.http = httpx.Client(base_url=addr.rstrip("/") + "/v1/", timeout=timeout)
@@ -59,17 +48,12 @@ class Bao:
         creds = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
         return cls.login_approle(addr, creds["role_id"], creds["secret_id"])
 
-    # ===== KV v2 =====
-
     def read(self, path: str) -> dict | None:
-        """Secret mới nhất ở secret/<path>; None nếu chưa có."""
         data = self.request("GET", f"secret/data/{path}", ok404=True)
         return data["data"]["data"] if data else None
 
     def write(self, path: str, values: dict) -> None:
         self.request("POST", f"secret/data/{path}", {"data": values})
-
-    # ===== Transit =====
 
     def encrypt(self, plaintext: str, key: str = "pii") -> str:
         b64 = base64.b64encode(plaintext.encode("utf-8")).decode()

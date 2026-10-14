@@ -2,23 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Select } from "antd"; // Ant Design
-import { SearchX } from "lucide-react"; // Lucide React
+import { Select } from "antd";
+import { SearchX } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { formatSeconds } from "../engine";
 import type { SearchResult, SortKey } from "../types";
 import { ResultItem } from "./ResultItem";
 
-// ===== Hằng số =====
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "relevance", label: "Phù hợp nhất" },
   { value: "newest", label: "Mới nhất" },
 ];
 
-// ===== Component =====
-/** Cột kết quả: tổng số + thời gian, sắp xếp, danh sách, "Xem thêm". */
 export const SearchResultList = ({
   query,
   results,
@@ -34,10 +29,8 @@ export const SearchResultList = ({
   onDownload,
 }: {
   query: string;
-  /** Kết quả đang hiển thị (đã cắt trang). */
   results: SearchResult[];
   total: number;
-  /** Máy chủ còn kết quả chưa tải. */
   moreOnServer: boolean;
   elapsedMs: number;
   sort: SortKey;

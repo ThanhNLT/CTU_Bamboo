@@ -2,12 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Truy vấn GraphQL cho đề nghị tiếp nhận nhân sự (docs/thiet-ke/08-api-giao-dien.md, ADR #41).
+import gql from "graphql-tag";
 
-// ===== Thư viện =====
-import gql from "graphql-tag"; // graphql-tag
-
-// ===== Truy vấn GraphQL =====
 export const OB_LIST = gql`
   query Onboardings(
     $limit: Int
@@ -68,7 +64,6 @@ export const OB_DETAIL = `
   }
 `;
 
-// Tư cách lập, quyền lập (phạm vi), cây đơn vị và ghế để chọn vị trí còn trống.
 export const OB_OPTIONS = `
   query OnboardingOptions($person: uuid!) {
     core_assignment(where: {person_id: {_eq: $person}, assignment_type: {_in: ["PRIMARY", "CONCURRENT", "ACTING"]}}) {

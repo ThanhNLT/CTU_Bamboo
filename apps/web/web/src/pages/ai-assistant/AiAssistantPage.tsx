@@ -2,17 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Trợ lý đa năng (Trí tuệ số): trái ~25% lịch sử phiên, phải ~75% khung chat (cuộn trong khung, ô nhập cố định ở đáy).
-// Trang khác mở trợ lý kèm ngữ cảnh: ?record=HS-… · ?entity=urn:ngsi-ld:… · ?source=library → tạo phiên mới gắn ngữ cảnh.
-// Câu trả lời đến từ bộ trả lời mẫu ./assistant (thay bằng API trợ lý nội bộ khi tích hợp).
+import { App } from "antd";
+import { History, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { App } from "antd"; // Ant Design
-import { History, Plus } from "lucide-react"; // Lucide React
-import { useEffect, useRef, useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../components/ui";
 import { cn } from "../../utils/cn";
 import { copyText } from "../../utils/clipboard";
@@ -26,10 +20,8 @@ import { UserMessage } from "./components/UserMessage";
 import { NEXT_DRAFT_CODE, SESSIONS } from "./mock";
 import type { ActionProposal, AiMsg, AssistantMode, ChatSession, Message, Reply } from "./types";
 
-// ===== Trạng thái module =====
 let seq = 0;
 
-// ===== Hàm tiện ích =====
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
 const newSession = (context?: string): ChatSession => ({
@@ -40,7 +32,6 @@ const newSession = (context?: string): ChatSession => ({
   messages: [],
 });
 
-/** Phiên ban đầu: có ngữ cảnh từ URL thì mở phiên mới gắn ngữ cảnh đó, không thì mở phiên "OEE tuần này giảm". */
 const initialState = (params: URLSearchParams) => {
   const ctx = contextFromParams(params);
   if (!ctx) return { sessions: SESSIONS, activeId: SESSIONS[0]?.id ?? "" };
@@ -48,10 +39,8 @@ const initialState = (params: URLSearchParams) => {
   return { sessions: [s, ...SESSIONS], activeId: s.id };
 };
 
-/** Mã nháp kế tiếp: HS-MOB-2026-00320, 00321… */
 const draftCode = (n: number) => NEXT_DRAFT_CODE.replace(/\d{5}$/, (d) => String(Number(d) + n).padStart(5, "0"));
 
-// ===== Component =====
 export const AiAssistantPage = () => {
   const { message } = App.useApp();
   const [params] = useSearchParams();
@@ -75,7 +64,6 @@ export const AiAssistantPage = () => {
     return () => set.forEach((t) => window.clearTimeout(t));
   }, []);
 
-  // Đang ở trang mà URL đổi ngữ cảnh (vd. bấm "Hỏi trợ lý" ở trang khác) → mở phiên mới cho ngữ cảnh đó.
   const paramKey = params.toString();
   const [seenParams, setSeenParams] = useState(paramKey);
   if (seenParams !== paramKey) {
@@ -219,7 +207,6 @@ export const AiAssistantPage = () => {
         >
           {active.messages.map((m) => {
             if (m.role === "user") return <UserMessage key={m.id} msg={m} />;
-            // id tin nhắn mẫu lặp lại giữa các phiên → khóa theo phiên + tin nhắn.
             const k = `${active.id}:${m.id}`;
             const draft = drafts[k];
             return (

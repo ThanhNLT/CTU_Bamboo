@@ -2,16 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Nhập hàng loạt từ Excel / CSV (ADR #44): tải tệp mẫu → chọn tệp → máy chủ chạy thử trong giao dịch rồi hoàn tác
-// (xem trước lỗi từng dòng, do chính CSDL kiểm tra) → ghi khi mọi dòng hợp lệ. Nhập nhân sự có cột tên đăng nhập
-// thì tạo tài khoản ngay sau khi ghi.
+import { Alert, App, Modal, Steps, Table, Upload } from "antd";
+import { Download, FileSpreadsheet, RotateCcw } from "lucide-react";
+import { useState } from "react";
 
-// ===== Thư viện =====
-import { Alert, App, Modal, Steps, Table, Upload } from "antd"; // Ant Design
-import { Download, FileSpreadsheet, RotateCcw } from "lucide-react"; // Lucide React
-import { useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { smallSecondaryButtonClass } from "../../../components/ui";
 import { AccountsResult } from "./AccountsResult";
 import {
@@ -23,10 +17,8 @@ import {
   type ImportResult,
 } from "./api";
 
-// ===== Hằng số =====
 const ACCEPT = ".xlsx,.csv";
 
-// ===== Component =====
 export const ImportModal = ({
   open,
   kind,
@@ -36,10 +28,8 @@ export const ImportModal = ({
 }: {
   open: boolean;
   kind: ImportKind;
-  /** "đơn vị", "nhân sự"... */
   label: string;
   onClose: () => void;
-  /** Sau khi đã ghi (để trang tải lại). */
   onDone: () => void;
 }) => {
   const { message } = App.useApp();

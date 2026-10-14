@@ -2,23 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Danh sách chứng từ dùng chung cho Trang chủ và trang Hồ sơ: đề nghị mua sắm, đề nghị tiếp nhận nhân sự, đơn
-// hàng nội bộ và đề xuất tài liệu thư viện gộp về một dạng. Hasura chỉ trả chứng từ người dùng được xem (can_read); `mine` lọc thêm
-// chứng từ do chính người dùng lập. Tự cập nhật qua subscription.
+import { useList, type CrudFilter } from "@refinedev/core";
+import gql from "graphql-tag";
+import { useMemo } from "react";
 
-// ===== Thư viện =====
-import { useList, type CrudFilter } from "@refinedev/core"; // Refine
-import gql from "graphql-tag"; // graphql-tag
-import { useMemo } from "react"; // React
-
-// ===== Module nội bộ =====
 import { formatMoney } from "../utils/format";
 import { IC_STATUS_LABEL, PR_STATUS_LABEL } from "../utils/status";
 
-// ===== Kiểu dữ liệu =====
 export type DocKind = "purchase_request" | "onboarding_request" | "ic_order" | "kb_document";
 
-// ===== Hằng số =====
 export const DOC_KIND_LABEL: Record<DocKind, string> = {
   purchase_request: "Đề nghị mua sắm",
   onboarding_request: "Tiếp nhận nhân sự",
@@ -26,7 +18,6 @@ export const DOC_KIND_LABEL: Record<DocKind, string> = {
   kb_document: "Đề xuất tài liệu",
 };
 
-/** Một bước duyệt của lần gửi hiện tại. */
 export type DocStep = {
   order: number;
   position: string;
@@ -40,7 +31,6 @@ export type DocSummary = {
   kind: DocKind;
   code: string;
   title: string;
-  /** Mã trạng thái gốc (DRAFT, PENDING, ...). */
   status: string;
   statusLabel: string;
   requester: string;
@@ -49,9 +39,7 @@ export type DocSummary = {
   amount: string;
   createdAt: string;
   updatedAt: string;
-  /** Trang chi tiết. */
   to: string;
-  /** Chuỗi duyệt của lần gửi hiện tại (đơn nội bộ không qua chuỗi duyệt). */
   steps: DocStep[];
 };
 
@@ -62,7 +50,6 @@ const STEPS = `
   }
 `;
 
-// ===== Truy vấn GraphQL =====
 const PR = gql`
   query DocsPr($limit: Int, $offset: Int, $order_by: [proc_purchase_request_order_by!], $where: proc_purchase_request_bool_exp) {
     proc_purchase_request(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -124,7 +111,6 @@ const KB = gql`
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type StepRow = {
   round: number;
   step_order: number;
@@ -189,7 +175,6 @@ type KbRow = {
   approval_steps: StepRow[];
 };
 
-// ===== Hàm tiện ích =====
 const stepsOf = (round: number, rows: StepRow[]): DocStep[] =>
   rows
     .filter((s) => s.round === round)
@@ -269,15 +254,11 @@ const fromKb = (r: KbRow): DocSummary => ({
   steps: stepsOf(r.approval_round, r.approval_steps),
 });
 
-// ===== Kiểu dữ liệu =====
 type Options = {
-  /** Chỉ chứng từ do người này lập (core.person.id). */
   mine?: string;
-  /** Số chứng từ mới nhất lấy về cho MỖI loại. */
   limit?: number;
 };
 
-// ===== Hook =====
 export const useDocuments = ({ mine, limit = 100 }: Options = {}) => {
   const by = (field: string): CrudFilter[] => (mine ? [{ field, operator: "eq", value: mine }] : []);
   const common = {
@@ -319,7 +300,6 @@ export const useDocuments = ({ mine, limit = 100 }: Options = {}) => {
 
   return {
     documents,
-    /** Tổng số chứng từ thỏa điều kiện (kể cả phần chưa tải về). */
     total: (pr.result.total ?? 0) + (ob.result.total ?? 0) + (ic.result.total ?? 0) + (kb.result.total ?? 0),
     loading: pr.query.isLoading || ob.query.isLoading || ic.query.isLoading || kb.query.isLoading,
     error: (pr.query.error ?? ob.query.error ?? ic.query.error ?? kb.query.error)?.message,

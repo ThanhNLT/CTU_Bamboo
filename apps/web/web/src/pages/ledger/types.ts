@@ -2,25 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Kiểu dữ liệu =====
-/**
- * Một bản niêm phong (ADR #46): SHA-256 của một tệp đính kèm ghi lúc tệp được nhận, nằm trong chuỗi hash của
- * nhật ký kiểm toán. `block` / `txId` là số thứ tự và mã hash của dòng nhật ký đó.
- */
 export type Seal = {
   attachmentId: string;
   entityType: string;
   entityId: string;
-  /** Số chứng từ, ví dụ "PR-2026-000012". */
   code: string;
-  /** Thứ tự tệp trong chứng từ (tệp nhận trước là v1). */
   version: number;
   title: string;
   fileName: string;
   unit: string;
-  /** "03/10/2026 14:22" */
   sealedAt: string;
-  /** Mã tenant (mỗi tenant một chuỗi hash). */
   channel: string;
   block: number | null;
   txId: string | null;
@@ -53,12 +44,10 @@ export type LedgerOverview = {
   matchedToday: number;
   mismatchedToday: number;
   mismatch30d: number;
-  /** Người gọi có quyền audit.read: được kiểm tra toàn chuỗi hash. */
   chainReader: boolean;
   recent: Seal[];
 };
 
-/** Hồ sơ lưu trữ: tệp của một chứng từ đã kết thúc (duyệt, từ chối, hủy). */
 export type ArchiveDoc = {
   id: string;
   code: string;
@@ -67,14 +56,12 @@ export type ArchiveDoc = {
   contentType: string;
   sizeBytes: number;
   unit: string;
-  /** Hồ sơ nhân sự: chỉ người có quyền xem chứng từ. */
   restricted: boolean;
   archivedYear: number;
 };
 
 export type AccessLog = { id: string; docTitle: string; fileName: string; viewer: string; at: string };
 
-/** Một lần mở hồ sơ ở phòng đọc: link xem trực tiếp hạn ngắn. */
 export type ArchiveView = {
   attachmentId: string;
   title: string;

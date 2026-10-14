@@ -2,28 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tiếp nhận nhân sự (ADR #41): dữ liệu nhạy cảm chỉ qua Action (mã hóa, bản che, xem có nhật ký), quyền xem
-qua Hasura, duyệt qua act_on_task, tạo tài khoản Keycloak chạy lại an toàn."""
-
-# ===== Thư viện chuẩn =====
 import json
 import os
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
-import psycopg  # psycopg
-import pytest  # pytest
+import httpx
+import psycopg
+import pytest
 
-# ===== Module nội bộ =====
 from app import hr_account
 from app.pii import PiiCipher, mask_address, mask_tail
 from conftest import ids, open_task
 
-# ===== Hằng số & cấu hình =====
 TENANT_SQL = "SELECT test.id('TDX') AS id"
 
 
-# ===== Kiểm thử =====
 def test_ban_che():
     assert mask_tail("079 123 456 789", 3) == "•••••••••789"
     assert mask_tail("12", 4) == "••"
@@ -41,10 +33,8 @@ def test_mat_khau_tam():
     assert hr_account.split_name("Nguyễn Văn An") == ("An", "Nguyễn Văn")
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture
 def hr(conn, org):
-    """Phòng nhân sự trong công ty kiểm thử, vai trò NHAN_SU, quy tắc duyệt ONBOARDING của tenant."""
     k = org
     conn.execute(f"""
         SELECT test.unit('TDX', '{k("NS")}', '{k("CTY")}', 'PHONG', 'Phòng Nhân sự');
@@ -76,7 +66,6 @@ def pii():
     return PiiCipher(addr, approle)
 
 
-# ===== Kiểm thử =====
 def test_ho_so_qua_hasura(hasura, conn, hr, pii):
     k = hr
     p = ids(conn, k("ns"), k("tp"), k("gd"), k("nv"), k("P_NS"), k("P_NV2"))
@@ -103,7 +92,6 @@ def test_ho_so_qua_hasura(hasura, conn, hr, pii):
     rid = created["data"]["insert_hr_onboarding_request_one"]["id"]
     assert created["data"]["insert_hr_onboarding_request_one"]["doc_no"].startswith("TN-")
 
-    # Người không có quyền lập thì không lập được.
     denied = gql(
         """mutation($o: hr_onboarding_request_insert_input!) { insert_hr_onboarding_request_one(object: $o) { id } }""",
         {
@@ -135,7 +123,6 @@ def test_ho_so_qua_hasura(hasura, conn, hr, pii):
     assert row["national_id_enc"].startswith("vault:v1:") and row["national_id_masked"] == "•••••••••789"
     assert pii.decrypt(row["bank_account_enc"]) == "0123456789"
 
-    # Bản mã không mở qua GraphQL; bản che thì có.
     hidden = gql(
         "query($id: uuid!) { hr_onboarding_request_by_pk(id: $id) { national_id_enc } }", {"id": rid}, who="ns"
     )
@@ -144,7 +131,6 @@ def test_ho_so_qua_hasura(hasura, conn, hr, pii):
     sent = gql("mutation($id: uuid!) { submit_onboarding_request(request_id: $id) { status } }", {"id": rid}, who="ns")
     assert sent["data"]["submit_onboarding_request"]["status"] == "PENDING", sent
 
-    # Trưởng phòng nhận việc: thấy hồ sơ (bản che), không xem được bản rõ; hộp việc có quan hệ onboarding_request.
     seen = gql(
         """query($id: uuid!) { hr_onboarding_request_by_pk(id: $id) { national_id_masked can_read_private }
                   wf_v_inbox { onboarding_request { id } } }""",
@@ -207,12 +193,7 @@ def test_ho_so_qua_hasura(hasura, conn, hr, pii):
     assert done["account_status"] == "PENDING" and done["employee_code"].startswith("NV-")
 
 
-# ===== Tạo tài khoản: Keycloak giả =====
-
-
 class FakeKeycloak:
-    """Admin API tối thiểu: tạo người dùng (409 khi trùng tên), tìm theo tên, đặt lại mật khẩu."""
-
     def __init__(self):
         self.users: dict[str, dict] = {}
         self.fail_next = False
@@ -256,7 +237,6 @@ def keycloak(monkeypatch):
 
 
 def _approved(conn, k, username: str, position: str = "P_NV2") -> str:
-    """Hồ sơ đã duyệt (gọi hàm CSDL trực tiếp), đang chờ tạo tài khoản."""
     rid = conn.execute(
         f"""
         INSERT INTO hr.onboarding_request (tenant_id, requester_id, requester_position_id, full_name,
@@ -277,7 +257,7 @@ def test_tao_tai_khoan(database, conn, hr, keycloak):
     k = hr
     rid = _approved(conn, k, f"an.{k('x').lower()}")
     with psycopg.connect(database) as work:
-        assert hr_account.run_once(work, users, FakeCipher()) >= 1  # CSDL dùng chung: có thể còn hồ sơ khác chờ
+        assert hr_account.run_once(work, users, FakeCipher()) >= 1
     row = conn.execute(
         """SELECT r.account_status, r.initial_password_enc, p.idp_subject FROM hr.onboarding_request r
                           JOIN core.person p ON p.id = r.person_id WHERE r.id = %s""",
@@ -295,7 +275,6 @@ def test_tao_tai_khoan_chay_lai_va_trung_ten(database, conn, hr, keycloak):
     k = hr
     conn.execute(f"SELECT test.position('TDX', '{k('P_NV3')}', '{k('PHONG')}', 'Chuyên viên mới 2')")
 
-    # Lần trước đã tạo trên Keycloak nhưng chưa kịp ghi CSDL: lần sau nhận lại đúng tài khoản đó.
     name = f"binh.{k('x').lower()}"
     rid = _approved(conn, k, name)
     fake.users["kc-9"] = {"id": "kc-9", "username": name, "attributes": {hr_account.ATTRIBUTE: [rid]}}
@@ -311,7 +290,6 @@ def test_tao_tai_khoan_chay_lai_va_trung_ten(database, conn, hr, keycloak):
     )
     assert fake.users["kc-9"]["credentials"][0]["temporary"] is True, "đặt lại mật khẩu tạm"
 
-    # Tên đã thuộc tài khoản khác: FAILED, không tự thử lại; đổi tên rồi tạo lại.
     other = f"chi.{k('x').lower()}"
     fake.users["kc-8"] = {"id": "kc-8", "username": other, "attributes": {}}
     rid2 = _approved(conn, k, other, position="P_NV3")
@@ -323,7 +301,7 @@ def test_tao_tai_khoan_chay_lai_va_trung_ten(database, conn, hr, keycloak):
     assert failed["account_status"] == "FAILED" and "đã thuộc một tài khoản khác" in failed["account_error"]
 
     conn.execute("SELECT hr.retry_onboarding_account(%s, test.id(%s), %s)", (rid2, k("ns"), f"chi2.{k('x').lower()}"))
-    fake.fail_next = True  # Keycloak tạm lỗi: giữ PENDING, đếm số lần thử, lần sau chờ lâu hơn
+    fake.fail_next = True
     with psycopg.connect(database) as work:
         hr_account.run_once(work, users, FakeCipher())
     pending = conn.execute(

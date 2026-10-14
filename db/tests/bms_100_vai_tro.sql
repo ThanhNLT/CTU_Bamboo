@@ -2,8 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Tài khoản ứng dụng đặc quyền tối thiểu (ADR #35; xem db/roles): đọc/ghi dữ liệu nghiệp vụ, không đổi
--- cấu trúc, không đụng được nhật ký kiểm toán; trigger kiểm toán vẫn ghi được khi người gọi không có quyền.
 SELECT test.fixture();
 
 SELECT test.ok(NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls,
@@ -12,7 +10,6 @@ FROM pg_roles WHERE rolname = 'bamboo_actions';
 SELECT test.ok(pg_has_role('bamboo_hasura', 'bamboo_app', 'MEMBER') AND pg_has_role('bamboo_actions', 'bamboo_app', 'MEMBER'),
                'Hasura và actions thuộc nhóm bamboo_app');
 
--- Hàm tiện ích kiểm thử dùng được dưới role ứng dụng (chỉ trong transaction này; ROLLBACK ở cuối).
 GRANT USAGE ON SCHEMA test TO bamboo_app;
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA test TO bamboo_app;
 SET LOCAL ROLE bamboo_actions;
@@ -20,7 +17,6 @@ SET LOCAL ROLE bamboo_actions;
 SELECT test.ok((SELECT count(*) FROM core.person) > 0, 'Đọc được dữ liệu nghiệp vụ');
 SELECT test.ok((SELECT count(*) FROM audit.log) > 0, 'Đọc được nhật ký kiểm toán');
 
--- Ghi bảng nghiệp vụ: trigger SECURITY DEFINER vẫn nối chuỗi hash.
 CREATE TEMP TABLE n AS SELECT count(*) AS c FROM audit.log;
 SELECT set_config('hasura.user', json_build_object('x-hasura-role', 'user', 'x-hasura-user-id', test.id('c'))::text, true);
 UPDATE core.person SET full_name = 'Chị C (role ứng dụng)' WHERE id = test.id('c');
@@ -28,7 +24,6 @@ SELECT set_config('hasura.user', '', true);
 SELECT test.eq((SELECT count(*) FROM audit.log), (SELECT c + 1 FROM n), 'Trigger ghi nhật ký dưới role ứng dụng');
 SELECT test.eq((SELECT count(*) FROM audit.verify_chain(test.id('TDX'))), 0::bigint, 'Chuỗi vẫn nguyên vẹn');
 UPDATE core.person SET full_name = full_name || '.' WHERE id = test.id('d');
--- Người thực hiện mặc định là session_user (tài khoản đăng nhập, production là bamboo_actions).
 SELECT test.eq((SELECT actor_role FROM audit.log ORDER BY id DESC LIMIT 1), session_user::text,
                'Không có phiên Hasura thì ghi tên tài khoản đăng nhập');
 

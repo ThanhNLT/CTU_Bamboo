@@ -2,17 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { SearchX } from "lucide-react"; // Lucide React
+import { SearchX } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { LibraryDoc } from "../types";
 import { docMeta } from "../utils";
 import { IndexStatus } from "./IndexStatus";
 
-// ===== Component =====
-/** Cột trái: danh sách tài liệu, cuộn độc lập. Mũi tên lên/xuống chuyển tài liệu đang chọn. */
 export const DocumentList = ({
   docs,
   selectedId,
@@ -59,7 +55,6 @@ export const DocumentList = ({
             const prevSelected = docs[i - 1]?.id === selectedId;
             return (
               <li key={d.id} className="relative">
-                {/* Đường kẻ mảnh giữa các mục, ẩn cạnh mục đang chọn */}
                 {i > 0 && !selected && !prevSelected && (
                   <span className="absolute inset-x-3 top-0 h-px bg-line/80" aria-hidden />
                 )}

@@ -2,28 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"; // Lucide React
-import { Link } from "react-router"; // React Router
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { InboxTask } from "../types";
 import { capitalize, SLA_PILL, SLA_TONE } from "./slaStyle";
 
-// ===== Component =====
 const Kbd = ({ children }: { children: string }) => (
   <kbd className="rounded border border-line bg-canvas px-1 font-sans text-[10.5px] text-muted">{children}</kbd>
 );
 
-// ===== Hằng số =====
 const navBtn =
   "inline-flex h-8 items-center gap-1.5 px-3 text-[12.5px] font-medium text-ink transition-colors hover:bg-canvas " +
   "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-bamboo-500 disabled:cursor-default disabled:text-muted/60 disabled:hover:bg-transparent";
 
-// ===== Component =====
-/** Mã · bước duyệt, tiêu đề, nhãn SLA, liên kết chứng từ và nút Trước (K) / Kế tiếp (J). */
 export const TaskDetailHeader = ({
   task,
   onPrev,
@@ -37,7 +31,6 @@ export const TaskDetailHeader = ({
   onNext: () => void;
   hasPrev: boolean;
   hasNext: boolean;
-  /** Trang chi tiết chứng từ. */
   to?: string;
 }) => (
   <header className="flex flex-col gap-3 rounded-2xl border border-line bg-white px-5 py-4 shadow-card md:flex-row md:items-center">

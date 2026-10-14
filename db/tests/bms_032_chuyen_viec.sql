@@ -2,10 +2,8 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Việc duyệt khi người ngồi ghế thay đổi (ADR #28) và ủy quyền (CONTEXT.md "Ủy quyền").
 SELECT test.fixture();
 
--- Bổ nhiệm TGĐ mới giữa chừng: việc đang chờ chuyển sang TGĐ mới.
 SELECT test.pr('pr600', 'a', 'P_NV_KD_CHIP', 600000000);
 SELECT test.approve('pr600', 'gd_chip');
 SELECT test.eq(test.assignee('pr600'), 'tgd', 'Việc bước 2 ở TGĐ cũ');
@@ -27,12 +25,10 @@ SELECT test.throws(format($$SELECT wf.act(%L, %L, 'APPROVE')$$, (test.open_task(
 SELECT test.approve('pr600', 'tgd2');
 SELECT test.eq(test.status('pr600'), 'APPROVED', 'TGĐ mới duyệt xong');
 
--- Người ngồi ghế rời đi, chưa có ai thay: việc đẩy lên cấp trên.
 SELECT test.pr('pr30', 'c', 'P_NV_MH_DT', 30000000);
 SELECT test.end_assignment('tp_mh_dt', 'P_TP_MH_DT');
 SELECT test.eq(test.assignee('pr30'), 'gd_dt', 'Trưởng phòng nghỉ: việc lên giám đốc công ty');
 
--- Ủy quyền: việc hiện ở hộp việc của cả hai, người được ủy quyền duyệt thay.
 SELECT test.pr('pr100', 'c', 'P_NV_MH_DT', 100000000);
 INSERT INTO core.delegation (tenant_id, delegator_id, delegate_id, position_id, valid_period, reason)
 VALUES (test.id('TDX'), test.id('gd_dt'), test.id('d'), test.id('P_GD_DT'),
@@ -46,7 +42,6 @@ SELECT test.eq((SELECT test.key(acted_by) || '/' || test.key(on_behalf_of) FROM 
                 WHERE entity_id = test.id('pr100')),
                'd/gd_dt', 'Bước duyệt ghi "duyệt thay"');
 
--- Ủy quyền không gồm quyền duyệt thì không duyệt thay được.
 SELECT test.pr('pr101', 'c', 'P_NV_MH_DT', 100000000);
 UPDATE core.delegation SET permission_codes = ARRAY['proc.purchase_request.read'] WHERE delegate_id = test.id('d');
 SELECT test.ok(NOT EXISTS (SELECT 1 FROM wf.v_inbox WHERE entity_id = test.id('pr101') AND via_delegation),
@@ -54,14 +49,11 @@ SELECT test.ok(NOT EXISTS (SELECT 1 FROM wf.v_inbox WHERE entity_id = test.id('p
 SELECT test.throws(format($$SELECT wf.act(%L, %L, 'APPROVE')$$, (test.open_task('pr101')).id, test.id('d')),
                    '%Không có quyền xử lý%', 'Ủy quyền không gồm quyền duyệt');
 
--- Người được ủy quyền chính là người lập: không được duyệt chứng từ của mình.
 UPDATE core.delegation SET permission_codes = NULL WHERE delegate_id = test.id('d');
 SELECT test.pr('pr_d', 'd', 'P_NV2_MH_DT', 100000000);
 SELECT test.throws(format($$SELECT wf.act(%L, %L, 'APPROVE')$$, (test.open_task('pr_d')).id, test.id('d')),
                    '%không được duyệt%', 'Người lập không duyệt thay chứng từ của mình');
 
--- Trigger chạy lúc commit: kết thúc người cũ và bổ nhiệm người mới cùng giao dịch
--- thì việc chuyển thẳng, không qua trạng thái nằm chờ.
 SET CONSTRAINTS ALL DEFERRED;
 SELECT test.pr('pr_gd', 'c', 'P_NV_MH_DT', 100000000);
 SELECT test.end_assignment('gd_dt', 'P_GD_DT');
@@ -73,7 +65,6 @@ SELECT test.eq(test.assignee('pr_gd'), 'gd_dt2', 'Lúc commit việc chuyển ch
 SELECT test.eq((SELECT count(*) FROM wf.approval_history WHERE entity_id = test.id('pr_gd') AND event = 'TRANSFERRED'),
                1::bigint, 'Chỉ chuyển một lần');
 
--- Bổ nhiệm hết hạn theo lịch, job làm mới chưa chạy: người cũ không duyệt được.
 SELECT test.pr('pr_lich', 'a', 'P_NV_KD_CHIP', 10000000);
 UPDATE core.assignment SET valid_period = tstzrange(lower(valid_period), now() + interval '1 day')
 WHERE person_id = test.id('tp_kd_chip');

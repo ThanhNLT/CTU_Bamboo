@@ -2,27 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Bảng "Chất lượng dữ liệu": các kiểm tra trên tổ chức, danh mục, tệp và chỉ mục tìm kiếm của tenant; mỗi kiểm tra có
-// số bản ghi vi phạm và chỗ sửa. Tên mẫu chỉ hiện cho người quản trị dữ liệu (Action ops_dashboard).
+import { Progress, Tag } from "antd";
+import { Link } from "react-router";
 
-// ===== Thư viện =====
-import { Progress, Tag } from "antd"; // Ant Design
-import { Link } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { useOpsTab, type QualityCheck } from "../api";
 import { ChartWidget } from "./ChartWidget";
 import { fmtNum } from "../boardFormat";
 import { BoardState } from "./BoardParts";
 
-// ===== Hằng số =====
 const SEVERITY: Record<QualityCheck["severity"], { label: string; color: string }> = {
   critical: { label: "Nghiêm trọng", color: "red" },
   warning: { label: "Cần sửa", color: "gold" },
   info: { label: "Theo dõi", color: "blue" },
 };
 
-// ===== Component =====
 export const QualityBoard = () => {
   const { data, error, loading } = useOpsTab("quality", 30);
   return (

@@ -2,10 +2,8 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Số chứng từ, dòng hàng (tổng tiền, khóa sau khi gửi), dữ liệu chủ, người lập hủy đề nghị.
 SELECT test.fixture();
 
--- Số chứng từ tăng dần theo tenant, loại, năm.
 SELECT test.pr('pr1', 'c', 'P_NV_MH_DT', 0, false);
 SELECT test.pr('pr2', 'c', 'P_NV_MH_DT', 0, false);
 SELECT test.ok((SELECT doc_no FROM proc.purchase_request WHERE id = test.id('pr1'))
@@ -17,7 +15,6 @@ SELECT test.eq(core.next_doc_no(test.id('BVX'), 'PR', '2026-12-31 23:00+07'), 'P
 SELECT test.eq(core.next_doc_no(test.id('BVX'), 'PR', '2026-12-31 18:00+00'), 'PR-2027-000001',
                'Năm tính theo giờ Việt Nam');
 
--- Dữ liệu chủ.
 INSERT INTO mdm.item (tenant_id, code, name, uom, category_code, ref_price)
 VALUES (test.id('TDX'), 'VT001', 'Tụ điện 10uF', 'cái', 'LINH_KIEN', 1500);
 SELECT test.put('vt1', id) FROM mdm.item WHERE code = 'VT001';
@@ -26,7 +23,6 @@ SELECT test.throws($$INSERT INTO mdm.partner (tenant_id, code, name, internal_un
                      VALUES (test.id('TDX'), 'NB_PHONG', 'Phòng', test.id('CHIP_KD'))$$,
                    '%phải trỏ tới một công ty%', 'Đối tác nội bộ phải là công ty');
 
--- Dòng hàng: số dòng, mô tả và đơn vị tính tự điền; tổng tiền đầu phiếu tự tính.
 INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
 VALUES (test.id('pr1'), test.id('vt1'), 1000, 1500);
 INSERT INTO proc.purchase_request_item (request_id, description, uom, quantity, unit_price)
@@ -49,7 +45,6 @@ DELETE FROM proc.purchase_request_item WHERE request_id = test.id('pr1') AND lin
 SELECT test.eq((SELECT total_amount FROM proc.purchase_request WHERE id = test.id('pr1')), 3000000.00,
                'Xóa dòng thì tính lại tổng');
 
--- Sau khi gửi duyệt thì khóa dòng hàng; bị trả về thì sửa lại được.
 SELECT proc.submit_purchase_request(test.id('pr1'), test.id('c'));
 SELECT test.throws($$UPDATE proc.purchase_request_item SET quantity = 1 WHERE request_id = test.id('pr1')$$,
                    '%trạng thái PENDING%', 'Đang chờ duyệt thì không sửa dòng hàng');
@@ -61,14 +56,12 @@ UPDATE proc.purchase_request_item SET unit_price = 1000 WHERE request_id = test.
 SELECT test.eq((SELECT total_amount FROM proc.purchase_request WHERE id = test.id('pr1')), 2000000.00,
                'Bị trả về thì sửa được dòng hàng');
 
--- Xóa đề nghị nháp kéo theo dòng hàng.
 INSERT INTO proc.purchase_request_item (request_id, description, uom, quantity, unit_price)
 VALUES (test.id('pr2'), 'Giấy A4', 'ram', 10, 80000);
 DELETE FROM proc.purchase_request WHERE id = test.id('pr2');
 SELECT test.eq((SELECT count(*) FROM proc.purchase_request_item WHERE request_id = test.id('pr2')), 0::bigint,
                'Xóa nháp thì xóa dòng hàng');
 
--- Hủy: chỉ người lập, phải có lý do; việc duyệt đang mở bị hủy theo.
 SELECT test.pr('pr3', 'c', 'P_NV_MH_DT', 20000000);
 SELECT test.throws($$SELECT proc.cancel_purchase_request(test.id('pr3'), test.id('d'), 'x')$$,
                    '%Chỉ người lập%', 'Người khác không hủy được');

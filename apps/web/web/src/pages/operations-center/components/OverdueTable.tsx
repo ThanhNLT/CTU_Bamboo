@@ -2,19 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Download } from "lucide-react"; // Lucide React
-import { Link } from "react-router"; // React Router
+import { Download } from "lucide-react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Company, CompanyKey, OverdueRow } from "../types";
 import { ChipButton, DefinitionButton } from "./ChartWidget";
 
-// ===== Hàm tiện ích =====
 const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
-/** Xuất CSV (UTF-8 có BOM để Excel đọc đúng tiếng Việt). */
 const exportCsv = (rows: OverdueRow[], COMPANY: Record<CompanyKey, Company>) => {
   const lines = [
     ["Mã hồ sơ", "Công ty", "Loại hồ sơ", "Bước", "Quá hạn (phút)", "Quá hạn"],
@@ -35,11 +31,8 @@ const exportCsv = (rows: OverdueRow[], COMPANY: Record<CompanyKey, Company>) => 
   URL.revokeObjectURL(url);
 };
 
-// ===== Hằng số =====
 const TH = "px-3 pb-2 pt-1 text-left text-[12px] font-medium text-muted";
 
-// ===== Component =====
-/** Hồ sơ quá hạn SLA – top 5. Dòng của công ty đang tô sáng nền xanh nhạt; bấm dòng để tô sáng công ty đó. */
 export const OverdueTable = ({
   rows,
   company: COMPANY,

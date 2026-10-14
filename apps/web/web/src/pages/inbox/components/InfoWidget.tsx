@@ -2,17 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import type { ReactNode } from "react"; // React
-import { Link } from "react-router"; // React Router
+import type { ReactNode } from "react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import type { TaskInfo } from "../types";
 
-// ===== Component =====
-/** Khối "Thông tin": cặp nhãn – giá trị. Thiết bị là liên kết sang Bản sao số. */
 export const InfoWidget = ({ info }: { info: TaskInfo }) => {
-  // Chỉ hiện dòng có dữ liệu (thiết bị, điện thoại, tầng dữ liệu chưa có ở mọi loại chứng từ).
   const rows: Array<[string, ReactNode]> = [
     ["Người nộp", info.submitter],
     ["Đơn vị", info.unit],

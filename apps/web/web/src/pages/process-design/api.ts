@@ -2,16 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Gọi các Action thiết kế quy trình (ADR #47).
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { FormDef, Issue, ProcessDetail, ProcessSummary, ProcessVersion, SandboxRun } from "./types";
 
-// ===== Kiểu dữ liệu =====
 type IssueRow = { level: Issue["level"]; message: string; element_id: string | null };
 
-// ===== Hàm tiện ích =====
 const toIssue = (i: IssueRow): Issue => ({ level: i.level, message: i.message, elementId: i.element_id });
 
 export const listProcesses = async (): Promise<{ canDesign: boolean; models: ProcessSummary[] }> => {

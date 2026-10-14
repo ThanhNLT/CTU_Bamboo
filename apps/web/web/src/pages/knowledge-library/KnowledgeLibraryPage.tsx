@@ -2,16 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Thư viện tri thức (Con người số, ADR #48): tài liệu đang hiệu lực người dùng đọc được (Action kb_library), lọc theo
-// phạm vi / loại, xem tóm tắt, mục lục, mở toàn văn; đề xuất tài liệu mới hoặc bản thay thế (chứng từ đi qua chuỗi
-// duyệt); tab "Đề xuất của tôi". ?doc=<id> chọn sẵn một tài liệu.
+import { App, Input, Segmented, Table, Tag } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { App, Input, Segmented, Table, Tag } from "antd"; // Ant Design
-import { useCallback, useEffect, useMemo, useState } from "react"; // React
-import { Link, useNavigate, useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { downloadUrl, fetchLibrary, reindexDocument, retireDocument, searchLibrary } from "./api";
@@ -24,7 +18,6 @@ import { CATEGORY_SHORT, PROPOSAL_STATUS } from "./labels";
 import type { CategoryFilter, DocCategory, LibraryDoc, ScopeFilter } from "./types";
 import { filterDocs } from "./utils";
 
-// ===== Kiểu dữ liệu =====
 type Tab = "library" | "mine";
 type Proposal = {
   id: string;
@@ -35,12 +28,10 @@ type Proposal = {
   updated_at: string;
 };
 
-// ===== Truy vấn GraphQL =====
 const MINE = `query MyProposals($me: uuid!) {
   collab_kb_document(where: {requester_id: {_eq: $me}}, order_by: {updated_at: desc}, limit: 100) {
     id doc_no title category status updated_at } }`;
 
-// ===== Component =====
 export const KnowledgeLibraryPage = () => {
   const navigate = useNavigate();
   const { message, modal } = App.useApp();
@@ -68,7 +59,6 @@ export const KnowledgeLibraryPage = () => {
     load();
   }, [load]);
 
-  // Tìm toàn văn ở máy chủ (Meilisearch, nội dung tệp) sau khi ngừng gõ; lỗi thì chỉ lọc tại chỗ.
   useEffect(() => {
     const q = query.trim();
     setFullText(undefined);

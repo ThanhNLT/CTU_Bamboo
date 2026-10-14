@@ -2,19 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Bản sao số, phả hệ, KPI ghim qua Hasura (ADR #50): đọc trong tenant, ghi nhận sự cố, ghim KPI của chính mình,
-báo sự cố dữ liệu."""
-
-# ===== Thư viện chuẩn =====
 import uuid
 
-# ===== Thư viện bên ngoài =====
-import pytest  # pytest
+import pytest
 
-# ===== Module nội bộ =====
 from conftest import ids
 
-# ===== Hằng số & cấu hình =====
 ENTITIES = (
     """query { iot_entity { code state type_model { kind attributes } incidents { id code acknowledged_at } } }"""
 )
@@ -24,10 +17,8 @@ SAVE = """mutation($p: [kpi_pin_insert_input!]!) {
   delete_kpi_pin(where: {}) { affected_rows } insert_kpi_pin(objects: $p) { affected_rows } }"""
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture
 def twin(conn):
-    """Một phòng sạch của TDX có sự cố đang mở, hai KPI, một nút phả hệ."""
     sfx = uuid.uuid4().hex[:6]
     i = ids(conn, "TDX", "CHIP", "a", "c")
     conn.execute(
@@ -68,7 +59,6 @@ def twin(conn):
     return {**i, "code": f"CR-{sfx}", "incident": str(incident)}
 
 
-# ===== Kịch bản kiểm thử =====
 def test_doc_va_ghi_nhan_su_co(hasura, twin):
     i = twin
     data = hasura(ENTITIES, person=i["a"], tenant=i["TDX"])["data"]["iot_entity"]
@@ -99,7 +89,6 @@ def test_ghim_kpi_cua_minh(hasura, twin):
                person=i["a"], tenant=i["TDX"])  # fmt: skip
     assert "errors" not in r, r
     hasura(SAVE, {"p": [{"kpi_key": "on-time", "position": 1}]}, person=i["c"], tenant=i["TDX"])
-    # Mỗi người chỉ thấy và chỉ xóa được ghim của mình.
     assert hasura(PINS, person=i["a"], tenant=i["TDX"])["data"]["kpi_pin"] == [
         {"kpi_key": "oee", "position": 1},
         {"kpi_key": "on-time", "position": 2},

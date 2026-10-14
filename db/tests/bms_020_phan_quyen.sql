@@ -2,7 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Vai trò, quyền, ủy quyền: quyền gắn với vị trí (ADR #5).
 SELECT test.fixture();
 
 INSERT INTO core.role (tenant_id, code, name) VALUES
@@ -17,10 +16,8 @@ INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES
     (test.id('TDX'), test.id('R_QUAN_LY'), 'wf.approval.act'),
     (test.id('TDX'), test.id('R_KIEM_TOAN'), 'proc.purchase_request.read');
 
--- Vai trò gán cho vị trí, phạm vi đơn vị của vị trí.
 INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
 VALUES (test.id('TDX'), test.id('R_MUA_HANG'), test.id('P_NV_MH_DT'), 'UNIT');
--- Vai trò gán cho vị trí trưởng, phạm vi cả cây con của công ty.
 INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
 VALUES (test.id('TDX'), test.id('R_QUAN_LY'), test.id('P_GD_DT'), 'SUBTREE');
 
@@ -35,7 +32,6 @@ SELECT test.ok(core.has_permission(test.id('gd_dt'), 'proc.purchase_request.read
 SELECT test.ok(NOT core.has_permission(test.id('gd_dt'), 'proc.purchase_request.read', test.id('CHIP_KD')),
                'Giám đốc Điện thoại X không xem được Chip X');
 
--- Luân chuyển: quyền đi theo vị trí, không theo người.
 SELECT test.end_assignment('c', 'P_NV_MH_DT');
 SELECT test.end_assignment('d', 'P_NV2_MH_DT');
 SELECT test.assign('TDX', 'c', 'P_NV2_MH_DT', 'PRIMARY', tstzrange(now(), NULL));
@@ -45,7 +41,6 @@ SELECT test.ok(NOT core.has_permission(test.id('c'), 'proc.purchase_request.crea
 SELECT test.ok(core.has_permission(test.id('d'), 'proc.purchase_request.create', test.id('DT_MH')),
                'Anh D ngồi ghế thì nhận quyền của ghế');
 
--- Ủy quyền một phần: chỉ quyền được liệt kê, có thời hạn.
 INSERT INTO core.delegation (tenant_id, delegator_id, delegate_id, position_id, permission_codes, valid_period)
 VALUES (test.id('TDX'), test.id('gd_dt'), test.id('tp_mh_dt'), test.id('P_GD_DT'),
         ARRAY['proc.purchase_request.read'], tstzrange(now() - interval '1 day', now() + interval '7 days'));
@@ -66,7 +61,6 @@ SELECT test.throws(format($$INSERT INTO core.delegation (tenant_id, delegator_id
                           test.id('TDX'), test.id('gd_dt'), test.id('gd_chip'), test.id('P_GD_DT')),
                    '%cùng công ty%', 'Không ủy quyền cho người công ty khác');
 
--- Gán thẳng cho người: chỉ người ngoài cây tổ chức, bắt buộc có thời hạn (ghi chú ADR #5).
 SELECT test.throws(format($$INSERT INTO core.role_grant (tenant_id, role_id, person_id, scope)
                             VALUES (%L, %L, %L, 'TENANT')$$, test.id('TDX'), test.id('R_KIEM_TOAN'), test.id('e')),
                    '%role_grant_person_has_end%', 'Gán cho người phải có thời hạn');

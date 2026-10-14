@@ -1,27 +1,17 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-#
-# Chờ `docker compose up -d` xong: job khởi tạo thoát mã 0, dịch vụ chạy lâu "healthy".
-#   scripts/ci/wait-ready.sh [số giây tối đa, mặc định 900]
-# Công cụ: Docker Compose
 
-# ===== Thiết lập =====
 set -euo pipefail
 
-# ===== Tham số =====
 TIMEOUT="${1:-900}"
 JOBS=(migrate seed openbao-init bootstrap)
 SERVICES=(db keycloak flowable hasura openbao seaweedfs actions web gateway)
 deadline=$((SECONDS + TIMEOUT))
-# Theo tên project: chạy được cả khi hệ thống dựng từ compose.release.yml hay oci:// (không cần tệp compose ở đây).
 DC=(docker compose -p "${COMPOSE_PROJECT_NAME:-bamboo}")
 
-# ===== Hàm =====
-# Dấu | phân cách cột: Health rỗng (dịch vụ không có healthcheck) không làm lệch cột sau.
 state() { "${DC[@]}" ps -a --format '{{.Service}}|{{.State}}|{{.Health}}|{{.ExitCode}}' | awk -F'|' -v s="$1" '$1 == s'; }
 
-# ===== Vòng chờ =====
 while :; do
     pending=()
     for job in "${JOBS[@]}"; do

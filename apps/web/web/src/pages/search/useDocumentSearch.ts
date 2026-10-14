@@ -2,20 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Tìm THẬT trong đề nghị mua sắm, tài liệu thư viện và nội dung tệp đính kèm (Action search_documents, ADR #36, #48).
-// Tenant và quyền xem lọc ở máy chủ; giao diện chỉ gửi chữ cần tìm.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { SearchResult } from "./types";
 
-// ===== Hằng số =====
 const PAGE = 20;
 
-// ===== Truy vấn GraphQL =====
 const SEARCH = `
   query Search($q: String!, $kind: SearchKind, $limit: Int, $offset: Int) {
     search_documents(query: $q, kind: $kind, limit: $limit, offset: $offset) {
@@ -26,7 +19,6 @@ const SEARCH = `
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Hit = {
   kind: "purchase_request" | "attachment" | "kb_document";
   entity_type: string;
@@ -47,7 +39,6 @@ type Hit = {
   kb_document: { id: string; doc_no: string; title: string; status: string; org_unit: { name: string } | null } | null;
 };
 
-// ===== Hằng số =====
 const FIELD: Record<string, string> = {
   doc_no: "Số chứng từ",
   title: "Tiêu đề",
@@ -60,8 +51,6 @@ const FIELD: Record<string, string> = {
   file_name: "Tên tệp",
 };
 
-// ===== Hàm tiện ích =====
-/** Kết quả thật → dòng hiển thị chung. Điểm giảm dần theo thứ tự máy chủ trả (đã xếp theo độ khớp). */
 const toResult = (h: Hit, i: number): SearchResult => {
   const kb = h.kb_document;
   if (h.entity_type === "collab.kb_document") {
@@ -105,13 +94,10 @@ const toResult = (h: Hit, i: number): SearchResult => {
   };
 };
 
-// ===== Kiểu dữ liệu =====
 type State = { hits: Hit[]; more: boolean; loading: boolean; error?: string; ms: number };
 
-// ===== Hằng số =====
 const EMPTY: State = { hits: [], more: false, loading: false, ms: 0 };
 
-// ===== Hook =====
 export const useDocumentSearch = (q: string, enabled: boolean) => {
   const [state, setState] = useState<State>(EMPTY);
   const seq = useRef(0);
@@ -122,7 +108,7 @@ export const useDocumentSearch = (q: string, enabled: boolean) => {
     setState((s) => ({ ...s, loading: true, error: undefined }));
     try {
       const r = await request<{ search_documents: Hit[] }>(SEARCH, { q: query, kind: null, limit: PAGE, offset });
-      if (my !== seq.current) return; // Đã có lần tìm mới hơn.
+      if (my !== seq.current) return;
       setState((s) => ({
         hits: offset === 0 ? r.search_documents : [...s.hits, ...r.search_documents],
         more: r.search_documents.length === PAGE,

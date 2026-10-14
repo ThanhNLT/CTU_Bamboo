@@ -2,21 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useEffect, useState } from "react"; // React
-import { Edit } from "@refinedev/antd"; // Refine Ant Design
-import { useGo, useParsed } from "@refinedev/core"; // Refine
-import { Alert, Spin } from "antd"; // Ant Design
-import dayjs from "dayjs"; // Day.js
+import { useEffect, useState } from "react";
+import { Edit } from "@refinedev/antd";
+import { useGo, useParsed } from "@refinedev/core";
+import { Alert, Spin } from "antd";
+import dayjs from "dayjs";
 
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { PurchaseRequestForm, type PrFormValues, NEW_PARTNER } from "./form";
 import { PR_DETAIL } from "./queries";
 import type { PurchaseRequest } from "./types";
 
-// ===== Component =====
 export const PurchaseRequestEdit = () => {
   const { id } = useParsed();
   const go = useGo();

@@ -2,18 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Nhà cung cấp người lập đề nghị mua sắm gõ tự do (chưa có trong danh mục, migration 018). Người quản lý dữ liệu
-// chủ đặt mã rồi thêm vào danh mục: mọi đề nghị cùng mã số thuế (hoặc cùng tên) chuyển sang nhà cung cấp đó.
+import { App, Button, Input, Tag } from "antd";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router";
 
-// ===== Thư viện =====
-import { App, Button, Input, Tag } from "antd"; // Ant Design
-import { useCallback, useEffect, useState } from "react"; // React
-import { Link } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { request } from "../../../api/client";
 
-// ===== Kiểu dữ liệu =====
 type Proposed = {
   request_id: string;
   doc_no: string;
@@ -25,11 +19,9 @@ type Proposed = {
   created_on: string;
 };
 
-// ===== Truy vấn GraphQL =====
 const LIST = `query { proposed_partners { request_id doc_no title status name tax_code requester created_on } }`;
 const ADOPT = `mutation Adopt($id: uuid!, $code: String) { adopt_proposed_partner(request_id: $id, code: $code) { id } }`;
 
-// ===== Component =====
 export const ProposedPartners = ({ onAdopted }: { onAdopted: () => void }) => {
   const { message } = App.useApp();
   const [rows, setRows] = useState<Proposed[]>([]);

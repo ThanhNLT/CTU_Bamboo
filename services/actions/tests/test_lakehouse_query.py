@@ -2,39 +2,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Xác thực và quyền theo tenant của Trino, Action Dịch vụ dữ liệu (ADR #45).
-
-Kiểm thử tích hợp chạy trên Trino thật (HTTPS, CA nội bộ) với dữ liệu silver dựng từ CSDL nguồn CDC
-(CDC_SOURCE_DATABASE_URL, mặc định `bms`): mỗi tenant chỉ thấy dòng của mình, không đọc được bronze hay bảng không
-có cột tenant, tài khoản actions không tự đọc được dữ liệu. Chỉ đọc, không ghi CSDL nguồn.
-"""
-
-# ===== Thư viện chuẩn =====
 import os
 import uuid
 from urllib.parse import urlparse, urlunparse
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
-import psycopg  # psycopg
-import pytest  # pytest
+import httpx
+import psycopg
+import pytest
 
-# ===== Module nội bộ =====
 from app import lakehouse_query as lq
 from app import lakehouse_silver as silver
 from app.common import ActionError, Context
 from app.trino import Trino, TrinoError
 from conftest import TEST_DB_URL, _missing, root_settings, trino_admin_password, trino_reachable
 
-# ===== Hằng số & cấu hình =====
 SOURCE_URL = os.environ.get("CDC_SOURCE_DATABASE_URL") or urlunparse(urlparse(TEST_DB_URL)._replace(path="/bms"))
 SETTINGS = root_settings()
 
 
-# ===== Lớp =====
 class AllowConn:
-    """Kết nối giả cho bước kiểm quyền: core.has_permission trả `allowed`."""
-
     def __init__(self, allowed: bool):
         self.allowed = allowed
 
@@ -45,12 +31,8 @@ class AllowConn:
         return (self.allowed,)
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def _session(tenant) -> dict:
     return {"x-hasura-user-id": str(uuid.uuid4()), "x-hasura-tenant-id": str(tenant)}
-
-
-# ===== Không cần Trino =====
 
 
 def test_nguoi_dung_trino_cua_tenant():
@@ -73,7 +55,6 @@ def test_chua_cau_hinh_trino():
 
 
 def test_thieu_ca_trino_khong_lam_sap_actions(tmp_path):
-    """Tệp CA chưa có: actions vẫn khởi động, Action Lakehouse trả 503 thay vì cả dịch vụ không lên."""
     from app import config, main
 
     settings = config.Settings(
@@ -87,9 +68,6 @@ def test_ten_tap_du_lieu_khong_hop_le(name):
     with pytest.raises(ActionError) as err:
         lq.lakehouse_preview(AllowConn(True), _session(uuid.uuid4()), {"dataset": name}, Context(lakehouse=object()))
     assert err.value.status == 400
-
-
-# ===== Trino thật =====
 
 
 @pytest.fixture(scope="module")
@@ -130,7 +108,6 @@ def test_moi_tenant_chi_thay_du_lieu_cua_minh(tenants, actions, admin):
     for code, tenant in tenants.items():
         user = lq.tenant_user(tenant)
         assert _count(actions, "SELECT count(*) FROM proc_purchase_request", user) == by_tenant.get(tenant, 0), code
-        # Điều kiện thêm vào câu SQL không vượt được row filter.
         others = [t for t in tenants.values() if t != tenant]
         if others:
             sql = f"SELECT count(*) FROM proc_purchase_request WHERE tenant_id = uuid '{others[0]}' OR true"
@@ -178,7 +155,6 @@ def test_dang_nhap_sai_bi_tu_choi(tenants):
     with pytest.raises(TrinoError) as err:
         wrong.query("SELECT 1")
     assert err.value.name == "UNAUTHENTICATED"
-    # Cổng HTTP nội bộ không nhận mật khẩu.
     http_url = os.environ.get("TRINO_HTTP_URL") or f"http://{urlparse(SETTINGS.trino_url).hostname}:8080"
     resp = httpx.post(
         http_url + "/v1/statement",

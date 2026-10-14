@@ -1,8 +1,5 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-# Ứng dụng Refine: build tĩnh bằng Node 22 (react-router 7 cần Node >= 20), phục vụ bằng nginx.
-# Địa chỉ Keycloak/Hasura gắn vào bundle lúc build (biến VITE_*, mặc định stack docker compose).
-# Bước build chạy trên kiến trúc của máy build (bản tĩnh không phụ thuộc CPU): build đa kiến trúc nhanh.
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
@@ -15,11 +12,9 @@ ARG VITE_HASURA_URL=http://localhost:8081/v1/graphql
 ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
     VITE_KEYCLOAK_CLIENT=$VITE_KEYCLOAK_CLIENT VITE_HASURA_URL=$VITE_HASURA_URL
 RUN npm run build
-# Nén sẵn mức cao nhất (nginx gzip_static gửi thẳng tệp .gz): không nén lại 2 MB JavaScript ở mỗi lượt tải.
 RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \
       -size +1k -exec sh -c 'gzip -9 -c "$1" > "$1.gz"' _ {} \;
 
-# nginx nhánh stable, chạy không cần root.
 FROM nginxinc/nginx-unprivileged:1.30-alpine
 LABEL org.opencontainers.image.title="bamboo-web" \
       org.opencontainers.image.description="Bamboo DX-OS: ứng dụng Refine (Tầng 2) phục vụ bằng nginx" \

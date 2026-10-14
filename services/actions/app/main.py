@@ -2,29 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Actions: mọi thao tác chuyển trạng thái chứng từ đi qua hàm CSDL (ADR #31).
-
-Hasura gửi payload {action, input, session_variables}; người gọi và tenant lấy
-từ session_variables. Lỗi trả về 400 {message, extensions.code} để Hasura chuyển
-nguyên cho giao diện.
-"""
-
-# ===== Thư viện chuẩn =====
 import hmac
 import logging
 import os
 import pathlib
 from contextlib import asynccontextmanager
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from botocore.exceptions import BotoCoreError, ClientError  # botocore
-from fastapi import FastAPI, Header, Request  # FastAPI
-from fastapi.responses import JSONResponse  # FastAPI
-from psycopg_pool import ConnectionPool  # psycopg-pool
-from starlette.concurrency import run_in_threadpool  # Starlette
+import psycopg
+from botocore.exceptions import BotoCoreError, ClientError
+from fastapi import FastAPI, Header, Request
+from fastapi.responses import JSONResponse
+from psycopg_pool import ConnectionPool
+from starlette.concurrency import run_in_threadpool
 
-# ===== Module nội bộ =====
 from . import (
     admin,
     attachments,
@@ -51,9 +41,7 @@ from .flowable import FlowableClient
 from .pii import PiiCipher
 from .storage import Storage
 
-# ===== Hằng số & cấu hình =====
 DECISIONS = {"APPROVE", "REJECT", "RETURN"}
-# Bảng của từng loại chứng từ được duyệt (trạng thái trả về sau khi xử lý việc duyệt).
 ENTITY_TABLES = {
     "proc.purchase_request": "proc.purchase_request",
     "hr.onboarding_request": "hr.onboarding_request",
@@ -62,7 +50,6 @@ ENTITY_TABLES = {
 BPMN = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
 log = logging.getLogger("actions")
 
-# Các phần tử BPMN đã đi qua theo trạng thái đề nghị, khi không hỏi được Flowable.
 _PATH = ["submitted", "toApprove", "approveStep", "toDecision", "decision"]
 _DB_ACTIVITIES = {
     "PENDING": (_PATH[:2], ["approveStep"]),
@@ -73,7 +60,6 @@ _DB_ACTIVITIES = {
 }
 
 
-# ===== Hàm =====
 def submit_purchase_request(conn: psycopg.Connection, session: dict, request_id: str) -> dict:
     row = conn.execute("SELECT tenant_id FROM proc.purchase_request WHERE id = %s", (request_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -111,8 +97,6 @@ def cancel_purchase_request(conn: psycopg.Connection, session: dict, request_id:
 
 
 def process_state(conn: psycopg.Connection, session: dict, request_id: str, flowable: FlowableClient | None) -> dict:
-    """Sơ đồ và bước hiện tại của lần gửi duyệt gần nhất. Đọc từ Flowable (bản phản chiếu,
-    ADR #31); Flowable chưa đồng bộ hoặc không truy cập được thì suy ra từ trạng thái trong CSDL."""
     row = conn.execute(
         "SELECT tenant_id, status, approval_round FROM proc.purchase_request WHERE id = %s", (request_id,)
     ).fetchone()
@@ -140,7 +124,7 @@ def process_state(conn: psycopg.Connection, session: dict, request_id: str, flow
                 "active_activity_ids": active,
                 "source": "flowable",
             }
-        except Exception as exc:  # noqa: BLE001 - Flowable là bản phản chiếu, lỗi thì dùng CSDL
+        except Exception as exc:  # noqa: BLE001
             log.warning("process_state: không đọc được Flowable cho %s: %s", request_id, exc)
     completed, active = _DB_ACTIVITIES.get(status, ([], []))
     return {
@@ -152,7 +136,6 @@ def process_state(conn: psycopg.Connection, session: dict, request_id: str, flow
     }
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {
     "my_tenants": lambda conn, session, args, _ctx: auth.my_tenants(conn, session),
     "submit_purchase_request": lambda conn, session, args, _ctx: submit_purchase_request(
@@ -186,7 +169,6 @@ HANDLERS = {
 }
 
 
-# ===== Hàm =====
 def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | None = None) -> dict:
     handler = HANDLERS.get(name)
     if handler is None:
@@ -199,7 +181,6 @@ def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | No
     except psycopg.errors.InvalidTextRepresentation as exc:
         raise ActionError("Mã không hợp lệ", "bad-request") from exc
     except (psycopg.errors.RaiseException, psycopg.errors.DataError, psycopg.errors.IntegrityError) as exc:
-        # Lỗi nghiệp vụ từ hàm CSDL (RAISE EXCEPTION, mã 22000) hoặc vi phạm ràng buộc.
         raise ActionError(exc.diag.message_primary or str(exc), "rejected") from exc
     except (BotoCoreError, ClientError) as exc:
         log.warning("action %s: lỗi S3: %s", name, exc)
@@ -207,26 +188,22 @@ def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | No
 
 
 def _keycloak_users(settings: config.Settings) -> hr_account.KeycloakUsers | None:
-    """Tạo tài khoản khi quản trị thêm người (ADR #44): cần secret client bms-provisioner."""
     if not settings.keycloak_provisioner_secret:
         return None
     return hr_account.KeycloakUsers(settings.keycloak_url, "bms-provisioner", settings.keycloak_provisioner_secret)
 
 
 def _lakehouse(settings: config.Settings) -> trino.Trino | None:
-    """Client Trino cho trang Dịch vụ dữ liệu (ADR #45). Thiếu tài khoản hoặc tệp CA thì Action lakehouse_* trả 503,
-    các Action khác vẫn chạy."""
     if not settings.trino_password:
         return None
     try:
         return trino.client(settings)
-    except OSError as exc:  # gồm FileNotFoundError, ssl.SSLError khi CA chưa có hoặc hỏng
+    except OSError as exc:
         log.warning("không tạo được client Trino (CA %s): %s", settings.trino_ca_file, exc)
         return None
 
 
 def _pii_cipher() -> PiiCipher | None:
-    """Khóa transit `pii` đọc bằng AppRole của dịch vụ; ngoài compose (không có OpenBao) thì không mã hóa được."""
     addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
     return PiiCipher(addr, approle) if addr and approle else None
 
@@ -271,8 +248,6 @@ def create_app(
 
     @app.get("/auth/gateway")
     def gateway_auth(request: Request):
-        """Cổng API (forward-auth, ADR #34): chặn tại biên request GraphQL không có token Keycloak hợp lệ.
-        Chỉ kiểm token (chữ ký, hạn, issuer, client); tenant và quyền do Hasura webhook xử lý."""
         header = request.headers.get("authorization", "")
         if not header.lower().startswith("bearer "):
             return JSONResponse(
@@ -292,7 +267,6 @@ def create_app(
 
     @app.get("/auth/hasura")
     def hasura_auth(request: Request):
-        """Hasura auth webhook (chế độ GET, Hasura chuyển nguyên header của client)."""
         header = request.headers.get("authorization", "")
         if not header.lower().startswith("bearer "):
             return JSONResponse({"message": "Thiếu token"}, 401)
@@ -323,8 +297,6 @@ def create_app(
         if not isinstance(payload, dict):
             return JSONResponse({"message": "Payload không hợp lệ", "extensions": {"code": "bad-request"}}, 400)
         try:
-            # Action gọi CSDL, Flowable, S3, Gotenberg bằng thư viện đồng bộ: chạy ở threadpool để một
-            # Action chậm (in phiếu PDF) không chặn event loop, tức chặn cả auth webhook của mọi request khác.
             result = await run_in_threadpool(run_action, app.state.pool, name, payload, ctx)
         except ActionError as exc:
             return JSONResponse({"message": exc.message, "extensions": {"code": exc.code}}, exc.status)
@@ -333,5 +305,4 @@ def create_app(
     return app
 
 
-# ===== Khởi tạo =====
 app = create_app()

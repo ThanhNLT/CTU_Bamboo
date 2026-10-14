@@ -2,24 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Nạp dữ liệu demo Tập đoàn X (ADR #16): chạy sau `migrate`, bỏ qua nếu đã có, tắt bằng SEED_DEMO=false.
-
-Đề nghị mua sắm mẫu (kèm dòng hàng) đi qua đúng các hàm CSDL (gửi duyệt, duyệt, trả về) nên dừng ở
-đúng bước của chuỗi duyệt; flow-sync tự tạo tiến trình Flowable tương ứng.
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 import logging
 import os
 import pathlib
 import sys
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from faker import Faker  # Faker
+import psycopg
+from faker import Faker
 
-# ===== Module nội bộ =====
 from . import demo_load
 from .demo import (
     CONTRACT_SEATS,
@@ -36,13 +27,10 @@ from .demo import (
     walk,
 )
 
-# ===== Hằng số & cấu hình =====
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
-# Quy trình mẫu cho trang Thiết kế quy trình (image Python chép thư mục platform vào /repo/platform).
 BPMN_SAMPLE = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
 
-# Nhóm hàng (danh mục ITEM_CATEGORY, khớp wf.approval_rule.category_code).
 ITEM_CATEGORIES = {
     "TDX": {
         "LINH_KIEN": "Linh kiện điện tử",
@@ -54,7 +42,6 @@ ITEM_CATEGORIES = {
     "BVX": {"TBYT": "Thiết bị y tế", "VAT_TU_YT": "Vật tư y tế", "VAN_PHONG": "Văn phòng phẩm"},
 }
 
-# Nhà cung cấp: (tenant, mã, tên, mã đơn vị nội bộ). Tên hư cấu (ADR #19).
 PARTNERS = [
     ("TDX", "NB_CHIP", "Công ty Chip X", "CHIP"),
     ("TDX", "NB_DT", "Công ty Điện thoại X", "DT"),
@@ -66,7 +53,6 @@ PARTNERS = [
     ("BVX", "NCC_YTE", "Công ty CP Thiết bị Y tế E", None),
 ]
 
-# Vật tư: (tenant, mã, tên, đơn vị tính, nhóm hàng, giá tham khảo).
 ITEMS = [
     ("TDX", "LK-PMIC", "Chip quản lý nguồn PMIC", "cái", "LINH_KIEN", 12_000),
     ("TDX", "LK-SOC-MAU", "SoC mẫu thử kỹ thuật", "cái", "LINH_KIEN", 300_000),
@@ -82,8 +68,6 @@ ITEMS = [
     ("BVX", "TBYT-SIEUAM", "Máy siêu âm 4D", "máy", "TBYT", 200_000_000),
 ]
 
-# (tenant, ghế người lập, tiêu đề, nhóm hàng, nhà cung cấp, dòng hàng: (mã vật tư, số lượng, đơn giá),
-#  các bước đã xử lý: (quyết định, ghế người xử lý, ghi chú))
 PURCHASE_REQUESTS = [
     (
         "TDX",
@@ -93,7 +77,7 @@ PURCHASE_REQUESTS = [
         "NB_CHIP",
         [("LK-PMIC", 50_000, 12_000), ("DV-VC", 1, 50_000_000)],
         [("APPROVE", "DT.HEAD", None)],
-    ),  # 650 tr: chờ TGĐ
+    ),
     (
         "TDX",
         "CHIP_PS.S1",
@@ -102,7 +86,7 @@ PURCHASE_REQUESTS = [
         "NCC_KTA",
         [("TB-DEMHAT", 1, 35_000_000)],
         [],
-    ),  # chờ quản đốc phòng sạch
+    ),
     (
         "TDX",
         "CHIP_KD.S2",
@@ -111,7 +95,7 @@ PURCHASE_REQUESTS = [
         None,
         [("LK-SOC-MAU", 300, 300_000)],
         [],
-    ),  # chờ giám đốc Chip X (đang ủy quyền)
+    ),
     (
         "TDX",
         "GD_KTHT.S1",
@@ -120,7 +104,7 @@ PURCHASE_REQUESTS = [
         "NCC_KTA",
         [("TB-DUNGCU", 40, 3_000_000)],
         [],
-    ),  # chờ giám đốc Gia dụng X
+    ),
     (
         "TDX",
         "CHIP_RD_KC.S1",
@@ -129,7 +113,7 @@ PURCHASE_REQUESTS = [
         None,
         [("LK-BOMACH", 50, 500_000)],
         [],
-    ),  # trưởng phòng trống: lên giám đốc R&D
+    ),
     (
         "TDX",
         "GD_BH.HD1",
@@ -138,7 +122,7 @@ PURCHASE_REQUESTS = [
         None,
         [("TB-DONGHO", 5, 3_000_000)],
         [],
-    ),  # người làm hợp đồng lập
+    ),
     (
         "TDX",
         "TDX_CDS.S2",
@@ -147,7 +131,7 @@ PURCHASE_REQUESTS = [
         "NCC_MCB",
         [("CNTT-MAYCHU", 2, 150_000_000)],
         [],
-    ),  # công ty mẹ: lên TGĐ
+    ),
     (
         "TDX",
         "DT_MH.S1",
@@ -165,7 +149,7 @@ PURCHASE_REQUESTS = [
         "NCC_DVD",
         [("DV-HVAC", 1, 45_000_000)],
         [("APPROVE", "CHIP_PS.HEAD", None)],
-    ),  # đã duyệt
+    ),
     (
         "BVX",
         "BVX_CDHA.S1",
@@ -174,17 +158,14 @@ PURCHASE_REQUESTS = [
         "NCC_YTE",
         [("TBYT-SIEUAM", 1, 200_000_000)],
         [],
-    ),  # thiết bị y tế: 2 cấp
+    ),
 ]
 
-# Đơn hàng nội bộ (ADR #42). Lô của Chip X: (mã lô, vật tư, đơn vị sản xuất, số lượng, ngày sản xuất, trạng thái).
 LOTS = [
     ("PMIC-2609-A", "LK-PMIC", "CHIP_PX", 200_000, "2026-09-12", "RELEASED"),
     ("PMIC-2609-B", "LK-PMIC", "CHIP_PX", 150_000, "2026-09-19", "RELEASED"),
     ("SOC-2609-A", "LK-SOC-MAU", "CHIP_PS", 2_000, "2026-09-15", "RELEASED"),
 ]
-# Lô gần đây cho bảng Sản xuất của Trung tâm điều hành (ADR #49): (số lô, vật tư, đơn vị, số lượng, cách hôm nay
-# bao nhiêu ngày, trạng thái, ghi chú). Ngày tính lúc nạp nên lần đầu cài luôn có số liệu trong kỳ.
 RECENT_LOTS = [
     ("PMIC-R-01", "LK-PMIC", "CHIP_PX", 180_000, 20, "RELEASED", None),
     ("PMIC-R-02", "LK-PMIC", "CHIP_PX", 160_000, 12, "RELEASED", None),
@@ -192,7 +173,6 @@ RECENT_LOTS = [
     ("SOC-R-01", "LK-SOC-MAU", "CHIP_PS", 1_500, 9, "RELEASED", None),
     ("SOC-R-02", "LK-SOC-MAU", "CHIP_PS", 800, 3, "SCRAPPED", "Lỗi quang khắc lớp kim loại 2"),
 ]
-# Vị trí cơ sở (tỉnh, vĩ độ, kinh độ) của các công ty để hiện trên bản đồ điều hành.
 SITES = {
     "TDX": [
         ("DT", "Thái Nguyên", 21.59422, 105.84817),
@@ -201,10 +181,7 @@ SITES = {
     ],
     "BVX": [("BVX", "Hà Nội", 20.97136, 105.77876)],
 }
-# Khối kinh doanh xác nhận đơn hàng nội bộ bán ra từ công ty mình: đơn vị → công ty.
 SALES_SCOPE = {"CHIP_KD": "CHIP", "DT_KD": "DT", "GD_PP": "GD"}
-# Đơn đã giao xong: Điện thoại X mua PMIC của Chip X (lô PMIC-2609-A), trưởng phòng mua hàng duyệt, kinh doanh
-# Chip X xác nhận. Bước 3 kịch bản demo truy xuất lô chip đã giao cho điện thoại từ đây.
 IC_DEMO = (
     "TDX",
     "DT_MH.S2",
@@ -216,7 +193,6 @@ IC_DEMO = (
     "PMIC-2609-A",
 )
 
-# Bình luận mẫu: (tiêu đề đề nghị, ghế người viết, nội dung).
 COMMENTS = [
     (
         "Văn phòng phẩm quý IV",
@@ -231,7 +207,6 @@ COMMENTS = [
 ]
 
 
-# ===== Lớp =====
 class Seeder:
     def __init__(self, conn: psycopg.Connection, faker_seed: int = 2026):
         self.conn = conn
@@ -239,8 +214,8 @@ class Seeder:
         self.fake.seed_instance(faker_seed)
         self.unit_types: dict[tuple[str, str], object] = {}
         self.titles: dict[tuple[str, str], object] = {}
-        self.positions: dict[tuple[str, str], object] = {}  # (tenant, khóa ghế) -> id
-        self.holders: dict[tuple[str, str], object] = {}  # (tenant, khóa ghế) -> person id
+        self.positions: dict[tuple[str, str], object] = {}
+        self.holders: dict[tuple[str, str], object] = {}
         self.codes: dict[str, int] = {}
 
     def x(self, sql: str, *args):
@@ -248,8 +223,6 @@ class Seeder:
 
     def tenant_id(self, code: str):
         return uid("tenant", code)
-
-    # ===== Tổ chức =====
 
     def title(self, tenant: str, name: str):
         key = (tenant, name)
@@ -315,8 +288,6 @@ class Seeder:
             if t == tenant:
                 self.position(tenant, key, unit_code, name, reports_to=reports_to)
 
-    # ===== Người và bổ nhiệm =====
-
     def person(self, tenant: str, full_name: str, person_id=None, subject=None):
         self.codes[tenant] = self.codes.get(tenant, 0) + 1
         person_id = person_id or uid(tenant, "person", str(self.codes[tenant]))
@@ -369,8 +340,6 @@ class Seeder:
                 continue
             self.assign(tenant, self.person(tenant, self.fake_name()), seat)
 
-    # ===== Phân quyền, hạn mức, ủy quyền =====
-
     def roles(self, tenant: str):
         tid = self.tenant_id(tenant)
         roles = {
@@ -415,18 +384,15 @@ class Seeder:
     def approval_rules(self):
         rules = []
         tdx, bvx = self.tenant_id("TDX"), self.tenant_id("BVX")
-        # Hạn mức chung của Tập đoàn X: < 50 tr quản lý trực tiếp; 50–500 tr giám đốc công ty; >= 500 tr thêm TGĐ.
         rules += [
             (tdx, 0, 50e6, 1, None, None, None),
             (tdx, 50e6, 500e6, 1, "CONG_TY", None, None),
             (tdx, 500e6, None, 1, "CONG_TY", None, None),
             (tdx, 500e6, None, 2, "TAP_DOAN", None, None),
         ]
-        # Các khối của công ty mẹ không thuộc công ty con nào: từ 50 tr lên thẳng TGĐ.
         for unit in TREES["TDX"].children:
             if unit.type != "CONG_TY":
                 rules += [(tdx, 0, 50e6, 1, None, unit.code, None), (tdx, 50e6, None, 1, "TAP_DOAN", unit.code, None)]
-        # Bệnh viện X: < 50 tr quản lý trực tiếp, từ 50 tr giám đốc bệnh viện; thiết bị y tế luôn duyệt 2 cấp.
         rules += [
             (bvx, 0, 50e6, 1, None, None, None),
             (bvx, 50e6, None, 1, "BENH_VIEN", None, None),
@@ -450,7 +416,6 @@ class Seeder:
             )
 
     def delegation(self):
-        # Giám đốc Chip X đi công tác, ủy quyền cho phó giám đốc (duyệt thay).
         self.x(
             """INSERT INTO core.delegation (tenant_id, delegator_id, delegate_id, position_id, valid_period, reason)
                   VALUES (%s, %s, %s, %s, tstzrange(now() - interval '1 day', now() + interval '60 days'),
@@ -541,10 +506,7 @@ class Seeder:
                 body,
             )
 
-    # ===== Nhân sự (ADR #41): chạy cả ở bản đã cài, bỏ qua phần đã có =====
-
     def _next_code(self, tenant: str) -> int:
-        """Số mã nhân viên tiếp theo dạng <tenant>-NNNN (đọc từ CSDL khi bổ sung vào bản đã cài)."""
         if tenant not in self.codes:
             self.codes[tenant] = self.x(
                 """SELECT coalesce(max(substring(employee_code FROM '-(\\d+)$')::int), 0) FROM core.person
@@ -617,8 +579,6 @@ class Seeder:
         self.holders.setdefault((tenant, seat), person_id)
 
     def hr_demo(self):
-        """Phòng nhân sự từng công ty, chuyên viên nhân sự demo, ghế tuyển mới, vai trò NHAN_SU và quy tắc duyệt
-        ONBOARDING (trưởng đơn vị nhận người rồi giám đốc công ty). Chạy lại không tạo trùng."""
         fake = Faker("vi_VN")
         fake.seed_instance(4141)
         for tenant, code, name, parent, type_, head, staff, staff_title in HR_UNITS:
@@ -690,7 +650,6 @@ class Seeder:
         if not self.x("SELECT 1 FROM wf.approval_rule WHERE process_code = 'ONBOARDING'").fetchone():
             tdx, bvx = self.tenant_id("TDX"), self.tenant_id("BVX")
             rules = [(tdx, 1, None, None), (tdx, 2, "CONG_TY", None), (bvx, 1, None, None), (bvx, 2, "BENH_VIEN", None)]
-            # Các khối của công ty mẹ: bước 2 là Tổng giám đốc.
             for unit in TREES["TDX"].children:
                 if unit.type != "CONG_TY":
                     rules += [(tdx, 1, None, unit.code), (tdx, 2, "TAP_DOAN", unit.code)]
@@ -707,13 +666,10 @@ class Seeder:
                     START,
                 )
 
-    # ===== Đơn hàng nội bộ (ADR #42): chạy cả ở bản đã cài, bỏ qua phần đã có =====
-
     def _holder(self, tenant: str, seat: str):
         return self.x("SELECT person_id FROM core.position_holder(%s)", uid(tenant, "position", seat)).fetchone()[0]
 
     def ic_demo(self):
-        """Lô của Chip X, vai trò BAN_HANG_NOI_BO cho khối kinh doanh từng công ty, một đơn nội bộ đã xác nhận."""
         tdx = self.tenant_id("TDX")
         for lot_no, item, unit, quantity, produced, status in LOTS:
             self.x(
@@ -748,7 +704,6 @@ class Seeder:
                     role,
                     perm,
                 )
-            # Quản lý xem đơn bán ra từ cây đơn vị mình (giám đốc công ty bán).
             self.x(
                 """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
                       SELECT tenant_id, id, 'ic.order.read' FROM core.role WHERE id = %s
@@ -812,7 +767,6 @@ class Seeder:
         self.x("SELECT ic.confirm_order(%s, %s, %s)", order_id, self._holder(tenant, confirmer), json.dumps(lot_lines))
 
     def seat_role(self, code: str, name: str, permission: str, seats: dict[str, list[str]]):
-        """Vai trò một quyền gán cho các ghế, phạm vi cả tenant. Chạy lại không trùng."""
         for t in TENANTS:
             tid = self.tenant_id(t.code)
             role = uid(t.code, "role", code)
@@ -841,10 +795,7 @@ class Seeder:
                         START,
                     )
 
-    # ===== Dữ liệu Lakehouse (ADR #45), dữ liệu chủ: chạy cả ở bản đã cài, bỏ qua phần đã có =====
-
     def lakehouse_demo(self):
-        """Vai trò PHAN_TICH_DU_LIEU (xem tập dữ liệu Lakehouse) cho CDO của Tập đoàn X và Kế hoạch tổng hợp BVX."""
         self.seat_role(
             "PHAN_TICH_DU_LIEU",
             "Phân tích dữ liệu",
@@ -853,7 +804,6 @@ class Seeder:
         )
 
     def master_data_admin_demo(self):
-        """Vai trò QUAN_LY_DU_LIEU_CHU (danh mục nhà cung cấp, vật tư; thêm nhà cung cấp người lập đề xuất)."""
         self.seat_role(
             "QUAN_LY_DU_LIEU_CHU",
             "Quản lý dữ liệu chủ",
@@ -862,7 +812,6 @@ class Seeder:
         )
 
     def process_design_demo(self):
-        """Vai trò THIET_KE_QUY_TRINH (wf.process.design) và quy trình mẫu Duyệt đề nghị mua sắm (ADR #47)."""
         seats = {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]}
         self.seat_role("THIET_KE_QUY_TRINH", "Thiết kế quy trình", "wf.process.design", seats)
         if not BPMN_SAMPLE.exists():
@@ -906,8 +855,6 @@ class Seeder:
             )
 
     def ops_demo(self):
-        """Trung tâm điều hành (ADR #49): vai trò xem số liệu tổng hợp của tenant con, tọa độ cơ sở, lô gần đây.
-        Chạy lại không tạo trùng, không ghi đè tọa độ đã sửa."""
         self.seat_role(
             "DIEU_HANH_TAP_DOAN",
             "Điều hành tập đoàn",
@@ -942,8 +889,6 @@ class Seeder:
             )
 
     def library_demo(self):
-        """Thư viện tri thức (ADR #48): vai trò đề xuất / quản lý, quy tắc duyệt KB_DOCUMENT (trưởng đơn vị của người
-        lập), vài tài liệu đã xuất bản. Chạy lại không tạo trùng."""
         self.seat_role(
             "DE_XUAT_TAI_LIEU",
             "Đề xuất tài liệu",
@@ -1056,7 +1001,6 @@ class Seeder:
         for t in TENANTS:
             self.org(t.code)
         self.people()
-        # Kiểm tra ngay trong giao dịch (trigger chuyển việc mặc định chạy lúc commit).
         self.x("SET CONSTRAINTS ALL IMMEDIATE")
         for t in TENANTS:
             self.roles(t.code)
@@ -1075,8 +1019,6 @@ class Seeder:
 
 
 def seed(conn: psycopg.Connection) -> bool:
-    """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự, đơn
-    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ, thiết kế quy trình, thư viện, điều hành)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
@@ -1107,6 +1049,5 @@ def main() -> int:
     return 0
 
 
-# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     sys.exit(main())

@@ -2,14 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useMemo } from "react"; // React
+import { useMemo } from "react";
 
-// ===== Module nội bộ =====
 import type { OrgData } from "./orgData";
 
-// ===== Hook =====
-/** Cây đơn vị đang hoạt động cho TreeSelect (chọn đơn vị cha, đơn vị neo phạm vi...). */
 export const useUnitTree = (org: OrgData, exclude?: string) =>
   useMemo(() => {
     type Node = { value: string; title: string; children: Node[] };

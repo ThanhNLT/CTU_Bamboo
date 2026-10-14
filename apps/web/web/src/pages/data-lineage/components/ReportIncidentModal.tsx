@@ -2,18 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Form, Input, Modal, Select } from "antd"; // Ant Design
-import { useEffect } from "react"; // React
+import { Form, Input, Modal, Select } from "antd";
+import { useEffect } from "react";
 
-// ===== Module nội bộ =====
 import { failedChecks } from "../graph";
 import type { LineageNode } from "../types";
 
-// ===== Kiểu dữ liệu =====
 type Values = { nodeId: string; kind: string; description: string };
 
-// ===== Hằng số =====
 const KINDS = [
   { value: "wrong", label: "Dữ liệu sai" },
   { value: "missing", label: "Thiếu / rỗng dữ liệu" },
@@ -21,8 +17,6 @@ const KINDS = [
   { value: "other", label: "Khác" },
 ];
 
-// ===== Component =====
-/** Báo sự cố dữ liệu: chọn tài sản, loại sự cố, mô tả. Tài sản đang có kiểm tra lỗi thì điền sẵn mô tả. */
 export const ReportIncidentModal = ({
   open,
   nodes,

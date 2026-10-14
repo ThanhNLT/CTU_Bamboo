@@ -2,19 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Checkbox, Modal, Tag } from "antd"; // Ant Design
-import { Pin } from "lucide-react"; // Lucide React
-import { useState } from "react"; // React
+import { Checkbox, Modal, Tag } from "antd";
+import { Pin } from "lucide-react";
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { MAX_PINS, type KpiOption } from "../useKpis";
 import type { PinnedKpi, Tone } from "../types";
 import { Dot, Panel, PanelLink } from "../../../components/ui";
 import { Sparkline } from "./Sparkline";
 
-// ===== Hằng số =====
 const NOTE_TEXT: Record<Tone, string> = {
   success: "text-bamboo-700",
   warning: "text-amber-700",
@@ -22,7 +19,6 @@ const NOTE_TEXT: Record<Tone, string> = {
   neutral: "text-muted",
 };
 
-// ===== Component =====
 const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
   <div className="py-4 first:pt-1 last:pb-0">
     <div className="text-[12px] text-muted">{kpi.label}</div>
@@ -50,7 +46,6 @@ const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
   </div>
 );
 
-/** Chọn KPI ghim: tích theo thứ tự muốn hiện (tối đa MAX_PINS). */
 const PinPicker = ({
   open,
   options,
@@ -111,7 +106,6 @@ const PinPicker = ({
   );
 };
 
-/** KPI đã ghim của người dùng (kpi.pin) kèm nút chọn lại. */
 export const PinnedKpis = ({
   kpis,
   options,

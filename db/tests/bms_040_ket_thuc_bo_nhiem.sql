@@ -2,10 +2,8 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Chứng từ dang dở khi bổ nhiệm của người lập kết thúc (ADR #29).
 SELECT test.fixture();
 
--- Hợp đồng kết thúc: chứng từ chưa duyệt xong tự hủy, chứng từ đã duyệt chạy tiếp.
 SELECT test.assign('TDX', 'a', 'P_HD_KT_GD', 'CONTRACT',
                    tstzrange(now() - interval '1 month', now() + interval '5 months'), 'HD-01');
 SELECT test.pr('hd_nhap', 'a', 'P_HD_KT_GD', 10000000, false);
@@ -26,7 +24,6 @@ SELECT test.ok(EXISTS (SELECT 1 FROM wf.approval_history WHERE entity_id = test.
                        AND detail->>'reason' LIKE '%hợp đồng%'),
                'Lịch sử ghi lý do hủy');
 
--- Luân chuyển / nghỉ việc: chứng từ chưa duyệt xong chuyển cho người kế nhiệm vị trí.
 SELECT test.pr('c_cho', 'c', 'P_NV_MH_DT', 10000000);
 SELECT test.pr('c_nhap', 'c', 'P_NV_MH_DT', 10000000, false);
 SELECT test.end_assignment('c', 'P_NV_MH_DT');
@@ -42,7 +39,6 @@ SELECT test.ok(EXISTS (SELECT 1 FROM wf.approval_history WHERE entity_id = test.
 SELECT proc.submit_purchase_request(test.id('c_nhap'), test.id('c2'));
 SELECT test.eq(test.status('c_nhap'), 'PENDING', 'Người kế nhiệm gửi duyệt được');
 
--- Người kế nhiệm ghế người lập lại là người đang nhận việc duyệt: việc đẩy lên.
 SELECT test.pr('d_cho', 'd', 'P_NV2_MH_DT', 10000000);
 SELECT test.eq(test.assignee('d_cho'), 'tp_mh_dt', 'Trưởng phòng nhận việc');
 SELECT test.end_assignment('d', 'P_NV2_MH_DT');
@@ -51,7 +47,6 @@ SELECT test.eq((SELECT test.key(requester_id) FROM proc.purchase_request WHERE i
                'Trưởng phòng kiêm nhiệm ghế của người lập');
 SELECT test.eq(test.assignee('d_cho'), 'gd_dt', 'Không tự duyệt: việc đẩy lên giám đốc');
 
--- Hợp đồng hết hạn theo lịch (không có lệnh UPDATE): chạy wf.refresh_all định kỳ.
 SELECT test.person('TDX', 'g', 'Anh G');
 SELECT test.position('TDX', 'P_HD2_KT_GD', 'GD_KT', 'Kỹ sư hợp đồng 2', false, 'P_TP_KT_GD');
 SELECT test.assign('TDX', 'g', 'P_HD2_KT_GD', 'CONTRACT',

@@ -2,24 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Job openbao-init (ADR #25): chạy mỗi lần `docker compose up`, làm lại bao nhiêu lần cũng được.
-
-1. Lần đầu: khởi tạo OpenBao với 1 khóa unseal (chỉ cho dev), lưu khóa + root token vào
-   BAO_KEYS_FILE (volume riêng, quyền 0600), không in ra log.
-2. Mỗi lần: unseal nếu đang sealed, chờ raft bầu leader.
-3. Cấu hình: KV v2 `secret/`, transit `transit/` + khóa `pii`, PKI `pki/` (CA nội bộ), AppRole, policy đặc
-   quyền tối thiểu.
-4. Đồng bộ secret hạ tầng từ biến môi trường; khóa S3, mật khẩu Trino do OpenBao sinh một lần và là nguồn duy nhất.
-5. Ghi s3.json cho SeaweedFS, tệp cấu hình Meilisearch (khóa chủ do OpenBao sinh), catalog Iceberg
-   của Trino, chứng chỉ TLS + tệp mật khẩu của Trino (ADR #45), CA nội bộ cho client và file AppRole
-   (role-id + secret-id) cho từng dịch vụ.
-Với BAMBOO_ENV=production: từ chối chạy nếu còn mật khẩu/secret mặc định của môi trường dev, nên
-không dịch vụ nào khởi động được với cấu hình dev.
-
-    python -m app.openbao_init
-"""
-
-# ===== Thư viện chuẩn =====
 import datetime as dt
 import hashlib
 import hmac
@@ -31,18 +13,14 @@ import secrets
 import sys
 import time
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
+import httpx
 
-# ===== Module nội bộ =====
 from . import config, search, storage
 from .openbao import Bao, BaoError
 
-# ===== Hằng số & cấu hình =====
 log = logging.getLogger("openbao_init")
 
 POLICIES = {
-    # Dịch vụ actions và flow-sync: CSDL, Flowable, khóa S3 của ứng dụng, mã hóa dữ liệu nhạy cảm.
     "actions": """
 path "secret/data/bms/postgres"  { capabilities = ["read"] }
 path "secret/data/bms/flowable"  { capabilities = ["read"] }
@@ -54,8 +32,6 @@ path "secret/data/bms/trino-actions" { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
 """,
-    # Job bootstrap: tạo bucket (khóa S3 admin), deploy BPMN, nạp metadata Hasura, tạo index và khóa API
-    # Meilisearch (khóa chủ), đặt secret cho client Keycloak bms-provisioner.
     "bootstrap": """
 path "secret/data/bms/seaweedfs-admin" { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-admin" { capabilities = ["read"] }
@@ -64,13 +40,11 @@ path "secret/data/bms/hasura"          { capabilities = ["read"] }
 path "secret/data/bms/keycloak"        { capabilities = ["read"] }
 path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 """,
-    # Dịch vụ search-sync (ADR #36): đọc CSDL, đọc tệp đã kiểm tra, ghi chỉ mục tìm kiếm.
     "search": """
 path "secret/data/bms/postgres"            { capabilities = ["read"] }
 path "secret/data/bms/seaweedfs-search"    { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-indexer" { capabilities = ["read"] }
 """,
-    # Dịch vụ lakehouse-sink (ADR #39): CSDL catalog Iceberg, bucket lakehouse, tài khoản Kafka chỉ đọc (ADR #45).
     "lakehouse": """
 path "secret/data/bms/lakehouse"           { capabilities = ["read"] }
 path "secret/data/bms/seaweedfs-lakehouse" { capabilities = ["read"] }
@@ -79,20 +53,15 @@ path "secret/data/bms/kafka-lakehouse"     { capabilities = ["read"] }
 }
 
 
-# Tên máy được ghi vào chứng chỉ do CA nội bộ cấp.
 INTERNAL_HOSTS = ["trino"]
-# Tài khoản dịch vụ của Trino (ADR #45): quản trị (job trino-init) và actions (chỉ được mượn danh t_<tenant>).
 TRINO_USERS = {"bms-admin": "bms/trino-admin", "bms-actions": "bms/trino-actions"}
 TRINO_PBKDF2_ITERATIONS = 10000
 CERT_RENEW_BEFORE = dt.timedelta(days=30)
 
 
-# ===== Hàm =====
 def env_secrets() -> dict[str, dict]:
-    """Secret hạ tầng khai báo ở .env (môi trường dev); OpenBao giữ bản để dịch vụ đọc."""
     env = os.environ.get
     return {
-        # Tài khoản CSDL của actions/flow-sync (ADR #35), không phải superuser.
         "bms/postgres": {"username": "bamboo_actions", "password": env("ACTIONS_DB_PASSWORD", "actions-db-dev")},
         "bms/hasura": {"admin_secret": env("HASURA_GRAPHQL_ADMIN_SECRET", "dev-admin-secret")},
         "bms/keycloak": {
@@ -105,7 +74,6 @@ def env_secrets() -> dict[str, dict]:
         },
         "bms/actions": {"secret": env("ACTIONS_SECRET", "dev-actions-secret")},
         "bms/lakehouse": {"username": "bamboo_lakehouse", "password": env("LAKEHOUSE_DB_PASSWORD", "lakehouse-db-dev")},
-        # Kafka (ADR #45): broker đặt cùng mật khẩu này cho tài khoản SCRAM `lakehouse` lúc khởi động.
         "bms/kafka-lakehouse": {
             "username": "lakehouse",
             "password": env("LAKEHOUSE_KAFKA_PASSWORD", "lakehouse-kafka-dev"),
@@ -134,10 +102,8 @@ def wait_reachable(addr: str, timeout: float = 120.0) -> None:
 
 
 def init_and_unseal(addr: str, keys_file: pathlib.Path) -> str:
-    """Trả về root token."""
     bao = Bao(addr)
     if not bao.request("GET", "sys/init")["initialized"]:
-        # Raft khởi tạo có thể mất vài chục giây; hết giờ chờ ở đây là mất khóa nên chờ lâu.
         result = bao.request("PUT", "sys/init", {"secret_shares": 1, "secret_threshold": 1}, timeout=300)
         _write_private(keys_file, {"unseal_keys_b64": result["keys_base64"], "root_token": result["root_token"]})
         log.info("đã khởi tạo OpenBao, khóa lưu ở %s", keys_file)
@@ -167,7 +133,6 @@ def configure(root: Bao) -> None:
         root.request("POST", "sys/mounts/transit", {"type": "transit"})
     if root.request("GET", "transit/keys/pii", ok404=True) is None:
         root.request("POST", "transit/keys/pii", {"type": "aes256-gcm96"})
-    # CA nội bộ (ADR #45): cấp chứng chỉ TLS cho dịch vụ trong mạng compose (hiện là Trino). Khóa CA không rời OpenBao.
     if "pki/" not in mounts:
         root.request("POST", "sys/mounts/pki", {"type": "pki", "config": {"max_lease_ttl": "87600h"}})
     if not root.request("LIST", "pki/issuers", ok404=True):
@@ -202,7 +167,6 @@ def configure(root: Bao) -> None:
 
 
 def sync_secrets(root: Bao) -> None:
-    """Ghi secret từ env khi khác bản đang có; sinh khóa S3 nếu chưa có (OpenBao là nguồn duy nhất)."""
     for path, values in env_secrets().items():
         if root.read(path) != values:
             root.write(path, values)
@@ -222,11 +186,9 @@ def sync_secrets(root: Bao) -> None:
             log.info("đã sinh mật khẩu Trino secret/%s", path)
     if root.read("bms/trino-internal") is None:
         root.write("bms/trino-internal", {"shared_secret": secrets.token_urlsafe(48)})
-    # Client Keycloak tạo tài khoản nhân viên mới (ADR #41): bootstrap đặt secret này cho client.
     if root.read("bms/keycloak-provisioner") is None:
         root.write("bms/keycloak-provisioner", {"client_secret": secrets.token_urlsafe(32)})
         log.info("đã sinh secret client bms-provisioner")
-    # Meilisearch: khóa chủ sinh một lần; hai khóa API suy ra từ khóa chủ và uid cố định (ADR #36).
     admin = root.read("bms/meilisearch-admin")
     if admin is None:
         admin = {"master_key": secrets.token_urlsafe(32)}
@@ -243,8 +205,6 @@ def sync_secrets(root: Bao) -> None:
 
 
 def write_approle(root: Bao, addr: str, role: str, path: pathlib.Path, uid: int | None = None) -> None:
-    """Giữ file cũ nếu còn đăng nhập được; nếu không thì cấp secret-id mới. File thuộc `uid`
-    (người dùng chạy dịch vụ, image Python chạy bằng uid 10001), quyền 0400."""
     keep = False
     if path.exists():
         try:
@@ -258,18 +218,15 @@ def write_approle(root: Bao, addr: str, role: str, path: pathlib.Path, uid: int 
         secret_id = root.request("POST", f"auth/approle/role/{role}/secret-id")["data"]["secret_id"]
         _write_private(path, {"role_id": role_id, "secret_id": secret_id}, mode=0o400)
         log.info("đã cấp AppRole %s vào %s", role, path)
-    # Cả file cũ (bản trước chạy dịch vụ bằng root) cũng chuyển cho đúng người dùng.
     if uid is not None and path.stat().st_uid != uid:
         os.chown(path, uid, uid)
 
 
 def parse_outputs(spec: str) -> dict[str, pathlib.Path]:
-    """ "actions=/run/a.json,bootstrap=/run/b.json" → {role: đường dẫn}."""
     return {k.strip(): pathlib.Path(v.strip()) for k, v in (item.split("=", 1) for item in spec.split(",") if item)}
 
 
 def _write_if_changed(path: pathlib.Path, text: str, mode: int) -> bool:
-    """Chỉ ghi khi nội dung đổi: SeaweedFS nạp lại s3.json khi thời điểm sửa tệp đổi (healthcheck)."""
     if path.exists() and path.read_text(encoding="utf-8") == text:
         return False
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -281,7 +238,6 @@ def _write_if_changed(path: pathlib.Path, text: str, mode: int) -> bool:
 
 
 def trino_catalog(root: Bao, db_url: str, s3_endpoint: str, bucket: str) -> str:
-    """Catalog Iceberg của Trino (ADR #40): cùng JDBC catalog (CSDL lakehouse) và bucket với lakehouse-sink."""
     db = root.read("bms/lakehouse")
     s3 = root.read("bms/seaweedfs-lakehouse")
     return (
@@ -289,7 +245,7 @@ def trino_catalog(root: Bao, db_url: str, s3_endpoint: str, bucket: str) -> str:
             [
                 "connector.name=iceberg",
                 "iceberg.catalog.type=jdbc",
-                "iceberg.jdbc-catalog.catalog-name=bms",  # trùng tên catalog của pyiceberg (lakehouse_sink.catalog)
+                "iceberg.jdbc-catalog.catalog-name=bms",
                 "iceberg.jdbc-catalog.driver-class=org.postgresql.Driver",
                 f"iceberg.jdbc-catalog.connection-url={db_url}",
                 f"iceberg.jdbc-catalog.connection-user={db['username']}",
@@ -308,8 +264,6 @@ def trino_catalog(root: Bao, db_url: str, s3_endpoint: str, bucket: str) -> str:
 
 
 def trino_password_hash(password: str, salt: bytes | None = None) -> str:
-    """Dòng mật khẩu PBKDF2 cho file authenticator của Trino: `<số vòng>:<salt hex>:<hash hex>`, HMAC-SHA1 (thuật
-    toán Trino dùng). Mật khẩu là chuỗi ngẫu nhiên 256 bit nên số vòng không phải hàng rào chính."""
     salt = salt or secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha1", password.encode(), salt, TRINO_PBKDF2_ITERATIONS, dklen=32)
     return f"{TRINO_PBKDF2_ITERATIONS}:{salt.hex()}:{digest.hex()}"
@@ -327,8 +281,7 @@ def _trino_hash_matches(line: str, password: str) -> bool:
 
 
 def _cert_needs_renewal(pem_path: pathlib.Path, ca_pem: str) -> bool:
-    """Chưa có, sắp hết hạn, hoặc do CA khác cấp (CA đã tạo lại) thì cấp chứng chỉ mới."""
-    from cryptography import x509  # cryptography
+    from cryptography import x509
 
     if not pem_path.exists():
         return True
@@ -343,14 +296,6 @@ def _cert_needs_renewal(pem_path: pathlib.Path, ca_pem: str) -> bool:
 
 
 def trino_secrets(root: Bao, directory: pathlib.Path, uid: int | None) -> None:
-    """Tệp bí mật của Trino (ADR #45), chỉ uid của Trino đọc được:
-
-    - trino.pem: khóa + chứng chỉ TLS (CA nội bộ cấp, tên `trino`, `localhost`) + CA, cho cổng HTTPS 8443;
-    - ca.pem: CA nội bộ để client (job trino-init) xác minh;
-    - password.db: tài khoản dịch vụ, hash PBKDF2 (giữ dòng cũ khi mật khẩu không đổi);
-    - shared-secret: khóa ký giao tiếp nội bộ của Trino;
-    - admin.password: mật khẩu bms-admin cho job trino-init (chạy cùng image, cùng volume).
-    """
     directory.mkdir(parents=True, exist_ok=True)
     ca_pem = root.request("GET", "pki/cert/ca")["data"]["certificate"]
     pem = directory / "trino.pem"
@@ -389,7 +334,6 @@ def trino_secrets(root: Bao, directory: pathlib.Path, uid: int | None) -> None:
 
 
 def write_internal_ca(root: Bao, paths: list[pathlib.Path]) -> None:
-    """CA nội bộ cho client trong image Python (actions gọi Trino qua HTTPS); chứng chỉ công khai, quyền 0644."""
     ca_pem = root.request("GET", "pki/cert/ca")["data"]["certificate"].strip() + "\n"
     for path in paths:
         if _write_if_changed(path, ca_pem, 0o644):
@@ -417,7 +361,6 @@ def run(
         if _write_if_changed(s3_config_path, json.dumps(storage.s3_identities(settings), indent=2), 0o644):
             log.info("đã ghi cấu hình S3 %s", s3_config_path)
     if meili_config_path:
-        # Meilisearch chạy bằng root trong container nên tệp chứa khóa chủ chỉ root đọc được.
         if _write_if_changed(
             meili_config_path, search.config_toml(root.read("bms/meilisearch-admin")["master_key"]), 0o600
         ):
@@ -432,7 +375,6 @@ def run(
         )
         if _write_if_changed(trino_catalog_path, text, 0o600):
             log.info("đã ghi catalog Trino %s", trino_catalog_path)
-        # Trino chạy bằng uid 1000 trong image: tệp chứa mật khẩu chỉ người dùng đó đọc được.
         if trino_uid is not None and trino_catalog_path.stat().st_uid != trino_uid:
             os.chown(trino_catalog_path, trino_uid, trino_uid)
     if trino_secrets_dir:
@@ -471,6 +413,5 @@ def main() -> int:
     return 0
 
 
-# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     sys.exit(main())

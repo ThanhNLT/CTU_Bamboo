@@ -2,16 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Nhóm 5 (ADR #50): KPI ghim Trang chủ chọn lại được, Bản sao số đọc số đo và ghi nhận sự cố, Phả hệ hiện kiểm tra
-// lỗi lan xuống và báo sự cố dữ liệu. Dữ liệu từ tệp demo (app.demo_load); chạy lại nhiều lần được.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -32,12 +26,10 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("KPI ghim, Bản sao số, Phả hệ dữ liệu dùng dữ liệu trong CSDL", async ({ page }) => {
   test.setTimeout(120_000);
   await login(page, "tgd");
 
-  // KPI ghim: có sẵn, thêm "Lô đang giữ" rồi bỏ lại.
   const kpis = page.getByRole("region", { name: "KPI đã ghim" });
   await expect(kpis.getByText("Duyệt đúng hạn")).toBeVisible();
   await kpis.getByRole("button", { name: "Chọn KPI" }).click();
@@ -50,7 +42,6 @@ test("KPI ghim, Bản sao số, Phả hệ dữ liệu dùng dữ liệu trong C
   await picker.getByRole("button", { name: "Lưu" }).click();
   await expect(kpis.getByText("Lô đang giữ")).toHaveCount(0);
 
-  // Bản sao số: CR-02 có số đo, biểu đồ, sự cố; ghi nhận nếu còn sự cố chờ.
   await page.goto("/d/twin?entity=CR-02");
   await expect(page.getByRole("heading", { name: /Phòng sạch CR-02/ })).toBeVisible();
   await page
@@ -71,7 +62,6 @@ test("KPI ghim, Bản sao số, Phả hệ dữ liệu dùng dữ liệu trong C
   await page.getByRole("button", { name: "24 giờ" }).click();
   await expect(page.getByRole("heading", { name: /24 giờ qua/ })).toBeVisible();
 
-  // Phả hệ: kiểm tra lỗi trên silver.wf_task lan tới KPI; báo sự cố dữ liệu.
   await page.goto("/d/lineage");
   await expect(page.getByText(/closed_at không rỗng với việc đã xong/).first()).toBeVisible();
   await page.getByRole("button", { name: "Báo sự cố dữ liệu" }).click();
@@ -81,7 +71,6 @@ test("KPI ghim, Bản sao số, Phả hệ dữ liệu dùng dữ liệu trong C
   await expect(page.getByText(/Đã tạo sự cố dữ liệu DQ-/)).toBeVisible();
   await logout(page);
 
-  // Bệnh viện X: thấy thiết bị y tế của mình (tủ vắc-xin TL-02).
   await login(page, "gd.benhvien");
   await page.goto("/d/twin?entity=TL-02");
   await expect(page.getByRole("heading", { name: /Tủ bảo quản vắc-xin TL-02/ })).toBeVisible();

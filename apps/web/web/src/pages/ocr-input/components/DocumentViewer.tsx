@@ -2,19 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { FileImage, LoaderCircle, Minus, Plus } from "lucide-react"; // Lucide React
-import { useState } from "react"; // React
+import { FileImage, LoaderCircle, Minus, Plus } from "lucide-react";
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import type { FieldKey, OcrField, SourceDoc } from "../types";
 import { PAPER_H, PAPER_W } from "../utils";
 import { MockDocumentPreview } from "./MockDocumentPreview";
 
-// ===== Hằng số =====
 const ZOOMS = [0.75, 1, 1.25, 1.5, 2];
 
-// ===== Component =====
 const LegendDot = ({ className, label }: { className: string; label: string }) => (
   <span className="inline-flex items-center gap-1.5">
     <span className={`h-2 w-2 rounded-full ${className}`} aria-hidden />
@@ -22,7 +18,6 @@ const LegendDot = ({ className, label }: { className: string; label: string }) =
   </span>
 );
 
-/** Cột trái: tên tệp, phóng to/thu nhỏ, bản xem trước có khung nhận diện, chú giải màu. */
 export const DocumentViewer = ({
   doc,
   fields,
@@ -33,7 +28,6 @@ export const DocumentViewer = ({
 }: {
   doc: SourceDoc;
   fields: OcrField[];
-  /** Đang tải / quét / trích xuất. */
   busy?: string;
   activeKey?: FieldKey;
   onPick: (key: FieldKey) => void;
@@ -89,7 +83,6 @@ export const DocumentViewer = ({
 
       <div className="relative mt-4 overflow-auto rounded-xl bg-canvas p-5" style={{ maxHeight: 520 }}>
         {doc.kind === "sample" ? (
-          // Bọc theo kích thước đã phóng để thanh cuộn đúng; bên trong phóng bằng transform.
           <div className="mx-auto" style={{ width: PAPER_W * zoom, height: PAPER_H * zoom }}>
             <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", width: PAPER_W }}>
               <MockDocumentPreview fields={fields} activeKey={activeKey} onPick={onPick} showBoxes={!busy} />

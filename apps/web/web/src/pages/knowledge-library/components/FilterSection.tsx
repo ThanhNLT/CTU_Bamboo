@@ -2,20 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Segmented } from "antd"; // Ant Design
+import { Segmented } from "antd";
 
-// ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { CATEGORY_LABEL, SCOPE_OPTIONS } from "../labels";
 import type { CategoryFilter, DocCategory, ScopeFilter } from "../types";
 
-// ===== Hằng số =====
 const CATEGORIES: CategoryFilter[] = ["all", ...(Object.keys(CATEGORY_LABEL) as DocCategory[])];
 
-// ===== Component =====
-/** Ô tìm kiếm + phạm vi (Tất cả / Tập đoàn / Công ty của tôi) + chip loại tài liệu. */
 export const FilterSection = ({
   query,
   onQueryChange,
@@ -31,7 +26,6 @@ export const FilterSection = ({
   onScopeChange: (s: ScopeFilter) => void;
   category: CategoryFilter;
   onCategoryChange: (c: CategoryFilter) => void;
-  /** Số tài liệu theo loại (trong phạm vi đang chọn). */
   counts: Partial<Record<CategoryFilter, number>>;
 }) => (
   <div className="flex flex-col gap-3">

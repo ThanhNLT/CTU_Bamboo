@@ -2,28 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Dữ liệu demo: nạp đúng, chạy lại không trùng, khớp realm Keycloak (ADR #16, #23)."""
-
-# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
 from urllib.parse import urlparse, urlunparse
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-import pytest  # pytest
+import psycopg
+import pytest
 
-# ===== Module nội bộ =====
 from app import realm, seed
 from app.demo import DEMO_USERS, HR_DEMO_USERS, OPEN_SEATS, account_id, uid
 
-# ===== Hằng số & cấu hình =====
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_seed_test")
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def conn():
     name = urlparse(URL).path.lstrip("/")
@@ -38,12 +31,10 @@ def conn():
         yield c
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def one(conn, sql, *args):
     return conn.execute(sql, args).fetchone()[0]
 
 
-# ===== Kiểm thử =====
 def test_chay_lai_khong_trung(conn):
     before = one(conn, "SELECT count(*) FROM core.person")
     assert seed.seed(conn) is False
@@ -53,7 +44,6 @@ def test_chay_lai_khong_trung(conn):
 def test_quy_mo(conn):
     assert one(conn, "SELECT count(*) FROM core.org_unit") >= 40
     assert 100 <= one(conn, "SELECT count(*) FROM core.person") <= 160
-    # Mỗi ghế có người, trừ ghế cố ý để trống và ghế tuyển mới.
     assert one(
         conn,
         """SELECT count(*) FROM core.position p
@@ -62,7 +52,6 @@ def test_quy_mo(conn):
 
 
 def test_tai_khoan_demo_khop_keycloak(conn):
-    """Id tài khoản = sub = person.id ở tenant giữ chính; tenant khác ánh xạ qua idp_subject."""
     for user in [*DEMO_USERS, *HR_DEMO_USERS]:
         tenants = {s.tenant for s in user.seats}
         rows = conn.execute("SELECT tenant_code, person_id FROM core.account_tenants(%s)", (str(user.id),)).fetchall()
@@ -130,7 +119,6 @@ def test_nhat_ky_va_thong_bao(conn):
         assert one(conn, "SELECT count(*) FROM audit.verify_chain(%s)", uid("tenant", code)) == 0
     assert one(conn, "SELECT count(*) FROM audit.log WHERE table_name = 'proc.purchase_request_item'") >= 12
     assert one(conn, "SELECT count(*) FROM audit.v_reader WHERE person_id = %s", account_id("gd.taichinh")) == 1
-    # TGĐ có hai việc chờ duyệt; người lập đề nghị bị trả về được báo kèm lý do.
     assert (
         one(
             conn,
@@ -169,7 +157,6 @@ def test_realm_khop_file_da_commit():
 
 
 def test_nhan_su(conn):
-    """Phòng nhân sự lập hồ sơ cho cả công ty mình; quy tắc duyệt tiếp nhận; ghế tuyển mới còn trống (ADR #41)."""
     ns = account_id("ns.dienthoai")
     assert one(conn, "SELECT core.has_permission(%s, 'hr.onboarding.create', %s)", ns, uid("TDX", "unit", "DT_RD_PM"))
     assert not one(
@@ -194,7 +181,6 @@ def test_nhan_su(conn):
 
 
 def test_don_hang_noi_bo(conn):
-    """Kinh doanh Chip X xác nhận đơn bán ra từ Chip X; đơn demo đã giao lô PMIC cho Điện thoại X (ADR #42)."""
     kd = account_id("kd.chip")
     assert one(conn, "SELECT core.has_permission(%s, 'ic.order.confirm', %s)", kd, uid("TDX", "unit", "CHIP"))
     assert not one(conn, "SELECT core.has_permission(%s, 'ic.order.confirm', %s)", kd, uid("TDX", "unit", "DT"))
@@ -209,7 +195,6 @@ def test_don_hang_noi_bo(conn):
     assert row[:2] == ("CONFIRMED", kd)
     assert row[2].startswith("PO-")
     assert row[3] == uid("TDX", "lot", "PMIC-2609-A")
-    # Đề nghị nội bộ 650 triệu còn chờ TGĐ: chưa có đơn hàng nội bộ.
     assert (
         one(
             conn,
@@ -221,14 +206,12 @@ def test_don_hang_noi_bo(conn):
 
 
 def test_xem_lakehouse(conn):
-    """CDO xem được tập dữ liệu Lakehouse của Tập đoàn X; nhân viên thường thì không (ADR #45)."""
     root = uid("TDX", "unit", "TDX")
     assert one(conn, "SELECT core.has_permission(%s, 'data.lakehouse.read', %s)", account_id("cdo"), root)
     assert not one(conn, "SELECT core.has_permission(%s, 'data.lakehouse.read', %s)", account_id("ns.chip"), root)
 
 
 def test_bo_sung_ban_da_cai(conn):
-    """Bản đã cài trước khi có nhân sự: chạy seed lại thì bổ sung phòng nhân sự, không đổi dữ liệu cũ."""
     with conn.transaction():
         conn.execute("DELETE FROM core.role_grant WHERE role_id IN (SELECT id FROM core.role WHERE code = 'NHAN_SU')")
         conn.execute("DELETE FROM core.role_permission WHERE permission_code LIKE 'hr.%'")
@@ -271,7 +254,6 @@ def test_bo_sung_ban_da_cai(conn):
 
 
 def test_du_lieu_nhom5(conn):
-    """Bản sao số, phả hệ, KPI ghim nạp từ tệp demo (ADR #50), mốc thời gian dời về gần hiện tại."""
     from app import demo_load
 
     assert one(conn, "SELECT count(*) FROM iot.entity") == 26
@@ -282,7 +264,6 @@ def test_du_lieu_nhom5(conn):
     assert one(conn, "SELECT count(*) FROM meta.quality_check WHERE NOT passed") == 1
     tgd = next(u for u in DEMO_USERS if u.username == "tgd")
     assert one(conn, "SELECT count(*) FROM kpi.pin WHERE person_id = %s", tgd.id) == 4
-    # Đã nạp thì không nạp lại; --refresh xóa rồi nạp lại không trùng.
     assert demo_load.load(conn) is False
     demo_load.clear(conn)
     assert demo_load.load(conn) is True

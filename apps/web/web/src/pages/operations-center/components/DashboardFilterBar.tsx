@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Select } from "antd"; // Ant Design
-import { X } from "lucide-react"; // Lucide React
+import { Select } from "antd";
+import { X } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { DashTab, Period } from "../types";
 
-// ===== Hằng số =====
 const TABS: Array<{ key: DashTab; label: string }> = [
   { key: "overview", label: "Tổng quan" },
   { key: "process", label: "Quy trình" },
@@ -25,8 +22,6 @@ const PERIODS: Array<{ value: Period; label: string }> = [
   { value: "quarter", label: "Quý này" },
 ];
 
-// ===== Component =====
-/** Một hàng bộ lọc phía trên mọi biểu đồ: tab · Kỳ · Cơ sở (lọc bản đồ, chỉ ở Tổng quan); dưới là các bộ lọc đang bật. */
 export const DashboardFilterBar = ({
   tab,
   onTabChange,

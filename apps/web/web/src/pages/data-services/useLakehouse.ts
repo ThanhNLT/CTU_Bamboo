@@ -2,18 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Tập dữ liệu THẬT của Lakehouse (tầng silver qua Trino, ADR #45): Action lakehouse_datasets, lakehouse_preview.
-// Máy chủ chỉ trả view của tenant đang chọn, row filter của Trino giữ dữ liệu trong đúng tenant; giá trị đã che
-// dữ liệu cá nhân. Cần quyền data.lakehouse.read (vai trò Phân tích dữ liệu).
+import { useEffect, useState } from "react";
 
-// ===== Thư viện =====
-import { useEffect, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { Dataset, DatasetPreview } from "./types";
 
-// ===== Truy vấn GraphQL =====
 const DATASETS = `
   query LakehouseDatasets {
     lakehouse_datasets { name label domain columns { name type } }
@@ -26,11 +19,8 @@ const PREVIEW = `
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type RawDataset = { name: string; label: string; domain: string; columns: Array<{ name: string; type: string }> };
 
-// ===== Hằng số =====
-/** Mô tả các cột chung; cột riêng của từng bảng để trống. */
 const COLUMN_NOTE: Record<string, string> = {
   id: "Khóa chính",
   tenant_id: "Công ty (tenant) · tự lọc theo tenant đang chọn",
@@ -46,10 +36,8 @@ const COLUMN_NOTE: Record<string, string> = {
   valid_period: "Thời gian hiệu lực",
 };
 
-/** Cột máy chủ che theo tên (như nhật ký kiểm toán); cột khác vẫn được Presidio che theo nội dung. */
 const PII_COLUMN = /(^|_)(email|phone|date_of_birth)$|_enc$/;
 
-// ===== Hàm tiện ích =====
 const usage = (name: string) => ({
   graphql: `query {\n  lakehouse_preview(dataset: "${name}") {\n    total_rows\n    rows\n    masked\n  }\n}`,
   sql: `-- Trino, người dùng của tenant: row filter tự thêm tenant_id = <tenant của bạn>\nSELECT *\nFROM lakehouse.silver.${name}\nORDER BY _changed_at DESC\nLIMIT 100;`,
@@ -84,10 +72,8 @@ const toDataset = (d: RawDataset): Dataset => {
   };
 };
 
-// ===== Kiểu dữ liệu =====
 type Status = { statusCode?: number; message: string };
 
-// ===== Hook =====
 export const useLakehouseDatasets = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);

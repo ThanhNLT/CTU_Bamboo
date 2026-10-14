@@ -2,19 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 009: Tệp đính kèm chứng từ (ADR #26; dịch vụ nền tảng mục 2).
---
--- Tệp nằm ở S3 (SeaweedFS), CSDL chỉ giữ metadata. Vòng đời:
---   PENDING   đã cấp link tải lên bucket cách ly, chờ trình duyệt PUT và confirm_upload
---   CLEAN     đã quét sạch, chuyển sang bucket chính; chỉ trạng thái này tải về được
---   INFECTED  quét thấy mã độc, tệp đã bị xóa
---   REJECTED  tệp tải lên không khớp khai báo (thiếu, quá cỡ), tệp đã bị xóa
--- Dịch vụ actions là nơi duy nhất ghi bảng này (Hasura chỉ cho xem).
-
--- ---------------------------------------------------------------------------
--- Bảng tệp đính kèm
--- ---------------------------------------------------------------------------
-
 CREATE TABLE core.attachment (
     tenant_id     uuid NOT NULL REFERENCES core.tenant,
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -38,11 +25,6 @@ CREATE TABLE core.attachment (
 CREATE INDEX ON core.attachment (entity_type, entity_id) WHERE deleted_at IS NULL;
 CREATE INDEX ON core.attachment (tenant_id, uploaded_by);
 
--- ---------------------------------------------------------------------------
--- Trigger kiểm tra
--- ---------------------------------------------------------------------------
-
--- Chứng từ phải cùng tenant; trạng thái chỉ đi tiếp từ PENDING.
 CREATE FUNCTION core.attachment_check() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -62,7 +44,6 @@ BEGIN
     IF OLD.deleted_at IS NOT NULL THEN
         RAISE EXCEPTION 'Tệp đính kèm đã bị xóa';
     END IF;
-    -- Chứng từ đã có kết quả thì giữ nguyên tệp làm chứng cứ.
     IF NEW.deleted_at IS NOT NULL AND NEW.entity_type = 'proc.purchase_request' AND EXISTS (
         SELECT 1 FROM proc.purchase_request WHERE id = NEW.entity_id AND status IN ('APPROVED', 'REJECTED', 'CANCELLED')
     ) THEN
@@ -74,11 +55,6 @@ END $$;
 CREATE TRIGGER attachment_check BEFORE INSERT OR UPDATE ON core.attachment
 FOR EACH ROW EXECUTE FUNCTION core.attachment_check();
 
--- ---------------------------------------------------------------------------
--- Quyền xem (Hasura) và nhật ký kiểm toán
--- ---------------------------------------------------------------------------
-
--- Computed field `can_read` của Hasura: xem tệp khi xem được chứng từ gốc.
 CREATE FUNCTION core.attachment_can_read(p_row core.attachment, hasura_session json)
 RETURNS boolean
 LANGUAGE sql STABLE AS $$

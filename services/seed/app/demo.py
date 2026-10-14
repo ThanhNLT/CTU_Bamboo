@@ -2,31 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Dữ liệu demo Tập đoàn X: cây tổ chức, tài khoản demo (dùng chung cho seed và realm Keycloak, ADR #23).
-
-Id tenant, đơn vị, vị trí và tài khoản demo cố định bằng uuid5 nên CSDL và Keycloak
-khớp nhau mà không gọi API lẫn nhau. Tài khoản demo đặt tên theo vai trò.
-"""
-
-# ===== Thư viện chuẩn =====
 import uuid
 from dataclasses import dataclass, field
 
-# ===== Hằng số & cấu hình =====
 DEMO_NS = uuid.UUID("7d3f0a52-1c4b-5e8f-9a6d-2b7c4e1f0a93")
 
 
-# ===== Hàm =====
 def uid(*parts: str) -> uuid.UUID:
     return uuid.uuid5(DEMO_NS, ":".join(parts))
 
 
 def account_id(username: str) -> uuid.UUID:
-    """Id tài khoản Keycloak (= `sub`) và id người ở tenant giữ chính (ADR #23)."""
     return uid("account", username)
 
 
-# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Tenant:
     code: str
@@ -34,7 +23,6 @@ class Tenant:
     parent: str | None = None
 
 
-# ===== Hằng số & cấu hình =====
 TENANTS = [Tenant("TDX", "Tập đoàn X"), Tenant("BVX", "Bệnh viện X", parent="TDX")]
 
 UNIT_TYPES = {
@@ -55,26 +43,23 @@ UNIT_TYPES = {
 }
 
 
-# ===== Kiểu dữ liệu =====
 @dataclass
 class Unit:
     code: str
     name: str
     type: str
-    head: str  # chức danh vị trí trưởng
-    staff: int = 2  # số ghế nhân viên
+    head: str
+    staff: int = 2
     staff_title: str = "Chuyên viên"
-    legal: bool = False  # công ty (pháp nhân)
+    legal: bool = False
     deputies: list[str] = field(default_factory=list)
     children: list["Unit"] = field(default_factory=list)
 
 
-# ===== Hàm =====
 def U(code, name, type_, head, staff=2, staff_title="Chuyên viên", legal=False, deputies=(), children=()):
     return Unit(code, name, type_, head, staff, staff_title, legal, list(deputies), list(children))
 
 
-# ===== Hằng số & cấu hình =====
 TREES = {
     "TDX": U(
         "TDX",
@@ -332,19 +317,16 @@ TREES = {
     ),
 }
 
-# Ghế theo hợp đồng (ADR #29): (tenant, mã ghế, đơn vị, chức danh, báo cáo cho).
 CONTRACT_SEATS = [("TDX", "GD_BH.HD1", "GD_BH", "Kỹ sư tư vấn (hợp đồng)", "GD_BH.HEAD")]
 
-# Ghế để trống: trình diễn đẩy lên cấp trên (ADR #28).
 VACANT = {("TDX", "CHIP_RD_KC.HEAD")}
 
 
-# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Seat:
     tenant: str
-    position: str  # khóa vị trí, ví dụ "DT_MH.S1", "CHIP.HEAD", "TDX.DEP1"
-    type: str = "PRIMARY"  # PRIMARY / CONCURRENT / CONTRACT
+    position: str
+    type: str = "PRIMARY"
 
 
 @dataclass(frozen=True)
@@ -359,12 +341,10 @@ class DemoUser:
         return account_id(self.username)
 
 
-# ===== Hàm =====
 def _u(username, full_name, *seats, roles=()):
     return DemoUser(username, full_name, tuple(seats), tuple(roles))
 
 
-# ===== Hằng số & cấu hình =====
 DEMO_USERS = [
     _u("tgd", "Nguyễn Văn Thành", Seat("TDX", "TDX.HEAD")),
     _u("pho.tgd", "Trần Thị Mai", Seat("TDX", "TDX.DEP1")),
@@ -382,15 +362,11 @@ DEMO_USERS = [
     _u("gd.benhvien", "Võ Thị Bích", Seat("BVX", "BVX.HEAD")),
     _u("tk.duoc.benhvien", "Dương Văn Khoa", Seat("BVX", "BVX_DUOC.HEAD")),
     _u("bs.cdha.benhvien", "Lưu Thị Yến", Seat("BVX", "BVX_CDHA.S1")),
-    # Một tài khoản cho hai tenant cùng công ty mẹ (ADR #30).
     _u("kiemnhiem", "Mai Xuân Phúc", Seat("TDX", "TDX_PC.S1"), Seat("BVX", "BVX_KHTH.S1", "CONCURRENT")),
-    # Giữ chính ở Chip X, làm hợp đồng ngoài giờ cho Gia dụng X (ADR #29).
     _u("hopdong", "Tạ Minh Tuấn", Seat("TDX", "CHIP_RD_TK.S1"), Seat("TDX", "GD_BH.HD1", "CONTRACT")),
-    # Đội nền tảng, quản trị kỹ thuật: bắt buộc OTP (ADR #32).
     _u("admin", "Kiều Anh Quân", Seat("TDX", "TDX_CDS.S1"), roles=("platform_admin",)),
 ]
 
-# Chuyên viên nhân sự (ADR #41): ngồi ở phòng nhân sự tạo trong HR_UNITS nên nạp sau cây tổ chức.
 HR_DEMO_USERS = [
     _u("ns.dienthoai", "Hồ Thị Thu Trang", Seat("TDX", "DT_NS.S1")),
     _u("ns.chip", "Châu Văn Phát", Seat("TDX", "CHIP_NS.S1")),
@@ -399,17 +375,13 @@ HR_DEMO_USERS = [
 ]
 
 
-# Phòng nhân sự từng công ty và ghế tuyển mới (ADR #41). Tách khỏi TREES để bản đã cài bổ sung được mà không
-# đổi tên giả của các ghế có sẵn: (tenant, mã, tên, đơn vị cha, loại, chức danh trưởng, số ghế, chức danh ghế).
 HR_UNITS = [
     ("TDX", "CHIP_NS", "Phòng Nhân sự", "CHIP", "PHONG", "Trưởng phòng nhân sự", 2, "Chuyên viên nhân sự"),
     ("TDX", "DT_NS", "Phòng Nhân sự", "DT", "PHONG", "Trưởng phòng nhân sự", 2, "Chuyên viên nhân sự"),
     ("TDX", "GD_NS", "Phòng Nhân sự", "GD", "PHONG", "Trưởng phòng nhân sự", 2, "Chuyên viên nhân sự"),
     ("BVX", "BVX_TCCB", "Phòng Tổ chức cán bộ", "BVX", "PHONG", "Trưởng phòng", 2, "Chuyên viên tổ chức"),
 ]
-# Phạm vi lập hồ sơ của phòng nhân sự: cả công ty (Khối Nhân sự công ty mẹ: cả tập đoàn).
 HR_SCOPE = {"CHIP_NS": "CHIP", "DT_NS": "DT", "GD_NS": "GD", "TDX_NS": "TDX", "BVX_TCCB": "BVX"}
-# Ghế còn trống để demo tuyển mới: (tenant, khóa ghế, đơn vị, chức danh).
 OPEN_SEATS = [
     ("TDX", "DT_RD_PM.S4", "DT_RD_PM", "Kỹ sư phần mềm"),
     ("TDX", "DT_MH.S4", "DT_MH", "Chuyên viên"),
@@ -419,9 +391,7 @@ OPEN_SEATS = [
 ]
 
 
-# ===== Hàm =====
 def walk(unit: Unit, parent: Unit | None = None):
-    """Duyệt cây theo thứ tự cha trước con: (đơn vị, đơn vị cha)."""
     yield unit, parent
     for child in unit.children:
         yield from walk(child, unit)

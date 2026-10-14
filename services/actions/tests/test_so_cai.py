@@ -2,22 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Sổ cái (ADR #46): đối soát tệp đính kèm với bản niêm phong trong chuỗi hash kiểm toán, phòng đọc chỉ đọc."""
-
-# ===== Thư viện chuẩn =====
 import hashlib
 import uuid
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
-import pytest  # pytest
+import httpx
+import pytest
 from test_tep_dinh_kem import CONFIRM, PDF, upload
 
-# ===== Module nội bộ =====
 from app import ledger
 from conftest import ids, pr
 
-# ===== Hằng số & cấu hình =====
 VERIFY = """mutation($code: String, $sha: String, $file: String) {
   ledger_verify(code: $code, sha256: $sha, file_name: $file) {
     kind via query checked_at actual_sha256 problem
@@ -27,9 +21,6 @@ OVERVIEW = """query { ledger_overview { channel sealed sealed_this_week archived
 ARCHIVE = """query { ledger_archive { docs { attachment_id code title file_name restricted status }
   access { doc_title viewer opened_at } } }"""
 OPEN = """mutation($a: uuid!) { ledger_open_archive(attachment_id: $a) { url viewer expires_in content_type } }"""
-
-
-# ===== Không cần dịch vụ ngoài =====
 
 
 @pytest.mark.parametrize(
@@ -45,12 +36,8 @@ def test_doc_ma_ho_so(text, code, version):
     assert m and m.group(1) == code and m.group(2) == version
 
 
-# ===== SeaweedFS + Hasura thật =====
-
-
 @pytest.fixture
 def sealed(hasura, conn, s3):
-    """Một đề nghị có tệp đã nhận (CLEAN): (ids, id đề nghị, số chứng từ, id tệp, khóa lưu trữ)."""
     i = ids(conn, "TDX", "c", "a")
     pr_id = pr(conn, f"so_cai_{uuid.uuid4().hex[:8]}", "c", "P_NV_MH_DT", 10_000_000)
     att = upload(hasura, i, pr_id, PDF, name="bien-ban.pdf")
@@ -77,16 +64,13 @@ def test_doi_soat_theo_ma_va_theo_tep(hasura, s3, sealed):
 
     assert verify(hasura, i, sha=digest, file="ban-sao.pdf")["kind"] == "match"
     assert verify(hasura, i, sha="0" * 64, file="khac.pdf")["kind"] == "not_found"
-    # Người không xem được chứng từ thì như không có bản niêm phong.
     assert verify(hasura, i, who="a", code=doc_no)["kind"] == "not_found"
 
-    # Tệp trong kho bị thay: đối soát theo mã phát hiện.
     s3.put_document(key, b"%PDF-1.7 da bi sua", "application/pdf")
     r = verify(hasura, i, code=f"{doc_no} v1")
     assert r["kind"] == "mismatch" and r["actual_sha256"] == hashlib.sha256(b"%PDF-1.7 da bi sua").hexdigest(), r
     assert r["seal"]["sha256"] == digest
 
-    # Tệp bị xóa khỏi kho.
     s3.delete(key)
     r = verify(hasura, i, code=doc_no)
     assert r["kind"] == "mismatch" and r["problem"] == "Tệp không còn trong kho lưu trữ", r
@@ -125,5 +109,4 @@ def test_phong_doc(hasura, conn, sealed):
     assert resp.content == PDF and resp.headers["content-disposition"].startswith("inline")
     access = hasura(ARCHIVE, person=i["c"], tenant=i["TDX"])["data"]["ledger_archive"]["access"]
     assert access[0]["viewer"] == view["viewer"] and access[0]["doc_title"] == doc["title"]
-    # Người không xem được chứng từ không mở được, không thấy nhật ký của hồ sơ đó.
     assert hasura(OPEN, {"a": att}, person=i["a"], tenant=i["TDX"])["errors"][0]["extensions"]["code"] == "not-found"

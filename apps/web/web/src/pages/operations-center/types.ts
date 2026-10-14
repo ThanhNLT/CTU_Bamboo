@@ -2,20 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Kiểu dữ liệu =====
-/** Khóa "công ty" = id đơn vị cấp 1 dưới gốc tenant, hoặc OTHER_COMPANY cho phần gộp "Khác". */
 export type CompanyKey = string;
 
 export type Company = { key: CompanyKey; name: string; short: string; color: string };
 
-/** Độ tươi dữ liệu: nóng (gần thời gian thực) · ấm (theo lô) · lạnh. */
 export type Freshness = { tier: "Nóng" | "Ấm" | "Lạnh"; at: string };
 
 export type Kpi = {
   key: string;
   label: string;
   value: string;
-  /** Chú thích dưới số: mũi tên/chấm + chữ. */
   delta?: { dir: "up" | "down" | "dot" | "none"; tone: "good" | "bad" | "neutral"; text: string };
   freshness: Freshness;
   definition: string;
@@ -27,7 +23,6 @@ export type Period = "week" | "month" | "quarter";
 
 export type OverdueRow = {
   code: string;
-  /** Trang Hộp việc / chi tiết của hồ sơ. */
   to: string;
   company: CompanyKey;
   type: string;
@@ -36,7 +31,6 @@ export type OverdueRow = {
   overdueLabel: string;
 };
 
-/** Một ngày trên biểu đồ "duyệt mỗi ngày": số hồ sơ duyệt xong theo từng công ty. */
 export type DailyPoint = { day: string } & Record<CompanyKey, number | string>;
 
 export type PendingRow = { company: CompanyKey; l1: number; l2: number };

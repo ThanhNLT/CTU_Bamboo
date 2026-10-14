@@ -2,21 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Quản trị dữ liệu tenant (ADR #44) qua giao diện thật: CDO (vai trò Quản trị tổ chức) thêm đơn vị, vị trí, người,
-// bổ nhiệm, tạo tài khoản, tạo vai trò và cấp cho vị trí; nhập đơn vị từ CSV (xem trước lỗi rồi ghi).
-// Nhân viên thường không thấy nhóm Quản trị.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now().toString().slice(-7);
 const UNIT = `E2E_${STAMP}`;
 const PERSON = `Người Thử ${STAMP}`;
 const ROLE = `E2E_VT_${STAMP}`;
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -37,9 +30,7 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
-/** Chọn một mục của Select / TreeSelect antd theo nhãn trường và chữ gõ vào. */
 async function pick(page: Page, label: string, text: string) {
-  // Hộp thoại có thể mở chồng lên ngăn kéo: gõ thẳng vào ô tìm của Select (không cần bấm).
   await page.locator(".ant-modal:visible").getByRole("combobox", { name: label, exact: true }).fill(text);
   await page
     .locator(
@@ -50,14 +41,12 @@ async function pick(page: Page, label: string, text: string) {
     .click();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", async ({ page }) => {
   test.setTimeout(180_000);
   await login(page, "cdo");
   const nav = page.getByRole("navigation", { name: "Điều hướng chính" });
   await nav.getByText("Cơ cấu tổ chức").click();
 
-  // Đơn vị con dưới Văn phòng Chuyển đổi số.
   await page.getByPlaceholder("Tìm đơn vị theo tên, mã").fill("Chuyển đổi số");
   await page.getByRole("tree").getByText("Văn phòng Chuyển đổi số").click();
   await page.getByRole("button", { name: "Đơn vị con" }).click();
@@ -69,7 +58,6 @@ test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", a
   await expect(page.getByText("Đã thêm đơn vị.")).toBeVisible();
   await expect(page.getByRole("heading", { name: `Nhóm Thử ${STAMP}` })).toBeVisible();
 
-  // Vị trí trưởng; thêm vị trí trưởng thứ hai bị CSDL chặn (một trưởng mỗi đơn vị).
   await page.getByRole("button", { name: "Thêm vị trí" }).click();
   dialog = page.locator(".ant-modal:visible");
   await dialog.getByLabel("Tên vị trí (ghế)").fill("Trưởng nhóm");
@@ -79,7 +67,6 @@ test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", a
   await expect(page.getByRole("cell", { name: /^Trưởng đơn vị Trưởng nhóm/ })).toBeVisible();
   await expect(page.getByText("Ghế trống")).toBeVisible();
 
-  // Người mới, bổ nhiệm vào ghế, tạo tài khoản.
   await nav.getByText("Người dùng").click();
   await page.getByRole("button", { name: "Thêm người" }).click();
   dialog = page.locator(".ant-modal:visible");
@@ -106,7 +93,6 @@ test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", a
   await drawer.getByRole("button", { name: "Đóng" }).click();
   await expect(drawer).toBeHidden();
 
-  // Vai trò mới với một quyền, cấp cho vị trí vừa tạo.
   await nav.getByText("Vai trò & phân quyền").click();
   await page.getByRole("button", { name: "Thêm vai trò" }).click();
   dialog = page.locator(".ant-modal:visible");
@@ -123,7 +109,6 @@ test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", a
   await expect(page.getByText("Đã cấp vai trò.")).toBeVisible();
   await expect(page.getByRole("cell", { name: new RegExp(`Trưởng nhóm.*${PERSON}`) })).toBeVisible();
 
-  // Nhập đơn vị từ CSV: dòng sai mã đơn vị cha bị báo, không ghi; sửa rồi ghi.
   await nav.getByText("Cơ cấu tổ chức").click();
   await page.getByRole("button", { name: "Nhập từ Excel" }).click();
   await page.getByRole("menuitem", { name: "Nhập đơn vị" }).click();
@@ -150,7 +135,6 @@ test("quản trị cơ cấu, người dùng, phân quyền và nhập Excel", a
   await expect(page.getByRole("tree").getByText(`Tổ B ${STAMP}`)).toBeVisible();
   await logout(page);
 
-  // Nhân viên thường: không có nhóm Quản trị, mở thẳng đường dẫn thì báo thiếu quyền.
   await login(page, "nv.muahang.dienthoai");
   await expect(nav.getByText("Cơ cấu tổ chức")).toHaveCount(0);
   await page.goto("/admin/org");

@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Xuất lại =====
 export { OnboardingList } from "./list";
 export { OnboardingCreate } from "./create";
 export { OnboardingEdit } from "./edit";

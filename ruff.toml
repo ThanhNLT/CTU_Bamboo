@@ -2,9 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Ruff: kiểm tra và định dạng mã Python của mọi dịch vụ.
-#   uvx ruff format .            định dạng
-#   uvx ruff check --select I .  thứ tự import (thư viện chuẩn / bên ngoài / nội bộ)
 line-length = 120
 target-version = "py313"
 extend-exclude = ["*.md"]

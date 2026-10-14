@@ -2,18 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { App, Form, Modal, type FormInstance } from "antd"; // Ant Design
-import { useEffect, useId, useState, type ReactNode } from "react"; // React
+import { App, Form, Modal, type FormInstance } from "antd";
+import { useEffect, useId, useState, type ReactNode } from "react";
 
-// ===== Module nội bộ =====
 import { MODAL_Z } from "./zIndex";
 
-// ===== Component =====
-/**
- * Hộp thoại form quản trị: điền sẵn khi mở, kiểm tra trường, gọi `onSubmit` (Action), báo lỗi máy chủ nguyên văn và
- * giữ hộp thoại mở để sửa.
- */
 export const FormModal = <T extends object>({
   open,
   title,
@@ -36,7 +29,6 @@ export const FormModal = <T extends object>({
   const { message } = App.useApp();
   const [form] = Form.useForm<T>();
   const [busy, setBusy] = useState(false);
-  // Tên riêng cho từng form: các hộp thoại render sẵn cùng lúc, trùng id trường thì nhãn trỏ nhầm ô.
   const formName = `admin${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
   useEffect(() => {
@@ -44,7 +36,6 @@ export const FormModal = <T extends object>({
       form.resetFields();
       form.setFieldsValue(initial as never);
     }
-    // Chỉ điền lại khi mở hộp thoại.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

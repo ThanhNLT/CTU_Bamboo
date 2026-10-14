@@ -2,12 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Nhãn mặc định của Refine bằng tiếng Việt (giao diện chỉ một ngôn ngữ trong giai đoạn này).
+import type { I18nProvider } from "@refinedev/core";
 
-// ===== Thư viện =====
-import type { I18nProvider } from "@refinedev/core"; // Refine
-
-// ===== Hằng số =====
 const VI: Record<string, string> = {
   "buttons.logout": "Đăng xuất",
   "buttons.create": "Tạo mới",
