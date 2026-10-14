@@ -8,6 +8,7 @@ import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 
 import { request } from "../../api/client";
+import { adminSave } from "../admin/shared/api";
 import { useSession } from "../../auth/useSession";
 import { formatMoney } from "../../utils/format";
 import { FORM_OPTIONS, INSERT_PR, SUBMIT_PR, UPDATE_PR } from "./queries";
@@ -46,9 +47,27 @@ type Options = {
     ref_price: number | null;
   }[];
   core_catalog_item: { code: string; name: string }[];
+  core_v_permission_grant: { permission_code: string }[];
 };
 
 export const NEW_PARTNER = "new:";
+const NEW_ITEM = "new-item:";
+const NEW_CATEGORY = "new-category:";
+
+const categoryCode = (name: string, taken: Set<string>) => {
+  const base =
+    name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/gi, "D")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 30) || "NHOM";
+  let code = base;
+  for (let n = 2; taken.has(code); n++) code = `${base}_${n}`;
+  return code;
+};
 const ASSIGNMENT: Record<string, string> = {
   PRIMARY: "giữ chính",
   CONCURRENT: "kiêm nhiệm",
@@ -69,6 +88,9 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
   const [options, setOptions] = useState<Options | null>(null);
   const [busy, setBusy] = useState(false);
   const [partnerSearch, setPartnerSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [itemSearch, setItemSearch] = useState<{ row: number; text: string }>({ row: -1, text: "" });
+  const canManageCatalog = (options?.core_v_permission_grant.length ?? 0) > 0;
   const partnerValue: string | null | undefined = Form.useWatch("partner_id", form);
   const proposedName = partnerValue?.startsWith(NEW_PARTNER) ? partnerValue.slice(NEW_PARTNER.length) : null;
   const items: Item[] = Form.useWatch("items", form) ?? [];
@@ -85,6 +107,26 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
       })
       .catch((e) => message.error(e.message));
   }, [tenant.person_id, id, form, message]);
+
+  const addCategory = async (name: string) => {
+    if (!options) return;
+    const code = categoryCode(name, new Set(options.core_catalog_item.map((c) => c.code)));
+    try {
+      await adminSave("catalog_item", { catalog: "ITEM_CATEGORY", code, name });
+      setOptions({ ...options, core_catalog_item: [...options.core_catalog_item, { code, name }] });
+      form.setFieldValue("category_code", code);
+      message.success(`Đã thêm nhóm hàng “${name}”`);
+    } catch (e) {
+      form.setFieldValue("category_code", null);
+      message.error((e as Error).message);
+    }
+  };
+
+  const applyFreeItem = (row: number, text: string) => {
+    const current = form.getFieldValue(["items", row]) as Item;
+    form.setFieldValue(["items", row], { ...current, item_id: null, description: text });
+    setItemSearch({ row: -1, text: "" });
+  };
 
   useEffect(() => {
     if (initial) form.setFieldsValue(initial);
@@ -117,7 +159,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
     };
     const lines = v.items.map((i, n) => ({
       line_no: n + 1,
-      item_id: i.item_id ?? null,
+      item_id: i.item_id && !i.item_id.startsWith(NEW_ITEM) ? i.item_id : null,
       description: i.description,
       uom: i.uom,
       quantity: i.quantity,
@@ -200,6 +242,11 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
               placeholder="Gõ tên hoặc mã nhà cung cấp"
               onSearch={setPartnerSearch}
               onChange={() => setPartnerSearch("")}
+              notFoundContent={
+                <Typography.Text type="secondary">
+                  Chưa có nhà cung cấp trong danh mục. Gõ tên để dùng nhà cung cấp mới.
+                </Typography.Text>
+              }
               options={[
                 ...(options?.mdm_partner.map((p) => ({
                   value: p.id,
@@ -208,7 +255,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                 ...(proposedName && proposedName !== partnerSearch.trim()
                   ? [{ value: NEW_PARTNER + proposedName, label: `${proposedName} (chưa có trong danh mục)` }]
                   : []),
-                ...(partnerSearch.trim().length >= 2
+                ...(partnerSearch.trim().length >= 1
                   ? [
                       {
                         value: NEW_PARTNER + partnerSearch.trim(),
@@ -236,8 +283,32 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
               allowClear
               showSearch
               optionFilterProp="label"
-              placeholder="Gõ để tìm nhóm hàng"
-              options={options?.core_catalog_item.map((c) => ({ value: c.code, label: c.name }))}
+              placeholder={canManageCatalog ? "Chọn hoặc gõ để thêm nhóm hàng" : "Gõ để tìm nhóm hàng"}
+              onSearch={setCategorySearch}
+              onChange={(v: string | undefined) => {
+                setCategorySearch("");
+                if (v?.startsWith(NEW_CATEGORY)) void addCategory(v.slice(NEW_CATEGORY.length));
+              }}
+              notFoundContent={
+                <Typography.Text type="secondary">
+                  {canManageCatalog
+                    ? "Chưa có nhóm hàng. Gõ tên để thêm nhóm hàng mới."
+                    : "Chưa có nhóm hàng phù hợp; có thể để trống. Người quản lý dữ liệu chủ thêm nhóm hàng ở Quản trị → Danh mục."}
+                </Typography.Text>
+              }
+              options={[
+                ...(options?.core_catalog_item.map((c) => ({ value: c.code, label: c.name })) ?? []),
+                ...(canManageCatalog &&
+                categorySearch.trim() &&
+                !options?.core_catalog_item.some((c) => c.name.toLowerCase() === categorySearch.trim().toLowerCase())
+                  ? [
+                      {
+                        value: NEW_CATEGORY + categorySearch.trim(),
+                        label: `＋ Thêm nhóm hàng “${categorySearch.trim()}”`,
+                      },
+                    ]
+                  : []),
+              ]}
             />
           </Form.Item>
         </Col>
@@ -287,10 +358,33 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                         allowClear
                         showSearch
                         optionFilterProp="label"
-                        placeholder="Chọn từ danh mục"
+                        placeholder={
+                          !items[f.name]?.item_id && items[f.name]?.description ? "Ngoài danh mục" : "Chọn hoặc gõ tên"
+                        }
                         style={{ width: "100%" }}
-                        onChange={(v: string) => v && pickItem(f.name, v)}
-                        options={options?.mdm_item.map((it) => ({ value: it.id, label: `${it.code} – ${it.name}` }))}
+                        popupMatchSelectWidth={360}
+                        onSearch={(text) => setItemSearch({ row: f.name, text })}
+                        onChange={(v: string | undefined) => {
+                          if (v?.startsWith(NEW_ITEM)) applyFreeItem(f.name, v.slice(NEW_ITEM.length));
+                          else if (v) pickItem(f.name, v);
+                        }}
+                        notFoundContent={
+                          <Typography.Text type="secondary">
+                            Danh mục vật tư trống. Gõ tên để ghi vật tư ngoài danh mục.
+                          </Typography.Text>
+                        }
+                        options={[
+                          ...(options?.mdm_item.map((it) => ({ value: it.id, label: `${it.code} – ${it.name}` })) ??
+                            []),
+                          ...(itemSearch.row === f.name && itemSearch.text.trim()
+                            ? [
+                                {
+                                  value: NEW_ITEM + itemSearch.text.trim(),
+                                  label: `＋ Ghi vật tư ngoài danh mục “${itemSearch.text.trim()}”`,
+                                },
+                              ]
+                            : []),
+                        ]}
                       />
                     </Form.Item>
                   ),
