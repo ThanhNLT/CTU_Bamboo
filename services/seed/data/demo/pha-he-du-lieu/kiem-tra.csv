@@ -1,0 +1,17 @@
+node_id,rule,name,passed,detail,checked_at
+pg-purchase-request,row_count > 0,Có dữ liệu,true,Đạt · 126 dòng,2026-10-14T10:18:00+07:00
+pg-approval-history,row_count > 0,Có dữ liệu,true,Đạt · 412 dòng,2026-10-14T10:18:00+07:00
+pg-task,schema unchanged,Lược đồ không đổi,true,Đạt,2026-10-14T10:18:00+07:00
+pg-org-unit,duplicate(code) = 0,Mã đơn vị không trùng,true,Đạt,2026-10-14T10:18:00+07:00
+kafka-purchase-request,consumer_lag < 1000,Độ trễ tiêu thụ,true,Đạt · lag 4,2026-10-14T10:27:00+07:00
+kafka-approval-history,consumer_lag < 1000,Độ trễ tiêu thụ,true,Đạt · lag 2,2026-10-14T10:27:00+07:00
+kafka-task,consumer_lag < 1000,Độ trễ tiêu thụ,true,Đạt · lag 1,2026-10-14T10:27:00+07:00
+kafka-iot,consumer_lag < 1000,Độ trễ tiêu thụ,true,Đạt · lag 37,2026-10-14T10:29:00+07:00
+ice-task,missing_count(closed_at) = 0 where status = 'DONE',closed_at không rỗng với việc đã xong,false,Lỗi · 37 dòng rỗng,2026-10-14T10:15:00+07:00
+ice-approval-history,freshness(created_at) < 15m,Dữ liệu mới,true,Đạt · trễ 41 giây,2026-10-14T10:25:00+07:00
+ice-lot,invalid_count(status) = 0,Trạng thái lô hợp lệ,true,Đạt,2026-10-14T10:25:00+07:00
+ice-telemetry,freshness(observed_at) < 10m,Dữ liệu mới,true,Đạt · trễ 2 phút,2026-10-14T10:28:00+07:00
+gold-approval-daily,row_count > 0,Có dữ liệu,true,Đạt · 1.284 dòng,2026-10-14T10:20:00+07:00
+gold-smt-oee,avg(oee) between 0 and 1,OEE trong khoảng 0–1,true,Đạt,2026-10-14T10:20:00+07:00
+gold-cleanroom,row_count > 0,Có dữ liệu,true,Đạt · 2.304 dòng,2026-10-14T10:20:00+07:00
+gold-cold-chain,"duplicate(day, device) = 0",Không trùng ngày / thiết bị,true,Đạt,2026-10-14T10:20:00+07:00
