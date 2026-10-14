@@ -2,31 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""OpenBao (ADR #25): khởi tạo lặp lại được, AppRole đặc quyền tối thiểu, transit, cấu hình đọc từ két.
-
-Cần OpenBao đã được openbao-init khởi tạo: BAO_ADDR và BAO_KEYS_FILE (file khóa của openbao-init).
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 import os
 import pathlib
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
-import pytest  # pytest
+import httpx
+import pytest
 
-# ===== Module nội bộ =====
 from app import config, openbao_init, search
 from app.openbao import Bao, BaoError
 from conftest import _missing
 
-# ===== Hằng số & cấu hình =====
 ADDR = os.environ.get("BAO_ADDR", "")
 KEYS = pathlib.Path(os.environ.get("BAO_KEYS_FILE", "/openbao/keys/init.json"))
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def roles(tmp_path_factory) -> dict[str, pathlib.Path]:
     if not ADDR or not KEYS.exists():
@@ -46,7 +36,6 @@ def roles(tmp_path_factory) -> dict[str, pathlib.Path]:
     return {**files, "s3": out / "s3.json", "meili": out / "meili.toml"}
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def denied(fn) -> bool:
     try:
         fn()
@@ -55,7 +44,6 @@ def denied(fn) -> bool:
     return False
 
 
-# ===== Kiểm thử =====
 def test_chay_lai_khong_doi(roles):
     root = Bao(ADDR, json.loads(KEYS.read_text())["root_token"])
     before = root.request("GET", "secret/metadata/bms/seaweedfs")["data"]["current_version"]
@@ -84,8 +72,6 @@ def test_dac_quyen_toi_thieu(roles):
 
 
 def test_dac_quyen_tao_tai_khoan(roles):
-    """ADR #41: secret client bms-provisioner sinh một lần; bootstrap đọc để đặt cho client, actions/flow-sync đọc
-    để tạo tài khoản nhân viên mới; search-sync và lakehouse-sink không đọc được."""
     root = Bao(ADDR, json.loads(KEYS.read_text())["root_token"])
     secret = root.read("bms/keycloak-provisioner")["client_secret"]
     assert len(secret) >= 32
@@ -99,8 +85,6 @@ def test_dac_quyen_tao_tai_khoan(roles):
 
 
 def test_dac_quyen_tim_kiem(roles):
-    """ADR #36: khóa chủ Meilisearch chỉ bootstrap đọc; actions chỉ có khóa tìm; search-sync có khóa ghi
-    chỉ mục và khóa S3 chỉ đọc."""
     root = Bao(ADDR, json.loads(KEYS.read_text())["root_token"])
     master = root.read("bms/meilisearch-admin")["master_key"]
     assert len(master) >= 32
@@ -126,7 +110,6 @@ def test_dac_quyen_tim_kiem(roles):
     s3 = {i["name"]: i for i in json.loads(roles["s3"].read_text())["identities"]}
     assert s3["bms-search"]["actions"] == ["Read:bms-documents"], "search-sync chỉ đọc bucket tài liệu"
 
-    # Chạy lại không sinh khóa chủ mới, không ghi lại tệp cấu hình (SeaweedFS nạp lại khi tệp đổi).
     mtime = roles["s3"].stat().st_mtime_ns
     openbao_init.run(ADDR, KEYS, {}, roles["s3"], meili_config_path=roles["meili"])
     assert root.read("bms/meilisearch-admin")["master_key"] == master
@@ -155,7 +138,6 @@ def test_cau_hinh_doc_tu_ket(roles, monkeypatch):
 
 
 def test_dac_quyen_lakehouse(roles):
-    """ADR #39: lakehouse-sink chỉ đọc tài khoản catalog và khóa S3 của bucket lakehouse."""
     lake = Bao.from_approle_file(ADDR, roles["lakehouse"])
     assert lake.read("bms/lakehouse")["username"] == "bamboo_lakehouse"
     assert lake.read("bms/seaweedfs-lakehouse")["access_key"] == "bms-lakehouse"

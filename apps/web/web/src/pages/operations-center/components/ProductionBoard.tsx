@@ -2,14 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Bảng "Sản xuất": lô sản xuất (mfg.lot) theo công ty và trạng thái, sản lượng theo kỳ, mặt hàng, lô đang giữ;
-// đơn hàng nội bộ giữa các công ty và đơn mua (Action ops_dashboard, chỉ phần người dùng được xem).
+import { Tag } from "antd";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-// ===== Thư viện =====
-import { Tag } from "antd"; // Ant Design
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
-
-// ===== Module nội bộ =====
 import { formatDay, formatMoney } from "../../../utils/format";
 import { useOpsTab } from "../api";
 import { AXIS_TICK, BAMBOO_DARK, BAMBOO_LIGHT, GRID_STROKE } from "./chartTheme";
@@ -18,7 +13,6 @@ import { ChartWidget, DefinitionButton } from "./ChartWidget";
 import { fmtBucket, fmtHours, fmtMoneyShort, fmtNum, kpi } from "../boardFormat";
 import { BoardState, KpiRow, NumTable } from "./BoardParts";
 
-// ===== Hằng số =====
 const STATUS_NAME: Record<string, string> = {
   RELEASED: "Đã xuất xưởng",
   ON_HOLD: "Đang giữ",
@@ -29,7 +23,6 @@ const STATUS_NAME: Record<string, string> = {
 const HOLD = "#eda100";
 const SCRAP = "#c2410c";
 
-// ===== Component =====
 export const ProductionBoard = ({ days }: { days: number }) => {
   const { data, error, loading, at } = useOpsTab("production", days);
   const t = data?.totals;

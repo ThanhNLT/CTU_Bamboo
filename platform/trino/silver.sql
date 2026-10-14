@@ -1,11 +1,9 @@
 -- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 -- SPDX-License-Identifier: Apache-2.0
--- Sinh tự động bằng services/actions/app/lakehouse_silver.py từ CSDL đã migrate; đừng sửa tay (ADR #40).
 
 CREATE SCHEMA IF NOT EXISTS lakehouse.bronze;
 CREATE SCHEMA IF NOT EXISTS lakehouse.silver;
 
--- collab.comment (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.collab_comment (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -41,7 +39,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- collab.kb_document (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.collab_kb_document (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -86,7 +83,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- collab.notification (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.collab_notification (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -122,7 +118,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.assignment (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_assignment (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -156,7 +151,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.attachment (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_attachment (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -196,7 +190,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.catalog_item (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_catalog_item (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -226,7 +219,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.delegation (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_delegation (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -260,7 +252,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.doc_sequence (khóa: tenant_id, prefix, year)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_doc_sequence (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -289,7 +280,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.org_unit (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_org_unit (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -327,7 +317,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.permission (khóa: code)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_permission (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -354,7 +343,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.person (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_person (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -385,7 +373,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.position (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_position (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -419,7 +406,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.role (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_role (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -448,7 +434,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.role_grant (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_role_grant (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -483,7 +468,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.role_permission (khóa: role_id, permission_code)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_role_permission (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -511,7 +495,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.team (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_team (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -539,7 +522,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.team_member (khóa: team_id, person_id, valid_period)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_team_member (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -568,7 +550,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.tenant (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_tenant (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -598,7 +579,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- core.tenant_relation (khóa: parent_tenant_id, child_tenant_id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_tenant_relation (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -626,7 +606,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- ic.ic_order (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.ic_ic_order (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -664,7 +643,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- ic.ic_order_item (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.ic_ic_order_item (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -699,7 +677,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- mdm.item (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.mdm_item (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -734,7 +711,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- mdm.partner (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.mdm_partner (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -771,7 +747,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- mfg.lot (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.mfg_lot (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -808,7 +783,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- proc.purchase_order (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_purchase_order (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -845,7 +819,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- proc.purchase_order_item (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_purchase_order_item (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -880,7 +853,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- proc.purchase_request (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_purchase_request (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -924,7 +896,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- proc.purchase_request_item (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_purchase_request_item (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -959,7 +930,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.approval_history (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_approval_history (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -994,7 +964,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.approval_rule (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_approval_rule (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1029,7 +998,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.approval_step (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_approval_step (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1067,7 +1035,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.flow_sync (khóa: entity_type, entity_id, round)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_flow_sync (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1103,7 +1070,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.process_model (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_model (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1139,7 +1105,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.process_version (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_version (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1174,7 +1139,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.sandbox_run (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_sandbox_run (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1210,7 +1174,6 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
--- wf.task (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_task (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,

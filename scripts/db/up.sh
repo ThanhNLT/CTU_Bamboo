@@ -4,16 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Service `migrate`: tạo các database phụ (Flowable, Keycloak, metadata Hasura) nếu chưa có, migrate `bms`,
-# rồi đặt tài khoản đặc quyền tối thiểu cho từng dịch vụ (ADR #35, db/roles). Chạy lại mỗi lần khởi động.
-# Công cụ: psql
-
-# ===== Thiết lập =====
 set -euo pipefail
 export PGOPTIONS="${PGOPTIONS:--c client_min_messages=warning}"
 
-# ===== Chờ CSDL và tạo database phụ =====
-# Chờ CSDL nhận kết nối TCP (phòng khi healthcheck báo sẵn sàng sớm), tối đa 60 giây.
 for _ in $(seq 1 30); do
     psql -X -q -d postgres -c "SELECT 1" > /dev/null 2>&1 && break
     sleep 2
@@ -26,12 +19,10 @@ for db in ${EXTRA_DATABASES:-flowable hasura_meta}; do
     fi
 done
 
-# ===== Migrate CSDL nghiệp vụ =====
 HERE="$(dirname "$0")"
 ROLES="$HERE/../../db/roles"
 "$HERE/migrate.sh" bms "$HERE/../../db/migrations/bms"
 
-# ===== Tài khoản dịch vụ và phân quyền =====
 PSQL=(psql -X -q -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -d postgres -f "$ROLES/roles.sql" \
     -v hasura_password="${HASURA_DB_PASSWORD:-hasura-db-dev}" \
@@ -41,7 +32,6 @@ PSQL=(psql -X -q -v ON_ERROR_STOP=1)
     -v cdc_password="${CDC_DB_PASSWORD:-cdc-db-dev}" \
     -v lakehouse_password="${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}"
 
-# Mỗi dịch vụ là chủ CSDL của mình (tự migrate schema); bản cũ để `bms` làm chủ thì chuyển sang.
 for pair in ${SERVICE_DATABASES:-keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura}; do
     db="${pair%%:*}"
     owner="${pair#*:}"

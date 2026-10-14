@@ -2,31 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho đề nghị tiếp nhận nhân sự (ADR #41).
-
-Dữ liệu nhạy cảm (CCCD, số tài khoản, địa chỉ) chỉ đi qua đây: ghi thì mã hóa bằng khóa transit `pii` và
-lưu kèm bản che; xem bản rõ cần quyền hr.onboarding.private.read và mỗi lần xem ghi hr.private_access.
-"""
-
-# ===== Thư viện chuẩn =====
 import re
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
+import psycopg
 
-# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .openbao import BaoError
 from .pii import mask_address, mask_tail
 
-# ===== Hằng số & cấu hình =====
 ENTITY = "hr.onboarding_request"
 EDITABLE = ("DRAFT", "RETURNED")
-NATIONAL_ID = re.compile(r"^(\d{9}|\d{12})$")  # CMND 9 số hoặc CCCD 12 số
+NATIONAL_ID = re.compile(r"^(\d{9}|\d{12})$")
 BANK_ACCOUNT = re.compile(r"^\d{6,20}$")
 
 
-# ===== Hàm =====
 def _request(conn: psycopg.Connection, request_id: str, session: dict, columns: str = "tenant_id") -> tuple:
     row = conn.execute(f"SELECT {columns} FROM hr.onboarding_request WHERE id = %s", (request_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -44,9 +33,7 @@ def _clean(value: str | None) -> str | None:
     return None if value is None else "".join(value.split()) if value.strip() else ""
 
 
-# ===== Hasura Action =====
 def save_onboarding_private(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
-    """Ghi CCCD, số tài khoản, ngân hàng, địa chỉ. Trường không gửi (null) giữ nguyên; chuỗi rỗng là xóa."""
     request_id = args["request_id"]
     person, row = _request(conn, request_id, session, "tenant_id, requester_id, status")
     if str(row[1]) != person:
@@ -141,7 +128,6 @@ def retry_onboarding_account(conn: psycopg.Connection, session: dict, args: dict
     return _result(conn, args["request_id"])
 
 
-# ===== Hàm =====
 def _result(conn: psycopg.Connection, request_id: str) -> dict:
     status, account = conn.execute(
         "SELECT status, account_status FROM hr.onboarding_request WHERE id = %s", (request_id,)
@@ -149,7 +135,6 @@ def _result(conn: psycopg.Connection, request_id: str) -> dict:
     return {"request_id": request_id, "status": status, "account_status": account}
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {
     "save_onboarding_private": save_onboarding_private,
     "reveal_onboarding_private": reveal_onboarding_private,

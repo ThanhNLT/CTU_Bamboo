@@ -2,17 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useState } from "react"; // React
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { RunResult, RunRow } from "../types";
 
-// ===== Hằng số =====
 const DEFAULT_ROWS = 3;
 
-// ===== Component =====
 const ResultBadge = ({ result }: { result: RunResult }) => {
   if (result === "check_failed") {
     return (
@@ -36,7 +32,6 @@ const ResultBadge = ({ result }: { result: RunResult }) => {
   );
 };
 
-/** Lần chạy pipeline gần đây. Bấm tên tác vụ để chọn tài sản tương ứng trên sơ đồ. */
 export const RecentRunsTable = ({
   runs,
   selectedNodeId,

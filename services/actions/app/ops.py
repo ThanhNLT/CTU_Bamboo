@@ -2,46 +2,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho Trung tâm điều hành (ADR #49): số liệu các bảng Quy trình, Sản xuất, Bệnh viện, Chất lượng
-dữ liệu và khối bản đồ cơ sở, tính ở máy chủ từ dữ liệu có sẵn.
-
-    ops_dashboard(tab, days) ─► SQL tổng hợp trong tenant của phiên
-        process     chuỗi duyệt (wf.approval_history, wf.task) của chứng từ người gọi được xem
-        production  lô (mfg.lot), đơn nội bộ, đơn mua người gọi được xem
-        hospital    số TỔNG HỢP hành chính của tenant con (bệnh viện) hoặc của chính tenant; cần ops.group.read
-        quality     các kiểm tra dữ liệu tổ chức / danh mục / tệp / chỉ mục; tên mẫu chỉ cho người quản trị
-        sites       đơn vị có tọa độ kèm việc đang chờ, quá hạn, lô đang giữ trong nhánh đơn vị đó
-
-Không trả chứng từ hay dữ liệu cá nhân của tenant con (ADR #22: công ty mẹ chỉ nhận số tổng hợp).
-"""
-
-# ===== Thư viện chuẩn =====
 import datetime as dt
 from decimal import Decimal
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from psycopg.rows import dict_row  # psycopg
+import psycopg
+from psycopg.rows import dict_row
 
-# ===== Module nội bộ =====
 from .common import ActionError, Context
 
-# ===== Hằng số & cấu hình =====
 TABS = {"process", "production", "hospital", "quality", "sites"}
-SLA_HOURS = 48  # như Hộp việc: backend chưa có hạn theo bước duyệt
+SLA_HOURS = 48
 TZ = "Asia/Ho_Chi_Minh"
 ENTITY_LABEL = {
     "proc.purchase_request": "Đề nghị mua sắm",
     "hr.onboarding_request": "Tiếp nhận nhân sự",
     "collab.kb_document": "Đề xuất tài liệu",
 }
-# Chứng từ đi qua chuỗi duyệt mà người gọi được xem (wf.entity_can_read), dùng làm CTE.
 VISIBLE = """vis AS (
     SELECT DISTINCT s.entity_type, s.entity_id FROM wf.approval_step s
     WHERE s.tenant_id = %(tenant)s AND wf.entity_can_read(s.entity_type, s.entity_id, %(person)s))"""
 
 
-# ===== Hàm tiện ích =====
 def _plain(v):
     if isinstance(v, Decimal):
         return float(v)
@@ -63,7 +44,6 @@ def _one(conn: psycopg.Connection, sql: str, params: dict) -> dict:
 
 
 def _bucket(days: int) -> str:
-    """Ngày khi kỳ ≤ 31 ngày, tuần khi dài hơn."""
     return "day" if days <= 31 else "week"
 
 
@@ -80,9 +60,7 @@ def _group_reader(conn: psycopg.Connection, person: str, tenant) -> bool:
     ).fetchone()[0]
 
 
-# ===== Bảng Quy trình =====
 def process_tab(conn: psycopg.Connection, p: dict) -> dict:
-    """Thông lượng, thời gian xử lý, điểm nghẽn của chuỗi duyệt."""
     events = _rows(
         conn,
         f"""WITH {VISIBLE}
@@ -201,9 +179,7 @@ def process_tab(conn: psycopg.Connection, p: dict) -> dict:
     }
 
 
-# ===== Bảng Sản xuất =====
 def production_tab(conn: psycopg.Connection, p: dict) -> dict:
-    """Lô theo công ty / trạng thái, sản lượng theo kỳ, đơn nội bộ, đơn mua."""
     lots = _rows(
         conn,
         """SELECT l.lot_no, l.status, l.quantity, l.uom, l.produced_on, l.note, i.name AS item,
@@ -304,9 +280,7 @@ def production_tab(conn: psycopg.Connection, p: dict) -> dict:
     }
 
 
-# ===== Bảng Bệnh viện =====
 def _tenant_admin(conn: psycopg.Connection, tenant, p: dict) -> dict:
-    """Số hành chính tổng hợp của một tenant: nhân sự, vị trí, mua sắm, tiếp nhận, việc duyệt; theo khối / khoa."""
     q = {**p, "t": tenant}
     units = _rows(
         conn,
@@ -390,7 +364,6 @@ def _tenant_admin(conn: psycopg.Connection, tenant, p: dict) -> dict:
 
 
 def hospital_tab(conn: psycopg.Connection, p: dict) -> dict:
-    """Tenant con (bệnh viện) của tenant hiện tại; tenant không có con thì là chính nó. Cần ops.group.read."""
     if not _group_reader(conn, p["person"], p["tenant"]):
         return {"allowed": False, "tenants": []}
     children = [r[0] for r in conn.execute("SELECT core.child_tenants(%s)", (p["tenant"],)).fetchall()]
@@ -401,7 +374,6 @@ def hospital_tab(conn: psycopg.Connection, p: dict) -> dict:
     }
 
 
-# ===== Bảng Chất lượng dữ liệu =====
 CHECKS = [
     (
         "person_unassigned",
@@ -480,7 +452,6 @@ CHECKS = [
 
 
 def quality_tab(conn: psycopg.Connection, p: dict) -> dict:
-    """Số bản ghi vi phạm từng kiểm tra; tên mẫu chỉ cho người quản trị dữ liệu của tenant."""
     admin = conn.execute(
         "SELECT EXISTS (SELECT 1 FROM core.v_admin WHERE tenant_id = %(tenant)s AND person_id = %(person)s)", p
     ).fetchone()[0]
@@ -501,10 +472,7 @@ def quality_tab(conn: psycopg.Connection, p: dict) -> dict:
     return {"admin": admin, "score": round(100 * passed / len(checks)), "checks": checks}
 
 
-# ===== Khối bản đồ =====
 def sites_tab(conn: psycopg.Connection, p: dict) -> dict:
-    """Đơn vị có tọa độ của tenant (việc chờ / quá hạn của chứng từ người gọi được xem, lô đang giữ trong nhánh) và,
-    với người có ops.group.read, đơn vị có tọa độ của tenant con (chỉ số tổng hợp)."""
     sites = _rows(
         conn,
         f"""WITH {VISIBLE},
@@ -560,7 +528,6 @@ def sites_tab(conn: psycopg.Connection, p: dict) -> dict:
     return {"sites": sites}
 
 
-# ===== Hasura Action =====
 HANDLERS_BY_TAB = {
     "process": process_tab,
     "production": production_tab,
@@ -584,5 +551,4 @@ def ops_dashboard(conn: psycopg.Connection, session: dict, args: dict, _ctx: Con
     return {"tab": tab, "days": days, "sla_hours": SLA_HOURS, "data": HANDLERS_BY_TAB[tab](conn, params)}
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {"ops_dashboard": ops_dashboard}

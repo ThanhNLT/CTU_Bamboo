@@ -2,16 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Nhận diện, che dữ liệu cá nhân tiếng Việt bằng Presidio (ADR #43): không cần CSDL."""
+import pytest
 
-# ===== Thư viện bên ngoài =====
-import pytest  # pytest
-
-# ===== Module nội bộ =====
 from app.pii_guard import guard, mask_value
 
 
-# ===== Kiểm thử =====
 @pytest.mark.parametrize(
     ("text", "masked", "entities"),
     [
@@ -45,7 +40,7 @@ def test_che(text, masked, entities):
         "Tổng tiền 12.000.000 đ, đơn giá 1500000000",
         "Đề nghị PR-2026-000001 và đơn IC-2026-000001, mã nhân viên NV-2026-000012",
         "Ngày cần hàng 06/10/2026, số lượng 50000 cái, lô PMIC-2609-A",
-        "Mã số 123456789 không có từ khóa",  # 9 số không đi kèm CMND
+        "Mã số 123456789 không có từ khóa",
         "Tài khoản đăng nhập e2e.k3x9 đã tạo",
         "0,912345678 là tỉ lệ",
         "Hóa đơn 4111 1111 1111 1112 (không qua Luhn)",
@@ -57,7 +52,6 @@ def test_khong_che_nham(text):
 
 
 def test_che_thua_duoc_chap_nhan():
-    """12 chữ số bắt đầu bằng 0 luôn coi là CCCD, kể cả không có từ khóa: che thừa an toàn hơn sót."""
     assert guard().mask("mã 012345678901")[0] == "mã •••••••••901"
 
 
@@ -88,6 +82,5 @@ def test_vi_tri_va_nhan():
 
 
 def test_mask_value_gia_tri_la():
-    # Presidio thử lambda với chuỗi mẫu: không được ném lỗi.
     for entity in ("EMAIL_ADDRESS", "VN_PHONE", "VN_CCCD", "CREDIT_CARD"):
         assert isinstance(mask_value(entity, "PII"), str)

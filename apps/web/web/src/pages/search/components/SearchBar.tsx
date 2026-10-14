@@ -2,23 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { LoaderCircle, Search, X } from "lucide-react"; // Lucide React
+import { LoaderCircle, Search, X } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { SearchMode } from "../types";
 
-// ===== Hằng số =====
 const MODES: Array<{ key: SearchMode; label: string; hint: string }> = [
   { key: "keyword", label: "Từ khóa", hint: "Chỉ trả về kết quả chứa đủ các từ đã gõ (không dấu cũng được)" },
   { key: "semantic", label: "Ngữ nghĩa", hint: "Tìm theo ý nghĩa câu hỏi, kể cả cách nói khác" },
   { key: "hybrid", label: "Kết hợp", hint: "Gộp cả hai, xếp theo độ phù hợp" },
 ];
 
-// ===== Component =====
-/** Ô tìm lớn + chọn cách tìm + nút Tìm. Gõ tới đâu tìm tới đó; Enter / nút Tìm để tìm ngay. */
 export const SearchBar = ({
   value,
   onChange,

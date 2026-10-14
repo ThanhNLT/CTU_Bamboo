@@ -2,7 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Tệp đính kèm: cùng tenant với chứng từ, trạng thái chỉ đi tiếp từ PENDING, quyền xem theo chứng từ.
 SELECT test.fixture();
 SELECT test.pr('pr', 'c', 'P_NV_MH_DT', 20000000);
 
@@ -35,7 +34,6 @@ SELECT test.throws($$UPDATE core.attachment SET file_name = 'x.pdf' WHERE id = t
 SELECT test.ok(EXISTS (SELECT 1 FROM audit.log WHERE table_name = 'core.attachment' AND row_id = test.id('f1')::text),
                'Ghi nhật ký kiểm toán');
 
--- Đề nghị đã có kết quả thì không xóa được tệp.
 SELECT test.put('f3', pg_temp.attach('TDX', 'k3'));
 SELECT test.approve('pr', 'tp_mh_dt');
 SELECT test.throws($$UPDATE core.attachment SET deleted_at = now() WHERE id = test.id('f3')$$,

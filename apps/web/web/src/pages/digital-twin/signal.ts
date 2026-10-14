@@ -2,13 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Phép tính trên chuỗi đo của Bản sao số (iot.measurement, ADR #50): gộp theo khung thời gian, tìm đoạn vượt ngưỡng,
-// chọn miền trục Y, vạch chia trục X. Chuỗi đo không đều (mặc định mỗi 5 phút, có thể mất tín hiệu).
-
-// ===== Module nội bộ =====
 import type { BreachSpan, SeriesPoint, Threshold, TimeRange } from "./types";
 
-// ===== Hằng số =====
 export const MINUTE = 60_000;
 
 export const RANGES: Record<
@@ -20,13 +15,11 @@ export const RANGES: Record<
   "7d": { minutes: 7 * 24 * 60, bucket: 120, tickEvery: 24 * 60, label: "7 ngày qua", short: "7 ngày" },
 };
 
-// ===== Hàm tiện ích =====
 const round = (v: number, decimals: number) => {
   const f = 10 ** decimals;
   return Math.round(v * f) / f;
 };
 
-/** Khoảng cách thường gặp giữa hai điểm đo (phút), để tính độ dài đoạn vượt ngưỡng. */
 export const stepMinutes = (points: SeriesPoint[]) => {
   const gaps = points
     .slice(1)
@@ -42,7 +35,6 @@ const isOutside = (v: number, th: Threshold): "above" | "below" | null => {
   return null;
 };
 
-/** Các đoạn liên tục nằm ngoài ngưỡng; mỗi điểm đo tính bằng một chu kỳ đo. */
 export const breachSpans = (points: SeriesPoint[], th: Threshold): BreachSpan[] => {
   const step = stepMinutes(points);
   const spans: BreachSpan[] = [];
@@ -61,12 +53,9 @@ export const breachSpans = (points: SeriesPoint[], th: Threshold): BreachSpan[] 
   return spans;
 };
 
-/** Cách gộp một khung: chỉ có ngưỡng trên → lấy đỉnh; chỉ có ngưỡng dưới → lấy đáy; có cả hai → trung bình. */
 export const aggregationOf = (th: Threshold): "max" | "min" | "mean" =>
   th.max != null && th.min == null ? "max" : th.min != null && th.max == null ? "min" : "mean";
 
-/** Gộp chuỗi thành các khung `bucket` phút tính từ điểm cuối về trước; mốc của khung là thời điểm cuối khung.
- * Khung không có điểm đo nào thì để trống (đường biểu đồ đứt quãng). */
 export const bucketize = (points: SeriesPoint[], bucket: number, agg: "max" | "min" | "mean", decimals: number) => {
   if (bucket <= 1 || points.length === 0) return points;
   const size = bucket * MINUTE;
@@ -91,14 +80,12 @@ export const bucketize = (points: SeriesPoint[], bucket: number, agg: "max" | "m
     }));
 };
 
-/** Bước "đẹp" (1, 2, 2,5, 5 × 10^k) gần nhất lớn hơn hoặc bằng x. */
 const niceStep = (x: number) => {
   const k = 10 ** Math.floor(Math.log10(x));
   const f = x / k;
   return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * k;
 };
 
-/** Miền trục Y + vạch chia: bao cả dữ liệu lẫn ngưỡng, chừa lề, khoảng 4 khoảng chia. */
 export const yAxisOf = (points: SeriesPoint[], th: Threshold) => {
   const vals = points.map((p) => p.v).filter((v): v is number => v != null);
   if (th.min != null) vals.push(th.min);
@@ -114,7 +101,6 @@ export const yAxisOf = (points: SeriesPoint[], th: Threshold) => {
   return { domain: [min, max] as [number, number], ticks };
 };
 
-/** Mốc vạch chia trục X: tròn theo `every` phút (giờ Việt Nam = UTC+7). */
 export const xTicksOf = (start: number, end: number, every: number) => {
   const tz = 7 * 60 * MINUTE;
   const stepMs = every * MINUTE;

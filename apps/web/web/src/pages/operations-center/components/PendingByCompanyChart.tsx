@@ -2,20 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
+import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-// ===== Module nội bộ =====
 import type { Company, CompanyKey, PendingRow } from "../types";
 import { BAMBOO_DARK, BAMBOO_LIGHT, DIM, INK } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget } from "./ChartWidget";
 
-// ===== Hằng số =====
 const LEVEL_NAME: Record<string, string> = { l1: "Cấp 1", l2: "Cấp 2+" };
 
-// ===== Component =====
-/** Tổng ở cuối thanh xếp chồng. */
 const TotalLabel = (props: {
   x?: number | string;
   y?: number | string;
@@ -40,10 +35,6 @@ const TotalLabel = (props: {
   );
 };
 
-/**
- * Hồ sơ đang chờ theo công ty — thanh ngang xếp chồng Cấp 1 / Cấp 2 (hai bậc cùng một sắc xanh).
- * Bấm một thanh để tô sáng công ty đó trên cả trang; Esc để bỏ.
- */
 export const PendingByCompanyChart = ({
   rows,
   company,

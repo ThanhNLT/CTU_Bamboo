@@ -2,16 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Lock } from "lucide-react"; // Lucide React
+import { Lock } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { RecordStatus } from "../types";
 import { STATUS_VIEW } from "../utils";
 
-// ===== Hằng số =====
 const PILL: Record<string, string> = {
   warning: "bg-amber-50 text-amber-800",
   danger: "bg-red-50 text-red-700",
@@ -19,8 +16,6 @@ const PILL: Record<string, string> = {
   neutral: "bg-canvas text-body",
 };
 
-// ===== Component =====
-/** Trạng thái hồ sơ: chấm màu (hoặc ổ khóa khi đã đóng) + chữ. `pill` dùng ở khung chi tiết. */
 export const RecordStatusBadge = ({
   status,
   label,

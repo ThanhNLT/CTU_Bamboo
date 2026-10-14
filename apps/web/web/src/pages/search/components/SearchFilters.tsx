@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Checkbox, Select } from "antd"; // Ant Design
-import { Lock } from "lucide-react"; // Lucide React
+import { Checkbox, Select } from "antd";
+import { Lock } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { COMPANY_LABEL, TYPE_LABEL } from "../labels";
 import type { Company, ResultType, TimeRange } from "../types";
 
-// ===== Hằng số =====
 const TYPES = Object.keys(TYPE_LABEL) as ResultType[];
 const TIME_OPTIONS: Array<{ value: TimeRange; label: string }> = [
   { value: "7d", label: "7 ngày qua" },
@@ -19,15 +16,12 @@ const TIME_OPTIONS: Array<{ value: TimeRange; label: string }> = [
   { value: "all", label: "Mọi thời điểm" },
 ];
 
-// ===== Component =====
 const GroupTitle = ({ children }: { children: string }) => (
   <h2 className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h2>
 );
 
-// ===== Hàm tiện ích =====
 const toggle = <T,>(list: T[], v: T, on: boolean) => (on ? [...list, v] : list.filter((x) => x !== v));
 
-// ===== Component =====
 const Option = ({
   label,
   count,
@@ -51,7 +45,6 @@ const Option = ({
   </Checkbox>
 );
 
-/** Cột lọc: loại, công ty (chỉ các công ty bạn được xem), thời gian, và số kết quả bị ẩn vì quyền. */
 export const SearchFilters = ({
   types,
   onTypesChange,

@@ -2,16 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { CheckCircle2, ClipboardCheck, Sparkles } from "lucide-react"; // Lucide React
+import { CheckCircle2, ClipboardCheck, Sparkles } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { Dot, primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { EntityStatus, Incident, TwinEntity } from "../types";
 import { ENTITY_STATUS } from "../utils";
 
-// ===== Hằng số =====
 const TAG_CLASS: Record<EntityStatus, string> = {
   critical: "bg-red-50 text-red-700",
   warning: "bg-amber-50 text-amber-800",
@@ -19,8 +16,6 @@ const TAG_CLASS: Record<EntityStatus, string> = {
   offline: "bg-gray-100 text-gray-600",
 };
 
-// ===== Component =====
-/** Thẻ đầu cột phải: loại + URN NGSI-LD, tên, trạng thái, hỏi trợ lý và ghi nhận sự cố nghiêm trọng. */
 export const EntityHeader = ({
   entity,
   pending,
@@ -28,7 +23,6 @@ export const EntityHeader = ({
   onAcknowledge,
 }: {
   entity: TwinEntity;
-  /** Sự cố nghiêm trọng chưa ghi nhận (nếu có). */
   pending?: Incident;
   onAsk: () => void;
   onAcknowledge: (i: Incident) => void;

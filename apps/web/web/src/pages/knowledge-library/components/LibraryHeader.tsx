@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Sparkles } from "lucide-react"; // Lucide React
+import { Sparkles } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
-// ===== Component =====
 export const LibraryHeader = ({
   canPropose,
   onSuggest,

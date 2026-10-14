@@ -2,16 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useState } from "react"; // React
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import type { Seal } from "../types";
 
-// ===== Hằng số =====
 const DEFAULT_ROWS = 5;
 
-// ===== Component =====
 const ResultTag = ({ result }: { result: Seal["lastResult"] }) =>
   result == null ? (
     <span className="text-[12.5px] text-muted">Chưa đối soát</span>
@@ -27,7 +23,6 @@ const ResultTag = ({ result }: { result: Seal["lastResult"] }) =>
     </span>
   );
 
-/** Niêm phong gần đây (tệp mới nhận). Bấm mã hồ sơ để đối soát lại ngay. */
 export const RecentSealsWidget = ({ rows, onPick }: { rows: Seal[]; onPick: (row: Seal) => void }) => {
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? rows : rows.slice(0, DEFAULT_ROWS);

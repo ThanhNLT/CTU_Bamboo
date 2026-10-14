@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-# Build tài liệu Sphinx. Chạy trong thư mục docs/ hoặc `make -C docs <lệnh>` từ gốc repo.
 
 PY          ?= python3
 VENV        ?= .venv

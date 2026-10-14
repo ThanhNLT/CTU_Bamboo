@@ -1,12 +1,9 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-#
-# Cổng API (ADR #34): APISIX chế độ standalone, route khai báo trong apisix.yaml (GitOps, không có
-# Admin API để thay đổi lúc chạy).
 apisix:
   node_listen: 9080
   enable_ipv6: false
-  enable_server_tokens: false      # không lộ phiên bản trong header Server
+  enable_server_tokens: false
 
 deployment:
   role: data_plane
@@ -16,17 +13,14 @@ deployment:
 nginx_config:
   error_log_level: warn
   http:
-    # Trần chung; từng route giới hạn chặt hơn bằng plugin client-control.
     client_max_body_size: 30m
 
 plugin_attr:
   prometheus:
-    # Số liệu chỉ mở trong mạng nội bộ compose, không qua cổng 9080.
     export_addr:
       ip: 0.0.0.0
       port: 9091
 
-# WAF Coraza (OWASP CRS nhúng sẵn), chạy dạng plugin Proxy-Wasm.
 wasm:
   plugins:
     - name: coraza-filter

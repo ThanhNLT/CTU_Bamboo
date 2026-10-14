@@ -2,18 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Tìm kiếm (Trí tuệ số): một ô tìm cho mọi thứ người dùng được xem.
-// - Đề nghị mua sắm, tài liệu thư viện, nội dung tệp: tìm toàn văn qua search_documents (máy chủ lọc tenant/quyền).
-// - Thiết bị Bản sao số, hồ sơ tiếp nhận / đơn nội bộ, tài sản dữ liệu: tìm theo tên / mã qua Hasura (./useEntitySearch).
-// Chế độ "Ngữ nghĩa" (Qdrant) chờ phần trợ lý AI: hiện mọi chế độ đều tìm theo từ khóa.
-// Từ khóa và cách tìm giữ trên URL (?q=…&mode=…) để chia sẻ được đường dẫn.
+import { App } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { App } from "antd"; // Ant Design
-import { useCallback, useEffect, useMemo, useState } from "react"; // React
-import { useNavigate, useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { AiContextBanner } from "./components/AiContextBanner";
 import { SearchBar } from "./components/SearchBar";
@@ -25,16 +17,12 @@ import type { Company, ResultType, SearchMode, SortKey, TimeRange } from "./type
 import { useDocumentSearch } from "./useDocumentSearch";
 import { useEntitySearch } from "./useEntitySearch";
 
-// ===== Hằng số =====
-/** Kết quả thật đã lọc theo tenant ở máy chủ: không còn bộ lọc công ty của chỉ mục mẫu. */
 const NO_COMPANIES: Company[] = [];
 
-// ===== Hằng số =====
 const PAGE_SIZE = 6;
 const MORE_STEP = 10;
 const MODES: SearchMode[] = ["keyword", "semantic", "hybrid"];
 
-// ===== Component =====
 export const SearchPage = () => {
   const { message } = App.useApp();
   const navigate = useNavigate();
@@ -43,11 +31,9 @@ export const SearchPage = () => {
   const modeParam = params.get("mode") as SearchMode | null;
   const mode: SearchMode = modeParam && MODES.includes(modeParam) ? modeParam : "hybrid";
 
-  // Mở trang không có ?q= thì điền sẵn câu ví dụ (như thiết kế); xóa ô là xóa hẳn.
   const [text, setText] = useState(() => params.get("q") ?? "");
   const [seenQ, setSeenQ] = useState(q);
   if (seenQ !== q) {
-    // URL đổi từ nơi khác (Back/Forward, liên kết) → cập nhật ô nhập.
     setSeenQ(q);
     if (q !== text.trim()) setText(q);
   }
@@ -70,7 +56,6 @@ export const SearchPage = () => {
     [params, setParams, q, mode],
   );
 
-  // Gõ tới đâu tìm tới đó, chờ 250 ms sau lần gõ cuối.
   useEffect(() => {
     const next = text.trim();
     if (next === q) return;
@@ -91,7 +76,6 @@ export const SearchPage = () => {
     return { filtered, counts: facetCounts(rows, filters), ms: performance.now() - t0 };
   }, [docs.results, entities.results, types, range, sort]);
 
-  // Số kết quả đang hiện: về lại trang đầu mỗi khi đổi câu hỏi / bộ lọc.
   const pageKey = `${q}|${mode}|${types.join()}|${range}|${sort}`;
   const [page, setPage] = useState({ key: pageKey, size: PAGE_SIZE });
   const size = page.key === pageKey ? page.size : PAGE_SIZE;

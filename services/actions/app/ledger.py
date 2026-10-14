@@ -2,40 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho trang Sổ cái (ADR #46): đối soát toàn vẹn tệp đính kèm và phòng đọc hồ sơ đã kết thúc.
-
-Bản niêm phong của một tệp là dòng nhật ký kiểm toán ghi lúc tệp được nhận (CLEAN, kèm SHA-256 của đúng nội dung
-đã quét), nằm trong chuỗi hash của tenant (ADR #18, #33):
-
-    ledger_verify(code)   ─► bản niêm phong của chứng từ ─► đọc lại tệp trong kho, tính SHA-256 ─► so với
-                              SHA-256 trong bản niêm phong và trong CSDL, kiểm mắt xích chuỗi hash ─► Khớp / Không khớp
-    ledger_verify(sha256) ─► tìm bản niêm phong có đúng SHA-256 (tệp người dùng băm ngay trong trình duyệt)
-
-Người gọi chỉ thấy tệp của chứng từ mình xem được (wf.entity_can_read). Mỗi lần đối soát ghi audit.ledger_check,
-mỗi lần mở hồ sơ ở phòng đọc ghi audit.archive_access.
-"""
-
-# ===== Thư viện chuẩn =====
 import hashlib
 import re
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from psycopg.rows import dict_row  # psycopg
+import psycopg
+from psycopg.rows import dict_row
 
-# ===== Module nội bộ =====
 from .common import ActionError, Context, session_identity
 
-# ===== Hằng số & cấu hình =====
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
-# "PR-DT-2026-00012", "PR-DT-2026-00012 v2", "PR-DT-2026-00012 · v2"
 CODE = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._/-]{1,63}?)(?:\s*(?:·|@|,|#)?\s*v(\d{1,4}))?\s*$", re.IGNORECASE)
-FINAL = ("APPROVED", "REJECTED", "CANCELLED")  # chứng từ đã kết thúc: hồ sơ lưu trữ của phòng đọc
-VIEW_TTL = 60  # giây; link xem ở phòng đọc chỉ dùng ngay
+FINAL = ("APPROVED", "REJECTED", "CANCELLED")
+VIEW_TTL = 60
 MAX_RECENT = 100
 TZ = "Asia/Ho_Chi_Minh"
 
-# Chứng từ có tệp đính kèm (storage.ENTITY_TYPES): số chứng từ, tiêu đề, đơn vị, trạng thái.
 _DOCS = """
 WITH docs AS (
     SELECT 'proc.purchase_request' AS entity_type, r.id AS entity_id, r.doc_no, r.title, r.status,
@@ -76,9 +57,7 @@ _SEAL_JOINS = """
 """
 
 
-# ===== Hàm =====
 def _caller(conn: psycopg.Connection, session: dict) -> tuple[str, str, str]:
-    """(person, tenant, mã tenant)."""
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)
     code = conn.execute("SELECT code FROM core.tenant WHERE id = %s", (tenant,)).fetchone()
@@ -127,9 +106,7 @@ def _is_audit_reader(conn: psycopg.Connection, person: str, tenant: str) -> bool
     )
 
 
-# ===== Hasura Action =====
 def ledger_overview(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
-    """Số liệu của trang và các bản niêm phong mới nhất người gọi xem được."""
     person, tenant, channel = _caller(conn, session)
     limit = max(1, min(int(args.get("limit") or 20), MAX_RECENT))
     recent = _seals(conn, person, tenant, limit=limit)
@@ -166,7 +143,6 @@ def ledger_overview(conn: psycopg.Connection, session: dict, args: dict, _ctx: C
 
 
 def ledger_verify(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
-    """Đối soát theo mã chứng từ (đọc lại tệp trong kho) hoặc theo SHA-256 của tệp người dùng đưa vào."""
     person, tenant, channel = _caller(conn, session)
     sha = (args.get("sha256") or "").strip().lower()
     code = (args.get("code") or "").strip()
@@ -235,7 +211,6 @@ def ledger_verify(conn: psycopg.Connection, session: dict, args: dict, ctx: Cont
 
 
 def ledger_archive(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
-    """Hồ sơ lưu trữ (tệp của chứng từ đã kết thúc) người gọi xem được, kèm nhật ký phòng đọc."""
     person, tenant, _ = _caller(conn, session)
     limit = max(1, min(int(args.get("limit") or 50), 200))
     cur = conn.cursor(row_factory=dict_row)
@@ -265,7 +240,6 @@ def ledger_archive(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
 
 
 def ledger_open_archive(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
-    """Mở một hồ sơ ở phòng đọc: ghi nhật ký truy cập, trả link xem trực tiếp hạn 60 giây."""
     person, tenant, _ = _caller(conn, session)
     if ctx.storage is None:
         raise ActionError("Chưa cấu hình lưu trữ tệp", "unavailable", 503)
@@ -298,7 +272,6 @@ def ledger_open_archive(conn: psycopg.Connection, session: dict, args: dict, ctx
     }
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {
     "ledger_overview": ledger_overview,
     "ledger_verify": ledger_verify,

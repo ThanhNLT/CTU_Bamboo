@@ -2,26 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho đơn hàng nội bộ (ADR #42): bên bán xác nhận kèm lô xuất hoặc từ chối, bên mua hủy.
-
-Mọi kiểm tra nghiệp vụ (quyền ic.order.confirm, người đặt, lô của công ty bán, đủ số lượng) nằm trong hàm CSDL
-ic.confirm_order / ic.reject_order / ic.cancel_order; ở đây chỉ chặn đơn khác tenant hoặc không xem được.
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
+import psycopg
 
-# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
-# ===== Hằng số & cấu hình =====
 ENTITY = "ic.ic_order"
 
 
-# ===== Hàm =====
 def _order(conn: psycopg.Connection, session: dict, order_id: str) -> str:
     row = conn.execute("SELECT tenant_id FROM ic.ic_order WHERE id = %s", (order_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -39,7 +28,6 @@ def _result(conn: psycopg.Connection, order_id: str, purchase_order_id=None) -> 
     }
 
 
-# ===== Hasura Action =====
 def confirm_ic_order(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
     order_id = args["order_id"]
     person = _order(conn, session, order_id)
@@ -66,7 +54,6 @@ def cancel_ic_order(conn: psycopg.Connection, session: dict, args: dict, _ctx: C
     return _result(conn, order_id)
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {
     "confirm_ic_order": confirm_ic_order,
     "reject_ic_order": reject_ic_order,

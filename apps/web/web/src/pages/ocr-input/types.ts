@@ -2,24 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Kiểu dữ liệu =====
 export type FieldKey = "docNo" | "date" | "unit" | "device" | "priority" | "description" | "requester" | "signature";
 
-/** Khung nhận diện trên trang giấy (px, theo khổ giấy gốc 320 × 350 trước khi phóng to). */
 export type BBox = { x: number; y: number; w: number; h: number };
 
 export type OcrField = {
   key: FieldKey;
   label: string;
-  /** Chữ OCR đọc được trên giấy (hiển thị trên bản xem trước). */
   raw: string;
-  /** Giá trị đề xuất đưa vào form ("" = không đọc được, phải nhập tay). */
   value: string;
   confidence: number;
   bbox: BBox;
 };
 
-/** Mức tin cậy: cao (≥ 0,8) · cần xem (0,5–0,8) · nhập tay (< 0,5). */
 export type ConfidenceLevel = "high" | "review" | "manual";
 
 export type StepState = "done" | "active" | "running" | "pending";

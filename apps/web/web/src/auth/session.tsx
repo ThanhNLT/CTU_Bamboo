@@ -2,22 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Phiên làm việc: tenant đang chọn và người dùng trong tenant đó (ADR #30). Sau khi đăng nhập,
-// gọi my_tenants (role `account`, chưa gửi tenant); một tenant thì chọn luôn, nhiều tenant thì hỏi.
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Alert, Button, Card, Flex, List, Spin, Typography } from "antd";
+import { BankOutlined, MedicineBoxOutlined } from "@ant-design/icons";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState, type ReactNode } from "react"; // React
-import { Alert, Button, Card, Flex, List, Spin, Typography } from "antd"; // Ant Design
-import { BankOutlined, MedicineBoxOutlined } from "@ant-design/icons"; // Ant Design Icons
-
-// ===== Module nội bộ =====
 import { getTenant, request, setTenant } from "../api/client";
 import { SessionContext, type AccountTenant } from "./useSession";
 
-// ===== Truy vấn GraphQL =====
 const MY_TENANTS = `query MyTenants { my_tenants { tenant_id tenant_code tenant_name person_id full_name } }`;
 
-// ===== Component =====
 export const TenantGate = ({ children }: { children: ReactNode }) => {
   const [tenants, setTenants] = useState<AccountTenant[] | null>(null);
   const [selected, setSelected] = useState<string | null>(getTenant());
@@ -39,7 +32,6 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
   const switchTenant = useCallback((tenantId: string) => {
     setTenant(tenantId);
     setSelected(tenantId);
-    // Mọi dữ liệu đang hiển thị thuộc tenant cũ: tải lại trang cho sạch bộ nhớ đệm.
     window.location.assign("/");
   }, []);
 

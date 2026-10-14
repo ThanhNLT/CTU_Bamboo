@@ -2,29 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Trình soạn BPMN bằng bpmn-js Modeler (bảng công cụ, kéo thả, nối luồng, hoàn tác Ctrl+Z). Tải lười cùng trang.
-// Giấy phép bpmn.io: PHẢI giữ nguyên watermark bpmn.io, không che, không ẩn.
+import Modeler from "bpmn-js/lib/Modeler";
+import "bpmn-js/dist/assets/diagram-js.css";
+import "bpmn-js/dist/assets/bpmn-js.css";
+import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
-// ===== Thư viện =====
-import Modeler from "bpmn-js/lib/Modeler"; // bpmn-js
-import "bpmn-js/dist/assets/diagram-js.css"; // bpmn-js
-import "bpmn-js/dist/assets/bpmn-js.css"; // bpmn-js
-import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css"; // bpmn-js
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"; // React
-
-// ===== Module nội bộ =====
 import "../editor.css";
 import { flowableModdle } from "../flowable-moddle";
 import type { SelectedElement } from "../types";
 
-// ===== Kiểu dữ liệu =====
-/** Thao tác trang gọi vào trình soạn. */
 export type BpmnEditorHandle = {
   getXml: () => Promise<string>;
   select: (id: string) => void;
-  /** Sửa thuộc tính phần tử đang chọn: tên, thuộc tính flowable:*, điều kiện của luồng. */
   update: (id: string, patch: Partial<SelectedElement>) => void;
-  /** Tô các phần tử theo kết quả chạy thử. */
   highlight: (ids: string[]) => void;
 };
 
@@ -46,7 +37,6 @@ type Bo = {
 };
 type Element = { id: string; type: string; businessObject: Bo };
 
-// ===== Hàm tiện ích =====
 const describe = (el: Element | undefined): SelectedElement | undefined => {
   if (!el || el.type === "bpmn:Process" || el.type === "label") return undefined;
   const bo = el.businessObject;
@@ -65,7 +55,6 @@ const describe = (el: Element | undefined): SelectedElement | undefined => {
   };
 };
 
-// ===== Component =====
 export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEditor(
   { xml, readOnly, onSelect, onChange, onError },
   ref,
@@ -73,7 +62,6 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
   const container = useRef<HTMLDivElement>(null);
   const modeler = useRef<Modeler | undefined>(undefined);
   const highlighted = useRef<string[]>([]);
-  // Callback mới nhất cho sự kiện của bpmn-js (đăng ký một lần khi tạo Modeler).
   const handlers = useRef({ onSelect, onChange, onError });
   handlers.current = { onSelect, onChange, onError };
 

@@ -2,14 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Gọi Thư viện tri thức (ADR #48): danh sách qua Action kb_library; đề xuất (chứng từ collab.kb_document) soạn qua
-// Hasura, gửi duyệt / hủy / ngừng hiệu lực / nạp lại chỉ mục qua Action.
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import type { DocCategory, DocScope, IndexState, LibraryDoc, LibraryFile } from "./types";
 
-// ===== Kiểu dữ liệu =====
 type Row = {
   id: string;
   doc_no: string;
@@ -33,7 +28,6 @@ type Row = {
   previous: LibraryDoc["previous"];
 };
 
-/** Đề xuất tài liệu (bản nháp → gửi duyệt). */
 export type ProposalInput = {
   title: string;
   category: DocCategory;
@@ -45,7 +39,6 @@ export type ProposalInput = {
   requester_position_id: string;
 };
 
-// ===== Hàm tiện ích =====
 const toIndex = (r: Row): IndexState =>
   r.index_status === "indexed"
     ? { status: "indexed", at: r.indexed_at }
@@ -116,7 +109,6 @@ export const retireDocument = (id: string, reason: string) =>
   action("retire_kb_document", { id, reason }, "$id: uuid!, $reason: String!");
 export const reindexDocument = (id: string) => action("kb_reindex", { id }, "$id: uuid!");
 
-/** Id tài liệu thư viện khớp tìm toàn văn (cả nội dung tệp); máy chủ đã lọc tenant và quyền xem. */
 export const searchLibrary = async (q: string): Promise<Set<string>> => {
   const r = await request<{ search_documents: { entity_type: string; entity_id: string }[] }>(
     `query KbSearch($q: String!) { search_documents(query: $q, limit: 50) { entity_type entity_id } }`,
@@ -125,7 +117,6 @@ export const searchLibrary = async (q: string): Promise<Set<string>> => {
   return new Set(r.search_documents.filter((h) => h.entity_type === "collab.kb_document").map((h) => h.entity_id));
 };
 
-/** Link tải tệp (chỉ tệp sạch, người xem được tài liệu). */
 export const downloadUrl = async (attachmentId: string) => {
   const r = await request<{ get_download_url: { url: string } }>(
     `query Dl($a: uuid!) { get_download_url(attachment_id: $a) { url } }`,

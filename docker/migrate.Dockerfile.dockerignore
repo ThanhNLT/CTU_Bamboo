@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-# Build context là gốc repo; image migrate chỉ cần db/ và scripts/db/.
 *
 !db/
 !scripts/db/

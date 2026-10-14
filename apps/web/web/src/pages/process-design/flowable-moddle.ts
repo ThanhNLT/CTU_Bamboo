@@ -2,11 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Mô tả moddle tối thiểu cho thuộc tính Flowable (xmlns:flowable="http://flowable.org/bpmn") mà trang dùng: người
-// nhận, nhóm, hạn xử lý, biểu mẫu của tác vụ người dùng; cách thực thi của tác vụ dịch vụ. bpmn-js đọc / ghi các
-// thuộc tính này như thuộc tính XML của phần tử.
-
-// ===== Hằng số =====
 export const flowableModdle = {
   name: "Flowable",
   uri: "http://flowable.org/bpmn",
@@ -37,7 +32,6 @@ export const flowableModdle = {
   ],
 };
 
-/** Quy trình mới: bắt đầu → một tác vụ duyệt → kết thúc, kèm sơ đồ. */
 export const newProcessXml = (key: string, name: string) => `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"

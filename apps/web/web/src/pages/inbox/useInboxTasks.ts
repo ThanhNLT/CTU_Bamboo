@@ -2,22 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dữ liệu thật cho Hộp việc (ADR #20), tự cập nhật qua subscription:
-// - "Của tôi": wf.v_inbox — việc của mình và việc nhận qua ủy quyền (được quyết định).
-// - "Cả nhóm": wf.task đang mở mà mình được xem (can_read) — việc của người khác chỉ để xem.
+import { useList } from "@refinedev/core";
+import gql from "graphql-tag";
+import { useMemo } from "react";
 
-// ===== Thư viện =====
-import { useList } from "@refinedev/core"; // Refine
-import gql from "graphql-tag"; // graphql-tag
-import { useMemo } from "react"; // React
-
-// ===== Module nội bộ =====
 import { useSession } from "../../auth/useSession";
 import { formatDate, formatMoney } from "../../utils/format";
 import type { Attachment, InboxTask, SlaLevel } from "./types";
 
-// ===== Hằng số =====
-// Backend chưa có hạn SLA theo bước duyệt: tạm tính hạn = lúc giao việc + SLA_HOURS.
 export const SLA_HOURS = 48;
 const URGENT_HOURS = 8;
 
@@ -39,7 +31,6 @@ const DOC_FIELDS = `
   }
 `;
 
-// ===== Truy vấn GraphQL =====
 const MINE = gql`
   query InboxMine($limit: Int, $offset: Int, $order_by: [wf_v_inbox_order_by!], $where: wf_v_inbox_bool_exp) {
     wf_v_inbox(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -62,7 +53,6 @@ const TEAM = gql`
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type AttachmentRow = { id: string; file_name: string; content_type: string; sha256: string | null; status: string };
 type Docs = {
   purchase_request: {
@@ -111,7 +101,6 @@ type TeamRow = {
   step: Docs & { step_order: number };
 };
 
-// ===== Hàm tiện ích =====
 const toAttachment = (a: AttachmentRow): Attachment => ({
   id: a.id,
   name: a.file_name,
@@ -121,11 +110,8 @@ const toAttachment = (a: AttachmentRow): Attachment => ({
   scan: a.status === "CLEAN" ? "clean" : a.status === "PENDING" ? "pending" : "blocked",
 });
 
-// ===== Hằng số =====
 const HOUR = 3_600_000;
 
-// ===== Hàm tiện ích =====
-/** "quá hạn 3 giờ" / "còn 1 ngày 2 giờ" từ số mili-giây còn lại. */
 const slaOf = (dueAt: number, now: number): { level: SlaLevel; label: string } => {
   const left = dueAt - now;
   const abs = Math.abs(left);
@@ -214,14 +200,11 @@ const toTask = (b: Base, d: Docs, org: string, now: number): InboxTask | null =>
       },
     };
   }
-  return null; // Loại chứng từ chưa hỗ trợ trên trang này.
+  return null;
 };
 
-// ===== Hằng số =====
 const PAGE = { pageSize: 200 };
 
-// ===== Hook =====
-/** `team: false` bỏ truy vấn "Cả nhóm" (Trang chủ chỉ cần việc của mình). */
 export const useInboxTasks = ({ team: withTeam = true }: { team?: boolean } = {}) => {
   const { tenant } = useSession();
   const mineQ = useList<MineRow>({

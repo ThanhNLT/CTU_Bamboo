@@ -2,26 +2,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import type { ReactElement } from "react"; // React
-import { useState } from "react"; // React
-import { App, Avatar, Button, Flex, Input, List, Popconfirm, Space, Typography } from "antd"; // Ant Design
-import { EyeInvisibleOutlined } from "@ant-design/icons"; // Ant Design Icons
+import type { ReactElement } from "react";
+import { useState } from "react";
+import { App, Avatar, Button, Flex, Input, List, Popconfirm, Space, Typography } from "antd";
+import { EyeInvisibleOutlined } from "@ant-design/icons";
 
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
 import type { DocumentComments } from "./types";
 
-// ===== Kiểu dữ liệu =====
 type Comment = DocumentComments["comments"][number];
 type PiiCheck = { masked_text: string; entities: { label: string }[] };
 type Props = { doc: DocumentComments; entityType: string; me: string; onChange: () => void };
 
-// ===== Hàm tiện ích =====
 const initials = (name?: string) => (name ?? "?").split(" ").slice(-1)[0]?.[0] ?? "?";
 
-// ===== Component =====
 export const Comments = ({ doc, entityType, me, onChange }: Props) => {
   const { message, modal } = App.useApp();
   const [body, setBody] = useState("");
@@ -42,8 +37,6 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
     }
   };
 
-  // Xóa ô nhập ngay khi gửi (khôi phục nếu lỗi): xóa sau khi mutation trả về sẽ xóa luôn chữ người dùng vừa gõ
-  // tiếp, vì bình luận có thể hiện ra trước qua subscription.
   const post = async (text: string) => {
     const draft = { body, replyTo };
     setBody("");
@@ -58,8 +51,6 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
     }
   };
 
-  // Mọi người xem được chứng từ đều đọc được trao đổi: có số CCCD, điện thoại... thì hỏi trước (ADR #43).
-  // Không kiểm tra được (dịch vụ lỗi) thì vẫn gửi, không chặn trao đổi.
   const send = async () => {
     const text = body.trim();
     if (!text) return;
@@ -122,7 +113,6 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
 
   const remove = (c: Comment) =>
     run(
-      // CSDL đặt lại giờ xóa và xóa nội dung (xóa mềm); giá trị gửi lên chỉ để đánh dấu.
       `mutation Del($id: uuid!, $at: timestamptz!) { update_collab_comment_by_pk(pk_columns: {id: $id}, _set: {deleted_at: $at}) { id } }`,
       { id: c.id, at: new Date().toISOString() },
     );
@@ -193,8 +183,6 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
           maxLength={4000}
           placeholder="Trao đổi với người lập, người duyệt..."
         />
-        {/* Trễ 200 ms: gửi nhanh thì không nháy biểu tượng; bật/tắt loading quá nhanh làm hiệu ứng của antd kẹt lại
-            biểu tượng ẩn, trình đọc màn hình đọc thành "loading Gửi". */}
         <Button type="primary" onClick={send} loading={busy ? { delay: 200 } : false} disabled={!body.trim()}>
           Gửi
         </Button>

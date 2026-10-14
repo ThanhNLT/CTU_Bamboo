@@ -2,24 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useState } from "react"; // React
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
+import { useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Company, CompanyKey, DailyPoint } from "../types";
 import { AXIS_TICK, DIM, GRID_STROKE } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget, ChipButton, DefinitionButton } from "./ChartWidget";
 
-// ===== Hằng số =====
 const DEFINITION =
   "Số hồ sơ hoàn tất toàn bộ chuỗi duyệt mỗi ngày (sự kiện COMPLETED), theo đơn vị cấp 1 của đơn vị lập. " +
   "Nguồn: wf.approval_history, trong phạm vi bạn được xem.";
 
-// ===== Component =====
-/** Nhãn trực tiếp ở cuối mỗi đường ("Chip 17"); Recharts truyền x, y, index, value cho từng điểm. */
 const EndLabel = (props: {
   x?: number | string;
   y?: number | string;
@@ -47,7 +42,6 @@ const EndLabel = (props: {
   );
 };
 
-/** Hồ sơ được duyệt mỗi ngày — mỗi công ty một đường; công ty đang tô sáng nét đậm, còn lại mờ đi. */
 export const DailyApprovalsChart = ({
   data,
   companies,
@@ -81,7 +75,6 @@ export const DailyApprovalsChart = ({
         </>
       }
     >
-      {/* Chú giải: luôn có với ≥ 2 chuỗi; bấm để tô sáng công ty. */}
       <ul className="m-0 mb-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0" aria-label="Chú giải">
         {companies.length === 0 && <li className="text-[11.5px] text-muted">Chưa có hồ sơ duyệt xong trong kỳ.</li>}
         {companies.map((c) => (

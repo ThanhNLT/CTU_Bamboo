@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Monitor, MonitorOff } from "lucide-react"; // Lucide React
+import { Monitor, MonitorOff } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { secondaryButtonClass } from "../../../components/ui";
 
-// ===== Component =====
 export const OpsHeader = ({ presenting, onTogglePresent }: { presenting: boolean; onTogglePresent: () => void }) => (
   <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">

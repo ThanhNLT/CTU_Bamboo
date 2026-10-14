@@ -2,23 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useList } from "@refinedev/core"; // Refine
-import { Tooltip } from "antd"; // Ant Design
-import gql from "graphql-tag"; // graphql-tag
-import { Globe } from "lucide-react"; // Lucide React
-import { Link, useLocation } from "react-router"; // React Router
+import { useList } from "@refinedev/core";
+import { Tooltip } from "antd";
+import gql from "graphql-tag";
+import { Globe } from "lucide-react";
+import { Link, useLocation } from "react-router";
 
-// ===== Module nội bộ =====
 import { cn } from "../../utils/cn";
 import { BambooLogo } from "./BambooLogo";
 import { findActive, NAV_GROUPS, type NavItem } from "./nav";
 import { NavGate } from "./NavGate";
 
-// ===== Kiểu dữ liệu =====
 type SiderProps = { collapsed?: boolean; onNavigate?: () => void };
 
-// ===== Truy vấn GraphQL =====
 const INBOX_COUNT = gql`
   query InboxCount($limit: Int, $offset: Int, $order_by: [wf_v_inbox_order_by!], $where: wf_v_inbox_bool_exp) {
     wf_v_inbox(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -32,8 +28,6 @@ const INBOX_COUNT = gql`
   }
 `;
 
-// ===== Hook =====
-/** Số việc chờ người dùng (kể cả việc nhận qua ủy quyền), tự cập nhật. */
 const useInboxCount = () => {
   const { result } = useList({
     resource: "wf_v_inbox",
@@ -44,7 +38,6 @@ const useInboxCount = () => {
   return result.total ?? 0;
 };
 
-// ===== Component =====
 const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; active: boolean } & SiderProps) => {
   const Icon = item.icon;
   const link = (
@@ -85,7 +78,6 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
   );
 };
 
-/** Nội dung menu trái: dùng cho thanh cố định (desktop) và Drawer (mobile). */
 export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   const { pathname } = useLocation();
   const activeKey = findActive(pathname)?.key;

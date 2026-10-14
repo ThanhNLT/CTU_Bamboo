@@ -2,34 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Phiếu PDF của chứng từ (ADR #37): HTML từ mẫu Jinja2, Gotenberg (Chromium) chuyển sang PDF.
-
-    get_purchase_request_pdf ─► quyền xem (wf.entity_can_read) ─► dữ liệu từ CSDL ─► HTML (escape tự động)
-        ─► mã nội dung sha256(HTML) ─► đã có trong bucket tài liệu? ── có ─► link tải về có chữ ký
-                                                                   └ chưa ─► Gotenberg ─► lưu ─┘
-
-Phiếu chỉ chứa dữ liệu của chứng từ (không có giờ in), nên cùng nội dung thì cùng tệp: in lại không
-gọi Gotenberg. Mã kiểm tra in ở chân trang là 16 ký tự đầu của mã nội dung.
-"""
-
-# ===== Thư viện chuẩn =====
 import hashlib
 import pathlib
 from decimal import ROUND_HALF_UP, Decimal
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
-import jinja2  # Jinja2
-import psycopg  # psycopg
-from psycopg.rows import dict_row  # psycopg
+import httpx
+import jinja2
+import psycopg
+from psycopg.rows import dict_row
 
-# ===== Module nội bộ =====
 from . import storage
 from .common import ActionError, Context, require_read, session_identity
 
-# ===== Hằng số & cấu hình =====
 TEMPLATES = pathlib.Path(__file__).resolve().parent / "templates"
-# Đổi khi sửa mẫu theo cách không làm đổi HTML (ví dụ tùy chọn khổ giấy) để không dùng lại tệp cũ.
 FORM_VERSION = "1"
 A4 = {
     "paperWidth": "8.27",
@@ -42,7 +27,6 @@ A4 = {
     "preferCssPageSize": "false",
 }
 
-# ===== Khởi tạo =====
 _env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(TEMPLATES),
     autoescape=True,
@@ -51,7 +35,6 @@ _env = jinja2.Environment(
     lstrip_blocks=True,
 )
 
-# ===== Hằng số & cấu hình =====
 STATUS_LABELS = {
     "DRAFT": "Bản nháp",
     "PENDING": "Chờ duyệt",
@@ -69,13 +52,10 @@ STEP_LABELS = {
     "CANCELLED": "Đã hủy",
 }
 
-# ===== Số tiền bằng chữ =====
-
 _DIGITS = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"]
 
 
 def _triple(n: int, full: bool) -> list[str]:
-    """Đọc số 0–999. `full`: nhóm đứng sau nhóm khác nên đọc đủ "không trăm", "linh"."""
     a, b, c = n // 100, n // 10 % 10, n % 10
     words = []
     if full or a:
@@ -112,7 +92,6 @@ def _words(n: int, full: bool = False) -> list[str]:
 
 
 def amount_in_words(amount) -> str:
-    """Số tiền VND bằng chữ, ví dụ 1234567 → "Một triệu hai trăm ba mươi tư nghìn năm trăm sáu mươi bảy đồng"."""
     n = int(Decimal(amount).quantize(Decimal(1), rounding=ROUND_HALF_UP))
     if n < 0:
         raise ValueError("Số tiền âm")
@@ -121,7 +100,6 @@ def amount_in_words(amount) -> str:
 
 
 def number(value, decimals: int = 0) -> str:
-    """Định dạng số kiểu Việt Nam: 1.234.567,5 (bỏ số 0 thừa ở phần thập phân)."""
     d = Decimal(value)
     whole = int(d.quantize(Decimal(1), rounding=ROUND_HALF_UP)) if decimals == 0 else int(d)
     text = f"{whole:,}".replace(",", ".")
@@ -133,8 +111,6 @@ def number(value, decimals: int = 0) -> str:
 
 
 _env.filters["number"] = number
-
-# ===== Dữ liệu =====
 
 
 def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
@@ -167,7 +143,6 @@ def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
            WHERE i.request_id = %s ORDER BY i.line_no""",
         (request_id,),
     ).fetchall()
-    # Chuỗi duyệt của lần gửi duyệt gần nhất.
     pr["steps"] = cur.execute(
         """SELECT s.step_order, s.status, pos.name AS position_name, actor.full_name AS acted_by,
                   principal.full_name AS on_behalf_of, s.note,
@@ -196,15 +171,11 @@ def footer(doc_no: str, check_code: str) -> str:
     return _env.get_template("chan_trang.html").render(doc_no=doc_no, check_code=check_code)
 
 
-# ===== Gotenberg =====
-
-
 class PdfUnavailable(Exception):
     pass
 
 
 def html_to_pdf(gotenberg_url: str, html: str, footer_html: str, timeout: float = 60.0) -> bytes:
-    """Chromium của Gotenberg in HTML ra PDF khổ A4. Trang không tải tài nguyên ngoài (CSS nhúng sẵn)."""
     files = [
         ("files", ("index.html", html.encode(), "text/html")),
         ("files", ("footer.html", footer_html.encode(), "text/html")),
@@ -218,9 +189,6 @@ def html_to_pdf(gotenberg_url: str, html: str, footer_html: str, timeout: float 
     if resp.status_code != 200 or not resp.content.startswith(b"%PDF-"):
         raise PdfUnavailable(f"Gotenberg lỗi {resp.status_code}: {resp.text[:300]}")
     return resp.content
-
-
-# ===== Hasura Action =====
 
 
 def get_purchase_request_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:

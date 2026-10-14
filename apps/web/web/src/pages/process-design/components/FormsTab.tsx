@@ -2,18 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Button, Checkbox, Input, Select } from "antd"; // Ant Design
-import { Plus, Trash2 } from "lucide-react"; // Lucide React
+import { Button, Checkbox, Input, Select } from "antd";
+import { Plus, Trash2 } from "lucide-react";
 
-// ===== Module nội bộ =====
 import type { FormDef } from "../types";
 
-// ===== Hằng số =====
 const FIELD_TYPES = ["Chữ", "Đoạn văn", "Số", "Ngày", "Danh mục", "Tệp (kiểm dịch)", "Tham chiếu chứng từ"];
 
-// ===== Component =====
-/** Tab "Biểu mẫu": biểu mẫu của tác vụ người dùng (gắn bằng formKey), lưu cùng bản nháp. */
 export const FormsTab = ({
   forms,
   usedBy,
@@ -21,7 +16,6 @@ export const FormsTab = ({
   onChange,
 }: {
   forms: FormDef[];
-  /** formKey → tên các tác vụ đang dùng. */
   usedBy: Record<string, string[]>;
   readOnly: boolean;
   onChange: (forms: FormDef[]) => void;

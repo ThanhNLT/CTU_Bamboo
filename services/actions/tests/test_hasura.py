@@ -2,12 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Qua Hasura thật: quyền xem (can_read), cách ly tenant, ghi nháp, Action đầu–cuối."""
-
-# ===== Module nội bộ =====
 from conftest import ids, open_task, pr, status
 
-# ===== Hằng số & cấu hình =====
 PR_QUERY = "query($id: uuid!) { proc_purchase_request_by_pk(id: $id) { id status requester_id } }"
 INSERT_PR = """
 mutation($pos: uuid!, $amount: numeric!) {
@@ -17,7 +13,6 @@ mutation($pos: uuid!, $amount: numeric!) {
 }"""
 
 
-# ===== Kiểm thử =====
 def test_quyen_xem_de_nghi(hasura, conn, org):
     k = org
     i = ids(conn, "TDX", "BVX", "c", "d", "tp_mh_dt", "gd_dt", k("nv"))

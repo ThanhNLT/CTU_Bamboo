@@ -2,17 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Hộp việc (/p/tasks), Trang chủ và Hồ sơ dùng dữ liệu thật: đề nghị vừa gửi hiện trong việc của người duyệt,
-// trả lại bắt buộc ý kiến, duyệt xong thì việc biến mất và hồ sơ chuyển sang Đã duyệt.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E hộp việc ${Date.now()}`;
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -33,7 +27,6 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/p/documents/create");
@@ -48,9 +41,8 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
   await logout(page);
 
   await login(page, "tp.muahang.dienthoai");
-  // Trang chủ: việc mới nằm trong "Việc của tôi", bấm vào mở đúng việc trong Hộp việc.
   await page.goto("/");
-  await page.getByText("Lịch", { exact: true }).click(); // Chế độ Lịch hiện mọi việc (Danh sách chỉ 4 việc gấp nhất).
+  await page.getByText("Lịch", { exact: true }).click();
   await page
     .getByRole("link", { name: new RegExp(TITLE) })
     .first()
@@ -60,7 +52,6 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
   await expect(detail).toBeVisible();
   await expect(page.getByText(/Chứng từ không có tệp đính kèm/)).toBeVisible();
 
-  // Trả lại không có ý kiến → báo lỗi, không gọi máy chủ.
   await page.getByRole("button", { name: "Trả lại" }).click();
   await expect(page.getByText("Nhập ý kiến để người nộp biết cần bổ sung gì.")).toBeVisible();
 
@@ -70,7 +61,6 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
   await expect(page.getByText(/^Đã duyệt PR-/)).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(TITLE) })).toHaveCount(0);
 
-  // Hồ sơ: chứng từ đã duyệt, quy trình ghi người duyệt cấp 1.
   await page.goto("/p/records");
   await page.getByPlaceholder("Mã, tiêu đề, người nộp").fill(TITLE);
   const detail2 = page.getByRole("complementary", { name: /^Chi tiết PR-/ });

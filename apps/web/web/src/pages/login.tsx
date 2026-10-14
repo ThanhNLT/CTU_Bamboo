@@ -2,12 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useLogin } from "@refinedev/core"; // Refine
-import { ThemedTitle } from "@refinedev/antd"; // Refine Ant Design
-import { Button, Typography, Layout, Space } from "antd"; // Ant Design
+import { useLogin } from "@refinedev/core";
+import { ThemedTitle } from "@refinedev/antd";
+import { Button, Typography, Layout, Space } from "antd";
 
-// ===== Component =====
 export const Login: React.FC = () => {
   const { mutate: login } = useLogin();
 

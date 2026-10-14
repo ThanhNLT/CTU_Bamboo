@@ -2,16 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useNavigate } from "react-router"; // React Router
+import { useNavigate } from "react-router";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { NotificationItem } from "../types";
 import { Panel, PanelLink, TONE_DOT } from "../../../components/ui";
 
-// ===== Component =====
-/** Thông báo mới nhất; bấm vào thì đánh dấu đã đọc và mở chứng từ liên quan. */
 export const NotificationsPanel = ({
   items,
   unread,
@@ -20,7 +16,6 @@ export const NotificationsPanel = ({
 }: {
   items: NotificationItem[];
   unread: number;
-  /** Không truyền `ids` = đọc hết. */
   onRead: (ids?: string[]) => Promise<void>;
   limit?: number;
 }) => {
@@ -41,7 +36,6 @@ export const NotificationsPanel = ({
         {items.slice(0, limit).map((n) => (
           <li key={n.id}>
             <button type="button" onClick={() => void open(n)} className="group flex w-full gap-2.5 text-left">
-              {/* Chưa đọc: chấm đặc theo mức độ · Đã đọc: vòng rỗng */}
               <span
                 className={cn(
                   "mt-[6px] h-2 w-2 shrink-0 rounded-full",

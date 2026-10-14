@@ -2,18 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { DatePicker, Form, Radio, Select, TreeSelect } from "antd"; // Ant Design
-import type { Dayjs } from "dayjs"; // Day.js
+import { DatePicker, Form, Radio, Select, TreeSelect } from "antd";
+import type { Dayjs } from "dayjs";
 
-// ===== Module nội bộ =====
 import { adminSave } from "../shared/api";
 import { FormModal } from "../shared/FormModal";
 import { SCOPE_LABEL, type OrgData } from "../shared/orgData";
 import { useUnitTree } from "../shared/useUnitTree";
 import { toDate } from "../shared/period";
 
-// ===== Kiểu dữ liệu =====
 type Target = "position" | "org_unit" | "person";
 type Values = {
   target: Target;
@@ -26,11 +23,6 @@ type Values = {
   valid_to?: Dayjs;
 };
 
-// ===== Component =====
-/**
- * Cấp vai trò. Mặc định cho VỊ TRÍ (ai ngồi ghế thì có quyền, ADR #5); cho cả đơn vị = mọi vị trí trong đơn vị;
- * cho người chỉ dành cho người ngoài cây tổ chức và bắt buộc có hạn (CSDL chặn nếu người đó đang giữ ghế).
- */
 export const GrantModal = ({
   open,
   org,

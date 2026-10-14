@@ -2,22 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho tệp đính kèm (ADR #26). Lưu trữ và quét virus ở `storage.py`."""
-
-# ===== Thư viện chuẩn =====
 import hashlib
 import logging
 import pathlib
 import uuid
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
+import psycopg
 
-# ===== Module nội bộ =====
 from . import storage
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
-# ===== Hằng số & cấu hình =====
 log = logging.getLogger("attachments")
 
 _COLUMNS = (
@@ -25,7 +19,6 @@ _COLUMNS = (
 )
 
 
-# ===== Hàm =====
 def _clean_name(file_name: str) -> str:
     name = pathlib.PurePosixPath((file_name or "").replace("\\", "/")).name.strip()
     name = "".join(ch for ch in name if ch.isprintable())
@@ -55,7 +48,6 @@ def _require_storage(ctx: Context) -> storage.Storage:
     return ctx.storage
 
 
-# ===== Hasura Action =====
 def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     s3 = _require_storage(ctx)
     entity_type, entity_id = args["entity_type"], args["entity_id"]
@@ -72,7 +64,6 @@ def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     tenant = conn.execute("SELECT collab.entity_tenant(%s, %s)", (entity_type, entity_id)).fetchone()[0]
     person = session_identity(session, tenant)
     require_read(conn, entity_type, entity_id, person)
-    # Hạn mức dung lượng của tenant: khóa dòng tenant để các lần tải lên đồng thời không cùng vượt hạn mức.
     quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE id = %s FOR UPDATE", (tenant,)).fetchone()[
         0
     ]
@@ -100,7 +91,6 @@ def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     }
 
 
-# ===== Hàm =====
 def _finish(conn, attachment_id: str, status: str, scan_result: str, sha256: str | None = None) -> dict:
     conn.execute(
         """UPDATE core.attachment SET status = %s, scan_result = %s, sha256 = %s, scanned_at = now()
@@ -110,10 +100,7 @@ def _finish(conn, attachment_id: str, status: str, scan_result: str, sha256: str
     return {"attachment_id": attachment_id, "status": status, "scan_result": scan_result}
 
 
-# ===== Hasura Action =====
 def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
-    """Kiểm tra tệp đã tải lên bucket cách ly; sạch thì chuyển sang bucket chính.
-    Tệp sai khai báo hoặc nhiễm mã độc bị xóa ngay (trạng thái REJECTED / INFECTED)."""
     s3 = _require_storage(ctx)
     att, person = _load(conn, session, args["attachment_id"], lock=True)
     if att["uploaded_by"] != uuid.UUID(person):
@@ -146,7 +133,6 @@ def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
         try:
             verdict, detail = storage.scan(data, ctx.clamav_host, ctx.clamav_port)
         except (OSError, RuntimeError) as exc:
-            # Không quét được (mất kết nối, clamd trả lời lạ) thì giữ tệp ở bucket cách ly (PENDING), thử lại sau.
             log.warning("ClamAV lỗi: %s", exc)
             raise ActionError("Chưa quét được virus, thử lại sau", "scanner-unavailable", 503) from exc
     else:
@@ -183,7 +169,6 @@ def delete_attachment(conn: psycopg.Connection, session: dict, args: dict, ctx: 
 
 
 def drive_usage(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
-    """Dung lượng tệp của cả tenant: đã dùng, hạn mức, theo loại tệp (Ổ đĩa tài liệu)."""
     tenant = session.get("x-hasura-tenant-id")
     session_identity(session, tenant)
     quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE id = %s", (tenant,)).fetchone()[0]

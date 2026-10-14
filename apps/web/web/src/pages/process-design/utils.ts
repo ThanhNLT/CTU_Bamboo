@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Hàm tiện ích =====
 export const downloadText = (fileName: string, text: string) => {
   const url = URL.createObjectURL(new Blob([text], { type: "application/xml;charset=utf-8" }));
   const a = document.createElement("a");
@@ -12,7 +11,6 @@ export const downloadText = (fileName: string, text: string) => {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-/** Mã quy trình từ tên: bỏ dấu, viết liền kiểu camelCase ("Duyệt hợp đồng" → "duyetHopDong"). */
 export const keyFromName = (name: string) => {
   const words = name
     .normalize("NFD")

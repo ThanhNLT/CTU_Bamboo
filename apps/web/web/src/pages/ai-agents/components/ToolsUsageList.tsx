@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { pct } from "../utils";
 
-// ===== Component =====
-/** Thanh ngang tỉ lệ lượt gọi từng công cụ. */
 export const ToolsUsageList = ({ tools }: { tools: Array<{ name: string; share: number }> }) => (
   <ul className="m-0 list-none space-y-2.5 p-0">
     {tools.map((t) => (

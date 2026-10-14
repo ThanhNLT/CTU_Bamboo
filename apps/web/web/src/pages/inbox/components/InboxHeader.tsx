@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Alert, Segmented } from "antd"; // Ant Design
+import { Alert, Segmented } from "antd";
 
-// ===== Module nội bộ =====
 import type { InboxScope } from "../types";
 
-// ===== Component =====
 export const InboxHeader = ({
   mineCount,
   teamCount,
@@ -21,7 +18,6 @@ export const InboxHeader = ({
   teamCount: number;
   scope: InboxScope;
   onScopeChange: (s: InboxScope) => void;
-  /** Hạn xử lý tính từ lúc giao việc. */
   slaHours: number;
   error?: string;
 }) => (

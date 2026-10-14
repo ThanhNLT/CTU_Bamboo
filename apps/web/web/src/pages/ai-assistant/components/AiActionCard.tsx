@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Check, CheckCircle2, Sparkles } from "lucide-react"; // Lucide React
-import { Link } from "react-router"; // React Router
+import { Check, CheckCircle2, Sparkles } from "lucide-react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { ActionProposal } from "../types";
 
-// ===== Hằng số =====
 const outline =
   "inline-flex h-9 items-center gap-1.5 rounded-full bg-black/[0.05] px-4 text-[12.5px] font-semibold text-ink transition-colors hover:bg-black/[0.08] " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
@@ -18,11 +15,6 @@ const primary =
   "inline-flex h-9 items-center gap-1.5 rounded-full bg-bamboo-600 px-4 text-[12.5px] font-semibold text-white transition-colors hover:bg-bamboo-700 " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
-// ===== Component =====
-/**
- * Thẻ đề xuất tác vụ: trợ lý chỉ ĐỀ XUẤT, người dùng xác nhận mới tạo (và chỉ ở trạng thái Nháp).
- * `createdCode` có giá trị = đã tạo.
- */
 export const AiActionCard = ({
   action,
   createdCode,

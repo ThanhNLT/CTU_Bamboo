@@ -2,10 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Danh mục & dữ liệu chủ (Quản trị, ADR #44): loại đơn vị, chức danh (core.org.manage); nhóm vật tư, nhà cung cấp,
-// vật tư (mdm.manage). Mã là khóa: nhập lại cùng mã từ Excel là cập nhật. Không xóa — ngừng dùng bằng cờ.
-
-// ===== Thư viện =====
 import {
   Alert,
   App,
@@ -19,12 +15,11 @@ import {
   Switch,
   Table,
   TreeSelect,
-} from "antd"; // Ant Design
-import { FileSpreadsheet, Plus } from "lucide-react"; // Lucide React
-import { useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
+} from "antd";
+import { FileSpreadsheet, Plus } from "lucide-react";
+import { useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Module nội bộ =====
 import { ProposedPartners } from "./ProposedPartners";
 import { bambooTableTheme, Dot, primaryButtonClass, SearchInput, secondaryButtonClass } from "../../../components/ui";
 import { formatMoney } from "../../../utils/format";
@@ -38,10 +33,8 @@ import { useUnitTree } from "../shared/useUnitTree";
 import { useGql } from "../shared/useGql";
 import { MDM, ORG, usePermissions } from "../shared/usePermissions";
 
-// ===== Kiểu dữ liệu =====
 type Tab = "UNIT_TYPE" | "JOB_TITLE" | "ITEM_CATEGORY" | "partner" | "item";
 
-// ===== Hằng số =====
 const TABS: { key: Tab; label: string; permission: string; hint: string }[] = [
   {
     key: "UNIT_TYPE",
@@ -70,7 +63,6 @@ const TABS: { key: Tab; label: string; permission: string; hint: string }[] = [
   { key: "item", label: "Vật tư", permission: MDM, hint: "Hàng hóa, dịch vụ dùng trong đề nghị mua sắm." },
 ];
 
-// ===== Truy vấn GraphQL =====
 const DATA = `
   query AdminCatalog {
     core_catalog_item(order_by: [{ catalog: asc }, { code: asc }]) { id catalog code name }
@@ -79,7 +71,6 @@ const DATA = `
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Catalog = { id: string; catalog: string; code: string; name: string };
 type Partner = {
   id: string;
@@ -104,7 +95,6 @@ type Item = {
 };
 type Data = { core_catalog_item: Catalog[]; mdm_partner: Partner[]; mdm_item: Item[] };
 
-// ===== Component =====
 const Active = ({ on }: { on: boolean }) => (
   <span className="inline-flex items-center gap-1.5 text-[12.5px] text-body">
     <Dot tone={on ? "success" : "neutral"} /> {on ? "Đang dùng" : "Ngừng dùng"}

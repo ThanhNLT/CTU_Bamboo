@@ -2,12 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Nhãn của Thư viện tri thức (ADR #48).
-
-// ===== Module nội bộ =====
 import type { DocCategory, ScopeFilter } from "./types";
 
-// ===== Hằng số =====
 export const CATEGORY_LABEL: Record<DocCategory, string> = {
   regulation: "Quy chế",
   sop: "Quy trình chuẩn (SOP)",
@@ -15,7 +11,6 @@ export const CATEGORY_LABEL: Record<DocCategory, string> = {
   faq: "Hỏi đáp",
 };
 
-/** Nhãn ngắn dùng trong dòng meta và thẻ loại. */
 export const CATEGORY_SHORT: Record<DocCategory, string> = {
   regulation: "Quy chế",
   sop: "Quy trình chuẩn",

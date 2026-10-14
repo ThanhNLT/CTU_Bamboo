@@ -2,17 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# ===== Thư viện chuẩn =====
 import os
 from dataclasses import dataclass, replace
 from urllib.parse import quote, urlparse, urlunparse
 
-# ===== Module nội bộ =====
 from .openbao import Bao, BaoError
 
-# ===== Hằng số & cấu hình =====
-# Secret trong OpenBao (KV v2 secret/<đường dẫn>) → trường Settings (ADR #25). Mỗi dịch vụ chỉ đọc
-# được những đường dẫn mà policy của nó cho phép; đường dẫn bị từ chối thì giữ giá trị env.
 SECRET_FIELDS = {
     "bms/actions": {"secret": "actions_secret"},
     "bms/flowable": {"username": "flowable_user", "password": "flowable_password"},
@@ -31,7 +26,6 @@ SECRET_FIELDS = {
 }
 
 
-# ===== Kiểu dữ liệu =====
 @dataclass(frozen=True)
 class Settings:
     database_url: str
@@ -55,36 +49,33 @@ class Settings:
     s3_documents_bucket: str
     clamav_host: str
     clamav_port: int
-    keycloak_url: str  # địa chỉ nội bộ (Admin API), không qua cổng công khai
+    keycloak_url: str
     keycloak_admin_user: str
     keycloak_admin_password: str
-    web_origin: str  # địa chỉ ứng dụng trình duyệt thấy (redirect URI của bms-web)
-    keycloak_provisioner_secret: str  # client bms-provisioner: chỉ quản lý người dùng realm bms (ADR #41)
-    s3_search_access_key: str  # search-sync: chỉ đọc bucket tài liệu (ADR #36)
+    web_origin: str
+    keycloak_provisioner_secret: str
+    s3_search_access_key: str
     s3_search_secret_key: str
     meili_url: str
     meili_index: str
-    meili_master_key: str  # chỉ job bootstrap (tạo index, khóa API)
-    meili_search_key: str  # actions: chỉ tìm
-    meili_indexer_key: str  # search-sync: ghi chỉ mục
+    meili_master_key: str
+    meili_search_key: str
+    meili_indexer_key: str
     tika_url: str
-    gotenberg_url: str  # in phiếu PDF (ADR #37)
-    kafka_bootstrap: str  # CDC (ADR #38)
-    kafka_username: str  # SCRAM (ADR #45); bỏ trống: Kafka không xác thực (chạy native khi dev)
+    gotenberg_url: str
+    kafka_bootstrap: str
+    kafka_username: str
     kafka_password: str
-    lakehouse_catalog_url: str  # catalog Iceberg (SQLAlchemy, CSDL lakehouse; ADR #39)
+    lakehouse_catalog_url: str
     s3_lakehouse_bucket: str
-    s3_lakehouse_access_key: str  # lakehouse-sink: chỉ đọc/ghi bucket lakehouse
+    s3_lakehouse_access_key: str
     s3_lakehouse_secret_key: str
-    trino_url: str  # truy vấn Lakehouse (ADR #45): HTTPS, CA nội bộ của OpenBao
+    trino_url: str
     trino_ca_file: str
-    trino_user: str  # bms-actions: chỉ mượn danh người dùng tenant t_<tenant_id>
+    trino_user: str
     trino_password: str
 
 
-# ===== Hằng số & cấu hình =====
-# Giá trị mặc định chỉ dành cho máy dev (docker-compose.yml, .env.example). Chạy với
-# BAMBOO_ENV=production mà còn giá trị nào trong số này thì dừng ngay, không khởi động.
 DEV_DEFAULTS = {
     "POSTGRES_PASSWORD": "bms-dev",
     "ACTIONS_DB_PASSWORD": "actions-db-dev",
@@ -103,15 +94,12 @@ DEV_DEFAULTS = {
 }
 
 
-# ===== Hàm =====
 def production_problems(env: dict[str, str] | None = None) -> list[str]:
-    """Biến còn giữ giá trị dev mặc định hoặc để trống."""
     env = os.environ if env is None else env
     return [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
 
 
 def assert_production_ready(env: dict[str, str] | None = None) -> None:
-    """BAMBOO_ENV=production mà còn giá trị dev mặc định thì dừng (job openbao-init gọi trước mọi dịch vụ)."""
     env = os.environ if env is None else env
     if env.get("BAMBOO_ENV", "development").lower() != "production":
         return
@@ -125,7 +113,6 @@ def assert_production_ready(env: dict[str, str] | None = None) -> None:
 
 
 def with_openbao(settings: Settings, bao: Bao) -> Settings:
-    """Thay các giá trị env bằng secret đọc được từ OpenBao."""
 
     def read(path: str) -> dict | None:
         try:
@@ -147,7 +134,6 @@ def with_openbao(settings: Settings, bao: Bao) -> Settings:
 
 
 def kafka_options(settings: Settings) -> dict:
-    """Tham số kết nối cho kafka-python: SCRAM-SHA-512 khi có tài khoản (ADR #45)."""
     options = {"bootstrap_servers": settings.kafka_bootstrap}
     if settings.kafka_password:
         options.update(
@@ -168,7 +154,6 @@ def _with_credentials(url: str, username: str, password: str) -> str:
 
 
 def load() -> Settings:
-    """Cấu hình từ biến môi trường; có BAO_ADDR và BAO_APPROLE_FILE thì secret lấy từ OpenBao."""
     settings = _from_env()
     addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
     if addr and approle:
@@ -178,9 +163,8 @@ def load() -> Settings:
 
 def _from_env() -> Settings:
     env = os.environ.get
-    from .search import INDEXER_KEY_UID, SEARCH_KEY_UID, derive_key  # search dùng config: import muộn
+    from .search import INDEXER_KEY_UID, SEARCH_KEY_UID, derive_key
 
-    # Chạy ngoài compose (kiểm thử native): đặt MEILI_MASTER_KEY thì hai khóa API suy ra từ khóa chủ.
     master = env("MEILI_MASTER_KEY", "")
     return Settings(
         database_url=env("DATABASE_URL", "postgresql://bamboo_actions:actions-db-dev@db:5432/bms"),
@@ -190,11 +174,9 @@ def _from_env() -> Settings:
         flowable_password=env("FLOWABLE_PASSWORD", "test"),
         hasura_url=env("HASURA_URL", "http://hasura:8080"),
         hasura_admin_secret=env("HASURA_GRAPHQL_ADMIN_SECRET", "dev-admin-secret"),
-        # JWKS lấy qua mạng nội bộ; issuer là URL trình duyệt thấy (KC_HOSTNAME).
         keycloak_jwks_url=env("KEYCLOAK_JWKS_URL", "http://keycloak:8080/realms/bms/protocol/openid-connect/certs"),
         keycloak_issuer=env("KEYCLOAK_ISSUER", "http://localhost:8080/realms/bms"),
         keycloak_clients=frozenset(env("KEYCLOAK_CLIENTS", "bms-web,bms-e2e").split(",")),
-        # S3 (SeaweedFS). Link có chữ ký dùng địa chỉ trình duyệt thấy (ADR #26).
         s3_endpoint=env("S3_ENDPOINT", "http://seaweedfs:8333"),
         s3_public_endpoint=env("S3_PUBLIC_ENDPOINT", "http://localhost:8333"),
         s3_region=env("S3_REGION", "us-east-1"),
@@ -204,7 +186,6 @@ def _from_env() -> Settings:
         s3_admin_secret_key=env("S3_ADMIN_SECRET_KEY", "bms-admin-dev-secret"),
         s3_quarantine_bucket=env("S3_QUARANTINE_BUCKET", "bms-quarantine"),
         s3_documents_bucket=env("S3_DOCUMENTS_BUCKET", "bms-documents"),
-        # Bỏ trống: chưa quét virus, confirm_upload ghi "bỏ qua" và vẫn nhận tệp.
         clamav_host=env("CLAMAV_HOST", ""),
         clamav_port=int(env("CLAMAV_PORT", "3310")),
         keycloak_url=env("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080"),

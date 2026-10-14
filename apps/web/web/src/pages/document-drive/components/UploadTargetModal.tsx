@@ -2,19 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Modal, Select } from "antd"; // Ant Design
-import { Upload } from "lucide-react"; // Lucide React
-import { useRef, useState } from "react"; // React
+import { Modal, Select } from "antd";
+import { Upload } from "lucide-react";
+import { useRef, useState } from "react";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
-// ===== Kiểu dữ liệu =====
 export type UploadTarget = { id: string; entityType: string; label: string };
 
-// ===== Component =====
-/** Tải lên ở thư mục gốc: chọn chứng từ nhận tệp (mỗi tệp thuộc một chứng từ) rồi chọn tệp. */
 export const UploadTargetModal = ({
   open,
   targets,

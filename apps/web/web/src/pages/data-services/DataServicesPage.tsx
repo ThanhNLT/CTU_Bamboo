@@ -2,16 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dịch vụ dữ liệu (Dữ liệu số): danh mục tập dữ liệu Lakehouse dạng master–detail. Trái ~40% danh sách thẻ, phải
-// ~60% chi tiết; trên màn hình lớn hai cột cao bằng nhau và cuộn độc lập. Mở thẳng một tập: ?dataset=<tên view>.
-// Dữ liệu thật từ tầng silver qua Trino (ADR #45), chỉ của tenant đang chọn, đã che dữ liệu cá nhân.
+import { DatabaseZap, Lock } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { DatabaseZap, Lock } from "lucide-react"; // Lucide React
-import { useMemo, useState, type ReactNode } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { DataFilterBar } from "./components/DataFilterBar";
 import { DatasetDetailPanel } from "./components/DatasetDetailPanel";
 import { DatasetList } from "./components/DatasetList";
@@ -19,7 +13,6 @@ import type { DomainFilter } from "./types";
 import { useLakehouseDatasets } from "./useLakehouse";
 import { domainCounts, filterDatasets } from "./utils";
 
-// ===== Component =====
 const Notice = ({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) => (
   <div
     role="status"
@@ -36,12 +29,10 @@ export const DataServicesPage = () => {
   const [domain, setDomain] = useState<DomainFilter>("all");
   const [params] = useSearchParams();
   const { datasets, loading, error } = useLakehouseDatasets();
-  // ?dataset=proc_purchase_request (vd. từ Phả hệ dữ liệu) → chọn sẵn tập đó.
   const [selectedId, setSelectedId] = useState<string | null>(() => params.get("dataset"));
 
   const domains = useMemo(() => domainCounts(datasets), [datasets]);
   const visible = useMemo(() => filterDatasets(datasets, query, domain), [datasets, query, domain]);
-  // Tập đang chọn bị lọc mất (hoặc chưa chọn) thì chọn tập đầu tiên còn hiển thị.
   const selected = visible.find((d) => d.id === selectedId) ?? visible[0];
 
   let body: ReactNode;
@@ -77,7 +68,6 @@ export const DataServicesPage = () => {
           domains={domains}
           total={datasets.length}
         />
-        {/* Key theo tập đang chọn: đổi tập thì khung chi tiết quay về tab "Lược đồ" và tải lại bản xem trước. */}
         <div className="grid grid-cols-1 gap-5 lg:h-[calc(100dvh-250px)] lg:min-h-[480px] lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <DatasetList
             className="max-h-[520px] lg:max-h-none"
