@@ -61,6 +61,18 @@ global_rules:
       prometheus: {}
 
 routes:
+  # Keycloak, CORS và cookie chỉ nhận origin localhost:8000; đưa 127.0.0.1 về đó
+  - id: canonical-host
+    uri: /*
+    hosts: ["127.0.0.1"]
+    priority: 1000
+    vars:
+      - ["uri", "!", "==", "/healthz"]
+    plugins:
+      redirect:
+        uri: "http://localhost:8000$request_uri"
+        ret_code: 302
+
   - id: healthz
     uri: /healthz
     priority: 100
@@ -172,3 +184,4 @@ routes:
     methods: [GET, HEAD]
     upstream_id: web
     plugin_config_id: waf
+#END
