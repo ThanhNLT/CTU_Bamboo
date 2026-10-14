@@ -38,6 +38,7 @@ export const ImportModal = ({
   const [busy, setBusy] = useState(false);
   const [accounts, setAccounts] = useState<AccountResult[] | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [finished, setFinished] = useState(false);
 
   const reset = () => {
     setFile(undefined);
@@ -74,15 +75,28 @@ export const ImportModal = ({
       }
       message.success(`Đã nhập ${r.total} dòng ${label}.`);
       onDone();
-      if (r.created.length) {
-        setNames(Object.fromEntries(r.created.map((c) => [c.person_id, c.full_name])));
+      if (!r.created.length) {
+        close();
+        return;
+      }
+      setFinished(true);
+      setNames(Object.fromEntries(r.created.map((c) => [c.person_id, c.full_name])));
+      try {
         setAccounts(
           await createAccounts(
             r.created.map((c) => ({ person_id: c.person_id, username: c.username, email: c.email })),
           ),
         );
+      } catch (e) {
+        const reason = (e as Error).message;
+        message.warning(
+          `Đã nhập ${r.total} dòng nhưng chưa tạo được tài khoản đăng nhập` +
+            (reason && reason !== "internal error" ? ` (${reason})` : " (máy chủ đăng nhập chưa sẵn sàng)") +
+            ". Mở từng người ở danh sách và tạo tài khoản ở ngăn bên phải.",
+          8,
+        );
+        close();
       }
-      close();
     } catch (e) {
       message.error((e as Error).message);
     } finally {
@@ -95,7 +109,7 @@ export const ImportModal = ({
   return (
     <>
       <Modal
-        open={open}
+        open={open && !finished}
         title={`Nhập ${label} từ Excel`}
         width={720}
         onCancel={close}
@@ -179,7 +193,14 @@ export const ImportModal = ({
           </div>
         )}
       </Modal>
-      <AccountsResult results={accounts} names={names} onClose={() => setAccounts(null)} />
+      <AccountsResult
+        results={accounts}
+        names={names}
+        onClose={() => {
+          setAccounts(null);
+          close();
+        }}
+      />
     </>
   );
 };

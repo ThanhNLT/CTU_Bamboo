@@ -333,3 +333,72 @@ def test_them_ncc_de_xuat(client, conn, admin):
         (pr_id,),
     ).fetchone()
     assert (row["code"], row["tax_code"], row["proposed_partner_name"]) == (k("NCC"), tax, None)
+
+
+def _import_people(client, admin, rows, dry_run=False):
+    k = admin["k"]
+    content = _xlsx([["Mã nhân viên", "Họ tên", "Vị trí (MÃ_ĐƠN_VỊ/Tên vị trí)", "Từ ngày (dd/mm/yyyy)"], *rows])
+    return call(
+        client,
+        "admin_import",
+        {"kind": "person", "file_name": "ns.xlsx", "content_base64": content, "dry_run": dry_run},
+        admin[k("gd")],
+        admin["TDX"],
+    ).json()
+
+
+def test_nhap_lai_bo_nhiem_tu_ngay_tuong_lai(client, conn, admin):
+    k = admin["k"]
+    save(client, admin, "position", {"unit_code": k("PHONG"), "name": "Chuyên viên tương lai"})
+    rows = [[k("F1"), "Lê Văn Tương Lai", f"{k('PHONG')}/Chuyên viên tương lai", "01/01/2099"]]
+    assert _import_people(client, admin, rows)["applied"]
+    again = _import_people(client, admin, rows)
+    assert again["applied"] and not again["errors"], again
+    count = conn.execute(
+        """SELECT count(*) AS n FROM core.assignment x JOIN core.person p ON p.id = x.person_id
+           WHERE p.tenant_id = test.id('TDX') AND p.employee_code = %s""",
+        (k("F1"),),
+    ).fetchone()
+    assert count["n"] == 1
+
+
+def test_vi_tri_trung_ten_chon_ghe_con_trong(client, conn, admin):
+    k = admin["k"]
+    for _ in range(3):
+        conn.execute(
+            """INSERT INTO core.position (tenant_id, org_unit_id, name)
+               VALUES (test.id('TDX'), test.id(%s), 'Chuyên viên trùng')""",
+            (k("PHONG"),),
+        )
+    first = [[k(f"D{i}"), f"Người trùng {i}", f"{k('PHONG')}/Chuyên viên trùng", ""] for i in range(3)]
+    r = _import_people(client, admin, first)
+    assert r["applied"] and not r["errors"], r["errors"]
+    held = conn.execute(
+        """SELECT count(DISTINCT x.position_id) AS n FROM core.assignment x JOIN core.position s ON s.id = x.position_id
+           WHERE s.org_unit_id = test.id(%s) AND s.name = 'Chuyên viên trùng' AND x.valid_period @> now()""",
+        (k("PHONG"),),
+    ).fetchone()
+    assert held["n"] == 3
+    full = _import_people(client, admin, [[k("D9"), "Người thừa", f"{k('PHONG')}/Chuyên viên trùng", ""]], True)
+    assert full["errors"] and "đã có người giữ" in full["errors"][0]["message"], full
+
+
+def test_loi_bo_nhiem_bao_bang_tieng_viet(client, conn, admin):
+    k = admin["k"]
+    save(client, admin, "position", {"unit_code": k("PHONG"), "name": "Chuyên viên A"})
+    save(client, admin, "position", {"unit_code": k("PHONG"), "name": "Chuyên viên B"})
+    assert _import_people(client, admin, [[k("G1"), "Lê Văn Giữ", f"{k('PHONG')}/Chuyên viên A", ""]])["applied"]
+    r = _import_people(client, admin, [[k("G1"), "Lê Văn Giữ", f"{k('PHONG')}/Chuyên viên B", ""]], True)
+    assert r["errors"] and "giữ chính" in r["errors"][0]["message"], r
+    assert "constraint" not in r["errors"][0]["message"]
+
+
+def test_nhap_lai_khong_tao_lai_tai_khoan(client, conn, admin):
+    k = admin["k"]
+    content = _xlsx([["Mã nhân viên", "Họ tên", "Tên đăng nhập"], [k("H1"), "Lê Văn Có Tài Khoản", "co.tk"]])
+    args = {"kind": "person", "file_name": "ns.xlsx", "content_base64": content, "dry_run": False}
+    first = call(client, "admin_import", args, admin[k("gd")], admin["TDX"]).json()
+    assert [c["username"] for c in first["created"]] == ["co.tk"]
+    conn.execute("UPDATE core.person SET idp_subject = 'sub-co-tk' WHERE id = %s", (first["created"][0]["person_id"],))
+    again = call(client, "admin_import", args, admin[k("gd")], admin["TDX"]).json()
+    assert again["applied"] and again["created"] == [], again
