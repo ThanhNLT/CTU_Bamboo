@@ -87,7 +87,7 @@ export const ReportIncidentModal = ({
         </Form.Item>
       </Form>
       <p className="text-[12px] text-muted">
-        Sự cố được gửi tới chủ sở hữu tài sản và ghi vào OpenMetadata; các tài sản phía sau được gắn cờ “Bị ảnh hưởng”.
+        Sự cố được ghi lại kèm người báo và thời điểm để chủ sở hữu tài sản xử lý.
       </p>
     </Modal>
   );
