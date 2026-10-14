@@ -2,10 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import datetime as dt
 import json
 import logging
 import os
 import pathlib
+import random
 import sys
 
 import psycopg
@@ -66,6 +68,19 @@ ITEMS = [
     ("TDX", "DV-VC", "Vận chuyển hàng nhanh", "chuyến", "DICH_VU", None),
     ("TDX", "DV-HVAC", "Bảo trì hệ thống điều hòa phòng sạch", "lần", "DICH_VU", None),
     ("BVX", "TBYT-SIEUAM", "Máy siêu âm 4D", "máy", "TBYT", 200_000_000),
+]
+
+HISTORY_DAYS = 60
+HISTORY_PER_DAY = {"TDX": [0, 1, 1, 2, 2, 3], "BVX": [0, 0, 1, 1]}
+HISTORY_TITLES = [
+    "Linh kiện bổ sung cho dây chuyền",
+    "Vật tư tiêu hao tháng này",
+    "Thay thế thiết bị đo hỏng",
+    "Văn phòng phẩm cho phòng",
+    "Dịch vụ vận chuyển hàng mẫu",
+    "Thiết bị cho nhân sự mới",
+    "Bảo trì định kỳ",
+    "Hàng mẫu cho khách hàng",
 ]
 
 PURCHASE_REQUESTS = [
@@ -888,6 +903,120 @@ class Seeder:
                 uid("TDX", "item", item),
             )
 
+    def approval_history_demo(self):
+        tz = dt.timezone(dt.timedelta(hours=7))
+        now = dt.datetime.now(tz)
+        for tenant, per_day in HISTORY_PER_DAY.items():
+            tid = self.tenant_id(tenant)
+            if self.x("SELECT 1 FROM proc.purchase_request WHERE id = %s", uid(tenant, "pr-history", "0")).fetchone():
+                continue
+            rng = random.Random(f"history:{tenant}")
+            seats = self.x(
+                """SELECT p.id, x.person_id FROM core.position p
+                   JOIN core.assignment x ON x.position_id = p.id AND x.assignment_type = 'PRIMARY'
+                                         AND x.valid_period @> now()
+                   JOIN core.org_unit u ON u.id = p.org_unit_id
+                   WHERE p.tenant_id = %s AND NOT p.is_head AND u.parent_id IS NOT NULL
+                   ORDER BY p.id""",
+                tid,
+            ).fetchall()
+            items = self.x(
+                """SELECT id, ref_price, category_code FROM mdm.item
+                   WHERE tenant_id = %s AND ref_price IS NOT NULL ORDER BY code""",
+                tid,
+            ).fetchall()
+            partners = [
+                r[0]
+                for r in self.x(
+                    "SELECT id FROM mdm.partner WHERE tenant_id = %s AND internal_unit_id IS NULL ORDER BY code", tid
+                ).fetchall()
+            ]
+            n = 0
+            for day in range(HISTORY_DAYS, 1, -1):
+                for _ in range(rng.choice(per_day)):
+                    position, requester = rng.choice(seats)
+                    item_id, price, category = rng.choice(items)
+                    roll = rng.random()
+                    target = (
+                        rng.uniform(2e6, 45e6)
+                        if roll < 0.75
+                        else rng.uniform(55e6, 300e6)
+                        if roll < 0.95
+                        else rng.uniform(5.2e8, 8e8)
+                    )
+                    quantity = max(1, round(target / float(price)))
+                    at = (now - dt.timedelta(days=day)).replace(hour=8, minute=0, second=0, microsecond=0)
+                    at += dt.timedelta(minutes=rng.randint(0, 480))
+                    pr_id = uid(tenant, "pr-history", str(n))
+                    title = rng.choice(HISTORY_TITLES)
+                    self.x(
+                        """INSERT INTO proc.purchase_request (tenant_id, id, title, requester_id, requester_position_id,
+                                                              category_code, partner_id, created_at)
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                        tid,
+                        pr_id,
+                        title,
+                        requester,
+                        position,
+                        category,
+                        rng.choice(partners) if partners else None,
+                        at,
+                    )
+                    self.x(
+                        """INSERT INTO proc.purchase_request_item (request_id, item_id, quantity, unit_price)
+                              VALUES (%s, %s, %s, %s)""",
+                        pr_id,
+                        item_id,
+                        quantity,
+                        price,
+                    )
+                    try:
+                        with self.conn.transaction():
+                            self._run_history(pr_id, requester, at, now, rng)
+                    except psycopg.Error as exc:
+                        log.warning("bỏ qua lịch sử %s: %s", title, exc.diag.message_primary)
+                        self.x(
+                            "UPDATE proc.purchase_request SET status = 'CANCELLED' WHERE id = %s AND status = 'DRAFT'",
+                            pr_id,
+                        )
+                    n += 1
+            self.x(
+                """UPDATE collab.notification SET read_at = created_at + interval '1 hour'
+                   WHERE read_at IS NULL AND entity_type = 'proc.purchase_request'
+                     AND entity_id IN (SELECT id FROM proc.purchase_request WHERE tenant_id = %s AND id = ANY(%s))""",
+                tid,
+                [uid(tenant, "pr-history", str(i)) for i in range(n)],
+            )
+
+    def _run_history(self, pr_id, requester, at, now, rng):
+        limit = now - dt.timedelta(hours=1)
+        self.x("SELECT proc.submit_purchase_request(%s, %s, %s)", pr_id, requester, at)
+        for _ in range(8):
+            row = self.x(
+                """SELECT t.id, t.assignee_id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
+                   WHERE s.entity_id = %s AND t.status = 'OPEN'""",
+                pr_id,
+            ).fetchone()
+            if row is None:
+                status = self.x("SELECT status FROM proc.purchase_request WHERE id = %s", pr_id).fetchone()[0]
+                if status != "RETURNED":
+                    return
+                at = min(at + dt.timedelta(hours=rng.uniform(1, 20)), limit)
+                self.x("SELECT proc.submit_purchase_request(%s, %s, %s)", pr_id, requester, at)
+                continue
+            task, approver = row
+            late = rng.random() < 0.12
+            at = min(at + dt.timedelta(hours=rng.uniform(50, 96) if late else rng.uniform(0.5, 36)), limit)
+            roll = rng.random()
+            decision, note = (
+                ("RETURN", "Bổ sung báo giá")
+                if roll < 0.04
+                else ("REJECT", "Chưa cần thiết")
+                if roll < 0.07
+                else ("APPROVE", None)
+            )
+            self.x("SELECT wf.act(%s, %s, %s, %s, %s)", task, approver, decision, note, at)
+
     def library_demo(self):
         self.seat_role(
             "DE_XUAT_TAI_LIEU",
@@ -1016,6 +1145,7 @@ class Seeder:
         self.process_design_demo()
         self.library_demo()
         self.ops_demo()
+        self.approval_history_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
@@ -1030,7 +1160,9 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.process_design_demo()
             seeder.library_demo()
             seeder.ops_demo()
+            seeder.approval_history_demo()
             demo_load.load(conn)
+            conn.execute("SELECT kpi.refresh()")
         return False
     with conn.transaction():
         Seeder(conn).run()

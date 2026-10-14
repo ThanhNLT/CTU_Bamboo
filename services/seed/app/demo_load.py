@@ -156,6 +156,7 @@ def load(conn: psycopg.Connection, now: dt.datetime | None = None) -> bool:
     n = load_twin(conn, shift)
     load_lineage(conn, shift)
     load_kpi(conn, shift)
+    conn.execute("SELECT kpi.refresh()")
     log.info("đã nạp dữ liệu demo nhóm 5: %d số đo, dời %s", n, shift)
     return True
 
