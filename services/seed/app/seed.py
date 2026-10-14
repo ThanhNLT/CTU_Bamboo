@@ -886,6 +886,106 @@ class Seeder:
                 owner[0],
             )
 
+    def library_demo(self):
+        """Thư viện tri thức (ADR #48): vai trò đề xuất / quản lý, quy tắc duyệt KB_DOCUMENT (trưởng đơn vị của người
+        lập), vài tài liệu đã xuất bản. Chạy lại không tạo trùng."""
+        self.seat_role(
+            "DE_XUAT_TAI_LIEU",
+            "Đề xuất tài liệu",
+            "kb.document.create",
+            {
+                "TDX": ["DT_MH.S1", "CHIP_PS.HEAD", "TDX_CDS.HEAD", "TDX_PC.S1"],
+                "BVX": ["BVX_KHTH.S1", "BVX_DUOC.HEAD", "BVX_KHTH.HEAD"],
+            },
+        )
+        self.seat_role(
+            "QUAN_LY_THU_VIEN",
+            "Quản lý thư viện",
+            "kb.document.manage",
+            {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]},
+        )
+        for t in TENANTS:
+            tid = self.tenant_id(t.code)
+            if not self.x(
+                "SELECT 1 FROM wf.approval_rule WHERE tenant_id = %s AND process_code = 'KB_DOCUMENT'", tid
+            ).fetchone():
+                self.x(
+                    """INSERT INTO wf.approval_rule (tenant_id, process_code, min_amount, step_order, valid_period)
+                          VALUES (%s, 'KB_DOCUMENT', 0, 1, tstzrange(%s, NULL))""",
+                    tid,
+                    START,
+                )
+        docs = [
+            (
+                "TDX",
+                "CHIP_PS.HEAD",
+                "Quy chế vận hành phòng sạch",
+                "regulation",
+                "company",
+                "Cấp độ sạch, kiểm soát ra vào, giám sát hạt bụi và xử lý sự cố phòng sạch của nhà máy chip.",
+                [
+                    "Phạm vi áp dụng và cấp độ sạch",
+                    "Kiểm soát ra vào khóa khí",
+                    "Giám sát hạt bụi, nhiệt độ, độ ẩm",
+                    "Phân cấp sự cố và thời hạn báo cáo",
+                ],
+            ),
+            (
+                "TDX",
+                "TDX_CDS.HEAD",
+                "Quy chế quản lý tài liệu số của Tập đoàn",
+                "regulation",
+                "group",
+                "Nguyên tắc lưu trữ, phân quyền, đối soát toàn vẹn và lưu giữ tài liệu số trên Bamboo.",
+                ["Phạm vi và đối tượng", "Phân loại và phân quyền", "Đối soát toàn vẹn (Sổ cái)", "Thời hạn lưu giữ"],
+            ),
+            (
+                "TDX",
+                "TDX_CDS.HEAD",
+                "Hướng dẫn lập đề nghị mua sắm",
+                "guide",
+                "group",
+                "Các bước lập, đính kèm báo giá, gửi duyệt và theo dõi đề nghị mua sắm.",
+                ["Chọn tư cách lập", "Nhà cung cấp và nhóm hàng", "Đính kèm báo giá", "Theo dõi chuỗi duyệt"],
+            ),
+            (
+                "BVX",
+                "BVX_KHTH.HEAD",
+                "Quy trình kiểm soát nhiễm khuẩn",
+                "sop",
+                "company",
+                "Quy trình chuẩn kiểm soát nhiễm khuẩn tại các khoa lâm sàng.",
+                ["Vệ sinh tay", "Phân loại chất thải y tế", "Giám sát và báo cáo"],
+            ),
+        ]
+        for code, seat, title, category, scope, summary, toc in docs:
+            tid = self.tenant_id(code)
+            doc_id = uid(code, "kb_document", title)
+            if self.x("SELECT 1 FROM collab.kb_document WHERE id = %s", doc_id).fetchone():
+                continue
+            position = uid(code, "position", seat)
+            owner = self.x(
+                "SELECT person_id FROM core.assignment WHERE position_id = %s AND upper_inf(valid_period) LIMIT 1",
+                position,
+            ).fetchone()
+            if owner is None:
+                continue
+            self.x(
+                """INSERT INTO collab.kb_document (tenant_id, id, title, category, scope, summary, toc, effective_date,
+                                                   requester_id, requester_position_id)
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, DATE '2026-09-01', %s, %s)""",
+                tid,
+                doc_id,
+                title,
+                category,
+                scope,
+                summary,
+                toc,
+                owner[0],
+                position,
+            )
+            self.x("UPDATE collab.kb_document SET status = 'APPROVED', published_at = %s WHERE id = %s", START, doc_id)
+
     def run(self):
         for t in TENANTS:
             self.x(
@@ -915,11 +1015,12 @@ class Seeder:
         self.lakehouse_demo()
         self.master_data_admin_demo()
         self.process_design_demo()
+        self.library_demo()
 
 
 def seed(conn: psycopg.Connection) -> bool:
     """Nạp dữ liệu demo trong một giao dịch. Trả về False nếu đã có (khi đó chỉ bổ sung phần mới: nhân sự, đơn
-    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ, thiết kế quy trình)."""
+    hàng nội bộ, vai trò xem Lakehouse, quản lý dữ liệu chủ, thiết kế quy trình, thư viện)."""
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
@@ -929,6 +1030,7 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.lakehouse_demo()
             seeder.master_data_admin_demo()
             seeder.process_design_demo()
+            seeder.library_demo()
         return False
     with conn.transaction():
         Seeder(conn).run()

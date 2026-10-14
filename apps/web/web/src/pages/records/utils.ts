@@ -53,6 +53,7 @@ const STATUS_OF: Record<string, RecordStatus> = {
   SETTLED: "approved",
   REJECTED: "closed",
   CANCELLED: "closed",
+  RETIRED: "closed",
 };
 
 // ===== Hàm tiện ích =====

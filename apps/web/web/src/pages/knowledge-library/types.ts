@@ -5,36 +5,42 @@
 // ===== Kiểu dữ liệu =====
 export type DocCategory = "regulation" | "sop" | "guide" | "faq";
 
-/** Phạm vi ban hành: cấp tập đoàn hay công ty con. */
+/** Phạm vi đọc: cả tập đoàn (tenant) hay chỉ công ty của đơn vị ban hành. */
 export type DocScope = "group" | "company";
 
 export type ScopeFilter = "all" | DocScope;
 
 export type CategoryFilter = "all" | DocCategory;
 
-/** Trạng thái nạp tài liệu vào kho tri thức của Trợ lý đa năng. */
+/** Trạng thái tài liệu trong chỉ mục tìm kiếm toàn văn (search-sync). */
 export type IndexState =
-  | { status: "indexed"; chunks: number; at: string }
-  | { status: "indexing"; progress: number }
-  | { status: "failed"; reason: string };
+  | { status: "indexed"; at: string | null }
+  | { status: "indexing" }
+  | { status: "missing" }
+  | { status: "error"; reason: string };
 
+export type LibraryFile = { id: string; file_name: string; content_type: string; size_bytes: number };
+
+/** Một tài liệu đang hiệu lực trong thư viện. */
 export type LibraryDoc = {
   id: string;
+  code: string;
   title: string;
   category: DocCategory;
   scope: DocScope;
-  /** Đơn vị ban hành hiển thị ("Công ty Chip & Linh kiện", "Tập đoàn"). */
+  /** Công ty (pháp nhân) ban hành. */
   issuer: string;
-  version?: number;
-  /** Ghi chú cuối dòng meta ("hiệu lực 01/09/2026", "cập nhật 10 phút trước"...). */
-  note?: string;
-  index: IndexState;
-  owner: string;
-  /** Mô tả phiên bản ("v3 (2 bản trước)"). */
-  versionLabel: string;
-  effectiveDate: string;
-  pages: number;
-  format: string;
+  /** Đơn vị ban hành. */
+  unit: string;
+  requester: string;
+  version: number;
+  summary: string | null;
   toc: string[];
-  excerpt?: { heading: string; body: string };
+  effectiveDate: string | null;
+  publishedAt: string | null;
+  myCompany: boolean;
+  canManage: boolean;
+  index: IndexState;
+  files: LibraryFile[];
+  previous: { id: string; version: number; doc_no: string }[];
 };

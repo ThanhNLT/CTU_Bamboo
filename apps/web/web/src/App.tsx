@@ -38,7 +38,7 @@ import { AuditLogList } from "./pages/audit/list";
 import { CatalogPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
 import { DashboardPage } from "./pages/dashboard";
 import { DocumentDrivePage } from "./pages/document-drive";
-import { KnowledgeLibraryPage } from "./pages/knowledge-library";
+import { KnowledgeLibraryPage, ProposalPage } from "./pages/knowledge-library";
 import { DataServicesPage } from "./pages/data-services";
 import { DigitalTwinPage } from "./pages/digital-twin";
 import { DataLineagePage } from "./pages/data-lineage";
@@ -166,6 +166,7 @@ function App() {
                     <Route index element={<DashboardPage />} />
                     <Route path="/h/drive" element={<DocumentDrivePage />} />
                     <Route path="/h/library" element={<KnowledgeLibraryPage />} />
+                    <Route path="/h/library/proposals/:id" element={<ProposalPage />} />
                     <Route path="/p/records" element={<RecordsPage />} />
                     <Route path="/p/tasks" element={<InboxPage />} />
                     <Route path="/p/process" element={<ProcessDesignPage />} />

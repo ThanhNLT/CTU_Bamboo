@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Danh sách chứng từ dùng chung cho Trang chủ và trang Hồ sơ: đề nghị mua sắm, đề nghị tiếp nhận nhân sự và
-// đơn hàng nội bộ gộp về một dạng. Hasura chỉ trả chứng từ người dùng được xem (can_read); `mine` lọc thêm
+// Danh sách chứng từ dùng chung cho Trang chủ và trang Hồ sơ: đề nghị mua sắm, đề nghị tiếp nhận nhân sự, đơn
+// hàng nội bộ và đề xuất tài liệu thư viện gộp về một dạng. Hasura chỉ trả chứng từ người dùng được xem (can_read); `mine` lọc thêm
 // chứng từ do chính người dùng lập. Tự cập nhật qua subscription.
 
 // ===== Thư viện =====
@@ -16,13 +16,14 @@ import { formatMoney } from "../utils/format";
 import { IC_STATUS_LABEL, PR_STATUS_LABEL } from "../utils/status";
 
 // ===== Kiểu dữ liệu =====
-export type DocKind = "purchase_request" | "onboarding_request" | "ic_order";
+export type DocKind = "purchase_request" | "onboarding_request" | "ic_order" | "kb_document";
 
 // ===== Hằng số =====
 export const DOC_KIND_LABEL: Record<DocKind, string> = {
   purchase_request: "Đề nghị mua sắm",
   onboarding_request: "Tiếp nhận nhân sự",
   ic_order: "Đơn hàng nội bộ",
+  kb_document: "Đề xuất tài liệu",
 };
 
 /** Một bước duyệt của lần gửi hiện tại. */
@@ -112,6 +113,17 @@ const IC = gql`
   }
 `;
 
+const KB = gql`
+  query DocsKb($limit: Int, $offset: Int, $order_by: [collab_kb_document_order_by!], $where: collab_kb_document_bool_exp) {
+    collab_kb_document(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+      id doc_no title status version created_at updated_at requester_id
+      requester { full_name } org_unit { name }
+      ${STEPS}
+    }
+    collab_kb_document_aggregate(where: $where) { aggregate { count } }
+  }
+`;
+
 // ===== Kiểu dữ liệu =====
 type StepRow = {
   round: number;
@@ -160,6 +172,21 @@ type IcRow = {
   created_by_person: { full_name: string } | null;
   buyer_unit: { name: string } | null;
   seller_unit: { name: string } | null;
+};
+
+type KbRow = {
+  id: string;
+  doc_no: string;
+  title: string;
+  status: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  requester_id: string;
+  requester: { full_name: string } | null;
+  org_unit: { name: string } | null;
+  approval_round: number;
+  approval_steps: StepRow[];
 };
 
 // ===== Hàm tiện ích =====
@@ -225,6 +252,23 @@ const fromIc = (r: IcRow): DocSummary => ({
   steps: [],
 });
 
+const fromKb = (r: KbRow): DocSummary => ({
+  id: r.id,
+  kind: "kb_document",
+  code: r.doc_no,
+  title: r.title,
+  status: r.status,
+  statusLabel: r.status === "APPROVED" ? "Đã xuất bản" : (PR_STATUS_LABEL[r.status] ?? "Ngừng hiệu lực"),
+  requester: r.requester?.full_name ?? "—",
+  requesterId: r.requester_id,
+  unit: r.org_unit?.name ?? "—",
+  amount: `Phiên bản ${r.version}`,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  to: `/h/library/proposals/${r.id}`,
+  steps: stepsOf(r.approval_round, r.approval_steps),
+});
+
 // ===== Kiểu dữ liệu =====
 type Options = {
   /** Chỉ chứng từ do người này lập (core.person.id). */
@@ -254,23 +298,30 @@ export const useDocuments = ({ mine, limit = 100 }: Options = {}) => {
     ...common,
   });
   const ic = useList<IcRow>({ resource: "ic_ic_order", filters: by("created_by"), meta: { gqlQuery: IC }, ...common });
+  const kb = useList<KbRow>({
+    resource: "collab_kb_document",
+    filters: by("requester_id"),
+    meta: { gqlQuery: KB },
+    ...common,
+  });
 
   const prRows = pr.result.data;
   const obRows = ob.result.data;
   const icRows = ic.result.data;
+  const kbRows = kb.result.data;
   const documents = useMemo(
     () =>
-      [...prRows.map(fromPr), ...obRows.map(fromOb), ...icRows.map(fromIc)].sort((a, b) =>
+      [...prRows.map(fromPr), ...obRows.map(fromOb), ...icRows.map(fromIc), ...kbRows.map(fromKb)].sort((a, b) =>
         b.updatedAt.localeCompare(a.updatedAt),
       ),
-    [prRows, obRows, icRows],
+    [prRows, obRows, icRows, kbRows],
   );
 
   return {
     documents,
     /** Tổng số chứng từ thỏa điều kiện (kể cả phần chưa tải về). */
-    total: (pr.result.total ?? 0) + (ob.result.total ?? 0) + (ic.result.total ?? 0),
-    loading: pr.query.isLoading || ob.query.isLoading || ic.query.isLoading,
-    error: (pr.query.error ?? ob.query.error ?? ic.query.error)?.message,
+    total: (pr.result.total ?? 0) + (ob.result.total ?? 0) + (ic.result.total ?? 0) + (kb.result.total ?? 0),
+    loading: pr.query.isLoading || ob.query.isLoading || ic.query.isLoading || kb.query.isLoading,
+    error: (pr.query.error ?? ob.query.error ?? ic.query.error ?? kb.query.error)?.message,
   };
 };

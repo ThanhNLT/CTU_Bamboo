@@ -47,11 +47,22 @@ def purchase_request_doc(conn: psycopg.Connection, entity_id) -> dict | None:
     }
 
 
+def kb_document_doc(conn: psycopg.Connection, entity_id) -> dict | None:
+    """Tài liệu thư viện đang hiệu lực (ADR #48); chưa xuất bản / đã ngừng: None (xóa khỏi chỉ mục)."""
+    row = conn.execute("SELECT search.kb_document_doc(%s) AS doc", (entity_id,)).fetchone()
+    doc = row["doc"] if row else None
+    if doc is None:
+        return None
+    return {**doc, "id": search.doc_id("collab.kb_document", entity_id), "kind": "kb_document"}
+
+
 def attachment_doc(conn: psycopg.Connection, settings: config.Settings, entity_id) -> dict | None:
+    """Tệp sạch của chứng từ được đưa vào chỉ mục (không phải hồ sơ nhân sự; tài liệu thư viện phải đang hiệu lực)."""
     att = conn.execute(
         """SELECT tenant_id, entity_type, entity_id, file_name, content_type, storage_key,
                   extract(epoch FROM created_at)::bigint AS created_at
-           FROM core.attachment WHERE id = %s AND status = 'CLEAN' AND deleted_at IS NULL""",
+           FROM core.attachment WHERE id = %s AND status = 'CLEAN' AND deleted_at IS NULL
+             AND search.attachment_indexable(entity_type) AND search.attachment_visible(entity_type, entity_id)""",
         (entity_id,),
     ).fetchone()
     if att is None:
@@ -84,6 +95,8 @@ def sync_one(
         doc = purchase_request_doc(conn, entity_id)
     elif entity_type == "core.attachment":
         doc = attachment_doc(conn, settings, entity_id)
+    elif entity_type == "collab.kb_document":
+        doc = kb_document_doc(conn, entity_id)
     else:
         raise ValueError(f"Không đồng bộ loại {entity_type}")
     conn.rollback()  # không giữ transaction trong lúc gọi Tika/Meilisearch
