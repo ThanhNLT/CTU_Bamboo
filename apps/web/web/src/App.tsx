@@ -25,7 +25,7 @@ import {
 import dayjs from "dayjs"; // Day.js
 import "dayjs/locale/vi"; // Day.js
 import { lazy, Suspense } from "react"; // React
-import { BrowserRouter, Outlet, Route, Routes } from "react-router"; // React Router
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router"; // React Router
 import { useKeycloak } from "@react-keycloak/web"; // React Keycloak
 
 // ===== Module nội bộ =====
@@ -38,7 +38,7 @@ import { AuditLogList } from "./pages/audit/list";
 import { CatalogPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
 import { DashboardPage } from "./pages/dashboard";
 import { DocumentDrivePage } from "./pages/document-drive";
-import { KnowledgeLibraryPage } from "./pages/knowledge-library";
+import { KnowledgeLibraryPage, ProposalPage } from "./pages/knowledge-library";
 import { DataServicesPage } from "./pages/data-services";
 import { DigitalTwinPage } from "./pages/digital-twin";
 import { DataLineagePage } from "./pages/data-lineage";
@@ -46,7 +46,6 @@ import { LedgerPage } from "./pages/ledger";
 import { AiAssistantPage } from "./pages/ai-assistant";
 import { OcrInputPage } from "./pages/ocr-input";
 import { AiAgentsPage } from "./pages/ai-agents";
-import { MapPage } from "./pages/map";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { ProcessDesignPage } from "./pages/process-design";
 import { RecordsPage } from "./pages/records";
@@ -101,7 +100,6 @@ function App() {
                   { name: "tasks", list: "/p/tasks", meta: { label: "Hộp việc" } },
                   { name: "process_design", list: "/p/process", meta: { label: "Thiết kế quy trình" } },
                   { name: "operations", list: "/d/ops", meta: { label: "Trung tâm điều hành" } },
-                  { name: "map", list: "/d/map", meta: { label: "Bản đồ" } },
                   { name: "data_services", list: "/d/services", meta: { label: "Dịch vụ dữ liệu" } },
                   { name: "digital_twin", list: "/d/twin", meta: { label: "Bản sao số" } },
                   { name: "data_lineage", list: "/d/lineage", meta: { label: "Phả hệ dữ liệu" } },
@@ -166,11 +164,12 @@ function App() {
                     <Route index element={<DashboardPage />} />
                     <Route path="/h/drive" element={<DocumentDrivePage />} />
                     <Route path="/h/library" element={<KnowledgeLibraryPage />} />
+                    <Route path="/h/library/proposals/:id" element={<ProposalPage />} />
                     <Route path="/p/records" element={<RecordsPage />} />
                     <Route path="/p/tasks" element={<InboxPage />} />
                     <Route path="/p/process" element={<ProcessDesignPage />} />
                     <Route path="/d/ops" element={<OperationsCenterPage />} />
-                    <Route path="/d/map" element={<MapPage />} />
+                    <Route path="/d/map" element={<Navigate to="/d/ops" replace />} />
                     <Route path="/d/services" element={<DataServicesPage />} />
                     <Route path="/d/twin" element={<DigitalTwinPage />} />
                     <Route path="/d/lineage" element={<DataLineagePage />} />

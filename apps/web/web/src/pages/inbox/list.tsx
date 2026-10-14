@@ -41,6 +41,17 @@ const INBOX = gql`
           name
         }
       }
+      kb_document {
+        id
+        doc_no
+        title
+        requester {
+          full_name
+        }
+        org_unit {
+          name
+        }
+      }
       onboarding_request {
         id
         doc_no
@@ -81,6 +92,13 @@ type Row = BaseRecord & {
     requester: { full_name: string } | null;
     org_unit: { name: string } | null;
   } | null;
+  kb_document: {
+    id: string;
+    doc_no: string;
+    title: string;
+    requester: { full_name: string } | null;
+    org_unit: { name: string } | null;
+  } | null;
   onboarding_request: {
     id: string;
     doc_no: string;
@@ -94,6 +112,18 @@ type Row = BaseRecord & {
 // ===== Hàm tiện ích =====
 // Hộp việc có nhiều loại chứng từ: mỗi việc hiện số, tiêu đề, người lập, số tiền và trang chi tiết.
 const describe = (r: Row) => {
+  if (r.kb_document) {
+    const k = r.kb_document;
+    return {
+      to: `/h/library/proposals/${k.id}`,
+      resource: "collab_kb_document",
+      id: k.id,
+      docNo: k.doc_no,
+      title: `Đề xuất tài liệu: ${k.title}`,
+      sub: `${k.requester?.full_name ?? ""} · ${k.org_unit?.name ?? ""}`,
+      amount: "—",
+    };
+  }
   if (r.onboarding_request) {
     const o = r.onboarding_request;
     return {
@@ -138,7 +168,7 @@ export const InboxList = () => {
             const d = describe(r);
             return (
               <Space direction="vertical" size={0}>
-                <a onClick={() => go({ to: { resource: d.resource, action: "show", id: d.id } })}>
+                <a onClick={() => go({ to: "to" in d ? d.to : { resource: d.resource, action: "show", id: d.id } })}>
                   <Typography.Text code style={{ whiteSpace: "nowrap" }}>
                     {d.docNo}
                   </Typography.Text>{" "}

@@ -8,7 +8,7 @@ import { Segmented } from "antd"; // Ant Design
 // ===== Module nội bộ =====
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
-import { CATEGORY_LABEL, CATEGORY_TOTALS, SCOPE_OPTIONS } from "../mock";
+import { CATEGORY_LABEL, SCOPE_OPTIONS } from "../labels";
 import type { CategoryFilter, DocCategory, ScopeFilter } from "../types";
 
 // ===== Hằng số =====
@@ -23,6 +23,7 @@ export const FilterSection = ({
   onScopeChange,
   category,
   onCategoryChange,
+  counts,
 }: {
   query: string;
   onQueryChange: (q: string) => void;
@@ -30,6 +31,8 @@ export const FilterSection = ({
   onScopeChange: (s: ScopeFilter) => void;
   category: CategoryFilter;
   onCategoryChange: (c: CategoryFilter) => void;
+  /** Số tài liệu theo loại (trong phạm vi đang chọn). */
+  counts: Partial<Record<CategoryFilter, number>>;
 }) => (
   <div className="flex flex-col gap-3">
     <div className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -65,7 +68,7 @@ export const FilterSection = ({
                 : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
             )}
           >
-            {c === "all" ? "Tất cả" : CATEGORY_LABEL[c]} · <span className="tabular-nums">{CATEGORY_TOTALS[c]}</span>
+            {c === "all" ? "Tất cả" : CATEGORY_LABEL[c]} · <span className="tabular-nums">{counts[c] ?? 0}</span>
           </button>
         );
       })}

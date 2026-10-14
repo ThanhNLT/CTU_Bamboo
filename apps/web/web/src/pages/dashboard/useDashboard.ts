@@ -90,6 +90,7 @@ const DETAIL: Record<string, string> = {
   "proc.purchase_request": "/p/documents/show/",
   "hr.onboarding_request": "/h/onboarding/show/",
   "ic.ic_order": "/p/ic-orders/show/",
+  "collab.kb_document": "/h/library/proposals/",
 };
 
 const NOTE_TONE: Record<string, Tone> = {

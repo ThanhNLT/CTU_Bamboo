@@ -15,7 +15,9 @@ import pytest  # pytest
 from conftest import ids
 
 # ===== Hằng số & cấu hình =====
-ENTITIES = """query { iot_entity { code state type_model { kind attributes } incidents { id code acknowledged_at } } }"""
+ENTITIES = (
+    """query { iot_entity { code state type_model { kind attributes } incidents { id code acknowledged_at } } }"""
+)
 ACK = """mutation($id: uuid!, $n: String!) { iot_acknowledge(id: $id, note: $n) { id acknowledged_at } }"""
 PINS = """query { kpi_pin { kpi_key position } }"""
 SAVE = """mutation($p: [kpi_pin_insert_input!]!) {
