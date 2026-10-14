@@ -125,3 +125,26 @@ def test_bo_sung_tai_khoan_demo(admin, tmp_path):
         assert keycloak_sync.ensure_demo_users(KEYCLOAK, *ADMIN, "", realm) == 0
     finally:
         http.delete(f"/users/{user['id']}")
+
+
+def master_realm() -> httpx.Client:
+    token = keycloak_sync.admin_token(KEYCLOAK, *ADMIN)
+    return httpx.Client(
+        base_url=f"{KEYCLOAK}/admin/realms/master", headers={"Authorization": f"Bearer {token}"}, timeout=15
+    )
+
+
+def test_realm_master_dung_dia_chi_quan_tri(admin):
+    with master_realm() as http:
+        original = http.get("").json()["attributes"].get("frontendUrl", "")
+    try:
+        url = "http://kc-admin-test.invalid:8080"
+        assert keycloak_sync.ensure_admin_console_url(KEYCLOAK, *ADMIN, url + "/") is True
+        with master_realm() as http:
+            assert http.get("").json()["attributes"]["frontendUrl"] == url
+        assert keycloak_sync.ensure_admin_console_url(KEYCLOAK, *ADMIN, url) is False
+        assert keycloak_sync.ensure_admin_console_url(KEYCLOAK, *ADMIN, "") is False
+    finally:
+        with master_realm() as http:
+            attrs = http.get("").json()["attributes"]
+            http.put("", json={"attributes": {**attrs, "frontendUrl": original}}).raise_for_status()

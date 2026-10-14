@@ -82,6 +82,12 @@ def main() -> int:
         ),
     )
     log.info("client %s chấp nhận %s", keycloak_sync.CLIENT_ID, settings.web_origin)
+    keycloak_sync.ensure_admin_console_url(
+        settings.keycloak_url,
+        settings.keycloak_admin_user,
+        settings.keycloak_admin_password,
+        settings.keycloak_admin_url,
+    )
     keycloak_sync.ensure_provisioner_client(
         settings.keycloak_url,
         settings.keycloak_admin_user,
