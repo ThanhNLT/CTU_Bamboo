@@ -446,7 +446,8 @@ class Seeder:
         for code, name in ITEM_CATEGORIES[tenant].items():
             self.x(
                 """INSERT INTO core.catalog_item (tenant_id, id, catalog, code, name)
-                      VALUES (%s, %s, 'ITEM_CATEGORY', %s, %s)""",
+                      VALUES (%s, %s, 'ITEM_CATEGORY', %s, %s)
+                      ON CONFLICT DO NOTHING""",
                 tid,
                 uid(tenant, "ITEM_CATEGORY", code),
                 code,
@@ -456,7 +457,8 @@ class Seeder:
             if t == tenant:
                 self.x(
                     """INSERT INTO mdm.partner (tenant_id, id, code, name, internal_unit_id)
-                          VALUES (%s, %s, %s, %s, %s)""",
+                          VALUES (%s, %s, %s, %s, %s)
+                          ON CONFLICT DO NOTHING""",
                     tid,
                     uid(tenant, "partner", code),
                     code,
@@ -467,7 +469,8 @@ class Seeder:
             if t == tenant:
                 self.x(
                     """INSERT INTO mdm.item (tenant_id, id, code, name, uom, category_code, ref_price)
-                          VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                          VALUES (%s, %s, %s, %s, %s, %s, %s)
+                          ON CONFLICT DO NOTHING""",
                     tid,
                     uid(tenant, "item", code),
                     code,
@@ -1153,6 +1156,8 @@ def seed(conn: psycopg.Connection) -> bool:
         with conn.transaction():
             seeder = Seeder(conn)
             seeder.x("SET CONSTRAINTS ALL IMMEDIATE")
+            for t in TENANTS:
+                seeder.master_data(t.code)
             seeder.hr_demo()
             seeder.ic_demo()
             seeder.lakehouse_demo()
