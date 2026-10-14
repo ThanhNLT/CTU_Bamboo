@@ -6,7 +6,6 @@ import argparse
 import csv
 import datetime as dt
 import json
-import math
 import pathlib
 import random
 
@@ -474,18 +473,18 @@ def lineage(out: pathlib.Path) -> None:
 
 
 KPIS = [
-    ("on-time", "TDX", "Duyệt đúng hạn", "%", "up", 90, "month", "kpi-on-time",
-     "Bước duyệt xong trong 48 giờ / mọi bước duyệt xong trong tháng."),
+    ("on-time", "TDX", "Duyệt đúng hạn", "%", "up", 90, "day", "kpi-on-time",
+     "Bước duyệt xong trong 48 giờ / mọi bước duyệt xong trong 30 ngày gần nhất, tính từ dữ liệu duyệt."),
     ("pr-value", "TDX", "Giá trị mua sắm đã duyệt", "tỷ đồng", "neutral", None, "month", "kpi-pr-value",
-     "Tổng tiền đề nghị mua sắm duyệt xong trong tháng."),
+     "Tổng tiền đề nghị mua sắm duyệt xong trong tháng, tính từ dữ liệu duyệt."),
     ("lots-on-hold", "TDX", "Lô đang giữ", "lô", "down", 3, "week", "kpi-lots-on-hold",
-     "Số lô ở trạng thái đang giữ cuối mỗi tuần."),
+     "Số lô ở trạng thái đang giữ; tuần hiện tại đếm trực tiếp từ bảng lô."),
     ("oee", "TDX", "OEE dây chuyền SMT", "%", "up", 75, "day", "kpi-oee",
      "Khả dụng × hiệu suất × chất lượng trung bình 8 dây chuyền SMT trong ngày."),
     ("particles", "TDX", "Hạt bụi ≥0,5 µm · CR-02", "hạt/m³", "down", 3520, "hour", "kpi-particles",
      "Trung bình mỗi giờ của hạt bụi ≥0,5 µm phòng sạch CR-02 (ngưỡng ISO 5)."),
-    ("on-time", "BVX", "Duyệt đúng hạn", "%", "up", 90, "month", "kpi-on-time",
-     "Bước duyệt xong trong 48 giờ / mọi bước duyệt xong trong tháng."),
+    ("on-time", "BVX", "Duyệt đúng hạn", "%", "up", 90, "day", "kpi-on-time",
+     "Bước duyệt xong trong 48 giờ / mọi bước duyệt xong trong 30 ngày gần nhất, tính từ dữ liệu duyệt."),
     ("cold-chain", "BVX", "Tủ vắc-xin đạt 2–8 °C", "%", "up", 99, "day", "kpi-cold-chain",
      "Tỷ lệ thời gian 3 tủ vắc-xin Khoa Dược ở 2–8 °C trong ngày."),
     ("ventilators", "BVX", "Máy thở sẵn sàng", "máy", "up", 4, "day", "",
@@ -502,9 +501,14 @@ PINS = [
 ]
 
 
+COMPUTED_KPIS = {"on-time", "pr-value"}
+
+
 def kpi_values(signals: dict) -> list[tuple]:
     rows = []
     for key, tenant, *_rest, grain, _node, _def in KPIS:
+        if key in COMPUTED_KPIS:
+            continue
         rng = random.Random(f"kpi:{tenant}:{key}")
         if grain == "hour":
             pts = signals[("CR-02", "particles05")]
@@ -522,11 +526,7 @@ def kpi_values(signals: dict) -> list[tuple]:
             else:
                 at = REF.replace(hour=0, minute=0, second=0) - step * (n - 1 - i)
             t = i / (n - 1)
-            if key == "on-time":
-                v = round((94.0 if tenant == "TDX" else 91.5) - 1.6 * t + rng.gauss(0, 0.25), 1)
-            elif key == "pr-value":
-                v = round(1.8 + 0.9 * math.sin(i / 1.9) + 0.08 * i + rng.gauss(0, 0.15), 2)
-            elif key == "lots-on-hold":
+            if key == "lots-on-hold":
                 v = max(0, round(1 + 2 * t + rng.gauss(0, 0.7)))
             elif key == "oee":
                 v = round(78 - (6 if i == n - 1 else 0) + rng.gauss(0, 1.2), 1)

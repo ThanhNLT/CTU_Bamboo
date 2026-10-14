@@ -36,4 +36,5 @@ def test_du_lieu_nhat_quan():
     kpis = {(r["kpi_key"], r["tenant"]) for r in csv.DictReader((out / "kpi/dinh-nghia.csv").open(encoding="utf-8"))}
     values = {(r["kpi_key"], r["tenant"]) for r in csv.DictReader((out / "kpi/gia-tri.csv").open(encoding="utf-8"))}
     pins = {(r["kpi_key"], r["tenant"]) for r in csv.DictReader((out / "kpi/ghim.csv").open(encoding="utf-8"))}
-    assert values == kpis and pins <= kpis
+    computed = {(k, t) for k, t in kpis if k in demo_files.COMPUTED_KPIS}
+    assert computed and values == kpis - computed and pins <= kpis

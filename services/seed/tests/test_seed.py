@@ -108,9 +108,19 @@ def test_dong_hang_va_so_chung_tu(conn):
         )
         == 650_000_000
     )
-    assert (
-        one(conn, "SELECT count(DISTINCT (tenant_id, doc_no)) FROM proc.purchase_request WHERE doc_no ~ '^PR-'") == 11
+    assert one(
+        conn, "SELECT count(DISTINCT (tenant_id, doc_no)) FROM proc.purchase_request WHERE doc_no ~ '^PR-'"
+    ) == one(conn, "SELECT count(*) FROM proc.purchase_request")
+    history = one(
+        conn,
+        """SELECT count(*) FROM proc.purchase_request r
+           WHERE r.created_at < now() - interval '1 day' AND r.status IN ('APPROVED', 'REJECTED')""",
     )
+    assert history >= 60, "lịch sử duyệt 60 ngày cho Trung tâm điều hành và KPI"
+    assert (
+        one(conn, "SELECT count(*) FROM wf.task WHERE status = 'OPEN' AND created_at < now() - interval '1 day'") == 0
+    )
+    assert one(conn, "SELECT count(*) FROM kpi.value WHERE kpi_key = 'on-time'") >= 14
     assert one(conn, "SELECT count(*) FROM mdm.partner WHERE internal_unit_id IS NOT NULL") == 3
 
 
@@ -123,7 +133,7 @@ def test_nhat_ky_va_thong_bao(conn):
         one(
             conn,
             """SELECT count(*) FROM collab.notification
-                        WHERE recipient_id = %s AND kind = 'TASK_ASSIGNED'""",
+                        WHERE recipient_id = %s AND kind = 'TASK_ASSIGNED' AND read_at IS NULL""",
             account_id("tgd"),
         )
         == 2
