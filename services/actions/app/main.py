@@ -35,6 +35,7 @@ from . import (
     hr,
     hr_account,
     ic,
+    kb,
     lakehouse_query,
     ledger,
     pii_guard,
@@ -51,7 +52,11 @@ from .storage import Storage
 # ===== Hằng số & cấu hình =====
 DECISIONS = {"APPROVE", "REJECT", "RETURN"}
 # Bảng của từng loại chứng từ được duyệt (trạng thái trả về sau khi xử lý việc duyệt).
-ENTITY_TABLES = {"proc.purchase_request": "proc.purchase_request", "hr.onboarding_request": "hr.onboarding_request"}
+ENTITY_TABLES = {
+    "proc.purchase_request": "proc.purchase_request",
+    "hr.onboarding_request": "hr.onboarding_request",
+    "collab.kb_document": "collab.kb_document",
+}
 BPMN = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
 log = logging.getLogger("actions")
 
@@ -167,6 +172,7 @@ HANDLERS = {
     "get_purchase_request_pdf": forms.get_purchase_request_pdf,
     **hr.HANDLERS,
     **ic.HANDLERS,
+    **kb.HANDLERS,
     **audit.HANDLERS,
     "check_pii": pii_guard.check_pii,
     **admin.HANDLERS,

@@ -41,6 +41,51 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+-- collab.kb_document (khóa: id)
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.collab_kb_document (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.collab_kb_document COMMENT 'Trạng thái hiện tại của collab.kb_document, dựng từ bronze.collab_kb_document' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    json_extract_scalar(after, '$["doc_no"]') AS "doc_no",
+    json_extract_scalar(after, '$["title"]') AS "title",
+    json_extract_scalar(after, '$["category"]') AS "category",
+    json_extract_scalar(after, '$["scope"]') AS "scope",
+    json_extract_scalar(after, '$["summary"]') AS "summary",
+    CAST(json_extract(after, '$["toc"]') AS array(varchar)) AS "toc",
+    date_add('day', CAST(json_extract_scalar(after, '$["effective_date"]') AS integer), DATE '1970-01-01') AS "effective_date",
+    CAST(json_extract_scalar(after, '$["version"]') AS integer) AS "version",
+    CAST(json_extract_scalar(after, '$["supersedes_id"]') AS uuid) AS "supersedes_id",
+    CAST(json_extract_scalar(after, '$["requester_id"]') AS uuid) AS "requester_id",
+    CAST(json_extract_scalar(after, '$["requester_position_id"]') AS uuid) AS "requester_position_id",
+    CAST(json_extract_scalar(after, '$["org_unit_id"]') AS uuid) AS "org_unit_id",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    CAST(json_extract_scalar(after, '$["approval_round"]') AS integer) AS "approval_round",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["published_at"]')) AS timestamp(6) with time zone) AS "published_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["retired_at"]')) AS timestamp(6) with time zone) AS "retired_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.collab_kb_document
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 -- collab.notification (khóa: id)
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.collab_notification (
     "op" varchar,

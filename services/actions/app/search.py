@@ -262,7 +262,7 @@ def search_documents(conn: psycopg.Connection, session: dict, args: dict, ctx: C
     limit = max(1, min(int(args.get("limit") or 20), MAX_LIMIT))
     offset = max(0, int(args.get("offset") or 0))
     kind = args.get("kind")
-    if kind not in (None, "purchase_request", "attachment"):
+    if kind not in (None, "purchase_request", "attachment", "kb_document"):
         raise ActionError(f"Loại kết quả không hợp lệ: {kind}")
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)

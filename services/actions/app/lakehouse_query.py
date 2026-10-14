@@ -44,6 +44,7 @@ DOMAINS = {
 }
 LABELS = {
     "collab_comment": "Trao đổi trên chứng từ",
+    "collab_kb_document": "Tài liệu thư viện tri thức",
     "collab_notification": "Thông báo",
     "core_assignment": "Bổ nhiệm",
     "core_attachment": "Tệp đính kèm",

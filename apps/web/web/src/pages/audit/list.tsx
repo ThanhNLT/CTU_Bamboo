@@ -94,6 +94,7 @@ const OP_COLOR: Record<string, string> = { INSERT: "green", UPDATE: "blue", DELE
 const TABLES = [
   "proc.purchase_request",
   "hr.onboarding_request",
+  "collab.kb_document",
   "proc.purchase_request_item",
   "core.attachment",
   "collab.comment",
