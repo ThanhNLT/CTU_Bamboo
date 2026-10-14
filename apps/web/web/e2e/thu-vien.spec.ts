@@ -2,21 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Thư viện tri thức (ADR #48): chuyên viên đề xuất tài liệu (nháp → đính kèm tệp → gửi duyệt), trưởng phòng duyệt
-// trong Hộp việc, tài liệu xuất bản vào thư viện; người ở công ty khác đọc được tài liệu phạm vi tập đoàn và tìm
-// thấy qua nội dung tệp (tìm toàn văn).
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now().toString(36);
 const TITLE = `Hướng dẫn E2E ${STAMP}`;
-// Từ chỉ có trong nội dung tệp: tìm thấy nghĩa là tệp đã qua Tika vào chỉ mục.
 const SECRET_WORD = `kimchinam${STAMP}`;
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -37,11 +29,9 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("đề xuất tài liệu, duyệt, xuất bản và tìm toàn văn trong thư viện", async ({ page }) => {
   test.setTimeout(180_000);
 
-  // Chuyên viên mua hàng: lập nháp, đính kèm tệp, gửi duyệt.
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/h/library");
   await page.getByRole("button", { name: "Đề xuất tài liệu" }).click();
@@ -68,7 +58,6 @@ test("đề xuất tài liệu, duyệt, xuất bản và tìm toàn văn trong 
   await expect(page.getByText("Chờ duyệt").first()).toBeVisible();
   await logout(page);
 
-  // Trưởng phòng Mua hàng: việc nằm trong Hộp việc, duyệt trên trang đề xuất.
   await login(page, "tp.muahang.dienthoai");
   await page.goto("/p/tasks");
   await expect(page.getByText(`Đề xuất tài liệu: ${TITLE}`).first()).toBeVisible();
@@ -78,13 +67,11 @@ test("đề xuất tài liệu, duyệt, xuất bản và tìm toàn văn trong 
   await expect(page.getByText("Đã xuất bản").first()).toBeVisible();
   await logout(page);
 
-  // Người ở công ty khác (Chip X) đọc được tài liệu phạm vi tập đoàn và tìm thấy qua nội dung tệp.
   await login(page, "kd.chip");
   await page.goto("/h/library");
   await expect(page.getByText(TITLE).first()).toBeVisible();
   const search = page.getByPlaceholder(/Tìm/).first();
   await search.fill(SECRET_WORD);
-  // Tệp vào chỉ mục bất đồng bộ (search-sync + Tika): thử lại tới khi khớp.
   await expect(async () => {
     await search.fill("");
     await search.fill(SECRET_WORD);

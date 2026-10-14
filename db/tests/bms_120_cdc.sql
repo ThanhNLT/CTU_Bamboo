@@ -2,8 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- CDC (ADR #38): publication bms_cdc gồm các schema nghiệp vụ (cả bảng tạo sau), không gồm nhật ký
--- kiểm toán và hàng đợi nội bộ; tài khoản Debezium chỉ đọc dữ liệu và ghi nhịp tim.
 SELECT test.ok(EXISTS (SELECT FROM pg_publication_tables WHERE pubname = 'bms_cdc'
                        AND schemaname = 'proc' AND tablename = 'purchase_request'), 'Đề nghị mua sắm có trong publication');
 SELECT test.ok(EXISTS (SELECT FROM pg_publication_tables WHERE pubname = 'bms_cdc'

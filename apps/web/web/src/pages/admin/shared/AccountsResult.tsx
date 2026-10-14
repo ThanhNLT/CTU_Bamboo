@@ -2,27 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Alert, Modal, Table } from "antd"; // Ant Design
-import { Download } from "lucide-react"; // Lucide React
+import { Alert, Modal, Table } from "antd";
+import { Download } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { MODAL_Z } from "./zIndex";
 import { smallSecondaryButtonClass } from "../../../components/ui";
 import { downloadCsv, type AccountResult } from "./api";
 
-// ===== Component =====
-/**
- * Kết quả tạo tài khoản: mật khẩu tạm chỉ hiện MỘT lần (máy chủ không lưu bản rõ) — tải CSV để bàn giao.
- * Người dùng phải đổi mật khẩu ở lần đăng nhập đầu.
- */
 export const AccountsResult = ({
   results,
   names,
   onClose,
 }: {
   results: AccountResult[] | null;
-  /** person_id → họ tên để hiển thị. */
   names: Record<string, string>;
   onClose: () => void;
 }) => {

@@ -2,17 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Qua Hasura thật: dòng hàng, bình luận và thông báo, hủy đề nghị, nhật ký kiểm toán, sơ đồ quy trình."""
+import psycopg
+from psycopg.rows import dict_row
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from psycopg.rows import dict_row  # psycopg
-
-# ===== Module nội bộ =====
 from app import flow_sync
 from conftest import ids, open_task, pr, status
 
-# ===== Hằng số & cấu hình =====
 INSERT_PR_WITH_ITEMS = """
 mutation($pos: uuid!) {
   insert_proc_purchase_request_one(object: {
@@ -28,7 +23,6 @@ ADD_ITEM = """mutation($id: uuid!) {
                                                  quantity: 1, unit_price: 1}) { id } }"""
 
 
-# ===== Kiểm thử =====
 def test_de_nghi_co_dong_hang(hasura, conn):
     i = ids(conn, "TDX", "c", "d", "P_NV_MH_DT")
     data = hasura(INSERT_PR_WITH_ITEMS, {"pos": i["P_NV_MH_DT"]}, person=i["c"], tenant=i["TDX"])
@@ -36,7 +30,6 @@ def test_de_nghi_co_dong_hang(hasura, conn):
     row = data["data"]["insert_proc_purchase_request_one"]
     assert row["doc_no"].startswith("PR-")
     assert [x["line_no"] for x in row["purchase_request_items"]] == [1, 2]
-    # Phản hồi của insert lồng nhau chụp dòng cha trước khi chèn dòng hàng: đọc lại để lấy tổng tiền.
     total = "query($id: uuid!) { proc_purchase_request_by_pk(id: $id) { total_amount } }"
     data = hasura(total, {"id": row["id"]}, person=i["c"], tenant=i["TDX"])
     assert data["data"]["proc_purchase_request_by_pk"]["total_amount"] == 15_000_000
@@ -101,7 +94,6 @@ def test_binh_luan_va_thong_bao(hasura, conn):
     assert [n["id"] for n in data["data"]["collab_mark_notifications_read"]] == [mine[0]["id"]], data
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def _grant_auditor(conn, position_key: str) -> None:
     conn.execute("""
         INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), 'KIEM_TOAN_TEST', 'Kiểm toán')
@@ -116,7 +108,6 @@ def _grant_auditor(conn, position_key: str) -> None:
     )
 
 
-# ===== Kiểm thử =====
 def test_nhat_ky_kiem_toan(hasura, conn):
     i = ids(conn, "TDX", "c", "ptgd")
     _grant_auditor(conn, "P_PTGD")

@@ -2,26 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho Thư viện tri thức (ADR #48).
+import psycopg
+from psycopg.rows import dict_row
 
-Đề xuất tài liệu là chứng từ `collab.kb_document`: người lập soạn nháp qua Hasura, đính kèm tệp, gửi duyệt (chuỗi
-duyệt KB_DOCUMENT); duyệt xong là xuất bản. Thư viện chỉ liệt kê tài liệu đang hiệu lực người gọi đọc được, kèm trạng
-thái chỉ mục tìm kiếm (search.pending) và các phiên bản trước.
-"""
-
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from psycopg.rows import dict_row  # psycopg
-
-# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
-# ===== Hằng số & cấu hình =====
 ENTITY = "collab.kb_document"
 TZ = "Asia/Ho_Chi_Minh"
 
 
-# ===== Hàm =====
 def _doc(conn: psycopg.Connection, session: dict, doc_id: str) -> str:
     row = conn.execute("SELECT tenant_id FROM collab.kb_document WHERE id = %s", (doc_id,)).fetchone()
     person = session_identity(session, row[0] if row else None)
@@ -35,7 +24,6 @@ def _result(conn: psycopg.Connection, doc_id: str) -> dict:
     return {"id": doc_id, "status": status}
 
 
-# ===== Hasura Action =====
 def submit_kb_document(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
     person = _doc(conn, session, args["id"])
     conn.execute("SELECT collab.submit_kb_document(%s, %s)", (args["id"], person))
@@ -55,7 +43,6 @@ def retire_kb_document(conn: psycopg.Connection, session: dict, args: dict, _ctx
 
 
 def kb_reindex(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
-    """Đánh dấu nạp lại chỉ mục cho tài liệu và tệp của nó (cần kb.document.manage)."""
     person = _doc(conn, session, args["id"])
     unit, tenant = conn.execute(
         "SELECT org_unit_id, tenant_id FROM collab.kb_document WHERE id = %s", (args["id"],)
@@ -72,7 +59,6 @@ def kb_reindex(conn: psycopg.Connection, session: dict, args: dict, _ctx: Contex
 
 
 def kb_library(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
-    """Tài liệu đang hiệu lực người gọi đọc được, kèm tệp, phiên bản trước, trạng thái chỉ mục; số theo loại."""
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)
     cur = conn.cursor(row_factory=dict_row)
@@ -128,7 +114,6 @@ def kb_library(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Conte
 
 
 def _companies(conn: psycopg.Connection, person: str) -> list:
-    """Công ty (pháp nhân) của các vị trí người gọi đang giữ: lọc "Công ty của tôi"."""
     rows = conn.execute(
         """SELECT DISTINCT core.company_of(pos.org_unit_id) FROM core.assignment a
            JOIN core.position pos ON pos.id = a.position_id
@@ -138,7 +123,6 @@ def _companies(conn: psycopg.Connection, person: str) -> list:
     return [r[0] for r in rows if r[0]]
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {
     "submit_kb_document": submit_kb_document,
     "cancel_kb_document": cancel_kb_document,

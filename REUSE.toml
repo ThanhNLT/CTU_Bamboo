@@ -1,25 +1,20 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-#
-# Giấy phép cho các tệp không chứa được chú thích (JSON, ảnh, PDF...) hoặc lấy từ dự án khác
-# (REUSE 3.3, https://reuse.software). Kiểm tra: `uvx --from 'reuse[charset-normalizer]==5.1.1' reuse lint`.
 version = 1
 
 [[annotations]]
-path = ["**.json", "**.md", "**.MD", "**/.npmrc", "**/.gitkeep", "NOTICE", "platform/trino/jvm.config",
+path = ["**.json", "**.md", "**.MD", "**/.gitkeep", "NOTICE", "platform/trino/jvm.config",
         "services/seed/data/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 DX-OS Open-Core contributors"
 SPDX-License-Identifier = "Apache-2.0"
 
-# Biểu tượng của mẫu create-refine-app.
 [[annotations]]
 path = "apps/web/web/public/favicon.ico"
 precedence = "override"
 SPDX-FileCopyrightText = "Refine Development Inc."
 SPDX-License-Identifier = "MIT"
 
-# Bản lưu đề thi do Ban tổ chức công bố, chỉ để tham chiếu.
 [[annotations]]
 path = "docs/tong-quan/00-de-thi-goc.pdf"
 precedence = "override"

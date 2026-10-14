@@ -2,43 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Đối chiếu luồng duyệt CSDL → Flowable (ADR #31).
-
-CSDL là nguồn sự thật. Mỗi lần gửi duyệt (entity, round) có một tiến trình
-`purchaseRequestApproval`; mỗi vòng user task ứng với một bước của chuỗi duyệt.
-Đối chiếu theo trạng thái nên chạy lại bao nhiêu lần cũng cho cùng kết quả:
-
-    bước hiện tại trong Flowable = biến stepIndex
-    bước đó trong CSDL
-      APPROVED            → hoàn thành task (APPROVE, stepIndex + 1), xét tiếp
-      REJECTED / RETURNED → hoàn thành task với quyết định đó (tiến trình kết thúc)
-      CANCELLED           → xóa tiến trình
-      ACTIVE              → đặt người nhận theo việc duyệt đang mở, dừng
-"""
-
-# ===== Thư viện chuẩn =====
 import json
 import logging
 import os
 import time
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from psycopg.rows import dict_row  # psycopg
+import psycopg
+from psycopg.rows import dict_row
 
-# ===== Module nội bộ =====
 from . import config, hr_account
 from .flowable import FlowableClient
 from .keycloak_sync import PROVISIONER_ID
 from .pii import PiiCipher
 
-# ===== Hằng số & cấu hình =====
 PROCESS_KEY = "purchaseRequestApproval"
 MAX_ATTEMPTS = 20
 log = logging.getLogger("flow_sync")
 
 
-# ===== Hàm =====
 def business_key(entity_id, round_no) -> str:
     return f"{entity_id}:{round_no}"
 
@@ -60,7 +41,6 @@ def reconcile(
     round_no: int,
     process_id: str | None,
 ) -> tuple[str | None, bool]:
-    """Đưa tiến trình Flowable về đúng trạng thái CSDL. Trả về (process_id, đã kết thúc)."""
     steps = _steps(conn, entity_type, entity_id, round_no)
     if not steps:
         return process_id, True
@@ -124,17 +104,12 @@ def reconcile(
             if task.get("assignee") != desired:
                 flowable.set_assignee(task["id"], desired)
             return process_id, False
-        else:  # WAITING: CSDL chưa tới bước này
+        else:
             return process_id, False
     return process_id, not flowable.process_running(process_id)
 
 
 def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50) -> int:
-    """Đối chiếu các lần gửi duyệt đang được đánh dấu. Trả về số dòng đối chiếu thành công.
-
-    Dòng lỗi không được đếm: vòng `while run_once(...)` dừng lại và chờ thông báo mới hoặc `idle_seconds`
-    rồi mới thử lại, thay vì thử liên tục hết MAX_ATTEMPTS lần trong vài giây khi Flowable tạm thời không
-    truy cập được (hết lượt thử thì dòng bị bỏ dở tới lần đánh dấu sau)."""
     rows = conn.execute(
         """SELECT entity_type, entity_id, round, process_instance_id, updated_at
            FROM wf.flow_sync WHERE dirty AND attempts < %s
@@ -148,7 +123,6 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
         try:
             process_id, finished = reconcile(conn, flowable, *key, row["process_instance_id"])
             conn.rollback()
-            # Chỉ xóa cờ khi không có thay đổi mới trong lúc đối chiếu.
             conn.execute(
                 """UPDATE wf.flow_sync
                    SET process_instance_id = %s, finished = %s, attempts = 0, last_error = NULL,
@@ -158,7 +132,7 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
             )
             conn.commit()
             done += 1
-        except Exception as exc:  # noqa: BLE001 - ghi lỗi, thử lại ở lần sau
+        except Exception as exc:  # noqa: BLE001
             conn.rollback()
             log.warning("flow-sync %s lỗi: %s", key, exc)
             conn.execute(
@@ -171,7 +145,6 @@ def run_once(conn: psycopg.Connection, flowable: FlowableClient, limit: int = 50
 
 
 def _account_service(settings: config.Settings):
-    """Tạo tài khoản nhân viên mới (ADR #41): cần secret client bms-provisioner và khóa transit pii."""
     addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
     if not settings.keycloak_provisioner_secret or not addr or not approle:
         log.warning("chưa cấu hình client %s hoặc OpenBao: không tạo tài khoản nhân viên mới", PROVISIONER_ID)
@@ -181,7 +154,6 @@ def _account_service(settings: config.Settings):
 
 
 def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_seconds: float = 60.0) -> None:
-    """Nghe kênh wf_flow_sync và hr_account; định kỳ chạy wf.refresh_all() cho bổ nhiệm hết hạn theo lịch."""
     flowable = FlowableClient(settings.flowable_url, settings.flowable_user, settings.flowable_password)
     listen = psycopg.connect(settings.database_url, autocommit=True)
     listen.execute("LISTEN wf_flow_sync")
@@ -201,14 +173,13 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
         if accounts:
             try:
                 hr_account.run_once(account_conn, *accounts)
-            except Exception as exc:  # noqa: BLE001 - lỗi CSDL tạm thời: thử lại ở vòng sau
+            except Exception as exc:  # noqa: BLE001
                 account_conn.rollback()
                 log.warning("tạo tài khoản nhân viên lỗi: %s", exc)
         for _ in listen.notifies(timeout=idle_seconds, stop_after=1):
             pass
 
 
-# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)

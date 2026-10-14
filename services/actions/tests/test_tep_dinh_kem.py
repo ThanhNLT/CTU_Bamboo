@@ -2,27 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tệp đính kèm (ADR #26): tải lên qua link có chữ ký, kiểm tra, quét virus, tải về, phân quyền."""
-
-# ===== Thư viện chuẩn =====
 import socket
 import struct
 import threading
 
-# ===== Thư viện bên ngoài =====
-import boto3  # boto3
-import httpx  # HTTPX
-import pytest  # pytest
-from botocore.config import Config  # botocore
-from botocore.exceptions import ClientError  # botocore
-from fastapi.testclient import TestClient  # FastAPI
+import boto3
+import httpx
+import pytest
+from botocore.config import Config
+from botocore.exceptions import ClientError
+from fastapi.testclient import TestClient
 
-# ===== Module nội bộ =====
 from app import config, main, storage
 from app.common import Context
 from conftest import SETTINGS, ids, pr
 
-# ===== Hằng số & cấu hình =====
 PDF = b"%PDF-1.7\n" + b"x" * 2000 + b"\n%%EOF\n"
 
 UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!) {
@@ -33,7 +27,6 @@ CONFIRM = """mutation($a: uuid!) { confirm_upload(attachment_id: $a) {
 DOWNLOAD = """query($a: uuid!) { get_download_url(attachment_id: $a) { url } }"""
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def upload(hasura, i, pr_id, content: bytes, *, name="bao-gia.pdf", ctype="application/pdf", size=None, person="c"):
     data = hasura(
         UPLOAD,
@@ -46,9 +39,6 @@ def upload(hasura, i, pr_id, content: bytes, *, name="bao-gia.pdf", ctype="appli
     resp = httpx.put(ticket["upload_url"], content=content, headers={"Content-Type": ticket["content_type"]})
     assert resp.status_code == 200, resp.text
     return ticket["attachment_id"]
-
-
-# ===== Không cần dịch vụ ngoài =====
 
 
 def test_kiem_tra_noi_dung():
@@ -65,7 +55,6 @@ def test_kiem_tra_noi_dung():
 
 @pytest.fixture
 def fake_clamd():
-    """clamd giả: trả FOUND khi nội dung chứa chuỗi kiểm thử EICAR, ngược lại OK."""
     server = socket.create_server(("127.0.0.1", 0))
     received = []
 
@@ -99,9 +88,6 @@ def test_clamd_instream(fake_clamd):
     assert received[0] == PDF
 
 
-# ===== SeaweedFS + Hasura thật =====
-
-
 def test_tai_len_quet_tai_ve(hasura, conn, s3):
     i = ids(conn, "TDX", "c", "d", "tp_mh_dt", "a")
     pr_id = pr(conn, "tep_hasura", "c", "P_NV_MH_DT", 10_000_000)
@@ -118,7 +104,6 @@ def test_tai_len_quet_tai_ve(hasura, conn, s3):
     assert len(result["attachment"]["sha256"]) == 64
     assert s3.read_quarantine(f"{i['TDX']}/proc.purchase_request/{pr_id}/{att}") is None, "đã rời bucket cách ly"
 
-    # Người duyệt tải về được; người không xem được chứng từ thì không thấy tệp.
     url = hasura(DOWNLOAD, {"a": att}, person=i["tp_mh_dt"], tenant=i["TDX"])["data"]["get_download_url"]["url"]
     resp = httpx.get(url)
     assert resp.content == PDF and "filename*=UTF-8''B%C3%A1o" in resp.headers["content-disposition"]
@@ -129,7 +114,6 @@ def test_tai_len_quet_tai_ve(hasura, conn, s3):
         "attachments"
     ] == [{"id": att, "status": "CLEAN"}]
 
-    # Chỉ người tải lên xóa được; xóa xong không còn thấy.
     delete = """mutation($a: uuid!) { delete_attachment(attachment_id: $a) { status } }"""
     assert "Chỉ người tải lên" in hasura(delete, {"a": att}, person=i["d"], tenant=i["TDX"])["errors"][0]["message"]
     assert (
@@ -161,7 +145,6 @@ def test_tu_choi_tep_sai(hasura, conn, s3):
     )
     assert data["errors"][0]["extensions"]["code"] == "file-size"
 
-    # Chưa tải lên mà xác nhận: báo lỗi, giữ PENDING để thử lại.
     data = hasura(
         UPLOAD,
         {"id": pr_id, "name": "a.pdf", "type": "application/pdf", "size": len(PDF)},
@@ -173,7 +156,6 @@ def test_tu_choi_tep_sai(hasura, conn, s3):
         hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["errors"][0]["extensions"]["code"] == "not-uploaded"
     )
 
-    # Khai báo PDF nhưng là tệp thực thi: bị loại và xóa khỏi bucket cách ly.
     att = upload(hasura, i, pr_id, b"MZ\x90\x00" + b"\x00" * 100)
     result = hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]
     assert result["status"] == "REJECTED" and "không khớp loại tệp" in result["scan_result"], result
@@ -181,7 +163,6 @@ def test_tu_choi_tep_sai(hasura, conn, s3):
     data = hasura(DOWNLOAD, {"a": att}, person=i["c"], tenant=i["TDX"])
     assert data["errors"][0]["extensions"]["code"] == "not-clean"
 
-    # Khai báo nhỏ hơn thực tế.
     att = upload(hasura, i, pr_id, PDF, size=100)
     result = hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]
     assert result["status"] == "REJECTED" and "khác khai báo" in result["scan_result"], result
@@ -255,7 +236,7 @@ def test_han_muc_dung_luong(hasura, conn, s3):
         "UPDATE core.tenant SET storage_quota_bytes = core.storage_used(id) + %s WHERE id = %s", (len(PDF), i["TDX"])
     )
     try:
-        att = upload(hasura, i, pr_id, PDF)  # vừa đủ hạn mức
+        att = upload(hasura, i, pr_id, PDF)
         assert (
             hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]["status"] == "CLEAN"
         )

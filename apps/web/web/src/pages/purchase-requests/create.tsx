@@ -2,14 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Create } from "@refinedev/antd"; // Refine Ant Design
-import { useGo } from "@refinedev/core"; // Refine
+import { Create } from "@refinedev/antd";
+import { useGo } from "@refinedev/core";
 
-// ===== Module nội bộ =====
 import { PurchaseRequestForm } from "./form";
 
-// ===== Component =====
 export const PurchaseRequestCreate = () => {
   const go = useGo();
   return (

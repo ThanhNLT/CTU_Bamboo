@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { Dot } from "../../../components/ui";
 import type { IndexState } from "../types";
 import { VIEW } from "./indexState";
 
-// ===== Component =====
-/** Nhãn ngắn trạng thái nạp vào Trợ lý: chấm màu + chữ. */
 export const IndexStatus = ({ state }: { state: IndexState }) => {
   const v = VIEW[state.status];
   return (

@@ -2,17 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Phả hệ dữ liệu (Dữ liệu số): sơ đồ 5 tầng Nguồn → Luồng sự kiện → Hồ dữ liệu → Phục vụ → Tiêu thụ (trái ~70%)
-// và chi tiết nút đang chọn với kiểm tra chất lượng Soda (phải ~30%). Trạng thái lỗi / bị ảnh hưởng tự lan theo đồ thị.
-// Mở thẳng một tài sản: /d/lineage?asset=lakehouse.gold.approval_daily. Dữ liệu: bảng meta.* (./api, ADR #50);
-// báo sự cố và báo chủ sở hữu ghi meta.data_issue.
+import { Alert, App, Spin } from "antd";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { Alert, App, Spin } from "antd"; // Ant Design
-import { useMemo, useState } from "react"; // React
-import { useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { reportIssue, useLineage, type LineageData } from "./api";
 import { DataLineageHeader } from "./components/DataLineageHeader";
 import { DataLineageToolbar } from "./components/DataLineageToolbar";
@@ -32,8 +25,6 @@ import {
 } from "./graph";
 import type { Direction, LineageNode } from "./types";
 
-// ===== Hằng số =====
-/** Nút mở mặc định: nút có kiểm tra lỗi đầu tiên, không có thì bảng tổng hợp duyệt. */
 const PREFERRED = "gold-approval-daily";
 const SEVERITY = { wrong: "high", missing: "high", late: "medium", other: "low" } as const;
 const KIND_LABEL: Record<string, string> = {
@@ -43,14 +34,11 @@ const KIND_LABEL: Record<string, string> = {
   other: "Khác",
 };
 
-// ===== Hàm tiện ích =====
 const isNode = (n: LineageNode | undefined): n is LineageNode => n != null;
 
-/** `?asset=` nhận id nút hoặc tên đầy đủ (fqn), ví dụ lakehouse.gold.approval_daily. */
 const nodeFromParam = (nodes: LineageNode[], asset: string | null) =>
   asset ? nodes.find((n) => n.id === asset || n.fqn.toLowerCase() === asset.toLowerCase())?.id : undefined;
 
-// ===== Component =====
 export const DataLineagePage = () => {
   const lineage = useLineage();
   if (lineage.error) return <Alert type="error" showIcon message="Không tải được phả hệ" description={lineage.error} />;
@@ -79,7 +67,6 @@ const LineageView = ({ data }: { data: LineageData }) => {
   const [reporting, setReporting] = useState(false);
   const [notified, setNotified] = useState<Set<string>>(() => new Set());
 
-  // Đang ở trang mà ?asset= đổi (vd. từ Dịch vụ dữ liệu) → chọn lại theo URL.
   const [seenAsset, setSeenAsset] = useState(asset);
   if (seenAsset !== asset) {
     setSeenAsset(asset);
@@ -93,7 +80,6 @@ const LineageView = ({ data }: { data: LineageData }) => {
   const inScope = useMemo(() => scopeOf(edges, node.id, direction, depth), [edges, node.id, direction, depth]);
   const matches = useMemo(() => nodes.filter((n) => query.trim() && matchesQuery(n, query)), [nodes, query]);
 
-  // Tác động phía sau (mọi bậc) và nguồn lỗi phía trước gây "Bị ảnh hưởng".
   const impacts = useMemo(
     () => [...reach(edges, node.id, "down").keys()].map((id) => byId.get(id)).filter(isNode),
     [edges, byId, node.id],
@@ -114,7 +100,6 @@ const LineageView = ({ data }: { data: LineageData }) => {
   const viewChecks = (id: string) => {
     setSelectedId(id);
     setQuery("");
-    // Đợi panel vẽ lại rồi cuộn tới khối kiểm tra.
     window.requestAnimationFrame(() =>
       document.getElementById("lineage-checks")?.scrollIntoView({ behavior: "smooth", block: "center" }),
     );

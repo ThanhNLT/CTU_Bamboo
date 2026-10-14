@@ -2,16 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { ArrowUp } from "lucide-react"; // Lucide React
-import type { ReactNode } from "react"; // React
+import { ArrowUp } from "lucide-react";
+import type { ReactNode } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import { KPI_STATIC } from "../mock";
 import { num, pct, type computeKpis } from "../utils";
 
-// ===== Component =====
 const Card = ({ label, value, unit, note }: { label: string; value: string; unit?: string; note: ReactNode }) => (
   <div className="min-w-0 rounded-2xl border border-line bg-white px-4 py-3.5 shadow-card">
     <dt className="truncate text-[12px] text-muted">{label}</dt>
@@ -31,7 +28,6 @@ const Dot = ({ className }: { className: string }) => (
   <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", className)} aria-hidden />
 );
 
-/** 5 thẻ chỉ số toàn cổng tác tử. */
 export const AiKpiCards = ({ kpi }: { kpi: ReturnType<typeof computeKpis> }) => {
   const overError = kpi.errorRate >= kpi.errorThreshold;
   const overLatency = kpi.p95 > kpi.p95Target;

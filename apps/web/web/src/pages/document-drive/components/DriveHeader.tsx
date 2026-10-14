@@ -2,26 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Tooltip } from "antd"; // Ant Design
-import { Upload } from "lucide-react"; // Lucide React
-import { useRef } from "react"; // React
+import { Tooltip } from "antd";
+import { Upload } from "lucide-react";
+import { useRef } from "react";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
-// ===== Component =====
-/**
- * Tiêu đề trang + nút "Tải lên". Tệp luôn thuộc một chứng từ: đang mở thư mục thì mở thẳng hộp chọn tệp,
- * ở thư mục gốc thì `onPickTarget` hỏi chứng từ trước.
- */
 export const DriveHeader = ({
   onUpload,
   onPickTarget,
   uploadDisabledReason,
 }: {
   onUpload: (files: FileList) => void;
-  /** Có giá trị: chưa mở thư mục, bấm "Tải lên" để chọn chứng từ. */
   onPickTarget?: () => void;
   uploadDisabledReason?: string;
 }) => {
@@ -57,7 +49,7 @@ export const DriveHeader = ({
           hidden
           onChange={(e) => {
             if (e.target.files?.length) onUpload(e.target.files);
-            e.target.value = ""; // cho phép chọn lại cùng tệp
+            e.target.value = "";
           }}
         />
       </div>

@@ -2,9 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Kiểu dữ liệu =====
-// Phần chung của mọi loại chứng từ (đề nghị mua sắm, đề nghị tiếp nhận nhân sự): tệp đính kèm, trao đổi,
-// chuỗi duyệt và lịch sử đều là bảng đa hình (entity_type, entity_id).
 type Person = { full_name: string } | null;
 
 export type Attachment = {

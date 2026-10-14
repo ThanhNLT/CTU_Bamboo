@@ -2,17 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura Action cho trang Thiết kế quy trình (ADR #47).
-
-Bản nháp là BPMN XML do bpmn-js soạn, kèm biểu mẫu của tác vụ người dùng. Máy chủ kiểm tra cú pháp và luật
-(có điểm bắt đầu / kết thúc, mọi bước nối được tới đích, cổng rẽ nhánh có điều kiện, tác vụ có người nhận...).
-Chạy thử: đổi id tiến trình sang khóa sandbox riêng, thay tác vụ dịch vụ bằng biểu thức rỗng, deploy lên Flowable,
-khởi chạy với biến mẫu, tự hoàn thành từng tác vụ người dùng (biến `decision`, `stepIndex` = số tác vụ đã
-xong), ghi các bước đã đi qua rồi xóa
-deployment: quy trình thật và dữ liệu thật không bị ảnh hưởng.
-"""
-
-# ===== Thư viện chuẩn =====
 import hashlib
 import json
 import re
@@ -20,14 +9,11 @@ import uuid
 import xml.etree.ElementTree as ET
 from collections import deque
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-from psycopg.rows import dict_row  # psycopg
+import psycopg
+from psycopg.rows import dict_row
 
-# ===== Module nội bộ =====
 from .common import ActionError, Context, bind_session, session_identity
 
-# ===== Hằng số & cấu hình =====
 PERMISSION = "wf.process.design"
 BPMN = "http://www.omg.org/spec/BPMN/20100524/MODEL"
 FLOWABLE = "http://flowable.org/bpmn"
@@ -59,7 +45,6 @@ ET.register_namespace("di", "http://www.omg.org/spec/DD/20100524/DI")
 ET.register_namespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
 
-# ===== Hàm =====
 def _local(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
@@ -73,7 +58,6 @@ def _label(el: ET.Element) -> str:
 
 
 def lint(xml: str, forms: list[dict] | None = None) -> list[dict]:
-    """Lỗi (error: không deploy được hoặc chạy sai) và cảnh báo (warning) của một bản BPMN."""
     try:
         root = ET.fromstring(xml)
     except ET.ParseError as exc:
@@ -150,7 +134,6 @@ def lint(xml: str, forms: list[dict] | None = None) -> list[dict]:
                         _issue("error", f"Nhánh “{_label(f)}” ra từ “{_label(el)}” chưa có điều kiện", f.get("id"))
                     )
 
-    # Đi được từ điểm bắt đầu, tới được điểm kết thúc.
     def walk(seeds: list[str], edges: dict[str, list[ET.Element]], ref: str) -> set[str]:
         seen, queue = set(seeds), deque(seeds)
         while queue:
@@ -177,7 +160,6 @@ def lint(xml: str, forms: list[dict] | None = None) -> list[dict]:
 
 
 def with_process_id(xml: str, process_id: str, name: str | None = None) -> str:
-    """Đặt id (và tên) của tiến trình đầu tiên, sửa luôn tham chiếu của sơ đồ."""
     root = ET.fromstring(xml)
     proc = root.find(f"{{{BPMN}}}process")
     old = proc.get("id")
@@ -194,7 +176,6 @@ def with_process_id(xml: str, process_id: str, name: str | None = None) -> str:
 
 
 def sandbox_xml(xml: str, process_id: str) -> str:
-    """Bản chạy thử: khóa sandbox riêng; tác vụ dịch vụ / script không gọi mã thật."""
     root = ET.fromstring(with_process_id(xml, process_id))
     for el in root.iter():
         kind = _local(el.tag)
@@ -206,7 +187,6 @@ def sandbox_xml(xml: str, process_id: str) -> str:
                 if _local(child.tag) == "extensionElements":
                     el.remove(child)
         elif kind == "scriptTask":
-            # Không chạy script thật: đổi thành tác vụ dịch vụ với biểu thức rỗng.
             el.tag = f"{{{BPMN}}}serviceTask"
             for attr in ("scriptFormat", f"{{{FLOWABLE}}}autoStoreVariables"):
                 el.attrib.pop(attr, None)
@@ -269,9 +249,7 @@ def _model(conn: psycopg.Connection, tenant: str, model_id: str, lock: bool = Fa
     return row
 
 
-# ===== Hasura Action =====
 def process_models(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
-    """Danh sách quy trình của tenant, phiên bản phát hành mới nhất, lần chạy thử gần nhất; người gọi sửa được không."""
     person, tenant = _caller(conn, session, write=False)
     rows = (
         conn.cursor(row_factory=dict_row)
@@ -333,7 +311,6 @@ def process_model_validate(conn: psycopg.Connection, session: dict, args: dict, 
 
 
 def process_model_save(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
-    """Tạo hoặc lưu bản nháp. Lỗi cú pháp XML thì không lưu; lỗi luật vẫn lưu (bản nháp) và trả về để sửa tiếp."""
     person, tenant = _caller(conn, session, write=True)
     key = str(args.get("process_key") or "").strip()
     name = str(args.get("name") or "").strip()
@@ -365,7 +342,6 @@ def process_model_save(conn: psycopg.Connection, session: dict, args: dict, _ctx
 
 
 def process_model_publish(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
-    """Chụp bản nháp thành phiên bản phát hành (bất biến). Còn lỗi thì không phát hành."""
     person, tenant = _caller(conn, session, write=True)
     m = _model(conn, tenant, args["id"], lock=True)
     errors = [i for i in lint(m["bpmn_xml"], m["forms"]) if i["level"] == "error"]
@@ -396,7 +372,6 @@ def process_model_publish(conn: psycopg.Connection, session: dict, args: dict, _
 
 
 def _steps(flowable, process_id: str, decisions: dict[str, str]) -> list[dict]:
-    """Các bước theo thời điểm bắt đầu; trùng mili-giây thì sự kiện kết thúc đứng sau (lịch sử không giữ thứ tự)."""
     steps = [
         {
             "activity_id": a.get("activityId"),
@@ -413,7 +388,6 @@ def _steps(flowable, process_id: str, decisions: dict[str, str]) -> list[dict]:
 
 
 def process_sandbox_run(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
-    """Chạy thử bản nháp trên Flowable với khóa sandbox riêng, tự hoàn thành tác vụ người dùng, ghi các bước."""
     person, tenant = _caller(conn, session, write=True)
     if ctx.flowable is None:
         raise ActionError("Chưa cấu hình Flowable", "unavailable", 503)
@@ -445,20 +419,19 @@ def process_sandbox_run(conn: psycopg.Connection, session: dict, args: dict, ctx
                 error = "Tiến trình đang chờ sự kiện không phải tác vụ người dùng (hẹn giờ, tin nhắn...)"
                 break
             for task in tasks:
-                # stepIndex = số tác vụ đã hoàn thành (như flow-sync đặt cho chuỗi duyệt nhiều bước).
                 completed += 1
                 decisions[task["id"]] = decision
                 ctx.flowable.complete(task["id"], {"decision": decision, "stepIndex": completed})
         else:
             status, error = "STOPPED", f"Dừng sau {MAX_SANDBOX_STEPS} lượt tác vụ (có thể là vòng lặp)"
         steps = _steps(ctx.flowable, instance, decisions)
-    except Exception as exc:  # noqa: BLE001 - lỗi deploy / chạy của Flowable: ghi lại cho người thiết kế
+    except Exception as exc:  # noqa: BLE001
         error = str(exc)[:1000]
     finally:
         if deployment:
             try:
                 ctx.flowable.delete_deployment(deployment["id"])
-            except Exception:  # noqa: BLE001, S110 - dọn dẹp hết sức có thể
+            except Exception:  # noqa: BLE001, S110
                 pass
     conn.execute(
         """INSERT INTO wf.sandbox_run (tenant_id, id, model_id, xml_sha256, status, steps, variables, error,
@@ -479,7 +452,6 @@ def process_sandbox_run(conn: psycopg.Connection, session: dict, args: dict, ctx
     return {"id": str(run_id), "status": status, "error": error, "steps": steps}
 
 
-# ===== Đăng ký Action =====
 HANDLERS = {
     "process_models": process_models,
     "process_model_get": process_model_get,

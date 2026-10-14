@@ -2,14 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Sparkles } from "lucide-react"; // Lucide React
+import { Sparkles } from "lucide-react";
 
-// ===== Module nội bộ =====
 import type { Concept, SearchMode } from "../types";
 
-// ===== Component =====
-/** Banner "Đã hiểu là…": cho người dùng thấy câu hỏi được hiểu thế nào, kèm lối tắt hỏi trợ lý. */
 export const AiContextBanner = ({
   query,
   mode,

@@ -2,18 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Nhập và chọn dữ liệu ở các luồng chưa có kịch bản riêng: lưu nháp rồi SỬA đề nghị mua sắm (nhóm hàng, nhà cung
-// cấp, dòng hàng), lọc danh sách Hồ sơ theo loại / trạng thái, sửa và hủy đề xuất tài liệu, tìm kiếm trả kết quả thật
-// (thiết bị, tài sản dữ liệu), quản trị ngừng vị trí và nhập vị trí từ CSV.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now().toString(36);
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -34,16 +27,13 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
-/** Chọn một mục trong ô chọn antd theo nhãn của ô (gõ để lọc nếu ô cho tìm). */
 async function pick(page: Page, label: string, text: string) {
   const box = page.getByRole("combobox", { name: label });
   await box.click({ force: true });
-  // Ô chọn không cho gõ (readonly) thì chọn thẳng trong danh sách.
   if ((await box.getAttribute("readonly")) === null) await box.fill(text);
   await page.locator(".ant-select-dropdown:visible .ant-select-item-option", { hasText: text }).first().click();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("lưu nháp rồi sửa đề nghị mua sắm, lọc Hồ sơ", async ({ page }) => {
   const title = `E2E Sửa ${STAMP}`;
   await login(page, "nv.muahang.dienthoai");
@@ -58,7 +48,6 @@ test("lưu nháp rồi sửa đề nghị mua sắm, lọc Hồ sơ", async ({ p
   await expect(page.getByText("Đã lưu nháp").last()).toBeVisible();
   await expect(page.getByText(title).first()).toBeVisible();
 
-  // Sửa: đổi tiêu đề, chọn nhóm hàng và nhà cung cấp từ danh mục, đổi số lượng.
   await page.getByRole("button", { name: "Sửa" }).click();
   await expect(page.getByLabel("Tiêu đề")).toHaveValue(title);
   await page.getByLabel("Tiêu đề").fill(`${title} (đã sửa)`);
@@ -71,7 +60,6 @@ test("lưu nháp rồi sửa đề nghị mua sắm, lọc Hồ sơ", async ({ p
   await expect(page.getByText(`${title} (đã sửa)`).first()).toBeVisible();
   await expect(page.getByText(/1\.000\.000/).first()).toBeVisible();
 
-  // Hồ sơ: lọc "Đề nghị mua sắm" + trạng thái nháp thì thấy đề nghị vừa sửa; lọc loại khác thì không.
   await page.goto("/p/records");
   await page.getByRole("tab", { name: /^Nháp/ }).click();
   await pick(page, "Loại hồ sơ", "Đề nghị mua sắm");
@@ -107,7 +95,6 @@ test("sửa rồi hủy đề xuất tài liệu; tìm kiếm trả thiết bị
   await page.getByRole("dialog").getByRole("button", { name: "Hủy đề xuất" }).click();
   await expect(page.getByText("Đã hủy").first()).toBeVisible();
 
-  // Tìm kiếm: không còn kết quả mẫu; mã thiết bị và tên bảng trả kết quả thật, mở đúng trang.
   await page.goto("/i/search?q=CR-02");
   const results = page.getByRole("region", { name: /Kết quả/ }).or(page.locator("main"));
   await expect(results.getByText("Phòng sạch CR-02").first()).toBeVisible();
@@ -126,7 +113,6 @@ test("quản trị: ngừng vị trí trống và nhập vị trí từ CSV", as
   await page.getByPlaceholder("Tìm đơn vị theo tên, mã").fill("Chuyển đổi số");
   await page.getByRole("tree").getByText("Văn phòng Chuyển đổi số").click();
 
-  // Nhập 2 vị trí từ CSV: dòng sai mã đơn vị bị báo, sửa rồi ghi.
   await page.getByRole("button", { name: "Nhập từ Excel" }).click();
   await page.getByRole("menuitem", { name: "Nhập vị trí" }).click();
   const importer = page.getByRole("dialog", { name: "Nhập vị trí từ Excel" });
@@ -145,7 +131,6 @@ test("quản trị: ngừng vị trí trống và nhập vị trí từ CSV", as
   await expect(page.getByText("Đã nhập 2 dòng vị trí.")).toBeVisible();
   await expect(page.getByRole("cell", { name: new RegExp(`Chuyên viên thử ${STAMP}`) }).first()).toBeVisible();
 
-  // Ngừng vị trí trống vừa nhập.
   const seat = page.getByRole("row", { name: new RegExp(`Chuyên viên thử ${STAMP}`) }).first();
   await seat.getByRole("button").last().click();
   await page.getByRole("menuitem", { name: "Ngừng vị trí" }).click();

@@ -2,19 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { useEffect, useState } from "react"; // React
-import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space, Table, Typography } from "antd"; // Ant Design
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons"; // Ant Design Icons
-import dayjs, { type Dayjs } from "dayjs"; // Day.js
+import { useEffect, useState } from "react";
+import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space, Table, Typography } from "antd";
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import dayjs, { type Dayjs } from "dayjs";
 
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { formatMoney } from "../../utils/format";
 import { FORM_OPTIONS, INSERT_PR, SUBMIT_PR, UPDATE_PR } from "./queries";
 
-// ===== Kiểu dữ liệu =====
 type Item = {
   item_id?: string | null;
   description: string;
@@ -28,7 +25,6 @@ export type PrFormValues = {
   description?: string;
   requester_position_id: string;
   category_code?: string | null;
-  /** id nhà cung cấp trong danh mục, hoặc NEW_PARTNER + tên gõ tay khi chưa có trong danh mục. */
   partner_id?: string | null;
   proposed_partner_tax_code?: string | null;
   needed_by?: Dayjs | null;
@@ -52,8 +48,6 @@ type Options = {
   core_catalog_item: { code: string; name: string }[];
 };
 
-// ===== Hằng số =====
-/** Tiền tố giá trị của ô Nhà cung cấp khi người lập gõ nhà cung cấp chưa có trong danh mục (migration 018). */
 export const NEW_PARTNER = "new:";
 const ASSIGNMENT: Record<string, string> = {
   PRIMARY: "giữ chính",
@@ -62,14 +56,12 @@ const ASSIGNMENT: Record<string, string> = {
   CONTRACT: "hợp đồng",
 };
 
-// ===== Kiểu dữ liệu =====
 type Props = {
-  id?: string; // có id: sửa đề nghị nháp / bị trả về
+  id?: string;
   initial?: Partial<PrFormValues>;
   onSaved: (id: string) => void;
 };
 
-// ===== Component =====
 export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
   const { message } = App.useApp();
   const { tenant } = useSession();

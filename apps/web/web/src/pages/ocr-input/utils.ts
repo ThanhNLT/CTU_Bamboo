@@ -2,18 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import type { ConfidenceLevel, FieldKey, FormValues, OcrField } from "./types";
 
-// ===== Hằng số =====
-/** Khổ tờ phiếu mẫu (px) trước khi phóng to. */
 export const PAPER_W = 320;
 export const PAPER_H = 350;
 
-// ===== Hàm tiện ích =====
 export const levelOf = (c: number): ConfidenceLevel => (c >= 0.8 ? "high" : c >= 0.5 ? "review" : "manual");
 
-// ===== Hằng số =====
 export const LEVEL_STYLE: Record<ConfidenceLevel, { box: string; dot: string; tag: string; note: string }> = {
   high: { box: "border-bamboo-500", dot: "bg-bamboo-500", tag: "bg-bamboo-50 text-bamboo-800", note: "" },
   review: {
@@ -25,7 +20,6 @@ export const LEVEL_STYLE: Record<ConfidenceLevel, { box: string; dot: string; ta
   manual: { box: "border-red-500 bg-red-50/40", dot: "bg-red-500", tag: "bg-red-50 text-red-700", note: "nhập tay" },
 };
 
-// ===== Hàm tiện ích =====
 export const formatConfidence = (c: number) =>
   c.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -35,15 +29,11 @@ export const initialValues = (fields: OcrField[], recordType: string): FormValue
   return v;
 };
 
-/** Trường còn cần người xem: tin cậy < 0,8 và chưa được sửa / xác nhận. */
 export const pendingReview = (fields: OcrField[], reviewed: Set<FieldKey>) =>
   fields.filter((f) => levelOf(f.confidence) !== "high" && !reviewed.has(f.key));
 
-// ===== Hằng số =====
 const DATE = /^(0?[1-9]|[12]\d|3[01])\/(0?[1-9]|1[0-2])\/\d{4}$/;
 
-// ===== Hàm tiện ích =====
-/** Kiểm tra trước khi tạo hồ sơ. Trả về lỗi theo trường. */
 export const validate = (v: FormValues): Partial<Record<FieldKey, string>> => {
   const e: Partial<Record<FieldKey, string>> = {};
   if (!v.docNo.trim()) e.docNo = "Nhập số phiếu";

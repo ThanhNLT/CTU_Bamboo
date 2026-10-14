@@ -2,13 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Gọi các Action quản trị (ADR #44). Máy chủ kiểm quyền và luật nghiệp vụ; lỗi trả về là câu tiếng Việt
-// hiện thẳng cho người dùng.
-
-// ===== Module nội bộ =====
 import { request } from "../../../api/client";
 
-// ===== Kiểu dữ liệu =====
 export type AdminEntity =
   | "org_unit"
   | "position"
@@ -21,7 +16,6 @@ export type AdminEntity =
   | "item"
   | "storage_quota";
 
-// ===== Hàm tiện ích =====
 export const adminSave = async (entity: AdminEntity, data: Record<string, unknown>): Promise<string> => {
   const r = await request<{ admin_save: { id: string } }>(
     `mutation AdminSave($e: AdminEntity!, $d: jsonb!) { admin_save(entity: $e, data: $d) { id } }`,
@@ -30,7 +24,6 @@ export const adminSave = async (entity: AdminEntity, data: Record<string, unknow
   return r.admin_save.id;
 };
 
-/** Ngừng / kết thúc hiệu lực: hết ngày `endDate` (YYYY-MM-DD) hoặc ngay bây giờ. */
 export const adminClose = async (entity: AdminEntity, id: string, endDate?: string | null) => {
   await request(
     `mutation AdminClose($e: AdminEntity!, $id: uuid!, $d: date) { admin_close(entity: $e, id: $id, end_date: $d) { id } }`,
@@ -104,7 +97,6 @@ export const downloadTemplate = async (kind: ImportKind) => {
   );
 };
 
-/** CSV UTF-8 có BOM để Excel đọc đúng tiếng Việt. */
 export const downloadCsv = (fileName: string, rows: string[][]) => {
   const cell = (v: string) => (/[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   saveBlob(

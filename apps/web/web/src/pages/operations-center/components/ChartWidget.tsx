@@ -2,15 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Popover } from "antd"; // Ant Design
-import type { ReactNode } from "react"; // React
+import { Popover } from "antd";
+import type { ReactNode } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 
-// ===== Component =====
-/** Nút nhỏ dạng viên thuốc ở chân khối ("Xem dạng bảng", "Định nghĩa và nguồn", "Xuất CSV"). */
 export const ChipButton = ({
   children,
   onClick,
@@ -37,7 +33,6 @@ export const ChipButton = ({
   </button>
 );
 
-/** "Định nghĩa và nguồn": mở hộp nổi giải thích chỉ số. */
 export const DefinitionButton = ({ text }: { text: string }) => (
   <Popover
     content={<p className="max-w-[300px] text-[12.5px] leading-relaxed text-body">{text}</p>}
@@ -50,7 +45,6 @@ export const DefinitionButton = ({ text }: { text: string }) => (
   </Popover>
 );
 
-/** Khung khối biểu đồ: tiêu đề, ghi chú độ tươi bên phải, thông báo (tùy chọn), thân, chân. */
 export const ChartWidget = ({
   title,
   meta,

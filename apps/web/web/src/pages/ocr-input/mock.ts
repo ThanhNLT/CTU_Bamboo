@@ -2,13 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dữ liệu mẫu cho Nhập liệu OCR: kết quả nhận diện phiếu yêu cầu bảo trì BM-BT-02 (máy khắc PE-04 báo lỗi E-217,
-// cùng sự cố với hồ sơ HS-SEMI-2026-00131 trên trang Tìm kiếm). OCR thật chạy trên máy chủ (Tesseract + PaddleOCR).
-
-// ===== Module nội bộ =====
 import type { ImportRecord, OcrField } from "./types";
 
-// ===== Hằng số =====
 export const SAMPLE_DOC = { kind: "sample" as const, name: "phieu-yeu-cau-bao-tri.jpg", sizeLabel: "1,2 MB", pages: 1 };
 
 export const TEMPLATE = {
@@ -89,7 +84,6 @@ export const OCR_FIELDS: OcrField[] = [
   },
 ];
 
-/** Hồ sơ nháp tiếp theo (sau HS-SEMI-2026-00131). */
 export const NEXT_RECORD_CODE = "HS-SEMI-2026-00132";
 
 export const IMPORT_COUNT = 24;

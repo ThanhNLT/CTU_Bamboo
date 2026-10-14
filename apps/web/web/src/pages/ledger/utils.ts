@@ -2,17 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import type { ArchiveDoc, Seal, VerifyResult, VerifyVia } from "./types";
 
-// ===== Khởi tạo =====
 const num = new Intl.NumberFormat("vi-VN");
 
-// ===== Hàm tiện ích =====
 export const formatInt = (n: number) => num.format(n);
 
-// ===== Khởi tạo =====
 const stampFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
   month: "2-digit",
@@ -23,28 +19,21 @@ const stampFmt = new Intl.DateTimeFormat("vi-VN", {
   timeZone: "Asia/Ho_Chi_Minh",
 });
 
-// ===== Hàm tiện ích =====
-/** "12/10/2026 09:01" theo giờ Việt Nam. */
 export const formatStamp = (d: Date) => {
   const p = Object.fromEntries(stampFmt.formatToParts(d).map((x) => [x.type, x.value]));
   return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}`;
 };
 
-/** "9c1e4b…d0277ab" */
 export const shortHash = (h: string, head = 6, tail = 7) =>
   h.length > head + tail + 1 ? `${h.slice(0, head)}…${h.slice(-tail)}` : h;
 
-// ===== Hàm tiện ích =====
-/** Băm SHA-256 ngay trong trình duyệt (Web Crypto). Tệp không rời khỏi máy. */
 export const sha256Hex = async (data: Blob) => {
   const digest = await crypto.subtle.digest("SHA-256", await data.arrayBuffer());
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 };
 
-// ===== Hằng số =====
 export const MAX_FILE_BYTES = 200 * 1024 * 1024;
 
-// ===== Hàm tiện ích =====
 export const formatBytes = (n: number) =>
   n < 1024
     ? `${n} B`
@@ -52,7 +41,6 @@ export const formatBytes = (n: number) =>
       ? `${(n / 1024).toFixed(1).replace(".", ",")} KB`
       : `${(n / 1024 ** 2).toFixed(1).replace(".", ",")} MB`;
 
-// ===== Hằng số =====
 export const READING_ROOM_RULES = "Dấu chìm tên người xem · link xem hết hạn sau 60 giây · ghi nhật ký truy cập";
 const VIA_LABEL: Record<VerifyVia, string> = { code: "theo mã hồ sơ", file: "theo tệp tải lên" };
 const KIND_LABEL: Record<VerifyResult["kind"], string> = {
@@ -61,8 +49,6 @@ const KIND_LABEL: Record<VerifyResult["kind"], string> = {
   not_found: "Không tìm thấy bản niêm phong",
 };
 
-// ===== Hàm tiện ích =====
-/** Bằng chứng dạng văn bản để dán vào hồ sơ / email. */
 export const evidenceText = (r: VerifyResult) => {
   const lines = ["Bằng chứng đối soát · Bamboo Sổ cái (chuỗi hash kiểm toán)", `Kết quả: ${KIND_LABEL[r.kind]}`];
   if (r.kind === "not_found") {
@@ -90,7 +76,6 @@ export const evidenceText = (r: VerifyResult) => {
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
 
-/** Trang chứng nhận để in / "Lưu dưới dạng PDF" từ hộp thoại In của trình duyệt. */
 export const certificateHtml = (r: Exclude<VerifyResult, { kind: "not_found" }>) => {
   const s = r.seal;
   const ok = r.kind === "match";
@@ -126,7 +111,6 @@ export const certificateHtml = (r: Exclude<VerifyResult, { kind: "not_found" }>)
 </body></html>`;
 };
 
-/** CSV báo cáo đối soát (có BOM để Excel đọc đúng tiếng Việt). */
 export const reconciliationCsv = (seals: Seal[]) => {
   const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
   const header = [

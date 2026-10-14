@@ -2,30 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Sinh realm Keycloak `bms` từ danh sách tài khoản demo (ADR #23, #32).
-
-    python -m app.realm [--out platform/keycloak/realm/bms-realm.json]
-
-Mật khẩu không nằm trong file: Keycloak thay `${DEMO_PASSWORD}` bằng biến môi trường
-lúc import. Tài khoản mang realm role platform_admin bắt buộc cài OTP ở lần đăng nhập đầu.
-"""
-
-# ===== Thư viện chuẩn =====
 import argparse
 import json
 import pathlib
 
-# ===== Module nội bộ =====
 from .demo import DEMO_USERS, HR_DEMO_USERS
 
-# ===== Hằng số & cấu hình =====
-# Địa chỉ ứng dụng qua cổng API, đọc từ biến WEB_ORIGIN lúc Keycloak import realm (mặc định stack
-# docker compose); thêm cổng 5173 cho `npm run dev`.
 WEB_ORIGIN = "${WEB_ORIGIN:http://localhost:8000}"
 DEV_ORIGIN = "http://localhost:5173"
 
 
-# ===== Hàm =====
 def build() -> dict:
     users = []
     for user in [*DEMO_USERS, *HR_DEMO_USERS]:
@@ -104,6 +90,5 @@ def main() -> None:
     print(f"đã ghi {out}: {len(DEMO_USERS) + len(HR_DEMO_USERS)} tài khoản")
 
 
-# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

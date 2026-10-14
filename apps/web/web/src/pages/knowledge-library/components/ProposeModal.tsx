@@ -2,19 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { App, DatePicker, Form, Input, Modal, Radio, Select } from "antd"; // Ant Design
-import dayjs, { type Dayjs } from "dayjs"; // Day.js
-import { useEffect, useState } from "react"; // React
+import { App, DatePicker, Form, Input, Modal, Radio, Select } from "antd";
+import dayjs, { type Dayjs } from "dayjs";
+import { useEffect, useState } from "react";
 
-// ===== Module nội bộ =====
 import { request } from "../../../api/client";
 import { useSession } from "../../../auth/useSession";
 import { createProposal, updateProposal, type ProposalInput } from "../api";
 import { CATEGORY_LABEL } from "../labels";
 import type { DocCategory, DocScope } from "../types";
 
-// ===== Kiểu dữ liệu =====
 type Values = {
   title: string;
   category: DocCategory;
@@ -25,20 +22,16 @@ type Values = {
   requester_position_id: string;
 };
 
-/** Giá trị ban đầu khi sửa đề xuất nháp / bị trả về, hoặc đề xuất bản thay thế. */
 export type ProposalDraft = Partial<Omit<ProposalInput, "effective_date">> & {
   id?: string;
   effective_date?: string | null;
   supersedes_title?: string;
 };
 
-// ===== Truy vấn GraphQL =====
 const POSITIONS = `query MyPositions($person: uuid!) {
   core_assignment(where: {person_id: {_eq: $person}, assignment_type: {_in: ["PRIMARY", "CONCURRENT", "ACTING"]}}) {
     position_id assignment_type position { name org_unit { name } } } }`;
 
-// ===== Component =====
-/** Biểu mẫu đề xuất tài liệu: lưu nháp rồi đính kèm tệp và gửi duyệt ở trang đề xuất. */
 export const ProposeModal = ({
   open,
   draft,

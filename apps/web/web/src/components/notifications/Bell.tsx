@@ -2,20 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Thông báo của chính người dùng (collab.notification sinh bằng trigger, ADR #20), tự cập nhật.
+import { useGo, useInvalidate, useList } from "@refinedev/core";
+import { Button, Empty, List, Popover, Typography } from "antd";
+import { Bell } from "lucide-react";
+import gql from "graphql-tag";
 
-// ===== Thư viện =====
-import { useGo, useInvalidate, useList } from "@refinedev/core"; // Refine
-import { Button, Empty, List, Popover, Typography } from "antd"; // Ant Design
-import { Bell } from "lucide-react"; // Lucide React
-import gql from "graphql-tag"; // graphql-tag
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
 import { iconButtonClass } from "../layout/styles";
 
-// ===== Truy vấn GraphQL =====
 const NOTIFICATIONS = gql`
   query Notifications(
     $limit: Int
@@ -41,7 +36,6 @@ const NOTIFICATIONS = gql`
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Note = {
   id: string;
   kind: string;
@@ -53,15 +47,12 @@ type Note = {
   entity_id: string | null;
 };
 
-// ===== Hằng số =====
-// Loại chứng từ → resource Refine của trang chi tiết.
 const RESOURCE: Record<string, string> = {
   "proc.purchase_request": "proc_purchase_request",
   "hr.onboarding_request": "hr_onboarding_request",
   "ic.ic_order": "ic_ic_order",
 };
 
-// ===== Component =====
 export const NotificationBell = () => {
   const go = useGo();
   const invalidate = useInvalidate();

@@ -2,15 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Tìm kiếm toàn văn (ADR #36): CSDL đánh dấu chứng từ và tệp cần đưa vào chỉ mục; dịch vụ
--- search-sync nghe kênh `search_sync`, đọc trạng thái hiện tại rồi ghi hoặc xóa tài liệu trong
--- Meilisearch. Đối chiếu theo trạng thái nên chạy lại bao nhiêu lần cũng cho cùng kết quả.
--- Schema `search` không mở qua Hasura.
-
--- ---------------------------------------------------------------------------
--- Hàng đợi đồng bộ chỉ mục
--- ---------------------------------------------------------------------------
-
 CREATE SCHEMA search;
 
 CREATE TABLE search.pending (
@@ -37,7 +28,6 @@ BEGIN
     PERFORM pg_notify('search_sync', p_type || ':' || p_id);
 END $$;
 
--- Đánh dấu toàn bộ (chỉ mục mới tạo hoặc dựng lại).
 CREATE FUNCTION search.mark_all() RETURNS int
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -54,10 +44,6 @@ BEGIN
     RETURN n;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Trigger đánh dấu khi dữ liệu đổi
--- ---------------------------------------------------------------------------
-
 CREATE FUNCTION search.purchase_request_changed() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -72,7 +58,6 @@ END $$;
 CREATE TRIGGER search_mark AFTER INSERT OR UPDATE OR DELETE ON proc.purchase_request
 FOR EACH ROW EXECUTE FUNCTION search.purchase_request_changed();
 
--- Dòng hàng: tên vật tư nằm trong tài liệu của đề nghị.
 CREATE FUNCTION search.purchase_request_item_changed() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -87,7 +72,6 @@ END $$;
 CREATE TRIGGER search_mark AFTER INSERT OR UPDATE OR DELETE ON proc.purchase_request_item
 FOR EACH ROW EXECUTE FUNCTION search.purchase_request_item_changed();
 
--- Tệp: vào chỉ mục khi sạch, ra khỏi chỉ mục khi bị xóa.
 CREATE FUNCTION search.attachment_changed() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -100,7 +84,6 @@ END $$;
 CREATE TRIGGER search_mark AFTER UPDATE OF status, deleted_at ON core.attachment
 FOR EACH ROW EXECUTE FUNCTION search.attachment_changed();
 
--- Đổi tên nhà cung cấp, người lập, đơn vị: tài liệu của các đề nghị liên quan có tên cũ.
 CREATE FUNCTION search.name_changed() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -122,11 +105,6 @@ FOR EACH ROW WHEN (OLD.full_name IS DISTINCT FROM NEW.full_name) EXECUTE FUNCTIO
 CREATE TRIGGER search_mark AFTER UPDATE OF name ON core.org_unit
 FOR EACH ROW WHEN (OLD.name IS DISTINCT FROM NEW.name) EXECUTE FUNCTION search.name_changed('org_unit_id');
 
--- ---------------------------------------------------------------------------
--- Nội dung tài liệu cho chỉ mục
--- ---------------------------------------------------------------------------
-
--- Nội dung một đề nghị để đưa vào chỉ mục (NULL: không còn đề nghị, xóa khỏi chỉ mục).
 CREATE FUNCTION search.purchase_request_doc(p_id uuid) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
     SELECT jsonb_build_object(
@@ -151,9 +129,4 @@ LANGUAGE sql STABLE AS $$
     WHERE r.id = p_id
 $$;
 
--- ---------------------------------------------------------------------------
--- Đánh dấu dữ liệu sẵn có
--- ---------------------------------------------------------------------------
-
--- Chứng từ và đề nghị đang có lúc nâng cấp từ bản trước.
 SELECT search.mark_all();

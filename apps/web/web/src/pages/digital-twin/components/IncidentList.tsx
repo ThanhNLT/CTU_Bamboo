@@ -2,17 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Sự cố gần đây của một thực thể (iot.incident): chỉ số, khoảng thời gian, đỉnh, ngưỡng, ai đã ghi nhận.
+import { Tag } from "antd";
 
-// ===== Thư viện =====
-import { Tag } from "antd"; // Ant Design
-
-// ===== Module nội bộ =====
 import { formatDate } from "../../../utils/format";
 import type { Incident, Metric } from "../types";
 import { formatDuration, formatNumber } from "../utils";
 
-// ===== Component =====
 export const IncidentList = ({
   incidents,
   metrics,

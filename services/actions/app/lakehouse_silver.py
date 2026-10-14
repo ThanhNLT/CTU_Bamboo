@@ -2,43 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Sinh SQL Trino cho Lakehouse (ADR #40): bảng bronze và view silver.
-
-Với mỗi bảng trong publication bms_cdc (ADR #38):
-
-- `lakehouse.bronze.<schema>_<bảng>`: tạo nếu chưa có, đúng cấu trúc lakehouse-sink ghi (ADR #39), để
-  view silver tạo được trước khi bảng nguồn có thay đổi đầu tiên.
-- `lakehouse.silver.<schema>_<bảng>`: trạng thái hiện tại, mỗi khóa chính một dòng (sự kiện mới nhất theo
-  vị trí Kafka, bỏ dòng đã xóa), cột có kiểu như trong PostgreSQL, thêm `_changed_at`, `_lsn`.
-
-Kiểu cột đọc từ CSDL đã migrate; kết quả ghi vào platform/trino/silver.sql (commit vào Git), job trino-init
-chạy tệp này mỗi lần khởi động (idempotent).
-
-Cùng lúc sinh platform/trino/rules.json, quyền truy cập của Trino (ADR #45): `bms-admin` toàn quyền (trino-init);
-`bms-actions` không đọc được gì, chỉ được mượn danh người dùng tenant `t_<tenant_id>`; người dùng tenant chỉ SELECT
-view silver có cột tenant, mỗi view kèm row filter về đúng tenant đó. Bronze và view không có cột tenant bị chặn.
-
-    DATABASE_URL=... python -m app.lakehouse_silver [--out silver.sql] [--rules-out rules.json]
-"""
-
-# ===== Thư viện chuẩn =====
 import argparse
 import json
 import pathlib
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
+import psycopg
 
-# ===== Module nội bộ =====
 from . import config
 
-# ===== Hằng số & cấu hình =====
 OUT = pathlib.Path(__file__).resolve().parents[3] / "platform/trino/silver.sql"
 RULES_OUT = OUT.with_name("rules.json")
 CATALOG = "lakehouse"
 ADMIN_USER = "bms-admin"
 ACTIONS_USER = "bms-actions"
-# Người dùng Trino của một tenant: t_<uuid tenant>; row filter đọc lại uuid từ current_user.
 TENANT_USER = "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 TENANT_OF_USER = "CAST(substr(current_user, 3) AS uuid)"
 
@@ -58,9 +34,7 @@ ORDER BY pt.schemaname, pt.tablename, a.attnum
 """
 
 
-# ===== Hàm =====
 def bronze_ddl() -> list[tuple[str, str]]:
-    """Cột bronze (tên, kiểu Trino) suy từ schema Arrow của lakehouse-sink, một nguồn duy nhất."""
     from .lakehouse_sink import BRONZE_COLUMNS
 
     return BRONZE_COLUMNS
@@ -71,8 +45,6 @@ def _path(name: str) -> str:
 
 
 def column_expr(name: str, typname: str, category: str, typmod: int, elem: str | None) -> tuple[str, str]:
-    """(biểu thức Trino đọc cột từ JSON `after`, kiểu Trino). JSON theo cách Debezium mã hóa (ADR #38):
-    numeric là chuỗi, date là số ngày từ 1970-01-01, timestamptz là chuỗi ISO-8601, mảng là mảng JSON."""
     scalar = f"json_extract_scalar(after, {_path(name)})"
     if typname == "uuid":
         return f"CAST({scalar} AS uuid)", "uuid"
@@ -98,7 +70,6 @@ def column_expr(name: str, typname: str, category: str, typmod: int, elem: str |
         )
     if category == "A":
         return f"CAST(json_extract(after, {_path(name)}) AS array(varchar))", "array(varchar)"
-    # text, varchar, enum, ltree, khoảng thời gian (tstzrange), json/jsonb: Debezium gửi dạng chuỗi.
     return scalar, "varchar"
 
 
@@ -114,7 +85,6 @@ def _tables(conn: psycopg.Connection) -> dict[tuple[str, str], list[tuple]]:
 
 
 def tenant_column(schema: str, table: str, columns: set[str]) -> str | None:
-    """Cột xác định tenant của dòng: tenant_id; bảng core.tenant là chính id."""
     if "tenant_id" in columns:
         return "tenant_id"
     return "id" if (schema, table) == ("core", "tenant") else None
@@ -156,12 +126,11 @@ def build_rules(conn: psycopg.Connection) -> str:
 def build(conn: psycopg.Connection) -> str:
     tables = _tables(conn)
     bronze_cols = ",\n    ".join(f"{_ident(n)} {t}" for n, t in bronze_ddl())
-    # REUSE-IgnoreStart (tiêu đề giấy phép của tệp SQL sinh ra, không phải của tệp này)
+    # REUSE-IgnoreStart
     out = [
         "-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors",
         "-- SPDX-License-Identifier: Apache-2.0",
         # REUSE-IgnoreEnd
-        "-- Sinh tự động bằng services/actions/app/lakehouse_silver.py từ CSDL đã migrate; đừng sửa tay (ADR #40).",
         "",
         f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.bronze;",
         f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.silver;",
@@ -172,10 +141,8 @@ def build(conn: psycopg.Connection) -> str:
         for attname, typname, category, typmod, _pg_type, elem, _is_key in cols:
             expr, _trino = column_expr(attname, typname, category, typmod, elem)
             exprs.append(f"{expr} AS {_ident(attname)}")
-        keys = [c[0] for c in cols if c[6]]
         out += [
             "",
-            f"-- {schema}.{table} (khóa: {', '.join(keys) or 'không có'})",
             f"CREATE TABLE IF NOT EXISTS {CATALOG}.bronze.{name} (\n    {bronze_cols}\n)"
             " WITH (format_version = 2, partitioning = ARRAY['source_date']);",
             f"CREATE OR REPLACE VIEW {CATALOG}.silver.{name}"
@@ -204,6 +171,5 @@ def main() -> None:
     )
 
 
-# ===== Điểm chạy chính =====
 if __name__ == "__main__":
     main()

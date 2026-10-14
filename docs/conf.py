@@ -1,11 +1,8 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Cấu hình Sphinx cho tài liệu DX-OS Open-Core (Markdown qua MyST)."""
 
-# ===== Thư viện chuẩn =====
 from datetime import date
 
-# ===== Hằng số & cấu hình =====
 project = "Bamboo"
 author = "OLP OSS"
 copyright = f"{date.today().year}, {author}"
@@ -30,16 +27,14 @@ extensions = [
     "sphinx_copybutton",
 ]
 
-# ===== MyST =====
 myst_enable_extensions = [
-    "colon_fence",  # ::: cho directive
+    "colon_fence",
     "deflist",
-    "tasklist",  # - [x] trong mục "Còn phải làm"
+    "tasklist",
 ]
-myst_heading_anchors = 3  # liên kết kiểu GitHub tới tiêu đề h1–h3
-myst_fence_as_directive = ["mermaid"]  # ```mermaid hiển thị như trên GitHub
+myst_heading_anchors = 3
+myst_fence_as_directive = ["mermaid"]
 
-# ===== HTML =====
 html_theme = "furo"
 html_title = project
 html_static_path = ["_static"]
@@ -48,12 +43,7 @@ html_last_updated_fmt = "%d/%m/%Y"
 html_copy_source = False
 html_theme_options = {
     "navigation_with_keys": True,
-    # Bật khi có kho công khai để hiện nút "Sửa trang này":
-    # "source_repository": "https://<forge>/<org>/Bamboo/",
-    # "source_branch": "main",
-    # "source_directory": "docs/",
 }
 
-# ===== Tiện ích =====
 copybutton_exclude = ".linenos, .gp"
 linkcheck_ignore = [r"http://localhost.*", r"https://t\.me/.*"]

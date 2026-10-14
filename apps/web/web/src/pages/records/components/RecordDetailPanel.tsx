@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { FileSearch, Sparkles } from "lucide-react"; // Lucide React
-import type { ReactNode } from "react"; // React
+import { FileSearch, Sparkles } from "lucide-react";
+import type { ReactNode } from "react";
 
-// ===== Module nội bộ =====
 import { DOC_KIND_LABEL } from "../../../api/documents";
 import { smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
@@ -16,12 +14,10 @@ import { buildWorkflow } from "../utils";
 import { RecordStatusBadge } from "./RecordStatusBadge";
 import { VerticalTimeline } from "./VerticalTimeline";
 
-// ===== Component =====
 const SectionTitle = ({ children }: { children: ReactNode }) => (
   <h3 className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h3>
 );
 
-/** Cột phải: thông tin chứng từ đang chọn — thông tin chung, quy trình duyệt, hành động. */
 export const RecordDetailPanel = ({
   record,
   canReview,
@@ -31,7 +27,6 @@ export const RecordDetailPanel = ({
   className,
 }: {
   record?: EofficeRecord;
-  /** Việc duyệt bước hiện tại đang nằm trong Hộp việc của người dùng. */
   canReview: boolean;
   onReview: (r: EofficeRecord) => void;
   onOpen: (r: EofficeRecord) => void;

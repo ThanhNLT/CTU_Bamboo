@@ -2,10 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Bộ trả lời MẪU (thay cho API trợ lý chạy Qwen3 nội bộ): khớp từ khóa → câu trả lời dựng sẵn từ dữ liệu mẫu.
-// Không hiểu câu hỏi thì nói thật là bản demo, không bịa. Khi nối API thật chỉ cần thay `replyTo`.
-
-// ===== Module nội bộ =====
 import { fold } from "../../utils/text";
 import {
   DEFAULT_SUGGESTIONS,
@@ -18,10 +14,8 @@ import {
 } from "./mock";
 import type { AssistantMode, Citation, Reply } from "./types";
 
-// ===== Văn bản có đánh dấu =====
 export type RichPart = { type: "text"; value: string } | { type: "bold"; value: string } | { type: "cite"; id: number };
 
-/** Tách "**đậm**" và "[1]" thành các phần để hiển thị. */
 export const parseRich = (text: string): RichPart[] =>
   text
     .split(/(\*\*[^*]+\*\*|\[\d+\])/g)
@@ -32,7 +26,6 @@ export const parseRich = (text: string): RichPart[] =>
       return cite?.[1] ? { type: "cite", id: Number(cite[1]) } : { type: "text", value: s };
     });
 
-/** Bản thuần văn bản (để sao chép): bỏ dấu **, giữ [n] và liệt kê nguồn ở cuối. */
 export const plainText = (text: string, sources: Citation[] = []) =>
   [
     text.replace(/\*\*/g, ""),
@@ -41,11 +34,8 @@ export const plainText = (text: string, sources: Citation[] = []) =>
 
 export const totalMs = (r: Reply) => (r.steps ?? []).reduce((a, s) => a + s.ms, 0);
 
-/** "1,9 giây" */
 export const formatSeconds = (ms: number) => `${(ms / 1000).toFixed(1).replace(".", ",")} giây`;
 
-// ===== Ngữ cảnh từ URL (các trang khác mở trợ lý kèm tham số) =====
-/** ?record=HS-… · ?entity=urn:ngsi-ld:CleanRoom:semicon:CR-02 · ?source=library · ?context=… */
 export const contextFromParams = (p: URLSearchParams) => {
   const record = p.get("record");
   if (record) return `Hồ sơ ${record}`;
@@ -66,7 +56,6 @@ export const suggestionsFor = (context?: string) => {
   return DEFAULT_SUGGESTIONS;
 };
 
-/** Tên phiên từ câu hỏi đầu tiên. */
 export const titleFrom = (text: string) => {
   const t = text
     .trim()
@@ -75,7 +64,6 @@ export const titleFrom = (text: string) => {
   return t.length > 40 ? `${t.slice(0, 38)}…` : t;
 };
 
-// ===== Bộ trả lời mẫu =====
 const has = (q: string, ...words: string[]) => words.some((w) => q.includes(w));
 
 const OEE_REPLY: Reply = {
@@ -101,7 +89,6 @@ export const replyTo = (question: string, opts: { mode: AssistantMode; context?:
     };
   }
 
-  // Đang gắn ngữ cảnh một hồ sơ → mọi câu hỏi xoay quanh hồ sơ đó.
   const record = /hs-[a-z]+-\d{4}-\d{5}/.exec(`${ctx} ${q}`)?.[0]?.toUpperCase();
   if (record && (ctx.startsWith("ho so") || has(q, "tom tat", "doi soat"))) {
     return {

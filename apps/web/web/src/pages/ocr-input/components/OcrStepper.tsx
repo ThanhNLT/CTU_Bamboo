@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Check, LoaderCircle } from "lucide-react"; // Lucide React
-import { Fragment } from "react"; // React
+import { Check, LoaderCircle } from "lucide-react";
+import { Fragment } from "react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Step } from "../types";
 
-// ===== Component =====
 const Marker = ({ step, index }: { step: Step; index: number }) => {
   if (step.state === "done") {
     return (
@@ -42,11 +39,8 @@ const Marker = ({ step, index }: { step: Step; index: number }) => {
   );
 };
 
-// ===== Hằng số =====
 const STATE_LABEL = { done: "đã xong", active: "đang thực hiện", running: "đang chạy", pending: "chưa tới" } as const;
 
-// ===== Component =====
-/** Thanh tiến trình 4 bước. Đoạn nối có màu xanh khi bước bên trái đã xong. */
 export const OcrStepper = ({ steps }: { steps: Step[] }) => (
   <ol
     aria-label="Tiến trình nhập liệu"

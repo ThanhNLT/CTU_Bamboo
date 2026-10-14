@@ -2,15 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Link } from "react-router"; // React Router
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import { parseRich } from "../assistant";
 import type { Citation } from "../types";
 
-// ===== Component =====
-/** Văn bản trả lời: **đậm** và [n] là liên kết tới nguồn trích dẫn. */
 export const RichText = ({ text, sources = [] }: { text: string; sources?: Citation[] }) => (
   <p className="text-[13.5px] leading-relaxed text-ink">
     {parseRich(text).map((p, i) => {

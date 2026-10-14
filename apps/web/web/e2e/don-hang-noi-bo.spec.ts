@@ -2,17 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Đơn hàng nội bộ (ADR #42): Điện thoại X đặt PMIC của Chip X qua đề nghị mua sắm; trưởng phòng mua hàng duyệt thì
-// sinh đơn hàng nội bộ; kinh doanh Chip X chọn lô xuất và xác nhận; bên mua thấy đơn mua và lô nhận về.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E PMIC nội bộ ${Date.now()}`;
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -23,9 +17,7 @@ async function login(page: Page, username: string) {
 }
 
 async function logout(page: Page) {
-  // Chờ Keycloak xóa phiên SSO trước khi đăng nhập tài khoản khác (check-sso sẽ đăng nhập lại người cũ).
   const loggedOut = page.waitForResponse((r) => r.url().includes("/protocol/openid-connect/logout"));
-  // Đăng xuất nằm trong menu tài khoản (avatar) trên header.
   await page
     .locator("header")
     .getByRole("button", { name: /^Tài khoản:/ })
@@ -35,11 +27,9 @@ async function logout(page: Page) {
   await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơn mua", async ({ page }) => {
   test.setTimeout(180_000);
 
-  // Chuyên viên mua hàng Điện thoại X lập đề nghị mua PMIC của nhà cung cấp nội bộ Chip X.
   await login(page, "nv.muahang.dienthoai");
   await page.goto("/p/documents/create");
   await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -56,7 +46,6 @@ test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơ
   const request = page.url();
   await logout(page);
 
-  // Trưởng phòng Mua hàng duyệt: đề nghị có đơn hàng nội bộ chờ bên bán xác nhận.
   await login(page, "tp.muahang.dienthoai");
   await page.goto("/p/inbox");
   await page.locator("tr", { hasText: TITLE }).getByRole("button", { name: "Xử lý" }).click();
@@ -67,7 +56,6 @@ test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơ
   const docNo = (await page.getByText(/^IC-\d{4}-\d{6}$/).innerText()).trim();
   await logout(page);
 
-  // Kinh doanh Chip X: có thông báo, đơn trong mục "Chờ tôi xác nhận", chọn lô rồi xác nhận.
   await login(page, "kd.chip");
   await expect(page.locator("header").getByRole("button", { name: /^[1-9]\d* thông báo chưa đọc$/ })).toBeVisible();
   await page.getByRole("navigation", { name: "Điều hướng chính" }).getByText("Đơn hàng nội bộ").click();
@@ -82,7 +70,6 @@ test("đặt hàng nội bộ, bên bán xác nhận kèm lô, bên mua có đơ
   await expect(page.getByText("PMIC-2609-A").first()).toBeVisible();
   await logout(page);
 
-  // Người đặt: đơn đã xác nhận, có đơn mua, lô nhận về.
   await login(page, "nv.muahang.dienthoai");
   await page.goto(request);
   await page.getByText(docNo).click();

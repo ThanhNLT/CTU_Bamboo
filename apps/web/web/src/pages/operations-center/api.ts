@@ -2,16 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Số liệu các bảng Quy trình, Sản xuất, Bệnh viện, Chất lượng dữ liệu và khối bản đồ (Action ops_dashboard, ADR #49).
-// Máy chủ tính trong tenant của phiên và lọc theo quyền xem; bệnh viện (tenant con) chỉ có số tổng hợp.
+import { useCallback, useEffect, useState } from "react";
 
-// ===== Thư viện =====
-import { useCallback, useEffect, useState } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 
-// ===== Kiểu dữ liệu =====
 export type OpsTab = "process" | "production" | "hospital" | "quality" | "sites";
 
 export type ProcessType = {
@@ -139,11 +133,8 @@ type DataOf = {
   sites: SitesData;
 };
 
-// ===== Hằng số =====
 const REFRESH_MS = 60_000;
 
-// ===== Hook =====
-/** Tải một bảng; tự làm mới mỗi phút. `tab` null thì không tải. */
 export const useOpsTab = <T extends OpsTab>(tab: T | null, days: number) => {
   const [state, setState] = useState<{ data?: DataOf[T]; error?: string; loading: boolean; at?: Date }>({
     loading: true,

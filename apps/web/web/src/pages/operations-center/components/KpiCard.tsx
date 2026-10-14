@@ -2,23 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Tooltip } from "antd"; // Ant Design
-import { Info } from "lucide-react"; // Lucide React
+import { Tooltip } from "antd";
+import { Info } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Kpi } from "../types";
 
-// ===== Hằng số =====
 const TONE: Record<"good" | "bad" | "neutral", string> = {
   good: "text-bamboo-700",
   bad: "text-red-600",
   neutral: "text-muted",
 };
 
-// ===== Component =====
-/** Thẻ KPI: nhãn + (i) định nghĩa, số lớn, chú thích xu hướng, độ tươi dữ liệu. Không vẽ biểu đồ — một con số. */
 export const KpiCard = ({ kpi }: { kpi: Kpi }) => {
   const d = kpi.delta;
   return (

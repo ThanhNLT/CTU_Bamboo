@@ -2,13 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Trang chủ (Con người số): lời chào, 4 thẻ thống kê, cột trái 70% (Việc của tôi, Hồ sơ gần đây),
-// cột phải 30% (Thông báo, KPI đã ghim). Dữ liệu thật qua ./useDashboard; KPI ghim qua ./useKpis (ADR #50).
+import { Alert, App } from "antd";
 
-// ===== Thư viện =====
-import { Alert, App } from "antd"; // Ant Design
-
-// ===== Module nội bộ =====
 import { DashboardFooter } from "./components/DashboardFooter";
 import { HeroSection } from "./components/HeroSection";
 import { MyTasks } from "./components/MyTasks";
@@ -19,7 +14,6 @@ import { SummaryCards } from "./components/SummaryCards";
 import { useKpis } from "./useKpis";
 import { useDashboard } from "./useDashboard";
 
-// ===== Component =====
 export const DashboardPage = () => {
   const d = useDashboard();
   const { message } = App.useApp();

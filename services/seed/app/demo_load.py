@@ -2,16 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Nạp tệp dữ liệu demo nhóm 5 (services/seed/data/demo) vào CSDL: Bản sao số (iot), Phả hệ dữ liệu (meta), KPI ghim
-Trang chủ (kpi) — ADR #50.
-
-Mọi mốc thời gian được dời theo (bây giờ − REF), làm tròn 5 phút, để sự cố và chuỗi đo trông như vừa xảy ra.
-`app.seed` gọi `load(conn)` khi chưa có dữ liệu; chạy tay với --refresh để xóa và nạp lại (dời theo giờ hiện tại):
-
-    DATABASE_URL=... python -m app.demo_load [--refresh]
-"""
-
-# ===== Thư viện chuẩn =====
 import argparse
 import csv
 import datetime as dt
@@ -20,27 +10,22 @@ import logging
 import os
 import pathlib
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
+import psycopg
 
-# ===== Module nội bộ =====
 from .demo import DEMO_USERS, uid
 from .demo_files import OUT as DATA
 from .demo_files import REF
 
-# ===== Hằng số & cấu hình =====
 log = logging.getLogger("seed")
 STEP = dt.timedelta(minutes=5)
 
 
-# ===== Hàm tiện ích =====
 def _rows(path: pathlib.Path) -> list[dict]:
     with path.open(encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
 def shift_of(now: dt.datetime) -> dt.timedelta:
-    """Khoảng dời: bây giờ − REF, làm tròn xuống 5 phút."""
     delta = now - REF
     return delta - dt.timedelta(seconds=delta.total_seconds() % STEP.total_seconds())
 
@@ -54,7 +39,6 @@ def _person(username: str):
     return user.id
 
 
-# ===== Nạp từng phần =====
 def load_twin(conn: psycopg.Connection, shift: dt.timedelta) -> int:
     d = DATA / "ban-sao-so"
     models = json.loads((d / "mo-hinh.json").read_text(encoding="utf-8"))
@@ -143,7 +127,6 @@ def load_kpi(conn: psycopg.Connection, shift: dt.timedelta) -> None:
              k["definition"]),
         )  # fmt: skip
     for v in _rows(d / "gia-tri.csv"):
-        # KPI theo giờ / ngày dời theo giờ hiện tại; theo tuần / tháng giữ mốc lịch (đầu tuần, đầu tháng).
         at = _at(v["period_start"], shift if v["grain"] in ("hour", "day") else dt.timedelta(0))
         if v["grain"] == "day":
             at = at.replace(hour=0, minute=0)
@@ -167,7 +150,6 @@ def clear(conn: psycopg.Connection) -> None:
 
 
 def load(conn: psycopg.Connection, now: dt.datetime | None = None) -> bool:
-    """Nạp nếu chưa có (trả về True khi vừa nạp). Gọi trong giao dịch của người gọi."""
     if conn.execute("SELECT 1 FROM iot.entity LIMIT 1").fetchone():
         return False
     shift = shift_of(now or dt.datetime.now(dt.UTC))
@@ -180,7 +162,9 @@ def load(conn: psycopg.Connection, now: dt.datetime | None = None) -> bool:
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(
+        description="Nạp tệp dữ liệu demo nhóm 5 (services/seed/data/demo) vào CSDL: Bản sao số (iot), Phả hệ dữ liệu (meta), KPI ghim Trang chủ (kpi)."
+    )
     p.add_argument("--refresh", action="store_true", help="xóa dữ liệu demo nhóm 5 rồi nạp lại theo giờ hiện tại")
     args = p.parse_args()
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn, conn.transaction():

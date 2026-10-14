@@ -2,15 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { DatabaseZap } from "lucide-react"; // Lucide React
+import { DatabaseZap } from "lucide-react";
 
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Dataset } from "../types";
 import { DatasetTags } from "./DatasetTags";
 
-// ===== Component =====
 export const DatasetCard = ({
   dataset,
   selected,
@@ -53,7 +50,6 @@ export const DatasetCard = ({
   </button>
 );
 
-/** Cột trái: danh sách thẻ tập dữ liệu, cuộn độc lập. Mũi tên lên/xuống để chuyển. */
 export const DatasetList = ({
   datasets,
   selectedId,

@@ -2,24 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Form, Input, Modal, Select } from "antd"; // Ant Design
-import { useEffect } from "react"; // React
+import { Form, Input, Modal, Select } from "antd";
+import { useEffect } from "react";
 
-// ===== Module nội bộ =====
 import type { ActionProposal } from "../types";
 
-// ===== Kiểu dữ liệu =====
 type Values = Pick<ActionProposal, "recordType" | "device" | "description">;
 
-// ===== Hằng số =====
 const TYPES = ["Báo cáo lỗi dây chuyền", "Báo cáo tuần dây chuyền", "Báo cáo sự cố", "Đề nghị bảo trì"].map((v) => ({
   value: v,
   label: v,
 }));
 
-// ===== Component =====
-/** "Mở biểu mẫu để sửa": sửa nội dung trợ lý đề xuất trước khi tạo nháp. */
 export const DraftFormModal = ({
   action,
   onCancel,

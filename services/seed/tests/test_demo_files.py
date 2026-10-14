@@ -2,18 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tệp dữ liệu demo nhóm 5 (services/seed/data/demo) phải khớp kết quả của app.demo_files, và nhất quán với nhau."""
-
-# ===== Thư viện chuẩn =====
 import csv
 import filecmp
 import json
 
-# ===== Module nội bộ =====
 from app import demo_files
 
 
-# ===== Kịch bản kiểm thử =====
 def test_tep_da_commit_khop_script(tmp_path):
     demo_files.generate(tmp_path)
     for f in sorted(p for p in tmp_path.rglob("*") if p.is_file()):

@@ -2,25 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { FileText, LoaderCircle, Upload } from "lucide-react"; // Lucide React
-import { useState, type DragEvent } from "react"; // React
+import { FileText, LoaderCircle, Upload } from "lucide-react";
+import { useState, type DragEvent } from "react";
 
-// ===== Module nội bộ =====
 import { primaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { VerifyMode, VerifyResult } from "../types";
 import { formatBytes } from "../utils";
 import { VerificationResultCard } from "./VerificationResultCard";
 
-// ===== Hằng số =====
 const MODES: Array<{ key: VerifyMode; label: string }> = [
   { key: "code", label: "Theo mã hồ sơ" },
   { key: "file", label: "Tải tệp lên" },
 ];
 
-// ===== Component =====
-/** Vùng kéo-thả tệp. Bấm (hoặc Enter/Space khi đang focus) để mở hộp chọn tệp. */
 const Dropzone = ({ disabled, tall, onFile }: { disabled: boolean; tall: boolean; onFile: (f: File) => void }) => {
   const [over, setOver] = useState(false);
   const onDrop = (e: DragEvent<HTMLLabelElement>) => {
@@ -71,7 +66,6 @@ const Dropzone = ({ disabled, tall, onFile }: { disabled: boolean; tall: boolean
   );
 };
 
-/** Cột trái tab Đối soát: đối soát theo mã hồ sơ hoặc theo tệp, và khối kết quả. */
 export const VerificationPanel = ({
   code,
   onCodeChange,
@@ -85,9 +79,7 @@ export const VerificationPanel = ({
 }: {
   code: string;
   onCodeChange: (c: string) => void;
-  /** Đang truy vấn sổ cái. */
   busy: boolean;
-  /** Đang băm tệp: tên + dung lượng. */
   hashing?: { name: string; size: number };
   result?: VerifyResult;
   onVerifyCode: () => void;

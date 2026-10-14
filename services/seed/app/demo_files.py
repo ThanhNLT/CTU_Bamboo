@@ -2,17 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Sinh tệp dữ liệu demo cho nhóm 5: Bản sao số, Phả hệ dữ liệu, KPI ghim Trang chủ.
-
-Ghi vào services/seed/data/demo/ (commit vào Git). Cùng mã thì ra cùng tệp: số ngẫu nhiên có hạt giống cố định,
-mốc thời gian cố định REF; bộ nạp dời mọi mốc theo (bây giờ − REF) để dữ liệu luôn "vừa xảy ra".
-
-    python -m app.demo_files [--out <thư mục>]
-
-Thực thể, mã đơn vị, tài khoản khớp dữ liệu demo của app.seed (Chip X, Điện thoại X, Bệnh viện X).
-"""
-
-# ===== Thư viện chuẩn =====
 import argparse
 import csv
 import datetime as dt
@@ -21,19 +10,17 @@ import math
 import pathlib
 import random
 
-# ===== Hằng số & cấu hình =====
 OUT = pathlib.Path(__file__).resolve().parents[1] / "data" / "demo"
 TZ = dt.timezone(dt.timedelta(hours=7))
-REF = dt.datetime(2026, 10, 14, 10, 30, tzinfo=TZ)  # "bây giờ" của bộ dữ liệu
-STEP_MIN = 5  # chu kỳ đo trong do-luong.csv
-HOURS = 24  # độ dài chuỗi đo
+REF = dt.datetime(2026, 10, 14, 10, 30, tzinfo=TZ)
+STEP_MIN = 5
+HOURS = 24
 CONTEXT = [
     "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
     "https://bamboo.local/context/ban-sao-so.jsonld",
 ]
 
 
-# ===== Mô hình (thuộc tính NGSI-LD + ngưỡng vận hành) =====
 def attr(key, label, unit, unit_code, decimals, base, noise, lo=None, hi=None, limit_label=None):
     return {
         "key": key,
@@ -135,9 +122,7 @@ MODELS = {
     },
 }
 
-# ===== Cơ sở (gắn với đơn vị của dữ liệu demo) =====
 SITES = [
-    # (mã, tenant, mã đơn vị, tên, tỉnh, vĩ độ, kinh độ)
     ("chip-bn", "TDX", "CHIP_PS", "Phòng sạch nhà máy chip Bắc Ninh", "Bắc Ninh", 21.18612, 106.07631),
     ("phone-tn", "TDX", "DT_NM", "Nhà máy lắp ráp Thái Nguyên", "Thái Nguyên", 21.59422, 105.84817),
     ("phone-bg", "TDX", "DT_NM", "Xưởng SMT Bắc Giang (Nhà máy lắp ráp)", "Bắc Giang", 21.27307, 106.19460),
@@ -148,10 +133,7 @@ SITES = [
 ]
 SITE = {s[0]: s for s in SITES}
 
-# ===== Thực thể =====
-# (mã, loại, cơ sở, phút mất tín hiệu, {thuộc tính: (nền, giá trị cuối, [(từ phút, tới phút, mức)], sự cố?)})
 ENTITIES = [
-    # Phòng sạch: CR-02 sự cố hạt bụi 17 phút vì chênh áp tụt từ 34 phút trước và chưa hồi.
     ("CR-01", "CleanRoom", "chip-bn", 0, {}),
     (
         "CR-02",
@@ -174,7 +156,6 @@ ENTITIES = [
         {"particles05": (2400, None, [], False), "relativeHumidity": (47, 52, [(50, None, 52)], False)},
     ),
     ("CR-04", "CleanRoom", "chip-bn", 2, {"particles05": (1600, None, [], False)}),
-    # Dây chuyền SMT: BG-03 sự cố lỗi AOI, TN-02 lò reflow quá nhiệt.
     ("SMT-BG-01", "SmtLine", "phone-bg", 0, {}),
     ("SMT-BG-02", "SmtLine", "phone-bg", 0, {}),
     ("SMT-BG-03", "SmtLine", "phone-bg", 0, {"aoiDefectRate": (0.2, 0.41, [(26, 9, 0.72)], True)}),
@@ -183,7 +164,6 @@ ENTITIES = [
     ("SMT-TN-01", "SmtLine", "phone-tn", 0, {}),
     ("SMT-TN-02", "SmtLine", "phone-tn", 0, {"reflowPeakTemperature": (244, 252, [(15, None, 252)], False)}),
     ("SMT-TN-03", "SmtLine", "phone-tn", 0, {}),
-    # Thiết bị y tế Bệnh viện X.
     ("MT-01", "Ventilator", "bv-cc", 0, {}),
     ("MT-02", "Ventilator", "bv-cc", 0, {}),
     ("MT-03", "Ventilator", "bv-noi", 0, {}),
@@ -207,7 +187,6 @@ ENTITIES = [
 ]
 
 
-# ===== Hàm tiện ích =====
 def iso(t: dt.datetime) -> str:
     return t.isoformat(timespec="seconds")
 
@@ -221,8 +200,6 @@ def rnd(v: float, decimals: int) -> float | int:
 
 
 def series(key: str, base: float, noise: float, excursions: list, pin, gap: int) -> list[tuple[int, float]]:
-    """Chuỗi (phút trước REF, giá trị) mỗi STEP_MIN phút: nhiễu AR(1) quanh nền, các lần lệch kéo về `mức`
-    (vào/ra dần trong ~3 phút), điểm cuối ghim `pin`; mất tín hiệu `gap` phút cuối thì không có điểm."""
     rng = random.Random(key)
     e = 0.0
     out = []
@@ -241,7 +218,6 @@ def series(key: str, base: float, noise: float, excursions: list, pin, gap: int)
 
 
 def breaches(points: list[tuple[int, float]], lo, hi) -> list[dict]:
-    """Các đoạn liên tục vượt ngưỡng (theo điểm đo)."""
     spans, cur = [], None
     for m, v in points:
         side = "above" if hi is not None and v > hi else "below" if lo is not None and v < lo else None
@@ -255,9 +231,7 @@ def breaches(points: list[tuple[int, float]], lo, hi) -> list[dict]:
     return spans
 
 
-# ===== Bản sao số =====
 def digital_twin(out: pathlib.Path) -> dict:
-    """Trả về chuỗi đo theo thực thể (dùng lại cho KPI)."""
     d = out / "ban-sao-so"
     d.mkdir(parents=True, exist_ok=True)
     models = {
@@ -301,7 +275,6 @@ def digital_twin(out: pathlib.Path) -> dict:
             for m, v in points:
                 rows.append((iso(REF - dt.timedelta(minutes=m)), eid, a["key"], v))
             last_m, last_v = points[-1]
-            # unitCode theo UN/CEFACT khi có mã chuẩn; luôn kèm unitText để hiển thị.
             ent[a["key"]] = {
                 "type": "Property",
                 "value": last_v,
@@ -347,8 +320,6 @@ def digital_twin(out: pathlib.Path) -> dict:
     return signals
 
 
-# ===== Phả hệ dữ liệu =====
-# (mã, tầng, công nghệ, tên, fqn, tiêu đề, chủ sở hữu, nơi dùng, mở trong ứng dụng)
 NODES = [
     ("pg-purchase-request", "source", "PostgreSQL", "proc.purchase_request", "postgres.bms.proc.purchase_request",
      "Đề nghị mua sắm", "Nhóm quy trình", "", "/p/documents"),
@@ -413,7 +384,6 @@ NODES = [
      "Nhóm dữ liệu", "Trang · Dịch vụ dữ liệu", "/d/services"),
 ]  # fmt: skip
 
-# (từ, tới, ánh xạ cột "nguồn→đích; …")
 EDGES = [
     ("pg-purchase-request", "kafka-purchase-request", "id→after.id; total_amount→after.total_amount"),
     ("pg-approval-history", "kafka-approval-history", "event→after.event; created_at→after.created_at"),
@@ -448,7 +418,6 @@ EDGES = [
     ("ice-lot", "app-data-services", ""),
 ]
 
-# Kiểm tra chất lượng (kiểu Soda): (nút, quy tắc, tên, đạt?, chi tiết, phút trước REF)
 CHECKS = [
     ("pg-purchase-request", "row_count > 0", "Có dữ liệu", True, "Đạt · 126 dòng", 12),
     ("pg-approval-history", "row_count > 0", "Có dữ liệu", True, "Đạt · 412 dòng", 12),
@@ -469,7 +438,6 @@ CHECKS = [
     ("gold-cold-chain", "duplicate(day, device) = 0", "Không trùng ngày / thiết bị", True, "Đạt", 10),
 ]  # fmt: skip
 
-# Lần chạy pipeline: (tác vụ, công cụ, nút, phút trước REF, giây, kết quả)
 RUNS = [
     ("cdc → bronze.wf_task", "lakehouse-sink", "ice-task", 16, 42, "success"),
     ("kiểm tra silver.wf_task", "Soda", "ice-task", 15, 9, "check_failed"),
@@ -505,8 +473,6 @@ def lineage(out: pathlib.Path) -> None:
             w.writerow([f"R-{n:03d}", task, engine, node, iso(REF - dt.timedelta(minutes=ago)), secs, result])
 
 
-# ===== KPI ghim Trang chủ =====
-# (mã, tenant, nhãn, đơn vị, hướng tốt, ngưỡng, độ chi tiết, nút phả hệ, định nghĩa)
 KPIS = [
     ("on-time", "TDX", "Duyệt đúng hạn", "%", "up", 90, "month", "kpi-on-time",
      "Bước duyệt xong trong 48 giờ / mọi bước duyệt xong trong tháng."),
@@ -526,7 +492,6 @@ KPIS = [
      "Số máy thở trực tuyến, pin dự phòng ≥30% lúc 7 giờ sáng."),
 ]  # fmt: skip
 
-# Ghim: (tài khoản, tenant, mã KPI theo thứ tự)
 PINS = [
     ("tgd", "TDX", ["on-time", "oee", "particles", "pr-value"]),
     ("cdo", "TDX", ["on-time", "lots-on-hold", "particles"]),
@@ -538,7 +503,6 @@ PINS = [
 
 
 def kpi_values(signals: dict) -> list[tuple]:
-    """Chuỗi 12 điểm (KPI theo giờ: 12 giờ; theo ngày: 14 ngày) có xu hướng và hạt giống cố định."""
     rows = []
     for key, tenant, *_rest, grain, _node, _def in KPIS:
         rng = random.Random(f"kpi:{tenant}:{key}")
@@ -568,7 +532,7 @@ def kpi_values(signals: dict) -> list[tuple]:
                 v = round(78 - (6 if i == n - 1 else 0) + rng.gauss(0, 1.2), 1)
             elif key == "cold-chain":
                 v = round(100 - (1.5 if i == n - 1 else 0) - abs(rng.gauss(0, 0.2)), 1)
-            else:  # máy thở
+            else:
                 v = 4 if i < n - 1 else 3
             rows.append((key, tenant, grain, iso(at), v))
     return rows
@@ -593,7 +557,6 @@ def kpis(out: pathlib.Path, signals: dict) -> None:
             w.writerows((user, tenant, k, i) for i, k in enumerate(keys, start=1))
 
 
-# ===== Điểm vào =====
 def generate(out: pathlib.Path = OUT) -> None:
     signals = digital_twin(out)
     lineage(out)
@@ -601,7 +564,9 @@ def generate(out: pathlib.Path = OUT) -> None:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(
+        description="Sinh tệp dữ liệu demo cho nhóm 5: Bản sao số, Phả hệ dữ liệu, KPI ghim Trang chủ."
+    )
     p.add_argument("--out", type=pathlib.Path, default=OUT)
     out = p.parse_args().out
     generate(out)

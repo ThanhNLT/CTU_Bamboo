@@ -2,31 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Client REST tối giản của Trino (ADR #40, #45): POST /v1/statement rồi theo nextUri.
-
-Đăng nhập bằng tài khoản dịch vụ qua HTTPS (chứng chỉ do CA nội bộ của OpenBao cấp). `as_user` đặt người dùng
-của phiên khác tài khoản đăng nhập (impersonation): actions chỉ được mượn danh người dùng tenant `t_<tenant_id>`,
-quyền và row filter của Trino áp theo người dùng đó (platform/trino/rules.json).
-"""
-
-# ===== Thư viện chuẩn =====
 import ssl
 
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
+import httpx
 
-# ===== Module nội bộ =====
 from . import config
 
 
-# ===== Lỗi (exception) =====
 class TrinoError(Exception):
     def __init__(self, message: str, name: str = ""):
         super().__init__(message)
-        self.name = name  # errorName của Trino, ví dụ PERMISSION_DENIED, TABLE_NOT_FOUND
+        self.name = name
 
 
-# ===== Lớp =====
 class Trino:
     def __init__(self, url: str, user: str, password: str = "", ca_file: str = "", timeout: float = 60):
         verify: ssl.SSLContext | bool = ssl.create_default_context(cafile=ca_file) if ca_file else True
@@ -42,7 +30,6 @@ class Trino:
     def query(
         self, sql: str, *, as_user: str | None = None, catalog: str = "lakehouse", schema: str | None = None
     ) -> tuple[list[dict], list[list]]:
-        """(cột [{name, type}], các dòng). Lỗi truy vấn hoặc quyền: TrinoError."""
         headers = {"X-Trino-User": as_user or self.user, "X-Trino-Catalog": catalog}
         if schema:
             headers["X-Trino-Schema"] = schema
@@ -69,6 +56,5 @@ class Trino:
         self.http.close()
 
 
-# ===== Hàm =====
 def client(settings: config.Settings) -> Trino:
     return Trino(settings.trino_url, settings.trino_user, settings.trino_password, settings.trino_ca_file)

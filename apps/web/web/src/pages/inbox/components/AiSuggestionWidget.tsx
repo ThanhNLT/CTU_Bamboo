@@ -2,15 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Sparkles } from "lucide-react"; // Lucide React
-import { Link } from "react-router"; // React Router
+import { Sparkles } from "lucide-react";
+import { Link } from "react-router";
 
-// ===== Module nội bộ =====
 import type { AiSuggestion } from "../types";
 
-// ===== Component =====
-/** Gợi ý của Trợ lý: tóm tắt + trích dẫn nguồn. Luôn nhắc rằng quyết định thuộc về người duyệt. */
 export const AiSuggestionWidget = ({ suggestion }: { suggestion?: AiSuggestion }) => (
   <section className="rounded-2xl border border-bamboo-100 bg-bamboo-50/60 p-4" aria-labelledby="inbox-ai">
     <h3 id="inbox-ai" className="flex items-center gap-2 text-[14px] font-semibold text-ink">

@@ -2,20 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Modal, Spin } from "antd"; // Ant Design
-import { FileWarning, Lock } from "lucide-react"; // Lucide React
-import { useEffect, useState } from "react"; // React
+import { Modal, Spin } from "antd";
+import { FileWarning, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
 
-// ===== Module nội bộ =====
 import type { ArchiveView } from "../types";
 import { READING_ROOM_RULES } from "../utils";
 
-// ===== Hàm tiện ích =====
 const escXml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c] ?? c);
 
-/** Dấu chìm lặp lại: tên người xem + thời điểm, xoay chéo, phủ toàn trang. */
 const watermarkUrl = (text: string) => {
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' width='340' height='190'>` +
@@ -24,8 +20,6 @@ const watermarkUrl = (text: string) => {
   return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
 };
 
-// ===== Component =====
-/** Văn bản thuần: tải nội dung qua link ngắn hạn rồi hiển thị (không mở tệp gốc trong tab mới). */
 const TextBody = ({ url }: { url: string }) => {
   const [text, setText] = useState<string>();
   const [failed, setFailed] = useState(false);
@@ -79,10 +73,6 @@ const Body = ({ view }: { view: ArchiveView }) => {
   );
 };
 
-/**
- * Trình xem chỉ đọc: không có nút tải, chặn chuột phải / sao chép / kéo, phủ dấu chìm tên người xem.
- * Bảo vệ ở giao diện chỉ là lớp ngoài; máy chủ cấp link hết hạn sau 60 giây và ghi nhật ký mỗi lần mở.
- */
 export const ReadOnlyViewerModal = ({ view, onClose }: { view?: ArchiveView; onClose: () => void }) => (
   <Modal
     open={view != null}

@@ -2,13 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Client REST tối thiểu cho Flowable (chỉ dịch vụ actions gọi Flowable)."""
-
-# ===== Thư viện bên ngoài =====
-import httpx  # HTTPX
+import httpx
 
 
-# ===== Lớp =====
 class FlowableClient:
     def __init__(self, base_url: str, user: str, password: str, timeout: float = 15.0):
         self.http = httpx.Client(base_url=base_url.rstrip("/") + "/", auth=(user, password), timeout=timeout)
@@ -23,8 +19,6 @@ class FlowableClient:
             )
         return resp
 
-    # ===== Triển khai quy trình =====
-
     def deployments_named(self, name: str) -> list[dict]:
         return self._check(self.http.get("repository/deployments", params={"name": name})).json()["data"]
 
@@ -35,7 +29,6 @@ class FlowableClient:
         return self._check(resp).json()
 
     def delete_deployment(self, deployment_id: str) -> None:
-        """Xóa deployment kèm mọi tiến trình và lịch sử của nó (chạy thử sandbox)."""
         resp = self.http.delete(f"repository/deployments/{deployment_id}", params={"cascade": "true"})
         if resp.status_code != 404:
             self._check(resp)
@@ -52,8 +45,6 @@ class FlowableClient:
         }
         return self._check(self.http.post("runtime/process-instances", json=body)).json()["id"]
 
-    # ===== Tiến trình =====
-
     def start_process(self, key: str, business_key: str, variables: dict) -> str:
         body = {
             "processDefinitionKey": key,
@@ -63,7 +54,6 @@ class FlowableClient:
         return self._check(self.http.post("runtime/process-instances", json=body)).json()["id"]
 
     def find_process(self, key: str, business_key: str) -> dict | None:
-        """Tiến trình (đang chạy hoặc đã kết thúc) theo business key."""
         resp = self._check(
             self.http.get(
                 "history/historic-process-instances", params={"processDefinitionKey": key, "businessKey": business_key}
@@ -89,7 +79,6 @@ class FlowableClient:
         return resp.json()["value"]
 
     def historic_activities(self, process_id: str) -> list[dict]:
-        """Các bước đã đi qua và đang đứng (endTime rỗng), theo thứ tự thời gian."""
         resp = self._check(
             self.http.get(
                 "history/historic-activity-instances",
@@ -100,8 +89,6 @@ class FlowableClient:
 
     def process_definition_xml(self, definition_id: str) -> str:
         return self._check(self.http.get(f"repository/process-definitions/{definition_id}/resourcedata")).text
-
-    # ===== User task =====
 
     def tasks(self, process_id: str) -> list[dict]:
         return self._check(self.http.get("runtime/tasks", params={"processInstanceId": process_id})).json()["data"]

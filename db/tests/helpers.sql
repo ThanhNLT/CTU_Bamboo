@@ -2,9 +2,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Hàm tiện ích dùng chung cho kiểm thử. Nạp một lần sau migration; mỗi file
--- kiểm thử gọi test.fixture() bên trong transaction của mình.
-
 CREATE SCHEMA test;
 
 CREATE TABLE test.ids (key text PRIMARY KEY, id uuid NOT NULL UNIQUE);
@@ -42,7 +39,6 @@ BEGIN
     END IF;
 END $$;
 
--- Câu lệnh phải báo lỗi có thông điệp khớp mẫu (ILIKE).
 CREATE FUNCTION test.throws(p_sql text, p_pattern text, p_msg text) RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -94,7 +90,6 @@ LANGUAGE sql AS $$
     SELECT test.put(p_key, p.id) FROM p
 $$;
 
--- Bổ nhiệm; mặc định giữ chính từ một năm trước, không thời hạn.
 CREATE FUNCTION test.assign(p_tenant text, p_person text, p_position text,
                             p_type text DEFAULT 'PRIMARY',
                             p_period tstzrange DEFAULT NULL,
@@ -106,14 +101,12 @@ LANGUAGE sql AS $$
     RETURNING id
 $$;
 
--- Kết thúc bổ nhiệm đang hiệu lực của một người tại một vị trí, ngay bây giờ.
 CREATE FUNCTION test.end_assignment(p_person text, p_position text) RETURNS void
 LANGUAGE sql AS $$
     UPDATE core.assignment SET valid_period = tstzrange(lower(valid_period), now())
     WHERE person_id = test.id(p_person) AND position_id = test.id(p_position) AND valid_period @> now()
 $$;
 
--- Lập và (tùy chọn) gửi duyệt một đề nghị mua sắm.
 CREATE FUNCTION test.pr(p_key text, p_person text, p_position text, p_amount numeric,
                         p_submit boolean DEFAULT true, p_ic_order uuid DEFAULT NULL) RETURNS uuid
 LANGUAGE plpgsql AS $$
@@ -130,14 +123,12 @@ BEGIN
     RETURN v;
 END $$;
 
--- Việc duyệt đang mở của một đề nghị.
 CREATE FUNCTION test.open_task(p_pr text) RETURNS wf.task
 LANGUAGE sql STABLE AS $$
     SELECT t.* FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
     WHERE s.entity_id = test.id(p_pr) AND t.status = 'OPEN'
 $$;
 
--- Khóa (tên trong test.ids) của người đang nhận việc duyệt của đề nghị.
 CREATE FUNCTION test.assignee(p_pr text) RETURNS text
 LANGUAGE sql STABLE AS $$ SELECT test.key((test.open_task(p_pr)).assignee_id) $$;
 
@@ -147,12 +138,6 @@ LANGUAGE sql AS $$ SELECT wf.act((test.open_task(p_pr)).id, test.id(p_actor), 'A
 CREATE FUNCTION test.status(p_pr text) RETURNS text
 LANGUAGE sql STABLE AS $$ SELECT status FROM proc.purchase_request WHERE id = test.id(p_pr) $$;
 
--- Kiểm thử chạy trong một giao dịch rồi rollback nên trigger chuyển việc (deferred,
--- chạy lúc commit) phải được bật chạy ngay: test.fixture() gọi SET CONSTRAINTS.
--- Tập đoàn X (tenant TDX) gồm công ty mẹ và ba công ty con; Bệnh viện X (BVX) là
--- tenant con; Công ty Y (CTY) là tenant ngoài tập đoàn.
--- Hạn mức đề nghị mua sắm: dưới 50 triệu – quản lý trực tiếp; 50 đến dưới 500
--- triệu – giám đốc công ty; từ 500 triệu – giám đốc công ty rồi TGĐ tập đoàn.
 CREATE FUNCTION test.fixture() RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE

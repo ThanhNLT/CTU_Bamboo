@@ -2,22 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dữ liệu thật cho Trung tâm điều hành, trong phạm vi tenant đang chọn và quyền xem của người dùng (Hasura lọc
-// can_read). "Công ty" = đơn vị cấp 1 dưới gốc tenant (Công ty Chip X, Khối Tài chính...); 4 đơn vị nhiều hồ sơ nhất
-// có màu riêng, còn lại gộp "Khác". Việc đang chờ tự cập nhật qua subscription; lịch sử duyệt tải theo kỳ.
+import { useList } from "@refinedev/core";
+import dayjs from "dayjs";
+import gql from "graphql-tag";
+import { useMemo } from "react";
 
-// ===== Thư viện =====
-import { useList } from "@refinedev/core"; // Refine
-import dayjs from "dayjs"; // Day.js
-import gql from "graphql-tag"; // graphql-tag
-import { useMemo } from "react"; // React
-
-// ===== Module nội bộ =====
 import { SLA_HOURS } from "../inbox/useInboxTasks";
 import type { Company, CompanyKey, DailyPoint, Kpi, MonthlyPoint, OverdueRow, PendingRow, Period } from "./types";
 
-// ===== Hằng số =====
-/** 4 ô đầu của bảng màu phân loại đã kiểm định (thứ tự cố định) + xám cho "Khác". */
 const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
 const OTHER_COLOR = "#8a948e";
 export const OTHER_COMPANY = "__other__";
@@ -25,7 +17,6 @@ export const OTHER_COMPANY = "__other__";
 export const PERIOD_DAYS: Record<Period, number> = { week: 7, month: 30, quarter: 90 };
 const HOUR = 3_600_000;
 
-// ===== Truy vấn GraphQL =====
 const UNITS = gql`
   query OpsUnits($limit: Int, $offset: Int, $order_by: [core_org_unit_order_by!], $where: core_org_unit_bool_exp) {
     core_org_unit(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -41,11 +32,9 @@ const UNITS = gql`
   }
 `;
 
-// ===== Hằng số =====
 const DOC = `purchase_request { id doc_no title org_unit_id } onboarding_request { id doc_no full_name org_unit_id }
   kb_document { id doc_no title org_unit_id }`;
 
-// ===== Truy vấn GraphQL =====
 const OPEN_TASKS = gql`
   query OpsOpen($limit: Int, $offset: Int, $order_by: [wf_task_order_by!], $where: wf_task_bool_exp) {
     wf_task(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
@@ -124,7 +113,6 @@ const COUNT_FILES = gql`
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Unit = { id: string; name: string; path: string };
 type DocRef = {
   purchase_request: { id: string; doc_no: string; title: string; org_unit_id: string } | null;
@@ -141,14 +129,12 @@ type Completed = {
   kb_document: { org_unit_id: string } | null;
 };
 
-// ===== Hàm tiện ích =====
 const unitOf = (d: {
   purchase_request: { org_unit_id: string } | null;
   onboarding_request: { org_unit_id: string } | null;
   kb_document: { org_unit_id: string } | null;
 }) => d.purchase_request?.org_unit_id ?? d.onboarding_request?.org_unit_id ?? d.kb_document?.org_unit_id;
 
-/** "1 ngày 3 giờ" / "5 giờ" / "20 phút". */
 const span = (ms: number) => {
   const d = Math.floor(ms / (24 * HOUR));
   const h = Math.floor((ms % (24 * HOUR)) / HOUR);
@@ -156,13 +142,10 @@ const span = (ms: number) => {
   return h ? `${h} giờ` : `${Math.max(1, Math.floor(ms / 60_000))} phút`;
 };
 
-// ===== Khởi tạo =====
 const pct = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 
-// ===== Hook =====
 export const useOpsData = (period: Period) => {
   const days = PERIOD_DAYS[period];
-  // Mốc thời gian chốt theo ngày để khóa truy vấn không đổi mỗi lần render.
   const today = dayjs().startOf("day");
   const since = today.subtract(days - 1, "day");
   const yearStart = today.startOf("year").subtract(1, "year");
@@ -222,7 +205,6 @@ export const useOpsData = (period: Period) => {
     const now = Date.now();
     const at = dayjs().format("HH:mm");
 
-    // Đơn vị cấp 1 của một đơn vị bất kỳ: hai nhãn đầu của ltree path.
     const byPath = new Map(unitRows.map((u) => [u.path, u]));
     const byId = new Map(unitRows.map((u) => [u.id, u]));
     const top = (unitId?: string) => {
@@ -231,7 +213,6 @@ export const useOpsData = (period: Period) => {
       return byPath.get(u.path.split(".").slice(0, 2).join(".")) ?? u;
     };
 
-    // Xếp hạng theo khối lượng (đang chờ + đã duyệt xong); 4 đơn vị đầu có màu riêng.
     const volume = new Map<string, number>();
     for (const id of [...openRows.map((t) => unitOf(t.step)), ...completedRows.map(unitOf)]) {
       const t = top(id);
@@ -254,7 +235,6 @@ export const useOpsData = (period: Period) => {
     };
     const company = Object.fromEntries(companies.map((c) => [c.key, c])) as Record<CompanyKey, Company>;
 
-    // Duyệt xong mỗi ngày trong kỳ.
     const daily: DailyPoint[] = Array.from({ length: days }, (_, i) => {
       const point: DailyPoint = { day: since.add(i, "day").format("DD/MM") };
       for (const c of companies) point[c.key] = 0;
@@ -268,7 +248,6 @@ export const useOpsData = (period: Period) => {
       }
     }
 
-    // Đang chờ theo công ty, tách cấp 1 / cấp 2 trở lên.
     const pendingMap = new Map<CompanyKey, PendingRow>();
     for (const t of openRows) {
       const k = keyOf(unitOf(t.step));
@@ -279,7 +258,6 @@ export const useOpsData = (period: Period) => {
     }
     const pending = companies.map((c) => pendingMap.get(c.key)).filter((r): r is PendingRow => Boolean(r));
 
-    // Theo tháng: năm nay (cột, các tháng chưa tới để trống) so với năm trước (đường).
     const year = today.year();
     const monthly: MonthlyPoint[] = Array.from({ length: 12 }, (_, m) => ({
       month: `T${m + 1}`,
@@ -293,7 +271,6 @@ export const useOpsData = (period: Period) => {
       else if (d.year() === year - 1) row.previous += 1;
     }
 
-    // Quá hạn: việc đang mở lâu hơn SLA_HOURS, lâu nhất trước.
     const overdueAll: OverdueRow[] = openRows
       .map((t) => ({ t, late: now - (Date.parse(t.created_at) + SLA_HOURS * HOUR) }))
       .filter((x) => x.late > 0)
@@ -319,7 +296,6 @@ export const useOpsData = (period: Period) => {
         };
       });
 
-    // KPI.
     const onTime = doneRows.filter(
       (t) => t.closed_at && Date.parse(t.closed_at) - Date.parse(t.created_at) <= SLA_HOURS * HOUR,
     ).length;
@@ -394,7 +370,6 @@ export const useOpsData = (period: Period) => {
       updatedAt: at,
       rangeLabel: `${since.format("DD/MM")} – ${today.format("DD/MM")}`,
     };
-    // since/today/yearStart suy ra từ `days` và ngày hiện tại.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unitRows, openRows, doneRows, completedRows, icPending.result.total, blockedFiles.result.total, days]);
 
@@ -406,5 +381,4 @@ export const useOpsData = (period: Period) => {
   };
 };
 
-// ===== Kiểu dữ liệu =====
 export type OpsData = ReturnType<typeof useOpsData>;

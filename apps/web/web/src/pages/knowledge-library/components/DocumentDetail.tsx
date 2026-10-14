@@ -2,28 +2,23 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { BookOpen, Download, FilePlus2, History, RotateCw, Sparkles, XCircle } from "lucide-react"; // Lucide React
-import { useState } from "react"; // React
+import { BookOpen, Download, FilePlus2, History, RotateCw, Sparkles, XCircle } from "lucide-react";
+import { useState } from "react";
 
-// ===== Module nội bộ =====
 import { Dot, smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { CATEGORY_SHORT, SCOPE_LABEL } from "../labels";
 import type { LibraryDoc, LibraryFile } from "../types";
 import { indexTone, VIEW } from "./indexState";
 
-// ===== Hàm tiện ích =====
 const size = (b: number) => (b < 1024 * 1024 ? `${Math.ceil(b / 1024)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
-// ===== Component =====
 const MetaItem = ({ label, value }: { label: string; value: string }) => (
   <div className="min-w-0 truncate text-[12px] text-muted">
     {label}: <span className="text-body">{value}</span>
   </div>
 );
 
-/** Trạng thái trong chỉ mục tìm kiếm toàn văn, kèm nạp lại (người quản lý) và hỏi trợ lý. */
 const IndexBox = ({ doc, onAsk, onReindex }: { doc: LibraryDoc; onAsk: () => void; onReindex: () => void }) => {
   const { index } = doc;
   const box = {
@@ -61,7 +56,6 @@ const IndexBox = ({ doc, onAsk, onReindex }: { doc: LibraryDoc; onAsk: () => voi
   );
 };
 
-/** Cột phải: thông tin, chỉ mục, tóm tắt, mục lục, tệp, phiên bản trước và hành động của tài liệu đang chọn. */
 export const DocumentDetail = ({
   doc,
   onAsk,
@@ -75,7 +69,6 @@ export const DocumentDetail = ({
   onAsk: (doc: LibraryDoc) => void;
   onReindex: (doc: LibraryDoc) => void;
   onDownload: (file: LibraryFile) => void;
-  /** Đề xuất bản thay thế (người được đề xuất tài liệu). */
   onSupersede?: (doc: LibraryDoc) => void;
   onRetire: (doc: LibraryDoc) => void;
   className?: string;

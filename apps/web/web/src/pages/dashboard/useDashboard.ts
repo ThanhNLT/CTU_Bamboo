@@ -2,16 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Dữ liệu thật cho Trang chủ: việc chờ tôi (wf.v_inbox), chứng từ tôi lập, thông báo của tôi, chức danh.
-// KPI đã ghim lấy riêng qua ./useKpis.
+import { useInvalidate, useList } from "@refinedev/core";
+import dayjs from "dayjs";
+import gql from "graphql-tag";
+import { useMemo } from "react";
 
-// ===== Thư viện =====
-import { useInvalidate, useList } from "@refinedev/core"; // Refine
-import dayjs from "dayjs"; // Day.js
-import gql from "graphql-tag"; // graphql-tag
-import { useMemo } from "react"; // React
-
-// ===== Module nội bộ =====
 import { request } from "../../api/client";
 import { DOC_KIND_LABEL, useDocuments, type DocSummary } from "../../api/documents";
 import { useSession } from "../../auth/useSession";
@@ -19,7 +14,6 @@ import { formatAgo as ago } from "../../utils/format";
 import { useInboxTasks } from "../inbox/useInboxTasks";
 import type { DashboardUser, NotificationItem, RecentRecord, SummaryStat, TaskItem, Tone } from "./types";
 
-// ===== Truy vấn GraphQL =====
 const NOTIFICATIONS = gql`
   query HomeNotifications(
     $limit: Int
@@ -72,7 +66,6 @@ const MY_POSITION = gql`
   }
 `;
 
-// ===== Kiểu dữ liệu =====
 type Note = {
   id: string;
   kind: string;
@@ -84,8 +77,6 @@ type Note = {
   actor: { full_name: string } | null;
 };
 
-// ===== Hằng số =====
-// Đường dẫn trang chi tiết theo loại chứng từ của thông báo.
 const DETAIL: Record<string, string> = {
   "proc.purchase_request": "/p/documents/show/",
   "hr.onboarding_request": "/h/onboarding/show/",
@@ -103,7 +94,6 @@ const NOTE_TONE: Record<string, Tone> = {
   IC_ORDER_NEW: "warning",
 };
 
-// ===== Hàm tiện ích =====
 const recordTone = (d: DocSummary): { tone: Tone; locked?: boolean } => {
   switch (d.status) {
     case "PENDING":
@@ -122,7 +112,6 @@ const recordTone = (d: DocSummary): { tone: Tone; locked?: boolean } => {
   }
 };
 
-/** Nhãn "Hôm nay" / "Ngày mai" / "Thứ Sáu, 09/10" cho chế độ xem Lịch. */
 const dueDay = (iso: string, now = dayjs()) => {
   const diff = dayjs(iso).startOf("day").diff(now.startOf("day"), "day");
   if (diff <= 0) return diff < 0 ? "Đã quá hạn" : "Hôm nay";
@@ -134,7 +123,6 @@ const dueDay = (iso: string, now = dayjs()) => {
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-// ===== Hook =====
 export const useDashboard = () => {
   const { tenant } = useSession();
   const invalidate = useInvalidate();

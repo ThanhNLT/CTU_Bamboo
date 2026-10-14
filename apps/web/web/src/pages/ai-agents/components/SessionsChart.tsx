@@ -2,21 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// ===== Thư viện =====
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; // Recharts
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-// ===== Module nội bộ =====
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "../../operations-center/components/chartTheme";
 import type { DayStat } from "../types";
 import { num, pct } from "../utils";
 
-// ===== Hằng số =====
 const ERROR = "#dc2626";
 
-// ===== Kiểu dữ liệu =====
 type TipProps = { active?: boolean; label?: string | number; payload?: Array<{ payload?: DayStat }> };
 
-// ===== Component =====
 const Tip = ({ active, label, payload }: TipProps) => {
   const d = payload?.[0]?.payload;
   if (!active || !d) return null;
@@ -38,7 +33,6 @@ const Tip = ({ active, label, payload }: TipProps) => {
   );
 };
 
-/** Cột chồng 7 ngày: phần xanh = phiên thành công, ngọn đỏ = phiên lỗi. */
 export const SessionsChart = ({ data, total, errors }: { data: DayStat[]; total: number; errors: number }) => {
   const max = Math.max(...data.map((d) => d.success + d.errors));
   const top = Math.max(50, Math.ceil(max / 50) * 50);

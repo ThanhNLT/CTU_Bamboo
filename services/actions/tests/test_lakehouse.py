@@ -2,32 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Lakehouse (ADR #39): topic CDC → bảng Iceberg bronze, đúng một lần nhờ vị trí Kafka lưu trong snapshot.
-
-Kiểm thử tích hợp ghi vào catalog riêng (CSDL lakehouse_test, thư mục warehouse-test/<ngẫu nhiên> trong bucket
-lakehouse) từ các topic CDC thật; khóa S3 lakehouse đọc từ OpenBao bằng root token như search_settings.
-"""
-
-# ===== Thư viện chuẩn =====
 import datetime as dt
 import json
 import uuid
 from urllib.parse import urlparse, urlunparse
 
-# ===== Thư viện bên ngoài =====
-import psycopg  # psycopg
-import pytest  # pytest
+import psycopg
+import pytest
 
-# ===== Module nội bộ =====
 from app import config
 from app import lakehouse_sink as ls
 from conftest import TEST_DB_URL, _missing, _reachable, root_settings
 
-# ===== Khởi tạo =====
 pytest.importorskip("pyiceberg")
 kafka = pytest.importorskip("kafka")
 
-# ===== Hằng số & cấu hình =====
 EVENT = {
     "before": None,
     "after": {"tenant_id": "t-1", "id": "pr-1", "title": "Tụ điện", "total_amount": "300000.00"},
@@ -46,7 +35,6 @@ EVENT = {
 }
 
 
-# ===== Kiểm thử =====
 def test_ten_bang_va_topic():
     assert ls.table_name("bms.proc.purchase_request") == "bronze.proc_purchase_request"
     for topic in ("bms.proc.purchase_request", "bms.core.person", "bms.wf.approval_step"):
@@ -77,10 +65,8 @@ def test_su_kien_thanh_dong_bronze():
     )
 
 
-# ===== Fixture kiểm thử =====
 @pytest.fixture(scope="module")
 def lake_settings() -> config.Settings:
-    """Cấu hình ghi vào catalog kiểm thử; cần Kafka có topic CDC, SeaweedFS có bucket lakehouse."""
     settings = root_settings()
     admin = urlparse(TEST_DB_URL)
     with psycopg.connect(urlunparse(admin._replace(path="/postgres")), autocommit=True) as conn:
@@ -101,7 +87,6 @@ def lake_settings() -> config.Settings:
     return settings
 
 
-# ===== Hàm hỗ trợ kiểm thử =====
 def _drain(sink: ls.Sink) -> int:
     total = 0
     while n := sink.run_once(wait_seconds=30, stop_when_idle=True):
@@ -109,7 +94,6 @@ def _drain(sink: ls.Sink) -> int:
     return total
 
 
-# ===== Kiểm thử =====
 def test_ghi_bronze_dung_mot_lan(lake_settings):
     warehouse = f"warehouse-test/{uuid.uuid4().hex[:8]}"
     cat = ls.catalog(lake_settings, warehouse)
@@ -125,8 +109,6 @@ def test_ghi_bronze_dung_mot_lan(lake_settings):
     assert all(json.loads(a)["doc_no"] for a in rows.column("after").to_pylist() if a)
     assert [f.name for f in table.spec().fields] == ["source_date"]
 
-    # Vị trí Kafka lưu trong snapshot = dòng cuối đã ghi + 1; khởi động lại đọc tiếp từ đó, không ghi trùng
-    # (dịch vụ khác vẫn có thể sinh thay đổi mới trong lúc kiểm thử nên không đòi lần sau ghi 0 dòng).
     assert ls.committed_offsets(table) == {0: max(rows.column("kafka_offset").to_pylist()) + 1}
     again = ls.Sink(lake_settings, cat=ls.catalog(lake_settings, warehouse))
     _drain(again)

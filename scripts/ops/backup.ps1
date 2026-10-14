@@ -1,10 +1,5 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
-#
-# Bản PowerShell của scripts/ops/backup.sh (Windows). Sao lưu CSDL (pg_dumpall), két OpenBao
-# (dữ liệu + khóa unseal) và tệp đính kèm SeaweedFS của project compose "bamboo".
-# Dùng: powershell -ExecutionPolicy Bypass -File scripts\ops\backup.ps1 [-Out thư_mục]
-# Tệp SQL lấy ra bằng `docker compose cp`, không qua chuyển hướng `>` của PowerShell (tránh UTF-16).
 param(
     [string]$Out = (Join-Path "backups" (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string]$Project = $(if ($env:COMPOSE_PROJECT_NAME) { $env:COMPOSE_PROJECT_NAME } else { "bamboo" })

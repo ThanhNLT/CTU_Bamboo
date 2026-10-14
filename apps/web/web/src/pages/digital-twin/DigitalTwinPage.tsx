@@ -2,17 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Bản sao số (Dữ liệu số): master–detail. Trái ~30% danh sách thực thể NGSI-LD, phải ~70% chi tiết
-// (thẻ đầu, lưới 6 chỉ số, biểu đồ lịch sử). Trên màn hình lớn hai cột cuộn độc lập.
-// Mở thẳng một thực thể: /d/twin?entity=CR-02, hoặc theo cơ sở: /d/twin?site=chip-bn. Dữ liệu: bảng iot.* (./api,
-// ADR #50), nạp từ tệp demo; ghi nhận sự cố qua Action iot_acknowledge.
+import { Alert, App, Input, Spin } from "antd";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 
-// ===== Thư viện =====
-import { Alert, App, Input, Spin } from "antd"; // Ant Design
-import { useMemo, useState } from "react"; // React
-import { useNavigate, useSearchParams } from "react-router"; // React Router
-
-// ===== Module nội bộ =====
 import { acknowledgeIncident, useTwinEntities } from "./api";
 import { CategoryTabs } from "./components/CategoryTabs";
 import { EntityHeader } from "./components/EntityHeader";
@@ -24,12 +17,9 @@ import { TwinPageHeader } from "./components/TwinPageHeader";
 import type { CategoryFilter, Incident, Metric, TimeRange } from "./types";
 import { countByCategory, filterEntities, pickFromParams, sortEntities } from "./utils";
 
-// ===== Hàm tiện ích =====
-/** Chỉ số vẽ mặc định: chỉ số nặng nhất (Nguy cấp → Cảnh báo), không có thì chỉ số đầu tiên. */
 const defaultMetric = (metrics: Metric[]) =>
   metrics.find((m) => m.status === "critical") ?? metrics.find((m) => m.status === "warning") ?? metrics[0];
 
-// ===== Component =====
 export const DigitalTwinPage = () => {
   const { message, modal } = App.useApp();
   const navigate = useNavigate();
@@ -51,7 +41,6 @@ export const DigitalTwinPage = () => {
   const [range, setRange] = useState<TimeRange>("1h");
   const [chartPick, setChartPick] = useState<{ entityId: string; key: string }>();
 
-  // Dữ liệu về lần đầu hoặc URL đổi → chọn theo URL (mặc định: thực thể nặng nhất).
   const [seenParamKey, setSeenParamKey] = useState("");
   if (twin.entities.length > 0 && seenParamKey !== paramKey) {
     setSeenParamKey(paramKey);
@@ -64,7 +53,6 @@ export const DigitalTwinPage = () => {
   }
 
   const visible = useMemo(() => filterEntities(sorted, category, query), [sorted, category, query]);
-  // Thực thể đang chọn bị lọc mất thì chọn thực thể đầu tiên còn hiển thị.
   const selected = visible.find((e) => e.id === selectedId) ?? visible[0];
   const chartMetric = selected
     ? (chartPick?.entityId === selected.id && selected.metrics.find((m) => m.key === chartPick.key)) ||

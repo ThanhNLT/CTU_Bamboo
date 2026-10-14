@@ -2,21 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Sổ cái dùng dữ liệu thật (ADR #46): tệp tải vào chứng từ có bản niêm phong; đối soát theo số chứng từ (máy chủ
-// đọc lại tệp trong kho) và theo tệp (băm trên trình duyệt); chứng từ kết thúc thì tệp vào phòng đọc, mở chỉ đọc
-// được ghi nhật ký truy cập.
+import { expect, test, type Page } from "@playwright/test";
 
-// ===== Thư viện =====
-import { expect, test, type Page } from "@playwright/test"; // Playwright
-
-// ===== Hằng số =====
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const STAMP = Date.now();
 const TITLE = `E2E sổ cái ${STAMP}`;
 const FILE = `bien-ban-${STAMP}.txt`;
 const CONTENT = Buffer.from(`Biên bản bàn giao ${STAMP}\nTệp kiểm thử Sổ cái.\n`);
 
-// ===== Hàm tiện ích =====
 async function login(page: Page, username: string) {
   await page.goto("/login");
   await page.getByRole("button", { name: /Đăng nhập/ }).click();
@@ -26,11 +19,9 @@ async function login(page: Page, username: string) {
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
 }
 
-// ===== Kịch bản kiểm thử =====
 test("đối soát tệp theo số chứng từ và theo tệp, mở hồ sơ lưu trữ ở phòng đọc", async ({ page }) => {
   await login(page, "nv.muahang.dienthoai");
 
-  // Đề nghị nháp + một tệp văn bản tải qua Ổ đĩa (kiểm dịch thật, được niêm phong khi nhận).
   await page.goto("/p/documents/create");
   await page.getByLabel("Tiêu đề").fill(TITLE);
   const row = page.locator("tr.ant-table-row").first();
@@ -58,14 +49,12 @@ test("đối soát tệp theo số chứng từ và theo tệp, mở hồ sơ l�
   await page.locator('input[type="file"]').setInputFiles({ name: FILE, mimeType: "text/plain", buffer: CONTENT });
   await expect(page.getByLabel("Tiến trình tải lên").getByText("Sạch · đã lưu")).toBeVisible();
 
-  // Đối soát theo số chứng từ: khớp, hiện tệp và dòng nhật ký.
   await page.goto(`/d/ledger?doc=${docNo}`);
   const result = page.getByRole("region", { name: "Kết quả đối soát" });
   await expect(result.getByText("Khớp với bản niêm phong")).toBeVisible();
   await expect(result.getByText(FILE)).toBeVisible();
   await expect(page.getByRole("region", { name: "Niêm phong gần đây" }).getByText(docNo).first()).toBeVisible();
 
-  // Đối soát theo tệp: đúng nội dung thì khớp, sửa một byte thì không tìm thấy bản niêm phong.
   await page.getByRole("button", { name: "Tải tệp lên" }).click();
   await page
     .locator('input[type="file"]')
@@ -78,7 +67,6 @@ test("đối soát tệp theo số chứng từ và theo tệp, mở hồ sơ l�
   });
   await expect(result.getByText("Không tìm thấy bản niêm phong")).toBeVisible();
 
-  // Hủy đề nghị: chứng từ kết thúc, tệp vào phòng đọc.
   await page.goto(`/p/documents/show/${id}`);
   await page.getByRole("button", { name: "Hủy" }).click();
   await page.getByPlaceholder("Lý do hủy (bắt buộc)").fill("Kiểm thử Sổ cái");

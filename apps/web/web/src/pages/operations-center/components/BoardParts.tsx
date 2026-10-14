@@ -2,19 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Phần dùng chung của các bảng Quy trình / Sản xuất / Bệnh viện / Chất lượng dữ liệu: trạng thái tải, hàng KPI,
-// bảng số. Định dạng số và dựng KPI ở ../boardFormat.
+import { Alert, Skeleton } from "antd";
+import type { ReactNode } from "react";
 
-// ===== Thư viện =====
-import { Alert, Skeleton } from "antd"; // Ant Design
-import type { ReactNode } from "react"; // React
-
-// ===== Module nội bộ =====
 import { cn } from "../../../utils/cn";
 import type { Kpi } from "../types";
 import { KpiCard } from "./KpiCard";
 
-// ===== Component =====
 export const KpiRow = ({ kpis }: { kpis: Kpi[] }) => (
   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
     {kpis.map((k) => (
@@ -23,7 +17,6 @@ export const KpiRow = ({ kpis }: { kpis: Kpi[] }) => (
   </div>
 );
 
-/** Đang tải lần đầu / lỗi; có dữ liệu rồi thì hiện `children`. */
 export const BoardState = ({
   loading,
   error,
@@ -46,7 +39,6 @@ export const BoardState = ({
   </>
 );
 
-/** Bảng số gọn trong một khối: cột đầu là nhãn, các cột sau canh phải. */
 export const NumTable = <T,>({
   rows,
   columns,

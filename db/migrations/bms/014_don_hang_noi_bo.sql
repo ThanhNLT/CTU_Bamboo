@@ -2,31 +2,18 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 014: Đơn hàng nội bộ giữa các công ty trong tập đoàn (ADR #42, thiết kế CSDL mục 4.4, 4.5).
---
--- Bên mua đặt: đề nghị mua sắm chọn nhà cung cấp nội bộ (mdm.partner.internal_unit_id) đi qua chuỗi duyệt
--- như mọi đề nghị. Duyệt xong, CSDL tự sinh đơn hàng nội bộ (IC-<năm>-<số>, chờ bên bán xác nhận) chép
--- dòng hàng của đề nghị. Người có quyền ic.order.confirm ở công ty bán xác nhận và ghi lô xuất cho từng
--- dòng (bắt buộc với mặt hàng bên bán quản lý theo lô), hoặc từ chối kèm lý do; người đặt hủy được khi đơn
--- còn chờ. Xác nhận xong tự sinh đơn mua (PO-<năm>-<số>) cho bên mua, dòng hàng mang lô nhận về để truy
--- xuất từ lô chip tới lô điện thoại (bước 3 kịch bản demo).
-
 CREATE SCHEMA mfg;
 
 INSERT INTO core.permission (code, description) VALUES
     ('ic.order.read', 'Xem đơn hàng nội bộ bán ra từ đơn vị'),
     ('ic.order.confirm', 'Xác nhận hoặc từ chối đơn hàng nội bộ bán ra từ đơn vị');
 
--- ---------------------------------------------------------------------------
--- Lô sản xuất (tối thiểu cho truy xuất; phả hệ lô, serial, sự cố làm sau)
--- ---------------------------------------------------------------------------
-
 CREATE TABLE mfg.lot (
     tenant_id    uuid NOT NULL REFERENCES core.tenant,
     id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     lot_no       text NOT NULL,
     item_id      uuid NOT NULL,
-    org_unit_id  uuid NOT NULL,                     -- đơn vị sản xuất (nhà máy, phân xưởng)
+    org_unit_id  uuid NOT NULL,
     quantity     numeric(18, 3) NOT NULL CHECK (quantity > 0),
     uom          text NOT NULL,
     produced_on  date NOT NULL,
@@ -45,11 +32,6 @@ CREATE INDEX ON mfg.lot (tenant_id, org_unit_id);
 CREATE TRIGGER lot_touch BEFORE UPDATE ON mfg.lot
 FOR EACH ROW EXECUTE FUNCTION core.touch_updated_at();
 
--- ---------------------------------------------------------------------------
--- Đơn hàng nội bộ: số chứng từ, trạng thái, người xác nhận / từ chối, dòng hàng
--- ---------------------------------------------------------------------------
-
--- DRAFT: bên bán tự lập (chưa dùng); PENDING: chờ bên bán xác nhận; SETTLED: đã đối trừ công nợ (làm sau).
 ALTER TABLE ic.ic_order
     DROP CONSTRAINT ic_order_status_check,
     ADD CHECK (status IN ('DRAFT', 'PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED', 'SETTLED')),
@@ -98,7 +80,7 @@ CREATE TABLE ic.ic_order_item (
     quantity     numeric(18, 3) NOT NULL CHECK (quantity > 0),
     unit_price   numeric(18, 2) NOT NULL CHECK (unit_price >= 0),
     amount       numeric(18, 2) GENERATED ALWAYS AS (round(quantity * unit_price, 2)) STORED,
-    lot_id       uuid,                              -- lô xuất, ghi khi bên bán xác nhận
+    lot_id       uuid,
     UNIQUE (tenant_id, id),
     UNIQUE (order_id, line_no),
     FOREIGN KEY (tenant_id, order_id) REFERENCES ic.ic_order (tenant_id, id) ON DELETE CASCADE,
@@ -109,19 +91,15 @@ CREATE INDEX ON ic.ic_order_item (tenant_id, order_id);
 CREATE INDEX ON ic.ic_order_item (tenant_id, item_id);
 CREATE INDEX ON ic.ic_order_item (tenant_id, lot_id);
 
--- ---------------------------------------------------------------------------
--- Đơn mua của bên mua (tự sinh khi đơn hàng nội bộ được xác nhận)
--- ---------------------------------------------------------------------------
-
 CREATE TABLE proc.purchase_order (
     tenant_id     uuid NOT NULL REFERENCES core.tenant,
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     doc_no        text NOT NULL,
-    request_id    uuid NOT NULL,                    -- đề nghị mua sắm nguồn
+    request_id    uuid NOT NULL,
     ic_order_id   uuid,
     partner_id    uuid NOT NULL,
-    org_unit_id   uuid NOT NULL,                    -- đơn vị mua (của đề nghị)
-    buyer_id      uuid NOT NULL,                    -- người phụ trách: người lập đề nghị
+    org_unit_id   uuid NOT NULL,
+    buyer_id      uuid NOT NULL,
     total_amount  numeric(18, 2) NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
     status        text NOT NULL DEFAULT 'ISSUED' CHECK (status IN ('ISSUED', 'RECEIVED', 'CLOSED', 'CANCELLED')),
     created_at    timestamptz NOT NULL DEFAULT now(),
@@ -165,7 +143,7 @@ CREATE TABLE proc.purchase_order_item (
     quantity     numeric(18, 3) NOT NULL CHECK (quantity > 0),
     unit_price   numeric(18, 2) NOT NULL CHECK (unit_price >= 0),
     amount       numeric(18, 2) GENERATED ALWAYS AS (round(quantity * unit_price, 2)) STORED,
-    lot_id       uuid,                              -- lô nhận về (đơn nội bộ: lô bên bán xuất)
+    lot_id       uuid,
     UNIQUE (tenant_id, id),
     UNIQUE (order_id, line_no),
     FOREIGN KEY (tenant_id, order_id) REFERENCES proc.purchase_order (tenant_id, id) ON DELETE CASCADE,
@@ -175,10 +153,6 @@ CREATE TABLE proc.purchase_order_item (
 CREATE INDEX ON proc.purchase_order_item (tenant_id, order_id);
 CREATE INDEX ON proc.purchase_order_item (tenant_id, item_id);
 CREATE INDEX ON proc.purchase_order_item (tenant_id, lot_id);
-
--- ---------------------------------------------------------------------------
--- Gửi duyệt đề nghị mua nội bộ: không mua của chính công ty mình, phải có dòng hàng
--- ---------------------------------------------------------------------------
 
 CREATE FUNCTION proc.purchase_request_internal_check() RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -202,12 +176,6 @@ CREATE TRIGGER purchase_request_internal_check BEFORE UPDATE OF status ON proc.p
 FOR EACH ROW WHEN (NEW.status = 'PENDING' AND OLD.status IS DISTINCT FROM 'PENDING')
 EXECUTE FUNCTION proc.purchase_request_internal_check();
 
--- ---------------------------------------------------------------------------
--- Sinh đơn hàng nội bộ (đề nghị được duyệt) và đơn mua (đơn được xác nhận)
--- ---------------------------------------------------------------------------
-
--- Đề nghị mua từ nhà cung cấp nội bộ đã duyệt → đơn hàng nội bộ chờ bên bán xác nhận. Đề nghị đã gắn đơn
--- (đơn do bên bán lập trước) thì giữ nguyên.
 CREATE FUNCTION ic.create_from_request(p_request uuid, p_at timestamptz DEFAULT now()) RETURNS uuid
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -231,7 +199,6 @@ BEGIN
     RETURN v_id;
 END $$;
 
--- Đơn mua cho bên mua từ đơn hàng nội bộ đã xác nhận; dòng hàng mang lô nhận về.
 CREATE FUNCTION proc.issue_purchase_order(p_ic_order uuid, p_at timestamptz DEFAULT now()) RETURNS uuid
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -256,10 +223,6 @@ BEGIN
     RETURN v_id;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Bên bán xác nhận / từ chối, bên mua hủy
--- ---------------------------------------------------------------------------
-
 CREATE FUNCTION ic.lock_pending(p_id uuid) RETURNS ic.ic_order
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -275,8 +238,6 @@ BEGIN
     RETURN v_o;
 END $$;
 
--- p_lots: {"<id dòng hàng>": "<id lô>"}. Mặt hàng bên bán có quản lý lô thì dòng phải ghi lô xuất; lô phải
--- của công ty bán, đúng mặt hàng, đang được xuất (RELEASED) và còn đủ số lượng.
 CREATE FUNCTION ic.confirm_order(p_id uuid, p_actor uuid, p_lots jsonb DEFAULT '{}', p_at timestamptz DEFAULT now())
 RETURNS uuid
 LANGUAGE plpgsql AS $$
@@ -324,7 +285,6 @@ BEGIN
         UPDATE ic.ic_order_item SET lot_id = v_lid WHERE id = l.id;
     END LOOP;
 
-    -- Số lượng đã xuất của mỗi lô (đơn đã xác nhận và đơn này) không vượt số lượng lô.
     SELECT t.lot_no, t.quantity, sum(i.quantity) AS used INTO v_over
     FROM ic.ic_order_item i
     JOIN ic.ic_order o ON o.id = i.order_id
@@ -378,10 +338,6 @@ BEGIN
     WHERE id = p_id;
 END $$;
 
--- ---------------------------------------------------------------------------
--- Quyền xem: bên mua (người đặt, người xem được đề nghị nguồn), bên bán (ic.order.read / confirm)
--- ---------------------------------------------------------------------------
-
 CREATE FUNCTION ic.can_read(p_id uuid, p_person uuid, p_at timestamptz DEFAULT now()) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT EXISTS (
@@ -401,7 +357,6 @@ LANGUAGE sql STABLE AS $$
     SELECT ic.can_read(p_row.id, core.session_person(hasura_session))
 $$;
 
--- Computed field cho giao diện: hiện nút xác nhận / từ chối.
 CREATE FUNCTION ic.ic_order_can_confirm(p_row ic.ic_order, hasura_session json) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT p_row.status = 'PENDING'
@@ -452,7 +407,6 @@ BEGIN
     );
 END $$;
 
--- Đề nghị mua nội bộ duyệt xong thì sinh đơn hàng nội bộ trong cùng giao dịch.
 CREATE OR REPLACE FUNCTION wf.set_entity_status(p_type text, p_id uuid, p_status text) RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -471,10 +425,6 @@ BEGIN
         RAISE EXCEPTION 'Loại chứng từ chưa hỗ trợ duyệt: %', p_type;
     END CASE;
 END $$;
-
--- ---------------------------------------------------------------------------
--- Bình luận, thông báo
--- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION collab.entity_tenant(p_type text, p_id uuid) RETURNS uuid
 LANGUAGE plpgsql STABLE AS $$
@@ -530,7 +480,6 @@ ALTER TABLE collab.notification
                         'REQUEST_CANCELLED', 'COMMENT', 'MENTION',
                         'IC_ORDER_NEW', 'IC_ORDER_CONFIRMED', 'IC_ORDER_REJECTED', 'IC_ORDER_CANCELLED'));
 
--- Người xác nhận được đơn bán ra từ công ty (nhận thông báo đơn mới, đơn bị hủy).
 CREATE FUNCTION ic.confirmers(p_seller uuid, p_at timestamptz DEFAULT now()) RETURNS SETOF uuid
 LANGUAGE sql STABLE AS $$
     SELECT DISTINCT g.person_id
@@ -566,16 +515,11 @@ BEGIN
     RETURN NULL;
 END $$;
 
--- Đơn sinh trong giao dịch duyệt đề nghị: dòng hàng chép sau INSERT, nhưng thông báo chỉ cần đầu phiếu.
 CREATE TRIGGER ic_order_notify_insert AFTER INSERT ON ic.ic_order
 FOR EACH ROW EXECUTE FUNCTION collab.ic_order_notify();
 CREATE TRIGGER ic_order_notify_update AFTER UPDATE OF status ON ic.ic_order
 FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION collab.ic_order_notify();
-
--- ---------------------------------------------------------------------------
--- Nhật ký kiểm toán, CDC (lô vào Lakehouse cho truy xuất)
--- ---------------------------------------------------------------------------
 
 CALL audit.enable('ic.ic_order_item');
 CALL audit.enable('proc.purchase_order');

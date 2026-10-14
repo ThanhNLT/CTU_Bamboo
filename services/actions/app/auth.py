@@ -2,27 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Hasura auth webhook (ADR #32): token Keycloak + tenant đã chọn → biến phiên Hasura.
-
-Authorization: Bearer <access token Keycloak>
-x-bamboo-tenant: <tenant id>         (bỏ trống: role `account`, chỉ gọi được my_tenants)
-x-hasura-role: platform_admin        (tùy chọn; cần realm role platform_admin)
-"""
-
-# ===== Thư viện chuẩn =====
 import time
 
-# ===== Thư viện bên ngoài =====
-import jwt  # PyJWT
-import psycopg  # psycopg
+import jwt
+import psycopg
 
 
-# ===== Lỗi (exception) =====
 class AuthError(Exception):
     pass
 
 
-# ===== Lớp =====
 class KeycloakVerifier:
     def __init__(self, jwks_url: str, issuer: str, clients: set[str], jwks_client=None):
         self.jwks = jwks_client or jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=300)
@@ -49,13 +38,6 @@ class KeycloakVerifier:
 
 
 class MembershipCache:
-    """Kết quả tra (tài khoản, tenant) → person.id, giữ trong thời gian ngắn.
-
-    Hasura CE gọi webhook ở mọi request (Cache-Control trong phản hồi chỉ dùng cho hạn
-    kết nối websocket), nên webhook tự cache để không truy vấn CSDL mỗi lần.
-    Gỡ tài khoản khỏi tenant có hiệu lực sau tối đa `ttl` giây.
-    """
-
     def __init__(self, ttl: float = 60.0, max_size: int = 10_000):
         self.ttl = ttl
         self.max_size = max_size
@@ -76,7 +58,6 @@ class MembershipCache:
         return person
 
 
-# ===== Hàm =====
 def session_for(
     conn: psycopg.Connection,
     claims: dict,
@@ -84,9 +65,7 @@ def session_for(
     requested_role: str | None,
     cache: MembershipCache | None = None,
 ) -> dict:
-    """Biến phiên Hasura cho token đã kiểm tra."""
     sub = claims["sub"]
-    # Hạn của kết nối websocket (subscription) theo hạn token.
     ttl = max(0, int(claims["exp"] - time.time()))
     base = {"X-Hasura-Account-Id": sub, "Cache-Control": f"max-age={ttl}"}
     if not tenant:
@@ -104,7 +83,6 @@ def session_for(
 
 
 def my_tenants(conn: psycopg.Connection, session: dict) -> list[dict]:
-    """Các tenant tài khoản được vào (màn hình chọn tenant, ADR #30)."""
     sub = session.get("x-hasura-account-id")
     if not sub:
         return []

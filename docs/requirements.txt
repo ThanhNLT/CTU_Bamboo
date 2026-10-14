@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Công cụ build tài liệu (chỉ dùng trong docs/, tách khỏi constraints.txt của dịch vụ)
 sphinx>=8.1,<9
 myst-parser>=4.0,<5
 furo>=2024.8.6
