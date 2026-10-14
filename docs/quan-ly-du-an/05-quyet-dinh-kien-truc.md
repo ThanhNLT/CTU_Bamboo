@@ -55,6 +55,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [47](#adr-47) | 13/10/2026 | Thiết kế quy trình trên giao diện: BPMN XML là nguồn sự thật (bpmn-js), kiểm tra ở máy chủ, chạy thử bằng deployment sandbox tạm trên Flowable |
 | [48](#adr-48) | 14/10/2026 | Thư viện tri thức: tài liệu vào thư viện qua đề xuất là loại chứng từ mới đi chung chuỗi duyệt; phạm vi đọc tập đoàn / công ty; tìm toàn văn bằng chỉ mục Meilisearch có sẵn |
 | [49](#adr-49) | 14/10/2026 | Trung tâm điều hành tính ở máy chủ từ dữ liệu có sẵn; bệnh viện chỉ số tổng hợp hành chính của tenant con; bản đồ cơ sở gộp vào Trung tâm điều hành |
+| [50](#adr-50) | 14/10/2026 | Bản sao số, Phả hệ dữ liệu, KPI ghim đọc bảng trong CSDL nạp từ tệp demo; ghi nhận sự cố, báo sự cố dữ liệu, ghim KPI là thao tác thật |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -464,6 +465,15 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Người dùng chọn không thêm mô hình vận hành bệnh viện hay kế hoạch sản xuất; số tính được từ chuỗi duyệt, lô, đơn nội bộ đã đủ trả lời "đang tắc ở đâu". Tính ở máy chủ vì cần gộp nhiều bảng, phân vị và số của tenant con mà Hasura không cho đọc chéo tenant. Bản đồ là một trang riêng mà không có dữ liệu thiết bị thì chỉ lặp lại số của Trung tâm điều hành
 - **Đã loại:** Bảng vận hành bệnh viện (khoa, giường, lượt khám) nhập tay trước khi có HIS; bảng kế hoạch / sản lượng; danh mục cơ sở riêng tách khỏi đơn vị (đơn vị đã có cây và quyền); bản đồ nền tải từ Internet (OpenStreetMap) hay GeoServer (thêm dịch vụ cho một khối nhỏ); cho công ty mẹ xem chứng từ của bệnh viện
 - **Giới hạn hiện tại:** Hạn duyệt vẫn tạm 48 giờ cho mọi bước; sản lượng cộng theo mặt hàng (không quy đổi đơn vị tính); bảng Bệnh viện chỉ có chỉ số hành chính tới khi nối HIS; tọa độ nhập tay
+
+(adr-50)=
+## ADR #50: Bản sao số, Phả hệ dữ liệu, KPI ghim đọc bảng trong CSDL nạp từ tệp demo; ghi nhận sự cố, báo sự cố dữ liệu, ghim KPI là thao tác thật
+
+- **Ngày:** 14/10/2026
+- **Quyết định:** Chưa có context broker NGSI-LD, OpenMetadata / Soda hay kho KPI, nên ba trang nhóm 5 đọc bảng trong CSDL `bms` (migration 022), nạp từ tệp demo `services/seed/data/demo` bằng `app.demo_load` (seed gọi khi chưa có; `--refresh` nạp lại), mọi mốc thời gian dời theo (bây giờ − REF). Schema `iot`: mô hình thiết bị và ngưỡng, cơ sở gắn đơn vị, thực thể, chuỗi đo (`iot.measurement`, trigger theo câu lệnh giữ giá trị mới nhất trong `iot.entity.state`), sự cố vượt ngưỡng; **Ghi nhận sự cố** (Action `iot_acknowledge`, một lần, bắt buộc hướng xử lý, có nhật ký kiểm toán). Schema `meta`: nút / cạnh phả hệ kèm ánh xạ cột, kiểm tra chất lượng, lần chạy, **sự cố dữ liệu** người dùng báo (`meta.data_issue`). Schema `kpi`: định nghĩa, chuỗi giá trị theo tenant, **ghim** của từng người (tối đa 6, Hasura chỉ cho thấy và sửa ghim của chính mình). Đọc qua Hasura trong tenant; mô hình thiết bị và siêu dữ liệu phả hệ dùng chung nền tảng. Không đưa ba schema vào CDC. Trang Tìm kiếm bỏ chỉ mục mẫu, tìm thật thêm thiết bị, hồ sơ tiếp nhận / đơn nội bộ, tài sản dữ liệu
+- **Lý do:** Giao diện và quyền được kiểm thử trên dữ liệu thật trong CSDL; khi có nguồn thật (Scorpio, OpenMetadata, job KPI) chỉ thay bộ nạp, giữ bảng và trang. Trạng thái "Nguy cấp" tính từ sự cố nghiêm trọng chưa ghi nhận nên thao tác ghi nhận có tác dụng thấy được
+- **Đã loại:** Giữ dữ liệu minh họa trong mã giao diện (không ghi được, không phân quyền); dựng Scorpio / OpenMetadata ngay (thêm nhiều dịch vụ cho dữ liệu demo); tính KPI trực tiếp từ chuỗi duyệt cho mọi KPI (KPI thiết bị chưa có nguồn)
+- **Giới hạn hiện tại:** Dữ liệu là dữ liệu demo, không tự sinh thêm theo thời gian (chạy `--refresh` để làm mới); chuỗi đo chỉ 24 giờ; sự cố dữ liệu chưa có quy trình xử lý (chỉ ghi nhận)
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
