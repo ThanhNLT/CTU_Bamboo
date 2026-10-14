@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { App, Button, Checkbox, Drawer, Form, Input } from "antd";
-import { KeyRound, Plus, ShieldCheck } from "lucide-react";
+import { KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Dot, smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui";
-import { adminSave, createAccounts, type AccountResult } from "../shared/api";
+import { adminSave, createAccounts, deletePerson, type AccountResult } from "../shared/api";
 import {
   ASSIGNMENT_LABEL,
   assignmentsOf,
@@ -32,6 +32,7 @@ export const PersonDrawer = ({
   onAssign,
   onEndAssignment,
   onAccounts,
+  onDeleted,
 }: {
   person?: Person;
   org: OrgData;
@@ -40,11 +41,12 @@ export const PersonDrawer = ({
   onAssign: (personId: string) => void;
   onEndAssignment: (a: Assignment, p: Position) => void;
   onAccounts: (results: AccountResult[]) => void;
+  onDeleted: () => void;
 }) => {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [info] = Form.useForm<{ full_name: string; employee_code?: string }>();
   const [account] = Form.useForm<{ username: string; email?: string; link_existing?: boolean }>();
-  const [busy, setBusy] = useState<"info" | "account">();
+  const [busy, setBusy] = useState<"info" | "account" | "delete">();
 
   useEffect(() => {
     if (!person) return;
@@ -92,6 +94,35 @@ export const PersonDrawer = ({
       setBusy(undefined);
     }
   };
+
+  const holding = list.some(({ a }) => a.period.active);
+  const remove = () =>
+    modal.confirm({
+      title: `Xóa hẳn ${person.full_name}?`,
+      content:
+        "Chỉ xóa được người chưa có dữ liệu nghiệp vụ (chứng từ, duyệt, tệp, nhật ký…). Lịch sử bổ nhiệm đã kết thúc và cấp quyền riêng của người này bị xóa theo; tài khoản đăng nhập bị vô hiệu hóa nếu không còn dùng ở công ty khác trong tập đoàn.",
+      okText: "Xóa hẳn",
+      okButtonProps: { danger: true },
+      cancelText: "Không",
+      onOk: async () => {
+        setBusy("delete");
+        try {
+          const account = await deletePerson(person.id);
+          message.success(
+            account === "disabled"
+              ? "Đã xóa người và vô hiệu hóa tài khoản đăng nhập."
+              : account === "kept"
+                ? "Đã xóa người; tài khoản vẫn dùng ở công ty khác trong tập đoàn."
+                : "Đã xóa người.",
+          );
+          onDeleted();
+        } catch (e) {
+          message.error((e as Error).message);
+        } finally {
+          setBusy(undefined);
+        }
+      },
+    });
 
   return (
     <Drawer open title={person.full_name} width={480} onClose={onClose} destroyOnHidden>
@@ -181,6 +212,22 @@ export const PersonDrawer = ({
           </li>
         ))}
       </ul>
+
+      <SectionTitle>Xóa người</SectionTitle>
+      <p className="mb-3 text-[12.5px] text-muted">
+        {holding
+          ? "Người này còn giữ vị trí: kết thúc bổ nhiệm trước khi xóa."
+          : "Dùng khi thêm nhầm. Người đã có dữ liệu nghiệp vụ không xóa được, chỉ kết thúc bổ nhiệm để ngừng hoạt động."}
+      </p>
+      <Button
+        danger
+        icon={<Trash2 className="h-3.5 w-3.5" aria-hidden />}
+        disabled={holding}
+        loading={busy === "delete"}
+        onClick={remove}
+      >
+        Xóa người
+      </Button>
     </Drawer>
   );
 };

@@ -932,6 +932,14 @@ def build(conn: psycopg.Connection) -> dict:
                 timeout=60,
             ),
             _action(
+                "delete_person",
+                "mutation",
+                [("id", "uuid!")],
+                "AdminDeleteResult!",
+                [ROLE, ADMIN_ROLE],
+                "Xóa hẳn người chưa có dữ liệu nghiệp vụ; vô hiệu hóa tài khoản nếu không còn dùng ở tenant khác",
+            ),
+            _action(
                 "admin_import",
                 "mutation",
                 [
@@ -1496,6 +1504,14 @@ def build(conn: psycopg.Connection) -> dict:
                 {
                     "name": "AdminSaveResult",
                     "fields": [{"name": "entity", "type": "AdminEntity!"}, {"name": "id", "type": "uuid!"}],
+                },
+                {
+                    "name": "AdminDeleteResult",
+                    "fields": [
+                        {"name": "entity", "type": "AdminEntity!"},
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "account", "type": "String!"},
+                    ],
                 },
                 {
                     "name": "AdminAccountResult",
