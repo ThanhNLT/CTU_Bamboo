@@ -4,14 +4,16 @@
 
 // Phả hệ dữ liệu (Dữ liệu số): sơ đồ 5 tầng Nguồn → Luồng sự kiện → Hồ dữ liệu → Phục vụ → Tiêu thụ (trái ~70%)
 // và chi tiết nút đang chọn với kiểm tra chất lượng Soda (phải ~30%). Trạng thái lỗi / bị ảnh hưởng tự lan theo đồ thị.
-// Mở thẳng một tài sản: /d/lineage?asset=mart.approval_daily. Dữ liệu minh họa ở ./mock.
+// Mở thẳng một tài sản: /d/lineage?asset=lakehouse.gold.approval_daily. Dữ liệu: bảng meta.* (./api, ADR #50);
+// báo sự cố và báo chủ sở hữu ghi meta.data_issue.
 
 // ===== Thư viện =====
-import { App } from "antd"; // Ant Design
+import { Alert, App, Spin } from "antd"; // Ant Design
 import { useMemo, useState } from "react"; // React
 import { useSearchParams } from "react-router"; // React Router
 
 // ===== Module nội bộ =====
+import { reportIssue, useLineage, type LineageData } from "./api";
 import { DataLineageHeader } from "./components/DataLineageHeader";
 import { DataLineageToolbar } from "./components/DataLineageToolbar";
 import { LineageGraphMock } from "./components/LineageGraphMock";
@@ -28,29 +30,48 @@ import {
   reach,
   scopeOf,
 } from "./graph";
-import { DEFAULT_NODE_ID, LINEAGE_EDGES, LINEAGE_NODES, LINEAGE_UPDATED_AT, RECENT_RUNS } from "./mock";
 import type { Direction, LineageNode } from "./types";
 
 // ===== Hằng số =====
-const STATUSES = computeStatuses(LINEAGE_NODES, LINEAGE_EDGES);
-const FAILURES = failureSummaries(LINEAGE_NODES, LINEAGE_EDGES);
-const BY_ID = new Map(LINEAGE_NODES.map((n) => [n.id, n]));
-const DEFAULT_NODE = BY_ID.get(DEFAULT_NODE_ID) as LineageNode;
+/** Nút mở mặc định: nút có kiểm tra lỗi đầu tiên, không có thì bảng tổng hợp duyệt. */
+const PREFERRED = "gold-approval-daily";
+const SEVERITY = { wrong: "high", missing: "high", late: "medium", other: "low" } as const;
+const KIND_LABEL: Record<string, string> = {
+  wrong: "Dữ liệu sai",
+  missing: "Thiếu / rỗng dữ liệu",
+  late: "Cập nhật trễ",
+  other: "Khác",
+};
 
 // ===== Hàm tiện ích =====
 const isNode = (n: LineageNode | undefined): n is LineageNode => n != null;
 
-/** `?asset=` nhận id nút hoặc tên đầy đủ (fqn), ví dụ mart.approval_daily. */
-const nodeFromParam = (asset: string | null) =>
-  asset ? LINEAGE_NODES.find((n) => n.id === asset || n.fqn.toLowerCase() === asset.toLowerCase())?.id : undefined;
+/** `?asset=` nhận id nút hoặc tên đầy đủ (fqn), ví dụ lakehouse.gold.approval_daily. */
+const nodeFromParam = (nodes: LineageNode[], asset: string | null) =>
+  asset ? nodes.find((n) => n.id === asset || n.fqn.toLowerCase() === asset.toLowerCase())?.id : undefined;
 
 // ===== Component =====
 export const DataLineagePage = () => {
+  const lineage = useLineage();
+  if (lineage.error) return <Alert type="error" showIcon message="Không tải được phả hệ" description={lineage.error} />;
+  if (!lineage.data) return <Spin className="m-10" />;
+  if (lineage.data.nodes.length === 0)
+    return <Alert type="info" showIcon message="Chưa có dữ liệu phả hệ (chạy python -m app.demo_load)." />;
+  return <LineageView data={lineage.data} />;
+};
+
+const LineageView = ({ data }: { data: LineageData }) => {
   const { message } = App.useApp();
   const [params] = useSearchParams();
   const asset = params.get("asset");
+  const { nodes, edges, runs, updatedAt } = data;
+  const statuses = useMemo(() => computeStatuses(nodes, edges), [nodes, edges]);
+  const failures = useMemo(() => failureSummaries(nodes, edges), [nodes, edges]);
+  const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
+  const defaultNodeId = byId.has(PREFERRED) ? PREFERRED : nodes[0].id;
+  const defaultNode = byId.get(defaultNodeId) as LineageNode;
 
-  const [selectedId, setSelectedId] = useState(() => nodeFromParam(asset) ?? DEFAULT_NODE_ID);
+  const [selectedId, setSelectedId] = useState(() => nodeFromParam(nodes, asset) ?? defaultNodeId);
   const [direction, setDirection] = useState<Direction>("both");
   const [depth, setDepth] = useState(3);
   const [columnMode, setColumnMode] = useState(false);
@@ -62,30 +83,30 @@ export const DataLineagePage = () => {
   const [seenAsset, setSeenAsset] = useState(asset);
   if (seenAsset !== asset) {
     setSeenAsset(asset);
-    const id = nodeFromParam(asset);
+    const id = nodeFromParam(nodes, asset);
     if (id) setSelectedId(id);
   }
 
-  const node = BY_ID.get(selectedId) ?? DEFAULT_NODE;
-  const status = STATUSES.get(node.id) ?? "healthy";
+  const node = byId.get(selectedId) ?? defaultNode;
+  const status = statuses.get(node.id) ?? "healthy";
 
-  const inScope = useMemo(() => scopeOf(LINEAGE_EDGES, node.id, direction, depth), [node.id, direction, depth]);
-  const matches = useMemo(() => LINEAGE_NODES.filter((n) => query.trim() && matchesQuery(n, query)), [query]);
+  const inScope = useMemo(() => scopeOf(edges, node.id, direction, depth), [edges, node.id, direction, depth]);
+  const matches = useMemo(() => nodes.filter((n) => query.trim() && matchesQuery(n, query)), [nodes, query]);
 
   // Tác động phía sau (mọi bậc) và nguồn lỗi phía trước gây "Bị ảnh hưởng".
   const impacts = useMemo(
-    () => [...reach(LINEAGE_EDGES, node.id, "down").keys()].map((id) => BY_ID.get(id)).filter(isNode),
-    [node.id],
+    () => [...reach(edges, node.id, "down").keys()].map((id) => byId.get(id)).filter(isNode),
+    [edges, byId, node.id],
   );
   const causes = useMemo(
     () =>
       status === "affected"
-        ? [...reach(LINEAGE_EDGES, node.id, "up").keys()]
-            .map((id) => BY_ID.get(id))
+        ? [...reach(edges, node.id, "up").keys()]
+            .map((id) => byId.get(id))
             .filter(isNode)
-            .filter((n) => STATUSES.get(n.id) === "failed")
+            .filter((n) => statuses.get(n.id) === "failed")
         : [],
-    [node.id, status],
+    [edges, byId, statuses, node.id, status],
   );
 
   const select = (id: string) => setSelectedId(id);
@@ -99,21 +120,32 @@ export const DataLineagePage = () => {
     );
   };
 
-  const notifyOwner = () => {
-    const fails = failedChecks(node).length;
-    setNotified((prev) => new Set(prev).add(node.id));
-    message.success(
-      fails
-        ? `Đã báo ${node.owner} về ${fails} kiểm tra lỗi trên ${node.fqn}.`
-        : `Đã gửi thông báo tới ${node.owner} về ${node.fqn}.`,
-    );
+  const notifyOwner = async () => {
+    const fails = failedChecks(node);
+    try {
+      const code = await reportIssue(
+        node.id,
+        fails.length ? "high" : "medium",
+        fails.length
+          ? `Báo ${node.owner}: ${fails.map((c) => `${c.rule} — ${c.detail}`).join("; ")}`
+          : `Báo ${node.owner} kiểm tra ${node.fqn}.`,
+      );
+      setNotified((prev) => new Set(prev).add(node.id));
+      message.success(
+        fails.length
+          ? `Đã báo ${node.owner} về ${fails.length} kiểm tra lỗi trên ${node.fqn} (${code}).`
+          : `Đã gửi thông báo tới ${node.owner} về ${node.fqn} (${code}).`,
+      );
+    } catch (e) {
+      message.error((e as Error).message);
+    }
   };
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
       <DataLineageHeader openMetadataHref={openMetadataUrl(node.fqn)} onReport={() => setReporting(true)} />
 
-      <QualityAlertBanner failures={FAILURES} onView={viewChecks} />
+      <QualityAlertBanner failures={failures} onView={viewChecks} />
 
       <DataLineageToolbar
         query={query}
@@ -132,20 +164,20 @@ export const DataLineagePage = () => {
         <div className="flex min-w-0 flex-col gap-4">
           <LineageGraphMock
             focus={node}
-            nodes={LINEAGE_NODES}
-            edges={LINEAGE_EDGES}
-            statuses={STATUSES}
+            nodes={nodes}
+            edges={edges}
+            statuses={statuses}
             inScope={inScope}
             matches={(n) => matchesQuery(n, query)}
             query={query}
             selectedId={node.id}
             direction={direction}
             columnMode={columnMode}
-            updatedAt={LINEAGE_UPDATED_AT}
+            updatedAt={updatedAt}
             onSelect={select}
             onDirectionChange={setDirection}
           />
-          <RecentRunsTable runs={RECENT_RUNS} selectedNodeId={node.id} onSelectNode={select} />
+          <RecentRunsTable runs={runs} selectedNodeId={node.id} onSelectNode={select} />
         </div>
 
         <NodeQualityPanel
@@ -154,24 +186,34 @@ export const DataLineagePage = () => {
           status={status}
           causes={causes}
           impacts={impacts}
-          statuses={STATUSES}
+          statuses={statuses}
           notified={notified.has(node.id)}
-          onNotify={notifyOwner}
+          onNotify={() => void notifyOwner()}
           onSelect={select}
         />
       </div>
 
       <ReportIncidentModal
         open={reporting}
-        nodes={LINEAGE_NODES}
+        nodes={nodes}
         defaultId={node.id}
         onCancel={() => setReporting(false)}
-        onSubmit={(v) => {
-          const target = BY_ID.get(v.nodeId);
-          setReporting(false);
-          message.success(
-            `Đã tạo sự cố dữ liệu DQ-2026-0118 cho ${target?.fqn ?? v.nodeId} · đã báo ${target?.owner ?? "chủ sở hữu"}.`,
-          );
+        onSubmit={async (v) => {
+          const target = byId.get(v.nodeId);
+          try {
+            const kind = v.kind as keyof typeof SEVERITY;
+            const code = await reportIssue(
+              v.nodeId,
+              SEVERITY[kind] ?? "low",
+              `[${KIND_LABEL[v.kind] ?? v.kind}] ${v.description.trim()}`,
+            );
+            setReporting(false);
+            message.success(
+              `Đã tạo sự cố dữ liệu ${code} cho ${target?.fqn ?? v.nodeId} · đã báo ${target?.owner ?? "chủ sở hữu"}.`,
+            );
+          } catch (e) {
+            message.error((e as Error).message);
+          }
         }}
       />
     </div>

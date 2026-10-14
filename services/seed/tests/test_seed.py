@@ -268,3 +268,22 @@ def test_bo_sung_ban_da_cai(conn):
             account_id("cdo"),
             uid("TDX", "unit", "TDX"),
         )
+
+
+def test_du_lieu_nhom5(conn):
+    """Bản sao số, phả hệ, KPI ghim nạp từ tệp demo (ADR #50), mốc thời gian dời về gần hiện tại."""
+    from app import demo_load
+
+    assert one(conn, "SELECT count(*) FROM iot.entity") == 26
+    assert one(conn, "SELECT count(*) FROM iot.measurement") > 40_000
+    assert one(conn, "SELECT max(observed_at) > now() - interval '1 day' FROM iot.measurement")
+    assert one(conn, "SELECT state ? 'particles05' FROM iot.entity WHERE code = 'CR-02'")
+    assert one(conn, "SELECT count(*) FROM meta.lineage_node") == 32
+    assert one(conn, "SELECT count(*) FROM meta.quality_check WHERE NOT passed") == 1
+    tgd = next(u for u in DEMO_USERS if u.username == "tgd")
+    assert one(conn, "SELECT count(*) FROM kpi.pin WHERE person_id = %s", tgd.id) == 4
+    # Đã nạp thì không nạp lại; --refresh xóa rồi nạp lại không trùng.
+    assert demo_load.load(conn) is False
+    demo_load.clear(conn)
+    assert demo_load.load(conn) is True
+    assert one(conn, "SELECT count(*) FROM iot.entity") == 26

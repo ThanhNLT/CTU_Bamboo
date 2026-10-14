@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ===== Thư viện =====
-import { FilePlus2, FileText, Sparkles } from "lucide-react"; // Lucide React
-import { Link } from "react-router"; // React Router
+import { CheckCircle2, ClipboardCheck, Sparkles } from "lucide-react"; // Lucide React
 
 // ===== Module nội bộ =====
 import { Dot, primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
-import type { EntityStatus, TwinEntity } from "../types";
+import type { EntityStatus, Incident, TwinEntity } from "../types";
 import { ENTITY_STATUS } from "../utils";
 
 // ===== Hằng số =====
@@ -21,18 +20,18 @@ const TAG_CLASS: Record<EntityStatus, string> = {
 };
 
 // ===== Component =====
-/** Thẻ đầu cột phải: loại + URN NGSI-LD, tên, trạng thái và hai thao tác chính. */
+/** Thẻ đầu cột phải: loại + URN NGSI-LD, tên, trạng thái, hỏi trợ lý và ghi nhận sự cố nghiêm trọng. */
 export const EntityHeader = ({
   entity,
-  incidentCode,
+  pending,
   onAsk,
-  onCreateIncident,
+  onAcknowledge,
 }: {
   entity: TwinEntity;
-  /** Mã hồ sơ sự cố đã tạo cho thực thể này (nếu có). */
-  incidentCode?: string;
+  /** Sự cố nghiêm trọng chưa ghi nhận (nếu có). */
+  pending?: Incident;
   onAsk: () => void;
-  onCreateIncident: () => void;
+  onAcknowledge: (i: Incident) => void;
 }) => {
   const status = ENTITY_STATUS[entity.status];
   return (
@@ -60,16 +59,16 @@ export const EntityHeader = ({
           <Sparkles className="h-4 w-4 text-bamboo-600" aria-hidden />
           Hỏi trợ lý
         </button>
-        {incidentCode ? (
-          <Link to="/p/records" className={secondaryButtonClass} title="Mở danh sách hồ sơ">
-            <FileText className="h-4 w-4 text-bamboo-600" aria-hidden />
-            {incidentCode}
-          </Link>
-        ) : (
-          <button type="button" onClick={onCreateIncident} className={primaryButtonClass}>
-            <FilePlus2 className="h-4 w-4" aria-hidden />
-            Tạo hồ sơ sự cố
+        {pending ? (
+          <button type="button" onClick={() => onAcknowledge(pending)} className={primaryButtonClass}>
+            <ClipboardCheck className="h-4 w-4" aria-hidden />
+            Ghi nhận sự cố {pending.code}
           </button>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
+            <CheckCircle2 className="h-4 w-4 text-bamboo-600" aria-hidden />
+            Không có sự cố chờ ghi nhận
+          </span>
         )}
       </div>
     </header>

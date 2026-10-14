@@ -20,6 +20,8 @@ COPY ${APP_DIR}/app ./app
 # Biên dịch sẵn bytecode (PYTHONDONTWRITEBYTECODE chặn ghi lúc chạy): container khởi động không phải dịch lại.
 RUN python -m compileall -q app
 COPY platform /repo/platform
+# Tệp dữ liệu demo nhóm 5 (ADR #50) cho job seed; nhỏ (~2,5 MB) nên chép chung, giữ một Dockerfile.
+COPY services/seed/data /repo/services/seed/data
 # Chạy bằng người dùng không đặc quyền. Job openbao-init (ghi volume secret) và kiểm thử
 # (cài gói) chạy bằng root, khai báo trong docker-compose.yml.
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
