@@ -274,6 +274,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "array_relationships": [
@@ -456,6 +470,406 @@
         {
           "table": {
             "schema": "collab",
+            "name": "kb_document"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "supersedes",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "supersedes_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "kb_documents_by_supersedes",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "supersedes_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "comments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "comment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "attachments",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "collab",
+                  "name": "kb_document_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "requester_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "requester_position_id",
+                  "title",
+                  "category",
+                  "scope",
+                  "summary",
+                  "toc",
+                  "effective_date",
+                  "supersedes_id"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {},
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "requester_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "requester_position_id",
+                  "title",
+                  "category",
+                  "scope",
+                  "summary",
+                  "toc",
+                  "effective_date",
+                  "supersedes_id"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_in": [
+                          "DRAFT",
+                          "RETURNED"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "status": {
+                    "_in": [
+                      "DRAFT",
+                      "RETURNED"
+                    ]
+                  }
+                },
+                "columns": [
+                  "title",
+                  "category",
+                  "scope",
+                  "summary",
+                  "toc",
+                  "effective_date",
+                  "supersedes_id"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_in": [
+                          "DRAFT",
+                          "RETURNED"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "status": {
+                    "_in": [
+                      "DRAFT",
+                      "RETURNED"
+                    ]
+                  }
+                },
+                "columns": [
+                  "title",
+                  "category",
+                  "scope",
+                  "summary",
+                  "toc",
+                  "effective_date",
+                  "supersedes_id"
+                ]
+              }
+            }
+          ],
+          "delete_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_eq": "DRAFT"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "requester_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "status": {
+                        "_eq": "DRAFT"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "collab",
             "name": "notification"
           },
           "object_relationships": [
@@ -538,6 +952,20 @@
                   "remote_table": {
                     "schema": "ic",
                     "name": "ic_order"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
                   },
                   "column_mapping": {
                     "entity_id": "id"
@@ -1038,53 +1466,22 @@
             "schema": "core",
             "name": "org_unit"
           },
-          "object_relationships": [
-            {
-              "name": "tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "parent",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "org_unit"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "parent_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "unit_type",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "catalog_item"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "unit_type_id": "id"
-                  }
-                }
-              }
-            }
-          ],
           "array_relationships": [
+            {
+              "name": "kb_documents",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
             {
               "name": "children",
               "using": {
@@ -1281,6 +1678,52 @@
               }
             }
           ],
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "parent",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "parent_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "unit_type",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "catalog_item"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "unit_type_id": "id"
+                  }
+                }
+              }
+            }
+          ],
           "select_permissions": [
             {
               "role": "user",
@@ -1365,6 +1808,21 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "author_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "kb_documents",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_id"
                   }
                 }
               }
@@ -1704,6 +2162,21 @@
             "name": "position"
           },
           "array_relationships": [
+            {
+              "name": "kb_documents",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_position_id"
+                  }
+                }
+              }
+            },
             {
               "name": "assignments",
               "using": {
@@ -5037,6 +5510,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "computed_fields": [
@@ -5331,6 +5818,20 @@
                   "remote_table": {
                     "schema": "hr",
                     "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
                   },
                   "column_mapping": {
                     "entity_id": "id"
@@ -5800,6 +6301,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "select_permissions": [
@@ -6159,6 +6674,164 @@
         }
       ],
       "comment": "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)"
+    },
+    {
+      "name": "submit_kb_document",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/submit_kb_document",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "KbActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi duyệt đề xuất tài liệu thư viện (người lập, ADR #48)"
+    },
+    {
+      "name": "cancel_kb_document",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_kb_document",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "KbActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người lập hủy đề xuất tài liệu chưa duyệt xong"
+    },
+    {
+      "name": "retire_kb_document",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/retire_kb_document",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "KbActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Ngừng hiệu lực tài liệu đang xuất bản (cần kb.document.manage)"
+    },
+    {
+      "name": "kb_reindex",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/kb_reindex",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "KbActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Nạp lại chỉ mục tìm kiếm cho tài liệu và tệp của nó (cần kb.document.manage)"
+    },
+    {
+      "name": "kb_library",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/kb_library",
+        "arguments": [],
+        "output_type": "KbLibrary!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thư viện tri thức: tài liệu đang hiệu lực người gọi đọc được, trạng thái chỉ mục, phiên bản trước"
     },
     {
       "name": "process_models",
@@ -7365,6 +8038,9 @@
           },
           {
             "value": "attachment"
+          },
+          {
+            "value": "kb_document"
           }
         ]
       },
@@ -7706,6 +8382,18 @@
             }
           },
           {
+            "name": "kb_document",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "collab",
+              "name": "kb_document"
+            },
+            "field_mapping": {
+              "entity_id": "id"
+            }
+          },
+          {
             "name": "attachment",
             "type": "object",
             "source": "bms",
@@ -7944,6 +8632,121 @@
           {
             "name": "masked",
             "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "KbActionResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "KbDocument",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "doc_no",
+            "type": "String!"
+          },
+          {
+            "name": "title",
+            "type": "String!"
+          },
+          {
+            "name": "category",
+            "type": "String!"
+          },
+          {
+            "name": "scope",
+            "type": "String!"
+          },
+          {
+            "name": "summary",
+            "type": "String"
+          },
+          {
+            "name": "toc",
+            "type": "[String!]!"
+          },
+          {
+            "name": "version",
+            "type": "Int!"
+          },
+          {
+            "name": "supersedes_id",
+            "type": "uuid"
+          },
+          {
+            "name": "effective_date",
+            "type": "String"
+          },
+          {
+            "name": "published_at",
+            "type": "String"
+          },
+          {
+            "name": "unit",
+            "type": "String!"
+          },
+          {
+            "name": "issuer",
+            "type": "String!"
+          },
+          {
+            "name": "requester",
+            "type": "String!"
+          },
+          {
+            "name": "my_company",
+            "type": "Boolean"
+          },
+          {
+            "name": "index_status",
+            "type": "String!"
+          },
+          {
+            "name": "indexed_at",
+            "type": "String"
+          },
+          {
+            "name": "index_error",
+            "type": "String"
+          },
+          {
+            "name": "can_manage",
+            "type": "Boolean!"
+          },
+          {
+            "name": "files",
+            "type": "jsonb!"
+          },
+          {
+            "name": "previous",
+            "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "KbLibrary",
+        "fields": [
+          {
+            "name": "can_propose",
+            "type": "Boolean!"
+          },
+          {
+            "name": "documents",
+            "type": "[KbDocument!]!"
           }
         ]
       },

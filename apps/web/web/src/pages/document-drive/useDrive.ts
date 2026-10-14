@@ -66,6 +66,7 @@ type Row = {
 const ENTITY_TYPE: Partial<Record<DocKind, string>> = {
   purchase_request: "proc.purchase_request",
   onboarding_request: "hr.onboarding_request",
+  kb_document: "collab.kb_document",
 };
 
 const SCAN: Record<string, ScanResult> = {
