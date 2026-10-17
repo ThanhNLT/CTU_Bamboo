@@ -215,6 +215,12 @@ Migration 014, [ADR #42](#adr-42).
 
 **Index khóa ngoại.** Mọi khóa ngoại nghiệp vụ có index. `core.v_unindexed_foreign_key` liệt kê khóa ngoại thiếu index; `make test-db` báo lỗi nếu view này có dòng.
 
+### 4.10. Trí tuệ số: tác tử AI và lượt hỏi (migration 024, 025, [ADR #51](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-51))
+
+- `core.ai_agent`: tác tử AI của tenant: `model` (tên mô hình trong Ollama), `status` (`active` | `inactive`), `guardrail_config` (`scope_guard`, `pii_guard`, `prompt_guard`, `think`), `tool_list` (`search_docs`, `cite`). Ghi qua Action `ai_agent_register/update/unregister`, cần `core.ai.manage` (view `core.v_ai_admin`); Hasura chỉ cho người có quyền này đọc.
+- `core.ai_question`: một **lượt hỏi**. `question` đã che PII khi bật `pii_guard`; `status` `queued` → `running` → `done` | `refused` | `error`; `answer` worker ghi dần; `citations` jsonb `[{n, kb_document_id, doc_no, title, attachment_id, file_name, heading, position}]`; `guard` (`scope` | `prompt`) khi bị chặn; token và mốc thời gian để tính số liệu. Index `(status, created_at)` cho hàng đợi, `(tenant_id, person_id, created_at desc)` cho lịch sử. Trigger `NOTIFY ai_question` khi thêm lượt chờ. Kiểm toán bằng trigger `audit_log` riêng: `INSERT`, `DELETE`, `UPDATE OF status` (không ghi mỗi lần câu trả lời dài thêm). Hasura: người dùng chỉ đọc (và subscription) lượt hỏi của chính mình, không ghi trực tiếp.
+- `search.pending_chunk`: hàng đợi nạp đoạn vào chỉ mục vector, mỗi tài liệu thư viện một dòng, cùng cột với `search.pending` (`dirty`, `attempts`, `next_attempt_at`, `last_error`). `search.mark_chunk()` gọi từ trigger tài liệu, tệp đính kèm và `kb_reindex`; `search.mark_all_chunks()` để nạp bù khi chỉ mục đoạn trống.
+
 ## 5. Tích hợp
 
 - **Keycloak chỉ xác thực** ([ADR #6](#adr-6), [ADR #32](#adr-32)). Access token chỉ cần `sub`; `core.person.idp_subject` = `sub`. Tài khoản demo: id Keycloak = `sub` = `person.id` ở tenant giữ chính = `uuid5(DEMO_NS, 'account:<tên đăng nhập>')`; tenant id = `uuid5(DEMO_NS, 'tenant:<mã>')` ([ADR #23](#adr-23)). Danh sách ở `services/seed/app/demo.py`, dùng chung cho seed (`python -m app.seed`) và realm (`python -m app.realm`, `make realm`).

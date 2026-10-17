@@ -35,6 +35,12 @@ IS_ADMIN = {
         "_where": {"_and": [{"person_id": {"_eq": ME}}, {"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}]},
     }
 }
+IS_AI_ADMIN = {
+    "_exists": {
+        "_table": {"schema": "core", "name": "v_ai_admin"},
+        "_where": {"_and": [{"person_id": {"_eq": ME}}, {"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}]},
+    }
+}
 ADMIN_READ = {
     ("core", "role"),
     ("core", "role_permission"),
@@ -101,6 +107,9 @@ SELECT_FILTER = {
     ("meta", "quality_check"): {},
     ("meta", "pipeline_run"): {},
     ("kpi", "pin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    ("core", "v_ai_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    ("core", "ai_agent"): {"_and": [TENANT, IS_AI_ADMIN]},
+    ("core", "ai_question"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     **{key: {"_and": [TENANT, IS_ADMIN]} for key in ADMIN_READ},
     ("proc", "purchase_request_item"): {"_and": [TENANT, {"request": {"can_read": {"_eq": True}}}]},
     ("ic", "ic_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
@@ -985,6 +994,75 @@ def build(conn: psycopg.Connection) -> dict:
                 [ROLE, ADMIN_ROLE],
                 "Tệp mẫu XLSX để nhập hàng loạt",
             ),
+            _action(
+                "ai_ask",
+                "mutation",
+                [("agent_id", "uuid!"), ("question", "String!"), ("kb_document_id", "uuid")],
+                "AiAskResult!",
+                [ROLE, ADMIN_ROLE],
+                "Gửi một lượt hỏi Trợ lý RAG; theo dõi câu trả lời qua subscription core_ai_question_by_pk (ADR #51)",
+            ),
+            _action(
+                "ai_assistants",
+                "query",
+                [],
+                "AiAssistants!",
+                [ROLE, ADMIN_ROLE],
+                "Trợ lý AI đang hoạt động người gọi hỏi được, và AI cục bộ có đang bật không",
+            ),
+            _action(
+                "ai_models",
+                "query",
+                [],
+                "AiModels!",
+                [ROLE, ADMIN_ROLE],
+                "Mô hình đang có trong Ollama (cần core.ai.manage)",
+            ),
+            _action(
+                "ai_agent_stats",
+                "query",
+                [("days", "Int")],
+                "[AiAgentStats!]!",
+                [ROLE, ADMIN_ROLE],
+                "Số liệu lượt hỏi theo tác tử AI, không kèm nội dung (cần core.ai.manage)",
+            ),
+            _action(
+                "ai_agent_register",
+                "mutation",
+                [
+                    ("name", "String!"),
+                    ("model", "String!"),
+                    ("status", "String"),
+                    ("guardrail_config", "jsonb"),
+                    ("tool_list", "jsonb"),
+                ],
+                "AiAgent!",
+                [ROLE, ADMIN_ROLE],
+                "Đăng ký tác tử AI (cần core.ai.manage)",
+            ),
+            _action(
+                "ai_agent_update",
+                "mutation",
+                [
+                    ("id", "uuid!"),
+                    ("name", "String"),
+                    ("model", "String"),
+                    ("status", "String"),
+                    ("guardrail_config", "jsonb"),
+                    ("tool_list", "jsonb"),
+                ],
+                "AiAgent!",
+                [ROLE, ADMIN_ROLE],
+                "Sửa tác tử AI (cần core.ai.manage)",
+            ),
+            _action(
+                "ai_agent_unregister",
+                "mutation",
+                [("id", "uuid!")],
+                "AiAgentRemoved!",
+                [ROLE, ADMIN_ROLE],
+                "Xóa tác tử AI chưa có lượt hỏi, hoặc ngừng kích hoạt nếu đã có (cần core.ai.manage)",
+            ),
         ],
         "custom_types": {
             "input_objects": [
@@ -1558,6 +1636,80 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "seq", "type": "Int"},
                         {"name": "log_id", "type": "Int"},
                         {"name": "problem", "type": "String!"},
+                    ],
+                },
+                {
+                    "name": "AiAskResult",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "status", "type": "String!"},
+                        {"name": "position", "type": "Int!"},
+                    ],
+                },
+                {
+                    "name": "AiAssistant",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "name", "type": "String!"},
+                        {"name": "model", "type": "String!"},
+                        {"name": "ready", "type": "Boolean!"},
+                    ],
+                },
+                {
+                    "name": "AiAssistants",
+                    "fields": [
+                        {"name": "ai_enabled", "type": "Boolean!"},
+                        {"name": "assistants", "type": "[AiAssistant!]!"},
+                    ],
+                },
+                {
+                    "name": "AiModel",
+                    "fields": [
+                        {"name": "name", "type": "String!"},
+                        {"name": "size_bytes", "type": "bigint"},
+                        {"name": "family", "type": "String"},
+                    ],
+                },
+                {
+                    "name": "AiModels",
+                    "fields": [
+                        {"name": "ai_enabled", "type": "Boolean!"},
+                        {"name": "models", "type": "[AiModel!]!"},
+                    ],
+                },
+                {
+                    "name": "AiAgentStats",
+                    "fields": [
+                        {"name": "agent_id", "type": "uuid!"},
+                        {"name": "questions", "type": "Int!"},
+                        {"name": "answered", "type": "Int!"},
+                        {"name": "avg_seconds", "type": "Float"},
+                        {"name": "p90_seconds", "type": "Float"},
+                        {"name": "scope_refused", "type": "Int!"},
+                        {"name": "prompt_refused", "type": "Int!"},
+                        {"name": "errors", "type": "Int!"},
+                        {"name": "pending", "type": "Int!"},
+                        {"name": "prompt_tokens", "type": "Int!"},
+                        {"name": "completion_tokens", "type": "Int!"},
+                    ],
+                },
+                {
+                    "name": "AiAgent",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "name", "type": "String!"},
+                        {"name": "model", "type": "String!"},
+                        {"name": "status", "type": "String!"},
+                        {"name": "guardrail_config", "type": "jsonb!"},
+                        {"name": "tool_list", "type": "jsonb!"},
+                    ],
+                },
+                {
+                    "name": "AiAgentRemoved",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "deleted", "type": "Boolean!"},
+                        {"name": "message", "type": "String!"},
                     ],
                 },
                 {

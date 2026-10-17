@@ -120,6 +120,9 @@ class Meili:
     def delete_document(self, index: str, document_id: str) -> None:
         self.wait(self.request("DELETE", f"/indexes/{index}/documents/{document_id}"))
 
+    def delete_by_filter(self, index: str, flt: str) -> None:
+        self.wait(self.request("POST", f"/indexes/{index}/documents/delete", {"filter": flt}))
+
     def document_count(self, index: str) -> int:
         return self.request("GET", f"/indexes/{index}/stats")["numberOfDocuments"]
 
@@ -127,11 +130,11 @@ class Meili:
         return self.request("POST", f"/indexes/{index}/search", body)
 
 
-def ensure_index(admin: Meili, index: str = INDEX) -> bool:
+def ensure_index(admin: Meili, index: str = INDEX, settings: dict | None = None) -> bool:
     created = admin.request("GET", f"/indexes/{index}", ok404=True) is None
     if created:
         admin.wait(admin.request("POST", "/indexes", {"uid": index, "primaryKey": "id"}))
-    admin.wait(admin.request("PATCH", f"/indexes/{index}/settings", index_settings()))
+    admin.wait(admin.request("PATCH", f"/indexes/{index}/settings", settings or index_settings()))
     return created
 
 
@@ -155,10 +158,17 @@ def config_toml(master_key: str) -> str:
 
 
 def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0) -> str:
+    if content_type == "text/plain":
+        return data.decode("utf-8", "replace")[:MAX_TEXT]
+    return " ".join(extract_lines(tika_url, data, content_type, timeout).split())[:MAX_TEXT]
+
+
+def extract_lines(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0) -> str:
+    """Văn bản giữ xuống dòng (để chia đoạn theo tiêu đề); extract_text gộp thành một dòng cho toàn văn."""
     if content_type not in TEXT_TYPES or not data:
         return ""
     if content_type == "text/plain":
-        return data.decode("utf-8", "replace")[:MAX_TEXT]
+        return data.decode("utf-8", "replace")
     try:
         resp = httpx.put(
             f"{tika_url.rstrip('/')}/tika",
@@ -172,7 +182,7 @@ def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float =
         return ""
     if resp.status_code >= 400:
         raise SearchUnavailable(f"Tika lỗi {resp.status_code}: {resp.text[:300]}")
-    return " ".join(resp.content.decode("utf-8", "replace").split())[:MAX_TEXT]
+    return resp.content.decode("utf-8", "replace")
 
 
 def _snippet(hit: dict) -> tuple[str | None, str]:
