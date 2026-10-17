@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Cho Ollama dùng GPU NVIDIA (cần nvidia-container-toolkit, xem docs/van-hanh/trien-khai.md):
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai up -d
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

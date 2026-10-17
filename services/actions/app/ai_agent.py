@@ -1,0 +1,387 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Tác tử AI và Trợ lý RAG (ADR #51).
+
+Quản trị (cần core.ai.manage, kiểm qua core.v_ai_admin): ai_agent_register, ai_agent_update,
+ai_agent_unregister, ai_models, ai_agent_stats.
+Người dùng: ai_assistants (tác tử hỏi được), ai_ask (lưu lượt hỏi, worker nền trả lời dần).
+Nhật ký kiểm toán bật qua audit.enable('core.ai_agent') và trigger audit_log trên core.ai_question.
+"""
+
+import logging
+import re
+import unicodedata
+
+import psycopg
+from psycopg.types.json import Jsonb
+
+from . import pii_guard
+from .common import ActionError, Context, bind_session
+from .ollama import OllamaUnavailable
+
+log = logging.getLogger("ai_agent")
+
+AI_MANAGE = "core.ai.manage"
+TOOLS = ("search_docs", "cite")
+GUARDRAILS = ("scope_guard", "pii_guard", "prompt_guard")
+DEFAULT_GUARDRAILS = {"scope_guard": True, "pii_guard": True, "prompt_guard": True, "think": False}
+MAX_QUESTION = 2000
+PROMPT_REFUSAL = "Câu hỏi có dấu hiệu cố tình thay đổi chỉ dẫn của trợ lý nên không được xử lý."
+
+# Mẫu tiêm lệnh, so trên văn bản đã bỏ dấu và viết thường (chặn cả có dấu lẫn không dấu).
+INJECTION_PATTERNS = (
+    r"\bbo qua\s+(?:(?:moi|cac|tat ca|nhung)\s+)*(?:huong dan|chi dan|lenh|quy tac)",
+    r"\bignore\s+(?:(?:all|any|previous|prior|the above|above)\s+)*(?:instructions|rules|prompts?)",
+    r"\bsystem\s*prompt",
+    r"\bban bay gio la\b",
+    r"\byou are now\b",
+    r"\bdong vai\b(?!\s+tro)",
+    r"</?\s*(?:tai_lieu|doan)\b",
+    r"\bjailbreak",
+)
+# "DAN" so trên văn bản gốc, phân biệt hoa thường, vì bỏ dấu thì "dân", "dẫn" cũng thành "dan".
+CASE_SENSITIVE_PATTERNS = (r"\bDAN\b",)
+_INJECTION = re.compile("|".join(INJECTION_PATTERNS))
+_INJECTION_CS = re.compile("|".join(CASE_SENSITIVE_PATTERNS))
+
+
+def fold(text: str) -> str:
+    text = text.replace("đ", "d").replace("Đ", "D")
+    return "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn").lower()
+
+
+def is_injection(text: str) -> bool:
+    return bool(_INJECTION.search(fold(text)) or _INJECTION_CS.search(text))
+
+
+def guardrails(config: dict | None) -> dict:
+    return {**DEFAULT_GUARDRAILS, **{k: bool(v) for k, v in (config or {}).items() if k in DEFAULT_GUARDRAILS}}
+
+
+def _identity(session: dict) -> tuple[str, str]:
+    person = session.get("x-hasura-user-id")
+    tenant = session.get("x-hasura-tenant-id")
+    if not person or not tenant:
+        raise ActionError("Thiếu x-hasura-user-id hoặc x-hasura-tenant-id", "unauthorized", 401)
+    return person, tenant
+
+
+def _require_admin(conn: psycopg.Connection, person: str, tenant: str) -> None:
+    """Kiểm tra người gọi có quyền core.ai.manage trong tenant."""
+    ok = conn.execute(
+        """SELECT 1 FROM core.v_ai_admin
+           WHERE tenant_id = %s AND person_id = %s LIMIT 1""",
+        (tenant, person),
+    ).fetchone()
+    if not ok:
+        raise ActionError("Bạn không có quyền quản trị tác tử AI", "forbidden", 403)
+
+
+def _text(data: dict, key: str, label: str, required: bool = True) -> str | None:
+    value = data.get(key)
+    value = str(value).strip() if value is not None else ""
+    if not value:
+        if required:
+            raise ActionError(f"Thiếu {label}")
+        return None
+    return value
+
+
+def _json_object(data: dict, key: str, label: str, required: bool = True) -> dict | None:
+    value = data.get(key)
+    if value is None:
+        if required:
+            raise ActionError(f"Thiếu {label}")
+        return None
+    if not isinstance(value, dict):
+        raise ActionError(f"{label} phải là đối tượng JSON")
+    return value
+
+
+def _json_array(data: dict, key: str, label: str, required: bool = True) -> list | None:
+    value = data.get(key)
+    if value is None:
+        if required:
+            raise ActionError(f"Thiếu {label}")
+        return None
+    if not isinstance(value, list):
+        raise ActionError(f"{label} phải là mảng JSON")
+    return value
+
+
+def _tools(args: dict, required: bool) -> list | None:
+    tools = _json_array(args, "tool_list", "danh sách công cụ", required=False)
+    if tools is None:
+        return list(TOOLS) if required else None
+    unknown = [t for t in tools if t not in TOOLS]
+    if unknown:
+        raise ActionError(f"Công cụ chưa hỗ trợ: {', '.join(map(str, unknown))} (chỉ có {', '.join(TOOLS)})")
+    return list(dict.fromkeys(tools))
+
+
+def _model_names(ctx: Context) -> set[str] | None:
+    """Tên mô hình Ollama đang có; None khi AI chưa bật hoặc không truy cập được."""
+    if ctx.ai is None:
+        return None
+    try:
+        return {m["name"] for m in ctx.ai.models()}
+    except OllamaUnavailable as exc:
+        log.info("Ollama không truy cập được: %s", exc)
+        return None
+
+
+def _check_model(ctx: Context, model: str) -> None:
+    names = _model_names(ctx)
+    if names is not None and model not in names and f"{model}:latest" not in names:
+        raise ActionError(f"Ollama chưa có mô hình {model}", "model-not-found")
+
+
+def _agent_out(row) -> dict:
+    return {
+        "id": str(row[0]),
+        "name": row[1],
+        "model": row[2],
+        "status": row[3],
+        "guardrail_config": guardrails(row[4]),
+        "tool_list": row[5],
+    }
+
+
+def ai_agent_register(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
+    """Đăng ký tác tử AI mới: name, model (tên trong Ollama), status, guardrail_config, tool_list."""
+    person, tenant = _identity(session)
+    _require_admin(conn, person, tenant)
+    bind_session(conn, session)
+
+    name = _text(args, "name", "tên tác tử")
+    model = _text(args, "model", "mô hình AI")
+    status = _text(args, "status", "trạng thái", required=False) or "active"
+    if status not in ("active", "inactive"):
+        raise ActionError("Trạng thái phải là 'active' hoặc 'inactive'")
+    _check_model(ctx, model)
+    config = guardrails(_json_object(args, "guardrail_config", "cấu hình guardrail", required=False))
+
+    row = conn.execute(
+        """INSERT INTO core.ai_agent (tenant_id, name, model, status, guardrail_config, tool_list, created_by)
+           VALUES (%s, %s, %s, %s, %s, %s, %s)
+           RETURNING id, name, model, status, guardrail_config, tool_list""",
+        (tenant, name, model, status, Jsonb(config), Jsonb(_tools(args, required=True)), person),
+    ).fetchone()
+    return _agent_out(row)
+
+
+def ai_agent_update(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
+    """Cập nhật tác tử AI theo id; chỉ đổi các trường có truyền."""
+    person, tenant = _identity(session)
+    _require_admin(conn, person, tenant)
+    bind_session(conn, session)
+
+    agent_id = args.get("id")
+    if not agent_id:
+        raise ActionError("Thiếu id tác tử")
+    existing = conn.execute(
+        "SELECT guardrail_config FROM core.ai_agent WHERE id = %s AND tenant_id = %s", (agent_id, tenant)
+    ).fetchone()
+    if not existing:
+        raise ActionError("Không tìm thấy tác tử AI", "not-found", 404)
+
+    updates, params = [], []
+    name = _text(args, "name", "tên tác tử", required=False)
+    if name is not None:
+        updates.append("name = %s")
+        params.append(name)
+    model = _text(args, "model", "mô hình AI", required=False)
+    if model is not None:
+        _check_model(ctx, model)
+        updates.append("model = %s")
+        params.append(model)
+    status = _text(args, "status", "trạng thái", required=False)
+    if status is not None:
+        if status not in ("active", "inactive"):
+            raise ActionError("Trạng thái phải là 'active' hoặc 'inactive'")
+        updates.append("status = %s")
+        params.append(status)
+    config = _json_object(args, "guardrail_config", "cấu hình guardrail", required=False)
+    if config is not None:
+        updates.append("guardrail_config = %s")
+        params.append(Jsonb(guardrails({**guardrails(existing[0]), **config})))
+    tools = _tools(args, required=False)
+    if tools is not None:
+        updates.append("tool_list = %s")
+        params.append(Jsonb(tools))
+    if not updates:
+        raise ActionError("Không có trường nào để cập nhật")
+
+    row = conn.execute(
+        f"""UPDATE core.ai_agent SET {", ".join(updates)}
+            WHERE id = %s AND tenant_id = %s
+            RETURNING id, name, model, status, guardrail_config, tool_list""",
+        (*params, agent_id, tenant),
+    ).fetchone()
+    return _agent_out(row)
+
+
+def ai_agent_unregister(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    """Xóa tác tử chưa có lượt hỏi; tác tử đã có lượt hỏi thì chỉ ngừng kích hoạt để giữ lịch sử."""
+    person, tenant = _identity(session)
+    _require_admin(conn, person, tenant)
+    bind_session(conn, session)
+
+    agent_id = args.get("id")
+    if not agent_id:
+        raise ActionError("Thiếu id tác tử")
+    # Khóa tác tử để ai_ask đồng thời không chèn lượt hỏi giữa lúc kiểm và lúc xóa.
+    if not conn.execute(
+        "SELECT 1 FROM core.ai_agent WHERE id = %s AND tenant_id = %s FOR UPDATE", (agent_id, tenant)
+    ).fetchone():
+        raise ActionError("Không tìm thấy tác tử AI", "not-found", 404)
+    if conn.execute("SELECT 1 FROM core.ai_question WHERE agent_id = %s LIMIT 1", (agent_id,)).fetchone():
+        conn.execute("UPDATE core.ai_agent SET status = 'inactive' WHERE id = %s", (agent_id,))
+        return {"id": str(agent_id), "deleted": False, "message": "Tác tử đã có lượt hỏi nên chỉ ngừng kích hoạt"}
+    conn.execute("DELETE FROM core.ai_agent WHERE id = %s", (agent_id,))
+    return {"id": str(agent_id), "deleted": True, "message": "Đã xóa tác tử AI"}
+
+
+def ai_models(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> dict:
+    person, tenant = _identity(session)
+    _require_admin(conn, person, tenant)
+    if ctx.ai is None:
+        return {"ai_enabled": False, "models": []}
+    try:
+        return {"ai_enabled": True, "models": ctx.ai.models()}
+    except OllamaUnavailable:
+        return {"ai_enabled": False, "models": []}
+
+
+def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> list[dict]:
+    """Số liệu theo tác tử trong `days` ngày gần nhất; không trả nội dung lượt hỏi."""
+    person, tenant = _identity(session)
+    _require_admin(conn, person, tenant)
+    days = max(1, min(int(args.get("days") or 7), 90))
+    rows = conn.execute(
+        """SELECT a.id, count(q.id),
+                  count(q.id) FILTER (WHERE q.status = 'done'),
+                  avg(extract(epoch FROM q.finished_at - q.started_at)) FILTER (WHERE q.status = 'done'),
+                  percentile_cont(0.9) WITHIN GROUP (ORDER BY extract(epoch FROM q.finished_at - q.started_at))
+                      FILTER (WHERE q.status = 'done'),
+                  count(q.id) FILTER (WHERE q.guard = 'scope'),
+                  count(q.id) FILTER (WHERE q.guard = 'prompt'),
+                  count(q.id) FILTER (WHERE q.status = 'error'),
+                  count(q.id) FILTER (WHERE q.status IN ('queued', 'running')),
+                  coalesce(sum(q.prompt_tokens), 0), coalesce(sum(q.completion_tokens), 0)
+           FROM core.ai_agent a
+           LEFT JOIN core.ai_question q ON q.agent_id = a.id AND q.created_at > now() - make_interval(days => %s)
+           WHERE a.tenant_id = %s
+           GROUP BY a.id ORDER BY a.id""",
+        (days, tenant),
+    ).fetchall()
+    return [
+        {
+            "agent_id": str(r[0]),
+            "questions": r[1],
+            "answered": r[2],
+            "avg_seconds": round(float(r[3]), 1) if r[3] is not None else None,
+            "p90_seconds": round(float(r[4]), 1) if r[4] is not None else None,
+            "scope_refused": r[5],
+            "prompt_refused": r[6],
+            "errors": r[7],
+            "pending": r[8],
+            "prompt_tokens": r[9],
+            "completion_tokens": r[10],
+        }
+        for r in rows
+    ]
+
+
+def _askable(tools) -> bool:
+    return isinstance(tools, list) and all(t in tools for t in TOOLS)
+
+
+def ai_assistants(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> dict:
+    """Tác tử đang hoạt động hỏi được tài liệu (search_docs + cite) và AI có đang bật không."""
+    _person, tenant = _identity(session)
+    rows = conn.execute(
+        """SELECT id, name, model FROM core.ai_agent
+           WHERE tenant_id = %s AND status = 'active' AND tool_list @> '["search_docs", "cite"]'::jsonb
+           ORDER BY name""",
+        (tenant,),
+    ).fetchall()
+    names = _model_names(ctx)
+    return {
+        "ai_enabled": names is not None,
+        "assistants": [
+            {
+                "id": str(r[0]),
+                "name": r[1],
+                "model": r[2],
+                "ready": names is not None and (r[2] in names or f"{r[2]}:latest" in names),
+            }
+            for r in rows
+        ],
+    }
+
+
+def queue_position(conn: psycopg.Connection, question_id) -> int:
+    return conn.execute(
+        """SELECT count(*) FROM core.ai_question o, core.ai_question q
+           WHERE q.id = %s AND q.status = 'queued' AND o.status IN ('queued', 'running')
+             AND o.created_at < q.created_at""",
+        (question_id,),
+    ).fetchone()[0]
+
+
+def ai_ask(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    """Lưu một lượt hỏi và trả ngay; worker ai_worker trả lời dần, giao diện theo dõi qua subscription."""
+    person, tenant = _identity(session)
+    agent = conn.execute(
+        """SELECT id, model, guardrail_config, tool_list FROM core.ai_agent
+           WHERE id = %s AND tenant_id = %s AND status = 'active'""",
+        (args.get("agent_id"), tenant),
+    ).fetchone()
+    if agent is None or not _askable(agent[3]):
+        raise ActionError("Không tìm thấy trợ lý AI đang hoạt động", "not-found", 404)
+    question = " ".join(str(args.get("question") or "").split())
+    if not question:
+        raise ActionError("Nhập câu hỏi", "question-required")
+    if len(question) > MAX_QUESTION:
+        raise ActionError(f"Câu hỏi tối đa {MAX_QUESTION} ký tự")
+    doc_id = args.get("kb_document_id")
+    if (
+        doc_id
+        and not conn.execute(
+            """SELECT 1 FROM collab.kb_document d
+           WHERE d.id = %s AND d.tenant_id = %s AND d.status = 'APPROVED'
+             AND collab.kb_can_read_published(d, %s)""",
+            (doc_id, tenant, person),
+        ).fetchone()
+    ):
+        raise ActionError("Không tìm thấy tài liệu", "not-found", 404)
+
+    guard = guardrails(agent[2])
+    refused = guard["prompt_guard"] and is_injection(question)
+    if guard["pii_guard"]:
+        question, _ = pii_guard.guard().mask(question)
+    bind_session(conn, session)
+    row = conn.execute(
+        """INSERT INTO core.ai_question (tenant_id, agent_id, person_id, question, kb_document_id, model,
+                                        status, guard, answer, started_at, finished_at)
+           SELECT %s, %s, %s, %s, %s, %s,
+                  CASE WHEN r THEN 'refused' ELSE 'queued' END, CASE WHEN r THEN 'prompt' END,
+                  CASE WHEN r THEN %s ELSE '' END, CASE WHEN r THEN now() END, CASE WHEN r THEN now() END
+           FROM (SELECT %s::boolean AS r) f
+           RETURNING id, status""",
+        (tenant, agent[0], person, question, doc_id or None, agent[1], PROMPT_REFUSAL, refused),
+    ).fetchone()
+    return {"id": str(row[0]), "status": row[1], "position": 0 if refused else queue_position(conn, row[0])}
+
+
+HANDLERS = {
+    "ai_agent_register": ai_agent_register,
+    "ai_agent_update": ai_agent_update,
+    "ai_agent_unregister": ai_agent_unregister,
+    "ai_models": ai_models,
+    "ai_agent_stats": ai_agent_stats,
+    "ai_assistants": ai_assistants,
+    "ai_ask": ai_ask,
+}

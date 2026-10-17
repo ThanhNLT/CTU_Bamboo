@@ -2,61 +2,34 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export type AssistantMode = "auto" | "knowledge" | "eoffice" | "analytics" | "operations" | "documents";
+export type QuestionStatus = "queued" | "running" | "done" | "refused" | "error";
 
-export type Citation = { id: number; label: string; to: string };
-
-export type ToolStep = { name: string; args: string; ms: number };
-
-export type ChartPoint = {
-  label: string;
-  actual?: number | null;
-  forecast?: number | null;
-  band?: [number, number] | null;
-  compare?: number | null;
-};
-
-export type ChartSpec = {
+export type Citation = {
+  n: number;
+  kb_document_id: string;
+  doc_no: string;
   title: string;
-  link?: { label: string; to: string };
-  data: ChartPoint[];
-  yDomain: [number, number];
-  yTicks: number[];
-  legend: { actual: string; forecast?: string; band?: string; compare?: string };
-  decimals: number;
-  method: string;
+  attachment_id: string | null;
+  file_name: string | null;
+  heading: string | null;
 };
 
-export type ActionProposal = {
-  title: string;
-  recordType: string;
-  device: string;
-  description: string;
-  note: string;
-};
-
-export type UserMsg = { id: string; role: "user"; text: string; files?: string[] };
-
-export type AiMsg = {
+export type Question = {
   id: string;
-  role: "assistant";
-  text: string;
-  chart?: ChartSpec;
-  steps?: ToolStep[];
-  sources?: Citation[];
-  action?: ActionProposal;
+  question: string;
+  status: QuestionStatus;
+  answer: string;
+  citations: Citation[];
+  guard: "scope" | "prompt" | null;
+  error: string | null;
+  model: string;
+  kb_document_id: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  position?: number;
 };
 
-export type Message = UserMsg | AiMsg;
+export type Assistant = { id: string; name: string; model: string; ready: boolean };
 
-export type SessionGroup = "today" | "yesterday" | "lastWeek";
-
-export type ChatSession = {
-  id: string;
-  title: string;
-  group: SessionGroup;
-  context?: string;
-  messages: Message[];
-};
-
-export type Reply = Omit<AiMsg, "id" | "role">;
+export type HistoryGroup = "today" | "yesterday" | "lastWeek" | "older";

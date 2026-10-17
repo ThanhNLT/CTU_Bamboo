@@ -565,6 +565,20 @@
               }
             },
             {
+              "name": "ai_questions",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_question"
+                  },
+                  "column_mapping": {
+                    "id": "kb_document_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "approval_steps",
               "using": {
                 "manual_configuration": {
@@ -1009,6 +1023,244 @@
                     },
                     {
                       "recipient_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "ai_agent"
+          },
+          "object_relationships": [
+            {
+              "name": "created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "created_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "ai_questions",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_question"
+                  },
+                  "column_mapping": {
+                    "id": "agent_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_ai_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "v_ai_admin"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "ai_question"
+          },
+          "object_relationships": [
+            {
+              "name": "agent",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent"
+                  },
+                  "column_mapping": {
+                    "agent_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "kb_document_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "person_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
                         "_eq": "X-Hasura-User-Id"
                       }
                     }
@@ -1883,6 +2135,34 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "recipient_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ai_agents",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent"
+                  },
+                  "column_mapping": {
+                    "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ai_questions",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_question"
+                  },
+                  "column_mapping": {
+                    "id": "person_id"
                   }
                 }
               }
@@ -3233,6 +3513,56 @@
           "table": {
             "schema": "core",
             "name": "v_admin"
+          },
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "v_ai_admin"
           },
           "select_permissions": [
             {
@@ -9231,6 +9561,257 @@
         }
       ],
       "comment": "Tệp mẫu XLSX để nhập hàng loạt"
+    },
+    {
+      "name": "ai_ask",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ai_ask",
+        "arguments": [
+          {
+            "name": "agent_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "question",
+            "type": "String!"
+          },
+          {
+            "name": "kb_document_id",
+            "type": "uuid"
+          }
+        ],
+        "output_type": "AiAskResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi một lượt hỏi Trợ lý RAG; theo dõi câu trả lời qua subscription core_ai_question_by_pk (ADR #51)"
+    },
+    {
+      "name": "ai_assistants",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ai_assistants",
+        "arguments": [],
+        "output_type": "AiAssistants!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Trợ lý AI đang hoạt động người gọi hỏi được, và AI cục bộ có đang bật không"
+    },
+    {
+      "name": "ai_models",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ai_models",
+        "arguments": [],
+        "output_type": "AiModels!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Mô hình đang có trong Ollama (cần core.ai.manage)"
+    },
+    {
+      "name": "ai_agent_stats",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_stats",
+        "arguments": [
+          {
+            "name": "days",
+            "type": "Int"
+          }
+        ],
+        "output_type": "[AiAgentStats!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Số liệu lượt hỏi theo tác tử AI, không kèm nội dung (cần core.ai.manage)"
+    },
+    {
+      "name": "ai_agent_register",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_register",
+        "arguments": [
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "model",
+            "type": "String!"
+          },
+          {
+            "name": "status",
+            "type": "String"
+          },
+          {
+            "name": "guardrail_config",
+            "type": "jsonb"
+          },
+          {
+            "name": "tool_list",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "AiAgent!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đăng ký tác tử AI (cần core.ai.manage)"
+    },
+    {
+      "name": "ai_agent_update",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_update",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          },
+          {
+            "name": "model",
+            "type": "String"
+          },
+          {
+            "name": "status",
+            "type": "String"
+          },
+          {
+            "name": "guardrail_config",
+            "type": "jsonb"
+          },
+          {
+            "name": "tool_list",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "AiAgent!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Sửa tác tử AI (cần core.ai.manage)"
+    },
+    {
+      "name": "ai_agent_unregister",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_unregister",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "AiAgentRemoved!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xóa tác tử AI chưa có lượt hỏi, hoặc ngừng kích hoạt nếu đã có (cần core.ai.manage)"
     }
   ],
   "custom_types": {
@@ -10705,6 +11286,182 @@
           },
           {
             "name": "problem",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "AiAskResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "position",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "AiAssistant",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "model",
+            "type": "String!"
+          },
+          {
+            "name": "ready",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
+        "name": "AiAssistants",
+        "fields": [
+          {
+            "name": "ai_enabled",
+            "type": "Boolean!"
+          },
+          {
+            "name": "assistants",
+            "type": "[AiAssistant!]!"
+          }
+        ]
+      },
+      {
+        "name": "AiModel",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "size_bytes",
+            "type": "bigint"
+          },
+          {
+            "name": "family",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "AiModels",
+        "fields": [
+          {
+            "name": "ai_enabled",
+            "type": "Boolean!"
+          },
+          {
+            "name": "models",
+            "type": "[AiModel!]!"
+          }
+        ]
+      },
+      {
+        "name": "AiAgentStats",
+        "fields": [
+          {
+            "name": "agent_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "questions",
+            "type": "Int!"
+          },
+          {
+            "name": "answered",
+            "type": "Int!"
+          },
+          {
+            "name": "avg_seconds",
+            "type": "Float"
+          },
+          {
+            "name": "p90_seconds",
+            "type": "Float"
+          },
+          {
+            "name": "scope_refused",
+            "type": "Int!"
+          },
+          {
+            "name": "prompt_refused",
+            "type": "Int!"
+          },
+          {
+            "name": "errors",
+            "type": "Int!"
+          },
+          {
+            "name": "pending",
+            "type": "Int!"
+          },
+          {
+            "name": "prompt_tokens",
+            "type": "Int!"
+          },
+          {
+            "name": "completion_tokens",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "AiAgent",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "model",
+            "type": "String!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "guardrail_config",
+            "type": "jsonb!"
+          },
+          {
+            "name": "tool_list",
+            "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "AiAgentRemoved",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "deleted",
+            "type": "Boolean!"
+          },
+          {
+            "name": "message",
             "type": "String!"
           }
         ]

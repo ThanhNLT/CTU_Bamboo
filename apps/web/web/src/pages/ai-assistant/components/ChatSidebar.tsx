@@ -4,40 +4,38 @@
 
 import { Search } from "lucide-react";
 
-import { fold } from "../../../utils/text";
 import { cn } from "../../../utils/cn";
-import { GROUP_LABEL, RETENTION_NOTE } from "../mock";
-import type { ChatSession, SessionGroup } from "../types";
+import { fold } from "../../../utils/text";
+import { GROUP_LABEL, groupOf, titleFrom } from "../assistant";
+import type { HistoryGroup, Question } from "../types";
 
-const GROUPS: SessionGroup[] = ["today", "yesterday", "lastWeek"];
+const GROUPS: HistoryGroup[] = ["today", "yesterday", "lastWeek", "older"];
 
 export const ChatSidebar = ({
-  sessions,
+  questions,
   activeId,
   query,
   onQuery,
   onSelect,
   className,
 }: {
-  sessions: ChatSession[];
-  activeId: string;
+  questions: Question[];
+  activeId?: string;
   query: string;
   onQuery: (q: string) => void;
   onSelect: (id: string) => void;
   className?: string;
 }) => {
   const q = fold(query.trim());
-  const visible = q
-    ? sessions.filter((s) => fold(`${s.title} ${s.messages.map((m) => m.text).join(" ")}`).includes(q))
-    : sessions;
+  const visible = q ? questions.filter((x) => fold(`${x.question} ${x.answer}`).includes(q)) : questions;
 
   return (
     <aside
-      aria-label="Lịch sử trò chuyện"
+      aria-label="Lịch sử lượt hỏi"
       className={cn("min-h-0 flex-col rounded-2xl border border-line bg-white p-3 shadow-card", className)}
     >
       <label className="relative block">
-        <span className="sr-only">Tìm phiên trò chuyện</span>
+        <span className="sr-only">Tìm lượt hỏi</span>
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
           aria-hidden
@@ -47,17 +45,19 @@ export const ChatSidebar = ({
           type="search"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Tìm phiên trò chuyện"
+          placeholder="Tìm lượt hỏi"
           className="h-9 w-full rounded-xl border border-transparent bg-canvas pl-9 pr-3 text-[13px] text-ink outline-none placeholder:text-muted focus:border-bamboo-400 focus:bg-white focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
         />
       </label>
 
       <nav className="mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
         {visible.length === 0 && (
-          <p className="px-2 py-6 text-center text-[12.5px] text-muted">Không có phiên phù hợp.</p>
+          <p className="px-2 py-6 text-center text-[12.5px] text-muted">
+            {questions.length ? "Không có lượt hỏi phù hợp." : "Chưa có lượt hỏi nào."}
+          </p>
         )}
         {GROUPS.map((g) => {
-          const items = visible.filter((s) => s.group === g);
+          const items = visible.filter((x) => groupOf(x.created_at) === g);
           if (!items.length) return null;
           return (
             <section key={g} className="mb-3">
@@ -65,13 +65,13 @@ export const ChatSidebar = ({
                 {GROUP_LABEL[g]}
               </h2>
               <ul className="m-0 list-none space-y-0.5 p-0">
-                {items.map((s) => {
-                  const active = s.id === activeId;
+                {items.map((x) => {
+                  const active = x.id === activeId;
                   return (
-                    <li key={s.id}>
+                    <li key={x.id}>
                       <button
                         type="button"
-                        onClick={() => onSelect(s.id)}
+                        onClick={() => onSelect(x.id)}
                         aria-current={active ? "true" : undefined}
                         className={cn(
                           "block w-full truncate rounded-lg px-2 py-2 text-left text-[13px] transition-colors",
@@ -79,7 +79,7 @@ export const ChatSidebar = ({
                           active ? "bg-bamboo-50 font-semibold text-ink" : "text-body hover:bg-canvas hover:text-ink",
                         )}
                       >
-                        {s.title}
+                        {titleFrom(x.question)}
                       </button>
                     </li>
                   );
@@ -90,7 +90,9 @@ export const ChatSidebar = ({
         })}
       </nav>
 
-      <p className="mt-2 border-t border-line px-2 pt-2.5 text-[11px] leading-snug text-muted">{RETENTION_NOTE}</p>
+      <p className="mt-2 border-t border-line px-2 pt-2.5 text-[11px] leading-snug text-muted">
+        Mỗi lượt hỏi độc lập, không dùng lại lượt trước. Thông tin cá nhân được che trước khi lưu.
+      </p>
     </aside>
   );
 };

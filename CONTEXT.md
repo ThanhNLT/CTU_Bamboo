@@ -177,3 +177,25 @@ _Tránh dùng_: bảng (bảng là ở CSDL nghiệp vụ), mart (mart là bản
 **Người dùng tenant của Trino** (`t_<tenant_id>`):
 Danh tính mà dịch vụ actions mượn khi truy vấn Lakehouse thay người dùng của một tenant; Trino chỉ cho danh tính này đọc tập dữ liệu có cột tenant và tự lọc về đúng tenant đó (ADR #45).
 _Tránh dùng_: tài khoản Trino (tài khoản là `bms-admin`, `bms-actions`, có mật khẩu)
+
+## Trí tuệ số
+
+**Mô hình** (mô hình AI):
+Mô hình ngôn ngữ hoặc mô hình embedding chạy cục bộ, dùng chung cho mọi tenant của nền tảng; chỉ chọn được mô hình đã cài trên máy chủ.
+_Tránh dùng_: AI (khi nói mô hình cụ thể), LLM (khi nói tác tử)
+
+**Tác tử AI** (`core.ai_agent`):
+Cấu hình riêng của một tenant cho một trợ thủ AI: tên, mô hình, guardrail, danh sách công cụ được gọi, trạng thái hoạt động. Người có quyền `core.ai.manage` đăng ký và cấu hình.
+_Tránh dùng_: bot, mô hình (mô hình là thứ tác tử dùng), agent
+
+**Trợ lý RAG**:
+Một tác tử AI có công cụ tìm tài liệu và trích dẫn, trả lời câu hỏi dựa trên tài liệu người hỏi được xem, kèm nguồn trích dẫn; không phải khái niệm riêng ngoài tác tử AI.
+_Tránh dùng_: chatbot, trợ lý AI (khi chưa rõ là tác tử nào)
+
+**Guardrail**:
+Luật cố định bật / tắt theo từng tác tử AI để giữ câu trả lời trong khuôn khổ: **giới hạn phạm vi** (chỉ trả lời từ tài liệu tìm được, không có thì nói không tìm thấy), **che dữ liệu cá nhân** (trong câu trả lời và nhật ký), **chặn tiêm lệnh** (từ chối câu hỏi tìm cách đổi chỉ dẫn của tác tử).
+_Tránh dùng_: bộ lọc, kiểm duyệt (kiểm duyệt là duyệt chứng từ)
+
+**Lượt hỏi**:
+Một câu hỏi của một người gửi cho một tác tử AI, kèm câu trả lời, các trích dẫn và trạng thái (chờ, đang trả lời, xong, lỗi). Mỗi lượt hỏi độc lập: tác tử không đọc lại các lượt trước.
+_Tránh dùng_: phiên chat, hội thoại, prompt

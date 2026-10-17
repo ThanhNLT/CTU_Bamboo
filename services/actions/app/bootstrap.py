@@ -12,7 +12,7 @@ import time
 
 import httpx
 
-from . import config, keycloak_sync, search, storage
+from . import ai_chunks, config, keycloak_sync, search, storage
 from .flowable import FlowableClient
 
 log = logging.getLogger("bootstrap")
@@ -72,6 +72,8 @@ def main() -> int:
     wait_for("Meilisearch", lambda: meili.request("GET", "/health"))
     if search.ensure_index(meili, settings.meili_index):
         log.info("đã tạo index tìm kiếm %s", settings.meili_index)
+    if search.ensure_index(meili, settings.meili_chunk_index, ai_chunks.index_settings()):
+        log.info("đã tạo index đoạn %s", settings.meili_chunk_index)
     search.ensure_keys(meili)
     wait_for("Hasura", lambda: httpx.get(f"{settings.hasura_url}/healthz", timeout=5).raise_for_status())
     apply_hasura_metadata(settings.hasura_url, settings.hasura_admin_secret)

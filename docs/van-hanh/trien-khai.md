@@ -119,7 +119,8 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 | `debezium` | 8083, chỉ 127.0.0.1 | Không | CDC, `/q/health` |
 | `trino` | 8085 (HTTPS), chỉ 127.0.0.1 | Không | Truy vấn Lakehouse |
 | `clamav` (profile `scan`) | 3310, chỉ 127.0.0.1 | Không | Quét virus |
-| `flow-sync`, `search-sync`, `lakehouse-sink` | không có (tiến trình nền, không nghe cổng) | Không | Đồng bộ Flowable, chỉ mục tìm kiếm, Lakehouse |
+| `ollama` (profile `ai`) | 11434, chỉ 127.0.0.1 | Không | Mô hình AI cục bộ (mục 9) |
+| `flow-sync`, `search-sync`, `lakehouse-sink`, `ai-worker` (profile `ai`) | không có (tiến trình nền, không nghe cổng) | Không | Đồng bộ Flowable, chỉ mục tìm kiếm, Lakehouse, trả lời lượt hỏi AI |
 
 Mọi cổng trên máy chủ trừ `gateway` chỉ nghe `127.0.0.1` (truy cập từ chính máy chủ hoặc qua SSH tunnel); triển khai thật có thể bỏ các dòng `ports` của dịch vụ không cần quản trị trực tiếp.
 
@@ -137,3 +138,50 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 | `kafka` | (cố định trong compose) | `-Xmx512m -Xms256m` |
 | `trino` | `platform/trino/jvm.config` | `-Xmx1G` |
 | `flowable` | (image tự đặt) | `-Xmx512M` |
+
+## 9. AI cục bộ (ADR #51)
+
+Trợ lý RAG và tác tử AI chạy bằng Ollama trong profile `ai`; không bật thì hệ thống chạy bình thường, trang Trợ lý báo "Trợ lý AI chưa bật".
+
+```bash
+docker compose --profile ai up -d          # hoặc make up-ai
+docker compose logs -f ollama-init         # lần đầu tải ~3,7 GB (qwen3:4b ~2,5 GB, bge-m3 ~1,2 GB)
+curl 127.0.0.1:11434/api/tags              # thấy hai mô hình là xong
+scripts/ai_smoke.sh                        # hỏi thật vài câu mẫu
+```
+
+| Hạng mục | Giá trị |
+|---|---|
+| RAM thêm | Tối thiểu 8 GB cho cả hai mô hình khi chạy CPU (khoảng 4 GB cho mô hình, phần còn lại cho ngữ cảnh 8K) |
+| Đĩa | ~3,7 GB trong volume `ollama-models`; sau lần tải đầu chạy không cần Internet |
+| Tốc độ | CPU: vài chục giây mỗi lượt hỏi. GPU 8 GB VRAM: vài giây. Mỗi lúc trả lời một lượt (`OLLAMA_NUM_PARALLEL=1`), người sau xếp hàng |
+
+**Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi.
+
+**Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose --profile ai up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
+
+**Bật GPU NVIDIA.** Driver NVIDIA phía Windows (WSL2) hoặc phía máy chủ Linux phải có sẵn. Cài NVIDIA Container Toolkit một lần (cần sudo), theo [hướng dẫn của NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
+
+```bash
+# Ubuntu / Debian
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+  | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+  | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+
+# Arch / CachyOS
+sudo pacman -S nvidia-container-toolkit
+
+# Cả hai
+sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart docker
+docker run --rm --gpus all ubuntu nvidia-smi   # thấy GPU là được
+```
+
+Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chạy kèm tệp bổ sung (máy không có GPU vẫn dùng lệnh thường, không lỗi):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai up -d   # hoặc make up-ai-gpu
+```
+
+**Quyền:** người quản trị tác tử cần quyền `core.ai.manage` (seed demo gán cho CDO Tập đoàn X và KHTH BVX). Tác tử không có quyền riêng; trợ lý chỉ đọc tài liệu thư viện đang hiệu lực mà người hỏi được xem.

@@ -75,6 +75,11 @@ class Settings:
     trino_ca_file: str
     trino_user: str
     trino_password: str
+    ollama_url: str = ""
+    meili_chunk_index: str = "documents_kb_chunk"
+    ai_chat_model: str = "qwen3:4b"
+    ai_embed_model: str = "bge-m3"
+    ai_min_score: float = 0.7
 
 
 DEV_DEFAULTS = {
@@ -217,4 +222,9 @@ def _from_env() -> Settings:
         trino_ca_file=env("TRINO_CA_FILE", ""),
         trino_user=env("TRINO_USER", "bms-actions"),
         trino_password=env("TRINO_PASSWORD", ""),
+        ollama_url=env("OLLAMA_URL", ""),
+        meili_chunk_index=env("MEILI_CHUNK_INDEX", "documents_kb_chunk"),
+        ai_chat_model=env("AI_CHAT_MODEL", "qwen3:4b"),
+        ai_embed_model=env("AI_EMBED_MODEL", "bge-m3"),
+        ai_min_score=float(env("AI_MIN_SCORE", "0.7")),
     )
