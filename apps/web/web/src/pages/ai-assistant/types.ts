@@ -19,6 +19,7 @@ export type Question = {
   question: string;
   status: QuestionStatus;
   answer: string;
+  thinking?: string | null;
   citations: Citation[];
   guard: "scope" | "prompt" | null;
   error: string | null;

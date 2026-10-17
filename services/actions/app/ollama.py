@@ -19,6 +19,7 @@ class OllamaUnavailable(Exception):
 @dataclass
 class Delta:
     content: str = ""
+    thinking: str = ""
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
 
@@ -83,7 +84,9 @@ class Ollama:
                     event = json.loads(data)
                     delta = Delta()
                     for choice in event.get("choices") or []:
-                        delta.content += (choice.get("delta") or {}).get("content") or ""
+                        d = choice.get("delta") or {}
+                        delta.content += d.get("content") or ""
+                        delta.thinking += d.get("reasoning") or d.get("reasoning_content") or ""
                     if usage := event.get("usage"):
                         delta.prompt_tokens = usage.get("prompt_tokens")
                         delta.completion_tokens = usage.get("completion_tokens")
