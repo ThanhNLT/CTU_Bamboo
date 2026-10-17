@@ -2,120 +2,142 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { HttpError } from "@refinedev/core";
 import { App } from "antd";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { fetchAgents, fetchModels, fetchStats, registerAgent, removeAgent, updateAgent } from "./api";
+import { AgentModal } from "./components/AgentModal";
 import { AiAgentsHeader } from "./components/AiAgentsHeader";
 import { AiAgentsTable } from "./components/AiAgentsTable";
-import { AiAnalyticsSection } from "./components/AiAnalyticsSection";
 import { AiKpiCards } from "./components/AiKpiCards";
-import { RegisterAgentModal } from "./components/RegisterAgentModal";
-import { AGENTS, DAYS, DEFAULT_AGENT_ID } from "./mock";
-import type { Agent, AnalyticsTab, GuardKey } from "./types";
-import { computeKpis } from "./utils";
+import type { Agent, AgentStats, AiModel } from "./types";
+import { STATS_DAYS, totals } from "./utils";
+
+type Editing = { agent?: Agent } | undefined;
 
 export const AiAgentsPage = () => {
   const { message, modal } = App.useApp();
-  const [agents, setAgents] = useState<Agent[]>(AGENTS);
-  const [selectedId, setSelectedId] = useState(DEFAULT_AGENT_ID);
-  const [tab, setTab] = useState<AnalyticsTab>("overview");
-  const [registering, setRegistering] = useState(false);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [stats, setStats] = useState<AgentStats[]>([]);
+  const [models, setModels] = useState<AiModel[]>([]);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Editing>();
+  const [saving, setSaving] = useState(false);
 
-  const kpi = useMemo(() => computeKpis(agents), [agents]);
-  const selected = agents.find((a) => a.id === selectedId) ?? agents[0];
+  const load = useCallback(async () => {
+    try {
+      const [m, a, s] = await Promise.all([fetchModels(), fetchAgents(), fetchStats(STATS_DAYS)]);
+      setModels(m.models);
+      setAiEnabled(m.ai_enabled);
+      setAgents(a);
+      setStats(s);
+    } catch (e) {
+      if ((e as HttpError).statusCode === 403) setForbidden(true);
+      else message.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [message]);
 
-  const patch = (id: string, fn: (a: Agent) => Agent) =>
-    setAgents((list) => list.map((a) => (a.id === id ? fn(a) : a)));
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  const pause = (a: Agent) =>
+  const kpi = useMemo(() => totals(agents, stats), [agents, stats]);
+
+  const run = async (action: () => Promise<unknown>, done: string) => {
+    setSaving(true);
+    try {
+      await action();
+      message.success(done);
+      setEditing(undefined);
+      await load();
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggle = (a: Agent) => {
+    if (a.status === "inactive") {
+      void run(() => updateAgent(a.id, { status: "active" }), `${a.name} đã hoạt động trở lại.`);
+      return;
+    }
     modal.confirm({
-      title: `Tạm dừng “${a.name}”?`,
+      title: `Ngừng “${a.name}”?`,
       content:
-        "Phiên mới sẽ được chuyển sang trợ lý mặc định; phiên đang chạy vẫn được hoàn tất. Thao tác được ghi nhật ký kiểm toán.",
-      okText: "Tạm dừng",
+        "Người dùng không hỏi được tác tử này nữa; lượt hỏi đang chờ vẫn được trả lời. Thao tác được ghi nhật ký.",
+      okText: "Ngừng",
       cancelText: "Hủy",
-      onOk: () => {
-        patch(a.id, (x) => ({ ...x, status: "paused" }));
-        message.success(`Đã tạm dừng ${a.name}.`);
+      onOk: () => run(() => updateAgent(a.id, { status: "inactive" }), `Đã ngừng ${a.name}.`),
+    });
+  };
+
+  const remove = (a: Agent) =>
+    modal.confirm({
+      title: `Xóa “${a.name}”?`,
+      content: "Tác tử đã có lượt hỏi sẽ chỉ bị ngừng để giữ lịch sử và nhật ký kiểm toán.",
+      okText: "Xóa",
+      okButtonProps: { danger: true },
+      cancelText: "Hủy",
+      onOk: async () => {
+        try {
+          const r = await removeAgent(a.id);
+          if (r.deleted) message.success(r.message);
+          else message.info(r.message);
+          await load();
+        } catch (e) {
+          message.error((e as Error).message);
+        }
       },
     });
 
-  const resume = (a: Agent) => {
-    patch(a.id, (x) => ({ ...x, status: "active" }));
-    message.success(`${a.name} đã hoạt động trở lại.`);
-  };
+  if (forbidden)
+    return (
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+        <AiAgentsHeader onRegister={() => undefined} canRegister={false} />
+        <p className="rounded-2xl border border-line bg-white px-5 py-10 text-center text-[13px] text-muted shadow-card">
+          Bạn cần quyền quản trị tác tử AI (core.ai.manage) để xem trang này.
+        </p>
+      </div>
+    );
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
-      <AiAgentsHeader onRegister={() => setRegistering(true)} />
+      <AiAgentsHeader onRegister={() => setEditing({})} canRegister={!loading} />
+
+      {!loading && !aiEnabled && (
+        <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-900">
+          Ollama chưa chạy (chưa bật profile <span className="font-mono">ai</span>): vẫn sửa được cấu hình, nhưng người
+          dùng chưa hỏi được và chưa kiểm tra được tên mô hình.
+        </p>
+      )}
 
       <AiKpiCards kpi={kpi} />
 
       <AiAgentsTable
         agents={agents}
-        selectedId={selected?.id ?? ""}
-        errorThreshold={kpi.errorThreshold}
-        onSelect={setSelectedId}
-        onPause={pause}
-        onResume={resume}
+        stats={stats}
+        loading={loading}
+        onEdit={(agent) => setEditing({ agent })}
+        onToggle={toggle}
+        onRemove={remove}
       />
 
-      {selected && (
-        <AiAnalyticsSection
-          agent={selected}
-          tab={tab}
-          onTabChange={setTab}
-          onToggleGuard={(g: GuardKey, on) => {
-            patch(selected.id, (x) => ({ ...x, guards: { ...x.guards, [g]: on } }));
-            if (on) message.success(`Đã bật ${g} cho ${selected.name}.`);
-            else message.warning(`Đã tắt ${g} cho ${selected.name}. Nên bật lại sau khi kiểm thử.`);
-          }}
-          onModelChange={(m) => {
-            patch(selected.id, (x) => ({ ...x, model: m }));
-            message.success(`${selected.name} chuyển sang ${m} (áp dụng cho phiên mới).`);
-          }}
-        />
-      )}
-
-      <RegisterAgentModal
-        open={registering}
-        onCancel={() => setRegistering(false)}
+      <AgentModal
+        open={editing != null}
+        agent={editing?.agent}
+        models={models}
+        saving={saving}
+        onCancel={() => setEditing(undefined)}
         onSubmit={(v) => {
-          const id = `ag-${Date.now().toString(36)}`;
-          const agent: Agent = {
-            id,
-            name: v.name.trim(),
-            description: v.description.trim(),
-            model: v.model,
-            tools: v.tools,
-            status: "pending",
-            sessions24h: 0,
-            calls24h: 0,
-            errors24h: 0,
-            p95: 0,
-            ratingsUp: 0,
-            ratingsTotal: 0,
-            week: DAYS.map((day) => ({ day, success: 0, errors: 0 })),
-            toolStats: v.tools.map((name) => ({ name, calls: 0, errors: 0, p95: 0, scope: v.scopes[0] ?? "" })),
-            events: [],
-            sessions: [],
-            guards: {
-              "scope-guard": v.guards.includes("scope-guard"),
-              "pii-guard": v.guards.includes("pii-guard"),
-              "prompt-guard": v.guards.includes("prompt-guard"),
-            },
-            config: {
-              temperature: 0.2,
-              maxTokens: 2048,
-              scopes: v.scopes,
-              retentionDays: 30,
-              systemPrompt: "(chưa cấu hình)",
-            },
-          };
-          setAgents((list) => [...list, agent]);
-          setSelectedId(id);
-          setRegistering(false);
-          message.success(`Đã gửi đăng ký “${agent.name}” · chờ quản trị viên duyệt.`);
+          const agent = editing?.agent;
+          if (agent) void run(() => updateAgent(agent.id, v), `Đã lưu ${v.name}.`);
+          else void run(() => registerAgent({ ...v, status: "active" }), `Đã đăng ký ${v.name}.`);
         }}
       />
     </div>

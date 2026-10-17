@@ -8,7 +8,8 @@ import time
 import psycopg
 from psycopg.rows import dict_row
 
-from . import config, search, storage
+from . import ai_chunks, config, search, storage
+from .ollama import Ollama, OllamaUnavailable
 
 log = logging.getLogger("search_sync")
 MAX_BACKOFF = 300
@@ -117,6 +118,62 @@ def run_once(conn: psycopg.Connection, meili: search.Meili, settings: config.Set
     return len(rows)
 
 
+def run_chunks_once(
+    conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, limit: int = 10
+) -> int:
+    """Nạp đoạn cho tài liệu thư viện trong search.pending_chunk; lỗi không ảnh hưởng chỉ mục toàn văn."""
+    rows = conn.execute(
+        """SELECT kb_document_id, attempts, updated_at FROM search.pending_chunk
+           WHERE dirty AND next_attempt_at <= now()
+           ORDER BY next_attempt_at, updated_at LIMIT %s""",
+        (limit,),
+    ).fetchall()
+    conn.commit()
+    for row in rows:
+        doc_id = row["kb_document_id"]
+        try:
+            ai_chunks.sync_document(conn, meili, ai, settings, doc_id)
+            conn.execute(
+                """UPDATE search.pending_chunk
+                   SET dirty = (updated_at <> %s), attempts = 0, last_error = NULL, indexed_at = now()
+                   WHERE kb_document_id = %s""",
+                (row["updated_at"], doc_id),
+            )
+            conn.commit()
+        except Exception as exc:  # noqa: BLE001
+            conn.rollback()
+            delay = min(2 ** row["attempts"], MAX_BACKOFF)
+            log.warning("nạp đoạn %s lỗi (thử lại sau %s giây): %s", doc_id, delay, exc)
+            conn.execute(
+                """UPDATE search.pending_chunk
+                   SET attempts = attempts + 1, last_error = %s, next_attempt_at = now() + make_interval(secs => %s)
+                   WHERE kb_document_id = %s AND updated_at = %s""",
+                (str(exc)[:1000], delay, doc_id, row["updated_at"]),
+            )
+            conn.commit()
+    return len(rows)
+
+
+def reindex_chunks_if_empty(conn: psycopg.Connection, meili: search.Meili, index: str) -> int:
+    if meili.document_count(index) > 0:
+        return 0
+    marked = conn.execute("SELECT search.mark_all_chunks() AS n").fetchone()["n"]
+    conn.commit()
+    if marked:
+        log.info("chỉ mục đoạn trống: đánh dấu lại %s tài liệu", marked)
+    return marked
+
+
+def ai_ready(ai: Ollama | None) -> bool:
+    if ai is None:
+        return False
+    try:
+        ai.models()
+        return True
+    except OllamaUnavailable:
+        return False
+
+
 def reindex_if_empty(conn: psycopg.Connection, meili: search.Meili, index: str) -> int:
     if meili.document_count(index) > 0:
         return 0
@@ -141,9 +198,21 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0) -> None:
             log.warning("chờ Meilisearch: %s", exc)
             time.sleep(5)
     log.info("search-sync đang chạy")
+    ai = Ollama(settings.ollama_url) if settings.ollama_url else None
+    chunks_checked = False
     while True:
         while run_once(work, meili, settings):
             pass
+        if ai_ready(ai):
+            try:
+                if not chunks_checked:
+                    reindex_chunks_if_empty(work, meili, settings.meili_chunk_index)
+                    chunks_checked = True
+                while run_chunks_once(work, meili, ai, settings):
+                    pass
+            except search.SearchUnavailable as exc:
+                work.rollback()
+                log.warning("chỉ mục đoạn chưa sẵn sàng: %s", exc)
         for _ in listen.notifies(timeout=idle_seconds, stop_after=1):
             pass
 

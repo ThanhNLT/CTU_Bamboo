@@ -8,12 +8,12 @@ import { Link } from "react-router";
 import { NavGate } from "../../../components/layout/NavGate";
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 
-export const AiAgentsHeader = ({ onRegister }: { onRegister: () => void }) => (
+export const AiAgentsHeader = ({ onRegister, canRegister }: { onRegister: () => void; canRegister: boolean }) => (
   <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Tác tử AI</h1>
       <p className="mt-1 text-[13px] text-muted">
-        Cổng quản trị tác tử · theo dõi phiên, công cụ, chi phí và rào chắn an toàn
+        Cổng quản trị tác tử · mô hình cục bộ, công cụ, rào chắn an toàn và số liệu lượt hỏi
       </p>
     </div>
     <div className="flex shrink-0 flex-wrap items-center gap-2.5">
@@ -23,7 +23,7 @@ export const AiAgentsHeader = ({ onRegister }: { onRegister: () => void }) => (
           Nhật ký kiểm toán
         </Link>
       </NavGate>
-      <button type="button" onClick={onRegister} className={primaryButtonClass}>
+      <button type="button" onClick={onRegister} className={primaryButtonClass} disabled={!canRegister}>
         <Plus className="h-4 w-4" aria-hidden />
         Đăng ký tác tử
       </button>

@@ -2,53 +2,40 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export type AgentStatus = "active" | "paused" | "pending";
+export type AgentStatus = "active" | "inactive";
 
-export type GuardKey = "scope-guard" | "pii-guard" | "prompt-guard";
-
-export type DayStat = { day: string; success: number; errors: number };
-
-export type ToolStat = { name: string; calls: number; errors: number; p95: number; scope: string };
-
-export type GuardEvent = {
-  id: string;
-  title: string;
-  at: string;
-  source: string;
-  guard: GuardKey;
-  action: "blocked" | "masked";
-};
-
-export type SessionRow = {
-  id: string;
-  at: string;
-  user: string;
-  question: string;
-  tools: string[];
-  seconds: number;
-  ok: boolean;
-  rating?: "up" | "down";
-};
+export type GuardKey = "scope_guard" | "pii_guard" | "prompt_guard" | "think";
 
 export type Agent = {
   id: string;
   name: string;
-  description: string;
   model: string;
-  tools: string[];
   status: AgentStatus;
-  sessions24h: number;
-  calls24h: number;
-  errors24h: number;
-  p95: number;
-  ratingsUp: number;
-  ratingsTotal: number;
-  week: DayStat[];
-  toolStats: ToolStat[];
-  events: GuardEvent[];
-  sessions: SessionRow[];
-  guards: Record<GuardKey, boolean>;
-  config: { temperature: number; maxTokens: number; scopes: string[]; retentionDays: number; systemPrompt: string };
+  guardrail_config: Partial<Record<GuardKey, boolean>>;
+  tool_list: string[];
+  created_at: string;
 };
 
-export type AnalyticsTab = "overview" | "sessions" | "tools" | "guards" | "config";
+export type AgentStats = {
+  agent_id: string;
+  questions: number;
+  answered: number;
+  avg_seconds: number | null;
+  p90_seconds: number | null;
+  scope_refused: number;
+  prompt_refused: number;
+  errors: number;
+  pending: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+};
+
+export type AiModel = { name: string; size_bytes: number | null; family: string | null };
+
+export type AgentInput = {
+  name: string;
+  model: string;
+  status: AgentStatus;
+  tool_list: string[];
+  guardrail_config: Record<GuardKey, boolean>;
+};
