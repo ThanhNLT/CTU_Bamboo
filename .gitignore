@@ -9,3 +9,6 @@ __pycache__/
 compose.release.yml
 
 /backups/
+.agents/
+entities.json
+mempalace.yaml

@@ -184,6 +184,11 @@ _Tránh dùng_: tài khoản Trino (tài khoản là `bms-admin`, `bms-actions`,
 Mô hình ngôn ngữ hoặc mô hình embedding chạy cục bộ, dùng chung cho mọi tenant của nền tảng; chỉ chọn được mô hình đã cài trên máy chủ.
 _Tránh dùng_: AI (khi nói mô hình cụ thể), LLM (khi nói tác tử)
 
+**Dòng suy nghĩ** (`thinking`):
+Quá trình lập luận nội bộ của mô hình trước khi đưa ra câu trả lời; hiển thị trực tiếp khi đang trả lời và tự động thu gọn khi hoàn tất. Không dùng làm căn cứ trích dẫn nguồn.
+_Tránh dùng_: thought, reasoning token, log suy nghĩ
+
+
 **Tác tử AI** (`core.ai_agent`):
 Cấu hình riêng của một tenant cho một trợ thủ AI: tên, mô hình, guardrail, danh sách công cụ được gọi, trạng thái hoạt động. Người có quyền `core.ai.manage` đăng ký và cấu hình.
 _Tránh dùng_: bot, mô hình (mô hình là thứ tác tử dùng), agent
