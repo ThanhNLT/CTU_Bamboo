@@ -27,7 +27,7 @@ log = logging.getLogger("ai_worker")
 CANDIDATES = 30
 CONTEXT_CHUNKS = 6
 SEMANTIC_RATIO = 0.7
-FLUSH_SECONDS = 1.0
+FLUSH_SECONDS = 0.4
 STALE_MINUTES = 10
 SCOPE_REFUSAL = "Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem."
 ERROR_MESSAGE = "Trợ lý AI tạm thời không trả lời được. Vui lòng hỏi lại sau."
@@ -42,8 +42,28 @@ _THINK = re.compile(r"<think>.*?(?:</think>|$)\s*", re.DOTALL)
 _CITE = re.compile(r"\[(\d{1,2})\]")
 
 
+def split_think(text: str) -> tuple[str | None, str]:
+    """Tách dòng suy nghĩ và câu trả lời. Bỏ tag <think> và </think>."""
+    if "<think>" in text:
+        parts = text.split("<think>", 1)[1]
+        if "</think>" in parts:
+            think_part, answer_part = parts.split("</think>", 1)
+            return think_part.strip(), answer_part.lstrip()
+        return parts.strip(), ""
+    return None, text
+
+
+def clean_thought(text: str | None) -> str | None:
+    """Loại bỏ thẻ <think> và </think> nếu còn sót trong dòng suy nghĩ."""
+    if not text:
+        return None
+    cleaned = text.replace("<think>", "").replace("</think>", "").strip()
+    return cleaned if cleaned else None
+
+
 def strip_think(text: str) -> str:
     return _THINK.sub("", text).lstrip()
+
 
 
 def cited(answer: str, count: int) -> list[int]:
@@ -159,16 +179,38 @@ def answer(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: 
     def mask(text: str) -> str:
         return pii_guard.guard().mask(text)[0] if guard["pii_guard"] else text
 
-    raw, usage, last = "", {}, time.monotonic()
+    raw_thinking, raw_content = "", ""
+    usage, last = {}, time.monotonic()
     for delta in ai.chat(q["model"], build_messages(q["question"], chunks), think=guard["think"]):
-        raw += delta.content
+        raw_thinking += delta.thinking
+        raw_content += delta.content
         if delta.prompt_tokens is not None:
             usage = {"prompt_tokens": delta.prompt_tokens, "completion_tokens": delta.completion_tokens}
         if time.monotonic() - last >= FLUSH_SECONDS:
-            conn.execute("UPDATE core.ai_question SET answer = %s WHERE id = %s", (mask(strip_think(raw)), q["id"]))
+            cur_think = raw_thinking
+            cur_answer = raw_content
+            if "<think>" in cur_answer:
+                tag_think, tag_ans = split_think(cur_answer)
+                if tag_think is not None:
+                    cur_think = (cur_think + "\n" + tag_think).strip() if cur_think else tag_think
+                    cur_answer = tag_ans
+            cleaned_cur_think = clean_thought(cur_think)
+            conn.execute(
+                "UPDATE core.ai_question SET thinking = %s, answer = %s WHERE id = %s",
+                (mask(cleaned_cur_think) if cleaned_cur_think else None, mask(cur_answer), q["id"]),
+            )
             conn.commit()
             last = time.monotonic()
-    text = mask(strip_think(raw).strip())
+    final_think = raw_thinking
+    final_answer = raw_content
+    if "<think>" in final_answer:
+        tag_think, tag_ans = split_think(final_answer)
+        if tag_think is not None:
+            final_think = (final_think + "\n" + tag_think).strip() if final_think else tag_think
+            final_answer = tag_ans
+    cleaned_final_think = clean_thought(final_think)
+    clean_think = mask(cleaned_final_think) if cleaned_final_think else None
+    text = mask(final_answer.strip())
     citations = (
         [
             {
@@ -183,7 +225,7 @@ def answer(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: 
         if chunks
         else []
     )
-    _finish(conn, q, status="done", answer=text, citations=citations, **usage)
+    _finish(conn, q, status="done", thinking=clean_think, answer=text, citations=citations, **usage)
     return "done"
 
 
@@ -214,9 +256,11 @@ def requeue(conn: psycopg.Connection, q: dict) -> None:
     """Ollama tạm không trả lời: trả lượt về hàng đợi (giữ chỗ cũ) để worker thử lại sau."""
     bind_session(conn, _session(q))
     conn.execute(
-        "UPDATE core.ai_question SET status = 'queued', started_at = NULL, answer = '' WHERE id = %s", (q["id"],)
+        "UPDATE core.ai_question SET status = 'queued', started_at = NULL, thinking = NULL, answer = '' WHERE id = %s",
+        (q["id"],),
     )
     conn.commit()
+
 
 
 def run_forever(settings: config.Settings, idle_seconds: float = 5.0) -> None:
