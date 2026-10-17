@@ -104,6 +104,23 @@ def test_bo_phan_suy_nghi():
     assert ai_worker.strip_think("<think>đang nghĩ dở") == "", "đang nghĩ thì chưa hiện gì"
 
 
+def test_tach_dong_suy_nghi():
+    assert ai_worker.split_think("<think>\nnghĩ...\n</think>\n\nTrả lời [1]") == ("nghĩ...", "Trả lời [1]")
+    assert ai_worker.split_think("<think>đang nghĩ dở") == ("đang nghĩ dở", "")
+    assert ai_worker.split_think("Trả lời thẳng.") == (None, "Trả lời thẳng.")
+
+
+def test_loc_sach_dong_suy_nghi():
+    assert ai_worker.clean_thought(None) is None
+    assert ai_worker.clean_thought("") is None
+    assert ai_worker.clean_thought("   ") is None
+    assert ai_worker.clean_thought("<think>suy nghĩ</think>") == "suy nghĩ"
+    assert ai_worker.clean_thought("<think>đang nghĩ") == "đang nghĩ"
+    assert ai_worker.clean_thought("nghĩ xong</think>") == "nghĩ xong"
+    assert ai_worker.clean_thought("bình thường") == "bình thường"
+
+
+
 def test_ngu_canh_boc_trong_the_va_thoat_ky_tu():
     [system, user] = ai_worker.build_messages(
         "Hạn mức?",
@@ -127,6 +144,7 @@ class FakeOllama:
     def __init__(self):
         self.chat_calls = 0
         self.reply = REPLY
+        self.thinking = ""
         self.last_messages: list[dict] = []
         handler = self._handler()
         self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
@@ -170,8 +188,11 @@ class FakeOllama:
                 self.send_response(200)
                 self.send_header("Content-Type", "text/event-stream")
                 self.end_headers()
+                events = []
+                if fake.thinking:
+                    events.extend([{"choices": [{"delta": {"reasoning": w + " "}}]} for w in fake.thinking.split(" ")])
                 words = fake.reply.split(" ")
-                events = [{"choices": [{"delta": {"content": w + " "}}]} for w in words]
+                events.extend([{"choices": [{"delta": {"content": w + " "}}]} for w in words])
                 events.append({"choices": [], "usage": {"prompt_tokens": 321, "completion_tokens": len(words)}})
                 for e in events:
                     self.wfile.write(f"data: {json.dumps(e)}\n\n".encode())
@@ -203,6 +224,7 @@ def ai_env(search_settings, fake_ai, conn):
     admin.wait(admin.request("DELETE", f"/indexes/{settings.meili_chunk_index}/documents"))
     conn.execute("UPDATE core.ai_question SET status = 'error' WHERE status IN ('queued', 'running')")
     fake_ai.reply = REPLY
+    fake_ai.thinking = ""
     return SimpleNamespace(
         settings=settings,
         ai=Ollama(fake_ai.url),
@@ -344,6 +366,42 @@ def test_trich_dan_khop_so_trong_cau_tra_loi(ai_env, conn, org):
     assert work(ai_env) == "done"
     q = question(conn, asked["id"])
     assert [c["n"] for c in q["citations"]] == [2]
+
+
+def test_tra_loi_co_dong_suy_nghi_tu_ollama(ai_env, conn, org):
+    k = org
+    i = ids(conn, "TDX", k("nv"))
+    doc = kb_doc(conn, k("tp"), k("P_TP"), "company", "Quy chế bảo hành", "Bảo hành thiết bị trong 12 tháng.")
+    with psycopg.connect(ai_env.settings.database_url, row_factory=dict_row) as w:
+        ai_chunks.sync_document(w, ai_env.indexer, ai_env.ai, ai_env.settings, doc)
+    agent = make_agent(conn, think=True)
+    ai_env.fake.thinking = "Đang suy nghĩ về quy định bảo hành 12 tháng"
+    ai_env.fake.reply = "Bảo hành 12 tháng [1]."
+    asked = act("ai_ask", {"agent_id": agent, "question": "Thời hạn bảo hành?"}, i[k("nv")], i["TDX"], ai_env.ctx)
+    assert work(ai_env) == "done"
+    q = question(conn, asked["id"])
+    assert q["status"] == "done"
+    assert q["thinking"] == "Đang suy nghĩ về quy định bảo hành 12 tháng"
+    assert "<think>" not in (q["thinking"] or "")
+    assert q["answer"] == "Bảo hành 12 tháng [1]."
+
+
+def test_tra_loi_co_the_think_trong_content(ai_env, conn, org):
+    k = org
+    i = ids(conn, "TDX", k("nv"))
+    doc = kb_doc(conn, k("tp"), k("P_TP"), "company", "Quy chế đổi trả", "Đổi trả hàng trong vòng 7 ngày.")
+    with psycopg.connect(ai_env.settings.database_url, row_factory=dict_row) as w:
+        ai_chunks.sync_document(w, ai_env.indexer, ai_env.ai, ai_env.settings, doc)
+    agent = make_agent(conn, think=True)
+    ai_env.fake.thinking = ""
+    ai_env.fake.reply = "<think>Phân tích quy định đổi trả</think>Đổi trả trong 7 ngày [1]."
+    asked = act("ai_ask", {"agent_id": agent, "question": "Quy định đổi trả?"}, i[k("nv")], i["TDX"], ai_env.ctx)
+    assert work(ai_env) == "done"
+    q = question(conn, asked["id"])
+    assert q["status"] == "done"
+    assert q["thinking"] == "Phân tích quy định đổi trả"
+    assert "<think>" not in (q["thinking"] or "")
+    assert q["answer"] == "Đổi trả trong 7 ngày [1]."
 
 
 def test_chan_tiem_lenh_ngay_khi_hoi(ai_env, conn):
