@@ -7,4 +7,5 @@ Kế hoạch theo tuần và nhật ký quyết định kiến trúc.
 
 04-timeline
 05-quyet-dinh-kien-truc
+06-ke-hoach-ai
 ```

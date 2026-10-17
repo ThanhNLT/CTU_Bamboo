@@ -17,6 +17,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import (
     admin,
+    ai_agent,
     attachments,
     audit,
     auth,
@@ -38,6 +39,7 @@ from . import (
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
 from .flowable import FlowableClient
+from .ollama import Ollama
 from .pii import PiiCipher
 from .storage import Storage
 
@@ -166,6 +168,7 @@ HANDLERS = {
     **lakehouse_query.HANDLERS,
     **ledger.HANDLERS,
     **process_design.HANDLERS,
+    **ai_agent.HANDLERS,
 }
 
 
@@ -226,6 +229,7 @@ def create_app(
         pii=_pii_cipher(),
         users=_keycloak_users(settings),
         lakehouse=_lakehouse(settings),
+        ai=Ollama(settings.ollama_url, timeout=10.0) if settings.ollama_url else None,
     )
     verifier = verifier or auth.KeycloakVerifier(
         settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)

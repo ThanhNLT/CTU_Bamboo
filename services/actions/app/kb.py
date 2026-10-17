@@ -50,6 +50,7 @@ def kb_reindex(conn: psycopg.Connection, session: dict, args: dict, _ctx: Contex
     if not conn.execute("SELECT core.has_permission(%s, 'kb.document.manage', %s)", (person, unit)).fetchone()[0]:
         raise ActionError("Cần quyền kb.document.manage để nạp lại chỉ mục", "forbidden", 403)
     conn.execute("SELECT search.mark(%s, %s, %s)", (tenant, ENTITY, args["id"]))
+    conn.execute("SELECT search.mark_chunk(%s, %s)", (tenant, args["id"]))
     conn.execute(
         """SELECT search.mark(tenant_id, 'core.attachment', id) FROM core.attachment
            WHERE entity_type = %s AND entity_id = %s AND status = 'CLEAN' AND deleted_at IS NULL""",

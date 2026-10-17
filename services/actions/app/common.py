@@ -13,6 +13,7 @@ from .storage import Storage
 
 if TYPE_CHECKING:
     from .hr_account import KeycloakUsers
+    from .ollama import Ollama
     from .pii import PiiCipher
     from .search import Meili
     from .trino import Trino
@@ -30,6 +31,7 @@ class Context:
     pii: "PiiCipher | None" = None
     users: "KeycloakUsers | None" = None
     lakehouse: "Trino | None" = None
+    ai: "Ollama | None" = None
 
 
 class ActionError(Exception):

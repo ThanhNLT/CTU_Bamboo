@@ -101,10 +101,10 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | | Phả hệ dữ liệu | OpenMetadata | Demo |
 | [D] Dữ liệu số (lạnh) | Phòng đọc ảo chống sửa xóa | S3 Object Lock + trình xem chỉ đọc | Mở rộng |
 | | Đối soát sổ cái bất biến | immudb + giao diện xác minh | Mở rộng |
-| [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa | Meilisearch + Qdrant, embedding bge-m3 | Demo |
+| [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa | Meilisearch (hybrid) + embedding bge-m3 qua Ollama | Demo |
 | | OCR | PaddleOCR, VietOCR | Demo |
-| | Trợ lý RAG | LlamaIndex + Ollama + Qdrant | Demo |
-| | Quản trị tác tử AI | LangGraph + Langfuse | Mở rộng |
+| | Trợ lý RAG | Ollama (Qwen3-4B) + Meilisearch, điều phối trong actions (ADR #51) | Demo |
+| | Quản trị tác tử AI | Action trong actions + số liệu từ lượt hỏi (ADR #51) | Demo |
 
 ## 5. Tầng 3 – Nền tảng Kinh doanh số
 

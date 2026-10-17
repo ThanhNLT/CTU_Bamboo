@@ -118,6 +118,81 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_ai_agent (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.core_ai_agent COMMENT 'Trạng thái hiện tại của core.ai_agent, dựng từ bronze.core_ai_agent' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    json_extract_scalar(after, '$["name"]') AS "name",
+    json_extract_scalar(after, '$["model"]') AS "model",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    json_extract_scalar(after, '$["guardrail_config"]') AS "guardrail_config",
+    json_extract_scalar(after, '$["tool_list"]') AS "tool_list",
+    CAST(json_extract_scalar(after, '$["created_by"]') AS uuid) AS "created_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.core_ai_agent
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_ai_question (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.core_ai_question COMMENT 'Trạng thái hiện tại của core.ai_question, dựng từ bronze.core_ai_question' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["agent_id"]') AS uuid) AS "agent_id",
+    CAST(json_extract_scalar(after, '$["person_id"]') AS uuid) AS "person_id",
+    json_extract_scalar(after, '$["question"]') AS "question",
+    CAST(json_extract_scalar(after, '$["kb_document_id"]') AS uuid) AS "kb_document_id",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    json_extract_scalar(after, '$["answer"]') AS "answer",
+    json_extract_scalar(after, '$["citations"]') AS "citations",
+    json_extract_scalar(after, '$["guard"]') AS "guard",
+    json_extract_scalar(after, '$["error"]') AS "error",
+    json_extract_scalar(after, '$["model"]') AS "model",
+    CAST(json_extract_scalar(after, '$["prompt_tokens"]') AS integer) AS "prompt_tokens",
+    CAST(json_extract_scalar(after, '$["completion_tokens"]') AS integer) AS "completion_tokens",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.core_ai_question
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_assignment (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,

@@ -4,11 +4,11 @@
 
 import { Link } from "react-router";
 
-import { parseRich } from "../assistant";
+import { citationLabel, citationLink, parseRich } from "../assistant";
 import type { Citation } from "../types";
 
-export const RichText = ({ text, sources = [] }: { text: string; sources?: Citation[] }) => (
-  <p className="text-[13.5px] leading-relaxed text-ink">
+export const RichText = ({ text, citations = [] }: { text: string; citations?: Citation[] }) => (
+  <p className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-ink">
     {parseRich(text).map((p, i) => {
       if (p.type === "bold")
         return (
@@ -17,18 +17,18 @@ export const RichText = ({ text, sources = [] }: { text: string; sources?: Citat
           </b>
         );
       if (p.type === "text") return <span key={i}>{p.value}</span>;
-      const src = sources.find((s) => s.id === p.id);
-      return src ? (
+      const c = citations.find((x) => x.n === p.n);
+      return c ? (
         <Link
           key={i}
-          to={src.to}
-          title={src.label}
+          to={citationLink(c)}
+          title={citationLabel(c)}
           className="mx-px rounded px-0.5 text-[12px] font-semibold text-bamboo-700 hover:bg-bamboo-50"
         >
-          [{p.id}]
+          [{p.n}]
         </Link>
       ) : (
-        <span key={i}>[{p.id}]</span>
+        <span key={i}>[{p.n}]</span>
       );
     })}
   </p>

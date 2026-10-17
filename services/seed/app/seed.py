@@ -1081,6 +1081,35 @@ class Seeder:
                 ["Chọn tư cách lập", "Nhà cung cấp và nhóm hàng", "Đính kèm báo giá", "Theo dõi chuỗi duyệt"],
             ),
             (
+                "TDX",
+                "TDX_PC.S1",
+                "Quy chế mua sắm hàng hóa và dịch vụ",
+                "regulation",
+                "group",
+                (
+                    "Điều 1. Phạm vi: áp dụng cho mọi khoản mua hàng hóa, dịch vụ của Tập đoàn X và các công ty thành viên. "
+                    "Điều 2. Hạn mức phê duyệt: đề nghị dưới 50 triệu đồng do trưởng đơn vị của người lập duyệt; "
+                    "từ 50 triệu đến dưới 500 triệu đồng do giám đốc công ty thành viên duyệt; từ 500 triệu đồng trở lên "
+                    "do giám đốc công ty duyệt rồi Tổng giám đốc Tập đoàn duyệt bước hai. Đơn vị trực thuộc Tập đoàn "
+                    "có đề nghị từ 50 triệu đồng do Tập đoàn duyệt. "
+                    "Điều 3. Báo giá: đề nghị từ 50 triệu đồng phải đính kèm ít nhất ba báo giá của ba nhà cung cấp khác "
+                    "nhau; dưới 50 triệu đồng cần ít nhất một báo giá. "
+                    "Điều 4. Nhà cung cấp: ưu tiên nhà cung cấp trong danh mục; nhà cung cấp mới được nhập tên và mã số "
+                    "thuế trên đề nghị, bộ phận quản lý dữ liệu chủ bổ sung vào danh mục sau khi đề nghị được duyệt. "
+                    "Điều 5. Trả về và từ chối: người duyệt trả về hoặc từ chối phải ghi lý do; đề nghị bị trả về được sửa "
+                    "và gửi lại, đề nghị bị từ chối không gửi lại được. "
+                    "Điều 6. Lưu trữ: đề nghị, báo giá và lịch sử duyệt được lưu trên Bamboo tối thiểu 10 năm."
+                ),
+                [
+                    "Điều 1. Phạm vi áp dụng",
+                    "Điều 2. Hạn mức phê duyệt",
+                    "Điều 3. Báo giá",
+                    "Điều 4. Nhà cung cấp",
+                    "Điều 5. Trả về và từ chối",
+                    "Điều 6. Lưu trữ",
+                ],
+            ),
+            (
                 "BVX",
                 "BVX_KHTH.HEAD",
                 "Quy trình kiểm soát nhiễm khuẩn",
@@ -1118,6 +1147,23 @@ class Seeder:
             )
             self.x("UPDATE collab.kb_document SET status = 'APPROVED', published_at = %s WHERE id = %s", START, doc_id)
 
+    def ai_demo(self):
+        self.seat_role(
+            "QUAN_TRI_AI", "Quản trị tác tử AI", "core.ai.manage", {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]}
+        )
+        tid = self.tenant_id("TDX")
+        agent = uid("TDX", "ai_agent", "Trợ lý quy chế")
+        if self.x("SELECT 1 FROM core.ai_agent WHERE id = %s", agent).fetchone():
+            return
+        self.x(
+            """INSERT INTO core.ai_agent (id, tenant_id, name, model, tool_list, created_by)
+                  VALUES (%s, %s, 'Trợ lý quy chế', %s, '["search_docs", "cite"]', %s)""",
+            agent,
+            tid,
+            os.environ.get("AI_CHAT_MODEL", "qwen3:4b"),
+            self._holder("TDX", "TDX_CDS.HEAD"),
+        )
+
     def run(self):
         for t in TENANTS:
             self.x(
@@ -1147,6 +1193,7 @@ class Seeder:
         self.master_data_admin_demo()
         self.process_design_demo()
         self.library_demo()
+        self.ai_demo()
         self.ops_demo()
         self.approval_history_demo()
 
@@ -1164,6 +1211,7 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.master_data_admin_demo()
             seeder.process_design_demo()
             seeder.library_demo()
+            seeder.ai_demo()
             seeder.ops_demo()
             seeder.approval_history_demo()
             demo_load.load(conn)
