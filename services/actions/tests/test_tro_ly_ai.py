@@ -120,7 +120,6 @@ def test_loc_sach_dong_suy_nghi():
     assert ai_worker.clean_thought("bình thường") == "bình thường"
 
 
-
 def test_ngu_canh_boc_trong_the_va_thoat_ky_tu():
     [system, user] = ai_worker.build_messages(
         "Hạn mức?",
@@ -139,10 +138,14 @@ REPLY = "Theo quy chế, đề nghị từ 50 triệu đồng phải có ba báo
 
 
 class FakeOllama:
-    """Ollama giả: /api/tags, /api/embed (bag-of-words băm vào 1024 chiều), /v1/chat/completions (SSE)."""
+    """Ollama giả: /api/tags, /api/embed (bag-of-words băm vào 1024 chiều), /v1/chat/completions (SSE),
+    /api/ps và /api/generate (nạp, gỡ mô hình; `vram_ratio` < 1 giả lập mô hình bị chia lớp sang CPU)."""
 
     def __init__(self):
         self.chat_calls = 0
+        self.loaded: dict[str, float] = {}
+        self.vram_ratio = 1.0
+        self.unloads: list[str] = []
         self.reply = REPLY
         self.thinking = ""
         self.last_messages: list[dict] = []
@@ -176,10 +179,28 @@ class FakeOllama:
                 self.wfile.write(data)
 
             def do_GET(self):
+                if self.path == "/api/ps":
+                    size = 2_500_000_000
+                    self._json(
+                        {
+                            "models": [
+                                {"name": n, "size": size, "size_vram": int(size * r)} for n, r in fake.loaded.items()
+                            ]
+                        }
+                    )
+                    return
                 self._json({"models": [{"name": "qwen3:4b", "size": 2_500_000_000}, {"name": "bge-m3:latest"}]})
 
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                if self.path == "/api/generate" or (self.path == "/api/embed" and body.get("keep_alive") == 0):
+                    if body.get("keep_alive") == 0:
+                        fake.unloads.append(body["model"])
+                        fake.loaded.pop(body["model"], None)
+                    else:
+                        fake.loaded[body["model"]] = fake.vram_ratio
+                    self._json({"model": body["model"], "done": True})
+                    return
                 if self.path == "/api/embed":
                     self._json({"embeddings": [fake.vector(t) for t in body["input"]]})
                     return
@@ -225,6 +246,9 @@ def ai_env(search_settings, fake_ai, conn):
     conn.execute("UPDATE core.ai_question SET status = 'error' WHERE status IN ('queued', 'running')")
     fake_ai.reply = REPLY
     fake_ai.thinking = ""
+    fake_ai.loaded.clear()
+    fake_ai.unloads.clear()
+    fake_ai.vram_ratio = 1.0
     return SimpleNamespace(
         settings=settings,
         ai=Ollama(fake_ai.url),
