@@ -77,13 +77,7 @@ export const ThinkingAccordion = ({
           ) : (
             <Brain className="h-3.5 w-3.5 text-bamboo-600" aria-hidden />
           )}
-          <span>
-            {isLive
-              ? "Đang suy luận…"
-              : elapsedSec
-                ? `Đã suy nghĩ trong ${elapsedSec}`
-                : "Dòng suy nghĩ"}
-          </span>
+          <span>{isLive ? "Đang suy luận…" : elapsedSec ? `Đã suy nghĩ trong ${elapsedSec}` : "Dòng suy nghĩ"}</span>
         </span>
         {isOpen ? (
           <ChevronDown className="h-3.5 w-3.5 text-muted" aria-hidden />
@@ -101,6 +95,7 @@ export const ThinkingAccordion = ({
 };
 
 export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => void; onRetry: () => void }) => {
+  if (q.status === "queued" && q.gpu_wait_since) return <ThinkingMessage label="Đang chờ GPU…" />;
   if (q.status === "queued")
     return <ThinkingMessage label={q.position ? `Đang chờ, vị trí thứ ${q.position + 1}…` : "Đang chờ trợ lý…"} />;
   if (q.status === "running" && !q.answer && !q.thinking)
@@ -108,18 +103,11 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
 
   const isLiveThinking = q.status === "running" && !q.answer;
 
-
   return (
     <div className="flex gap-3">
       <AiAvatar />
       <div className="flex min-w-0 flex-1 flex-col gap-3" aria-busy={q.status === "running"}>
-        {q.thinking && (
-          <ThinkingAccordion
-            thinking={q.thinking}
-            isLive={isLiveThinking}
-            elapsedSec={elapsed(q)}
-          />
-        )}
+        {q.thinking && <ThinkingAccordion thinking={q.thinking} isLive={isLiveThinking} elapsedSec={elapsed(q)} />}
         {q.status === "refused" ? (
           <Notice tone="warn" icon={<ShieldAlert className="h-4 w-4" />}>
             {refusalText(q)}
