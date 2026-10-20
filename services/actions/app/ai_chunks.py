@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import psycopg
 
-from . import config, search, storage
+from . import config, ocr, search, storage
 from .ollama import Ollama
 
 log = logging.getLogger("ai_chunks")
@@ -169,14 +169,17 @@ def records(conn: psycopg.Connection, settings: config.Settings, doc_id) -> list
                 "text": c.text,
             }
         )
+    scanned = {f["id"]: ocr.text_of(conn, f["id"]) for f in files}
+    conn.rollback()
     for f in files:
-        if f["content_type"] not in search.TEXT_TYPES:
-            continue
-        data = storage.read_document(settings, f["storage_key"])
-        if data is None:
-            log.warning("tệp %s không còn trong bucket tài liệu", f["id"])
-            continue
-        text = search.extract_lines(settings.tika_url, data, f["content_type"])[: search.MAX_TEXT]
+        text = ""
+        if f["content_type"] in search.TEXT_TYPES:
+            data = storage.read_document(settings, f["storage_key"])
+            if data is None:
+                log.warning("tệp %s không còn trong bucket tài liệu", f["id"])
+                continue
+            text = search.extract_lines(settings.tika_url, data, f["content_type"])
+        text = "\n".join(t for t in (text, scanned[f["id"]]) if t)[: search.MAX_TEXT]
         for n, c in enumerate(split(text)):
             out.append(
                 {

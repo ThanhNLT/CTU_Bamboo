@@ -6,6 +6,10 @@
 Mỗi lần lấy một lượt `queued` (FIFO, SKIP LOCKED), tìm đoạn trong `documents_kb_chunk`, lọc theo quyền
 xem của người hỏi, gọi Ollama và ghi dần câu trả lời mỗi ~1 giây để giao diện hiện qua subscription.
 Chạy một worker (Ollama trả lời một lượt một lúc); lượt `running` quá STALE_MINUTES coi là bị gián đoạn.
+
+Worker cũng là hàng đợi GPU chung (ADR #52): hết lượt hỏi thì OCR một trang tệp quét rồi xem lại lượt hỏi,
+nên mỗi lúc chỉ một mô hình chính chạy. Mô hình sinh không nạp trọn lên GPU thì lượt hỏi chờ GPU,
+quá `AI_GPU_WAIT_SECONDS` thì lỗi.
 """
 
 import html
@@ -18,9 +22,11 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from . import ai_agent, ai_chunks, config, pii_guard, search
+from . import ai_agent, ai_chunks, config, ocr, pii_guard, search
 from .common import bind_session
+from .gpu import Gpu, GpuUnavailable
 from .ollama import Ollama, OllamaUnavailable
+from .storage import Storage
 
 log = logging.getLogger("ai_worker")
 
@@ -29,8 +35,10 @@ CONTEXT_CHUNKS = 6
 SEMANTIC_RATIO = 0.7
 FLUSH_SECONDS = 0.4
 STALE_MINUTES = 10
+OCR_PAUSE_SECONDS = 60
 SCOPE_REFUSAL = "Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem."
 ERROR_MESSAGE = "Trợ lý AI tạm thời không trả lời được. Vui lòng hỏi lại sau."
+GPU_ERROR = "Không đủ VRAM để chạy mô hình trên GPU. Vui lòng hỏi lại sau."
 SYSTEM_PROMPT = """Bạn là trợ lý tra cứu Thư viện tri thức của doanh nghiệp. Trả lời bằng tiếng Việt, ngắn gọn.
 Quy tắc:
 - Chỉ trả lời dựa trên các đoạn trong <tai_lieu>. Không dùng kiến thức bên ngoài.
@@ -63,7 +71,6 @@ def clean_thought(text: str | None) -> str | None:
 
 def strip_think(text: str) -> str:
     return _THINK.sub("", text).lstrip()
-
 
 
 def cited(answer: str, count: int) -> list[int]:
@@ -167,7 +174,9 @@ def _finish(conn: psycopg.Connection, q: dict, **fields) -> None:
     conn.commit()
 
 
-def answer(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, q: dict) -> str:
+def answer(
+    conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, q: dict, gpu: Gpu
+) -> str:
     agent = conn.execute("SELECT guardrail_config FROM core.ai_agent WHERE id = %s", (q["agent_id"],)).fetchone()
     conn.commit()
     guard = ai_agent.guardrails(agent["guardrail_config"] if agent else None)
@@ -179,6 +188,7 @@ def answer(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: 
     def mask(text: str) -> str:
         return pii_guard.guard().mask(text)[0] if guard["pii_guard"] else text
 
+    gpu.ensure_chat(q["model"])
     raw_thinking, raw_content = "", ""
     usage, last = {}, time.monotonic()
     for delta in ai.chat(q["model"], build_messages(q["question"], chunks), think=guard["think"]):
@@ -229,14 +239,24 @@ def answer(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: 
     return "done"
 
 
-def run_once(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings) -> str | None:
+def run_once(
+    conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, gpu: Gpu | None = None
+) -> str | None:
     q = claim(conn)
     if q is None:
         return None
+    gpu = gpu or Gpu(ai, None, settings.ai_cpu_models)
     try:
-        return answer(conn, meili, ai, settings, q)
+        return answer(conn, meili, ai, settings, q, gpu)
     except psycopg.OperationalError:
         raise
+    except GpuUnavailable as exc:
+        conn.rollback()
+        if wait_gpu(conn, q, settings.ai_gpu_wait_seconds):
+            raise
+        log.warning("lượt hỏi %s chờ GPU quá %s giây: %s", q["id"], settings.ai_gpu_wait_seconds, exc)
+        _finish(conn, q, status="error", error=GPU_ERROR)
+        return "error"
     except OllamaUnavailable as exc:
         conn.rollback()
         if not exc.transient:
@@ -262,24 +282,62 @@ def requeue(conn: psycopg.Connection, q: dict) -> None:
     conn.commit()
 
 
+def wait_gpu(conn: psycopg.Connection, q: dict, limit_seconds: int) -> bool:
+    """Trả lượt về hàng đợi, đánh dấu đang chờ GPU. False khi đã chờ quá hạn."""
+    bind_session(conn, _session(q))
+    row = conn.execute(
+        """UPDATE core.ai_question
+           SET status = 'queued', started_at = NULL, thinking = NULL, answer = '',
+               gpu_wait_since = coalesce(gpu_wait_since, now())
+           WHERE id = %s RETURNING now() - gpu_wait_since <= make_interval(secs => %s) AS waiting""",
+        (q["id"], limit_seconds),
+    ).fetchone()
+    conn.commit()
+    return row["waiting"]
+
+
+def step(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, gpu: Gpu, files) -> bool:
+    """Một việc trên hàng đợi GPU: lượt hỏi trước, hết lượt hỏi thì một trang OCR."""
+    if run_once(conn, meili, ai, settings, gpu):
+        return True
+    return files is not None and ocr.run_once(conn, gpu, files) is not None
+
 
 def run_forever(settings: config.Settings, idle_seconds: float = 5.0) -> None:
     ai = Ollama(settings.ollama_url)
+    ocr_client = ocr.OcrClient(settings.ocr_url) if settings.ocr_url else None
+    gpu = Gpu(ai, ocr_client, settings.ai_cpu_models)
+    files = ocr.Files(Storage(settings).read_stored) if ocr_client else None
+    ocr_paused_until = 0.0
     meili = search.Meili(settings.meili_url, settings.meili_search_key)
     listen = psycopg.connect(settings.database_url, autocommit=True)
     listen.execute("LISTEN ai_question")
     work = psycopg.connect(settings.database_url, row_factory=dict_row)
     pii_guard.warm_up()
-    log.info("ai-worker đang chạy (mô hình %s, embedding %s)", settings.ai_chat_model, settings.ai_embed_model)
+    log.info(
+        "ai-worker đang chạy (mô hình %s, embedding %s, OCR %s)",
+        settings.ai_chat_model,
+        settings.ai_embed_model,
+        settings.ocr_url or "tắt",
+    )
     while True:
         try:
             if n := recover_stale(work):
                 log.info("đánh dấu lỗi %s lượt hỏi bị gián đoạn", n)
-            while run_once(work, meili, ai, settings):
+            use_ocr = files if time.monotonic() >= ocr_paused_until else None
+            while step(work, meili, ai, settings, gpu, use_ocr):
                 pass
         except OllamaUnavailable as exc:
             log.warning("ai-worker tạm dừng, Ollama chưa sẵn sàng: %s", exc)
             time.sleep(idle_seconds)
+            continue
+        except GpuUnavailable as exc:
+            log.warning("ai-worker chờ GPU: %s", exc)
+            time.sleep(idle_seconds)
+            continue
+        except ocr.OcrUnavailable as exc:
+            log.warning("tạm dừng OCR %s giây, dịch vụ OCR chưa sẵn sàng: %s", OCR_PAUSE_SECONDS, exc)
+            ocr_paused_until = time.monotonic() + OCR_PAUSE_SECONDS
             continue
         except psycopg.OperationalError as exc:
             log.warning("ai-worker mất kết nối CSDL, kết nối lại: %s", exc)

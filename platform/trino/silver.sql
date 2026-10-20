@@ -185,6 +185,8 @@ SELECT
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    json_extract_scalar(after, '$["thinking"]') AS "thinking",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["gpu_wait_since"]')) AS timestamp(6) with time zone) AS "gpu_wait_since",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -262,6 +264,42 @@ SELECT
 FROM (
     SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
     FROM lakehouse.bronze.core_attachment
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_attachment_ocr (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.core_attachment_ocr COMMENT 'Trạng thái hiện tại của core.attachment_ocr, dựng từ bronze.core_attachment_ocr' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["attachment_id"]') AS uuid) AS "attachment_id",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    CAST(json_extract(after, '$["pages"]') AS array(varchar)) AS "pages",
+    CAST(json_extract_scalar(after, '$["pages_total"]') AS integer) AS "pages_total",
+    CAST(json_extract_scalar(after, '$["pages_done"]') AS integer) AS "pages_done",
+    json_extract_scalar(after, '$["note"]') AS "note",
+    json_extract_scalar(after, '$["error"]') AS "error",
+    CAST(json_extract_scalar(after, '$["attempts"]') AS integer) AS "attempts",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["next_attempt_at"]')) AS timestamp(6) with time zone) AS "next_attempt_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.core_attachment_ocr
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
