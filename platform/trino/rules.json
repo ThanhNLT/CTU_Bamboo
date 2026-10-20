@@ -114,6 +114,16 @@
       "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
       "catalog": "lakehouse",
       "schema": "silver",
+      "table": "core_attachment_ocr",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
       "table": "core_catalog_item",
       "privileges": [
         "SELECT"
