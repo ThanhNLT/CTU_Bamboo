@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .env
+docker-compose.override.yml
 compose.release.yml
 
 /backups/

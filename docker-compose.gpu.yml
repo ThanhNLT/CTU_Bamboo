@@ -6,6 +6,10 @@
 #   docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai up -d
 services:
   ollama:
-    devices:
-      - nvidia.com/gpu=all
-
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
