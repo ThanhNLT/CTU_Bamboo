@@ -37,6 +37,7 @@ x-actions-env: &actions-env
   AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
   AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
   AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
+  AI_CPU_MODELS: ${AI_CPU_MODELS:-bge-m3}
 
 x-bao-sync-env: &bao-sync-env
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
@@ -416,13 +417,15 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
+  # Mô hình AI chỉ nạp vào RAM/VRAM khi có việc và tự gỡ sau AI_KEEP_ALIVE nhàn rỗi (ADR #52);
+  # dùng GPU NVIDIA khi bật docker-compose.gpu.yml, không thì chạy CPU.
   ollama:
     logging: *logging
     image: ollama/ollama:0.35.1
     environment:
       OLLAMA_NUM_PARALLEL: "1"
       OLLAMA_MAX_LOADED_MODELS: "2"
-      OLLAMA_KEEP_ALIVE: "30m"
+      OLLAMA_KEEP_ALIVE: ${AI_KEEP_ALIVE:-5m}
       OLLAMA_CONTEXT_LENGTH: "8192"
     volumes:
       - ollama-models:/root/.ollama
@@ -449,6 +452,41 @@ services:
     entrypoint: ["sh", "-c", "for m in \"$$AI_CHAT_MODEL\" \"$$AI_EMBED_MODEL\"; do ollama show \"$$m\" > /dev/null 2>&1 || ollama pull \"$$m\" || echo \"CẢNH BÁO: không tải được mô hình $$m, AI chưa dùng được\" >&2; done"]
     restart: "no"
 
+  ocr:
+    logging: *logging
+    build:
+      context: .
+      dockerfile: services/ocr/Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
+    depends_on:
+      ocr-init:
+        condition: service_completed_successfully
+    environment:
+      HF_HUB_OFFLINE: "1"
+      OCR_IDLE_SECONDS: ${OCR_IDLE_SECONDS:-300}
+    volumes:
+      - ocr-models:/models
+    ports:
+      - "127.0.0.1:8866:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  ocr-init:
+    logging: *logging
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
+    build:
+      context: .
+      dockerfile: services/ocr/Dockerfile
+    volumes:
+      - ocr-models:/models
+    command: ["python", "-m", "app.download"]
+    restart: "no"
+
   ai-worker:
     logging: *logging
     <<: *actions-image
@@ -457,7 +495,11 @@ services:
         condition: service_completed_successfully
       ollama-init:
         condition: service_completed_successfully
-    environment: *actions-env
+      ocr:
+        condition: service_started
+    environment:
+      <<: *actions-env
+      OCR_URL: http://ocr:8000
     volumes:
       - actions-secrets:/run/bms:ro
     command: ["python", "-m", "app.ai_worker"]
@@ -536,6 +578,8 @@ services:
       DEBEZIUM_SOURCE_PUBLICATION_AUTOCREATE_MODE: disabled
       DEBEZIUM_SOURCE_SLOT_NAME: bms_debezium
       DEBEZIUM_SOURCE_SCHEMA_INCLUDE_LIST: core,mdm,wf,proc,ic,mfg,collab,cdc
+      # Khớp CDC_EXCLUDED_COLUMNS trong services/actions/app/lakehouse_silver.py.
+      DEBEZIUM_SOURCE_COLUMN_EXCLUDE_LIST: core.attachment_ocr.page_texts
       DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
       DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
       DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string
@@ -729,3 +773,4 @@ volumes:
   trino-catalog:
   trino-secrets:
   ollama-models:
+  ocr-models:

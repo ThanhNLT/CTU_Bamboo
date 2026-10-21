@@ -81,6 +81,7 @@ EXTRA_COMPUTED = {
 
 HIDDEN_COLUMNS = {
     ("core", "attachment"): {"storage_key"},
+    ("core", "attachment_ocr"): {"page_texts", "pages", "attempts", "next_attempt_at"},
     ("hr", "onboarding_request"): {
         "national_id_enc",
         "bank_account_enc",
@@ -110,6 +111,7 @@ SELECT_FILTER = {
     ("core", "v_ai_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "ai_agent"): {"_and": [TENANT, IS_AI_ADMIN]},
     ("core", "ai_question"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    ("core", "attachment_ocr"): {"_and": [TENANT, {"attachment": {"can_read": {"_eq": True}}}]},
     **{key: {"_and": [TENANT, IS_ADMIN]} for key in ADMIN_READ},
     ("proc", "purchase_request_item"): {"_and": [TENANT, {"request": {"can_read": {"_eq": True}}}]},
     ("ic", "ic_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
@@ -151,6 +153,7 @@ MANUAL_RELATIONSHIPS = [
     ("array", ("collab", "kb_document"), "comments", ("collab", "comment"), {"id": "entity_id"}),
     ("object", ("collab", "notification"), "kb_document", ("collab", "kb_document"), {"entity_id": "id"}),
     ("array", ("collab", "kb_document"), "attachments", ("core", "attachment"), {"id": "entity_id"}),
+    ("object", ("core", "attachment"), "ocr", ("core", "attachment_ocr"), {"id": "attachment_id"}),
 ]
 
 PR_EDITABLE = [
@@ -818,6 +821,14 @@ def build(conn: psycopg.Connection) -> dict:
                 "AttachmentDownload!",
                 [ROLE, ADMIN_ROLE],
                 "Link tải về có chữ ký (chỉ tệp sạch, người xem được chứng từ)",
+            ),
+            _action(
+                "ocr_retry",
+                "mutation",
+                [("attachment_id", "uuid!")],
+                "AttachmentResult!",
+                [ROLE, ADMIN_ROLE],
+                "Xếp lại việc OCR tệp đính kèm đã xong, bị bỏ qua hoặc lỗi (ADR #52)",
             ),
             _action(
                 "delete_attachment",

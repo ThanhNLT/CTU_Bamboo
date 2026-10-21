@@ -108,7 +108,7 @@ def test_de_xuat_duyet_xuat_ban(hasura, conn, s3, library):
     assert "kb.document.manage" in retired["errors"][0]["message"]
     delete = """mutation($a: uuid!) { delete_attachment(attachment_id: $a) { status } }"""
     kept = hasura(delete, {"a": att}, person=i["c"], tenant=i["TDX"])
-    assert "đã có kết quả" in kept["errors"][0]["message"], "tệp của tài liệu đã xuất bản được giữ nguyên"
+    assert "giữ làm bằng chứng" in kept["errors"][0]["message"], "tệp của tài liệu đã xuất bản được giữ nguyên"
 
     late = hasura(UPLOAD, {"id": doc_id, "size": len(PDF)}, person=i["a"], tenant=i["TDX"])
     assert "Chỉ người lập thêm tệp" in late["errors"][0]["message"]
