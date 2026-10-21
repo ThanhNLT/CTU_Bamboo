@@ -49,6 +49,27 @@ class Ollama:
             for m in resp.json().get("models", [])
         ]
 
+    def running(self) -> list[dict]:
+        """Mô hình đang nạp: tên, tổng dung lượng và phần nằm trên VRAM (`/api/ps`)."""
+        try:
+            resp = self.http.get("/api/ps", timeout=5.0)
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise OllamaUnavailable(f"Ollama không truy cập được: {exc}") from exc
+        return [
+            {"name": m["name"], "size": m.get("size") or 0, "size_vram": m.get("size_vram") or 0}
+            for m in resp.json().get("models", [])
+        ]
+
+    def unload(self, model: str) -> None:
+        """Gỡ mô hình khỏi bộ nhớ; mô hình embedding không nhận /api/generate nên gỡ qua /api/embed."""
+        try:
+            self._post("/api/generate", {"model": model, "keep_alive": 0, "stream": False})
+        except OllamaUnavailable as exc:
+            if exc.transient:
+                raise
+            self._post("/api/embed", {"model": model, "input": [], "keep_alive": 0})
+
     def embed(self, model: str, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []

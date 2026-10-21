@@ -2,14 +2,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Cho Ollama dùng GPU NVIDIA (cần nvidia-container-toolkit, xem docs/van-hanh/trien-khai.md):
-#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai up -d
+# Cho Ollama và dịch vụ OCR dùng GPU NVIDIA (cần nvidia-container-toolkit, xem docs/van-hanh/trien-khai.md):
+#   cp docker-compose.gpu.yml docker-compose.override.yml && docker compose up -d   (hoặc make up-gpu)
+# Mô hình vẫn chỉ nạp lên GPU khi có việc và tự gỡ khi nhàn rỗi (ADR #52).
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
 services:
-  ollama:
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+  ollama: *gpu
+  ocr: *gpu
