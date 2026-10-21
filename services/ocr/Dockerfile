@@ -7,7 +7,7 @@ LABEL org.opencontainers.image.title="bamboo-ocr" \
       org.opencontainers.image.source="https://github.com/ThanhNLT/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
-ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2 \
     OCR_MODELS_DIR=/models PADDLE_PDX_CACHE_HOME=/models/paddlex HF_HOME=/models/huggingface \
     PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \

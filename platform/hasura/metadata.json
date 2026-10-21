@@ -7996,7 +7996,10 @@
             "from_env": "BMS_DATABASE_URL"
           },
           "isolation_level": "read-committed",
-          "use_prepared_statements": true
+          "use_prepared_statements": true,
+          "pool_settings": {
+            "max_connections": 20
+          }
         }
       }
     }

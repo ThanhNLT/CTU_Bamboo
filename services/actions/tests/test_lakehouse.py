@@ -65,6 +65,24 @@ def test_su_kien_thanh_dong_bronze():
     )
 
 
+def test_bo_snapshot_cu_giu_vi_tri_kafka(tmp_path):
+    from pyiceberg.catalog.sql import SqlCatalog
+
+    cat = SqlCatalog("t", uri=f"sqlite:///{tmp_path}/catalog.db", warehouse=f"file://{tmp_path}")
+    table = ls.ensure_table(cat, "bronze.proc_purchase_request")
+    now = dt.datetime.now(dt.UTC)
+    for offset in range(3):
+        row = ls.to_row(0, offset, None, json.dumps(EVENT).encode(), now)
+        ls.write_batch(table, [row], {0: offset + 1})
+    assert len(table.metadata.snapshots) == 3
+    assert ls.expire_snapshots(table, now) == 0, "snapshot còn trong hạn giữ"
+
+    assert ls.expire_snapshots(table, now + ls.SNAPSHOT_RETENTION + dt.timedelta(minutes=1)) == 2
+    reloaded = cat.load_table("bronze.proc_purchase_request")
+    assert len(reloaded.metadata.snapshots) == 1 and ls.committed_offsets(reloaded) == {0: 3}
+    assert reloaded.scan().to_arrow().num_rows == 3, "bỏ snapshot không làm mất dòng"
+
+
 @pytest.fixture(scope="module")
 def lake_settings() -> config.Settings:
     settings = root_settings()

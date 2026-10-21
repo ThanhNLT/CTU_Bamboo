@@ -18,6 +18,10 @@ OFFSETS_PROPERTY = "kafka.offsets"
 MAX_BATCH = 5000
 FLUSH_SECONDS = 30.0
 TOPIC_REFRESH_SECONDS = 60.0
+# Mỗi lô tạo một snapshot; siêu dữ liệu bảng (cả bản trong bộ nhớ) lớn dần theo số snapshot nên bỏ snapshot cũ.
+# Lịch sử thay đổi nằm trong các dòng bronze, không cần snapshot; snapshot hiện tại (giữ vị trí Kafka) luôn được giữ.
+SNAPSHOT_RETENTION = dt.timedelta(hours=24)
+EXPIRE_SECONDS = 3600.0
 
 
 def table_name(topic: str) -> str:
@@ -127,6 +131,17 @@ def committed_offsets(table) -> dict[int, int]:
     return {int(p): int(o) for p, o in json.loads(raw).items()} if raw else {}
 
 
+def expire_snapshots(table, now: dt.datetime) -> int:
+    """Bỏ snapshot cũ hơn SNAPSHOT_RETENTION (trừ snapshot hiện tại). Không xóa tệp dữ liệu: bronze chỉ ghi thêm."""
+    cutoff = now - SNAPSHOT_RETENTION
+    current = table.current_snapshot()
+    keep = current.snapshot_id if current else None
+    old = [s for s in table.metadata.snapshots if s.timestamp_ms < cutoff.timestamp() * 1000 and s.snapshot_id != keep]
+    if old:
+        table.maintenance.expire_snapshots().older_than(cutoff).commit()
+    return len(old)
+
+
 def write_batch(table, rows: list[dict], next_offsets: dict[int, int]) -> None:
     import pyarrow as pa
 
@@ -153,6 +168,7 @@ class Sink:
         self.tables: dict[str, object] = {}
         self.assigned: set = set()
         self.last_refresh = 0.0
+        self.last_expire = time.monotonic()
 
     def refresh_assignment(self) -> None:
         import kafka
@@ -210,7 +226,19 @@ class Sink:
             write_batch(table, rows, {**committed_offsets(table), **offsets[topic]})
         if count:
             log.info("đã ghi %s thay đổi vào %s bảng", count, len(pending))
+        if time.monotonic() - self.last_expire > EXPIRE_SECONDS:
+            self.expire()
         return count
+
+    def expire(self) -> None:
+        now = dt.datetime.now(dt.UTC)
+        for topic, table in self.tables.items():
+            try:
+                if n := expire_snapshots(table, now):
+                    log.info("bỏ %s snapshot cũ của %s", n, table_name(topic))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("không bỏ được snapshot cũ của %s: %s", table_name(topic), exc)
+        self.last_expire = time.monotonic()
 
 
 def run_forever(settings: config.Settings) -> None:
