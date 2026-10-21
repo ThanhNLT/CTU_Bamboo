@@ -14,6 +14,15 @@ export type Attachment = {
   created_at: string;
   uploaded_by: string;
   uploaded_by_person: Person;
+  ocr?: AttachmentOcr | null;
+};
+
+export type AttachmentOcr = {
+  status: "PENDING" | "RUNNING" | "DONE" | "ERROR" | "SKIPPED";
+  pages_total: number | null;
+  pages_done: number;
+  note: string | null;
+  error: string | null;
 };
 
 export type Comment = {

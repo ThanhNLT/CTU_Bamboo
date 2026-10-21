@@ -119,8 +119,9 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 | `debezium` | 8083, chỉ 127.0.0.1 | Không | CDC, `/q/health` |
 | `trino` | 8085 (HTTPS), chỉ 127.0.0.1 | Không | Truy vấn Lakehouse |
 | `clamav` (profile `scan`) | 3310, chỉ 127.0.0.1 | Không | Quét virus |
-| `ollama` (profile `ai`) | 11434, chỉ 127.0.0.1 | Không | Mô hình AI cục bộ (mục 9) |
-| `flow-sync`, `search-sync`, `lakehouse-sink`, `ai-worker` (profile `ai`) | không có (tiến trình nền, không nghe cổng) | Không | Đồng bộ Flowable, chỉ mục tìm kiếm, Lakehouse, trả lời lượt hỏi AI |
+| `ollama` | 11434, chỉ 127.0.0.1 | Không | Mô hình AI cục bộ (mục 9) |
+| `ocr` | 8866, chỉ 127.0.0.1 | Không | OCR tệp quét (mục 9) |
+| `flow-sync`, `search-sync`, `lakehouse-sink`, `ai-worker` | không có (tiến trình nền, không nghe cổng) | Không | Đồng bộ Flowable, chỉ mục tìm kiếm, Lakehouse, trả lời lượt hỏi AI |
 
 Mọi cổng trên máy chủ trừ `gateway` chỉ nghe `127.0.0.1` (truy cập từ chính máy chủ hoặc qua SSH tunnel); triển khai thật có thể bỏ các dòng `ports` của dịch vụ không cần quản trị trực tiếp.
 
@@ -139,28 +140,37 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 | `trino` | `platform/trino/jvm.config` | `-Xmx1G` |
 | `flowable` | (image tự đặt) | `-Xmx512M` |
 
-## 9. AI cục bộ (ADR #51)
+## 9. AI cục bộ (ADR #51, #52)
 
-Trợ lý RAG và tác tử AI chạy bằng Ollama trong profile `ai`; không bật thì hệ thống chạy bình thường, trang Trợ lý báo "Trợ lý AI chưa bật".
+Trợ lý RAG, tác tử AI (Ollama) và OCR tệp quét (dịch vụ `ocr`) khởi động cùng hệ thống bằng `docker compose up -d`. Mô hình đã có trong volume thì `ollama-init`, `ocr-init` bỏ qua, nên các lần sau chạy không cần Internet; tải lỗi chỉ ghi cảnh báo vào log, phần còn lại của hệ thống vẫn lên.
+
+**Mô hình chỉ nạp khi có việc** ([ADR #52](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-52)): lúc nhàn rỗi Ollama và `ocr` không giữ mô hình nào trong RAM/VRAM. Có lượt hỏi thì Ollama nạp mô hình sinh, có trang quét thì `ocr` nạp bộ OCR; hết việc quá `AI_KEEP_ALIVE` (mặc định `5m`) với Ollama, `OCR_IDLE_SECONDS` (mặc định 300) với OCR thì tự gỡ. Bật GPU (bên dưới) thì mô hình nạp lên GPU, không thì chạy CPU.
 
 ```bash
-docker compose --profile ai up -d          # hoặc make up-ai
+docker compose up -d
 docker compose logs -f ollama-init         # lần đầu tải ~3,7 GB (qwen3:4b ~2,5 GB, bge-m3 ~1,2 GB)
+docker compose logs -f ocr-init            # lần đầu tải ~250 MB mô hình OCR (PaddleOCR, VietOCR)
 curl 127.0.0.1:11434/api/tags              # thấy hai mô hình là xong
+curl 127.0.0.1:8866/health                 # dịch vụ OCR: GPU hay CPU, mô hình đang nạp chưa
 scripts/ai_smoke.sh                        # hỏi thật vài câu mẫu
+scripts/ocr_smoke.sh                       # OCR ảnh mẫu tiếng Việt, đo tỉ lệ lỗi ký tự
 ```
 
 | Hạng mục | Giá trị |
 |---|---|
-| RAM thêm | Tối thiểu 8 GB cho cả hai mô hình khi chạy CPU (khoảng 4 GB cho mô hình, phần còn lại cho ngữ cảnh 8K) |
-| Đĩa | ~3,7 GB trong volume `ollama-models`; sau lần tải đầu chạy không cần Internet |
-| Tốc độ | CPU: vài chục giây mỗi lượt hỏi. GPU 8 GB VRAM: vài giây. Mỗi lúc trả lời một lượt (`OLLAMA_NUM_PARALLEL=1`), người sau xếp hàng |
+| RAM / GPU | Chỉ chiếm khi có việc: qwen3:4b ~3 GB (kèm ngữ cảnh 8K), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
+| Đĩa | ~3,7 GB volume `ollama-models`, ~250 MB volume `ocr-models`, image `ocr` ~14 GB (PyTorch CUDA); sau lần tải đầu chạy không cần Internet |
+| Tốc độ | GPU: vài giây mỗi lượt hỏi, 1–2 giây mỗi trang OCR; CPU chậm hơn nhiều lần. Lần đầu sau khi nhàn rỗi chờ thêm thời gian nạp mô hình. Lượt hỏi và trang OCR chung một hàng đợi trong `ai-worker`, mỗi lúc một việc, lượt hỏi được ưu tiên |
+
+**Mô hình chính và mô hình phụ.** Mô hình sinh của tác tử và bộ OCR là mô hình chính, không nạp cùng lúc: trước khi trả lời, `ai-worker` gỡ bộ OCR và mô hình chính khác của Ollama để mô hình sinh có đủ chỗ (ưu tiên nằm trọn trên GPU); trước khi OCR mà hết bộ nhớ thì gỡ mô hình sinh đang nhàn rỗi rồi thử lại; vẫn hết thì thử lại sau, quá 5 lần thì tệp hiện "OCR lỗi" kèm nút thử lại. Mô hình phụ (`AI_CPU_MODELS`, mặc định `bge-m3`) nhỏ, được giữ lại, Ollama tự gỡ khi nhàn rỗi.
+
+**OCR tệp quét.** Ảnh PNG/JPEG luôn OCR; PDF chỉ OCR trang không có chữ, tối đa 50 trang mỗi tệp. Chỉ tệp của đề nghị mua sắm và tài liệu thư viện (các tệp được đánh chỉ mục tìm kiếm). Văn bản OCR vào chỉ mục toàn văn và, với tài liệu thư viện, vào chỉ mục đoạn của Trợ lý RAG. Tệp có từ trước khi nâng cấp được OCR bù. Trạng thái từng tệp ở bảng `core.attachment_ocr`.
 
 **Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi.
 
-**Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose --profile ai up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
+**Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
 
-**Bật GPU NVIDIA.** Driver NVIDIA phía Windows (WSL2) hoặc phía máy chủ Linux phải có sẵn. Cài NVIDIA Container Toolkit một lần (cần sudo), theo [hướng dẫn của NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
+**Cài GPU cho Docker.** Driver NVIDIA phía Windows (WSL2) hoặc phía máy chủ Linux phải có sẵn. Cài NVIDIA Container Toolkit một lần (cần sudo), theo [hướng dẫn của NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
 
 ```bash
 # Ubuntu / Debian
@@ -178,10 +188,15 @@ sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart doc
 docker run --rm --gpus all ubuntu nvidia-smi   # thấy GPU là được
 ```
 
-Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chạy kèm tệp bổ sung (máy không có GPU vẫn dùng lệnh thường, không lỗi):
+Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chép tệp bổ sung một lần thành `docker-compose.override.yml` (Compose tự nạp, tệp này không đưa lên git), từ đó chỉ cần lệnh thường:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ai up -d   # hoặc make up-ai-gpu
+cp docker-compose.gpu.yml docker-compose.override.yml
+docker compose up -d
+docker compose exec ollama ollama ps        # cột PROCESSOR ghi "100% GPU" khi đang trả lời
+curl 127.0.0.1:8866/health                  # "device" là tên GPU
 ```
+
+Máy không có GPU thì đừng chép: Docker không tạo được container xin GPU mà máy không có, Compose cũng không tự dò được GPU. Không muốn chép thì dùng `make up-gpu`.
 
 **Quyền:** người quản trị tác tử cần quyền `core.ai.manage` (seed demo gán cho CDO Tập đoàn X và KHTH BVX). Tác tử không có quyền riêng; trợ lý chỉ đọc tài liệu thư viện đang hiệu lực mà người hỏi được xem.

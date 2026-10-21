@@ -170,6 +170,10 @@ _Tránh dùng_: site, địa điểm (khi nói đơn vị)
 Số đếm và tổng tiền (không có chứng từ, không có tên người) của một tenant con như Bệnh viện X mà người có quyền điều hành tập đoàn ở công ty mẹ được xem.
 _Tránh dùng_: dữ liệu bệnh viện (khi chỉ là số tổng hợp)
 
+**Văn bản OCR**:
+Chữ đọc được từ ảnh của một tệp đính kèm quét hoặc chụp, chỉ dùng để tìm kiếm và trả lời trợ lý; không thay nội dung gốc của tệp.
+_Tránh dùng_: bản số hóa, nội dung tệp (khi nói chữ do OCR đọc ra)
+
 **Tập dữ liệu** (view `lakehouse.silver.<schema>_<bảng>`):
 Trạng thái hiện tại của một bảng nghiệp vụ trong Lakehouse, dựng từ lịch sử thay đổi (CDC) ở tầng bronze; mỗi bản ghi một dòng. Người có quyền `data.lakehouse.read` xem tập dữ liệu của tenant đang chọn trên trang Dịch vụ dữ liệu, dữ liệu cá nhân đã che.
 _Tránh dùng_: bảng (bảng là ở CSDL nghiệp vụ), mart (mart là bảng tổng hợp cho BI, chưa có)

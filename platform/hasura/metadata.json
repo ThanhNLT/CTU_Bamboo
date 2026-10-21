@@ -1383,6 +1383,37 @@
                   }
                 }
               }
+            },
+            {
+              "name": "ocr",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment_ocr"
+                  },
+                  "column_mapping": {
+                    "id": "attachment_id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "attachment_ocrs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment_ocr"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "attachment_id"
+                  }
+                }
+              }
             }
           ],
           "computed_fields": [
@@ -1485,6 +1516,97 @@
                 "computed_fields": [
                   "can_read"
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "attachment_ocr"
+          },
+          "object_relationships": [
+            {
+              "name": "attachment",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "attachment_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": [
+                  "attachment_id",
+                  "created_at",
+                  "error",
+                  "note",
+                  "pages_done",
+                  "pages_total",
+                  "status",
+                  "tenant_id",
+                  "updated_at"
+                ],
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "attachment": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": [
+                  "attachment_id",
+                  "created_at",
+                  "error",
+                  "note",
+                  "pages_done",
+                  "pages_total",
+                  "status",
+                  "tenant_id",
+                  "updated_at"
+                ],
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "attachment": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
               }
             }
           ]
@@ -8875,6 +8997,37 @@
         }
       ],
       "comment": "Link tải về có chữ ký (chỉ tệp sạch, người xem được chứng từ)"
+    },
+    {
+      "name": "ocr_retry",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ocr_retry",
+        "arguments": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "AttachmentResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xếp lại việc OCR tệp đính kèm đã xong, bị bỏ qua hoặc lỗi (ADR #52)"
     },
     {
       "name": "delete_attachment",
