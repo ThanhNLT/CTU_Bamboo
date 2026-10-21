@@ -156,7 +156,8 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
-      JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms128m -Xmx768m}
+      JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms64m -Xmx512m}
+      KC_DB_POOL_MAX_SIZE: ${KEYCLOAK_DB_POOL:-20}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
@@ -184,6 +185,7 @@ services:
       FLOWABLE_REST_APP_CREATE_DEMO_DEFINITIONS: "false"
       FLOWABLE_REST_APP_ADMIN_USER_ID: ${FLOWABLE_ADMIN:-rest-admin}
       FLOWABLE_REST_APP_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
+      JAVA_OPTS: ${FLOWABLE_JAVA_OPTS:--Xms64m -Xmx512m}
     ports:
       - "127.0.0.1:8082:8080"
     restart: unless-stopped
@@ -362,6 +364,8 @@ services:
       openbao-init:
         condition: service_completed_successfully
     command: ["/bin/meilisearch", "--config-file-path", "/etc/meilisearch/config.toml"]
+    environment:
+      MEILI_MAX_INDEXING_MEMORY: ${MEILI_MAX_INDEXING_MEMORY:-512 MiB}
     volumes:
       - meilisearch-data:/meili_data
       - meilisearch-config:/etc/meilisearch:ro
@@ -427,6 +431,8 @@ services:
       OLLAMA_MAX_LOADED_MODELS: "2"
       OLLAMA_KEEP_ALIVE: ${AI_KEEP_ALIVE:-5m}
       OLLAMA_CONTEXT_LENGTH: "8192"
+      OLLAMA_FLASH_ATTENTION: "1"
+      OLLAMA_KV_CACHE_TYPE: ${AI_KV_CACHE_TYPE:-q8_0}
     volumes:
       - ollama-models:/root/.ollama
     ports:
@@ -531,7 +537,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG_RETENTION_HOURS: 168
-      KAFKA_HEAP_OPTS: -Xmx512m -Xms256m
+      KAFKA_HEAP_OPTS: ${KAFKA_HEAP:--Xms128m -Xmx512m}
       DEBEZIUM_KAFKA_PASSWORD: ${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}
       LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
     volumes:
@@ -666,6 +672,8 @@ services:
     build:
       context: ./platform/apisix
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-gateway:${BAMBOO_TAG:-dev}
+    environment:
+      APISIX_WORKER_PROCESSES: ${GATEWAY_WORKERS:-2}
     depends_on:
       web:
         condition: service_started
