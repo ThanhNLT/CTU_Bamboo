@@ -56,6 +56,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 ### Hiệu năng
 - Dịch vụ `actions` chạy mỗi Action ở threadpool thay vì trên event loop. Trước đây một Action chậm (in phiếu PDF, gọi Flowable, S3) chặn mọi request khác của tiến trình, kể cả auth webhook mà Hasura gọi ở **mọi** request GraphQL. uvicorn dùng `uvloop` và `httptools`, không ghi access log (Hasura và cổng API đã ghi).
 - Ghim heap của các JVM. Container không giới hạn bộ nhớ nên Keycloak mặc định lấy heap ban đầu bằng 50% RAM **của cả máy**; Tika, Debezium lấy tối đa 1/4. Nay: Keycloak 128–768 MB, Tika 512 MB, Debezium 384 MB, chỉnh được qua `KEYCLOAK_HEAP`, `TIKA_JAVA_OPTS`, `DEBEZIUM_JAVA_OPTS` (docs/van-hanh/trien-khai.md mục 8).
+- Giảm RAM (docs/van-hanh/trien-khai.md mục 8): Keycloak heap 64–512 MB, Kafka heap ban đầu 128 MB, Flowable heap ban đầu 64 MB (chỉnh qua `KEYCLOAK_HEAP`, `KAFKA_HEAP`, `FLOWABLE_JAVA_OPTS`); pool kết nối PostgreSQL của Keycloak 20 (mặc định 100) và của Hasura 20 (mặc định 50); Meilisearch lập chỉ mục tối đa 512 MB (mặc định 2/3 RAM máy); cổng API chạy 2 worker thay vì một worker mỗi lõi CPU (mỗi worker một bản WAF Coraza, `GATEWAY_WORKERS`); Ollama bật flash attention và bộ đệm KV `q8_0`, ngữ cảnh 8K tốn nửa RAM/VRAM (`AI_KV_CACHE_TYPE`). Tiến trình Python chạy với `MALLOC_ARENA_MAX=2`; dịch vụ OCR chạy suy luận trong `torch.inference_mode()` và trả bộ nhớ cho hệ điều hành (`malloc_trim`) sau khi gỡ mô hình, trước đây RSS không giảm khi chạy CPU.
 - PostgreSQL tắt JIT (`jit=off`): câu SQL lớn Hasura sinh ra không mất hàng trăm ms biên dịch JIT.
 - Giao diện: JavaScript, CSS nén gzip mức 9 sẵn lúc build, nginx gửi thẳng tệp `.gz` (`gzip_static`) thay vì nén lại 2 MB mỗi lượt tải.
 - Image Python biên dịch sẵn bytecode của mã dịch vụ.
@@ -65,6 +66,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - Mọi dịch vụ chạy lâu dài có cổng hiện trên Docker, chỉ nghe `127.0.0.1` của máy chạy compose: actions 8090, web 8088 (không qua cổng API), SeaweedFS 8333 / 9333 / 8888, Meilisearch 7700, Tika 9998, Gotenberg 3000, Debezium 8083, ClamAV 3310 (profile `scan`). Kafka thêm listener `HOST` `localhost:19092` (cùng SCRAM + ACL) cho công cụ trên máy dev. `flow-sync`, `search-sync`, `lakehouse-sink` là tiến trình nền, không nghe cổng.
 
 ### Sửa
+- `lakehouse-sink` giữ mọi snapshot Iceberg (mỗi lô 30 giây một snapshot), nên siêu dữ liệu bảng trong bộ nhớ và mỗi lần commit lớn dần không giới hạn: nay mỗi giờ bỏ snapshot cũ hơn 24 giờ, giữ snapshot hiện tại (chứa vị trí Kafka); dòng bronze không đổi.
+- `ai-worker` giữ tệp vừa OCR (tới 25 MB) trong bộ nhớ tới khi có tệp khác cần OCR: nay bỏ ngay khi việc OCR xong, lỗi hoặc tạm hoãn.
 - Ngừng một đơn vị / vị trí / bổ nhiệm vừa tạo (ví dụ ngay sau khi nhập Excel) vẫn hiện như còn hiệu lực tới khi tải lại trang: thời điểm kết thúc tối thiểu giảm từ 1 giây xuống 1 mili giây sau lúc bắt đầu.
 - Dựng lại chỉ mục tìm kiếm (`search.mark_all`) không còn đánh dấu tệp của đề nghị tiếp nhận nhân sự (có dữ liệu cá nhân); tệp loại này vốn không được đưa vào chỉ mục khi tải lên.
 - Dịch vụ actions không khởi động được nếu thiếu tệp CA của Trino (chạy ngoài compose, volume chưa ghi): nay chỉ ghi cảnh báo, các Action Lakehouse trả 503, các Action khác chạy bình thường.
