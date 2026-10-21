@@ -134,12 +134,24 @@ class Files:
 
     def get(self, key: str) -> bytes | None:
         if key != self.key:
-            self.key, self.data = key, self.read(key)
+            self.release()  # bỏ tệp cũ trước khi tải tệp mới, không giữ hai tệp cùng lúc
+            self.data = self.read(key)
+            self.key = key
         return self.data
+
+    def release(self) -> None:
+        self.key, self.data = None, None
 
 
 def run_once(conn: psycopg.Connection, gpu, files: Files) -> str | None:
     """OCR một trang của việc đứng đầu hàng đợi. Trả trạng thái việc sau bước này, None khi hết việc."""
+    status = _run_page(conn, gpu, files)
+    if status != "RUNNING":
+        files.release()  # việc đã xong hoặc tạm hoãn: không giữ tệp (tới 25 MB) trong bộ nhớ lúc nhàn rỗi
+    return status
+
+
+def _run_page(conn: psycopg.Connection, gpu, files: Files) -> str | None:
     job = claim(conn)
     if job is None:
         conn.commit()
