@@ -133,12 +133,24 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 
 | Dịch vụ | Biến | Mặc định |
 |---|---|---|
-| `keycloak` | `KEYCLOAK_HEAP` | `-Xms128m -Xmx768m` |
+| `keycloak` | `KEYCLOAK_HEAP` | `-Xms64m -Xmx512m` |
 | `tika` | `TIKA_JAVA_OPTS` | `-Xmx512m` |
 | `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m` |
-| `kafka` | (cố định trong compose) | `-Xmx512m -Xms256m` |
+| `kafka` | `KAFKA_HEAP` | `-Xms128m -Xmx512m` |
 | `trino` | `platform/trino/jvm.config` | `-Xmx1G` |
-| `flowable` | (image tự đặt) | `-Xmx512M` |
+| `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m` |
+
+Các giới hạn bộ nhớ khác (đặt trong `.env`):
+
+| Dịch vụ | Biến | Mặc định | Ghi chú |
+|---|---|---|---|
+| `keycloak` | `KEYCLOAK_DB_POOL` | `20` | Keycloak mặc định mở tới 100 kết nối, bằng cả `max_connections` của PostgreSQL |
+| `hasura` | `pool_settings` trong metadata | 20 kết nối | Mặc định của Hasura là 50; mỗi kết nối PostgreSQL tốn RAM riêng |
+| `meilisearch` | `MEILI_MAX_INDEXING_MEMORY` | `512 MiB` | Mặc định Meilisearch dùng tới 2/3 RAM máy khi lập chỉ mục |
+| `gateway` | `GATEWAY_WORKERS` | `2` | Mặc định APISIX chạy một worker mỗi lõi CPU, mỗi worker nạp riêng WAF Coraza |
+| `ollama` | `AI_KV_CACHE_TYPE` | `q8_0` | Bộ đệm ngữ cảnh 8K tốn nửa RAM/VRAM so với `f16` (cần flash attention, đã bật) |
+
+Các tiến trình Python chạy với `MALLOC_ARENA_MAX=2` để glibc không tạo vùng heap riêng cho từng luồng. `lakehouse-sink` bỏ snapshot Iceberg cũ hơn 24 giờ mỗi giờ (giữ snapshot hiện tại chứa vị trí Kafka), nên siêu dữ liệu bảng không lớn dần; tệp manifest của snapshot đã bỏ vẫn nằm trên S3, dọn bằng Trino `ALTER TABLE lakehouse.bronze.<bảng> EXECUTE remove_orphan_files`.
 
 ## 9. AI cục bộ (ADR #51, #52)
 
