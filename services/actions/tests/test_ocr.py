@@ -17,7 +17,7 @@ from test_tim_kiem import SEARCH, sync
 from test_tro_ly_ai import act, ai_env, fake_ai, make_agent, question  # noqa: F401 (fixture)
 
 from app import ai_worker, ocr
-from app.gpu import Gpu, GpuUnavailable
+from app.gpu import Gpu
 from conftest import ids, pr
 
 RETRY = """mutation($a: uuid!) { ocr_retry(attachment_id: $a) { attachment_id status } }"""
@@ -124,6 +124,10 @@ def ocr_all(env) -> list[str]:
         return steps
 
 
+def load(env, model: str) -> None:
+    env.ai.http.post("/api/generate", json={"model": model, "stream": False}).raise_for_status()
+
+
 def state(conn, attachment_id: str) -> dict:
     return conn.execute("SELECT * FROM core.attachment_ocr WHERE attachment_id = %s", (attachment_id,)).fetchone()
 
@@ -186,7 +190,7 @@ def test_het_vram_go_mo_hinh_sinh_roi_thu_lai(hasura, conn, ocr_env):
     pr_id = pr(conn, "ocr_vram", "c", "P_NV_MH_DT", 0, submit=False)
     att = upload(hasura, i, pr_id, png(), name="hoa-don.png", ctype="image/png")
     hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])
-    ocr_env.ai.load("qwen3:4b")
+    load(ocr_env, "qwen3:4b")
     ocr_env.ai.http.post("/api/embed", json={"model": "bge-m3", "input": ["x"]})
     ocr_env.fake.loaded["bge-m3:latest"] = 0.0
     ocr_env.ocr.oom = 1
@@ -203,35 +207,24 @@ def test_het_vram_go_mo_hinh_sinh_roi_thu_lai(hasura, conn, ocr_env):
     assert (s["status"], s["error"], s["attempts"]) == ("ERROR", ocr.OOM_ERROR, ocr.MAX_ATTEMPTS)
 
 
-def test_mo_hinh_sinh_phai_nam_tron_tren_gpu(ocr_env):
-    ocr_env.fake.vram_ratio = 1.0
+def test_nap_mo_hinh_sinh_thi_go_mo_hinh_chinh_khac(ocr_env):
+    load(ocr_env, "llama3:8b")
+    ocr_env.ai.http.post("/api/embed", json={"model": "bge-m3", "input": ["x"]})
+    ocr_env.fake.loaded["bge-m3:latest"] = 0.0
     ocr_env.gpu.ensure_chat("qwen3:4b")
     assert ocr_env.ocr.unloads == 1, "nạp mô hình sinh thì gỡ bộ OCR trước"
+    assert ocr_env.fake.unloads == ["llama3:8b"], "gỡ mô hình chính khác, giữ mô hình phụ"
+
+    load(ocr_env, "qwen3:4b")
     ocr_env.gpu.ensure_chat("qwen3:4b")
-    assert ocr_env.ocr.unloads == 1, "đã nằm trọn trên GPU thì không nạp lại"
-
-    ocr_env.fake.loaded.clear()
-    ocr_env.fake.vram_ratio = 0.6
-    with pytest.raises(GpuUnavailable):
-        ocr_env.gpu.ensure_chat("qwen3:4b")
-    assert "qwen3:4b" not in ocr_env.fake.loaded, "không để mô hình chia lớp sang CPU"
+    assert ocr_env.ocr.unloads == 1, "mô hình đã nạp thì không gỡ gì thêm"
 
 
-def test_luot_hoi_cho_gpu_roi_bao_loi(ocr_env, conn):
+def test_khong_co_gpu_van_tra_loi(ocr_env, conn):
     i = ids(conn, "TDX", "c")
     agent = make_agent(conn, scope_guard=False)
     asked = act("ai_ask", {"agent_id": agent, "question": "Hạn mức mua sắm?"}, i["c"], i["TDX"], ocr_env.ctx)
-    ocr_env.fake.vram_ratio = 0.5
+    ocr_env.fake.vram_ratio = 0.0
     with psycopg.connect(ocr_env.settings.database_url, row_factory=dict_row) as w:
-        with pytest.raises(GpuUnavailable):
-            ai_worker.run_once(w, ocr_env.searcher, ocr_env.ai, ocr_env.settings, ocr_env.gpu)
-        q = question(conn, asked["id"])
-        assert q["status"] == "queued" and q["gpu_wait_since"] is not None and q["answer"] == ""
-
-        conn.execute(
-            "UPDATE core.ai_question SET gpu_wait_since = now() - interval '1 hour' WHERE id = %s", (asked["id"],)
-        )
-        assert ai_worker.run_once(w, ocr_env.searcher, ocr_env.ai, ocr_env.settings, ocr_env.gpu) == "error"
-    q = question(conn, asked["id"])
-    assert (q["status"], q["error"]) == ("error", ai_worker.GPU_ERROR)
-    assert ocr_env.ai.running() == [], "mô hình không nạp trọn đã bị gỡ"
+        assert ai_worker.run_once(w, ocr_env.searcher, ocr_env.ai, ocr_env.settings, ocr_env.gpu) == "done"
+    assert question(conn, asked["id"])["status"] == "done"

@@ -30,7 +30,7 @@ Hạn: code freeze 30/10/2026 ([timeline](04-timeline.md)). Làm theo thứ tự
 | 20 | Guardrail | Luật cố định, không thêm mô hình phân loại (chi tiết ở lát 3) |
 | 21 | Giao diện hỏi | Trang `/i/assistant` có sẵn, chỉ còn chế độ Tri thức; xóa mock và các chế độ minh họa |
 | 22 | Quản trị tác tử | Trang `ai-agents` dùng Action thật, số liệu từ bảng lượt hỏi; xóa mock |
-| 23 | GPU | `nvidia-container-toolkit` (người dùng tự cài, cần sudo); từ 20/10/2026 mọi tác vụ AI chỉ chạy GPU, GPU khai thẳng trong `docker-compose.yml` ([ADR #52](05-quyet-dinh-kien-truc.md#adr-52)) |
+| 23 | GPU | `nvidia-container-toolkit` (người dùng tự cài, cần sudo); `docker-compose.gpu.yml` (chép thành `docker-compose.override.yml`) cấp GPU cho `ollama` và `ocr`; từ 20/10/2026 mô hình chỉ nạp khi có việc ([ADR #52](05-quyet-dinh-kien-truc.md#adr-52)) |
 | 24 | Kiểm thử | Server giả tương thích OpenAI trong pytest; smoke test chạy tay khi bật profile `ai` |
 
 ## Trạng thái triển khai (17/10/2026)

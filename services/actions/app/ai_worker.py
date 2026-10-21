@@ -7,9 +7,8 @@ Mỗi lần lấy một lượt `queued` (FIFO, SKIP LOCKED), tìm đoạn trong
 xem của người hỏi, gọi Ollama và ghi dần câu trả lời mỗi ~1 giây để giao diện hiện qua subscription.
 Chạy một worker (Ollama trả lời một lượt một lúc); lượt `running` quá STALE_MINUTES coi là bị gián đoạn.
 
-Worker cũng là hàng đợi GPU chung (ADR #52): hết lượt hỏi thì OCR một trang tệp quét rồi xem lại lượt hỏi,
-nên mỗi lúc chỉ một mô hình chính chạy. Mô hình sinh không nạp trọn lên GPU thì lượt hỏi chờ GPU,
-quá `AI_GPU_WAIT_SECONDS` thì lỗi.
+Worker cũng là hàng đợi chung của mô hình chính (ADR #52): hết lượt hỏi thì OCR một trang tệp quét rồi xem
+lại lượt hỏi, nên mỗi lúc chỉ một mô hình chính nằm trong bộ nhớ.
 """
 
 import html
@@ -24,7 +23,7 @@ from psycopg.types.json import Jsonb
 
 from . import ai_agent, ai_chunks, config, ocr, pii_guard, search
 from .common import bind_session
-from .gpu import Gpu, GpuUnavailable
+from .gpu import Gpu
 from .ollama import Ollama, OllamaUnavailable
 from .storage import Storage
 
@@ -38,7 +37,6 @@ STALE_MINUTES = 10
 OCR_PAUSE_SECONDS = 60
 SCOPE_REFUSAL = "Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem."
 ERROR_MESSAGE = "Trợ lý AI tạm thời không trả lời được. Vui lòng hỏi lại sau."
-GPU_ERROR = "Không đủ VRAM để chạy mô hình trên GPU. Vui lòng hỏi lại sau."
 SYSTEM_PROMPT = """Bạn là trợ lý tra cứu Thư viện tri thức của doanh nghiệp. Trả lời bằng tiếng Việt, ngắn gọn.
 Quy tắc:
 - Chỉ trả lời dựa trên các đoạn trong <tai_lieu>. Không dùng kiến thức bên ngoài.
@@ -250,13 +248,6 @@ def run_once(
         return answer(conn, meili, ai, settings, q, gpu)
     except psycopg.OperationalError:
         raise
-    except GpuUnavailable as exc:
-        conn.rollback()
-        if wait_gpu(conn, q, settings.ai_gpu_wait_seconds):
-            raise
-        log.warning("lượt hỏi %s chờ GPU quá %s giây: %s", q["id"], settings.ai_gpu_wait_seconds, exc)
-        _finish(conn, q, status="error", error=GPU_ERROR)
-        return "error"
     except OllamaUnavailable as exc:
         conn.rollback()
         if not exc.transient:
@@ -282,22 +273,8 @@ def requeue(conn: psycopg.Connection, q: dict) -> None:
     conn.commit()
 
 
-def wait_gpu(conn: psycopg.Connection, q: dict, limit_seconds: int) -> bool:
-    """Trả lượt về hàng đợi, đánh dấu đang chờ GPU. False khi đã chờ quá hạn."""
-    bind_session(conn, _session(q))
-    row = conn.execute(
-        """UPDATE core.ai_question
-           SET status = 'queued', started_at = NULL, thinking = NULL, answer = '',
-               gpu_wait_since = coalesce(gpu_wait_since, now())
-           WHERE id = %s RETURNING now() - gpu_wait_since <= make_interval(secs => %s) AS waiting""",
-        (q["id"], limit_seconds),
-    ).fetchone()
-    conn.commit()
-    return row["waiting"]
-
-
 def step(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, gpu: Gpu, files) -> bool:
-    """Một việc trên hàng đợi GPU: lượt hỏi trước, hết lượt hỏi thì một trang OCR."""
+    """Một việc trên hàng đợi mô hình chính: lượt hỏi trước, hết lượt hỏi thì một trang OCR."""
     if run_once(conn, meili, ai, settings, gpu):
         return True
     return files is not None and ocr.run_once(conn, gpu, files) is not None
@@ -329,10 +306,6 @@ def run_forever(settings: config.Settings, idle_seconds: float = 5.0) -> None:
                 pass
         except OllamaUnavailable as exc:
             log.warning("ai-worker tạm dừng, Ollama chưa sẵn sàng: %s", exc)
-            time.sleep(idle_seconds)
-            continue
-        except GpuUnavailable as exc:
-            log.warning("ai-worker chờ GPU: %s", exc)
             time.sleep(idle_seconds)
             continue
         except ocr.OcrUnavailable as exc:

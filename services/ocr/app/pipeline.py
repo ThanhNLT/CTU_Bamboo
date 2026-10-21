@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Một trang ảnh → các dòng chữ: xoay hướng trang, phát hiện dòng (PaddleOCR), xoay dòng, nhận dạng (VietOCR).
 
-Mọi mô hình chạy bằng PyTorch trên `device` (CUDA). Thứ tự đọc: trên xuống, trái sang phải; các ô cùng hàng
+Mọi mô hình chạy bằng PyTorch trên `device` (CUDA hoặc CPU). Thứ tự đọc: trên xuống, trái sang phải; các ô cùng hàng
 gộp thành một dòng. Không dựng lại bảng, bố cục.
 """
 
@@ -46,11 +46,11 @@ class Models:
 def paddle_models(device: str) -> dict:
     from paddleocr import DocImgOrientationClassification, TextDetection, TextLineOrientationClassification
 
-    gpu = "gpu:" + device.split(":")[-1]
+    paddle = "gpu:" + device.split(":")[-1] if device.startswith("cuda") else "cpu"
     return {
-        "doc_ori": DocImgOrientationClassification(model_name=DOC_ORI_MODEL, engine="transformers", device=gpu),
-        "det": TextDetection(model_name=DET_MODEL, engine="transformers", device=gpu),
-        "line_ori": TextLineOrientationClassification(model_name=LINE_ORI_MODEL, engine="transformers", device=gpu),
+        "doc_ori": DocImgOrientationClassification(model_name=DOC_ORI_MODEL, engine="transformers", device=paddle),
+        "det": TextDetection(model_name=DET_MODEL, engine="transformers", device=paddle),
+        "line_ori": TextLineOrientationClassification(model_name=LINE_ORI_MODEL, engine="transformers", device=paddle),
     }
 
 

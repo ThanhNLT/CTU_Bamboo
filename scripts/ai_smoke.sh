@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Smoke test Trợ lý RAG với Ollama thật (ADR #51). Chạy khi đã bật profile ai và có dữ liệu demo:
-#   docker compose --profile ai up -d && scripts/ai_smoke.sh
+# Smoke test Trợ lý RAG với Ollama thật (ADR #51). Chạy khi ollama-init đã tải xong mô hình và có dữ liệu demo:
+#   docker compose up -d && scripts/ai_smoke.sh
 # Hỏi bằng tác tử "Trợ lý quy chế" của Tập đoàn X dưới danh tính CDO, gọi thẳng dịch vụ actions.
 set -uo pipefail
 

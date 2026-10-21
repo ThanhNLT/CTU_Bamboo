@@ -23,7 +23,6 @@ export type Question = {
   citations: Citation[];
   guard: "scope" | "prompt" | null;
   error: string | null;
-  gpu_wait_since?: string | null;
   model: string;
   kb_document_id: string | null;
   created_at: string;

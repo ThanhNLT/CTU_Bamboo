@@ -2,15 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: up-ai test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
+.PHONY: up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
 
 up:
 	docker compose up -d --build
 
-up-ai:
-	docker compose --profile ai up -d --build
+up-gpu:
+	docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
 
 down:
 	docker compose down

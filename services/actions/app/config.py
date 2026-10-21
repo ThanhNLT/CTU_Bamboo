@@ -82,7 +82,6 @@ class Settings:
     ai_min_score: float = 0.7
     ocr_url: str = ""
     ai_cpu_models: tuple[str, ...] = ("bge-m3",)
-    ai_gpu_wait_seconds: int = 300
 
 
 DEV_DEFAULTS = {
@@ -231,5 +230,4 @@ def _from_env() -> Settings:
         ai_min_score=float(env("AI_MIN_SCORE", "0.7")),
         ocr_url=env("OCR_URL", ""),
         ai_cpu_models=tuple(m.strip() for m in env("AI_CPU_MODELS", "bge-m3").split(",") if m.strip()),
-        ai_gpu_wait_seconds=int(env("AI_GPU_WAIT_SECONDS", "300")),
     )
