@@ -164,7 +164,6 @@ def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float =
 
 
 def extract_lines(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0) -> str:
-    """Văn bản giữ xuống dòng (để chia đoạn theo tiêu đề); extract_text gộp thành một dòng cho toàn văn."""
     if content_type not in TEXT_TYPES or not data:
         return ""
     if content_type == "text/plain":
