@@ -29,6 +29,7 @@ from . import (
     kb,
     lakehouse_query,
     ledger,
+    ocr,
     ops,
     pii_guard,
     process_design,
@@ -169,6 +170,7 @@ HANDLERS = {
     **ledger.HANDLERS,
     **process_design.HANDLERS,
     **ai_agent.HANDLERS,
+    **ocr.HANDLERS,
 }
 
 

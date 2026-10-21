@@ -8,7 +8,7 @@ import time
 import psycopg
 from psycopg.rows import dict_row
 
-from . import ai_chunks, config, search, storage
+from . import ai_chunks, config, ocr, search, storage
 from .ollama import Ollama, OllamaUnavailable
 
 log = logging.getLogger("search_sync")
@@ -53,6 +53,8 @@ def attachment_doc(conn: psycopg.Connection, settings: config.Settings, entity_i
             log.warning("tệp %s không còn trong bucket tài liệu", entity_id)
         else:
             content = search.extract_text(settings.tika_url, data, att["content_type"])
+    if scanned := ocr.text_of(conn, entity_id):
+        content = " ".join(f"{content} {scanned}".split())[: search.MAX_TEXT]
     return {
         "id": search.doc_id("core.attachment", entity_id),
         "kind": "attachment",
