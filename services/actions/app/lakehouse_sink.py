@@ -18,8 +18,6 @@ OFFSETS_PROPERTY = "kafka.offsets"
 MAX_BATCH = 5000
 FLUSH_SECONDS = 30.0
 TOPIC_REFRESH_SECONDS = 60.0
-# Mỗi lô tạo một snapshot; siêu dữ liệu bảng (cả bản trong bộ nhớ) lớn dần theo số snapshot nên bỏ snapshot cũ.
-# Lịch sử thay đổi nằm trong các dòng bronze, không cần snapshot; snapshot hiện tại (giữ vị trí Kafka) luôn được giữ.
 SNAPSHOT_RETENTION = dt.timedelta(hours=24)
 EXPIRE_SECONDS = 3600.0
 
@@ -132,7 +130,6 @@ def committed_offsets(table) -> dict[int, int]:
 
 
 def expire_snapshots(table, now: dt.datetime) -> int:
-    """Bỏ snapshot cũ hơn SNAPSHOT_RETENTION (trừ snapshot hiện tại). Không xóa tệp dữ liệu: bronze chỉ ghi thêm."""
     cutoff = now - SNAPSHOT_RETENTION
     current = table.current_snapshot()
     keep = current.snapshot_id if current else None
