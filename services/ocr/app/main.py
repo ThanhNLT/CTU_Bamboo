@@ -9,6 +9,7 @@ transformers, PyTorch), nhận dạng bằng VietOCR. Mô hình chỉ nạp khi 
 không thì CPU, và tự gỡ sau OCR_IDLE_SECONDS không có việc.
 """
 
+import ctypes
 import gc
 import io
 import logging
@@ -68,7 +69,9 @@ class Engine:
     def recognize(self, image: np.ndarray) -> list[dict]:
         with self.lock:
             try:
-                return pipeline.recognize(self._ensure(), image)
+                models = self._ensure()
+                with torch.inference_mode():
+                    return pipeline.recognize(models, image)
             finally:
                 self.last_used = time.monotonic()
 
@@ -82,6 +85,7 @@ class Engine:
         gc.collect()
         if self.device.startswith("cuda"):
             torch.cuda.empty_cache()
+        _trim_heap()
         return had
 
     def unload_idle(self) -> bool:
@@ -102,6 +106,14 @@ class Engine:
 
     def loaded(self) -> bool:
         return self.models is not None
+
+
+def _trim_heap() -> None:
+    """Trả vùng heap trống cho hệ điều hành: glibc giữ lại bộ nhớ đã free, RSS không giảm sau khi gỡ mô hình."""
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except (OSError, AttributeError):
+        pass  # không phải glibc
 
 
 def _out_of_memory(exc: BaseException) -> bool:
