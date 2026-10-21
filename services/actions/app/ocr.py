@@ -26,7 +26,7 @@ RENDER_DPI = 200
 MAX_SIDE = 4000
 MAX_ATTEMPTS = 5
 RETRY_SECONDS = 60
-OOM_ERROR = "Không đủ VRAM để chạy OCR"
+OOM_ERROR = "Không đủ bộ nhớ để chạy OCR"
 READ_ERROR = "Không đọc được tệp"
 IMAGE_TYPES = {"image/png", "image/jpeg"}
 

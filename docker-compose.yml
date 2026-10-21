@@ -38,7 +38,6 @@ x-actions-env: &actions-env
   AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
   AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
   AI_CPU_MODELS: ${AI_CPU_MODELS:-bge-m3}
-  AI_GPU_WAIT_SECONDS: ${AI_GPU_WAIT_SECONDS:-300}
 
 x-bao-sync-env: &bao-sync-env
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
@@ -418,18 +417,15 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
-  # Mọi tác vụ AI chỉ chạy GPU NVIDIA (ADR #52): máy không có GPU (hoặc chưa cài nvidia-container-toolkit)
-  # không bật được profile `ai`, phần lõi vẫn chạy.
+  # Mô hình AI chỉ nạp vào RAM/VRAM khi có việc và tự gỡ sau AI_KEEP_ALIVE nhàn rỗi (ADR #52);
+  # dùng GPU NVIDIA khi bật docker-compose.gpu.yml, không thì chạy CPU.
   ollama:
     logging: *logging
     image: ollama/ollama:0.35.1
-    profiles: [ai]
-    devices:
-      - nvidia.com/gpu=all
     environment:
       OLLAMA_NUM_PARALLEL: "1"
       OLLAMA_MAX_LOADED_MODELS: "2"
-      OLLAMA_KEEP_ALIVE: "30m"
+      OLLAMA_KEEP_ALIVE: ${AI_KEEP_ALIVE:-5m}
       OLLAMA_CONTEXT_LENGTH: "8192"
     volumes:
       - ollama-models:/root/.ollama
@@ -445,7 +441,6 @@ services:
   ollama-init:
     logging: *logging
     image: ollama/ollama:0.35.1
-    profiles: [ai]
     depends_on:
       ollama:
         condition: service_healthy
@@ -453,7 +448,8 @@ services:
       OLLAMA_HOST: http://ollama:11434
       AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
-    entrypoint: ["sh", "-c", "ollama pull \"$$AI_CHAT_MODEL\" && ollama pull \"$$AI_EMBED_MODEL\""]
+    # Mô hình đã có trong volume thì bỏ qua (chạy được không cần Internet); tải lỗi chỉ cảnh báo để phần còn lại của hệ thống vẫn lên
+    entrypoint: ["sh", "-c", "for m in \"$$AI_CHAT_MODEL\" \"$$AI_EMBED_MODEL\"; do ollama show \"$$m\" > /dev/null 2>&1 || ollama pull \"$$m\" || echo \"CẢNH BÁO: không tải được mô hình $$m, AI chưa dùng được\" >&2; done"]
     restart: "no"
 
   ocr:
@@ -462,14 +458,12 @@ services:
       context: .
       dockerfile: services/ocr/Dockerfile
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
-    profiles: [ai]
     depends_on:
       ocr-init:
         condition: service_completed_successfully
-    devices:
-      - nvidia.com/gpu=all
     environment:
       HF_HUB_OFFLINE: "1"
+      OCR_IDLE_SECONDS: ${OCR_IDLE_SECONDS:-300}
     volumes:
       - ocr-models:/models
     ports:
@@ -488,9 +482,6 @@ services:
     build:
       context: .
       dockerfile: services/ocr/Dockerfile
-    profiles: [ai]
-    devices:
-      - nvidia.com/gpu=all
     volumes:
       - ocr-models:/models
     command: ["python", "-m", "app.download"]
@@ -499,14 +490,13 @@ services:
   ai-worker:
     logging: *logging
     <<: *actions-image
-    profiles: [ai]
     depends_on:
       bootstrap:
         condition: service_completed_successfully
       ollama-init:
         condition: service_completed_successfully
       ocr:
-        condition: service_healthy
+        condition: service_started
     environment:
       <<: *actions-env
       OCR_URL: http://ocr:8000
