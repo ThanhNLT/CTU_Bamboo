@@ -17,8 +17,6 @@ ADMIN_USER = "bms-admin"
 ACTIONS_USER = "bms-actions"
 TENANT_USER = "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 TENANT_OF_USER = "CAST(substr(current_user, 3) AS uuid)"
-# Cột không theo CDC vào Lakehouse (khớp DEBEZIUM_SOURCE_COLUMN_EXCLUDE_LIST trong docker-compose.yml):
-# văn bản OCR là nội dung tệp đính kèm, chỉ dùng để tìm kiếm (ADR #52).
 CDC_EXCLUDED_COLUMNS = {("core", "attachment_ocr"): {"page_texts"}}
 
 _COLUMNS = """
