@@ -61,7 +61,6 @@ global_rules:
       prometheus: {}
 
 routes:
-  # Keycloak, CORS và cookie chỉ nhận origin localhost:8000; đưa 127.0.0.1 về đó
   - id: canonical-host
     uri: /*
     hosts: ["127.0.0.1"]

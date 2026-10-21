@@ -421,8 +421,6 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
-  # Mô hình AI chỉ nạp vào RAM/VRAM khi có việc và tự gỡ sau AI_KEEP_ALIVE nhàn rỗi (ADR #52);
-  # dùng GPU NVIDIA khi bật docker-compose.gpu.yml, không thì chạy CPU.
   ollama:
     logging: *logging
     image: ollama/ollama:0.35.1
@@ -454,7 +452,6 @@ services:
       OLLAMA_HOST: http://ollama:11434
       AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
-    # Mô hình đã có trong volume thì bỏ qua (chạy được không cần Internet); tải lỗi chỉ cảnh báo để phần còn lại của hệ thống vẫn lên
     entrypoint: ["sh", "-c", "for m in \"$$AI_CHAT_MODEL\" \"$$AI_EMBED_MODEL\"; do ollama show \"$$m\" > /dev/null 2>&1 || ollama pull \"$$m\" || echo \"CẢNH BÁO: không tải được mô hình $$m, AI chưa dùng được\" >&2; done"]
     restart: "no"
 
@@ -584,7 +581,6 @@ services:
       DEBEZIUM_SOURCE_PUBLICATION_AUTOCREATE_MODE: disabled
       DEBEZIUM_SOURCE_SLOT_NAME: bms_debezium
       DEBEZIUM_SOURCE_SCHEMA_INCLUDE_LIST: core,mdm,wf,proc,ic,mfg,collab,cdc
-      # Khớp CDC_EXCLUDED_COLUMNS trong services/actions/app/lakehouse_silver.py.
       DEBEZIUM_SOURCE_COLUMN_EXCLUDE_LIST: core.attachment_ocr.page_texts
       DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
       DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1

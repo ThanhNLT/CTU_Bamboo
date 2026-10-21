@@ -123,7 +123,6 @@ def run_once(conn: psycopg.Connection, meili: search.Meili, settings: config.Set
 def run_chunks_once(
     conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, limit: int = 10
 ) -> int:
-    """Nạp đoạn cho tài liệu thư viện trong search.pending_chunk; lỗi không ảnh hưởng chỉ mục toàn văn."""
     rows = conn.execute(
         """SELECT kb_document_id, attempts, updated_at FROM search.pending_chunk
            WHERE dirty AND next_attempt_at <= now()
