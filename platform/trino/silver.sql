@@ -186,7 +186,6 @@ SELECT
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
     json_extract_scalar(after, '$["thinking"]') AS "thinking",
-    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["gpu_wait_since"]')) AS timestamp(6) with time zone) AS "gpu_wait_since",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (

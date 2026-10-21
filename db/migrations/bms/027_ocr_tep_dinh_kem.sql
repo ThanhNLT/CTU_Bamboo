@@ -2,10 +2,10 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- 027: OCR tệp đính kèm quét và chờ GPU cho lượt hỏi (ADR #52).
+-- 027: OCR tệp đính kèm quét (ADR #52).
 
 -- Việc OCR của một tệp: ảnh luôn OCR, PDF chỉ OCR trang không có chữ. ai-worker làm từng trang một,
--- chung hàng đợi GPU với lượt hỏi. Văn bản OCR chỉ dùng để tìm, không hiện riêng.
+-- chung hàng đợi mô hình chính với lượt hỏi. Văn bản OCR chỉ dùng để tìm, không hiện riêng.
 CREATE TABLE core.attachment_ocr (
     tenant_id        uuid NOT NULL,
     attachment_id    uuid PRIMARY KEY,
@@ -76,11 +76,8 @@ CREATE TRIGGER audit_log_retry AFTER UPDATE OF status ON core.attachment_ocr
 FOR EACH ROW WHEN (NEW.status = 'PENDING' AND OLD.status <> 'PENDING')
 EXECUTE FUNCTION audit.log_change('attachment_id');
 
--- Tệp đã có từ trước: xếp hàng OCR bù, worker chạy khi bật profile `ai`.
+-- Tệp đã có từ trước: xếp hàng OCR bù.
 INSERT INTO core.attachment_ocr (tenant_id, attachment_id)
 SELECT tenant_id, id FROM core.attachment
 WHERE status = 'CLEAN' AND deleted_at IS NULL AND core.ocr_type(content_type)
   AND search.attachment_indexable(entity_type);
-
--- Lượt hỏi đang chờ GPU (mô hình sinh không nạp trọn lên GPU): giao diện báo "Đang chờ GPU", quá hạn thì lỗi.
-ALTER TABLE core.ai_question ADD COLUMN gpu_wait_since timestamptz;

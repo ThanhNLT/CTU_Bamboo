@@ -472,7 +472,7 @@ Trợ lý RAG hỏi đáp Thư viện tri thức. Mọi thứ chạy trong máy 
 | `search-sync` | (mặc định) | Thêm hàng đợi `search.pending_chunk`: chia đoạn, gọi `/api/embed`, ghi `documents_kb_chunk`; chỉ chạy khi Ollama trả lời `/api/tags` |
 | `bootstrap` | (mặc định) | Tạo chỉ mục `documents_kb_chunk` (embedder `userProvided`, 1024 chiều) bằng khóa admin |
 
-Biến môi trường (`x-actions-env`, không phải bí mật): `OLLAMA_URL` (mặc định `http://ollama:11434`), `AI_CHAT_MODEL` (`qwen3:4b`), `AI_EMBED_MODEL` (`bge-m3`), `MEILI_CHUNK_INDEX` (`documents_kb_chunk`), `AI_MIN_SCORE` (`0.7`: điểm tối thiểu của đoạn; Meilisearch quy cosine về `(1 + cos) / 2` nên đoạn không liên quan vẫn được khoảng 0,5–0,7). Chưa bật profile `ai` thì `ai_assistants` trả `ai_enabled = false`, trang `/i/assistant` hiện "Trợ lý AI chưa bật"; các đoạn chờ trong `search.pending_chunk` và được nạp bù khi bật.
+Biến môi trường (`x-actions-env`, không phải bí mật): `OLLAMA_URL` (mặc định `http://ollama:11434`), `AI_CHAT_MODEL` (`qwen3:4b`), `AI_EMBED_MODEL` (`bge-m3`), `MEILI_CHUNK_INDEX` (`documents_kb_chunk`), `AI_MIN_SCORE` (`0.7`: điểm tối thiểu của đoạn; Meilisearch quy cosine về `(1 + cos) / 2` nên đoạn không liên quan vẫn được khoảng 0,5–0,7), `AI_CPU_MODELS` (`bge-m3`: mô hình phụ được giữ lại khi gỡ mô hình chính, ADR #52); `ai-worker` thêm `OCR_URL` (`http://ocr:8000`). Mô hình chỉ nạp khi có việc: `AI_KEEP_ALIVE` (`5m`, đặt cho `ollama`) và `OCR_IDLE_SECONDS` (`300`, đặt cho `ocr`) là thời gian nhàn rỗi trước khi gỡ. Ollama không truy cập được thì `ai_assistants` trả `ai_enabled = false`, trang `/i/assistant` hiện "Trợ lý AI chưa bật"; các đoạn chờ trong `search.pending_chunk` và được nạp bù khi bật.
 
 ### Chỉ mục đoạn
 
@@ -514,8 +514,8 @@ Giao diện ──ai_ask──▶ actions: kiểm tác tử, prompt_guard, che P
 Chạy CPU mất vài chục giây mỗi lượt; một lượt một lúc nên người sau phải chờ. Hàng đợi chung cho mọi tenant (một mô hình), nên vị trí chờ người hỏi thấy gồm cả lượt của tenant khác (chỉ là con số, không lộ nội dung). Chỉ chạy một `ai-worker`. Mô hình 4B có thể trả lời thiếu ý hoặc trích sai số đoạn; smoke test `scripts/ai_smoke.sh` dùng để kiểm bằng mắt. Chỉ lấy tài liệu thư viện đang hiệu lực, không lấy tệp chứng từ hay Ổ đĩa.
 
 ```bash
-make up-ai                                        # bật profile ai (CPU)
-make up-ai-gpu                                    # bật kèm GPU NVIDIA (docs/van-hanh/trien-khai.md)
+make up                                           # AI chạy cùng hệ thống (CPU)
+make up-gpu                                       # kèm GPU NVIDIA (docs/van-hanh/trien-khai.md)
 make test-actions T=tests/test_tro_ly_ai.py       # chia đoạn, guardrail, worker với Ollama giả
-scripts/ai_smoke.sh                               # hỏi thật 5 câu mẫu khi đã bật profile ai
+scripts/ai_smoke.sh                               # hỏi thật 5 câu mẫu khi đã tải xong mô hình
 ```
