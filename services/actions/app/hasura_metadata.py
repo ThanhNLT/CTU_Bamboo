@@ -26,7 +26,6 @@ ADMIN_ROLE = "platform_admin"
 ACCOUNT_ROLE = "account"
 ME = "X-Hasura-User-Id"
 TENANT = {"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}
-# Hasura mặc định 50 kết nối mỗi source; PostgreSQL chỉ có 100 cho mọi dịch vụ và mỗi kết nối tốn RAM riêng.
 POOL_MAX_CONNECTIONS = 20
 
 ADMIN_ONLY = {("core", "tenant_relation")}

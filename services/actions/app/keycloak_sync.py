@@ -62,8 +62,6 @@ def ensure_web_client(base_url: str, user: str, password: str, web_origin: str) 
 
 
 def ensure_admin_console_url(base_url: str, user: str, password: str, admin_url: str) -> bool:
-    # Bảng quản trị lấy URL đăng nhập từ KC_HOSTNAME (cổng API), mà cổng chặn /realms/master
-    # → iframe kiểm tra cookie không trả lời. Gắn realm master vào địa chỉ quản trị riêng.
     if not admin_url:
         return False
     admin_url = admin_url.rstrip("/")
