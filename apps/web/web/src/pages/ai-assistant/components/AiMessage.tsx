@@ -95,7 +95,6 @@ export const ThinkingAccordion = ({
 };
 
 export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => void; onRetry: () => void }) => {
-  if (q.status === "queued" && q.gpu_wait_since) return <ThinkingMessage label="Đang chờ GPU…" />;
   if (q.status === "queued")
     return <ThinkingMessage label={q.position ? `Đang chờ, vị trí thứ ${q.position + 1}…` : "Đang chờ trợ lý…"} />;
   if (q.status === "running" && !q.answer && !q.thinking)

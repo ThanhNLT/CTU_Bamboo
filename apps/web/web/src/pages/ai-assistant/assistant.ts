@@ -5,7 +5,7 @@
 import { request, wsClient } from "../../api/client";
 import type { Assistant, Citation, HistoryGroup, Question } from "./types";
 
-const FIELDS = `id question status answer thinking citations guard error gpu_wait_since model kb_document_id created_at started_at finished_at`;
+const FIELDS = `id question status answer thinking citations guard error model kb_document_id created_at started_at finished_at`;
 
 export const fetchAssistants = async () => {
   const { ai_assistants } = await request<{ ai_assistants: { ai_enabled: boolean; assistants: Assistant[] } }>(

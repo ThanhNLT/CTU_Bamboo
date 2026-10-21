@@ -61,9 +61,6 @@ class Ollama:
             for m in resp.json().get("models", [])
         ]
 
-    def load(self, model: str) -> None:
-        self._post("/api/generate", {"model": model, "stream": False})
-
     def unload(self, model: str) -> None:
         """Gỡ mô hình khỏi bộ nhớ; mô hình embedding không nhận /api/generate nên gỡ qua /api/embed."""
         try:
