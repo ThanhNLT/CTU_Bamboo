@@ -25,8 +25,16 @@ export const AiKpiCards = ({ kpi }: { kpi: ReturnType<typeof totals> }) => (
       value={num(kpi.active)}
       note={kpi.inactive ? `${kpi.inactive} đang ngừng` : "Không có tác tử ngừng"}
     />
-    <Card label={`Lượt hỏi · ${STATS_DAYS} ngày`} value={num(kpi.questions)} note={`${num(kpi.answered)} đã trả lời`} />
-    <Card label="Thời gian trả lời TB" value={seconds(kpi.avg)} note={`p90 cao nhất ${seconds(kpi.p90)}`} />
+    <Card
+      label={`Lượt hỏi · ${STATS_DAYS} ngày`}
+      value={num(kpi.questions)}
+      note={`${num(kpi.answered)} đã trả lời · ${num(kpi.coldStarts)} nạp lạnh`}
+    />
+    <Card
+      label="Thời gian trả lời TB"
+      value={seconds(kpi.avg)}
+      note={`p90 cao nhất ${seconds(kpi.p90)} · chữ đầu ${seconds(kpi.firstToken)}`}
+    />
     <Card
       label="Rào chắn đã chặn"
       value={num(kpi.refused)}

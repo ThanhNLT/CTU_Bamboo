@@ -1698,6 +1698,8 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "answered", "type": "Int!"},
                         {"name": "avg_seconds", "type": "Float"},
                         {"name": "p90_seconds", "type": "Float"},
+                        {"name": "first_token_seconds", "type": "Float"},
+                        {"name": "cold_starts", "type": "Int!"},
                         {"name": "scope_refused", "type": "Int!"},
                         {"name": "prompt_refused", "type": "Int!"},
                         {"name": "errors", "type": "Int!"},

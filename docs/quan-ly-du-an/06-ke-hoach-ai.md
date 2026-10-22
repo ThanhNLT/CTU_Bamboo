@@ -261,9 +261,34 @@ Hasura: `user` chỉ **select** lượt hỏi của chính mình (`person_id = X
   ```
 
   (Kiểm lại lệnh với tài liệu NVIDIA hiện hành khi viết; Docker Desktop cho Windows thì chỉ cần bật WSL2 backend.)
-- `scripts/ai_smoke.sh`: gọi `ai_ask` với 5 câu hỏi mẫu về quy chế mua sắm trong seed, chờ `done`, in câu trả lời, trích dẫn, thời gian; một câu ngoài phạm vi phải ra `refused/scope`; một câu tiêm lệnh phải ra `refused/prompt`.
+- `scripts/ai_smoke.sh`: gọi `ai_ask` với 5 câu hỏi mẫu về quy chế mua sắm trong seed, chờ `done`, in câu trả lời, trích dẫn, thời gian; một câu ngoài phạm vi phải ra `refused/scope`; một câu tiêm lệnh phải ra `refused/prompt`. Từ 22/10 xem [Tối ưu tốc độ](#toi-uu-toc-do-22-10-2026) bên dưới: bộ 22 câu, chấm bằng luật.
 - `CHANGELOG.md`: mục mới.
 - `apps/web/web/src/pages/ai-agents/mock.ts` ghi chú "máy chủ GPU nội bộ" → bỏ cùng mock.
+
+(toi-uu-toc-do-22-10-2026)=
+## Tối ưu tốc độ (22/10/2026)
+
+Quyết định ở [ADR #52](05-quyet-dinh-kien-truc.md#adr-52) (mục Bổ sung). Đo trên laptop dev RTX 4060 8 GB, qwen3:4b, tác tử mẫu "Trợ lý quy chế" (bật dòng suy nghĩ), bằng `scripts/ai_smoke.sh [--cold]`.
+
+| Số đo | Trước | Sau | Mục tiêu |
+|---|---|---|---|
+| Chữ đầu tiên, mô hình đã nạp (trung vị) | 0,2 giây | 0,2 giây | dưới 2 giây |
+| Cả lượt, mô hình đã nạp (trung vị) | 7,6 giây | 7,6 giây | dưới 10 giây |
+| Chữ đầu tiên, nạp lạnh | 5,6–7,5 giây (embedding rồi mới nạp mô hình sinh) | 4,7–6,4 giây (nạp song song) | dưới 8 giây |
+| Nạp qwen3:4b khi tệp chưa có trong page cache | 28,4 giây | 3,1 giây (đọc trước khi `ollama` khởi động) | |
+| Lượt có dòng suy nghĩ dài hết 1024 token | `done`, câu trả lời rỗng | `error` kèm lời nhắn rõ ràng (giới hạn 2048 token khi bật dòng suy nghĩ) | |
+
+Cả lượt chủ yếu là sinh dòng suy nghĩ (khoảng 500–1000 token ở 68 token/giây); tác tử tắt dòng suy nghĩ thì khoảng 3–5 giây. Che dữ liệu cá nhân mỗi lần ghi dần tốn dưới 2 ms nên giữ nguyên. Chưa đo CPU.
+
+**Hiệu chỉnh `AI_MIN_SCORE`** bằng 22 câu trong `scripts/ai_smoke_cases.json` (13 trong phạm vi, 3 cùng chủ đề nhưng tài liệu không nói tới, 3 ngoài phạm vi, 3 tiêm lệnh), hạ tạm ngưỡng xuống 0,5 để thấy điểm của câu bị chặn:
+
+| Nhóm | Điểm cao nhất |
+|---|---|
+| Trong phạm vi | 0,734–0,899 |
+| Cùng chủ đề, tài liệu không nói tới | 0,771–0,795 |
+| Ngoài phạm vi | 0,649–0,672 |
+
+Ngưỡng 0,7 nằm giữa khoảng trống 0,672–0,734 nên giữ nguyên. Nhóm "cùng chủ đề" trùng điểm với nhóm trong phạm vi nên ngưỡng không tách được; mô hình trả lời "không tìm thấy" và bộ smoke chấm đạt khi gặp câu đó. Bộ tài liệu seed nhỏ (chỉ Quy chế mua sắm có nội dung đầy đủ), nên chạy lại bộ này khi thêm tài liệu thật.
 
 ## Ngoài phạm vi (không làm đợt này)
 

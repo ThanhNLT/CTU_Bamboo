@@ -208,3 +208,7 @@ _Tránh dùng_: bộ lọc, kiểm duyệt (kiểm duyệt là duyệt chứng t
 **Lượt hỏi**:
 Một câu hỏi của một người gửi cho một tác tử AI, kèm câu trả lời, các trích dẫn và trạng thái (chờ, đang trả lời, xong, lỗi). Mỗi lượt hỏi độc lập: tác tử không đọc lại các lượt trước.
 _Tránh dùng_: phiên chat, hội thoại, prompt
+
+**Lượt hỏi nạp lạnh**:
+Lượt hỏi mà mô hình sinh chưa nằm trong bộ nhớ lúc nhận, nên phải chờ nạp. Ngược lại là lượt hỏi nạp sẵn.
+_Tránh dùng_: cold start (trong giao diện và tài liệu tiếng Việt)
