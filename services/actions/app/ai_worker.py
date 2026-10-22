@@ -14,6 +14,7 @@ lại lượt hỏi, nên mỗi lúc chỉ một mô hình chính nằm trong b�
 import html
 import logging
 import re
+import threading
 import time
 import uuid
 
@@ -37,6 +38,12 @@ STALE_MINUTES = 10
 OCR_PAUSE_SECONDS = 60
 SCOPE_REFUSAL = "Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem."
 ERROR_MESSAGE = "Trợ lý AI tạm thời không trả lời được. Vui lòng hỏi lại sau."
+THINK_OVERRUN_MESSAGE = (
+    "Câu hỏi cần suy nghĩ quá dài nên chưa có câu trả lời. Hãy hỏi cụ thể hơn hoặc tắt dòng suy nghĩ của tác tử."
+)
+TRUNCATED_NOTE = "\n\n(câu trả lời bị cắt do quá dài)"
+ANSWER_MAX_TOKENS = 1024
+THINK_MAX_TOKENS = 2048  # dòng suy nghĩ và câu trả lời dùng chung giới hạn
 SYSTEM_PROMPT = """Bạn là trợ lý tra cứu Thư viện tri thức của doanh nghiệp. Trả lời bằng tiếng Việt, ngắn gọn.
 Quy tắc:
 - Chỉ trả lời dựa trên các đoạn trong <tai_lieu>. Không dùng kiến thức bên ngoài.
@@ -65,6 +72,27 @@ def clean_thought(text: str | None) -> str | None:
         return None
     cleaned = text.replace("<think>", "").replace("</think>", "").strip()
     return cleaned if cleaned else None
+
+
+def split_output(thinking: str, content: str) -> tuple[str | None, str]:
+    """Dòng suy nghĩ (trường riêng của API hoặc thẻ <think> trong nội dung) và câu trả lời đã tách."""
+    if "<think>" in content:
+        tagged, content = split_think(content)
+        if tagged is not None:
+            thinking = (thinking + "\n" + tagged).strip() if thinking else tagged
+    return clean_thought(thinking), content
+
+
+def prewarm(ai: Ollama, model: str) -> None:
+    """Cho Ollama nạp mô hình sinh song song với embedding và tìm kiếm; lỗi thì để lệnh chat báo."""
+
+    def load() -> None:
+        try:
+            ai.warm(model)
+        except OllamaUnavailable as exc:
+            log.info("nạp trước %s không thành: %s", model, exc)
+
+    threading.Thread(target=load, daemon=True, name="ollama-prewarm").start()
 
 
 def strip_think(text: str) -> str:
@@ -178,6 +206,11 @@ def answer(
     agent = conn.execute("SELECT guardrail_config FROM core.ai_agent WHERE id = %s", (q["agent_id"],)).fetchone()
     conn.commit()
     guard = ai_agent.guardrails(agent["guardrail_config"] if agent else None)
+    cold = gpu.ensure_chat(q["model"])
+    conn.execute("UPDATE core.ai_question SET cold_start = %s WHERE id = %s", (cold, q["id"]))
+    conn.commit()
+    if cold:
+        prewarm(ai, q["model"])
     chunks = find_chunks(conn, meili, ai, settings, q)
     if not chunks and guard["scope_guard"]:
         _finish(conn, q, status="refused", guard="scope", answer=SCOPE_REFUSAL)
@@ -186,39 +219,38 @@ def answer(
     def mask(text: str) -> str:
         return pii_guard.guard().mask(text)[0] if guard["pii_guard"] else text
 
-    gpu.ensure_chat(q["model"])
     raw_thinking, raw_content = "", ""
-    usage, last = {}, time.monotonic()
-    for delta in ai.chat(q["model"], build_messages(q["question"], chunks), think=guard["think"]):
+    usage, finish, started, last = {}, None, False, time.monotonic()
+    max_tokens = THINK_MAX_TOKENS if guard["think"] else ANSWER_MAX_TOKENS
+    for delta in ai.chat(
+        q["model"], build_messages(q["question"], chunks), think=guard["think"], max_tokens=max_tokens
+    ):
         raw_thinking += delta.thinking
         raw_content += delta.content
+        if not started and (delta.thinking or delta.content):
+            started = True
+            conn.execute("UPDATE core.ai_question SET first_token_at = clock_timestamp() WHERE id = %s", (q["id"],))
+            conn.commit()
         if delta.prompt_tokens is not None:
             usage = {"prompt_tokens": delta.prompt_tokens, "completion_tokens": delta.completion_tokens}
+        finish = delta.finish_reason or finish
         if time.monotonic() - last >= FLUSH_SECONDS:
-            cur_think = raw_thinking
-            cur_answer = raw_content
-            if "<think>" in cur_answer:
-                tag_think, tag_ans = split_think(cur_answer)
-                if tag_think is not None:
-                    cur_think = (cur_think + "\n" + tag_think).strip() if cur_think else tag_think
-                    cur_answer = tag_ans
-            cleaned_cur_think = clean_thought(cur_think)
+            thought, partial = split_output(raw_thinking, raw_content)
             conn.execute(
                 "UPDATE core.ai_question SET thinking = %s, answer = %s WHERE id = %s",
-                (mask(cleaned_cur_think) if cleaned_cur_think else None, mask(cur_answer), q["id"]),
+                (mask(thought) if thought else None, mask(partial), q["id"]),
             )
             conn.commit()
             last = time.monotonic()
-    final_think = raw_thinking
-    final_answer = raw_content
-    if "<think>" in final_answer:
-        tag_think, tag_ans = split_think(final_answer)
-        if tag_think is not None:
-            final_think = (final_think + "\n" + tag_think).strip() if final_think else tag_think
-            final_answer = tag_ans
-    cleaned_final_think = clean_thought(final_think)
-    clean_think = mask(cleaned_final_think) if cleaned_final_think else None
-    text = mask(final_answer.strip())
+    thought, final = split_output(raw_thinking, raw_content)
+    clean_think = mask(thought) if thought else None
+    text = mask(final.strip())
+    truncated = finish == "length"
+    if truncated and not text:
+        _finish(conn, q, status="error", thinking=clean_think, error=THINK_OVERRUN_MESSAGE, **usage)
+        return "error"
+    if truncated:
+        text += TRUNCATED_NOTE
     citations = (
         [
             {

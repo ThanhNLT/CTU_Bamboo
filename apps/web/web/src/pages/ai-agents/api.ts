@@ -16,7 +16,7 @@ export const fetchAgents = async () => {
 
 export const fetchStats = async (days: number) => {
   const { ai_agent_stats } = await request<{ ai_agent_stats: AgentStats[] }>(
-    `query($d: Int) { ai_agent_stats(days: $d) { agent_id questions answered avg_seconds p90_seconds scope_refused
+    `query($d: Int) { ai_agent_stats(days: $d) { agent_id questions answered avg_seconds p90_seconds first_token_seconds cold_starts scope_refused
       prompt_refused errors pending prompt_tokens completion_tokens } }`,
     { d: days },
   );

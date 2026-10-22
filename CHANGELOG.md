@@ -4,6 +4,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp (tối ưu tốc độ AI):** chạy migration `028` (thêm `core.ai_question.first_token_at`, `cold_start`), `make hasura-metadata` và `docker compose up -d --build` (image `actions`, `ocr` đổi). Lượt hỏi gặp mô hình sinh chưa nạp thì nạp song song với tìm kiếm; container `ollama` và `ocr` đọc trước tệp mô hình vào page cache khi khởi động (đọc đĩa một lần, hệ điều hành tự thu hồi khi cần RAM). Lượt hỏi có dòng suy nghĩ hết giới hạn token mà chưa có câu trả lời nay báo lỗi thay vì trả câu rỗng. Trang Quản trị tác tử AI hiện chữ đầu tiên và số lượt phải nạp mô hình. `scripts/ai_smoke.sh` chạy bộ 22 câu chấm bằng luật (ADR #52).
+
 **Nâng cấp:** container `db` khởi động lại một lần với `wal_level=logical`. Triển khai thật đặt thêm `CDC_DB_PASSWORD`, `LAKEHOUSE_DB_PASSWORD`. Cần thêm khoảng 2,3 GB RAM cho Kafka, Debezium, lakehouse-sink và Trino.
 
 **Nâng cấp (OCR, nạp mô hình khi có việc):** chạy lại như thường (ADR #52). Dịch vụ `ocr`, `ocr-init` chạy cùng `docker compose up -d`; lần đầu `ocr-init` tải ~250 MB mô hình OCR vào volume `ocr-models`, image `bamboo-ocr` ~14 GB. Mô hình AI và OCR chỉ nạp vào RAM/VRAM khi có việc, tự gỡ sau `AI_KEEP_ALIVE` (mặc định `5m`) và `OCR_IDLE_SECONDS` (mặc định 300) nhàn rỗi. Đã chép `docker-compose.gpu.yml` thành `docker-compose.override.yml` thì chép lại để `ocr` cũng dùng GPU. Migration `027` thêm `core.attachment_ocr` (xếp hàng OCR bù mọi ảnh, PDF đã có của đề nghị mua sắm và tài liệu thư viện); chạy lại `make hasura-metadata`.

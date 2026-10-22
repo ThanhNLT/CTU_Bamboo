@@ -11551,6 +11551,14 @@
             "type": "Float"
           },
           {
+            "name": "first_token_seconds",
+            "type": "Float"
+          },
+          {
+            "name": "cold_starts",
+            "type": "Int!"
+          },
+          {
             "name": "scope_refused",
             "type": "Int!"
           },

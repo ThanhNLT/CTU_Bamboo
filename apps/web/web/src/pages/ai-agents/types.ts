@@ -22,6 +22,8 @@ export type AgentStats = {
   answered: number;
   avg_seconds: number | null;
   p90_seconds: number | null;
+  first_token_seconds: number | null;
+  cold_starts: number;
   scope_refused: number;
   prompt_refused: number;
   errors: number;

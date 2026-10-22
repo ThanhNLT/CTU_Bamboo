@@ -22,6 +22,7 @@ class Delta:
     thinking: str = ""
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
+    finish_reason: str | None = None
 
 
 class Ollama:
@@ -70,6 +71,10 @@ class Ollama:
                 raise
             self._post("/api/embed", {"model": model, "input": [], "keep_alive": 0})
 
+    def warm(self, model: str) -> None:
+        """Nạp mô hình vào bộ nhớ mà không sinh gì (yêu cầu rỗng), để chạy song song với việc khác."""
+        self._post("/api/generate", {"model": model, "stream": False})
+
     def embed(self, model: str, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
@@ -108,6 +113,7 @@ class Ollama:
                         d = choice.get("delta") or {}
                         delta.content += d.get("content") or ""
                         delta.thinking += d.get("reasoning") or d.get("reasoning_content") or ""
+                        delta.finish_reason = choice.get("finish_reason") or delta.finish_reason
                     if usage := event.get("usage"):
                         delta.prompt_tokens = usage.get("prompt_tokens")
                         delta.completion_tokens = usage.get("completion_tokens")
