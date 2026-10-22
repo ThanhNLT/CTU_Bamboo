@@ -265,6 +265,9 @@ def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
                   avg(extract(epoch FROM q.finished_at - q.started_at)) FILTER (WHERE q.status = 'done'),
                   percentile_cont(0.9) WITHIN GROUP (ORDER BY extract(epoch FROM q.finished_at - q.started_at))
                       FILTER (WHERE q.status = 'done'),
+                  percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM q.first_token_at - q.started_at))
+                      FILTER (WHERE q.status = 'done' AND q.first_token_at IS NOT NULL),
+                  count(q.id) FILTER (WHERE q.cold_start),
                   count(q.id) FILTER (WHERE q.guard = 'scope'),
                   count(q.id) FILTER (WHERE q.guard = 'prompt'),
                   count(q.id) FILTER (WHERE q.status = 'error'),
@@ -283,12 +286,14 @@ def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
             "answered": r[2],
             "avg_seconds": round(float(r[3]), 1) if r[3] is not None else None,
             "p90_seconds": round(float(r[4]), 1) if r[4] is not None else None,
-            "scope_refused": r[5],
-            "prompt_refused": r[6],
-            "errors": r[7],
-            "pending": r[8],
-            "prompt_tokens": r[9],
-            "completion_tokens": r[10],
+            "first_token_seconds": round(float(r[5]), 1) if r[5] is not None else None,
+            "cold_starts": r[6],
+            "scope_refused": r[7],
+            "prompt_refused": r[8],
+            "errors": r[9],
+            "pending": r[10],
+            "prompt_tokens": r[11],
+            "completion_tokens": r[12],
         }
         for r in rows
     ]

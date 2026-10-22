@@ -164,7 +164,7 @@ docker compose logs -f ollama-init         # lần đầu tải ~3,7 GB (qwen3:4
 docker compose logs -f ocr-init            # lần đầu tải ~250 MB mô hình OCR (PaddleOCR, VietOCR)
 curl 127.0.0.1:11434/api/tags              # thấy hai mô hình là xong
 curl 127.0.0.1:8866/health                 # dịch vụ OCR: GPU hay CPU, mô hình đang nạp chưa
-scripts/ai_smoke.sh                        # hỏi thật vài câu mẫu
+scripts/ai_smoke.sh                        # 22 câu mẫu chấm bằng luật, in tốc độ (--cold: gỡ mô hình trước câu đầu)
 scripts/ocr_smoke.sh                       # OCR ảnh mẫu tiếng Việt, đo tỉ lệ lỗi ký tự
 ```
 
@@ -172,13 +172,13 @@ scripts/ocr_smoke.sh                       # OCR ảnh mẫu tiếng Việt, đo
 |---|---|
 | RAM / GPU | Chỉ chiếm khi có việc: qwen3:4b ~3 GB (kèm ngữ cảnh 8K), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
 | Đĩa | ~3,7 GB volume `ollama-models`, ~250 MB volume `ocr-models`, image `ocr` ~14 GB (PyTorch CUDA); sau lần tải đầu chạy không cần Internet |
-| Tốc độ | GPU: vài giây mỗi lượt hỏi, 1–2 giây mỗi trang OCR; CPU chậm hơn nhiều lần. Lần đầu sau khi nhàn rỗi chờ thêm thời gian nạp mô hình. Lượt hỏi và trang OCR chung một hàng đợi trong `ai-worker`, mỗi lúc một việc, lượt hỏi được ưu tiên |
+| Tốc độ | GPU: vài giây mỗi lượt hỏi, 1–2 giây mỗi trang OCR; CPU chậm hơn nhiều lần. Lần đầu sau khi nhàn rỗi chờ thêm thời gian nạp mô hình (chữ đầu tiên sau khoảng 5–6 giây; `ollama` và `ocr` đọc trước tệp mô hình vào page cache khi khởi động, nên máy ít RAM bị hệ điều hành thu hồi cache thì lần nạp đầu đọc lại từ đĩa, chậm hơn nhiều). Lượt hỏi và trang OCR chung một hàng đợi trong `ai-worker`, mỗi lúc một việc, lượt hỏi được ưu tiên |
 
 **Mô hình chính và mô hình phụ.** Mô hình sinh của tác tử và bộ OCR là mô hình chính, không nạp cùng lúc: trước khi trả lời, `ai-worker` gỡ bộ OCR và mô hình chính khác của Ollama để mô hình sinh có đủ chỗ (ưu tiên nằm trọn trên GPU); trước khi OCR mà hết bộ nhớ thì gỡ mô hình sinh đang nhàn rỗi rồi thử lại; vẫn hết thì thử lại sau, quá 5 lần thì tệp hiện "OCR lỗi" kèm nút thử lại. Mô hình phụ (`AI_CPU_MODELS`, mặc định `bge-m3`) nhỏ, được giữ lại, Ollama tự gỡ khi nhàn rỗi.
 
 **OCR tệp quét.** Ảnh PNG/JPEG luôn OCR; PDF chỉ OCR trang không có chữ, tối đa 50 trang mỗi tệp. Chỉ tệp của đề nghị mua sắm và tài liệu thư viện (các tệp được đánh chỉ mục tìm kiếm). Văn bản OCR vào chỉ mục toàn văn và, với tài liệu thư viện, vào chỉ mục đoạn của Trợ lý RAG. Tệp có từ trước khi nâng cấp được OCR bù. Trạng thái từng tệp ở bảng `core.attachment_ocr`.
 
-**Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi.
+**Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi; `scripts/ai_smoke.sh` in điểm theo nhóm câu hỏi (trong phạm vi, ngoài phạm vi, tiêm lệnh). Hạ tạm `AI_MIN_SCORE` xuống 0,5 khi chạy để thấy điểm của câu bị chặn.
 
 **Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
 

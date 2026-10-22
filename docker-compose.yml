@@ -431,6 +431,19 @@ services:
       OLLAMA_CONTEXT_LENGTH: "8192"
       OLLAMA_FLASH_ATTENTION: "1"
       OLLAMA_KV_CACHE_TYPE: ${AI_KV_CACHE_TYPE:-q8_0}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
+    # Sau khi máy chủ lên, đọc tệp hai mô hình mặc định vào page cache của hệ điều hành (không nạp lên RAM tiến trình
+    # hay VRAM, kernel tự thu hồi khi cần): lượt hỏi đầu tiên không phải đọc ~3,3 GB từ đĩa (ADR #52).
+    entrypoint:
+      - sh
+      - -c
+      - |
+        (until ollama list > /dev/null 2>&1; do sleep 1; done
+        for m in "$$AI_CHAT_MODEL" "$$AI_EMBED_MODEL"; do
+          ollama show --modelfile "$$m" 2> /dev/null | sed -n 's/^FROM \(\/.*\)/\1/p' | xargs -r cat > /dev/null
+        done) &
+        exec ollama serve
     volumes:
       - ollama-models:/root/.ollama
     ports:

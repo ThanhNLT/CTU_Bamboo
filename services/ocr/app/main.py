@@ -120,6 +120,20 @@ def _out_of_memory(exc: BaseException) -> bool:
     return isinstance(exc, torch.cuda.OutOfMemoryError) or "out of memory" in str(exc).lower()
 
 
+def warm_page_cache(models_dir: str) -> None:
+    """Đọc trọng số vào page cache của hệ điều hành (không nạp mô hình): trang OCR đầu tiên không phải chờ đĩa."""
+    total = 0
+    try:
+        for root, _dirs, files in os.walk(models_dir):
+            for name in files:
+                with open(os.path.join(root, name), "rb") as f:
+                    while chunk := f.read(8 * 2**20):
+                        total += len(chunk)
+    except OSError as exc:
+        log.info("đọc trước trọng số OCR dừng: %s", exc)
+    log.info("đã đọc trước %d MB trọng số OCR vào page cache", total // 2**20)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     dev = device()
@@ -129,6 +143,7 @@ async def lifespan(app: FastAPI):
     )
     stop = threading.Event()
     threading.Thread(target=app.state.engine.watch_idle, args=(stop,), daemon=True).start()
+    threading.Thread(target=warm_page_cache, args=(app.state.engine.models_dir,), daemon=True).start()
     log.info("dịch vụ OCR chạy trên %s, nạp mô hình khi có việc", app.state.device)
     yield
     stop.set()
