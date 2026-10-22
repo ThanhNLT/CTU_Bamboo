@@ -7,6 +7,7 @@ import json
 import math
 import re
 import threading
+import time
 import zlib
 from itertools import pairwise
 from types import SimpleNamespace
@@ -120,6 +121,14 @@ def test_loc_sach_dong_suy_nghi():
     assert ai_worker.clean_thought("bình thường") == "bình thường"
 
 
+def test_gop_dong_suy_nghi_tu_truong_rieng_va_the_think():
+    assert ai_worker.split_output("", "Trả lời thẳng.") == (None, "Trả lời thẳng.")
+    assert ai_worker.split_output("nghĩ A", "Trả lời.") == ("nghĩ A", "Trả lời.")
+    assert ai_worker.split_output("", "<think>nghĩ B</think>Trả lời.") == ("nghĩ B", "Trả lời.")
+    assert ai_worker.split_output("nghĩ A", "<think>nghĩ B</think>Trả lời.") == ("nghĩ A\nnghĩ B", "Trả lời.")
+    assert ai_worker.split_output("", "<think>đang nghĩ dở") == ("đang nghĩ dở", "")
+
+
 def test_ngu_canh_boc_trong_the_va_thoat_ky_tu():
     [system, user] = ai_worker.build_messages(
         "Hạn mức?",
@@ -149,6 +158,8 @@ class FakeOllama:
         self.reply = REPLY
         self.thinking = ""
         self.last_messages: list[dict] = []
+        self.last_body: dict = {}
+        self.finish_reason: str | None = None
         handler = self._handler()
         self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
         self.url = f"http://127.0.0.1:{self.server.server_address[1]}"
@@ -206,14 +217,17 @@ class FakeOllama:
                     return
                 fake.chat_calls += 1
                 fake.last_messages = body["messages"]
+                fake.last_body = body
                 self.send_response(200)
                 self.send_header("Content-Type", "text/event-stream")
                 self.end_headers()
                 events = []
                 if fake.thinking:
                     events.extend([{"choices": [{"delta": {"reasoning": w + " "}}]} for w in fake.thinking.split(" ")])
-                words = fake.reply.split(" ")
+                words = fake.reply.split(" ") if fake.reply else []
                 events.extend([{"choices": [{"delta": {"content": w + " "}}]} for w in words])
+                if fake.finish_reason:
+                    events.append({"choices": [{"delta": {}, "finish_reason": fake.finish_reason}]})
                 events.append({"choices": [], "usage": {"prompt_tokens": 321, "completion_tokens": len(words)}})
                 for e in events:
                     self.wfile.write(f"data: {json.dumps(e)}\n\n".encode())
@@ -246,6 +260,7 @@ def ai_env(search_settings, fake_ai, conn):
     conn.execute("UPDATE core.ai_question SET status = 'error' WHERE status IN ('queued', 'running')")
     fake_ai.reply = REPLY
     fake_ai.thinking = ""
+    fake_ai.finish_reason = None
     fake_ai.loaded.clear()
     fake_ai.unloads.clear()
     fake_ai.vram_ratio = 1.0
@@ -426,6 +441,81 @@ def test_tra_loi_co_the_think_trong_content(ai_env, conn, org):
     assert q["thinking"] == "Phân tích quy định đổi trả"
     assert "<think>" not in (q["thinking"] or "")
     assert q["answer"] == "Đổi trả trong 7 ngày [1]."
+
+
+def ask_one(env, conn, org, agent: str, title: str, summary: str, text: str = "Hạn mức?") -> dict:
+    k = org
+    i = ids(conn, "TDX", k("nv"))
+    doc = kb_doc(conn, k("tp"), k("P_TP"), "company", title, summary)
+    with psycopg.connect(env.settings.database_url, row_factory=dict_row) as w:
+        ai_chunks.sync_document(w, env.indexer, env.ai, env.settings, doc)
+    asked = act("ai_ask", {"agent_id": agent, "question": text}, i[k("nv")], i["TDX"], env.ctx)
+    return {"id": asked["id"], "person": i[k("nv")]}
+
+
+def test_do_toc_do_luot_hoi_nguoi_cu_va_nap_song_song(ai_env, conn, org):
+    asked = ask_one(ai_env, conn, org, make_agent(conn), "Quy chế đo tốc độ", "Hạn mức tạm ứng là 20 triệu đồng.")
+    assert work(ai_env) == "done"
+    q = question(conn, asked["id"])
+    assert q["cold_start"] is True, "mô hình sinh chưa nạp thì lượt hỏi chờ nạp"
+    assert q["created_at"] <= q["started_at"] <= q["first_token_at"] <= q["finished_at"]
+    for _ in range(40):  # nạp trước chạy ở luồng nền
+        if "qwen3:4b" in ai_env.fake.loaded:
+            break
+        time.sleep(0.05)
+    assert "qwen3:4b" in ai_env.fake.loaded, "mô hình sinh được nạp trước, không đợi đến lệnh chat"
+
+    ai_env.fake.loaded["qwen3:4b"] = 1.0
+    second = ask_one(ai_env, conn, org, make_agent(conn), "Quy chế đo tốc độ B", "Hạn mức tạm ứng là 30 triệu đồng.")
+    assert work(ai_env) == "done"
+    assert question(conn, second["id"])["cold_start"] is False
+
+
+def test_thong_ke_co_chu_dau_va_so_lan_nap(ai_env, conn, org, monkeypatch):
+    monkeypatch.setattr(ai_agent, "_require_admin", lambda *_: None)
+    agent = make_agent(conn)
+    asked = ask_one(ai_env, conn, org, agent, "Quy chế thống kê", "Hạn mức tạm ứng là 20 triệu đồng.")
+    assert work(ai_env) == "done"
+    conn.execute(
+        "UPDATE core.ai_question SET first_token_at = started_at + interval '1.5 seconds' WHERE id = %s",
+        (asked["id"],),
+    )
+    tenant = str(conn.execute("SELECT test.id('TDX') AS id").fetchone()["id"])
+    stats = {r["agent_id"]: r for r in act("ai_agent_stats", {}, asked["person"], tenant, ai_env.ctx)}
+    assert stats[agent]["first_token_seconds"] == 1.5 and stats[agent]["cold_starts"] == 1
+    assert stats[agent]["answered"] == 1 and stats[agent]["errors"] == 0
+
+
+def test_gioi_han_token_theo_dong_suy_nghi(ai_env, conn, org):
+    plain = ask_one(ai_env, conn, org, make_agent(conn), "Quy chế giới hạn A", "Hạn mức tạm ứng 20 triệu đồng.")
+    assert work(ai_env) == "done"
+    assert ai_env.fake.last_body["max_tokens"] == ai_worker.ANSWER_MAX_TOKENS
+    assert ai_env.fake.last_body["reasoning_effort"] == "none" and plain["id"]
+    ask_one(ai_env, conn, org, make_agent(conn, think=True), "Quy chế giới hạn B", "Hạn mức tạm ứng 30 triệu đồng.")
+    assert work(ai_env) == "done"
+    assert ai_env.fake.last_body["max_tokens"] == ai_worker.THINK_MAX_TOKENS
+
+
+def test_het_token_khi_dang_nghi_thi_bao_loi_ro_rang(ai_env, conn, org):
+    agent = make_agent(conn, think=True)
+    asked = ask_one(ai_env, conn, org, agent, "Quy chế nghĩ dài", "Hạn mức tạm ứng là 20 triệu đồng.")
+    ai_env.fake.thinking = "Suy nghĩ rất dài chưa đến câu trả lời"
+    ai_env.fake.reply = ""
+    ai_env.fake.finish_reason = "length"
+    assert work(ai_env) == "error"
+    q = question(conn, asked["id"])
+    assert q["status"] == "error" and q["error"] == ai_worker.THINK_OVERRUN_MESSAGE
+    assert q["thinking"] == "Suy nghĩ rất dài chưa đến câu trả lời" and q["answer"] == ""
+
+
+def test_cau_tra_loi_bi_cat_van_giu_va_danh_dau(ai_env, conn, org):
+    asked = ask_one(ai_env, conn, org, make_agent(conn), "Quy chế câu dài", "Hạn mức tạm ứng là 20 triệu đồng.")
+    ai_env.fake.reply = "Hạn mức tạm ứng là 20 triệu đồng [1] và"
+    ai_env.fake.finish_reason = "length"
+    assert work(ai_env) == "done"
+    q = question(conn, asked["id"])
+    assert q["answer"].startswith("Hạn mức tạm ứng là 20 triệu đồng [1] và")
+    assert q["answer"].endswith(ai_worker.TRUNCATED_NOTE)
 
 
 def test_chan_tiem_lenh_ngay_khi_hoi(ai_env, conn):

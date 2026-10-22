@@ -27,11 +27,13 @@ class Gpu:
         self.ocr = ocr
         self.cpu_models = {model_name(m) for m in cpu_models}
 
-    def ensure_chat(self, model: str) -> None:
-        """Trước khi Ollama nạp mô hình sinh: gỡ bộ OCR và mô hình chính khác để nó có đủ chỗ (ưu tiên GPU)."""
+    def ensure_chat(self, model: str) -> bool:
+        """Trước khi Ollama nạp mô hình sinh: gỡ bộ OCR và mô hình chính khác để nó có đủ chỗ (ưu tiên GPU).
+
+        Trả True nếu mô hình sinh chưa nạp (lượt hỏi phải chờ nạp)."""
         running = self.ai.running()
         if any(model_name(m["name"]) == model_name(model) for m in running):
-            return
+            return False
         log.info("chuẩn bị nạp %s: gỡ bộ OCR và các mô hình chính khác", model)
         if self.ocr is not None:
             try:
@@ -41,6 +43,7 @@ class Gpu:
         for m in running:
             if model_name(m["name"]) not in self.cpu_models:
                 self.ai.unload(m["name"])
+        return True
 
     def free_for_ocr(self) -> None:
         """Gỡ mô hình chính của Ollama đang nhàn rỗi để nhường bộ nhớ cho bộ OCR."""
