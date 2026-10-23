@@ -45,10 +45,10 @@ hasura-metadata:
 
 trino-sql:
 	docker compose run --rm -u 0 -v ./:/repo actions python -m app.lakehouse_silver
-	docker compose up -d --build trino && docker compose run --rm trino-init
+	docker compose up -d --build sleeper trino-core && docker compose run --rm trino-init
 
 trino-password:
-	@docker compose exec trino cat /etc/trino/secrets/admin.password
+	@docker compose up -d trino-core > /dev/null && docker compose exec trino-core cat /etc/trino/secrets/admin.password
 
 realm:
 	docker compose run --rm -u 0 -v ./:/repo seed python -m app.realm
