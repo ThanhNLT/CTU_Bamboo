@@ -133,12 +133,14 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 
 | Dịch vụ | Biến | Mặc định |
 |---|---|---|
-| `keycloak` | `KEYCLOAK_HEAP` | `-Xms64m -Xmx512m -XX:+UseSerialGC` |
-| `tika-core` | `TIKA_JAVA_OPTS` | `-Xmx512m -XX:+UseSerialGC` |
-| `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m -XX:+UseSerialGC` |
+| `keycloak` | `KEYCLOAK_HEAP` | `-Xms64m -Xmx512m` |
+| `tika-core` | `TIKA_JAVA_OPTS` | `-Xmx512m` |
+| `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m` |
 | `kafka` | `KAFKA_HEAP` | `-Xms128m -Xmx512m` |
 | `trino-core` | `platform/trino/jvm.config` | `-Xmx1G` |
-| `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m -XX:+UseSerialGC -XX:ReservedCodeCacheSize=96m` |
+| `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m` |
+
+**Mức RAM 8 / 16** ([ADR #54](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-54)): máy 8 GB chạy chức năng cơ bản, không AI; máy 16 GB chạy đầy đủ. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 không chạy Ollama, `ocr`, `ai-worker` và hạ heap JVM; chuyển từ 16 xuống 8 thì `make up` dừng luôn các container AI. Chạy `docker compose up -d` trực tiếp thì mức 16 khi `.env` có `COMPOSE_PROFILES=ai`; mức 8 đặt `COMPOSE_PROFILES=` và `OLLAMA_URL=` (để trống).
 
 **Dịch vụ dùng thưa tự ngủ** ([ADR #53](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-53)): `trino-core`, `tika-core`, `gotenberg-core` chỉ chạy khi có yêu cầu; `sleeper` giữ tên mạng và cổng cũ (`trino`, `tika`, `gotenberg`), đánh thức khi có byte đầu tiên và cho ngủ sau `SLEEPER_IDLE_SECONDS` (mặc định 300) không có lưu lượng. Lần gọi đầu sau khi ngủ chậm thêm thời gian khởi động container. Xem trạng thái bằng `docker compose ps` hoặc `docker compose exec sleeper python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:9000/status').read().decode())"`. `sleeper` gắn `/var/run/docker.sock`; môi trường không cho phép thì bỏ `sleeper` và đặt lại tên ba dịch vụ thật như ADR #53 mô tả.
 
