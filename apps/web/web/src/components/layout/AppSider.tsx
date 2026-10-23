@@ -47,9 +47,11 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.label : undefined}
       className={cn(
-        "group relative flex h-9 items-center gap-3 rounded-[10px] text-[13.5px] transition-colors",
+        "group relative flex h-9 items-center gap-3 rounded-[10px] text-[13.5px] transition-[background-color,box-shadow,color] duration-150",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-        active ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:bg-white/60 hover:text-ink",
+        active
+          ? "bg-bamboo-700/15 font-semibold text-ink ring-1 ring-inset ring-bamboo-700/10"
+          : "text-body hover:bg-bamboo-700/[0.07] hover:text-ink",
         collapsed ? "justify-center" : "px-2.5",
       )}
     >
@@ -60,7 +62,12 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       />
       {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
       {!collapsed && item.badge ? (
-        <span className="min-w-5 rounded-full bg-white/80 px-1.5 text-center text-[11.5px] font-medium tabular-nums text-muted">
+        <span
+          className={cn(
+            "min-w-5 rounded-full px-1.5 text-center text-[11.5px] font-medium tabular-nums",
+            active ? "bg-bamboo-700/15 text-bamboo-800" : "bg-white/80 text-muted",
+          )}
+        >
           {item.badge}
         </span>
       ) : null}
