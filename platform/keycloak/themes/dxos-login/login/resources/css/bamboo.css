@@ -1,0 +1,520 @@
+/*
+ * SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Trang đăng nhập Bamboo: nền xanh đậm của hệ thống, tên và biểu tượng ứng dụng, ô đăng nhập dạng cửa sổ nổi kiểu kính mờ
+   của macOS. Màu lấy từ --color-bamboo-* của apps/web (src/styles/tailwind.css). */
+
+:root {
+    --bb-green-300: #98c9a0;
+    --bb-green-400: #63ab70;
+    --bb-green-500: #3f9150;
+    --bb-green-600: #2f7a3e;
+    --bb-green-700: #276533;
+    --bb-green-800: #1f512a;
+    --bb-green-950: #0c2a15;
+    --bb-ink: #1b231e;
+    --bb-muted: #6b7670;
+    --bb-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", system-ui,
+        "Helvetica Neue", Arial, sans-serif;
+    --bb-glass: rgba(255, 255, 255, 0.74);
+    --bb-glass-border: rgba(255, 255, 255, 0.55);
+    --bb-field: rgba(255, 255, 255, 0.7);
+    --bb-field-border: rgba(27, 35, 30, 0.14);
+    --bb-text: var(--bb-ink);
+    --bb-text-2: var(--bb-muted);
+    --keycloak-card-top-color: transparent;
+    --bb-radius-card: 1.75rem;
+    --bb-radius-field: 0.75rem;
+    --bb-danger: #d64545;
+    --bb-line: rgba(27, 35, 30, 0.1);
+}
+
+.pf-v5-theme-dark {
+    --bb-glass: rgba(28, 38, 31, 0.66);
+    --bb-glass-border: rgba(255, 255, 255, 0.14);
+    --bb-field: rgba(255, 255, 255, 0.08);
+    --bb-field-border: rgba(255, 255, 255, 0.18);
+    --bb-text: #eef4ef;
+    --bb-text-2: #a9b6ad;
+    --bb-line: rgba(255, 255, 255, 0.12);
+}
+
+html,
+body {
+    min-height: 100%;
+    font-family: var(--bb-font);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Nền: xanh đậm, hai quầng sáng mềm tạo chiều sâu */
+body#keycloak-bg {
+    background:
+        radial-gradient(60rem 40rem at 15% 10%, rgba(99, 171, 112, 0.42), transparent 60%),
+        radial-gradient(50rem 36rem at 90% 95%, rgba(63, 145, 80, 0.38), transparent 60%),
+        linear-gradient(160deg, var(--bb-green-700) 0%, var(--bb-green-800) 45%, var(--bb-green-950) 100%);
+    background-attachment: fixed;
+}
+
+.pf-v5-c-login {
+    background: transparent;
+    --pf-v5-c-login--BackgroundImage: none;
+    min-height: 100vh;
+}
+
+.pf-v5-c-login__container {
+    grid-template-columns: minmax(0, 26rem);
+    justify-content: center;
+    align-content: center;
+    gap: 1.75rem;
+    padding: 2rem 1rem;
+}
+
+/* Tên và biểu tượng ứng dụng */
+.pf-v5-c-login__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+}
+
+#kc-header-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: #fff;
+    font-family: var(--bb-font);
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+#kc-header-wrapper::before {
+    content: "";
+    width: 5.5rem;
+    height: 5.5rem;
+    background: url("../img/bamboo-icon.svg") center / contain no-repeat;
+    filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+/* Ô đăng nhập: cửa sổ nổi, kính mờ */
+.pf-v5-c-login__main {
+    color: var(--bb-text);
+    background: var(--bb-glass);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--bb-glass-border);
+    border-radius: var(--bb-radius-card);
+    box-shadow:
+        0 30px 70px rgba(0, 0, 0, 0.35),
+        0 8px 20px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    overflow: hidden;
+    animation: bb-pop 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+@keyframes bb-pop {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.94);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.pf-v5-c-login__main-header {
+    display: block;
+    padding: 2rem 2rem 0.25rem;
+    text-align: center;
+    border: 0;
+}
+
+#kc-page-title {
+    margin: 0;
+    color: var(--bb-text);
+    font-family: var(--bb-font);
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* Ô chọn ngôn ngữ: viên nhỏ, căn giữa dưới tiêu đề */
+.pf-v5-c-login__main-header-utilities {
+    width: 11rem;
+    margin: 0.875rem auto 0;
+}
+
+.pf-v5-c-login__main-header-utilities .pf-v5-c-form-control {
+    min-height: 2.25rem;
+    font-size: 0.8125rem;
+}
+
+.pf-v5-c-login__main-header-utilities .pf-v5-c-form-control > select {
+    padding-block: 0.4375rem;
+}
+
+.pf-v5-c-login__main-body {
+    padding: 1rem 2rem 2rem;
+}
+
+.pf-v5-c-form__group {
+    margin: 0;
+}
+
+.pf-v5-c-form__label-text,
+.pf-v5-c-check__label {
+    color: var(--bb-text-2);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+/* Hai vùng chân thẻ luôn được dựng, kể cả khi rỗng: bỏ đệm để không thừa khoảng trắng */
+.pf-v5-c-login__main-footer {
+    padding: 0;
+}
+
+.pf-v5-c-login__main-footer:empty,
+.pf-v5-c-login__main-footer:not(:has(*)) {
+    display: none;
+}
+
+.pf-v5-c-login__main-footer-band {
+    padding: 1rem 2rem;
+    color: var(--bb-text-2);
+    font-size: 0.8125rem;
+    text-align: center;
+    background: transparent;
+    border-top: 1px solid var(--bb-line);
+}
+
+/* Ô nhập: một đường viền liền, bo đủ bốn góc, vòng sáng xanh khi focus như macOS */
+.pf-v5-c-form-control {
+    min-height: 2.75rem;
+    align-items: center;
+    overflow: hidden;
+    color: var(--bb-text);
+    background: var(--bb-field);
+    border-radius: var(--bb-radius-field);
+    transition: box-shadow 0.15s ease;
+}
+
+.pf-v5-c-form-control::before {
+    border: 1px solid var(--bb-field-border);
+    border-radius: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.pf-v5-c-form-control::after {
+    display: none; /* gạch chân của PatternFly */
+}
+
+.pf-v5-c-form-control:hover::before {
+    border-color: var(--bb-green-400);
+}
+
+.pf-v5-c-form-control:focus-within {
+    box-shadow: 0 0 0 4px rgba(63, 145, 80, 0.3);
+}
+
+.pf-v5-c-form-control:focus-within::before {
+    border-color: var(--bb-green-500);
+}
+
+.pf-v5-c-form-control.pf-m-error::before {
+    border-color: var(--bb-danger);
+}
+
+.pf-v5-c-form-control.pf-m-error:focus-within {
+    box-shadow: 0 0 0 4px rgba(214, 69, 69, 0.28);
+}
+
+.pf-v5-c-form-control > :is(input, select) {
+    min-height: 2.75rem;
+    padding-block: 0.6875rem;
+    color: var(--bb-text);
+    font-family: var(--bb-font);
+    font-size: 0.9375rem;
+    background: transparent;
+    outline: none; /* vòng focus nằm ở khung ngoài */
+}
+
+.pf-v5-c-form-control > ::placeholder {
+    color: var(--bb-text-2);
+}
+
+/* Trình duyệt tự điền: giữ nền và chữ của ô, không để lộ góc vuông */
+.pf-v5-c-form-control > input:-webkit-autofill,
+.pf-v5-c-form-control > input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--bb-text);
+    caret-color: var(--bb-text);
+    box-shadow: 0 0 0 100px var(--bb-autofill, #e9f2ea) inset;
+    transition: background-color 9999s ease-out;
+}
+
+.pf-v5-theme-dark .pf-v5-c-form-control > input:-webkit-autofill {
+    --bb-autofill: #26352b;
+}
+
+.pf-v5-c-form-control > select option {
+    color: #1b231e;
+    background: #fff;
+}
+
+/* Ô chỉ đọc (tên đăng nhập đã nhập ở bước sau) */
+.pf-v5-c-form-control.pf-m-readonly {
+    background: transparent;
+}
+
+/* Ô mật khẩu: ô nhập và nút hiện mật khẩu là một khối bo tròn duy nhất */
+.pf-v5-c-input-group {
+    position: relative;
+    align-items: stretch;
+    overflow: hidden;
+    background: var(--bb-field);
+    border-radius: var(--bb-radius-field);
+    transition: box-shadow 0.15s ease;
+}
+
+.pf-v5-c-input-group::before {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    content: "";
+    border: 1px solid var(--bb-field-border);
+    border-radius: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.pf-v5-c-input-group:hover::before {
+    border-color: var(--bb-green-400);
+}
+
+.pf-v5-c-input-group:focus-within {
+    box-shadow: 0 0 0 4px rgba(63, 145, 80, 0.3);
+}
+
+.pf-v5-c-input-group:focus-within::before {
+    border-color: var(--bb-green-500);
+}
+
+.pf-v5-c-input-group:has(.pf-m-error)::before {
+    border-color: var(--bb-danger);
+}
+
+.pf-v5-c-input-group__item {
+    margin: 0;
+    background: transparent;
+    border: 0;
+}
+
+.pf-v5-c-input-group .pf-v5-c-form-control,
+.pf-v5-c-input-group .pf-v5-c-form-control:focus-within {
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.pf-v5-c-input-group .pf-v5-c-form-control::before {
+    display: none;
+}
+
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
+    width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+    color: var(--bb-text-2);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control::after {
+    display: none;
+}
+
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control:hover {
+    color: var(--bb-green-600);
+    background: rgba(63, 145, 80, 0.1);
+}
+
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control:focus-visible {
+    outline: 2px solid var(--bb-green-500);
+    outline-offset: -4px;
+    border-radius: var(--bb-radius-field);
+}
+
+/* Nút: mọi viền ::after theo đúng bán kính của nút, không để lòi góc vuông */
+.pf-v5-c-button:not(.pf-m-control) {
+    min-height: 2.75rem;
+    font-family: var(--bb-font);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    border-radius: 999px;
+    transition:
+        transform 0.12s ease,
+        filter 0.12s ease,
+        background-color 0.15s ease;
+}
+
+.pf-v5-c-button:not(.pf-m-control)::after {
+    border-radius: inherit;
+}
+
+.pf-v5-c-button:not(.pf-m-control):active {
+    transform: scale(0.98);
+}
+
+.pf-v5-c-button.pf-m-primary {
+    color: #fff;
+    background: linear-gradient(180deg, var(--bb-green-500), var(--bb-green-600));
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.2),
+        0 6px 14px rgba(47, 122, 62, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.pf-v5-c-button.pf-m-primary::after {
+    border: 0;
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-v5-c-button.pf-m-primary:focus {
+    background: linear-gradient(180deg, var(--bb-green-400), var(--bb-green-500));
+}
+
+.pf-v5-c-button.pf-m-primary:focus-visible,
+.pf-v5-c-button.pf-m-secondary:focus-visible,
+.pf-v5-c-button.pf-m-tertiary:focus-visible {
+    outline: 3px solid rgba(63, 145, 80, 0.45);
+    outline-offset: 2px;
+}
+
+.pf-v5-c-button.pf-m-secondary,
+.pf-v5-c-button.pf-m-tertiary {
+    color: var(--bb-green-700);
+    background: var(--bb-field);
+}
+
+.pf-v5-c-button.pf-m-secondary::after,
+.pf-v5-c-button.pf-m-tertiary::after,
+.pf-v5-c-button.pf-m-secondary:hover::after,
+.pf-v5-c-button.pf-m-tertiary:hover::after {
+    border: 1px solid var(--bb-field-border);
+}
+
+.pf-v5-c-button.pf-m-secondary:hover,
+.pf-v5-c-button.pf-m-tertiary:hover {
+    background: rgba(63, 145, 80, 0.12);
+}
+
+.pf-v5-theme-dark .pf-v5-c-button.pf-m-secondary,
+.pf-v5-theme-dark .pf-v5-c-button.pf-m-tertiary {
+    color: var(--bb-green-300);
+}
+
+.pf-v5-c-button:disabled,
+.pf-v5-c-button.pf-m-disabled {
+    color: var(--bb-text-2);
+    background: rgba(127, 140, 131, 0.28);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+a,
+.pf-v5-c-button.pf-m-link {
+    --pf-v5-global--link--Color: var(--bb-green-600);
+    --pf-v5-global--link--Color--hover: var(--bb-green-800);
+}
+
+.pf-v5-theme-dark a,
+.pf-v5-theme-dark .pf-v5-c-button.pf-m-link {
+    --pf-v5-global--link--Color: var(--bb-green-300);
+    --pf-v5-global--link--Color--hover: #fff;
+}
+
+/* Hộp thông báo: bo tròn, thanh màu bên trái bị cắt theo góc */
+.pf-v5-c-alert {
+    margin: 0 0 1rem;
+    overflow: hidden;
+    font-size: 0.875rem;
+    border: 0;
+    border-radius: var(--bb-radius-field);
+    box-shadow: none;
+}
+
+.pf-v5-c-alert.pf-m-danger {
+    background: rgba(214, 69, 69, 0.12);
+}
+
+/* Hộp chọn: ô vuông bo góc, dấu tích vẽ bằng SVG */
+.pf-v5-c-check__input {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    cursor: pointer;
+    background: var(--bb-field);
+    border: 1.5px solid var(--bb-field-border);
+    border-radius: 0.375rem;
+    -webkit-appearance: none;
+    appearance: none;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.pf-v5-c-check__input:checked {
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-6.5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+            center / 80% no-repeat,
+        var(--bb-green-600);
+    border-color: var(--bb-green-600);
+}
+
+.pf-v5-c-check__input:focus-visible {
+    outline: 3px solid rgba(63, 145, 80, 0.45);
+    outline-offset: 2px;
+}
+
+@media (max-width: 30rem) {
+    .pf-v5-c-login__main-header {
+        padding-inline: 1.25rem;
+    }
+
+    .pf-v5-c-login__main-body {
+        padding-inline: 1.25rem;
+    }
+
+    .pf-v5-c-login__main-footer-band {
+        padding-inline: 1.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pf-v5-c-login__main {
+        animation: none;
+    }
+
+    .pf-v5-c-form-control,
+    .pf-v5-c-input-group,
+    .pf-v5-c-button {
+        transition: none;
+    }
+}
+
+/* Máy không hỗ trợ backdrop-filter: dùng nền đặc để chữ vẫn đọc được */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .pf-v5-c-login__main {
+        background: #f6f9f6;
+    }
+
+    .pf-v5-theme-dark .pf-v5-c-login__main {
+        background: #1c261f;
+    }
+}
