@@ -12,6 +12,7 @@ log = logging.getLogger("keycloak_sync")
 
 REALM = "bms"
 CLIENT_ID = "bms-web"
+LOGIN_THEME = "dxos-login"
 PROVISIONER_ID = "bms-provisioner"
 PROVISIONER_ROLES = ("manage-users", "view-users", "query-users")
 REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "platform/keycloak/realm/bms-realm.json"
@@ -75,6 +76,20 @@ def ensure_admin_console_url(base_url: str, user: str, password: str, admin_url:
             return False
         http.put("", json={"attributes": {**attrs, "frontendUrl": admin_url}}).raise_for_status()
     log.info("realm master dùng địa chỉ quản trị %s", admin_url)
+    return True
+
+
+def ensure_login_theme(base_url: str, user: str, password: str, theme: str = LOGIN_THEME) -> bool:
+    """Realm đã có từ trước không nhận lại tệp import, nên đặt theme đăng nhập qua Admin API."""
+    base_url = base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
+    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
+        realm = http.get("")
+        realm.raise_for_status()
+        if realm.json().get("loginTheme") == theme:
+            return False
+        http.put("", json={"loginTheme": theme}).raise_for_status()
+    log.info("realm %s dùng theme đăng nhập %s", REALM, theme)
     return True
 
 

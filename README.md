@@ -56,10 +56,10 @@ Yêu cầu: Docker Engine 24+ với Docker Compose v2, khoảng 12 GB RAM trốn
 ```bash
 git clone https://github.com/ThanhNLT/Bamboo.git
 cd Bamboo
-docker compose up -d
+make up        # tự chọn mức RAM: 8 GB chỉ chức năng cơ bản, 16 GB đầy đủ gồm AI (BAMBOO_RAM=8 hoặc 16 để chọn tay)
 ```
 
-Không cần tạo `.env` hay chạy migration tay. Lệnh trên build image từ mã nguồn (muốn bỏ qua bước build: xem mục *Chạy bằng image dựng sẵn* bên dưới), rồi tự chạy theo thứ tự: migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp metadata Hasura. Lần đầu mất khoảng 5–10 phút (tải image, build giao diện). Theo dõi tiến độ:
+Không cần tạo `.env` hay chạy migration tay. `make up` chạy `docker compose up -d --build` (chạy trực tiếp lệnh này thì không có AI nếu chưa đặt `COMPOSE_PROFILES=ai`, xem ADR #54). Lệnh trên build image từ mã nguồn (muốn bỏ qua bước build: xem mục *Chạy bằng image dựng sẵn* bên dưới), rồi tự chạy theo thứ tự: migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp metadata Hasura. Lần đầu mất khoảng 5–10 phút (tải image, build giao diện). Theo dõi tiến độ:
 
 ```bash
 docker compose ps          # mọi dịch vụ chạy lâu phải là "healthy"; migrate, seed, openbao-init, bootstrap "exited (0)"
