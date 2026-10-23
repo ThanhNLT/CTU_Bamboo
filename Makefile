@@ -7,10 +7,12 @@
 DEMO_PASSWORD ?= demo-password
 
 up:
-	docker compose up -d --build
+	eval "$$(scripts/ram_profile.sh)"; docker compose up -d --build --remove-orphans \
+		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose --profile ai stop ollama ai-worker ocr; }
 
 up-gpu:
-	docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+	eval "$$(scripts/ram_profile.sh)"; docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build --remove-orphans \
+		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose --profile ai stop ollama ai-worker ocr; }
 
 down:
 	docker compose down

@@ -12,3 +12,4 @@ export {
 } from "./buttons";
 export { bambooTableTheme } from "./tableTheme";
 export { SearchInput } from "./SearchInput";
+export { ComingSoon } from "./ComingSoon";
