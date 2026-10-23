@@ -28,6 +28,7 @@ from .demo import (
     uid,
     walk,
 )
+from .demo_library import EXTRA_DOCS
 
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
@@ -1119,6 +1120,7 @@ class Seeder:
                 ["Vệ sinh tay", "Phân loại chất thải y tế", "Giám sát và báo cáo"],
             ),
         ]
+        docs += EXTRA_DOCS
         for code, seat, title, category, scope, summary, toc in docs:
             tid = self.tenant_id(code)
             doc_id = uid(code, "kb_document", title)
