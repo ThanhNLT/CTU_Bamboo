@@ -4,6 +4,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp (dịch vụ Tầng 1 tự ngủ):** chạy `docker compose up -d --build` (ADR #53). `trino`, `tika`, `gotenberg` đổi tên thành `*-core` và ngủ khi nhàn rỗi; dịch vụ mới `sleeper` giữ tên và cổng cũ nên không cần đổi cấu hình, nhưng gắn `/var/run/docker.sock`. Dùng `docker compose exec trino-core ...` thay cho `trino`. Container cũ `bamboo-trino-1`, `bamboo-tika-1`, `bamboo-gotenberg-1` còn sót: `docker compose up -d --remove-orphans`.
+
 **Nâng cấp (tối ưu tốc độ AI):** chạy migration `028` (thêm `core.ai_question.first_token_at`, `cold_start`), `make hasura-metadata` và `docker compose up -d --build` (image `actions`, `ocr` đổi). Lượt hỏi gặp mô hình sinh chưa nạp thì nạp song song với tìm kiếm; container `ollama` và `ocr` đọc trước tệp mô hình vào page cache khi khởi động (đọc đĩa một lần, hệ điều hành tự thu hồi khi cần RAM). Lượt hỏi có dòng suy nghĩ hết giới hạn token mà chưa có câu trả lời nay báo lỗi thay vì trả câu rỗng. Trang Quản trị tác tử AI hiện chữ đầu tiên và số lượt phải nạp mô hình. `scripts/ai_smoke.sh` chạy bộ 22 câu chấm bằng luật (ADR #52).
 
 **Nâng cấp:** container `db` khởi động lại một lần với `wal_level=logical`. Triển khai thật đặt thêm `CDC_DB_PASSWORD`, `LAKEHOUSE_DB_PASSWORD`. Cần thêm khoảng 2,3 GB RAM cho Kafka, Debezium, lakehouse-sink và Trino.

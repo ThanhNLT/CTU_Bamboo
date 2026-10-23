@@ -133,12 +133,14 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 
 | Dịch vụ | Biến | Mặc định |
 |---|---|---|
-| `keycloak` | `KEYCLOAK_HEAP` | `-Xms64m -Xmx512m` |
-| `tika` | `TIKA_JAVA_OPTS` | `-Xmx512m` |
-| `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m` |
+| `keycloak` | `KEYCLOAK_HEAP` | `-Xms64m -Xmx512m -XX:+UseSerialGC` |
+| `tika-core` | `TIKA_JAVA_OPTS` | `-Xmx512m -XX:+UseSerialGC` |
+| `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m -XX:+UseSerialGC` |
 | `kafka` | `KAFKA_HEAP` | `-Xms128m -Xmx512m` |
-| `trino` | `platform/trino/jvm.config` | `-Xmx1G` |
-| `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m` |
+| `trino-core` | `platform/trino/jvm.config` | `-Xmx1G` |
+| `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m -XX:+UseSerialGC -XX:ReservedCodeCacheSize=96m` |
+
+**Dịch vụ dùng thưa tự ngủ** ([ADR #53](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-53)): `trino-core`, `tika-core`, `gotenberg-core` chỉ chạy khi có yêu cầu; `sleeper` giữ tên mạng và cổng cũ (`trino`, `tika`, `gotenberg`), đánh thức khi có byte đầu tiên và cho ngủ sau `SLEEPER_IDLE_SECONDS` (mặc định 300) không có lưu lượng. Lần gọi đầu sau khi ngủ chậm thêm thời gian khởi động container. Xem trạng thái bằng `docker compose ps` hoặc `docker compose exec sleeper python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:9000/status').read().decode())"`. `sleeper` gắn `/var/run/docker.sock`; môi trường không cho phép thì bỏ `sleeper` và đặt lại tên ba dịch vụ thật như ADR #53 mô tả.
 
 Các giới hạn bộ nhớ khác (đặt trong `.env`):
 
