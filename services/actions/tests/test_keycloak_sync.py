@@ -148,3 +148,19 @@ def test_realm_master_dung_dia_chi_quan_tri(admin):
         with master_realm() as http:
             attrs = http.get("").json()["attributes"]
             http.put("", json={"attributes": {**attrs, "frontendUrl": original}}).raise_for_status()
+
+
+def test_realm_dung_theme_dang_nhap_bamboo(admin):
+    realm = keycloak_sync.REALM
+    token = keycloak_sync.admin_token(KEYCLOAK, *ADMIN)
+    with httpx.Client(
+        base_url=f"{KEYCLOAK}/admin/realms/{realm}", headers={"Authorization": f"Bearer {token}"}, timeout=15
+    ) as http:
+        original = http.get("").json().get("loginTheme")
+        try:
+            http.put("", json={"loginTheme": "keycloak.v2"}).raise_for_status()
+            assert keycloak_sync.ensure_login_theme(KEYCLOAK, *ADMIN) is True
+            assert http.get("").json()["loginTheme"] == keycloak_sync.LOGIN_THEME
+            assert keycloak_sync.ensure_login_theme(KEYCLOAK, *ADMIN) is False
+        finally:
+            http.put("", json={"loginTheme": original}).raise_for_status()

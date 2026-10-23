@@ -7,3 +7,4 @@ LABEL org.opencontainers.image.title="bamboo-keycloak" \
       org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 COPY realm/ /opt/keycloak/data/import/
+COPY themes/ /opt/keycloak/themes/

@@ -2,6 +2,7 @@
   "realm": "bms",
   "enabled": true,
   "displayName": "Bamboo DX-OS",
+  "loginTheme": "dxos-login",
   "sslRequired": "external",
   "registrationAllowed": false,
   "resetPasswordAllowed": false,

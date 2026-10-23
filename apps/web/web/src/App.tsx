@@ -11,7 +11,7 @@ import routerProvider, {
   NavigateToResource,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
-import { App as AntdApp, ConfigProvider, Spin } from "antd";
+import { App as AntdApp, ConfigProvider } from "antd";
 import viVN from "antd/locale/vi_VN";
 import {
   AuditOutlined,
@@ -23,13 +23,13 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
-import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
 import { useKeycloak } from "@react-keycloak/web";
 
 import "./styles/tailwind.css";
 import { TenantGate } from "./auth/session";
 import { BambooLayout } from "./components/layout";
+import { ComingSoon } from "./components/ui";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
 import { CatalogPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
@@ -44,7 +44,6 @@ import { AiAssistantPage } from "./pages/ai-assistant";
 import { OcrInputPage } from "./pages/ocr-input";
 import { AiAgentsPage } from "./pages/ai-agents";
 import { OperationsCenterPage } from "./pages/operations-center";
-import { ProcessDesignPage } from "./pages/process-design";
 import { RecordsPage } from "./pages/records";
 import { IcOrderList, IcOrderShow } from "./pages/ic-orders";
 import { InboxPage } from "./pages/inbox";
@@ -64,8 +63,6 @@ import { dataProvider, liveProvider } from "./providers/data";
 import { i18nProvider } from "./providers/i18n";
 
 dayjs.locale("vi");
-
-const ProcessDiagram = lazy(() => import("./pages/process/diagram"));
 
 function App() {
   const { initialized } = useKeycloak();
@@ -160,7 +157,7 @@ function App() {
                     <Route path="/h/library/proposals/:id" element={<ProposalPage />} />
                     <Route path="/p/records" element={<RecordsPage />} />
                     <Route path="/p/tasks" element={<InboxPage />} />
-                    <Route path="/p/process" element={<ProcessDesignPage />} />
+                    <Route path="/p/process" element={<ComingSoon title="Thiết kế quy trình" />} />
                     <Route path="/d/ops" element={<OperationsCenterPage />} />
                     <Route path="/d/map" element={<Navigate to="/d/ops" replace />} />
                     <Route path="/d/services" element={<DataServicesPage />} />
@@ -187,14 +184,7 @@ function App() {
                       <Route path="show/:id" element={<OnboardingShow />} />
                     </Route>
                     <Route path="/p/inbox" element={<InboxList />} />
-                    <Route
-                      path="/p/process/:id"
-                      element={
-                        <Suspense fallback={<Spin />}>
-                          <ProcessDiagram />
-                        </Suspense>
-                      }
-                    />
+                    <Route path="/p/process/:id" element={<ComingSoon title="Sơ đồ quy trình" />} />
                     <Route path="/i/search" element={<SearchPage />} />
                     <Route path="/admin/audit-logs" element={<AuditLogList />} />
                     <Route path="/admin/org" element={<OrgPage />} />
