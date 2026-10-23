@@ -156,7 +156,8 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
-      JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms64m -Xmx512m}
+      JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms64m -Xmx512m -XX:+UseSerialGC}
+      MALLOC_ARENA_MAX: "2"
       KC_DB_POOL_MAX_SIZE: ${KEYCLOAK_DB_POOL:-20}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
@@ -185,7 +186,8 @@ services:
       FLOWABLE_REST_APP_CREATE_DEMO_DEFINITIONS: "false"
       FLOWABLE_REST_APP_ADMIN_USER_ID: ${FLOWABLE_ADMIN:-rest-admin}
       FLOWABLE_REST_APP_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
-      JAVA_OPTS: ${FLOWABLE_JAVA_OPTS:--Xms64m -Xmx512m}
+      JAVA_OPTS: ${FLOWABLE_JAVA_OPTS:--Xms64m -Xmx512m -XX:+UseSerialGC -XX:ReservedCodeCacheSize=96m}
+      MALLOC_ARENA_MAX: "2"
     ports:
       - "127.0.0.1:8082:8080"
     restart: unless-stopped
@@ -378,13 +380,13 @@ services:
       timeout: 3s
       retries: 40
 
-  tika:
+  # Ba dịch vụ -core dùng thưa nên ngủ khi nhàn rỗi; tên mạng cũ (tika, gotenberg, trino) và cổng công bố thuộc `sleeper` (ADR #53)
+  tika-core:
     logging: *logging
     image: apache/tika:4.1.0-1
     environment:
-      JAVA_TOOL_OPTIONS: ${TIKA_JAVA_OPTS:--Xmx512m}
-    ports:
-      - "127.0.0.1:9998:9998"
+      JAVA_TOOL_OPTIONS: ${TIKA_JAVA_OPTS:--Xmx512m -XX:+UseSerialGC}
+      MALLOC_ARENA_MAX: "2"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9998 && printf 'GET /version HTTP/1.0\r\n\r\n' >&3 && grep -q Tika <&3"]
@@ -393,13 +395,11 @@ services:
       retries: 30
       start_period: 10s
 
-  gotenberg:
+  gotenberg-core:
     logging: *logging
     image: gotenberg/gotenberg:8.37.0-chromium
     command: ["gotenberg", "--chromium-auto-start", "--chromium-disable-javascript", "--chromium-deny-private-ips",
               "--chromium-deny-public-ips", "--api-disable-download-from", "--webhook-disable", "--api-timeout=60s"]
-    ports:
-      - "127.0.0.1:3000:3000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/health"]
@@ -413,8 +413,8 @@ services:
     depends_on:
       bootstrap:
         condition: service_completed_successfully
-      tika:
-        condition: service_started
+      sleeper:
+        condition: service_healthy
     environment: *actions-env
     volumes:
       - search-secrets:/run/bms:ro
@@ -548,6 +548,8 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_HEAP_OPTS: ${KAFKA_HEAP:--Xms128m -Xmx512m}
+      KAFKA_JVM_PERFORMANCE_OPTS: -server -XX:+UseSerialGC -XX:ReservedCodeCacheSize=96m -Djava.awt.headless=true
+      MALLOC_ARENA_MAX: "2"
       DEBEZIUM_KAFKA_PASSWORD: ${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}
       LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
     volumes:
@@ -603,7 +605,8 @@ services:
       DEBEZIUM_FORMAT_VALUE: json
       DEBEZIUM_FORMAT_KEY_SCHEMAS_ENABLE: "false"
       DEBEZIUM_FORMAT_VALUE_SCHEMAS_ENABLE: "false"
-      JAVA_OPTS: ${DEBEZIUM_JAVA_OPTS:--Xms64m -Xmx384m}
+      JAVA_OPTS: ${DEBEZIUM_JAVA_OPTS:--Xms64m -Xmx384m -XX:+UseSerialGC}
+      MALLOC_ARENA_MAX: "2"
     volumes:
       - debezium-data:/debezium/data
     ports:
@@ -638,7 +641,7 @@ services:
     command: ["python", "-m", "app.lakehouse_sink"]
     restart: unless-stopped
 
-  trino:
+  trino-core:
     logging: *logging
     build:
       context: ./platform/trino
@@ -653,8 +656,8 @@ services:
     volumes:
       - trino-catalog:/etc/trino/bms-catalog:ro
       - trino-secrets:/etc/trino/secrets:ro
-    ports:
-      - "127.0.0.1:8085:8443"
+    environment:
+      MALLOC_ARENA_MAX: "2"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "/usr/lib/trino/bin/health-check"]
@@ -669,12 +672,50 @@ services:
       context: ./platform/trino
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
     depends_on:
-      trino:
+      sleeper:
         condition: service_healthy
     volumes:
       - trino-secrets:/etc/trino/secrets:ro
     entrypoint: ["bash", "-c", "TRINO_PASSWORD=$$(cat /etc/trino/secrets/admin.password) exec trino --server https://trino:8443 --truststore-path /etc/trino/secrets/ca.pem --user bms-admin --password --file /etc/trino/bms/silver.sql"]
     restart: "no"
+
+  sleeper:
+    logging: *logging
+    build:
+      context: .
+      dockerfile: services/sleeper/Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-sleeper:${BAMBOO_TAG:-dev}
+    depends_on:
+      trino-core:
+        condition: service_started
+      tika-core:
+        condition: service_started
+      gotenberg-core:
+        condition: service_started
+    environment:
+      SLEEPER_PROJECT: bamboo
+      SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
+      SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000
+    networks:
+      default:
+        aliases: [trino, tika, gotenberg]
+    # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn, và nó chỉ start/stop container thuộc SLEEPER_TARGETS
+    user: "0"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:8085:8443"
+      - "127.0.0.1:9998:9998"
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   gateway:
     logging: *logging
@@ -747,10 +788,8 @@ services:
         condition: service_started
       meilisearch:
         condition: service_started
-      tika:
-        condition: service_started
-      gotenberg:
-        condition: service_started
+      sleeper:
+        condition: service_healthy
       debezium:
         condition: service_started
       lakehouse-sink:

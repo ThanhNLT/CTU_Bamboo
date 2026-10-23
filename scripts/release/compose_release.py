@@ -11,6 +11,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TAG_VAR = "${BAMBOO_TAG:-dev}"
+DOCKER_SOCK = "/var/run/docker.sock"
 
 
 def build(version: str) -> dict:
@@ -29,7 +30,11 @@ def build(version: str) -> dict:
             continue
         svc.pop("build", None)
         svc["image"] = svc["image"].replace(TAG_VAR, "${BAMBOO_TAG:-%s}" % version)
-        binds = [v.get("source") for v in svc.get("volumes", []) if v.get("type") == "bind"]
+        binds = [
+            v.get("source")
+            for v in svc.get("volumes", [])
+            if v.get("type") == "bind" and v.get("source") != DOCKER_SOCK
+        ]
         if binds:
             raise SystemExit(f"Dịch vụ {name} còn bind mount {binds}: đóng gói vào image trước khi phát hành")
         for dep in list(svc.get("depends_on", {})):
