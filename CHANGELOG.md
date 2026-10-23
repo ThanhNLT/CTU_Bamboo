@@ -4,6 +4,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp (mức RAM 8/16):** dùng `make up` thay `docker compose up -d` để tự chọn mức (ADR #54); `BAMBOO_RAM=8` tắt AI và hạ heap, `16` chạy đầy đủ. Chạy `docker compose` trực tiếp thì cần `COMPOSE_PROFILES=ai` trong `.env` (có sẵn trong `.env.example`), nếu không các dịch vụ AI không khởi động. Sửa lỗi Keycloak khởi động lại liên tục do cờ `-XX:+UseSerialGC` của ADR #53 xung đột với `-XX:+UseG1GC` trong `kc.sh`.
+
 **Nâng cấp (dịch vụ Tầng 1 tự ngủ):** chạy `docker compose up -d --build` (ADR #53). `trino`, `tika`, `gotenberg` đổi tên thành `*-core` và ngủ khi nhàn rỗi; dịch vụ mới `sleeper` giữ tên và cổng cũ nên không cần đổi cấu hình, nhưng gắn `/var/run/docker.sock`. Dùng `docker compose exec trino-core ...` thay cho `trino`. Container cũ `bamboo-trino-1`, `bamboo-tika-1`, `bamboo-gotenberg-1` còn sót: `docker compose up -d --remove-orphans`.
 
 **Nâng cấp (tối ưu tốc độ AI):** chạy migration `028` (thêm `core.ai_question.first_token_at`, `cold_start`), `make hasura-metadata` và `docker compose up -d --build` (image `actions`, `ocr` đổi). Lượt hỏi gặp mô hình sinh chưa nạp thì nạp song song với tìm kiếm; container `ollama` và `ocr` đọc trước tệp mô hình vào page cache khi khởi động (đọc đĩa một lần, hệ điều hành tự thu hồi khi cần RAM). Lượt hỏi có dòng suy nghĩ hết giới hạn token mà chưa có câu trả lời nay báo lỗi thay vì trả câu rỗng. Trang Quản trị tác tử AI hiện chữ đầu tiên và số lượt phải nạp mô hình. `scripts/ai_smoke.sh` chạy bộ 22 câu chấm bằng luật (ADR #52).
