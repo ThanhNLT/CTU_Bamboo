@@ -192,6 +192,7 @@ def save_org_unit(a: Admin, data: dict) -> str:
     unit_type = _ref(a, data, "unit_type_id", "unit_type_code", lambda c: _catalog_by_code(a, "UNIT_TYPE", c))
     parent = _ref(a, data, "parent_id", "parent_code", lambda c: _unit_by_code(a, c), required=False)
     legal = _bool(data.get("is_legal_entity"))
+    hr_unit = _bool(data.get("is_hr"))
     location = _location(data)
     if unit_id is None and code:
         row = a.conn.execute(
@@ -206,9 +207,9 @@ def save_org_unit(a: Admin, data: dict) -> str:
         return str(
             a.conn.execute(
                 """INSERT INTO core.org_unit (tenant_id, parent_id, unit_type_id, code, name, is_legal_entity,
-                                              province, lat, lng)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
-                (a.tenant, parent, unit_type, code, name, legal, loc["province"], loc["lat"], loc["lng"]),
+                                              is_hr, province, lat, lng)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                (a.tenant, parent, unit_type, code, name, legal, hr_unit, loc["province"], loc["lat"], loc["lng"]),
             ).fetchone()[0]
         )
     old_parent = a.one(
@@ -225,8 +226,8 @@ def save_org_unit(a: Admin, data: dict) -> str:
         a.require(ORG, parent)
     a.conn.execute(
         """UPDATE core.org_unit SET parent_id = %s, unit_type_id = %s, code = %s, name = %s,
-                             is_legal_entity = %s WHERE id = %s""",
-        (parent, unit_type, code, name, legal, unit_id),
+                             is_legal_entity = %s, is_hr = %s WHERE id = %s""",
+        (parent, unit_type, code, name, legal, hr_unit, unit_id),
     )
     if location is not None:
         a.conn.execute(
