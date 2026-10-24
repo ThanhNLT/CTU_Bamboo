@@ -11,6 +11,7 @@ from .openbao import BaoError
 from .pii import mask_address, mask_tail
 
 ENTITY = "hr.onboarding_request"
+TRANSFER_ENTITY = "hr.transfer_request"
 EDITABLE = ("DRAFT", "RETURNED")
 NATIONAL_ID = re.compile(r"^(\d{9}|\d{12})$")
 BANK_ACCOUNT = re.compile(r"^\d{6,20}$")
@@ -135,10 +136,137 @@ def _result(conn: psycopg.Connection, request_id: str) -> dict:
     return {"request_id": request_id, "status": status, "account_status": account}
 
 
+def _transfer(conn: psycopg.Connection, request_id: str, session: dict) -> tuple[str, tuple | None]:
+    row = conn.execute("SELECT tenant_id FROM hr.transfer_request WHERE id = %s", (request_id,)).fetchone()
+    person = session_identity(session, row[0] if row else None)
+    require_read(conn, TRANSFER_ENTITY, request_id, person)
+    return person, row
+
+
+def create_transfer_request(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    row = conn.execute("SELECT tenant_id FROM core.position WHERE id = %s", (args["source_position_id"],)).fetchone()
+    person = session_identity(session, row[0] if row else None)
+    bind_session(conn, session)
+    request_id = conn.execute(
+        "SELECT hr.create_transfer_request(%s, %s, %s, %s, %s, %s)",
+        (person, args["person_id"], args["source_position_id"], args["target_unit_id"],
+         args["effective_date"], args["reason"]),
+    ).fetchone()[0]
+    return _transfer_result(conn, str(request_id))
+
+
+def submit_transfer_request(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    person, _ = _transfer(conn, args["request_id"], session)
+    bind_session(conn, session)
+    conn.execute("SELECT hr.submit_transfer_request(%s, %s)", (args["request_id"], person))
+    return _transfer_result(conn, args["request_id"])
+
+
+def choose_transfer_position(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    person, _ = _transfer(conn, args["request_id"], session)
+    bind_session(conn, session)
+    conn.execute("SELECT hr.choose_transfer_position(%s, %s, %s)", (args["request_id"], person, args["position_id"]))
+    return _transfer_result(conn, args["request_id"])
+
+
+def cancel_transfer_request(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    person, _ = _transfer(conn, args["request_id"], session)
+    bind_session(conn, session)
+    conn.execute("SELECT hr.cancel_transfer_request(%s, %s, %s)", (args["request_id"], person, args["reason"]))
+    return _transfer_result(conn, args["request_id"])
+
+
+def _transfer_result(conn: psycopg.Connection, request_id: str) -> dict:
+    status = conn.execute("SELECT status FROM hr.transfer_request WHERE id = %s", (request_id,)).fetchone()[0]
+    return {"request_id": request_id, "status": status}
+
+
+def create_transfer_out(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    row = conn.execute("SELECT tenant_id FROM core.position WHERE id = %s", (args["source_position_id"],)).fetchone()
+    person = session_identity(session, row[0] if row else None)
+    bind_session(conn, session)
+    request_id = conn.execute(
+        "SELECT hr.create_transfer_out(%s, %s, %s, %s, %s, %s, %s)",
+        (person, args["person_id"], args["source_position_id"], args["target_tenant_id"],
+         args["target_unit_id"], args["effective_date"], args["reason"]),
+    ).fetchone()[0]
+    return _leg_result(conn, "hr.transfer_out", str(request_id))
+
+
+def submit_transfer_out(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    person = _leg_person(conn, "hr.transfer_out", args["request_id"], session)
+    bind_session(conn, session)
+    conn.execute("SELECT hr.submit_transfer_out(%s, %s)", (args["request_id"], person))
+    return _leg_result(conn, "hr.transfer_out", args["request_id"])
+
+
+def cancel_transfer_out(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    person = _leg_person(conn, "hr.transfer_out", args["request_id"], session)
+    bind_session(conn, session)
+    conn.execute("SELECT hr.cancel_transfer_out(%s, %s, %s)", (args["request_id"], person, args["reason"]))
+    return _leg_result(conn, "hr.transfer_out", args["request_id"])
+
+
+def choose_transfer_in_position(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    person = _leg_person(conn, "hr.transfer_in", args["request_id"], session)
+    bind_session(conn, session)
+    conn.execute("SELECT hr.choose_transfer_in_position(%s, %s, %s)", (args["request_id"], person, args["position_id"]))
+    return _leg_result(conn, "hr.transfer_in", args["request_id"])
+
+
+def transfer_tenants(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
+    tenant = session.get("x-hasura-tenant-id")
+    session_identity(session, tenant)
+    bind_session(conn, session)
+    rows = conn.execute(
+        """SELECT t.id, t.code, t.name FROM core.tenant t
+           WHERE t.id <> %s AND core.tenant_root(t.id) = core.tenant_root(%s) ORDER BY t.name""",
+        (tenant, tenant),
+    ).fetchall()
+    return {"tenants": [{"id": str(i), "code": c, "name": n} for i, c, n in rows]}
+
+
+def transfer_target_units(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    tenant = session.get("x-hasura-tenant-id")
+    session_identity(session, tenant)
+    bind_session(conn, session)
+    if not conn.execute(
+        "SELECT core.tenant_root(%s) = core.tenant_root(%s)", (args["tenant_id"], tenant)
+    ).fetchone()[0]:
+        raise ActionError("Tenant không cùng tập đoàn", "forbidden", 403)
+    rows = conn.execute(
+        """SELECT u.id, u.name, u.path::text FROM core.org_unit u
+           WHERE u.tenant_id = %s AND u.valid_period @> now() ORDER BY u.path""",
+        (args["tenant_id"],),
+    ).fetchall()
+    return {"units": [{"id": str(i), "name": n, "path": p} for i, n, p in rows]}
+
+
+def _leg_person(conn: psycopg.Connection, table: str, leg_id: str, session: dict) -> str:
+    # Chứng từ tenant đích: người gọi phải là người đang đăng nhập ở tenant đó
+    row = conn.execute(f"SELECT tenant_id FROM {table} WHERE id = %s", (leg_id,)).fetchone()
+    return session_identity(session, row[0] if row else None)
+
+
+def _leg_result(conn: psycopg.Connection, table: str, leg_id: str) -> dict:
+    status = conn.execute(f"SELECT status FROM {table} WHERE id = %s", (leg_id,)).fetchone()[0]
+    return {"request_id": leg_id, "status": status}
+
+
 HANDLERS = {
     "save_onboarding_private": save_onboarding_private,
     "reveal_onboarding_private": reveal_onboarding_private,
     "submit_onboarding_request": submit_onboarding_request,
     "cancel_onboarding_request": cancel_onboarding_request,
     "retry_onboarding_account": retry_onboarding_account,
+    "create_transfer_request": create_transfer_request,
+    "submit_transfer_request": submit_transfer_request,
+    "choose_transfer_position": choose_transfer_position,
+    "cancel_transfer_request": cancel_transfer_request,
+    "create_transfer_out": create_transfer_out,
+    "submit_transfer_out": submit_transfer_out,
+    "cancel_transfer_out": cancel_transfer_out,
+    "choose_transfer_in_position": choose_transfer_in_position,
+    "transfer_tenants": transfer_tenants,
+    "transfer_target_units": transfer_target_units,
 }
