@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Dịch vụ ngủ (ADR #53): `python -m app.sleeper`.
 
-Đứng trước các dịch vụ Tầng 1 dùng thưa (Trino, Tika, Gotenberg) dưới đúng tên mạng cũ. Có yêu cầu đến thì dựng
+Đứng trước các dịch vụ dùng thưa (Trino, Tika, Gotenberg; Ollama và OCR của AI) dưới đúng tên mạng cũ. Có yêu cầu đến thì dựng
 container thật dậy (docker start) rồi chuyển tiếp nguyên byte TCP, nên TLS của Trino vẫn đầu-cuối. Không có byte nào
 qua proxy quá SLEEPER_IDLE_SECONDS thì docker stop để trả RAM. Chỉ chạm vào container có nhãn compose
 `com.docker.compose.service` nằm trong SLEEPER_TARGETS.
@@ -103,12 +103,20 @@ class Target:
     def touch(self) -> None:
         self.last_activity = time.monotonic()
 
+    async def inspect(self, docker: Docker) -> dict:
+        """Trạng thái container; compose tạo lại container (id mới) thì tìm lại theo nhãn."""
+        if self.container:
+            try:
+                return await docker.state(self.container)
+            except DockerError:
+                self.container = ""
+        self.container = await docker.find(self.service)
+        return await docker.state(self.container)
+
     async def ensure_awake(self, docker: Docker, timeout: float) -> None:
         """Dựng container dậy nếu đang ngủ và chờ tới khi sẵn sàng; nhiều yêu cầu cùng đến thì chỉ một lần start."""
         async with self.awake_lock:
-            if not self.container:
-                self.container = await docker.find(self.service)
-            state = await docker.state(self.container)
+            state = await self.inspect(docker)
             if state.get("Running") and state.get("Health", {}).get("Status", "healthy") == "healthy":
                 return
             if not state.get("Running"):
@@ -130,12 +138,10 @@ class Target:
         if self.awake_lock.locked():
             return False  # đang đánh thức hoặc đang dừng
         async with self.awake_lock:
-            if not self.container:
-                try:
-                    self.container = await docker.find(self.service)
-                except DockerError:
-                    return False
-            state = await docker.state(self.container)
+            try:
+                state = await self.inspect(docker)
+            except DockerError:
+                return False
             if not state.get("Running"):
                 return False
             quiet = min(time.monotonic() - self.last_activity, time.time() - started_at(state))
@@ -201,9 +207,7 @@ class Sleeper:
         out = {}
         for target in self.targets:
             try:
-                running = bool(
-                    (await self.docker.state(target.container or await self.docker.find(target.service)))["Running"]
-                )
+                running = bool((await target.inspect(self.docker))["Running"])
             except (DockerError, OSError):
                 running = None
             out[target.service] = {"running": running, "idle_for": round(time.monotonic() - target.last_activity)}

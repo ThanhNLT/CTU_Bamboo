@@ -4,6 +4,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp (thư viện tri thức, sơ đồ BPMN):** chạy `docker compose up -d` để seed bổ sung sáu tài liệu quy tắc công ty vào Thư viện tri thức (hạn mức duyệt, nhóm hàng, luồng duyệt, đơn hàng nội bộ, cơ cấu tổ chức, quy định của Bệnh viện X); nội dung khớp quy tắc đã nạp vào CSDL. Trang Thiết kế quy trình `/p/process` và Sơ đồ quy trình `/p/process/:id` tạm hiện "Sẽ được cập nhật chức năng sau"; phía máy chủ giữ nguyên.
+
+**Công cụ (dọn dữ liệu thử):** `scripts/demo_cleanup.sh [--apply]` xóa đề nghị mua sắm do người dùng lập khi thử duyệt và đưa số chứng từ về sau số lớn nhất còn lại; mặc định chỉ xem trước.
+
+**Nâng cấp (giao diện đăng nhập):** chạy `docker compose up -d --build` để dựng lại image `keycloak` (ADR #55); `bootstrap` tự đặt theme `dxos-login` cho realm `bms` đã có. Nếu trình duyệt còn hiện giao diện cũ, tải lại cứng (Ctrl+F5).
+
 **Nâng cấp (mức RAM 8/16):** dùng `make up` thay `docker compose up -d` để tự chọn mức (ADR #54); `BAMBOO_RAM=8` tắt AI và hạ heap, `16` chạy đầy đủ. Chạy `docker compose` trực tiếp thì cần `COMPOSE_PROFILES=ai` trong `.env` (có sẵn trong `.env.example`), nếu không các dịch vụ AI không khởi động. Sửa lỗi Keycloak khởi động lại liên tục do cờ `-XX:+UseSerialGC` của ADR #53 xung đột với `-XX:+UseG1GC` trong `kc.sh`.
 
 **Nâng cấp (dịch vụ Tầng 1 tự ngủ):** chạy `docker compose up -d --build` (ADR #53). `trino`, `tika`, `gotenberg` đổi tên thành `*-core` và ngủ khi nhàn rỗi; dịch vụ mới `sleeper` giữ tên và cổng cũ nên không cần đổi cấu hình, nhưng gắn `/var/run/docker.sock`. Dùng `docker compose exec trino-core ...` thay cho `trino`. Container cũ `bamboo-trino-1`, `bamboo-tika-1`, `bamboo-gotenberg-1` còn sót: `docker compose up -d --remove-orphans`.
