@@ -121,6 +121,9 @@ def top_scores(ids: list[str], since: str) -> dict[str, str]:
 def judge(case: dict, r: dict) -> list[str]:
     problems, text = [], fold(r["answer"])
     want = case["status"]
+    leaked = [k for k in case.get("forbid", []) if fold(k) in text or fold(k) in fold(r["cites"])]
+    if leaked:
+        problems.append(f"lộ nội dung không được phép {leaked}")
     if want == "gan_dung":
         if not (r["status"] == "refused/scope" or (r["status"] == "done" and any(n in text for n in NOT_FOUND))):
             problems.append(f"gần đúng nhưng mô hình vẫn trả lời ({r['status']})")

@@ -80,7 +80,7 @@ Ví dụ hạn mức (doanh nghiệp tự cấu hình): dưới 50 triệu – t
 1. **Cấu hình tổ chức (2')**: đăng nhập SSO, cho thấy 4 công ty có cây tổ chức khác nhau; thêm phòng ban mới không sửa code.
 2. **Sự cố hiện trường (3')**: cảm biến phòng sạch nhà máy chip vượt ngưỡng bụi → Digital Twin đỏ → tự tạo quy trình xử lý sự cố, gắn cờ lô wafer nghi lỗi.
 3. **Truy xuất ảnh hưởng (3')**: lô chip đã giao cho công ty điện thoại qua đơn nội bộ; màn hình phả hệ hiển thị lô điện thoại bị ảnh hưởng.
-4. **Mua sắm bổ sung (4')**: lập đề nghị mua linh kiện thay thế; OCR điền form; RAG trả lời quy chế; vượt hạn mức lên công ty mẹ duyệt; ký số, niêm phong sổ cái.
+4. **Mua sắm bổ sung (4')**: lập đề nghị mua linh kiện thay thế; báo giá quét đã OCR, tìm và hỏi ra đúng nội dung trong bản quét; RAG trả lời quy chế; vượt hạn mức lên công ty mẹ duyệt; ký số, niêm phong sổ cái.
 5. **Bảo mật và nền tảng (3')**: tài khoản công ty mẹ không xem được bệnh án, chỉ thấy số liệu tổng hợp; xóa pod, ArgoCD tự phục hồi.
 
 ## 10. Phạm vi 1 tháng
