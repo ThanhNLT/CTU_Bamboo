@@ -41,7 +41,6 @@ import { DigitalTwinPage } from "./pages/digital-twin";
 import { DataLineagePage } from "./pages/data-lineage";
 import { LedgerPage } from "./pages/ledger";
 import { AiAssistantPage } from "./pages/ai-assistant";
-import { OcrInputPage } from "./pages/ocr-input";
 import { AiAgentsPage } from "./pages/ai-agents";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { RecordsPage } from "./pages/records";
@@ -165,7 +164,7 @@ function App() {
                     <Route path="/d/lineage" element={<DataLineagePage />} />
                     <Route path="/d/ledger" element={<LedgerPage />} />
                     <Route path="/i/assistant" element={<AiAssistantPage />} />
-                    <Route path="/i/ocr" element={<OcrInputPage />} />
+                    <Route path="/i/ocr" element={<ComingSoon title="Nhập liệu OCR" />} />
                     <Route path="/i/agents" element={<AiAgentsPage />} />
                     <Route path="/p/documents">
                       <Route index element={<PurchaseRequestList />} />
