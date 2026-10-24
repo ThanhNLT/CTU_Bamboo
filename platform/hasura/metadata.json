@@ -2080,6 +2080,36 @@
                   }
                 }
               }
+            },
+            {
+              "name": "transfer_ins",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_in"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_unit_id"
+                  }
+                }
+              }
             }
           ],
           "object_relationships": [
@@ -2588,6 +2618,66 @@
                   }
                 }
               }
+            },
+            {
+              "name": "transfer_outs_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_outs_by_requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests_by_requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_id"
+                  }
+                }
+              }
             }
           ],
           "object_relationships": [
@@ -2785,6 +2875,96 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "assigned_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_ins",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_in"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_outs_by_requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_outs_by_source_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "source_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests_by_requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests_by_source_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "source_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests_by_target_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_position_id"
                   }
                 }
               }
@@ -7130,6 +7310,62 @@
                   }
                 }
               }
+            },
+            {
+              "name": "transfer_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_out",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_in",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_in"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_group",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_group"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "computed_fields": [
@@ -7438,6 +7674,62 @@
                   "remote_table": {
                     "schema": "collab",
                     "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_out",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_in",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_in"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_group",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_group"
                   },
                   "column_mapping": {
                     "entity_id": "id"
@@ -7921,6 +8213,62 @@
                   }
                 }
               }
+            },
+            {
+              "name": "transfer_request",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_out",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_in",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_in"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_group",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_group"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "select_permissions": [
@@ -7964,6 +8312,702 @@
                   ]
                 },
                 "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_group"
+          },
+          "object_relationships": [
+            {
+              "name": "in_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "in_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "out_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "out_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_group_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_in"
+          },
+          "object_relationships": [
+            {
+              "name": "out_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "out_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_in_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_out"
+          },
+          "object_relationships": [
+            {
+              "name": "target_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "target_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "source_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "source_position_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_out_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_request"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "source_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "source_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_request_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
               }
             }
           ]
@@ -9968,6 +11012,363 @@
         }
       ],
       "comment": "Xóa tác tử AI chưa có lượt hỏi, hoặc ngừng kích hoạt nếu đã có (cần core.ai.manage)"
+    },
+    {
+      "name": "create_transfer_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/create_transfer_request",
+        "arguments": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "source_position_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "target_unit_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "effective_date",
+            "type": "date!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập đề nghị điều chuyển nhân sự: nhân viên, trưởng đơn vị hoặc người có quyền hr.transfer.create (ngày chuyển sau ít nhất 14 ngày)"
+    },
+    {
+      "name": "submit_transfer_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/submit_transfer_request",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi duyệt đề nghị điều chuyển (người lập)"
+    },
+    {
+      "name": "choose_transfer_position",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/choose_transfer_position",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "position_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Trưởng đơn vị tiếp nhận chọn vị trí cho người được điều chuyển, trước khi duyệt bước của mình"
+    },
+    {
+      "name": "cancel_transfer_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_transfer_request",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người lập hủy đề nghị điều chuyển chưa duyệt xong"
+    },
+    {
+      "name": "create_transfer_out",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/create_transfer_out",
+        "arguments": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "source_position_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "target_tenant_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "target_unit_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "effective_date",
+            "type": "date!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập đề nghị điều chuyển sang tenant khác cùng tập đoàn (tenant nguồn duyệt trước, rồi tenant đích, rồi tập đoàn mẹ)"
+    },
+    {
+      "name": "submit_transfer_out",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/submit_transfer_out",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi duyệt đề nghị điều chuyển liên tập đoàn (người lập ở tenant nguồn)"
+    },
+    {
+      "name": "cancel_transfer_out",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_transfer_out",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người lập hủy đề nghị liên tập đoàn khi còn ở tenant nguồn"
+    },
+    {
+      "name": "choose_transfer_in_position",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/choose_transfer_in_position",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "position_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Trưởng đơn vị tiếp nhận ở tenant đích chọn vị trí cho người được điều chuyển"
+    },
+    {
+      "name": "transfer_tenants",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/transfer_tenants",
+        "arguments": [],
+        "output_type": "TransferTenants!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Các tenant khác cùng tập đoàn để điều chuyển đến"
+    },
+    {
+      "name": "transfer_target_units",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/transfer_target_units",
+        "arguments": [
+          {
+            "name": "tenant_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferUnits!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đơn vị của tenant đích (cùng tập đoàn) để chọn nơi tiếp nhận"
     }
   ],
   "custom_types": {
@@ -11656,6 +13057,51 @@
           {
             "name": "problems",
             "type": "[AuditChainProblem!]!"
+          }
+        ]
+      },
+      {
+        "name": "TransferActionResult",
+        "fields": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          }
+        ],
+        "relationships": [
+          {
+            "name": "transfer_request",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "hr",
+              "name": "transfer_request"
+            },
+            "field_mapping": {
+              "request_id": "id"
+            }
+          }
+        ]
+      },
+      {
+        "name": "TransferTenants",
+        "fields": [
+          {
+            "name": "tenants",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "TransferUnits",
+        "fields": [
+          {
+            "name": "units",
+            "type": "json!"
           }
         ]
       }
