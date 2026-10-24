@@ -112,8 +112,8 @@ export const AiAgentsPage = () => {
 
       {!loading && !aiEnabled && (
         <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-900">
-          Ollama chưa chạy (chưa bật profile <span className="font-mono">ai</span>): vẫn sửa được cấu hình, nhưng người
-          dùng chưa hỏi được và chưa kiểm tra được tên mô hình.
+          Ollama không phản hồi (AI bị tắt ở mức RAM 8, hoặc dịch vụ <span className="font-mono">ollama-core</span>{" "}
+          lỗi): vẫn sửa được cấu hình, nhưng người dùng chưa hỏi được và chưa kiểm tra được tên mô hình.
         </p>
       )}
 

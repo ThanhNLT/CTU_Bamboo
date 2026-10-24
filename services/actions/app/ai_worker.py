@@ -24,7 +24,7 @@ from psycopg.types.json import Jsonb
 
 from . import ai_agent, ai_chunks, config, ocr, pii_guard, search
 from .common import bind_session
-from .gpu import Gpu
+from .gpu import Gpu, sleeper_awake
 from .ollama import Ollama, OllamaUnavailable
 from .storage import Storage
 
@@ -315,7 +315,7 @@ def step(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: co
 def run_forever(settings: config.Settings, idle_seconds: float = 5.0) -> None:
     ai = Ollama(settings.ollama_url)
     ocr_client = ocr.OcrClient(settings.ocr_url) if settings.ocr_url else None
-    gpu = Gpu(ai, ocr_client, settings.ai_cpu_models)
+    gpu = Gpu(ai, ocr_client, settings.ai_cpu_models, sleeper_awake(settings.sleeper_url))
     files = ocr.Files(Storage(settings).read_stored) if ocr_client else None
     ocr_paused_until = 0.0
     meili = search.Meili(settings.meili_url, settings.meili_search_key)
