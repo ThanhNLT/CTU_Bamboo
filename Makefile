@@ -6,13 +6,15 @@
 
 DEMO_PASSWORD ?= demo-password
 
+AI_SERVICES := ollama-core ollama-init ocr-core ocr-init ai-worker
+
 up:
-	eval "$$(scripts/ram_profile.sh)"; docker compose up -d --build --remove-orphans \
-		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose --profile ai stop ollama ai-worker ocr; }
+	eval "$$(scripts/ram_profile.sh)"; docker compose up -d --build --remove-orphans $$BAMBOO_SERVICES \
+		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 up-gpu:
-	eval "$$(scripts/ram_profile.sh)"; docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build --remove-orphans \
-		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose --profile ai stop ollama ai-worker ocr; }
+	eval "$$(scripts/ram_profile.sh)"; docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
+		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 down:
 	docker compose down

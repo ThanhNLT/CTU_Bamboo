@@ -17,6 +17,7 @@ type UnitValues = {
   unit_type_id: string;
   parent_id: string;
   is_legal_entity: boolean;
+  is_hr: boolean;
   province?: string | null;
   lat?: number | null;
   lng?: number | null;
@@ -50,11 +51,12 @@ export const UnitModal = ({
               unit_type_id: unit.unit_type_id,
               parent_id: unit.parent_id ?? undefined,
               is_legal_entity: unit.is_legal_entity,
+              is_hr: unit.is_hr,
               province: unit.province,
               lat: unit.lat,
               lng: unit.lng,
             }
-          : { parent_id: parentId, is_legal_entity: false }
+          : { parent_id: parentId, is_legal_entity: false, is_hr: false }
       }
       onCancel={onClose}
       onSubmit={async (v) =>
@@ -115,6 +117,14 @@ export const UnitModal = ({
             label="Là công ty (pháp nhân)"
             valuePropName="checked"
             extra="Bật cho công ty con: dùng để xác định công ty khi bổ nhiệm hợp đồng, đơn hàng nội bộ."
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            name="is_hr"
+            label="Là phòng nhân sự của công ty"
+            valuePropName="checked"
+            extra="Trưởng phòng nhân sự của công ty duyệt đề nghị điều chuyển nhân sự thuộc công ty."
           >
             <Switch />
           </Form.Item>

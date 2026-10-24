@@ -18,7 +18,7 @@ from psycopg.types.json import Jsonb
 
 from . import pii_guard
 from .common import ActionError, Context, bind_session
-from .ollama import OllamaUnavailable
+from .ollama import WAKE_SECONDS, OllamaUnavailable
 
 log = logging.getLogger("ai_agent")
 
@@ -125,7 +125,7 @@ def _model_names(ctx: Context) -> set[str] | None:
     if ctx.ai is None:
         return None
     try:
-        return {m["name"] for m in ctx.ai.models()}
+        return {m["name"] for m in ctx.ai.models(timeout=WAKE_SECONDS)}
     except OllamaUnavailable as exc:
         log.info("Ollama không truy cập được: %s", exc)
         return None
@@ -249,7 +249,7 @@ def ai_models(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context
     if ctx.ai is None:
         return {"ai_enabled": False, "models": []}
     try:
-        return {"ai_enabled": True, "models": ctx.ai.models()}
+        return {"ai_enabled": True, "models": ctx.ai.models(timeout=WAKE_SECONDS)}
     except OllamaUnavailable:
         return {"ai_enabled": False, "models": []}
 

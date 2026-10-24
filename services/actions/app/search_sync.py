@@ -9,7 +9,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 from . import ai_chunks, config, ocr, search, storage
-from .ollama import Ollama, OllamaUnavailable
+from .ollama import WAKE_SECONDS, Ollama, OllamaUnavailable
 
 log = logging.getLogger("search_sync")
 MAX_BACKOFF = 300
@@ -165,11 +165,17 @@ def reindex_chunks_if_empty(conn: psycopg.Connection, meili: search.Meili, index
     return marked
 
 
+def chunks_pending(conn: psycopg.Connection) -> bool:
+    row = conn.execute("SELECT 1 FROM search.pending_chunk WHERE dirty AND next_attempt_at <= now() LIMIT 1").fetchone()
+    conn.commit()
+    return row is not None
+
+
 def ai_ready(ai: Ollama | None) -> bool:
     if ai is None:
         return False
     try:
-        ai.models()
+        ai.models(timeout=WAKE_SECONDS)
         return True
     except OllamaUnavailable:
         return False
@@ -204,16 +210,17 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0) -> None:
     while True:
         while run_once(work, meili, settings):
             pass
-        if ai_ready(ai):
-            try:
-                if not chunks_checked:
-                    reindex_chunks_if_empty(work, meili, settings.meili_chunk_index)
-                    chunks_checked = True
+        try:
+            if ai is not None and not chunks_checked:
+                reindex_chunks_if_empty(work, meili, settings.meili_chunk_index)
+                chunks_checked = True
+            # Chỉ gọi Ollama khi có đoạn cần nạp: hỏi thăm định kỳ sẽ giữ container ollama-core không bao giờ ngủ
+            if ai is not None and chunks_pending(work) and ai_ready(ai):
                 while run_chunks_once(work, meili, ai, settings):
                     pass
-            except search.SearchUnavailable as exc:
-                work.rollback()
-                log.warning("chỉ mục đoạn chưa sẵn sàng: %s", exc)
+        except search.SearchUnavailable as exc:
+            work.rollback()
+            log.warning("chỉ mục đoạn chưa sẵn sàng: %s", exc)
         for _ in listen.notifies(timeout=idle_seconds, stop_after=1):
             pass
 
