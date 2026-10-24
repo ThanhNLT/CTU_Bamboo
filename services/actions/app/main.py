@@ -48,6 +48,10 @@ DECISIONS = {"APPROVE", "REJECT", "RETURN"}
 ENTITY_TABLES = {
     "proc.purchase_request": "proc.purchase_request",
     "hr.onboarding_request": "hr.onboarding_request",
+    "hr.transfer_request": "hr.transfer_request",
+    "hr.transfer_out": "hr.transfer_out",
+    "hr.transfer_in": "hr.transfer_in",
+    "hr.transfer_group": "hr.transfer_group",
     "collab.kb_document": "collab.kb_document",
 }
 BPMN = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
