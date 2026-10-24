@@ -34,6 +34,8 @@ SELECT test.ok(NOT core.has_permission(test.id('gd_dt'), 'proc.purchase_request.
 
 SELECT test.end_assignment('c', 'P_NV_MH_DT');
 SELECT test.end_assignment('d', 'P_NV2_MH_DT');
+-- Dữ liệu thiết lập để kiểm quyền theo ghế, không phải luồng chuyển người (chuyển qua hr.transfer_request)
+SELECT set_config('bms.transfer_applying', 'on', false);
 SELECT test.assign('TDX', 'c', 'P_NV2_MH_DT', 'PRIMARY', tstzrange(now(), NULL));
 SELECT test.assign('TDX', 'd', 'P_NV_MH_DT', 'PRIMARY', tstzrange(now(), NULL));
 SELECT test.ok(NOT core.has_permission(test.id('c'), 'proc.purchase_request.create', test.id('DT_MH')),
