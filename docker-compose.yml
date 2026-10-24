@@ -421,9 +421,9 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
-  ollama:
+  # Ollama và OCR ngủ khi nhàn rỗi như các dịch vụ -core khác: tên mạng `ollama`, `ocr` và cổng công bố thuộc `sleeper`
+  ollama-core:
     logging: *logging
-    profiles: [ai]
     image: ollama/ollama:0.35.1
     environment:
       OLLAMA_NUM_PARALLEL: "1"
@@ -447,8 +447,6 @@ services:
         exec ollama serve
     volumes:
       - ollama-models:/root/.ollama
-    ports:
-      - "127.0.0.1:11434:11434"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "ollama", "list"]
@@ -458,10 +456,11 @@ services:
 
   ollama-init:
     logging: *logging
-    profiles: [ai]
     image: ollama/ollama:0.35.1
     depends_on:
-      ollama:
+      ollama-core:
+        condition: service_healthy
+      sleeper:
         condition: service_healthy
     environment:
       OLLAMA_HOST: http://ollama:11434
@@ -470,9 +469,8 @@ services:
     entrypoint: ["sh", "-c", "for m in \"$$AI_CHAT_MODEL\" \"$$AI_EMBED_MODEL\"; do ollama show \"$$m\" > /dev/null 2>&1 || ollama pull \"$$m\" || echo \"CẢNH BÁO: không tải được mô hình $$m, AI chưa dùng được\" >&2; done"]
     restart: "no"
 
-  ocr:
+  ocr-core:
     logging: *logging
-    profiles: [ai]
     build:
       context: .
       dockerfile: services/ocr/Dockerfile
@@ -485,8 +483,6 @@ services:
       OCR_IDLE_SECONDS: ${OCR_IDLE_SECONDS:-300}
     volumes:
       - ocr-models:/models
-    ports:
-      - "127.0.0.1:8866:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
@@ -497,7 +493,6 @@ services:
 
   ocr-init:
     logging: *logging
-    profiles: [ai]
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
     build:
       context: .
@@ -509,18 +504,20 @@ services:
 
   ai-worker:
     logging: *logging
-    profiles: [ai]
     <<: *actions-image
     depends_on:
       bootstrap:
         condition: service_completed_successfully
       ollama-init:
         condition: service_completed_successfully
-      ocr:
+      ocr-core:
         condition: service_started
+      sleeper:
+        condition: service_healthy
     environment:
       <<: *actions-env
       OCR_URL: http://ocr:8000
+      SLEEPER_URL: http://sleeper:9000
     volumes:
       - actions-secrets:/run/bms:ro
     command: ["python", "-m", "app.ai_worker"]
@@ -700,10 +697,10 @@ services:
     environment:
       SLEEPER_PROJECT: bamboo
       SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
-      SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000
+      SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000,11434=ollama-core:11434,8000=ocr-core:8000
     networks:
       default:
-        aliases: [trino, tika, gotenberg]
+        aliases: [trino, tika, gotenberg, ollama, ocr]
     # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn, và nó chỉ start/stop container thuộc SLEEPER_TARGETS
     user: "0"
     cap_drop: [ALL]
@@ -715,6 +712,8 @@ services:
       - "127.0.0.1:8085:8443"
       - "127.0.0.1:9998:9998"
       - "127.0.0.1:3000:3000"
+      - "127.0.0.1:11434:11434"
+      - "127.0.0.1:8866:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/healthz', timeout=2)"]

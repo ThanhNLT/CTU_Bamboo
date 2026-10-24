@@ -50,6 +50,14 @@ import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
 import { OnboardingCreate, OnboardingEdit, OnboardingList, OnboardingShow } from "./pages/onboarding";
 import {
+  CrossTransferList,
+  CrossTransferShow,
+  TransferCreate,
+  TransferLegShow,
+  TransferList,
+  TransferShow,
+} from "./pages/transfer";
+import {
   PurchaseRequestCreate,
   PurchaseRequestEdit,
   PurchaseRequestList,
@@ -118,6 +126,13 @@ function App() {
                     show: "/h/onboarding/show/:id",
                     meta: { label: "Tiếp nhận nhân sự", icon: <UserAddOutlined /> },
                   },
+                  {
+                    name: "hr_transfer_request",
+                    list: "/h/transfer",
+                    create: "/h/transfer/create",
+                    show: "/h/transfer/show/:id",
+                    meta: { label: "Điều chuyển nhân sự", icon: <SwapOutlined /> },
+                  },
                   { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
                   { name: "search", list: "/i/search", meta: { label: "Tìm kiếm", icon: <SearchOutlined /> } },
                   {
@@ -181,6 +196,15 @@ function App() {
                       <Route path="create" element={<OnboardingCreate />} />
                       <Route path="edit/:id" element={<OnboardingEdit />} />
                       <Route path="show/:id" element={<OnboardingShow />} />
+                    </Route>
+                    <Route path="/h/transfer">
+                      <Route index element={<TransferList />} />
+                      <Route path="create" element={<TransferCreate />} />
+                      <Route path="show/:id" element={<TransferShow />} />
+                      <Route path="cross" element={<CrossTransferList />} />
+                      <Route path="cross/show/:id" element={<CrossTransferShow />} />
+                      <Route path="leg/in/:id" element={<TransferLegShow kind="in" />} />
+                      <Route path="leg/group/:id" element={<TransferLegShow kind="group" />} />
                     </Route>
                     <Route path="/p/inbox" element={<InboxList />} />
                     <Route path="/p/process/:id" element={<ComingSoon title="Sơ đồ quy trình" />} />
