@@ -49,7 +49,7 @@ Trình duyệt ──► Cổng API APISIX :8000 (một điểm vào; WAF Coraza
 | AI cục bộ | Ollama 0.35, Qwen3-4B (chat), bge-m3 (vector) | MIT, Apache-2.0 |
 | OCR tiếng Việt | PaddleOCR + VietOCR (dịch vụ `ocr`) | Apache-2.0 |
 | Che dữ liệu cá nhân | Microsoft Presidio (nhận diện theo mẫu cho Việt Nam) | MIT |
-| Quét virus (tùy chọn, mặc định tắt) | ClamAV | GPL-2.0 |
+| Quét tệp trước khi nhận | Bộ quét nội bộ Bamboo Scan (luôn chạy), ClamAV (tùy chọn, mặc định tắt) | Apache-2.0, GPL-2.0 |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI | MIT |
 | Giao diện | Refine 5, React 19, Ant Design 5 | MIT |
 
@@ -239,13 +239,14 @@ docs/                Tài liệu Sphinx: yêu cầu, kiến trúc, thiết kế,
 
 Phần nên biết trước khi đánh giá hoặc triển khai:
 
-- **Thiết kế quy trình BPMN:** việc kiểm lỗi, chạy thử sandbox và phát hành phiên bản quy trình đã làm ở máy chủ, nhưng trang giao diện (`/p/process`) tạm hiện "Sẽ được cập nhật chức năng sau". Quy trình tự thiết kế chưa tự thay luồng duyệt đang chạy (ADR #47). Luồng duyệt mua sắm chạy trên Flowable bình thường.
-- **Nhập liệu OCR (`/i/ocr`):** trang minh họa, chưa gọi máy chủ. OCR thật chạy ở đường tải tệp và tìm kiếm.
+- **Thiết kế quy trình BPMN:** vẽ bằng bpmn-js, kiểm lỗi, chạy thử sandbox và phát hành phiên bản ở trang `/p/process`; trưởng đơn vị thiết kế quy trình trong phạm vi đơn vị, phát hành thì phòng ban, công ty hoặc cả tập đoàn được thông báo và xem sơ đồ; quản lý, giám đốc yêu cầu sửa hoặc chạy demo; quy trình chỉ gồm tác vụ tự động và hẹn giờ có thể bật chạy tự động trên Flowable. Quy trình tự thiết kế chưa tự thay luồng duyệt đang chạy (ADR #47). Luồng duyệt mua sắm chạy trên Flowable bình thường.
+- **Nhập liệu OCR (`/i/ocr`):** tải bản quét hoặc ảnh báo giá, hóa đơn; hệ thống tạo đề nghị mua sắm nháp, quét an toàn, OCR, rút nhà cung cấp, mã số thuế, dòng hàng và số tiền (tự kiểm số lượng × đơn giá và tổng), gợi ý khớp danh mục, rồi điền vào đề nghị để người dùng kiểm tra và gửi duyệt. Phần rút trường chạy bằng quy tắc, không dùng mô hình; mẫu lạ hoặc chữ đọc sai thì hạ độ tin cậy và báo để nhập tay. Cần dịch vụ OCR chạy (máy 16 GB); bước OCR thật chưa được kiểm tự động trong CI.
 - **Dữ liệu mẫu:** Bản sao số phòng sạch, Phả hệ dữ liệu và chất lượng dữ liệu đọc từ dữ liệu nạp từ tệp mẫu (ADR #50), chưa tự thu thập từ pipeline. Chưa có báo cáo chi tiêu theo công ty, nhà cung cấp (dữ liệu có sẵn ở lớp silver của Trino).
-- **Quét virus:** ClamAV là tùy chọn, mặc định tắt (`docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`). Kiểm kích thước và chữ ký đầu tệp luôn chạy.
+- **Quét tệp:** bộ quét nội bộ luôn chạy trước khi tệp được xác nhận sạch (chữ ký, tệp thực thi nhúng, cấu trúc, mã chủ động trong PDF, macro và đối tượng nhúng trong Office, bom nén); không quét hết thì không xác nhận là sạch. Chưa có cơ sở dữ liệu mẫu virus nên không thay được ClamAV: bật ClamAV bằng `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`, đặt `SCAN_REQUIRE_CLAMAV=true` để bắt buộc. Chưa có xử lý CDR (làm sạch tệp).
 - **Hạn mức duyệt mẫu** (50 triệu, 500 triệu) áp cho công ty thành viên. Đơn vị trực thuộc tập đoàn (HĐQT, các khối, Văn phòng Chuyển đổi số) từ 50 triệu lên thẳng Tổng giám đốc; Bệnh viện X có quy tắc riêng, nhóm thiết bị y tế luôn hai bước.
 - **Cổng quản trị** (Hasura Console, Keycloak admin, Trino, Kafka...) chỉ nghe `127.0.0.1`; triển khai thật đặt `HASURA_ENABLE_CONSOLE=false`.
-- **Chưa có:** giám sát tập trung (Prometheus, Grafana, OpenTelemetry), sao lưu theo lịch và diễn tập khôi phục, GitOps tự đối chiếu (k3s, Argo CD), mTLS giữa dịch vụ, ký số, MQTT và NGSI-LD cho cảm biến thật, môi trường chạy kịch bản tự động hóa do người dùng định nghĩa, email và SMS, giao diện tiếng Anh.
+- **Đã có ở mức tối thiểu:** thông báo ngoài ứng dụng (email, SMS qua cổng HTTP, webhook; cần cấu hình `SMTP_*`, `SMS_GATEWAY_URL`), nhật ký tập trung trong CSDL (chưa có Prometheus, Grafana, OpenTelemetry), sao lưu theo lịch và diễn tập khôi phục, GitOps bằng script đối chiếu (không có k3s, Argo CD), kịch bản tự động trong phạm vi hành động có sẵn (thông báo, gọi API https, đặt biến), văn bản mẫu PDF (quyết định nhân sự, báo cáo KPI), lớp ngữ nghĩa trên Lakehouse, nhận diện thêm dữ liệu cá nhân bằng quy tắc theo từ khóa (không dùng mô hình NER), giao diện tiếng Anh cho phần khung.
+- **Chưa có:** mTLS giữa dịch vụ, ký số chứng thư công cộng, MQTT và NGSI-LD cho cảm biến thật, kịch bản tự động tùy ý do người dùng viết mã, dịch toàn bộ trang nghiệp vụ sang tiếng Anh, chính sách vòng đời và xóa dữ liệu Lakehouse, giao diện cho lớp ngữ nghĩa và báo cáo KPI.
 - **Cách ly tenant** là cách ly logic trong cùng một PostgreSQL (khóa kép `tenant_id`, `id`, phân quyền theo dòng), không phải CSDL riêng cho từng tenant.
 
 ## Đóng góp
