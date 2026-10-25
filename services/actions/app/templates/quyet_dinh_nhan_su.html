@@ -3,7 +3,7 @@
 SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 SPDX-License-Identifier: Apache-2.0
 
-Quyết định nhân sự theo thể thức văn bản hành chính (quốc hiệu, tiêu ngữ, điều khoản, nơi nhận). Giá trị được Jinja2 escape.
+Quyết định nhân sự của công ty tư nhân (số, địa danh ngày tháng, điều khoản, nơi nhận); không có quốc hiệu, tiêu ngữ. Giá trị được Jinja2 escape.
 -->
 <html lang="vi">
 <head>
@@ -15,8 +15,6 @@ Quyết định nhân sự theo thể thức văn bản hành chính (quốc hi�
   .head { display: flex; justify-content: space-between; text-align: center; font-size: 11pt; }
   .head div { width: 48%; }
   .head strong { text-transform: uppercase; display: block; }
-  .nation { font-weight: 700; text-transform: uppercase; }
-  .motto { font-weight: 700; border-bottom: 1px solid #111; display: inline-block; padding-bottom: 2px; }
   h1 { text-align: center; text-transform: uppercase; font-size: 15pt; margin: 22px 0 2px; }
   .sub { text-align: center; font-weight: 700; margin-bottom: 14px; }
   p { margin: 4px 0; text-align: justify; }
@@ -31,7 +29,7 @@ Quyết định nhân sự theo thể thức văn bản hành chính (quốc hi�
 <body>
 <div class="head">
   <div>{{ d.company }}<strong>{{ d.issuer_position }}</strong><span>Số: {{ d.doc_no }}</span></div>
-    <em>{{ d.place }}, ngày {{ d.day }} tháng {{ d.month }} năm {{ d.year }}</em></div>
+  <div><em>{{ d.place }}, ngày {{ d.day }} tháng {{ d.month }} năm {{ d.year }}</em></div>
 </div>
 
 <h1>Quyết định</h1>
