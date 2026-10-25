@@ -13,9 +13,10 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
 
-from app import config, main, storage
+from app import attachments, config, main, scanner, storage
 from app.common import Context
 from conftest import SETTINGS, ids, pr
+from test_quet_tep import DOCX, MZ, ooxml, png
 
 PDF = b"%PDF-1.7\n" + b"x" * 2000 + b"\n%%EOF\n"
 
@@ -65,7 +66,11 @@ def fake_clamd():
             except OSError:
                 return
             with conn:
-                assert conn.recv(10) == b"zINSTREAM\0"
+                command = conn.recv(10)
+                if command.startswith(b"zVERSION"):
+                    conn.sendall(b"ClamAV 1.4.99/27000/Sun Oct 25 2026\0")
+                    continue
+                assert command == b"zINSTREAM\0"
                 data = b""
                 while True:
                     size = struct.unpack("!L", conn.recv(4, socket.MSG_WAITALL))[0]
@@ -99,7 +104,10 @@ def test_tai_len_quet_tai_ve(hasura, conn, s3):
     data = hasura(CONFIRM, {"a": att}, person=i["tp_mh_dt"], tenant=i["TDX"])
     assert "Chỉ người tải lên" in data["errors"][0]["message"], data
     result = hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]
-    assert result["status"] == "CLEAN" and result["scan_result"].startswith("bỏ qua"), result
+    assert result["status"] == "CLEAN" and result["scan_result"].startswith("Đã quét xong"), result
+    row = conn.execute("SELECT scan_engines, scan_report FROM core.attachment WHERE id = %s", (att,)).fetchone()
+    assert row["scan_engines"] and row["scan_engines"][0].startswith("Bamboo Scan"), "ghi rõ công cụ đã quét"
+    assert row["scan_report"]["verdict"] == "CLEAN" and row["scan_report"]["checked"], row
     assert result["attachment"]["file_name"] == "Báo giá Q4.pdf"
     assert len(result["attachment"]["sha256"]) == 64
     assert s3.read_quarantine(f"{i['TDX']}/proc.purchase_request/{pr_id}/{att}") is None, "đã rời bucket cách ly"
@@ -210,6 +218,101 @@ def test_quet_virus_tim_thay(conn, database, s3, fake_clamd, hasura):
         )
 
 
+def test_bo_quet_noi_bo_luon_chay_truoc_khi_xac_nhan_sach(hasura, conn, s3):
+    """Không cần ClamAV: tệp độc hại vẫn bị chặn, tệp sạch được ghi rõ công cụ đã quét."""
+    i = ids(conn, "TDX", "c")
+    pr_id = pr(conn, "tep_quet_noi_bo", "c", "P_NV_MH_DT", 10_000_000)
+    js_pdf = b"%PDF-1.7\n1 0 obj\n<< /OpenAction << /S /JavaScript /JS (app.alert(1)) >> >>\nendobj\n%%EOF\n"
+    cases = [
+        (scanner.EICAR, "text/plain", "eicar.txt", "INFECTED"),
+        (js_pdf, "application/pdf", "bao-gia.pdf", "REJECTED"),
+        (ooxml("docx", {"word/vbaProject.bin": b"\xd0\xcf\x11\xe0"}), DOCX, "macro.docx", "REJECTED"),
+        (png(trailing=MZ), "image/png", "anh.png", "INFECTED"),
+        ("Báo giá linh kiện".encode(), "text/plain", "ghi-chu.txt", "CLEAN"),
+        (ooxml("docx"), DOCX, "hop-dong.docx", "CLEAN"),
+    ]
+    for content, ctype, name, expected in cases:
+        att = upload(hasura, i, pr_id, content, name=name, ctype=ctype)
+        result = hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]
+        assert result["status"] == expected, (name, result)
+        row = conn.execute(
+            "SELECT scan_engines, scan_report FROM core.attachment WHERE id = %s", (att,)
+        ).fetchone()
+        assert row["scan_report"]["checked"], "báo cáo ghi các kiểm tra đã chạy"
+        assert s3.read_quarantine(f"{i['TDX']}/proc.purchase_request/{pr_id}/{att}") is None
+        download = hasura(DOWNLOAD, {"a": att}, person=i["c"], tenant=i["TDX"])
+        if expected == "CLEAN":
+            assert row["scan_engines"] and result["scan_result"].startswith("Đã quét xong"), result
+            assert "url" in download["data"]["get_download_url"]
+        else:
+            assert download["errors"][0]["extensions"]["code"] == "not-clean", "tệp không sạch không tải về được"
+            assert not s3.document_exists(f"{i['TDX']}/proc.purchase_request/{pr_id}/{att}")
+
+
+def test_bat_buoc_clamav_khong_co_thi_khong_xac_nhan_sach(conn, database, s3):
+    i = ids(conn, "TDX", "c")
+    pr_id = pr(conn, "tep_bat_buoc_clam", "c", "P_NV_MH_DT", 10_000_000)
+    settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database})
+    ctx = Context(storage=s3, require_clamav=True)
+    session = {"x-hasura-role": "user", "x-hasura-user-id": i["c"], "x-hasura-tenant-id": i["TDX"]}
+    with TestClient(main.create_app(settings, ctx=ctx)) as client:
+
+        def call(name, args):
+            return client.post(
+                f"/actions/{name}",
+                json={"input": args, "session_variables": session},
+                headers={"x-actions-secret": SETTINGS.actions_secret},
+            )
+
+        ticket = call(
+            "get_upload_url",
+            {"entity_type": "proc.purchase_request", "entity_id": pr_id, "file_name": "a.pdf",
+             "content_type": "application/pdf", "size_bytes": len(PDF)},
+        ).json()
+        httpx.put(ticket["upload_url"], content=PDF, headers={"Content-Type": "application/pdf"})
+        response = call("confirm_upload", {"attachment_id": ticket["attachment_id"]})
+        assert response.status_code == 503 and "ClamAV" in response.json()["message"], response.text
+        status = conn.execute("SELECT status FROM core.attachment WHERE id = %s", (ticket["attachment_id"],)).fetchone()
+        assert status["status"] == "PENDING", "chưa quét được thì vẫn chờ, không bị coi là sạch"
+
+
+def test_quet_lai_tep_cu_chua_tung_quet(conn, database, s3, hasura):
+    import hashlib
+
+    import psycopg
+
+    i = ids(conn, "TDX", "c")
+    pr_id = pr(conn, "tep_quet_lai", "c", "P_NV_MH_DT", 10_000_000)
+    made = {}
+    for label, content in (("sach", PDF), ("doc", scanner.EICAR), ("doi", PDF)):
+        key = f"{i['TDX']}/proc.purchase_request/{pr_id}/{label}"
+        ctype = "application/pdf" if label != "doc" else "text/plain"
+        s3.put_document(key, content if label != "doi" else PDF + b"da bi sua", ctype)
+        made[label] = conn.execute(
+            """INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes,
+                                            storage_key, status, sha256, scan_engines, uploaded_by)
+               VALUES (test.id('TDX'), 'proc.purchase_request', %s, %s, %s, %s, %s, 'CLEAN', %s, ARRAY['unscanned'], %s)
+               RETURNING id""",
+            (pr_id, f"{label}.pdf", ctype, len(content), key, hashlib.sha256(content).hexdigest(), i["c"]),
+        ).fetchone()["id"]
+
+    # Chưa quét lại thì chưa tải về được dù trạng thái cũ là CLEAN
+    data = hasura(DOWNLOAD, {"a": str(made["sach"])}, person=i["c"], tenant=i["TDX"])
+    assert data["errors"][0]["extensions"]["code"] == "not-scanned", data
+
+    with psycopg.connect(database) as worker:
+        assert attachments.rescan_unscanned(worker, s3, limit=50) >= 3
+    rows = {
+        k: conn.execute("SELECT status, scan_engines, scan_result FROM core.attachment WHERE id = %s", (v,)).fetchone()
+        for k, v in made.items()
+    }
+    assert rows["sach"]["status"] == "CLEAN" and rows["sach"]["scan_engines"][0].startswith("Bamboo Scan"), rows["sach"]
+    assert rows["doc"]["status"] == "INFECTED" and "Eicar" in rows["doc"]["scan_result"], rows["doc"]
+    assert rows["doi"]["status"] == "REJECTED" and "mã băm" in rows["doi"]["scan_result"], rows["doi"]
+    assert not s3.document_exists(f"{i['TDX']}/proc.purchase_request/{pr_id}/doc"), "tệp nhiễm bị gỡ khỏi kho"
+    assert "url" in hasura(DOWNLOAD, {"a": str(made["sach"])}, person=i["c"], tenant=i["TDX"])["data"]["get_download_url"]
+
+
 def test_khoa_ung_dung_dac_quyen_toi_thieu(s3):
     app = boto3.client(
         "s3",
@@ -268,9 +371,9 @@ def test_chi_xoa_tep_khi_chung_tu_chua_ket_thuc(conn, database, org, doc_status,
     pr_id = pr(conn, k("PR"), k("nv"), k("P_NV"), 1000, submit=False)
     att = conn.execute(
         """INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes,
-                                        storage_key, status, sha256, uploaded_by)
+                                        storage_key, status, sha256, scan_engines, uploaded_by)
            VALUES (test.id('TDX'), 'proc.purchase_request', %s, 'nham.pdf', 'application/pdf', 10, %s, 'CLEAN',
-                   repeat('0', 64), %s)
+                   repeat('0', 64), ARRAY['test'], %s)
            RETURNING id""",
         (pr_id, f"thu/{pr_id}/nham.pdf", i[k("nv")]),
     ).fetchone()["id"]

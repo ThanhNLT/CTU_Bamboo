@@ -19,6 +19,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { useSession } from "../../auth/useSession";
+import { LOCALES, setLocale, useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
 import { NotificationBell } from "../notifications/Bell";
 import { EXTRA_PAGES, findActive, NAV_GROUPS } from "./nav";
@@ -42,43 +43,48 @@ const initials = (name: string) =>
     .join("")
     .toUpperCase();
 
-const SiderToggle = ({ collapsed, onCollapsedChange }: Pick<HeaderProps, "collapsed" | "onCollapsedChange">) => (
-  <div className="hidden h-9 items-center rounded-full border border-line bg-white p-0.5 shadow-card md:flex">
-    <button
-      type="button"
-      onClick={() => onCollapsedChange(true)}
-      disabled={collapsed}
-      aria-label="Thu gọn menu"
-      className="grid h-8 w-8 place-items-center rounded-full text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
-    >
-      <ChevronLeft className="h-4 w-4" />
-    </button>
-    <button
-      type="button"
-      onClick={() => onCollapsedChange(false)}
-      disabled={!collapsed}
-      aria-label="Mở rộng menu"
-      className="grid h-8 w-8 place-items-center rounded-full text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
-    >
-      <ChevronRight className="h-4 w-4" />
-    </button>
-  </div>
-);
+const SiderToggle = ({ collapsed, onCollapsedChange }: Pick<HeaderProps, "collapsed" | "onCollapsedChange">) => {
+  const { t } = useLocale();
+  return (
+    <div className="hidden h-9 items-center rounded-full border border-line bg-white p-0.5 shadow-card md:flex">
+      <button
+        type="button"
+        onClick={() => onCollapsedChange(true)}
+        disabled={collapsed}
+        aria-label={t("Thu gọn menu")}
+        className="grid h-8 w-8 place-items-center rounded-full text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onCollapsedChange(false)}
+        disabled={!collapsed}
+        aria-label={t("Mở rộng menu")}
+        className="grid h-8 w-8 place-items-center rounded-full text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
 
 const Breadcrumb = () => {
+  const { t } = useLocale();
   const { pathname } = useLocation();
   const active = findActive(pathname);
   return (
-    <nav aria-label="Vị trí" className="min-w-0 leading-tight">
-      <div className="truncate text-[11px] text-muted">{active?.group ?? "Bamboo"}</div>
+    <nav aria-label={t("Vị trí")} className="min-w-0 leading-tight">
+      <div className="truncate text-[11px] text-muted">{active ? t(active.group) : "Bamboo"}</div>
       <div className="truncate text-[13.5px] font-semibold text-ink" aria-current="page">
-        {active?.label ?? "Trang"}
+        {t(active?.label ?? "Trang")}
       </div>
     </nav>
   );
 };
 
 const SearchTrigger = () => {
+  const { t } = useLocale();
   const { query } = useKBar();
   return (
     <button
@@ -87,7 +93,7 @@ const SearchTrigger = () => {
       className="hidden h-9 w-full max-w-[340px] items-center gap-2 rounded-full border border-line bg-canvas px-3.5 text-left text-[13px] text-muted transition-colors hover:border-bamboo-200 hover:bg-white lg:flex"
     >
       <Search className="h-4 w-4 shrink-0" aria-hidden />
-      <span className="flex-1 truncate">Tìm mọi thứ</span>
+      <span className="flex-1 truncate">{t("Tìm mọi thứ")}</span>
       <kbd className="rounded-md border border-line bg-white px-1.5 py-px font-sans text-[11px] text-muted">
         {IS_MAC ? "⌘K" : "Ctrl K"}
       </kbd>
@@ -121,6 +127,7 @@ const CompanySwitcher = () => {
 };
 
 const AppLauncher = () => {
+  const { t } = useLocale();
   const content = (
     <div className="w-[320px] space-y-3 p-1">
       <div className="grid grid-cols-3 gap-1">
@@ -132,7 +139,7 @@ const AppLauncher = () => {
                 className="flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[11.5px] leading-tight text-body hover:bg-bamboo-50 hover:text-ink"
               >
                 <Icon className="h-5 w-5 text-bamboo-700" strokeWidth={1.75} aria-hidden />
-                {label}
+                {t(label)}
               </Link>
             </NavGate>
           ),
@@ -145,7 +152,7 @@ const AppLauncher = () => {
             to={p.to}
             className="block rounded-lg px-2 py-1.5 text-[13px] text-body hover:bg-bamboo-50 hover:text-ink"
           >
-            {p.label} <span className="text-muted">· {p.group}</span>
+            {t(p.label)} <span className="text-muted">· {t(p.group)}</span>
           </Link>
         ))}
       </div>
@@ -153,14 +160,33 @@ const AppLauncher = () => {
   );
   return (
     <Popover content={content} trigger="click" placement="bottomRight" arrow={false}>
-      <button type="button" className={iconButtonClass} aria-label="Ứng dụng">
+      <button type="button" className={iconButtonClass} aria-label={t("Ứng dụng")}>
         <LayoutGrid className="h-[18px] w-[18px]" strokeWidth={1.75} />
       </button>
     </Popover>
   );
 };
 
+const LanguageSwitch = () => {
+  const { locale, t } = useLocale();
+  return (
+    <Dropdown
+      trigger={["click"]}
+      placement="bottomRight"
+      menu={{
+        selectedKeys: [locale],
+        items: LOCALES.map((l) => ({ key: l.code, label: l.label, onClick: () => setLocale(l.code) })),
+      }}
+    >
+      <button type="button" className={iconButtonClass} aria-label={t("Ngôn ngữ")}>
+        <span className="text-[11.5px] font-semibold uppercase">{locale}</span>
+      </button>
+    </Dropdown>
+  );
+};
+
 const UserMenu = () => {
+  const { t } = useLocale();
   const { tenant } = useSession();
   const { mutate: logout } = useLogout();
   const items: MenuProps["items"] = [
@@ -175,7 +201,7 @@ const UserMenu = () => {
       ),
     },
     { type: "divider" },
-    { key: "logout", icon: <LogOut className="h-3.5 w-3.5" />, label: "Đăng xuất", onClick: () => logout() },
+    { key: "logout", icon: <LogOut className="h-3.5 w-3.5" />, label: t("Đăng xuất"), onClick: () => logout() },
   ];
   return (
     <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
@@ -191,10 +217,16 @@ const UserMenu = () => {
 };
 
 export const AppHeader = ({ collapsed, onCollapsedChange, onOpenMobileNav }: HeaderProps) => {
+  const { t } = useLocale();
   const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-white/80 px-4 backdrop-blur-md md:px-5">
-      <button type="button" className={cn(iconButtonClass, "md:hidden")} onClick={onOpenMobileNav} aria-label="Mở menu">
+      <button
+        type="button"
+        className={cn(iconButtonClass, "md:hidden")}
+        onClick={onOpenMobileNav}
+        aria-label={t("Mở menu")}
+      >
         <Menu className="h-5 w-5" />
       </button>
       <SiderToggle collapsed={collapsed} onCollapsedChange={onCollapsedChange} />
@@ -208,8 +240,9 @@ export const AppHeader = ({ collapsed, onCollapsedChange, onOpenMobileNav }: Hea
         <CompanySwitcher />
         <button type="button" className={cn(pillButtonClass, "max-sm:hidden")} onClick={() => navigate("/i/assistant")}>
           <Sparkles className="h-4 w-4 text-bamboo-600" strokeWidth={1.75} aria-hidden />
-          Trợ lý
+          {t("Trợ lý")}
         </button>
+        <LanguageSwitch />
         <AppLauncher />
         <NotificationBell />
         <UserMenu />

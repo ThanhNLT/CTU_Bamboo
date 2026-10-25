@@ -24,6 +24,7 @@ const FILES = gql`
       size_bytes
       status
       scan_result
+      scan_engines
       created_at
       entity_type
       entity_id
@@ -47,6 +48,7 @@ type Row = {
   size_bytes: number;
   status: string;
   scan_result: string | null;
+  scan_engines?: string[];
   created_at: string;
   entity_type: string;
   entity_id: string;
@@ -66,6 +68,11 @@ const SCAN: Record<string, ScanResult> = {
   REJECTED: "rejected",
   PENDING: "pending",
 };
+// Tệp cũ chưa từng được quét: coi như đang kiểm tra cho tới khi hệ thống quét lại xong
+const scanOf = (row: { status: string; scan_engines?: string[] }): ScanResult =>
+  row.status === "CLEAN" && (row.scan_engines ?? []).includes("unscanned")
+    ? "pending"
+    : (SCAN[row.status] ?? "pending");
 const RECENT_DAYS = 7;
 const EDITABLE = new Set(["DRAFT", "PENDING", "RETURNED"]);
 
@@ -96,7 +103,7 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
         updatedAt: r.created_at,
         updatedLabel: formatAgo(r.created_at),
         bytes: r.size_bytes,
-        scan: SCAN[r.status] ?? "pending",
+        scan: scanOf(r),
         locked: Boolean(docById.get(r.entity_id)?.status && !EDITABLE.has(docById.get(r.entity_id)!.status)),
       })),
     [rows, docById],

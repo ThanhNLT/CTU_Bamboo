@@ -36,7 +36,7 @@ seals AS (
            d.doc_no, d.title, d.status, d.unit, d.updated_at, d.restricted
     FROM core.attachment a
     JOIN docs d ON d.entity_type = a.entity_type AND d.entity_id = a.entity_id
-    WHERE a.tenant_id = %(tenant)s AND a.status = 'CLEAN' AND a.deleted_at IS NULL
+    WHERE a.tenant_id = %(tenant)s AND a.status = 'CLEAN' AND a.scan_engines <> '{unscanned}' AND a.deleted_at IS NULL
       AND wf.entity_can_read(a.entity_type, a.entity_id, %(person)s)
 )
 """

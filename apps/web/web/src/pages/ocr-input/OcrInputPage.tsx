@@ -2,265 +2,682 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { App } from "antd";
-import { Camera, History } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { App, Alert, Drawer, Input, InputNumber, Segmented, Select, Table, Tag, Upload } from "antd";
+import { FileSearch, History, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 
+import { useSession } from "../../auth/useSession";
 import { primaryButtonClass, secondaryButtonClass } from "../../components/ui";
-import { cn } from "../../utils/cn";
-import { DocumentViewer } from "./components/DocumentViewer";
-import { ExtractedFieldsForm } from "./components/ExtractedFieldsForm";
-import { ImportHistoryDrawer } from "./components/ImportHistoryDrawer";
+import { formatDate, formatDay, formatMoney } from "../../utils/format";
+import {
+  createDraft,
+  downloadUrl,
+  getOcrDocument,
+  loadOptions,
+  recentImports,
+  retryOcr,
+  saveImport,
+  uploadScan,
+  type Options,
+} from "./api";
 import { OcrStepper } from "./components/OcrStepper";
-import { IMPORT_COUNT, IMPORT_HISTORY, NEXT_RECORD_CODE, OCR_FIELDS, RECORD_TYPES, SAMPLE_DOC, TEMPLATE } from "./mock";
-import type { FieldKey, FormValues, ImportRecord, Phase, SourceDoc, Step } from "./types";
-import { formatBytes, initialValues, pendingReview, validate } from "./utils";
+import type { OcrDocument, ParsedItem, RecentImport, Row, Step, StepState } from "./types";
 
-const DURATION: Record<Exclude<Phase, "review" | "created">, number> = {
-  uploading: 500,
-  scanning: 900,
-  extracting: 1200,
-};
-const BUSY_LABEL: Record<Phase, string | undefined> = {
-  uploading: "Đang tải lên…",
-  scanning: "Đang quét mã độc…",
-  extracting: "Đang trích xuất trường…",
-  review: undefined,
-  created: undefined,
-};
-const MAX_BYTES = 20 * 1024 * 1024;
+const MAX_BYTES = 25 * 1024 * 1024;
+const POLL_MS = 2000;
+const NEW_PARTNER = "new-partner:";
+const FAILED = new Set(["ERROR", "REJECTED", "UNSUPPORTED"]);
+
+type Stage = "idle" | "creating" | "uploading" | "waiting" | "ready" | "failed";
+
+const toRows = (items: ParsedItem[], matches: OcrDocument["item_matches"]): Row[] =>
+  items.map((it, n) => {
+    const hit = matches?.[n] ?? null;
+    return {
+      key: n,
+      description: it.description,
+      uom: it.uom,
+      quantity: it.quantity,
+      unit_price: it.unit_price,
+      item_id: hit?.id ?? null,
+      item_code: hit?.code ?? it.item_code,
+      note: it.note,
+      confidence: it.confidence,
+      sourceAmount: it.amount,
+    };
+  });
+
+const amountOf = (r: Row) => (Number(r.quantity) || 0) * (Number(r.unit_price) || 0);
+
+const confidenceTag = (c: number) =>
+  c >= 0.8 ? (
+    <Tag color="success">Tin cậy cao</Tag>
+  ) : c >= 0.5 ? (
+    <Tag color="warning">Cần xem</Tag>
+  ) : (
+    <Tag color="error">Nhập tay</Tag>
+  );
 
 export const OcrInputPage = () => {
-  const { message, modal } = App.useApp();
-  const [doc, setDoc] = useState<SourceDoc>(SAMPLE_DOC);
-  const [phase, setPhase] = useState<Phase>("review");
-  const [values, setValues] = useState<FormValues>(() => initialValues(OCR_FIELDS, RECORD_TYPES[0] ?? ""));
-  const [reviewed, setReviewed] = useState<Set<FieldKey>>(() => new Set());
-  const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
-  const [activeKey, setActiveKey] = useState<FieldKey>();
-  const [createdCode, setCreatedCode] = useState<string>();
-  const [history, setHistory] = useState<ImportRecord[]>(IMPORT_HISTORY);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const timers = useRef(new Set<number>());
-  const objectUrls = useRef(new Set<string>());
+  const { message } = App.useApp();
+  const navigate = useNavigate();
+  const { tenant } = useSession();
+  const [params, setParams] = useSearchParams();
+  const [options, setOptions] = useState<Options | null>(null);
+  const [stage, setStage] = useState<Stage>("idle");
+  const [requestId, setRequestId] = useState<string>();
+  const [attachmentId, setAttachmentId] = useState<string>();
+  const [doc, setDoc] = useState<OcrDocument>();
+  const [failure, setFailure] = useState<string>();
+  const [localUrl, setLocalUrl] = useState<{ url: string; image: boolean }>();
+  const [rows, setRows] = useState<Row[]>([]);
+  const [title, setTitle] = useState("");
+  const [partner, setPartner] = useState<string | null>(null);
+  const [taxCode, setTaxCode] = useState("");
+  const [tab, setTab] = useState<"fields" | "text">("fields");
+  const [saving, setSaving] = useState(false);
+  const [recent, setRecent] = useState<RecentImport[]>([]);
+  const [recentOpen, setRecentOpen] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    const set = timers.current;
-    const urls = objectUrls.current;
-    return () => {
-      set.forEach((t) => window.clearTimeout(t));
-      urls.forEach((u) => URL.revokeObjectURL(u));
-    };
+    loadOptions(tenant.person_id)
+      .then(setOptions)
+      .catch((e: Error) => message.error(e.message));
+  }, [tenant.person_id, message]);
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  useEffect(
+    () => () => {
+      if (localUrl) URL.revokeObjectURL(localUrl.url);
+    },
+    [localUrl],
+  );
+
+  const fill = useCallback((d: OcrDocument) => {
+    const p = d.parsed;
+    if (!p) return;
+    setRows(toRows(p.items, d.item_matches));
+    const supplier = p.supplier_name?.value ?? "";
+    const label = d.doc_label ?? "Chứng từ";
+    setTitle(`${label}${p.doc_no ? ` ${p.doc_no.value}` : ""}${supplier ? ` – ${supplier}` : ""}`.slice(0, 150));
+    setTaxCode(p.supplier_tax_code?.value ?? "");
+    setPartner(d.partner ? d.partner.id : supplier ? `${NEW_PARTNER}${supplier}` : null);
   }, []);
 
-  const revokeUrls = () => {
-    objectUrls.current.forEach((u) => URL.revokeObjectURL(u));
-    objectUrls.current.clear();
-  };
+  const poll = useCallback(
+    (id: string) => {
+      getOcrDocument(id)
+        .then((d) => {
+          setDoc(d);
+          if (d.phase === "READY") {
+            fill(d);
+            setStage("ready");
+          } else if (FAILED.has(d.phase)) {
+            setFailure(
+              d.phase === "REJECTED"
+                ? "Tệp bị loại ở bước quét an toàn."
+                : d.phase === "UNSUPPORTED"
+                  ? (d.message ?? "Loại tệp này không đọc được chữ.")
+                  : (d.ocr?.error ?? "OCR không đọc được tệp."),
+            );
+            setStage("failed");
+          } else {
+            timer.current = window.setTimeout(() => poll(id), POLL_MS);
+          }
+        })
+        .catch((e: Error) => {
+          setFailure(e.message);
+          setStage("failed");
+        });
+    },
+    [fill],
+  );
 
-  const pending = pendingReview(OCR_FIELDS, reviewed);
-  const busy = BUSY_LABEL[phase];
+  const openExisting = useCallback(
+    (id: string, entityId?: string) => {
+      window.clearTimeout(timer.current);
+      setAttachmentId(id);
+      setRequestId(entityId);
+      setLocalUrl(undefined);
+      setFailure(undefined);
+      setDoc(undefined);
+      setStage("waiting");
+      poll(id);
+    },
+    [poll],
+  );
 
-  const runPipeline = (from: "uploading" | "extracting") => {
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current.clear();
-    const order: Phase[] =
-      from === "uploading" ? ["uploading", "scanning", "extracting", "review"] : ["extracting", "review"];
-    let at = 0;
-    setPhase(order[0] ?? "review");
-    setCreatedCode(undefined);
-    setErrors({});
-    setActiveKey(undefined);
-    setValues(initialValues(OCR_FIELDS, RECORD_TYPES[0] ?? ""));
-    setReviewed(new Set());
-    order.slice(1).forEach((next, i) => {
-      const prev = order[i] as keyof typeof DURATION;
-      at += DURATION[prev];
-      const t = window.setTimeout(() => {
-        timers.current.delete(t);
-        setPhase(next);
-      }, at);
-      timers.current.add(t);
-    });
-  };
-
-  const onUpload = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      message.error("Chỉ nhận ảnh chụp hoặc ảnh quét (JPG, PNG, HEIC…).");
-      return;
+  useEffect(() => {
+    const a = params.get("attachment");
+    if (a && a !== attachmentId) {
+      recentImports(tenant.person_id)
+        .then((list) => openExisting(a, list.find((r) => r.id === a)?.entity_id))
+        .catch(() => openExisting(a));
     }
+  }, [params, attachmentId, openExisting, tenant.person_id]);
+
+  const start = async (file: File) => {
     if (file.size > MAX_BYTES) {
-      message.error("Ảnh lớn hơn 20 MB. Chụp lại ở độ phân giải thấp hơn.");
+      message.error("Tệp tối đa 25 MB");
       return;
     }
-    revokeUrls();
-    const url = URL.createObjectURL(file);
-    objectUrls.current.add(url);
-    setDoc({ kind: "upload", name: file.name, sizeLabel: formatBytes(file.size), pages: 1, url });
-    runPipeline("uploading");
-  };
-
-  const change = (key: FieldKey | "recordType", v: string) => {
-    setValues((s) => ({ ...s, [key]: v }));
-    if (key !== "recordType") {
-      setReviewed((s) => new Set(s).add(key));
-      setErrors((e) => ({ ...e, [key]: undefined }));
-    }
-  };
-
-  const create = () => {
-    const e = validate(values);
-    setErrors(e);
-    const firstError = Object.keys(e)[0] as FieldKey | undefined;
-    if (firstError) {
-      document.getElementById(`ocr-field-${firstError}`)?.focus();
+    if (!/\.(pdf|png|jpe?g)$/i.test(file.name)) {
+      message.error("Chỉ nhận PDF, PNG hoặc JPEG");
       return;
     }
-    const finish = () => {
-      setCreatedCode(NEXT_RECORD_CODE);
-      setPhase("created");
-      setHistory((h) => [
-        {
-          id: `ih-${Date.now()}`,
-          file: doc.name,
-          template: TEMPLATE.name,
-          at: "Vừa xong",
-          result: NEXT_RECORD_CODE,
-          to: "/p/records",
-        },
-        ...h,
-      ]);
-      message.success(`Đã tạo hồ sơ nháp ${NEXT_RECORD_CODE} · ${values.recordType}.`);
-    };
-    const left = pendingReview(OCR_FIELDS, reviewed);
-    if (left.length) {
-      modal.confirm({
-        title: `Còn ${left.length} trường chưa kiểm tra`,
-        content: `${left.map((f) => f.label).join(", ")} có độ tin cậy thấp. Vẫn tạo hồ sơ nháp?`,
-        okText: "Vẫn tạo nháp",
-        cancelText: "Xem lại",
-        onOk: finish,
-      });
-    } else finish();
+    const position =
+      options?.core_assignment.find((a) => a.assignment_type === "PRIMARY") ?? options?.core_assignment[0];
+    if (!position) {
+      message.error("Tài khoản chưa có vị trí công tác nên chưa lập được đề nghị");
+      return;
+    }
+    window.clearTimeout(timer.current);
+    setFailure(undefined);
+    setDoc(undefined);
+    setLocalUrl({ url: URL.createObjectURL(file), image: file.type.startsWith("image/") });
+    try {
+      setStage("creating");
+      const id = await createDraft(position.position_id, `Nhập liệu từ ${file.name}`.slice(0, 150));
+      setRequestId(id);
+      setStage("uploading");
+      const up = await uploadScan(id, file);
+      setAttachmentId(up.attachmentId);
+      if (up.status !== "CLEAN") {
+        setFailure(up.scanResult ?? "Tệp không qua được bước quét an toàn.");
+        setStage("failed");
+        return;
+      }
+      setStage("waiting");
+      poll(up.attachmentId);
+    } catch (e) {
+      setFailure((e as Error).message);
+      setStage("failed");
+    }
   };
 
   const reset = () => {
-    revokeUrls();
-    setDoc(SAMPLE_DOC);
-    runPipeline("uploading");
+    window.clearTimeout(timer.current);
+    setStage("idle");
+    setDoc(undefined);
+    setAttachmentId(undefined);
+    setRequestId(undefined);
+    setFailure(undefined);
+    setLocalUrl(undefined);
+    setRows([]);
+    if (params.get("attachment")) setParams({});
   };
 
-  const steps: Step[] = useMemo(() => {
-    const at = (["uploading", "scanning", "extracting", "review", "created"] as Phase[]).indexOf(phase);
-    const runOrDone = (i: number): Step["state"] => (at > i ? "done" : at === i ? "running" : "pending");
-    const reviewState: Step["state"] = at === 2 ? "running" : at === 3 ? "active" : at === 4 ? "done" : "pending";
-    const reviewSub =
-      at < 2
-        ? "Chờ quét xong"
-        : at === 2
-          ? "Đang trích xuất…"
-          : `${OCR_FIELDS.length} trường · ${pending.length ? `${pending.length} cần xem` : "đã kiểm tra hết"}`;
-    return [
-      { key: "upload", title: "Tải lên", sub: at === 0 ? "Đang tải…" : doc.name, state: runOrDone(0) },
-      {
-        key: "scan",
-        title: "Quét mã độc",
-        sub: at === 0 ? "Chờ tải xong" : at === 1 ? "Đang quét…" : "Sạch · ClamAV",
-        state: runOrDone(1),
-      },
-      { key: "review", title: "Kiểm tra trường", sub: reviewSub, state: reviewState },
-      {
-        key: "create",
-        title: "Tạo hồ sơ",
-        sub: createdCode ?? "Chờ bạn xác nhận",
-        state: at === 4 ? "done" : "pending",
-      },
-    ];
-  }, [phase, doc.name, pending.length, createdCode]);
+  const retry = async () => {
+    if (!attachmentId) return;
+    try {
+      await retryOcr(attachmentId);
+      setFailure(undefined);
+      setStage("waiting");
+      poll(attachmentId);
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
 
-  const templateNote =
-    doc.kind === "sample"
-      ? `Mẫu nhận diện: ${TEMPLATE.name} · khớp ${Math.round(TEMPLATE.match * 100)}% · OCR ${TEMPLATE.engines}`
-      : `Bản demo: ảnh của bạn được hiển thị, còn các trường bên phải là kết quả mẫu của ${TEMPLATE.name}. OCR thật chạy trên máy chủ (${TEMPLATE.engines}).`;
+  const openOriginal = async () => {
+    if (!attachmentId) return;
+    try {
+      window.open(await downloadUrl(attachmentId), "_blank", "noopener");
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
+
+  const showRecent = () => {
+    setRecentOpen(true);
+    recentImports(tenant.person_id)
+      .then(setRecent)
+      .catch((e: Error) => message.error(e.message));
+  };
+
+  const setRow = (key: number, patch: Partial<Row>) =>
+    setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+
+  const total = rows.reduce((s, r) => s + amountOf(r), 0);
+  const docTotal = doc?.parsed?.total_amount ? Number(doc.parsed.total_amount.value) : null;
+  const net = doc?.parsed?.net_amount ? Number(doc.parsed.net_amount.value) : null;
+  const mismatch = net != null && Math.abs(net - total) > 1;
+
+  const save = async () => {
+    if (!requestId) return;
+    const bad = rows.findIndex(
+      (r) => !r.description.trim() || !r.uom.trim() || !(Number(r.quantity) > 0) || Number(r.unit_price) < 0,
+    );
+    if (rows.length === 0 || bad >= 0) {
+      message.error(
+        rows.length === 0
+          ? "Cần ít nhất một dòng hàng"
+          : `Dòng ${bad + 1}: cần mô tả, đơn vị tính và số lượng lớn hơn 0`,
+      );
+      return;
+    }
+    if (!title.trim()) {
+      message.error("Nhập tiêu đề đề nghị");
+      return;
+    }
+    const isNew = partner?.startsWith(NEW_PARTNER) ?? false;
+    const p = doc?.parsed;
+    const description = [
+      `Nhập từ ${doc?.doc_label ?? "chứng từ"} ${p?.doc_no ? p.doc_no.value : ""}`.trim(),
+      p?.date ? `ngày ${formatDay(p.date.value)}` : null,
+      `(tệp ${doc?.file_name})`,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    setSaving(true);
+    try {
+      await saveImport(
+        requestId,
+        {
+          title: title.trim(),
+          description,
+          category_code: doc?.item_matches?.find((m) => m?.category_code)?.category_code ?? null,
+          partner_id: isNew ? null : partner,
+          proposed_partner_name: isNew ? (partner as string).slice(NEW_PARTNER.length) : null,
+          proposed_partner_tax_code: isNew ? taxCode.trim() || null : null,
+        },
+        rows.map((r, n) => ({
+          line_no: n + 1,
+          item_id: r.item_id,
+          description: r.description.trim(),
+          uom: r.uom.trim(),
+          quantity: r.quantity,
+          unit_price: r.unit_price,
+          note: r.note,
+        })),
+      );
+      message.success("Đã điền vào đề nghị mua sắm nháp. Kiểm tra lần cuối rồi gửi duyệt.");
+      navigate(`/p/documents/show/${requestId}`);
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const phase = doc?.phase;
+  const state = (n: number): StepState => {
+    const at =
+      stage === "idle"
+        ? 0
+        : stage === "creating" || stage === "uploading"
+          ? 1
+          : phase === "SCANNING"
+            ? 2
+            : phase === "QUEUED" || phase === "OCR"
+              ? 3
+              : stage === "ready"
+                ? 5
+                : 3;
+    if (stage === "idle") return n === 1 ? "active" : "pending";
+    if (n < at) return "done";
+    if (n === at) return stage === "ready" ? "done" : "running";
+    return "pending";
+  };
+  const steps: Step[] = [
+    {
+      key: "up",
+      title: "Tải lên",
+      sub: stage === "idle" ? "Chọn bản quét hoặc ảnh chụp" : (doc?.file_name ?? "Đang tải tệp lên"),
+      state: state(1),
+    },
+    { key: "scan", title: "Quét an toàn", sub: "Tệp chưa sạch thì không đọc", state: state(2) },
+    {
+      key: "ocr",
+      title: "Đọc chữ (OCR)",
+      sub: doc?.ocr?.pages_total ? `Trang ${doc.ocr.pages_done}/${doc.ocr.pages_total}` : "Nhận dạng tiếng Việt",
+      state: state(3),
+    },
+    {
+      key: "review",
+      title: "Kiểm tra và lưu",
+      sub: "Xem lại từng trường",
+      state: stage === "ready" ? "active" : "pending",
+    },
+  ];
+
+  const parsed = doc?.parsed;
+  const busy = stage === "creating" || stage === "uploading" || stage === "waiting";
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Nhập liệu OCR</h1>
-          <p className="mt-1 text-[13px] text-muted">
-            Chụp hoặc quét giấy tờ → hệ thống trích xuất trường → bạn kiểm tra → tạo hồ sơ
+    <div className="mx-auto max-w-[1200px] space-y-4">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="m-0 text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Nhập liệu OCR</h1>
+          <p className="m-0 mt-1 max-w-[640px] text-[13px] text-muted">
+            Tải bản quét hoặc ảnh chụp báo giá, hóa đơn. Hệ thống đọc chữ, rút nhà cung cấp, dòng hàng, số tiền và điền
+            vào một đề nghị mua sắm nháp để bạn kiểm tra rồi gửi duyệt.
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-          <button type="button" onClick={() => setHistoryOpen(true)} className={secondaryButtonClass}>
-            <History className="h-4 w-4" aria-hidden />
-            Lịch sử nhập ({IMPORT_COUNT + history.length - IMPORT_HISTORY.length})
+        <div className="flex gap-2">
+          <button type="button" className={secondaryButtonClass} onClick={showRecent}>
+            <History className="mr-1.5 h-4 w-4" aria-hidden /> Lần nhập gần đây
           </button>
-          <label
-            className={cn(
-              primaryButtonClass,
-              "cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-bamboo-500",
-              busy && "pointer-events-none opacity-60",
-            )}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="sr-only"
-              disabled={busy != null}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) onUpload(file);
-                e.target.value = "";
-              }}
-            />
-            <Camera className="h-4 w-4" aria-hidden />
-            Tải ảnh mới
-          </label>
+          {stage !== "idle" && (
+            <button type="button" className={secondaryButtonClass} onClick={reset}>
+              Nhập tệp khác
+            </button>
+          )}
         </div>
-      </div>
+      </header>
 
       <OcrStepper steps={steps} />
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-        <DocumentViewer
-          doc={doc}
-          fields={OCR_FIELDS}
-          busy={busy}
-          activeKey={activeKey}
-          onPick={(k) => {
-            setActiveKey(k);
-            document.getElementById(`ocr-field-${k}`)?.focus();
+      {stage === "idle" && (
+        <Upload.Dragger
+          accept=".pdf,.png,.jpg,.jpeg"
+          showUploadList={false}
+          multiple={false}
+          disabled={!options}
+          beforeUpload={(f) => {
+            void start(f);
+            return false;
           }}
-          templateNote={templateNote}
-        />
-        <ExtractedFieldsForm
-          fields={OCR_FIELDS}
-          values={values}
-          reviewed={reviewed}
-          errors={errors}
-          pendingCount={pending.length}
-          disabled={busy != null}
-          createdCode={createdCode}
-          onChange={change}
-          onConfirm={(k) => setReviewed((s) => new Set(s).add(k))}
-          onFocusField={setActiveKey}
-          onCreate={create}
-          onRescan={() => runPipeline("extracting")}
-          onReset={reset}
-        />
-      </div>
+          aria-label="Thả tệp cần nhập liệu"
+        >
+          <p className="m-0 text-[15px] font-semibold text-ink">Thả tệp vào đây hoặc bấm để chọn</p>
+          <p className="m-0 mt-1 text-[12.5px] text-muted">
+            PDF quét, PNG, JPEG · tối đa 25 MB · mỗi tệp tạo một đề nghị mua sắm nháp
+          </p>
+        </Upload.Dragger>
+      )}
 
-      <ImportHistoryDrawer
-        open={historyOpen}
-        total={IMPORT_COUNT + history.length - IMPORT_HISTORY.length}
-        items={history}
-        onClose={() => setHistoryOpen(false)}
-      />
+      {busy && (
+        <div role="status" className="rounded-2xl border border-line bg-white p-5 text-[13.5px] text-body shadow-card">
+          {stage === "creating" && "Đang tạo đề nghị nháp…"}
+          {stage === "uploading" && "Đang tải lên và quét an toàn…"}
+          {stage === "waiting" &&
+            (phase === "SCANNING"
+              ? "Đang quét an toàn…"
+              : phase === "OCR"
+                ? `Đang đọc chữ${doc?.ocr?.pages_total ? `: trang ${doc.ocr.pages_done}/${doc.ocr.pages_total}` : "…"}`
+                : "Đang chờ tới lượt đọc chữ (OCR dùng chung mô hình với trợ lý AI)…")}
+        </div>
+      )}
+
+      {stage === "failed" && (
+        <Alert
+          type="error"
+          showIcon
+          message="Chưa nhập liệu được"
+          description={failure}
+          action={
+            attachmentId && phase === "ERROR" ? (
+              <button type="button" className={secondaryButtonClass} onClick={() => void retry()}>
+                <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden /> Thử lại OCR
+              </button>
+            ) : undefined
+          }
+        />
+      )}
+
+      {stage === "ready" && parsed && doc && (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+          <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Bản gốc">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="m-0 text-[14px] font-semibold text-ink">Bản gốc</h2>
+              <button
+                type="button"
+                className="text-[12.5px] text-bamboo-700 underline"
+                onClick={() => void openOriginal()}
+              >
+                Mở tệp gốc
+              </button>
+            </div>
+            <div className="mt-3 overflow-auto rounded-xl bg-canvas p-3" style={{ maxHeight: 560 }}>
+              {localUrl?.image ? (
+                <img
+                  src={localUrl.url}
+                  alt={`Bản quét ${doc.file_name}`}
+                  className="mx-auto block max-w-full rounded-md bg-white shadow-card"
+                />
+              ) : localUrl ? (
+                <iframe
+                  title={`Bản quét ${doc.file_name}`}
+                  src={localUrl.url}
+                  className="h-[520px] w-full rounded-md bg-white"
+                />
+              ) : (
+                <p className="m-0 p-6 text-center text-[12.5px] text-muted">Bấm “Mở tệp gốc” để xem bản đã tải lên.</p>
+              )}
+            </div>
+          </section>
+
+          <section
+            className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-card"
+            aria-label="Trường đã rút"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="m-0 text-[14px] font-semibold text-ink">
+                {doc.doc_label} {parsed.doc_no ? <span className="font-mono">{parsed.doc_no.value}</span> : null}
+                {parsed.date ? (
+                  <span className="ml-2 text-[12.5px] font-normal text-muted">ngày {formatDay(parsed.date.value)}</span>
+                ) : null}
+              </h2>
+              <Segmented
+                value={tab}
+                onChange={(v) => setTab(v as "fields" | "text")}
+                options={[
+                  { value: "fields", label: "Trường đã rút" },
+                  { value: "text", label: "Chữ OCR" },
+                ]}
+              />
+            </div>
+
+            {parsed.warnings.length > 0 && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Cần kiểm tra lại"
+                description={
+                  <ul className="m-0 list-disc pl-4">
+                    {parsed.warnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                }
+              />
+            )}
+
+            {tab === "text" ? (
+              <pre
+                className="m-0 max-h-[460px] overflow-auto whitespace-pre-wrap rounded-xl bg-canvas p-3 font-mono text-[12px] text-body"
+                aria-label="Chữ OCR"
+              >
+                {doc.text}
+              </pre>
+            ) : (
+              <>
+                <label className="block text-[12.5px] font-medium text-body">
+                  Tiêu đề đề nghị
+                  <Input
+                    aria-label="Tiêu đề đề nghị"
+                    className="mt-1"
+                    value={title}
+                    maxLength={150}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </label>
+                <div>
+                  <div className="flex items-center gap-2 text-[12.5px] font-medium text-body">
+                    Nhà cung cấp
+                    {parsed.supplier_name && confidenceTag(parsed.supplier_name.confidence)}
+                    {doc.partner && (
+                      <Tag color="green">Khớp danh mục theo {doc.partner.by === "tax_code" ? "mã số thuế" : "tên"}</Tag>
+                    )}
+                  </div>
+                  <Select
+                    aria-label="Nhà cung cấp"
+                    className="mt-1 w-full"
+                    showSearch
+                    optionFilterProp="label"
+                    value={partner ?? undefined}
+                    onChange={(v: string) => setPartner(v)}
+                    options={[
+                      ...(partner?.startsWith(NEW_PARTNER)
+                        ? [{ value: partner, label: `＋ Dùng nhà cung cấp mới “${partner.slice(NEW_PARTNER.length)}”` }]
+                        : []),
+                      ...(options?.mdm_partner ?? []).map((p) => ({ value: p.id, label: `${p.name} (${p.code})` })),
+                    ]}
+                  />
+                  {partner?.startsWith(NEW_PARTNER) && (
+                    <label className="mt-2 block text-[12.5px] font-medium text-body">
+                      Mã số thuế nhà cung cấp mới
+                      <Input
+                        aria-label="Mã số thuế nhà cung cấp mới"
+                        className="mt-1 font-mono"
+                        value={taxCode}
+                        onChange={(e) => setTaxCode(e.target.value)}
+                      />
+                    </label>
+                  )}
+                  {parsed.supplier_address && (
+                    <p className="m-0 mt-1 text-[11.5px] text-muted">
+                      Địa chỉ đọc được: {parsed.supplier_address.value}
+                    </p>
+                  )}
+                </div>
+
+                <Table<Row>
+                  size="small"
+                  rowKey="key"
+                  dataSource={rows}
+                  pagination={false}
+                  aria-label="Dòng hàng"
+                  locale={{ emptyText: "Không nhận ra dòng hàng nào" }}
+                  scroll={{ x: 640 }}
+                  columns={[
+                    { title: "TT", width: 36, render: (_: unknown, __: Row, i: number) => i + 1 },
+                    {
+                      title: "Tên hàng hóa, dịch vụ",
+                      render: (_: unknown, r: Row) => (
+                        <div>
+                          <Input
+                            aria-label={`Mô tả dòng ${r.key + 1}`}
+                            value={r.description}
+                            onChange={(e) => setRow(r.key, { description: e.target.value })}
+                          />
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted">
+                            {confidenceTag(r.confidence)}
+                            {r.item_id ? (
+                              <Tag color="green">Khớp mã {r.item_code}</Tag>
+                            ) : r.item_code ? (
+                              <span>Mã đọc được: {r.item_code}</span>
+                            ) : null}
+                            {Math.abs(Number(r.sourceAmount) - amountOf(r)) > 1 && (
+                              <span className="text-red-700">Bản gốc ghi {formatMoney(r.sourceAmount)}</span>
+                            )}
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      title: "ĐVT",
+                      width: 78,
+                      render: (_: unknown, r: Row) => (
+                        <Input
+                          aria-label={`ĐVT dòng ${r.key + 1}`}
+                          value={r.uom}
+                          onChange={(e) => setRow(r.key, { uom: e.target.value })}
+                        />
+                      ),
+                    },
+                    {
+                      title: "Số lượng",
+                      width: 100,
+                      render: (_: unknown, r: Row) => (
+                        <InputNumber
+                          aria-label={`Số lượng dòng ${r.key + 1}`}
+                          min={0}
+                          value={Number(r.quantity)}
+                          onChange={(v) => setRow(r.key, { quantity: String(v ?? 0) })}
+                        />
+                      ),
+                    },
+                    {
+                      title: "Đơn giá",
+                      width: 120,
+                      render: (_: unknown, r: Row) => (
+                        <InputNumber
+                          aria-label={`Đơn giá dòng ${r.key + 1}`}
+                          min={0}
+                          value={Number(r.unit_price)}
+                          onChange={(v) => setRow(r.key, { unit_price: String(v ?? 0) })}
+                        />
+                      ),
+                    },
+                    {
+                      title: "Thành tiền",
+                      width: 120,
+                      align: "right",
+                      render: (_: unknown, r: Row) => formatMoney(amountOf(r)),
+                    },
+                  ]}
+                />
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
+                  <span>
+                    Tổng các dòng: <strong>{formatMoney(total)}</strong>
+                    {docTotal != null && (
+                      <span className="ml-3 text-muted">
+                        Tổng cộng trên chứng từ (gồm thuế{parsed.vat ? ` ${parsed.vat.rate}%` : ""}):{" "}
+                        {formatMoney(docTotal)}
+                      </span>
+                    )}
+                  </span>
+                  {mismatch && <Tag color="error">Tổng các dòng khác cộng tiền hàng trên chứng từ</Tag>}
+                </div>
+                <p className="m-0 text-[11.5px] text-muted">
+                  Đề nghị mua sắm tính tiền hàng chưa gồm thuế; thuế GTGT trên chứng từ không đưa vào dòng hàng.
+                </p>
+              </>
+            )}
+
+            <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
+              <button type="button" className={secondaryButtonClass} onClick={() => void retry()}>
+                <FileSearch className="mr-1.5 h-4 w-4" aria-hidden /> Đọc lại
+              </button>
+              <button type="button" className={primaryButtonClass} disabled={saving} onClick={() => void save()}>
+                Điền vào đề nghị và mở
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      <Drawer open={recentOpen} onClose={() => setRecentOpen(false)} title="Lần nhập gần đây" width={420}>
+        {recent.length === 0 ? (
+          <p className="m-0 text-[13px] text-muted">Chưa có tệp nào đã được đọc chữ.</p>
+        ) : (
+          <ul className="m-0 list-none space-y-2 p-0">
+            {recent.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  className="w-full rounded-xl border border-line bg-white p-3 text-left hover:bg-bamboo-50"
+                  onClick={() => {
+                    setRecentOpen(false);
+                    setParams({ attachment: r.id });
+                    openExisting(r.id, r.entity_id);
+                  }}
+                >
+                  <span className="block text-[13.5px] font-semibold text-ink">{r.file_name}</span>
+                  <span className="block text-[11.5px] text-muted">
+                    {formatDate(r.created_at)} · {r.ocr?.status === "DONE" ? "Đã OCR" : "Đã có chữ"}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Drawer>
     </div>
   );
 };
-
-export default OcrInputPage;

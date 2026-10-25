@@ -26,7 +26,7 @@ const AiOff = ({ loading }: { loading: boolean }) => (
       <Bot className="h-5 w-5" />
     </span>
     {loading ? (
-      <p className="text-[13px] text-muted">Đang kiểm tra trợ lý AI…</p>
+      <p className="text-[13px] text-muted">Đang khởi động trợ lý AI, lần đầu sau khi nghỉ có thể mất vài giây…</p>
     ) : (
       <>
         <p className="text-[15px] font-semibold text-ink">Trợ lý AI chưa bật</p>

@@ -4,15 +4,63 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-.bpmn-editor {
-  height: 620px;
+.bpmn-frame {
+  position: relative;
   border-radius: 16px;
+  overflow: hidden;
+}
+
+.bpmn-editor {
+  height: clamp(460px, 68vh, 760px);
   background: #fff;
 }
 
+/* Trình duyệt vẽ viền focus đen dày quanh thẻ svg của bpmn-js: thay bằng viền xanh mảnh ở khung ngoài */
+.bpmn-editor .djs-container svg:focus,
+.bpmn-editor .djs-container svg:focus-visible {
+  outline: none;
+}
+.bpmn-frame:focus-within {
+  box-shadow: inset 0 0 0 2px var(--color-bamboo-400, #63ab70);
+}
+
+/* Chế độ xem không có bảng công cụ, thanh ngữ cảnh hay sửa nhãn trực tiếp */
 .bpmn-editor--readonly .djs-palette,
-.bpmn-editor--readonly .djs-context-pad {
+.bpmn-editor--readonly .djs-context-pad,
+.bpmn-editor--readonly .djs-direct-editing-parent {
   display: none;
+}
+.bpmn-editor--readonly .djs-element {
+  cursor: pointer;
+}
+
+.bpmn-zoom {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--color-line, #e4e9e5);
+  border-radius: 10px;
+  background: var(--color-line, #e4e9e5);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgb(16 24 20 / 0.08);
+}
+.bpmn-zoom button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: #fff;
+  color: #36413a;
+}
+.bpmn-zoom button:hover {
+  background: #f0f7f1;
+}
+.bpmn-zoom button:focus-visible {
+  outline: 2px solid #3f9150;
+  outline-offset: -2px;
 }
 
 .sandbox-visited:not(.djs-connection) .djs-visual > :nth-child(1) {
@@ -21,4 +69,12 @@
 }
 .sandbox-visited.djs-connection .djs-visual > path {
   stroke: #2f7a3e !important;
+}
+
+.bamboo-picked:not(.djs-connection) .djs-visual > :nth-child(1) {
+  stroke: #1677ff !important;
+  stroke-width: 3px !important;
+}
+.bamboo-picked.djs-connection .djs-visual > path {
+  stroke: #1677ff !important;
 }

@@ -14,7 +14,6 @@ const FILE = `bao-gia-ncc-${STAMP}.txt`;
 
 async function login(page: Page, username: string) {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
@@ -71,7 +70,7 @@ test("CDO lập đề nghị với nhà cung cấp mới, thêm vào danh mục,
     mimeType: "text/plain",
     buffer: Buffer.from(`Báo giá ${SUPPLIER}\n`),
   });
-  await expect(page.getByLabel("Tiến trình tải lên").getByText("Sạch · đã lưu")).toBeVisible();
+  await expect(page.getByLabel("Tiến trình tải lên").getByText("Đã quét sạch · đã lưu")).toBeVisible();
   await expect(page.getByRole("row", { name: new RegExp(FILE) })).toBeVisible();
 
   await page.goto("/p/documents");

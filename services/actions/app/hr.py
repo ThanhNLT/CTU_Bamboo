@@ -253,6 +253,102 @@ def _leg_result(conn: psycopg.Connection, table: str, leg_id: str) -> dict:
     return {"request_id": leg_id, "status": status}
 
 
+def _decision_caller(conn: psycopg.Connection, session: dict) -> tuple[str, str]:
+    tenant = session.get("x-hasura-tenant-id")
+    person = session_identity(session, tenant)
+    bind_session(conn, session)
+    return person, tenant
+
+
+def issue_personnel_decision(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    person, _ = _decision_caller(conn, session)
+    decision_id = conn.execute(
+        "SELECT hr.issue_personnel_decision(%s, %s, %s, %s, %s, %s, %s, %s)",
+        (
+            person,
+            args["decision_type"],
+            args["person_id"],
+            args.get("source_position_id"),
+            args.get("target_position_id"),
+            args.get("assignment_type"),
+            args["effective_date"],
+            args["reason"],
+        ),
+    ).fetchone()[0]
+    doc_no = conn.execute("SELECT doc_no FROM hr.personnel_decision WHERE id = %s", (decision_id,)).fetchone()[0]
+    return {"id": str(decision_id), "doc_no": doc_no}
+
+
+def personnel_decisions(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
+    person, tenant = _decision_caller(conn, session)
+    can_all = conn.execute("SELECT hr.can_read_decisions(%s, %s)", (person, tenant)).fetchone()[0]
+    rows = conn.execute(
+        """SELECT d.id, d.doc_no, d.decision_type, d.assignment_type, d.effective_date, d.reason, d.created_at,
+                  p.full_name, p.employee_code, i.full_name,
+                  src.name, su.name, dst.name, du.name
+           FROM hr.personnel_decision d
+           JOIN core.person p ON p.id = d.person_id
+           JOIN core.person i ON i.id = d.issuer_id
+           LEFT JOIN core.position src ON src.id = d.source_position_id
+           LEFT JOIN core.org_unit su ON su.id = src.org_unit_id
+           LEFT JOIN core.position dst ON dst.id = d.target_position_id
+           LEFT JOIN core.org_unit du ON du.id = dst.org_unit_id
+           WHERE d.tenant_id = %s AND (%s OR d.issuer_id = %s OR d.person_id = %s)
+           ORDER BY d.created_at DESC LIMIT 500""",
+        (tenant, can_all, person, person),
+    ).fetchall()
+    keys = ("id", "doc_no", "decision_type", "assignment_type", "effective_date", "reason", "created_at",
+            "person_name", "employee_code", "issuer_name", "source_position", "source_unit", "target_position",
+            "target_unit")
+    items = []
+    for row in rows:
+        item = dict(zip(keys, row))
+        for key in ("id", "effective_date", "created_at"):
+            item[key] = str(item[key])
+        items.append(item)
+    can_issue = conn.execute("SELECT hr.can_issue_decision(%s, %s)", (person, tenant)).fetchone()[0]
+    return {"can_issue": bool(can_issue), "decisions": items}
+
+
+def personnel_decision_context(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
+    person, tenant = _decision_caller(conn, session)
+    if not conn.execute("SELECT hr.can_issue_decision(%s, %s)", (person, tenant)).fetchone()[0]:
+        raise ActionError("Cần quyền hr.decision.issue để ban hành quyết định nhân sự", "forbidden", 403)
+    people = conn.execute(
+        """SELECT p.id, p.full_name, p.employee_code,
+                  coalesce(jsonb_agg(jsonb_build_object('position_id', pos.id, 'position', pos.name,
+                                                        'unit', u.name, 'type', a.assignment_type)
+                                     ORDER BY a.assignment_type) FILTER (WHERE a.id IS NOT NULL), '[]')
+           FROM core.person p
+           LEFT JOIN core.assignment a ON a.person_id = p.id AND a.valid_period @> now()
+                AND a.assignment_type IN ('PRIMARY', 'CONCURRENT', 'ACTING')
+           LEFT JOIN core.position pos ON pos.id = a.position_id
+           LEFT JOIN core.org_unit u ON u.id = pos.org_unit_id
+           WHERE p.tenant_id = %s AND p.id <> %s
+           GROUP BY p.id ORDER BY p.full_name LIMIT 3000""",
+        (tenant, person),
+    ).fetchall()
+    positions = conn.execute(
+        """SELECT pos.id, pos.name, u.name, pos.is_head,
+                  (SELECT string_agg(h.full_name, ', ') FROM core.assignment a
+                   JOIN core.person h ON h.id = a.person_id
+                   WHERE a.position_id = pos.id AND a.valid_period @> now()
+                     AND a.assignment_type IN ('PRIMARY', 'CONCURRENT', 'ACTING'))
+           FROM core.position pos JOIN core.org_unit u ON u.id = pos.org_unit_id
+           WHERE pos.tenant_id = %s AND pos.valid_period @> now() ORDER BY u.path, pos.is_head DESC, pos.name
+           LIMIT 5000""",
+        (tenant,),
+    ).fetchall()
+    return {
+        "people": [
+            {"id": str(i), "full_name": n, "employee_code": c, "assignments": a} for i, n, c, a in people
+        ],
+        "positions": [
+            {"id": str(i), "name": n, "unit": u, "is_head": h, "holder": holder} for i, n, u, h, holder in positions
+        ],
+    }
+
+
 HANDLERS = {
     "save_onboarding_private": save_onboarding_private,
     "reveal_onboarding_private": reveal_onboarding_private,
@@ -269,4 +365,7 @@ HANDLERS = {
     "choose_transfer_in_position": choose_transfer_in_position,
     "transfer_tenants": transfer_tenants,
     "transfer_target_units": transfer_target_units,
+    "issue_personnel_decision": issue_personnel_decision,
+    "personnel_decisions": personnel_decisions,
+    "personnel_decision_context": personnel_decision_context,
 }

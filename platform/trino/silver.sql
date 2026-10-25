@@ -118,6 +118,36 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.collab_notification_pref (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.collab_notification_pref COMMENT 'Trạng thái hiện tại của collab.notification_pref, dựng từ bronze.collab_notification_pref' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["person_id"]') AS uuid) AS "person_id",
+    json_extract_scalar(after, '$["channel"]') AS "channel",
+    CAST(json_extract_scalar(after, '$["enabled"]') AS boolean) AS "enabled",
+    CAST(json_extract(after, '$["kinds"]') AS array(varchar)) AS "kinds",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.collab_notification_pref
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_ai_agent (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -260,6 +290,8 @@ SELECT
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["scanned_at"]')) AS timestamp(6) with time zone) AS "scanned_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["deleted_at"]')) AS timestamp(6) with time zone) AS "deleted_at",
+    CAST(json_extract(after, '$["scan_engines"]') AS array(varchar)) AS "scan_engines",
+    json_extract_scalar(after, '$["scan_report"]') AS "scan_report",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -394,6 +426,47 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_ingest_job (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.core_ingest_job COMMENT 'Trạng thái hiện tại của core.ingest_job, dựng từ bronze.core_ingest_job' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    json_extract_scalar(after, '$["kind"]') AS "kind",
+    json_extract_scalar(after, '$["idempotency_key"]') AS "idempotency_key",
+    json_extract_scalar(after, '$["mode"]') AS "mode",
+    CAST(json_extract_scalar(after, '$["dry_run"]') AS boolean) AS "dry_run",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    CAST(json_extract_scalar(after, '$["total"]') AS integer) AS "total",
+    CAST(json_extract_scalar(after, '$["accepted"]') AS integer) AS "accepted",
+    CAST(json_extract_scalar(after, '$["rejected"]') AS integer) AS "rejected",
+    json_extract_scalar(after, '$["errors"]') AS "errors",
+    json_extract_scalar(after, '$["failure"]') AS "failure",
+    CAST(json_extract_scalar(after, '$["source_bytes"]') AS bigint) AS "source_bytes",
+    json_extract_scalar(after, '$["source_sha256"]') AS "source_sha256",
+    CAST(json_extract_scalar(after, '$["started_by"]') AS uuid) AS "started_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.core_ingest_job
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_org_unit (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -423,6 +496,7 @@ SELECT
     json_extract_scalar(after, '$["province"]') AS "province",
     CAST(json_extract_scalar(after, '$["lat"]') AS decimal(8, 5)) AS "lat",
     CAST(json_extract_scalar(after, '$["lng"]') AS decimal(8, 5)) AS "lng",
+    CAST(json_extract_scalar(after, '$["is_hr"]') AS boolean) AS "is_hr",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -791,6 +865,38 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.kpi_snapshot (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.kpi_snapshot COMMENT 'Trạng thái hiện tại của kpi.snapshot, dựng từ bronze.kpi_snapshot' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    json_extract_scalar(after, '$["kpi_key"]') AS "kpi_key",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["period_start"]')) AS timestamp(6) with time zone) AS "period_start",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["period_end"]')) AS timestamp(6) with time zone) AS "period_end",
+    json_extract_scalar(after, '$["grain"]') AS "grain",
+    CAST(json_extract_scalar(after, '$["value"]') AS double) AS "value",
+    json_extract_scalar(after, '$["sha256"]') AS "sha256",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["frozen_at"]')) AS timestamp(6) with time zone) AS "frozen_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.kpi_snapshot
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.mdm_item (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1149,6 +1255,43 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_automation_run (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.wf_automation_run COMMENT 'Trạng thái hiện tại của wf.automation_run, dựng từ bronze.wf_automation_run' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["automation_id"]') AS uuid) AS "automation_id",
+    json_extract_scalar(after, '$["flowable_instance_id"]') AS "flowable_instance_id",
+    json_extract_scalar(after, '$["trigger"]') AS "trigger",
+    CAST(json_extract_scalar(after, '$["started_by"]') AS uuid) AS "started_by",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    json_extract_scalar(after, '$["variables"]') AS "variables",
+    json_extract_scalar(after, '$["steps"]') AS "steps",
+    CAST(json_extract_scalar(after, '$["notified"]') AS integer) AS "notified",
+    json_extract_scalar(after, '$["error"]') AS "error",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["ended_at"]')) AS timestamp(6) with time zone) AS "ended_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.wf_automation_run
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_flow_sync (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1184,6 +1327,78 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_automation (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.wf_process_automation COMMENT 'Trạng thái hiện tại của wf.process_automation, dựng từ bronze.wf_process_automation' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["model_id"]') AS uuid) AS "model_id",
+    CAST(json_extract_scalar(after, '$["version"]') AS integer) AS "version",
+    json_extract_scalar(after, '$["flowable_deployment_id"]') AS "flowable_deployment_id",
+    json_extract_scalar(after, '$["flowable_definition_id"]') AS "flowable_definition_id",
+    json_extract_scalar(after, '$["definition_key"]') AS "definition_key",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    json_extract_scalar(after, '$["actions"]') AS "actions",
+    CAST(json_extract_scalar(after, '$["activated_by"]') AS uuid) AS "activated_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["activated_at"]')) AS timestamp(6) with time zone) AS "activated_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["stopped_at"]')) AS timestamp(6) with time zone) AS "stopped_at",
+    CAST(json_extract(after, '$["events"]') AS array(varchar)) AS "events",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.wf_process_automation
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_change_request (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.wf_process_change_request COMMENT 'Trạng thái hiện tại của wf.process_change_request, dựng từ bronze.wf_process_change_request' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["model_id"]') AS uuid) AS "model_id",
+    CAST(json_extract_scalar(after, '$["version"]') AS integer) AS "version",
+    CAST(json_extract_scalar(after, '$["requested_by"]') AS uuid) AS "requested_by",
+    json_extract_scalar(after, '$["message"]') AS "message",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    json_extract_scalar(after, '$["resolution_note"]') AS "resolution_note",
+    CAST(json_extract_scalar(after, '$["resolved_by"]') AS uuid) AS "resolved_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["resolved_at"]')) AS timestamp(6) with time zone) AS "resolved_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.wf_process_change_request
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_model (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,
@@ -1211,6 +1426,7 @@ SELECT
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
     CAST(json_extract_scalar(after, '$["updated_by"]') AS uuid) AS "updated_by",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    CAST(json_extract_scalar(after, '$["owner_unit_id"]') AS uuid) AS "owner_unit_id",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -1245,6 +1461,7 @@ SELECT
     json_extract_scalar(after, '$["note"]') AS "note",
     CAST(json_extract_scalar(after, '$["published_by"]') AS uuid) AS "published_by",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["published_at"]')) AS timestamp(6) with time zone) AS "published_at",
+    json_extract_scalar(after, '$["audience"]') AS "audience",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -1280,6 +1497,7 @@ SELECT
     CAST(json_extract_scalar(after, '$["started_by"]') AS uuid) AS "started_by",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    CAST(json_extract_scalar(after, '$["version"]') AS integer) AS "version",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (

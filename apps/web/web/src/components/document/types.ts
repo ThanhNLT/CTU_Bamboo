@@ -11,6 +11,7 @@ export type Attachment = {
   size_bytes: number;
   status: string;
   scan_result: string | null;
+  scan_engines?: string[];
   created_at: string;
   uploaded_by: string;
   uploaded_by_person: Person;

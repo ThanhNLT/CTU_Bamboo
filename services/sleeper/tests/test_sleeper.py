@@ -119,6 +119,20 @@ class SleeperTest(unittest.IsolatedAsyncioTestCase):
         self.docker.health = "healthy"
         self.assertEqual(await task, b"Z")
 
+    async def test_finds_container_again_after_recreate(self):
+        await self.ask(b"x")
+        state = self.docker.state
+
+        async def gone(container):
+            if container == "cid":
+                raise DockerError("404 không còn container")
+            return await state(container)
+
+        self.docker.state = gone
+        self.docker.find = lambda service: asyncio.sleep(0, "cid-moi")
+        self.assertEqual(await self.ask(b"y"), b"Y")
+        self.assertEqual(self.target.container, "cid-moi")
+
     async def test_watch_loop_stops_idle_container(self):
         await self.ask(b"x")
         watcher = asyncio.create_task(self.sleeper.watch())

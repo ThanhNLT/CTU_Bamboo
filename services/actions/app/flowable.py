@@ -8,9 +8,13 @@ import httpx
 class FlowableClient:
     def __init__(self, base_url: str, user: str, password: str, timeout: float = 15.0):
         self.http = httpx.Client(base_url=base_url.rstrip("/") + "/", auth=(user, password), timeout=timeout)
+        # API tác vụ ngoài (external worker) nằm cạnh /service trong ứng dụng REST
+        external = base_url.rstrip("/").removesuffix("/service") + "/external-job-api/"
+        self.ext = httpx.Client(base_url=external, auth=(user, password), timeout=timeout)
 
     def close(self) -> None:
         self.http.close()
+        self.ext.close()
 
     def _check(self, resp: httpx.Response) -> httpx.Response:
         if resp.status_code >= 400:
@@ -102,3 +106,26 @@ class FlowableClient:
     def complete(self, task_id: str, variables: dict) -> None:
         body = {"action": "complete", "variables": [{"name": k, "value": v} for k, v in variables.items()]}
         self._check(self.http.post(f"runtime/tasks/{task_id}", json=body))
+
+    WORKER = "bamboo-automation"
+
+    def external_acquire(self, topic: str, limit: int = 20, lock: str = "PT2M") -> list[dict]:
+        body = {
+            "topic": topic,
+            "lockDuration": lock,
+            "numberOfTasks": limit,
+            "numberOfRetries": 3,
+            "workerId": self.WORKER,
+        }
+        return self._check(self.ext.post("acquire/jobs", json=body)).json()
+
+    def external_complete(self, job_id: str, variables: dict | None = None) -> None:
+        body = {
+            "workerId": self.WORKER,
+            "variables": [{"name": k, "value": v} for k, v in (variables or {}).items()],
+        }
+        self._check(self.ext.post(f"acquire/jobs/{job_id}/complete", json=body))
+
+    def external_fail(self, job_id: str, message: str, retries: int) -> None:
+        body = {"workerId": self.WORKER, "errorMessage": message[:500], "retries": retries, "retryTimeout": "PT30S"}
+        self._check(self.ext.post(f"acquire/jobs/{job_id}/fail", json=body))

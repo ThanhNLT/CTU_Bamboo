@@ -126,6 +126,21 @@ _Tránh dùng_: hồ sơ nhân viên (khi nói chứng từ xin duyệt), duyệ
 Cá nhân được đề nghị tiếp nhận, chưa phải người của tenant cho tới khi đề nghị được duyệt.
 _Tránh dùng_: nhân viên mới (trước khi duyệt), người
 
+**Đề nghị điều chuyển nhân sự** (`hr.transfer_request`):
+Chứng từ chuyển một người đang giữ chính (hoặc kiêm nhiệm) sang vị trí trong đơn vị khác của cùng tenant, số dạng `DC-2026-000001`. Người lập là chính nhân viên (**SELF**), trưởng đơn vị quản lý trực tiếp (**MANAGER**), hoặc người có quyền `hr.transfer.create` như phòng nhân sự, giám đốc, tổng giám đốc (**EXECUTIVE**). Ngày chuyển phải cách ngày gửi ít nhất 14 ngày. Chuỗi duyệt: trưởng đơn vị tiếp nhận (nhận hay không, chọn vị trí trong đơn vị), rồi trưởng phòng nhân sự của công ty chung gần nhất của đơn vị nguồn và đơn vị đích. Duyệt xong thì bổ nhiệm cũ kết thúc trước ngày chuyển và bổ nhiệm mới bắt đầu từ ngày chuyển.
+_Tránh dùng_: phân công, luân chuyển
+
+**Phòng nhân sự**:
+Đơn vị được đánh dấu `is_hr` trong một công ty; trưởng phòng là vị trí trưởng của đơn vị đó và là người duyệt điều chuyển thuộc công ty ấy.
+_Tránh dùng_: HR (khi nói đơn vị)
+
+**Người giữ chính đã có bổ nhiệm**:
+Người đã có bổ nhiệm giữ chính trong tenant: bổ nhiệm giữ chính mới của họ chỉ được tạo qua đề nghị điều chuyển đã duyệt, không sửa hay kết thúc rồi bổ nhiệm lại trực tiếp.
+
+**Điều chuyển liên tập đoàn**:
+Đề nghị đưa người từ tenant này sang tenant khác cùng tập đoàn. Gồm ba chứng từ liên kết, mỗi chứng từ nằm trong tenant của người duyệt: **đi** (`hr.transfer_out`, tenant nguồn: quản lý trực tiếp rồi HR nguồn duyệt), **tiếp nhận** (`hr.transfer_in`, tenant đích: trưởng đơn vị tiếp nhận chọn vị trí, rồi HR công ty đích duyệt) và **quyết định** (`hr.transfer_group`, tenant mẹ: trưởng phòng nhân sự tập đoàn duyệt). Khi quyết định được duyệt, bổ nhiệm ở tenant nguồn kết thúc và người đó có bổ nhiệm ở tenant đích, dùng lại hồ sơ cùng tài khoản nếu đã có.
+_Tránh dùng_: chuyển tenant, luân chuyển liên công ty
+
 **Dữ liệu cá nhân nhạy cảm**:
 Số CCCD, số tài khoản ngân hàng, địa chỉ của ứng viên; chỉ phòng nhân sự xem được bản đầy đủ, mỗi lần xem đều được ghi lại. Những người khác xem được đề nghị chỉ thấy **bản che** (ví dụ `•••••••••789`).
 _Tránh dùng_: PII (trong giao diện), thông tin bí mật
