@@ -1,0 +1,49 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+SPDX-License-Identifier: Apache-2.0
+
+Báo cáo số liệu KPI đã đóng băng theo kỳ. Mỗi dòng kèm mã băm của bản chụp để đối chiếu.
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Báo cáo KPI {{ r.period_label }}</title>
+<style>
+  @page { size: A4; }
+  body { font-family: "Noto Sans", "DejaVu Sans", "Liberation Sans", sans-serif; font-size: 10pt; color: #111; line-height: 1.4; }
+  h1 { text-align: center; font-size: 15pt; margin: 4px 0; text-transform: uppercase; }
+  .sub { text-align: center; font-style: italic; margin-bottom: 14px; }
+  h2 { font-size: 11pt; margin: 14px 0 4px; }
+  .def { color: #444; font-size: 9pt; margin: 0 0 4px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #555; padding: 3px 6px; }
+  th { background: #eee; font-size: 9pt; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  .num { text-align: right; white-space: nowrap; }
+  .hash { font-family: "DejaVu Sans Mono", monospace; font-size: 7.5pt; color: #555; }
+  .bad { color: #b00; font-weight: 700; }
+</style>
+</head>
+<body>
+<p style="margin:0">{{ r.tenant_name }}</p>
+<h1>Báo cáo chỉ số KPI</h1>
+<div class="sub">{{ r.period_label }} · số liệu đã đóng băng, không sửa được</div>
+{% for k in r.kpis %}
+<h2>{{ k.label }} ({{ k.unit }})</h2>
+<p class="def">{{ k.definition }}</p>
+<table>
+  <thead><tr><th>Kỳ</th><th class="num">Giá trị</th><th>Đánh giá</th><th>Mã băm</th></tr></thead>
+  <tbody>
+  {% for s in k.rows %}
+    <tr><td>{{ s.period }}</td><td class="num">{{ s.value | number(2) }}</td><td>{{ s.assessment }}</td>
+        <td class="hash">{{ s.sha256[:16] }}{% if not s.valid %} <span class="bad">SAI</span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Chưa có kỳ nào được đóng băng trong khoảng thời gian này.</p>
+{% endfor %}
+</body>
+</html>

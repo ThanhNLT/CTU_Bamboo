@@ -34,7 +34,7 @@ const DETAIL = `query KbDoc($id: uuid!) {
     }
     approval_history(order_by: {id: asc}) { id event detail created_at person { full_name } on_behalf_of_person { full_name } }
     comments(order_by: {created_at: asc}) { id body created_at edited_at deleted_at parent_id author_id author { full_name } }
-    attachments(order_by: {created_at: asc}) { id file_name content_type size_bytes status scan_result created_at uploaded_by
+    attachments(order_by: {created_at: asc}) { id file_name content_type size_bytes status scan_result scan_engines created_at uploaded_by
       uploaded_by_person { full_name } ocr { status pages_total pages_done note error } }
   }
   wf_v_inbox(where: {entity_id: {_eq: $id}}) { task_id via_delegation }

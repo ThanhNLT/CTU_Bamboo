@@ -3,9 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import hmac
+import json
 import logging
 import os
 import pathlib
+import time
+import uuid
 from contextlib import asynccontextmanager
 
 import psycopg
@@ -16,24 +19,33 @@ from psycopg_pool import ConnectionPool
 from starlette.concurrency import run_in_threadpool
 
 from . import (
+    anchoring,
     admin,
     ai_agent,
     attachments,
     audit,
     auth,
     config,
+    documents,
     forms,
     hr,
     hr_account,
     ic,
+    ingest,
     kb,
     lakehouse_query,
     ledger,
+    messaging,
+    obs,
     ocr,
+    ocr_import,
     ops,
     pii_guard,
+    process_automation,
     process_design,
+    receipts,
     search,
+    semantic,
     trino,
     twin,
 )
@@ -163,6 +175,7 @@ HANDLERS = {
     "search_documents": search.search_documents,
     "get_purchase_request_pdf": forms.get_purchase_request_pdf,
     **hr.HANDLERS,
+    **documents.HANDLERS,
     **ic.HANDLERS,
     **kb.HANDLERS,
     **ops.HANDLERS,
@@ -171,10 +184,16 @@ HANDLERS = {
     "check_pii": pii_guard.check_pii,
     **admin.HANDLERS,
     **lakehouse_query.HANDLERS,
+    **semantic.HANDLERS,
     **ledger.HANDLERS,
     **process_design.HANDLERS,
+    **process_automation.HANDLERS,
+    **messaging.HANDLERS,
+    **anchoring.HANDLERS,
+    **obs.HANDLERS,
     **ai_agent.HANDLERS,
     **ocr.HANDLERS,
+    **ocr_import.HANDLERS,
 }
 
 
@@ -217,6 +236,16 @@ def _pii_cipher() -> PiiCipher | None:
     return PiiCipher(addr, approle) if addr and approle else None
 
 
+def _channels(settings: config.Settings) -> tuple[str, ...]:
+    """Các kênh thông báo ngoài ứng dụng đã được cấu hình trên máy chủ."""
+    out = ["WEBHOOK"]
+    if settings.smtp_host:
+        out.append("EMAIL")
+    if settings.sms_gateway_url:
+        out.append("SMS")
+    return tuple(out)
+
+
 def create_app(
     settings: config.Settings | None = None,
     pool: ConnectionPool | None = None,
@@ -229,6 +258,7 @@ def create_app(
         storage=Storage(settings),
         clamav_host=settings.clamav_host,
         clamav_port=settings.clamav_port,
+        require_clamav=settings.scan_require_clamav,
         search=search.Meili(settings.meili_url, settings.meili_search_key, timeout=5.0),
         search_index=settings.meili_index,
         gotenberg_url=settings.gotenberg_url,
@@ -236,6 +266,10 @@ def create_app(
         users=_keycloak_users(settings),
         lakehouse=_lakehouse(settings),
         ai=Ollama(settings.ollama_url, timeout=10.0) if settings.ollama_url else None,
+        channels=_channels(settings),
+        signer=receipts.Signer.from_env(settings.actions_secret),
+        anchor_signer=receipts.Signer.from_env(settings.actions_secret, "anchor"),
+        anchor_url=settings.anchor_url,
     )
     verifier = verifier or auth.KeycloakVerifier(
         settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)
@@ -245,12 +279,16 @@ def create_app(
     async def lifespan(app: FastAPI):
         app.state.pool = pool or ConnectionPool(settings.database_url, min_size=1, max_size=10, open=True)
         pii_guard.warm_up()
+        if settings.obs_enabled:
+            obs.install("actions", settings.database_url)
         yield
         if pool is None:
             app.state.pool.close()
 
     app = FastAPI(title="Bamboo actions", lifespan=lifespan)
     memberships = auth.MembershipCache()
+    app.state.verifier, app.state.memberships = verifier, memberships
+    app.include_router(ingest.router)
 
     @app.get("/healthz")
     def healthz():
@@ -296,6 +334,64 @@ def create_app(
             return JSONResponse({"message": "Mã tenant không hợp lệ"}, 401)
         return JSONResponse(session)
 
+    @app.middleware("http")
+    async def trace(request: Request, call_next):
+        """Gắn mã truy vết (X-Request-Id do cổng cấp) vào mọi log của yêu cầu và ghi tóm tắt mỗi yêu cầu."""
+        request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+        obs.bind(trace_id=request_id[:100])
+        started = time.perf_counter()
+        response = await call_next(request)
+        response.headers["X-Request-Id"] = request_id[:100]
+        if request.url.path != "/healthz":
+            ms = round((time.perf_counter() - started) * 1000)
+            level = logging.ERROR if response.status_code >= 500 else logging.WARNING if response.status_code >= 400 else logging.INFO
+            log.log(
+                level,
+                "%s %s -> %s (%d ms)",
+                request.method,
+                request.url.path,
+                response.status_code,
+                ms,
+                extra={"fields": {"status": response.status_code, "ms": ms}},
+            )
+        return response
+
+    @app.post("/obs/ingest")
+    async def obs_ingest(request: Request, x_actions_secret: str | None = Header(default=None)):
+        if not hmac.compare_digest((x_actions_secret or "").encode(), settings.actions_secret.encode()):
+            return JSONResponse({"message": "Sai mã bí mật actions"}, 401)
+        try:
+            body = await request.body()
+            text = body.decode("utf-8", "replace").strip()
+            events = json.loads(text) if text.startswith("[") else [json.loads(line) for line in text.splitlines() if line.strip()]
+        except ValueError:
+            return JSONResponse({"message": "Cần mảng JSON hoặc NDJSON"}, 400)
+
+        def write() -> int:
+            with app.state.pool.connection() as conn, conn.transaction():
+                return obs.ingest(conn, events)
+
+        return {"accepted": await run_in_threadpool(write)}
+
+    @app.post("/hooks/{token}")
+    async def automation_hook(token: str, request: Request):
+        """Webhook khởi chạy quy trình tự động. Mã trong đường dẫn là bí mật; thân JSON (nếu có) thành biến quy trình."""
+        if ctx.flowable is None:
+            return JSONResponse({"message": "Chưa cấu hình Flowable"}, 503)
+        raw = await request.body()
+        if len(raw) > 65536:
+            return JSONResponse({"message": "Thân yêu cầu quá lớn"}, 413)
+        try:
+            body = json.loads(raw) if raw.strip() else {}
+        except ValueError:
+            return JSONResponse({"message": "Thân yêu cầu phải là JSON"}, 400)
+        if not isinstance(body, dict):
+            return JSONResponse({"message": "Thân yêu cầu phải là đối tượng JSON"}, 400)
+        try:
+            return await run_in_threadpool(process_automation.start_from_webhook, app.state.pool, ctx.flowable, token, body)
+        except ActionError as exc:
+            return JSONResponse({"message": str(exc)}, exc.status)
+
     @app.post("/actions/{name}")
     async def action(name: str, request: Request, x_actions_secret: str | None = Header(default=None)):
         if not hmac.compare_digest((x_actions_secret or "").encode(), settings.actions_secret.encode()):
@@ -306,10 +402,23 @@ def create_app(
             payload = None
         if not isinstance(payload, dict):
             return JSONResponse({"message": "Payload không hợp lệ", "extensions": {"code": "bad-request"}}, 400)
+        variables = {str(k).lower(): v for k, v in (payload.get("session_variables") or {}).items()}
+        obs.bind(tenant=variables.get("x-hasura-tenant-id"), person=variables.get("x-hasura-user-id"))
+        started = time.perf_counter()
         try:
             result = await run_in_threadpool(run_action, app.state.pool, name, payload, ctx)
         except ActionError as exc:
+            log.warning(
+                "action %s bị từ chối: %s",
+                name,
+                exc.message,
+                extra={"fields": {"action": name, "code": exc.code, "ms": round((time.perf_counter() - started) * 1000)}},
+            )
             return JSONResponse({"message": exc.message, "extensions": {"code": exc.code}}, exc.status)
+        except Exception:
+            log.exception("action %s lỗi không lường trước", name, extra={"fields": {"action": name}})
+            raise
+        log.info("action %s", name, extra={"fields": {"action": name, "ms": round((time.perf_counter() - started) * 1000)}})
         return result
 
     return app

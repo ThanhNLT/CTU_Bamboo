@@ -10,7 +10,6 @@ const FILE = `bao-gia-${Date.now()}.pdf`;
 
 async function login(page: Page, username: string) {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
@@ -40,7 +39,7 @@ test("tải tệp vào chứng từ qua Ổ đĩa, xem số liệu điều hành
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-1.7\nbao gia o dia\n%%EOF\n"),
   });
-  await expect(page.getByLabel("Tiến trình tải lên").getByText("Sạch · đã lưu")).toBeVisible();
+  await expect(page.getByLabel("Tiến trình tải lên").getByText("Đã quét sạch · đã lưu")).toBeVisible();
   await expect(page.getByRole("row", { name: new RegExp(FILE) }).getByText("Sạch")).toBeVisible();
 
   await page.getByRole("navigation", { name: "Vùng lưu trữ" }).getByText("Tệp tôi tải lên").click();

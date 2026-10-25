@@ -11,7 +11,6 @@ const TITLE = `E2E ${WORD} mua ổ cứng`;
 
 async function login(page: Page, username: string) {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
@@ -55,12 +54,15 @@ test("tìm thấy đề nghị vừa gửi, in phiếu, xem sơ đồ quy trình
 
   await page.getByRole("button", { name: "Sơ đồ quy trình" }).click();
   await expect(page).toHaveURL(/\/p\/process\//);
-  await expect(page.getByText("Sẽ được cập nhật chức năng sau")).toBeVisible();
+  await expect(page.locator(".bamboo-bpmn svg").first()).toBeVisible();
+  await expect(page.locator('.bamboo-active[data-element-id="approveStep"]')).toBeVisible();
+  await expect(page.locator(".bjs-powered-by")).toBeVisible();
+  await expect(page.getByText("Các bước duyệt")).toBeVisible();
+  await expect(page.getByText(/Trưởng phòng/).first()).toBeVisible();
 });
 
 test("tìm kiếm không trả chứng từ của tenant khác", async ({ page }) => {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill("kiemnhiem");
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();

@@ -144,6 +144,6 @@ SELECT set_config('hasura.user', '', true);
 
 INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, uploaded_by)
 VALUES (test.id('TDX'), 'hr.onboarding_request', test.id('o3'), 'cv.pdf', 'application/pdf', 10, 'k-cv', test.id('ns'));
-UPDATE core.attachment SET status = 'CLEAN', sha256 = 'x' WHERE storage_key = 'k-cv';
+UPDATE core.attachment SET status = 'CLEAN', sha256 = 'x', scan_engines = ARRAY['test'] WHERE storage_key = 'k-cv';
 SELECT test.ok(NOT EXISTS (SELECT 1 FROM search.pending p JOIN core.attachment a ON a.id = p.entity_id
                            WHERE a.storage_key = 'k-cv'), 'CV không vào hàng đợi tìm kiếm');

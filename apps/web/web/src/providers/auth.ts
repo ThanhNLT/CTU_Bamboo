@@ -7,6 +7,17 @@ import type { AuthProvider } from "@refinedev/core";
 import { setTenant, setToken } from "../api/client";
 import { keycloak } from "../auth/keycloak";
 
+// Dấu lần tự chuyển tới trang đăng nhập gần nhất (chống vòng lặp, xem pages/login.tsx); đăng nhập thành công hay đăng xuất thì xóa
+export const LOGIN_ATTEMPT_KEY = "bamboo.login-attempt";
+
+const clearLoginAttempt = () => {
+  try {
+    sessionStorage.removeItem(LOGIN_ATTEMPT_KEY);
+  } catch {
+    // trình duyệt chặn sessionStorage: không có dấu để xóa
+  }
+};
+
 export const authProvider: AuthProvider = {
   login: async () => {
     const to = new URLSearchParams(window.location.search).get("to");
@@ -15,6 +26,7 @@ export const authProvider: AuthProvider = {
     return { success: true };
   },
   logout: async () => {
+    clearLoginAttempt();
     setTenant(null);
     setToken(undefined);
     await keycloak.logout({ redirectUri: window.location.origin });
@@ -27,6 +39,7 @@ export const authProvider: AuthProvider = {
     try {
       await keycloak.updateToken(30);
       setToken(keycloak.token);
+      clearLoginAttempt();
       return { authenticated: true };
     } catch {
       return { authenticated: false, logout: true, redirectTo: "/login" };
