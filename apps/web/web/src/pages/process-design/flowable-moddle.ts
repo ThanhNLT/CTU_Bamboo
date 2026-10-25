@@ -32,6 +32,30 @@ export const flowableModdle = {
   ],
 };
 
+// Hành động tự động do hệ thống thực hiện khi quy trình chạy tự động (xem process_automation.py)
+export const bambooModdle = {
+  name: "Bamboo",
+  uri: "http://bamboo.local/bpmn",
+  prefix: "bamboo",
+  xml: { tagAlias: "lowerCase" },
+  types: [
+    {
+      name: "AutomationProps",
+      extends: ["bpmn:ServiceTask"],
+      properties: [
+        { name: "action", isAttr: true, type: "String" },
+        { name: "audience", isAttr: true, type: "String" },
+        { name: "message", isAttr: true, type: "String" },
+        { name: "url", isAttr: true, type: "String" },
+        { name: "method", isAttr: true, type: "String" },
+        { name: "body", isAttr: true, type: "String" },
+        { name: "name", isAttr: true, type: "String" },
+        { name: "value", isAttr: true, type: "String" },
+      ],
+    },
+  ],
+};
+
 export const newProcessXml = (key: string, name: string) => `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"

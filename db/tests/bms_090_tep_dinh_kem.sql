@@ -17,7 +17,7 @@ SELECT test.throws($$SELECT pg_temp.attach('BVX', 'k2')$$, '%Không tìm thấy 
 SELECT test.throws($$UPDATE core.attachment SET status = 'CLEAN' WHERE id = test.id('f1')$$,
                    '%violates check%', 'Sạch thì phải có sha256');
 
-UPDATE core.attachment SET status = 'CLEAN', sha256 = 'abc', scanned_at = now() WHERE id = test.id('f1');
+UPDATE core.attachment SET status = 'CLEAN', sha256 = 'abc', scan_engines = ARRAY['test'], scanned_at = now() WHERE id = test.id('f1');
 SELECT test.throws($$UPDATE core.attachment SET status = 'INFECTED' WHERE id = test.id('f1')$$,
                    '%đã ở trạng thái CLEAN%', 'Không đổi trạng thái sau khi quét');
 SELECT test.throws($$UPDATE core.attachment SET entity_id = gen_random_uuid() WHERE id = test.id('f1')$$,

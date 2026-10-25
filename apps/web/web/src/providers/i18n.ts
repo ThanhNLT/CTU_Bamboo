@@ -4,6 +4,8 @@
 
 import type { I18nProvider } from "@refinedev/core";
 
+import { getLocale, setLocale, tr } from "../i18n";
+
 const VI: Record<string, string> = {
   "buttons.logout": "Đăng xuất",
   "buttons.create": "Tạo mới",
@@ -28,11 +30,11 @@ const VI: Record<string, string> = {
 
 export const i18nProvider: I18nProvider = {
   translate: (key, options, defaultMessage) => {
-    const text = VI[key] ?? defaultMessage ?? key;
+    const text = tr(VI[key] ?? defaultMessage ?? key);
     return typeof options === "object" && options
       ? text.replace(/\{\{(\w+)\}\}/g, (_, k) => String((options as Record<string, unknown>)[k] ?? ""))
       : text;
   },
-  changeLocale: async () => undefined,
-  getLocale: () => "vi",
+  changeLocale: async (locale) => setLocale(locale === "en" ? "en" : "vi"),
+  getLocale,
 };

@@ -11,6 +11,11 @@ const STATUS = {
   STOPPED: { color: "orange", label: "Dừng" },
   FAILED: { color: "red", label: "Lỗi" },
 } as const;
+const AUDIENCE_LABEL = {
+  UNIT: "đơn vị và các đơn vị con",
+  COMPANY: "toàn công ty",
+  GROUP: "toàn tập đoàn (công ty mẹ và công ty con)",
+} as const;
 const STEP_TYPE: Record<string, string> = {
   startEvent: "Bắt đầu",
   endEvent: "Kết thúc",
@@ -21,7 +26,19 @@ const STEP_TYPE: Record<string, string> = {
   inclusiveGateway: "Rẽ nhánh",
 };
 
-export const RunsTab = ({ runs, versions }: { runs: SandboxRun[]; versions: ProcessVersion[] }) => (
+export const RunsTab = ({
+  runs,
+  versions,
+  canDesign,
+  onShowRun,
+  onRestore,
+}: {
+  runs: SandboxRun[];
+  versions: ProcessVersion[];
+  canDesign: boolean;
+  onShowRun: (run: SandboxRun) => void;
+  onRestore: (version: number) => void;
+}) => (
   <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
     <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Lần chạy thử">
       <h2 className="m-0 text-[14px] font-semibold text-ink">Lần chạy thử</h2>
@@ -33,9 +50,25 @@ export const RunsTab = ({ runs, versions }: { runs: SandboxRun[]; versions: Proc
               <Tag color={STATUS[r.status].color}>{STATUS[r.status].label}</Tag>
               <span className="text-muted">
                 {r.startedAt} · {r.startedBy}
+                {r.version ? ` · phiên bản v${r.version}` : " · bản nháp"}
                 {r.variables?.decision ? ` · quyết định ${String(r.variables.decision)}` : ""}
               </span>
+              <button
+                type="button"
+                className="ml-auto text-[12px] font-semibold text-bamboo-700"
+                onClick={() => onShowRun(r)}
+              >
+                Tô lên sơ đồ
+              </button>
             </div>
+            {r.variables && (
+              <p className="m-0 mt-1 break-words font-mono text-[11.5px] text-muted">
+                {Object.entries(r.variables)
+                  .filter(([k]) => !["decision", "stepIndex", "stepCount"].includes(k))
+                  .map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+                  .join(" · ")}
+              </p>
+            )}
             {r.error && <p className="m-0 mt-1.5 break-words text-[12px] text-red-700">{r.error}</p>}
             <ol className="m-0 mt-2 flex list-none flex-wrap items-center gap-1.5 p-0 text-[12px]">
               {r.steps.map((s, i) => (
@@ -62,7 +95,17 @@ export const RunsTab = ({ runs, versions }: { runs: SandboxRun[]; versions: Proc
             <span className="text-muted">
               · {v.publishedAt} · {v.publishedBy}
             </span>
+            {canDesign && (
+              <button
+                type="button"
+                className="ml-2 text-[12px] font-semibold text-bamboo-700"
+                onClick={() => onRestore(v.version)}
+              >
+                Khôi phục về bản nháp
+              </button>
+            )}
             {v.note && <span className="block text-body">{v.note}</span>}
+            {v.audience && <span className="block text-muted">Đối tượng: {AUDIENCE_LABEL[v.audience]}</span>}
             <span className="block font-mono text-[11px] text-muted">SHA-256 {v.sha256.slice(0, 16)}…</span>
           </li>
         ))}

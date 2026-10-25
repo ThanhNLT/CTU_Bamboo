@@ -1441,6 +1441,8 @@
                   "entity_type",
                   "file_name",
                   "id",
+                  "scan_engines",
+                  "scan_report",
                   "scan_result",
                   "scanned_at",
                   "sha256",
@@ -1485,6 +1487,8 @@
                   "entity_type",
                   "file_name",
                   "id",
+                  "scan_engines",
+                  "scan_report",
                   "scan_result",
                   "scanned_at",
                   "sha256",
@@ -1838,6 +1842,69 @@
         {
           "table": {
             "schema": "core",
+            "name": "ingest_job"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "started_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "started_by": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
             "name": "org_unit"
           },
           "array_relationships": [
@@ -1938,6 +2005,36 @@
                   "remote_table": {
                     "schema": "hr",
                     "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_ins",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_in"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "target_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
                   },
                   "column_mapping": {
                     "tenant_id": "tenant_id",
@@ -2082,31 +2179,16 @@
               }
             },
             {
-              "name": "transfer_ins",
+              "name": "process_models",
               "using": {
                 "manual_configuration": {
                   "remote_table": {
-                    "schema": "hr",
-                    "name": "transfer_in"
+                    "schema": "wf",
+                    "name": "process_model"
                   },
                   "column_mapping": {
                     "tenant_id": "tenant_id",
-                    "id": "target_unit_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "transfer_requests",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "hr",
-                    "name": "transfer_request"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "target_unit_id"
+                    "id": "owner_unit_id"
                   }
                 }
               }
@@ -2380,6 +2462,21 @@
               }
             },
             {
+              "name": "ingest_jobs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ingest_job"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "started_by"
+                  }
+                }
+              }
+            },
+            {
               "name": "role_grants",
               "using": {
                 "manual_configuration": {
@@ -2431,6 +2528,66 @@
                   "remote_table": {
                     "schema": "hr",
                     "name": "onboarding_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_outs_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_outs_by_requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_out"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "transfer_requests_by_requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "hr",
+                    "name": "transfer_request"
                   },
                   "column_mapping": {
                     "tenant_id": "tenant_id",
@@ -2618,66 +2775,6 @@
                   }
                 }
               }
-            },
-            {
-              "name": "transfer_outs_by_person",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "hr",
-                    "name": "transfer_out"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "person_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "transfer_outs_by_requester",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "hr",
-                    "name": "transfer_out"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "requester_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "transfer_requests_by_person",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "hr",
-                    "name": "transfer_request"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "person_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "transfer_requests_by_requester",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "hr",
-                    "name": "transfer_request"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "requester_id"
-                  }
-                }
-              }
             }
           ],
           "object_relationships": [
@@ -2835,51 +2932,6 @@
               }
             },
             {
-              "name": "purchase_requests",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "proc",
-                    "name": "purchase_request"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "requester_position_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "approval_steps",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_step"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "position_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "tasks",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "task"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "assigned_position_id"
-                  }
-                }
-              }
-            },
-            {
               "name": "transfer_ins",
               "using": {
                 "manual_configuration": {
@@ -2965,6 +3017,51 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "target_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "purchase_requests",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "proc",
+                    "name": "purchase_request"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "requester_position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "position_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tasks",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "task"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "assigned_position_id"
                   }
                 }
               }
@@ -4477,6 +4574,702 @@
                     }
                   ]
                 }
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_group"
+          },
+          "object_relationships": [
+            {
+              "name": "in_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "in_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "out_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "out_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_group_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_in"
+          },
+          "object_relationships": [
+            {
+              "name": "out_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "out_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_in_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_out"
+          },
+          "object_relationships": [
+            {
+              "name": "target_tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "target_tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "source_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "source_position_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_out_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "hr",
+            "name": "transfer_request"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "requester_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "requester_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "source_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "source_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_position",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "position"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_position_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "target_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "target_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "approval_steps",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_step"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "approval_history",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "wf",
+                    "name": "approval_history"
+                  },
+                  "column_mapping": {
+                    "id": "entity_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "hr",
+                  "name": "transfer_request_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
               }
             }
           ]
@@ -7298,20 +8091,6 @@
               }
             },
             {
-              "name": "kb_document",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "collab",
-                    "name": "kb_document"
-                  },
-                  "column_mapping": {
-                    "entity_id": "id"
-                  }
-                }
-              }
-            },
-            {
               "name": "transfer_request",
               "using": {
                 "manual_configuration": {
@@ -7360,6 +8139,20 @@
                   "remote_table": {
                     "schema": "hr",
                     "name": "transfer_group"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
                   },
                   "column_mapping": {
                     "entity_id": "id"
@@ -7668,20 +8461,6 @@
               }
             },
             {
-              "name": "kb_document",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "collab",
-                    "name": "kb_document"
-                  },
-                  "column_mapping": {
-                    "entity_id": "id"
-                  }
-                }
-              }
-            },
-            {
               "name": "transfer_request",
               "using": {
                 "manual_configuration": {
@@ -7730,6 +8509,20 @@
                   "remote_table": {
                     "schema": "hr",
                     "name": "transfer_group"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
                   },
                   "column_mapping": {
                     "entity_id": "id"
@@ -7818,6 +8611,21 @@
                   },
                   "column_mapping": {
                     "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "owner_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "owner_unit_id": "id"
                   }
                 }
               }
@@ -8201,20 +9009,6 @@
               }
             },
             {
-              "name": "kb_document",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "collab",
-                    "name": "kb_document"
-                  },
-                  "column_mapping": {
-                    "entity_id": "id"
-                  }
-                }
-              }
-            },
-            {
               "name": "transfer_request",
               "using": {
                 "manual_configuration": {
@@ -8269,6 +9063,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "kb_document",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "collab",
+                    "name": "kb_document"
+                  },
+                  "column_mapping": {
+                    "entity_id": "id"
+                  }
+                }
+              }
             }
           ],
           "select_permissions": [
@@ -8312,702 +9120,6 @@
                   ]
                 },
                 "allow_aggregations": true
-              }
-            }
-          ]
-        },
-        {
-          "table": {
-            "schema": "hr",
-            "name": "transfer_group"
-          },
-          "object_relationships": [
-            {
-              "name": "in_tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "in_tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "out_tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "out_tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "id"
-                  }
-                }
-              }
-            }
-          ],
-          "array_relationships": [
-            {
-              "name": "approval_steps",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_step"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "approval_history",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_history"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            }
-          ],
-          "computed_fields": [
-            {
-              "name": "can_read",
-              "definition": {
-                "function": {
-                  "schema": "hr",
-                  "name": "transfer_group_can_read"
-                },
-                "session_argument": "hasura_session"
-              },
-              "comment": "Người gọi có được xem chứng từ không"
-            }
-          ],
-          "select_permissions": [
-            {
-              "role": "user",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
-              }
-            },
-            {
-              "role": "platform_admin",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "table": {
-            "schema": "hr",
-            "name": "transfer_in"
-          },
-          "object_relationships": [
-            {
-              "name": "out_tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "out_tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "target_position",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "position"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "target_position_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "target_unit",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "org_unit"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "target_unit_id": "id"
-                  }
-                }
-              }
-            }
-          ],
-          "array_relationships": [
-            {
-              "name": "approval_steps",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_step"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "approval_history",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_history"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            }
-          ],
-          "computed_fields": [
-            {
-              "name": "can_read",
-              "definition": {
-                "function": {
-                  "schema": "hr",
-                  "name": "transfer_in_can_read"
-                },
-                "session_argument": "hasura_session"
-              },
-              "comment": "Người gọi có được xem chứng từ không"
-            }
-          ],
-          "select_permissions": [
-            {
-              "role": "user",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
-              }
-            },
-            {
-              "role": "platform_admin",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "table": {
-            "schema": "hr",
-            "name": "transfer_out"
-          },
-          "object_relationships": [
-            {
-              "name": "target_tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "target_tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "person",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "person"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "person_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "requester",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "person"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "requester_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "requester_position",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "position"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "requester_position_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "source_position",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "position"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "source_position_id": "id"
-                  }
-                }
-              }
-            }
-          ],
-          "array_relationships": [
-            {
-              "name": "approval_steps",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_step"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "approval_history",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_history"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            }
-          ],
-          "computed_fields": [
-            {
-              "name": "can_read",
-              "definition": {
-                "function": {
-                  "schema": "hr",
-                  "name": "transfer_out_can_read"
-                },
-                "session_argument": "hasura_session"
-              },
-              "comment": "Người gọi có được xem chứng từ không"
-            }
-          ],
-          "select_permissions": [
-            {
-              "role": "user",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
-              }
-            },
-            {
-              "role": "platform_admin",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "table": {
-            "schema": "hr",
-            "name": "transfer_request"
-          },
-          "object_relationships": [
-            {
-              "name": "tenant",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "person",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "person"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "person_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "requester",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "person"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "requester_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "requester_position",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "position"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "requester_position_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "source_position",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "position"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "source_position_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "target_position",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "position"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "target_position_id": "id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "target_unit",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "org_unit"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "target_unit_id": "id"
-                  }
-                }
-              }
-            }
-          ],
-          "array_relationships": [
-            {
-              "name": "approval_steps",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_step"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "approval_history",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "wf",
-                    "name": "approval_history"
-                  },
-                  "column_mapping": {
-                    "id": "entity_id"
-                  }
-                }
-              }
-            }
-          ],
-          "computed_fields": [
-            {
-              "name": "can_read",
-              "definition": {
-                "function": {
-                  "schema": "hr",
-                  "name": "transfer_request_can_read"
-                },
-                "session_argument": "hasura_session"
-              },
-              "comment": "Người gọi có được xem chứng từ không"
-            }
-          ],
-          "select_permissions": [
-            {
-              "role": "user",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
-              }
-            },
-            {
-              "role": "platform_admin",
-              "permission": {
-                "columns": "*",
-                "filter": {
-                  "_and": [
-                    {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
-                    },
-                    {
-                      "can_read": {
-                        "_eq": true
-                      }
-                    }
-                  ]
-                },
-                "allow_aggregations": true,
-                "computed_fields": [
-                  "can_read"
-                ]
               }
             }
           ]
@@ -9327,6 +9439,87 @@
         }
       ],
       "comment": "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)"
+    },
+    {
+      "name": "semantic_catalog",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/semantic_catalog",
+        "arguments": [],
+        "output_type": "SemanticCatalog!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Danh mục chỉ số, chiều và chu kỳ của lớp ngữ nghĩa trên Lakehouse (cần data.lakehouse.read)"
+    },
+    {
+      "name": "semantic_query",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/semantic_query",
+        "arguments": [
+          {
+            "name": "metric",
+            "type": "String!"
+          },
+          {
+            "name": "dimensions",
+            "type": "[String!]"
+          },
+          {
+            "name": "time_grain",
+            "type": "String"
+          },
+          {
+            "name": "from",
+            "type": "String"
+          },
+          {
+            "name": "to",
+            "type": "String"
+          },
+          {
+            "name": "filters",
+            "type": "jsonb"
+          },
+          {
+            "name": "limit",
+            "type": "Int"
+          }
+        ],
+        "output_type": "SemanticResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Truy vấn chỉ số theo chiều bằng tên nghiệp vụ; hệ thống sinh SQL từ danh mục có kiểm soát (cần data.lakehouse.read)"
     },
     {
       "name": "submit_kb_document",
@@ -9678,6 +9871,10 @@
           {
             "name": "forms",
             "type": "jsonb"
+          },
+          {
+            "name": "owner_unit_id",
+            "type": "uuid"
           }
         ],
         "output_type": "ProcessSaveResult!",
@@ -9697,7 +9894,7 @@
           "role": "platform_admin"
         }
       ],
-      "comment": "Tạo / lưu bản nháp quy trình (cần wf.process.design)"
+      "comment": "Tạo / lưu bản nháp quy trình; người có wf.process.design tại đơn vị sở hữu (trưởng phòng, giám đốc...)"
     },
     {
       "name": "process_model_publish",
@@ -9712,6 +9909,10 @@
           },
           {
             "name": "note",
+            "type": "String"
+          },
+          {
+            "name": "audience",
             "type": "String"
           }
         ],
@@ -9732,7 +9933,714 @@
           "role": "platform_admin"
         }
       ],
-      "comment": "Phát hành bản nháp thành phiên bản bất biến (không còn lỗi)"
+      "comment": "Phát hành bản nháp thành phiên bản bất biến và thông báo cho đối tượng UNIT | COMPANY | GROUP"
+    },
+    {
+      "name": "audit_anchors",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/audit_anchors",
+        "arguments": [],
+        "output_type": "AuditAnchors!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Các bản neo chuỗi băm kiểm toán đã ký và công bố ra ngoài CSDL (cần audit.read)"
+    },
+    {
+      "name": "audit_anchor_verify",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/audit_anchor_verify",
+        "arguments": [],
+        "output_type": "AnchorVerify!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đối chiếu bản neo với chuỗi hiện tại, chữ ký và bản công bố bên ngoài (cần audit.read)"
+    },
+    {
+      "name": "audit_anchor_now",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/audit_anchor_now",
+        "arguments": [],
+        "output_type": "AnchorNow!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Neo ngay đầu chuỗi kiểm toán hiện tại (cần audit.read)"
+    },
+    {
+      "name": "obs_logs",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/obs_logs",
+        "arguments": [
+          {
+            "name": "service",
+            "type": "String"
+          },
+          {
+            "name": "level",
+            "type": "String"
+          },
+          {
+            "name": "trace_id",
+            "type": "String"
+          },
+          {
+            "name": "q",
+            "type": "String"
+          },
+          {
+            "name": "since_minutes",
+            "type": "Int"
+          },
+          {
+            "name": "limit",
+            "type": "Int"
+          }
+        ],
+        "output_type": "ObsLogs!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Nhật ký hệ thống tập trung của tenant, tra theo dịch vụ, mức, từ khóa hoặc mã truy vết (cần audit.read)"
+    },
+    {
+      "name": "backup_runs",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/backup_runs",
+        "arguments": [],
+        "output_type": "[BackupRun!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lịch sử sao lưu theo lịch và diễn tập khôi phục (cần audit.read)"
+    },
+    {
+      "name": "notification_prefs",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/notification_prefs",
+        "arguments": [],
+        "output_type": "NotificationPrefs!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Kênh nhận thông báo ngoài ứng dụng của người gọi và các loại thông báo chọn được"
+    },
+    {
+      "name": "save_notification_pref",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/save_notification_pref",
+        "arguments": [
+          {
+            "name": "channel",
+            "type": "String!"
+          },
+          {
+            "name": "address",
+            "type": "String!"
+          },
+          {
+            "name": "enabled",
+            "type": "Boolean"
+          },
+          {
+            "name": "kinds",
+            "type": "[String!]"
+          }
+        ],
+        "output_type": "ChannelResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Bật hoặc đổi kênh nhận thông báo (EMAIL, SMS, WEBHOOK)"
+    },
+    {
+      "name": "delete_notification_pref",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/delete_notification_pref",
+        "arguments": [
+          {
+            "name": "channel",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ChannelResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xóa kênh nhận thông báo"
+    },
+    {
+      "name": "send_test_notification",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/send_test_notification",
+        "arguments": [
+          {
+            "name": "channel",
+            "type": "String!"
+          }
+        ],
+        "output_type": "QueueRef!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi thông báo thử qua một kênh đã lưu"
+    },
+    {
+      "name": "my_deliveries",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/my_deliveries",
+        "arguments": [],
+        "output_type": "[Delivery!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "20 tin gửi ra ngoài ứng dụng gần nhất của người gọi và trạng thái giao"
+    },
+    {
+      "name": "queue_overview",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/queue_overview",
+        "arguments": [],
+        "output_type": "QueueOverview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Hàng đợi tin nhắn của tenant: số lượng theo trạng thái, tin lỗi và hàng chết (cần core.org.manage)"
+    },
+    {
+      "name": "queue_retry",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/queue_retry",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "QueueRef!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đưa tin trong hàng chết trở lại hàng đợi (cần core.org.manage)"
+    },
+    {
+      "name": "queue_verify",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/queue_verify",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "QueueVerify!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xác minh chữ ký biên nhận và mã băm nội dung của một tin đã giao (cần core.org.manage)"
+    },
+    {
+      "name": "process_automation_enable",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_automation_enable",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "events",
+            "type": "[String!]"
+          }
+        ],
+        "output_type": "ProcessAutomationResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Bật chạy tự động cho phiên bản đã phát hành: hệ thống tự thực hiện tác vụ tự động và hẹn giờ"
+    },
+    {
+      "name": "process_automation_disable",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_automation_disable",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProcessAutomationResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tắt chạy tự động; các lần chạy đang dở bị hủy"
+    },
+    {
+      "name": "process_automation_start",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_automation_start",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "variables",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "ProcessAutomationResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Khởi chạy ngay một lần quy trình tự động (người thiết kế hoặc người giám sát)"
+    },
+    {
+      "name": "process_automation_webhook",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_automation_webhook",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProcessWebhookResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tạo hoặc đổi mã webhook để hệ thống ngoài khởi chạy quy trình tự động; mã chỉ hiện một lần"
+    },
+    {
+      "name": "process_automation_events",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_automation_events",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "events",
+            "type": "[String!]!"
+          }
+        ],
+        "output_type": "ProcessEventsResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chọn các sự kiện nghiệp vụ tự khởi chạy quy trình tự động"
+    },
+    {
+      "name": "process_change_request_create",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_change_request_create",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "message",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ProcessChangeRequestResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người giám sát (wf.process.review) yêu cầu sửa quy trình đã phát hành; báo cho người thiết kế"
+    },
+    {
+      "name": "process_change_request_resolve",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_change_request_resolve",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "outcome",
+            "type": "String"
+          },
+          {
+            "name": "note",
+            "type": "String"
+          }
+        ],
+        "output_type": "ProcessChangeRequestResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người thiết kế đánh dấu đã xử lý hoặc từ chối yêu cầu sửa; báo cho người yêu cầu"
+    },
+    {
+      "name": "process_model_delete",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_model_delete",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProcessDeleteResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xóa quy trình chưa từng phát hành (cần wf.process.design)"
+    },
+    {
+      "name": "process_version_get",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/process_version_get",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "version",
+            "type": "Int!"
+          }
+        ],
+        "output_type": "ProcessVersionDetail!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Nội dung BPMN và biểu mẫu của một phiên bản đã phát hành"
     },
     {
       "name": "process_sandbox_run",
@@ -10077,6 +10985,37 @@
       "comment": "Xếp lại việc OCR tệp đính kèm đã xong, bị bỏ qua hoặc lỗi (ADR #52)"
     },
     {
+      "name": "ocr_document",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ocr_document",
+        "arguments": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "OcrDocument!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chữ OCR của tệp đính kèm, các trường báo giá, hóa đơn rút ra kèm độ tin cậy và gợi ý khớp danh mục (ADR #52)"
+    },
+    {
       "name": "delete_attachment",
       "definition": {
         "kind": "synchronous",
@@ -10324,6 +11263,567 @@
         }
       ],
       "comment": "Người lập hủy đề nghị tiếp nhận chưa duyệt xong"
+    },
+    {
+      "name": "issue_personnel_decision",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/issue_personnel_decision",
+        "arguments": [
+          {
+            "name": "decision_type",
+            "type": "String!"
+          },
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "source_position_id",
+            "type": "uuid"
+          },
+          {
+            "name": "target_position_id",
+            "type": "uuid"
+          },
+          {
+            "name": "assignment_type",
+            "type": "String"
+          },
+          {
+            "name": "effective_date",
+            "type": "date!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "PersonnelDecisionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tổng giám đốc / Phó tổng giám đốc (hr.decision.issue) ban hành quyết định bổ nhiệm, điều chuyển, miễn nhiệm"
+    },
+    {
+      "name": "get_personnel_decision_pdf",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/get_personnel_decision_pdf",
+        "arguments": [
+          {
+            "name": "decision_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "DecisionPdf!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Quyết định nhân sự dạng PDF theo thể thức văn bản hành chính (người ban hành, người được quyết định hoặc hr.decision.read)"
+    },
+    {
+      "name": "kpi_snapshots",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/kpi_snapshots",
+        "arguments": [
+          {
+            "name": "kpi_key",
+            "type": "String!"
+          },
+          {
+            "name": "limit",
+            "type": "Int"
+          }
+        ],
+        "output_type": "[KpiSnapshotRow!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Số liệu KPI đã đóng băng theo kỳ, kèm kết quả đối chiếu mã băm"
+    },
+    {
+      "name": "get_kpi_report_pdf",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/get_kpi_report_pdf",
+        "arguments": [
+          {
+            "name": "month",
+            "type": "String"
+          }
+        ],
+        "output_type": "KpiReportPdf!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Báo cáo KPI đã đóng băng dạng PDF (theo tháng YYYY-MM hoặc tổng hợp)"
+    },
+    {
+      "name": "personnel_decisions",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/personnel_decisions",
+        "arguments": [],
+        "output_type": "PersonnelDecisionList!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Quyết định nhân sự người gọi được xem (người ban hành, người được ra quyết định hoặc hr.decision.read)"
+    },
+    {
+      "name": "personnel_decision_context",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/personnel_decision_context",
+        "arguments": [],
+        "output_type": "PersonnelDecisionContext!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người và vị trí để chọn khi lập quyết định nhân sự (cần hr.decision.issue)"
+    },
+    {
+      "name": "create_transfer_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/create_transfer_request",
+        "arguments": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "source_position_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "target_unit_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "effective_date",
+            "type": "date!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập đề nghị điều chuyển nhân sự: nhân viên, trưởng đơn vị hoặc người có quyền hr.transfer.create (ngày chuyển sau ít nhất 14 ngày)"
+    },
+    {
+      "name": "submit_transfer_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/submit_transfer_request",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi duyệt đề nghị điều chuyển (người lập)"
+    },
+    {
+      "name": "choose_transfer_position",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/choose_transfer_position",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "position_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Trưởng đơn vị tiếp nhận chọn vị trí cho người được điều chuyển, trước khi duyệt bước của mình"
+    },
+    {
+      "name": "cancel_transfer_request",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_transfer_request",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người lập hủy đề nghị điều chuyển chưa duyệt xong"
+    },
+    {
+      "name": "create_transfer_out",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/create_transfer_out",
+        "arguments": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "source_position_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "target_tenant_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "target_unit_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "effective_date",
+            "type": "date!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập đề nghị điều chuyển sang tenant khác cùng tập đoàn (tenant nguồn duyệt trước, rồi tenant đích, rồi tập đoàn mẹ)"
+    },
+    {
+      "name": "submit_transfer_out",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/submit_transfer_out",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gửi duyệt đề nghị điều chuyển liên tập đoàn (người lập ở tenant nguồn)"
+    },
+    {
+      "name": "cancel_transfer_out",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/cancel_transfer_out",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "reason",
+            "type": "String!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người lập hủy đề nghị liên tập đoàn khi còn ở tenant nguồn"
+    },
+    {
+      "name": "choose_transfer_in_position",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/choose_transfer_in_position",
+        "arguments": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "position_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferActionResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Trưởng đơn vị tiếp nhận ở tenant đích chọn vị trí cho người được điều chuyển"
+    },
+    {
+      "name": "transfer_tenants",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/transfer_tenants",
+        "arguments": [],
+        "output_type": "TransferTenants!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Các tenant khác cùng tập đoàn để điều chuyển đến"
+    },
+    {
+      "name": "transfer_target_units",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/transfer_target_units",
+        "arguments": [
+          {
+            "name": "tenant_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "TransferUnits!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đơn vị của tenant đích (cùng tập đoàn) để chọn nơi tiếp nhận"
     },
     {
       "name": "confirm_ic_order",
@@ -11012,363 +12512,6 @@
         }
       ],
       "comment": "Xóa tác tử AI chưa có lượt hỏi, hoặc ngừng kích hoạt nếu đã có (cần core.ai.manage)"
-    },
-    {
-      "name": "create_transfer_request",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/create_transfer_request",
-        "arguments": [
-          {
-            "name": "person_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "source_position_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "target_unit_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "effective_date",
-            "type": "date!"
-          },
-          {
-            "name": "reason",
-            "type": "String!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Lập đề nghị điều chuyển nhân sự: nhân viên, trưởng đơn vị hoặc người có quyền hr.transfer.create (ngày chuyển sau ít nhất 14 ngày)"
-    },
-    {
-      "name": "submit_transfer_request",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/submit_transfer_request",
-        "arguments": [
-          {
-            "name": "request_id",
-            "type": "uuid!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Gửi duyệt đề nghị điều chuyển (người lập)"
-    },
-    {
-      "name": "choose_transfer_position",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/choose_transfer_position",
-        "arguments": [
-          {
-            "name": "request_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "position_id",
-            "type": "uuid!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Trưởng đơn vị tiếp nhận chọn vị trí cho người được điều chuyển, trước khi duyệt bước của mình"
-    },
-    {
-      "name": "cancel_transfer_request",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/cancel_transfer_request",
-        "arguments": [
-          {
-            "name": "request_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "reason",
-            "type": "String!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Người lập hủy đề nghị điều chuyển chưa duyệt xong"
-    },
-    {
-      "name": "create_transfer_out",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/create_transfer_out",
-        "arguments": [
-          {
-            "name": "person_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "source_position_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "target_tenant_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "target_unit_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "effective_date",
-            "type": "date!"
-          },
-          {
-            "name": "reason",
-            "type": "String!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Lập đề nghị điều chuyển sang tenant khác cùng tập đoàn (tenant nguồn duyệt trước, rồi tenant đích, rồi tập đoàn mẹ)"
-    },
-    {
-      "name": "submit_transfer_out",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/submit_transfer_out",
-        "arguments": [
-          {
-            "name": "request_id",
-            "type": "uuid!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Gửi duyệt đề nghị điều chuyển liên tập đoàn (người lập ở tenant nguồn)"
-    },
-    {
-      "name": "cancel_transfer_out",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/cancel_transfer_out",
-        "arguments": [
-          {
-            "name": "request_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "reason",
-            "type": "String!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Người lập hủy đề nghị liên tập đoàn khi còn ở tenant nguồn"
-    },
-    {
-      "name": "choose_transfer_in_position",
-      "definition": {
-        "kind": "synchronous",
-        "type": "mutation",
-        "handler": "{{ACTIONS_URL}}/actions/choose_transfer_in_position",
-        "arguments": [
-          {
-            "name": "request_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "position_id",
-            "type": "uuid!"
-          }
-        ],
-        "output_type": "TransferActionResult!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Trưởng đơn vị tiếp nhận ở tenant đích chọn vị trí cho người được điều chuyển"
-    },
-    {
-      "name": "transfer_tenants",
-      "definition": {
-        "kind": "synchronous",
-        "type": "query",
-        "handler": "{{ACTIONS_URL}}/actions/transfer_tenants",
-        "arguments": [],
-        "output_type": "TransferTenants!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Các tenant khác cùng tập đoàn để điều chuyển đến"
-    },
-    {
-      "name": "transfer_target_units",
-      "definition": {
-        "kind": "synchronous",
-        "type": "query",
-        "handler": "{{ACTIONS_URL}}/actions/transfer_target_units",
-        "arguments": [
-          {
-            "name": "tenant_id",
-            "type": "uuid!"
-          }
-        ],
-        "output_type": "TransferUnits!",
-        "headers": [
-          {
-            "name": "x-actions-secret",
-            "value_from_env": "ACTIONS_SECRET"
-          }
-        ],
-        "timeout": 30
-      },
-      "permissions": [
-        {
-          "role": "user"
-        },
-        {
-          "role": "platform_admin"
-        }
-      ],
-      "comment": "Đơn vị của tenant đích (cùng tập đoàn) để chọn nơi tiếp nhận"
     }
   ],
   "custom_types": {
@@ -11801,6 +12944,113 @@
         ]
       },
       {
+        "name": "DecisionPdf",
+        "fields": [
+          {
+            "name": "decision_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "doc_no",
+            "type": "String!"
+          },
+          {
+            "name": "url",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "check_code",
+            "type": "String!"
+          },
+          {
+            "name": "cached",
+            "type": "Boolean!"
+          },
+          {
+            "name": "expires_in",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "KpiReportPdf",
+        "fields": [
+          {
+            "name": "month",
+            "type": "String"
+          },
+          {
+            "name": "kpis",
+            "type": "Int!"
+          },
+          {
+            "name": "url",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "check_code",
+            "type": "String!"
+          },
+          {
+            "name": "cached",
+            "type": "Boolean!"
+          },
+          {
+            "name": "expires_in",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "KpiSnapshotRow",
+        "fields": [
+          {
+            "name": "kpi_key",
+            "type": "String!"
+          },
+          {
+            "name": "label",
+            "type": "String!"
+          },
+          {
+            "name": "unit",
+            "type": "String!"
+          },
+          {
+            "name": "grain",
+            "type": "String!"
+          },
+          {
+            "name": "period",
+            "type": "String!"
+          },
+          {
+            "name": "value",
+            "type": "Float!"
+          },
+          {
+            "name": "sha256",
+            "type": "String!"
+          },
+          {
+            "name": "frozen_at",
+            "type": "String!"
+          },
+          {
+            "name": "valid",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
         "name": "PurchaseRequestPdf",
         "fields": [
           {
@@ -11861,6 +13111,90 @@
             "field_mapping": {
               "request_id": "id"
             }
+          }
+        ]
+      },
+      {
+        "name": "TransferActionResult",
+        "fields": [
+          {
+            "name": "request_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          }
+        ],
+        "relationships": [
+          {
+            "name": "transfer_request",
+            "type": "object",
+            "source": "bms",
+            "remote_table": {
+              "schema": "hr",
+              "name": "transfer_request"
+            },
+            "field_mapping": {
+              "request_id": "id"
+            }
+          }
+        ]
+      },
+      {
+        "name": "PersonnelDecisionResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "doc_no",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "PersonnelDecisionList",
+        "fields": [
+          {
+            "name": "can_issue",
+            "type": "Boolean!"
+          },
+          {
+            "name": "decisions",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "PersonnelDecisionContext",
+        "fields": [
+          {
+            "name": "people",
+            "type": "json!"
+          },
+          {
+            "name": "positions",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "TransferTenants",
+        "fields": [
+          {
+            "name": "tenants",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "TransferUnits",
+        "fields": [
+          {
+            "name": "units",
+            "type": "json!"
           }
         ]
       },
@@ -11992,6 +13326,101 @@
           {
             "name": "columns",
             "type": "[LakehouseColumn!]!"
+          }
+        ]
+      },
+      {
+        "name": "SemanticCatalog",
+        "fields": [
+          {
+            "name": "sources",
+            "type": "[jsonb!]!"
+          },
+          {
+            "name": "grains",
+            "type": "[jsonb!]!"
+          }
+        ]
+      },
+      {
+        "name": "SemanticResult",
+        "fields": [
+          {
+            "name": "source",
+            "type": "String!"
+          },
+          {
+            "name": "measure",
+            "type": "String!"
+          },
+          {
+            "name": "label",
+            "type": "String!"
+          },
+          {
+            "name": "unit",
+            "type": "String!"
+          },
+          {
+            "name": "columns",
+            "type": "[String!]!"
+          },
+          {
+            "name": "rows",
+            "type": "[jsonb!]!"
+          },
+          {
+            "name": "sql",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "OcrDocument",
+        "fields": [
+          {
+            "name": "attachment_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "scan_status",
+            "type": "String!"
+          },
+          {
+            "name": "phase",
+            "type": "String!"
+          },
+          {
+            "name": "message",
+            "type": "String"
+          },
+          {
+            "name": "ocr",
+            "type": "jsonb"
+          },
+          {
+            "name": "text",
+            "type": "String"
+          },
+          {
+            "name": "parsed",
+            "type": "jsonb"
+          },
+          {
+            "name": "partner",
+            "type": "jsonb"
+          },
+          {
+            "name": "item_matches",
+            "type": "jsonb"
+          },
+          {
+            "name": "doc_label",
+            "type": "String"
           }
         ]
       },
@@ -12214,6 +13643,22 @@
             "type": "String"
           },
           {
+            "name": "owner_unit_id",
+            "type": "uuid"
+          },
+          {
+            "name": "owner_unit",
+            "type": "String"
+          },
+          {
+            "name": "audience",
+            "type": "String"
+          },
+          {
+            "name": "access",
+            "type": "String!"
+          },
+          {
             "name": "updated_at",
             "type": "String!"
           },
@@ -12239,6 +13684,10 @@
             "type": "Boolean!"
           },
           {
+            "name": "design_units",
+            "type": "json!"
+          },
+          {
             "name": "models",
             "type": "[ProcessModelSummary!]!"
           }
@@ -12257,6 +13706,10 @@
           },
           {
             "name": "note",
+            "type": "String"
+          },
+          {
+            "name": "audience",
             "type": "String"
           },
           {
@@ -12293,6 +13746,10 @@
             "type": "String"
           },
           {
+            "name": "version",
+            "type": "Int"
+          },
+          {
             "name": "started_by",
             "type": "String"
           },
@@ -12322,6 +13779,22 @@
             "type": "String"
           },
           {
+            "name": "access",
+            "type": "String!"
+          },
+          {
+            "name": "owner_unit",
+            "type": "String"
+          },
+          {
+            "name": "audience",
+            "type": "String"
+          },
+          {
+            "name": "viewing_version",
+            "type": "Int"
+          },
+          {
             "name": "bpmn_xml",
             "type": "String!"
           },
@@ -12340,6 +13813,14 @@
           {
             "name": "runs",
             "type": "[SandboxRun!]!"
+          },
+          {
+            "name": "change_requests",
+            "type": "json!"
+          },
+          {
+            "name": "automation",
+            "type": "json"
           }
         ]
       },
@@ -12370,6 +13851,311 @@
           {
             "name": "sha256",
             "type": "String!"
+          },
+          {
+            "name": "audience",
+            "type": "String!"
+          },
+          {
+            "name": "notified",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessChangeRequestResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ]
+      },
+      {
+        "name": "NotificationPrefs",
+        "fields": [
+          {
+            "name": "channels",
+            "type": "json!"
+          },
+          {
+            "name": "kinds",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "ChannelResult",
+        "fields": [
+          {
+            "name": "channel",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "AuditAnchors",
+        "fields": [
+          {
+            "name": "head_seq",
+            "type": "Int!"
+          },
+          {
+            "name": "anchors",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "AnchorVerify",
+        "fields": [
+          {
+            "name": "ok",
+            "type": "Boolean!"
+          },
+          {
+            "name": "checked",
+            "type": "Int!"
+          },
+          {
+            "name": "problems",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "AnchorNow",
+        "fields": [
+          {
+            "name": "anchored",
+            "type": "Boolean!"
+          },
+          {
+            "name": "seq",
+            "type": "Int"
+          }
+        ]
+      },
+      {
+        "name": "ObsLogs",
+        "fields": [
+          {
+            "name": "events",
+            "type": "json!"
+          },
+          {
+            "name": "last_hour",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "BackupRun",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Int!"
+          },
+          {
+            "name": "kind",
+            "type": "String!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "location",
+            "type": "String"
+          },
+          {
+            "name": "size_bytes",
+            "type": "Int"
+          },
+          {
+            "name": "detail",
+            "type": "json!"
+          },
+          {
+            "name": "started_at",
+            "type": "String!"
+          },
+          {
+            "name": "finished_at",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "QueueRef",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "Delivery",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "channel",
+            "type": "String!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "attempts",
+            "type": "Int!"
+          },
+          {
+            "name": "last_error",
+            "type": "String"
+          },
+          {
+            "name": "title",
+            "type": "String"
+          },
+          {
+            "name": "address",
+            "type": "String"
+          },
+          {
+            "name": "created_at",
+            "type": "String"
+          },
+          {
+            "name": "delivered_at",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "QueueOverview",
+        "fields": [
+          {
+            "name": "counts",
+            "type": "json!"
+          },
+          {
+            "name": "messages",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "QueueVerify",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "valid",
+            "type": "Boolean!"
+          },
+          {
+            "name": "reason",
+            "type": "String"
+          },
+          {
+            "name": "alg",
+            "type": "String"
+          },
+          {
+            "name": "delivered_at",
+            "type": "String"
+          },
+          {
+            "name": "payload_sha256",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "ProcessAutomationResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "version",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessWebhookResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "token",
+            "type": "String!"
+          },
+          {
+            "name": "path",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessEventsResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "events",
+            "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessDeleteResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessVersionDetail",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "version",
+            "type": "Int!"
+          },
+          {
+            "name": "bpmn_xml",
+            "type": "String!"
+          },
+          {
+            "name": "forms",
+            "type": "jsonb!"
           }
         ]
       },
@@ -13057,51 +14843,6 @@
           {
             "name": "problems",
             "type": "[AuditChainProblem!]!"
-          }
-        ]
-      },
-      {
-        "name": "TransferActionResult",
-        "fields": [
-          {
-            "name": "request_id",
-            "type": "uuid!"
-          },
-          {
-            "name": "status",
-            "type": "String!"
-          }
-        ],
-        "relationships": [
-          {
-            "name": "transfer_request",
-            "type": "object",
-            "source": "bms",
-            "remote_table": {
-              "schema": "hr",
-              "name": "transfer_request"
-            },
-            "field_mapping": {
-              "request_id": "id"
-            }
-          }
-        ]
-      },
-      {
-        "name": "TransferTenants",
-        "fields": [
-          {
-            "name": "tenants",
-            "type": "json!"
-          }
-        ]
-      },
-      {
-        "name": "TransferUnits",
-        "fields": [
-          {
-            "name": "units",
-            "type": "json!"
           }
         ]
       }

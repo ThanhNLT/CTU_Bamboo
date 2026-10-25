@@ -2,29 +2,63 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { App, Input, Modal, Segmented, Spin } from "antd";
+import { App, Input, Modal, Radio, Segmented, Select, Spin } from "antd";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import { getProcess, listProcesses, publishProcess, runSandbox, saveProcess, validateProcess } from "./api";
+import {
+  deleteProcess,
+  createAutomationWebhook,
+  disableAutomation,
+  enableAutomation,
+  getProcess,
+  getProcessVersion,
+  listProcesses,
+  publishProcess,
+  requestChange,
+  resolveChange,
+  runSandbox,
+  saveProcess,
+  setAutomationEvents,
+  startAutomation,
+  validateProcess,
+} from "./api";
 import type { BpmnEditorHandle } from "./components/BpmnEditor";
+import { AutomationTab } from "./components/AutomationTab";
+import { ChangeRequestsTab } from "./components/ChangeRequestsTab";
 import { FormsTab } from "./components/FormsTab";
 import { ProcessHeader } from "./components/ProcessHeader";
 import { PropertiesPanel } from "./components/PropertiesPanel";
 import { RunsTab } from "./components/RunsTab";
+import { SandboxModal, type SandboxInput } from "./components/SandboxModal";
 import { SidebarTools } from "./components/SidebarTools";
 import { newProcessXml } from "./flowable-moddle";
-import type { FormDef, Issue, ProcessDetail, ProcessSummary, SelectedElement } from "./types";
-import { downloadText, keyFromName } from "./utils";
+import type {
+  Audience,
+  DesignUnit,
+  FormDef,
+  Issue,
+  ProcessDetail,
+  ProcessSummary,
+  SandboxRun,
+  SelectedElement,
+} from "./types";
+import { downloadText, keyFromName, userTasksOf, type UserTaskRef } from "./utils";
 
 const BpmnEditor = lazy(() => import("./components/BpmnEditor"));
 
-type Tab = "process" | "forms" | "runs";
+type Tab = "process" | "forms" | "runs" | "requests" | "auto";
+
+const AUDIENCE_OPTIONS: { value: Audience; label: string; hint: string }[] = [
+  { value: "UNIT", label: "Phòng ban", hint: "Đơn vị sở hữu quy trình và các đơn vị con" },
+  { value: "COMPANY", label: "Cả công ty", hint: "Mọi người trong công ty chứa đơn vị này" },
+  { value: "GROUP", label: "Toàn tập đoàn", hint: "Công ty mẹ và tất cả công ty con" },
+];
 
 export const ProcessDesignPage = () => {
   const { message, modal } = App.useApp();
   const [params, setParams] = useSearchParams();
-  const [list, setList] = useState<{ canDesign: boolean; models: ProcessSummary[] }>();
+  const [list, setList] = useState<{ canDesign: boolean; designUnits: DesignUnit[]; models: ProcessSummary[] }>();
   const [detail, setDetail] = useState<ProcessDetail>();
   const [forms, setForms] = useState<FormDef[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -34,9 +68,19 @@ export const ProcessDesignPage = () => {
   const [tab, setTab] = useState<Tab>("process");
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const [sandboxTasks, setSandboxTasks] = useState<UserTaskRef[]>();
+  const [meta, setMeta] = useState<{ name: string; description: string }>();
+  const [newUnit, setNewUnit] = useState<string>();
+  const [publishing, setPublishing] = useState<{ audience: Audience; note: string }>();
+  const [changing, setChanging] = useState<string>();
   const editor = useRef<BpmnEditorHandle>(null);
   const activeId = params.get("id") ?? undefined;
-  const canDesign = list?.canDesign ?? false;
+  const access = detail?.access ?? "view";
+  const canDesign = access === "design";
+
+  useEffect(() => {
+    if (access === "view" || (!canDesign && tab === "forms")) setTab("process");
+  }, [access, canDesign, tab]);
 
   const loadList = useCallback(
     () =>
@@ -63,7 +107,10 @@ export const ProcessDesignPage = () => {
   }, [loadList]);
   useEffect(() => {
     const id = activeId ?? list?.models[0]?.id;
-    if (id && id !== detail?.id) void loadDetail(id);
+    if (id && id !== detail?.id) {
+      editor.current?.highlight([]);
+      void loadDetail(id);
+    }
   }, [activeId, list, detail?.id, loadDetail]);
 
   const select = (id: string) => {
@@ -120,86 +167,160 @@ export const ProcessDesignPage = () => {
     }
   };
 
-  const sandbox = () => {
+  const openSandbox = async () => setSandboxTasks(userTasksOf(await currentXml()));
+
+  const sandbox = async ({ decision, variables, taskDecisions }: SandboxInput) => {
     if (!detail) return;
-    let decision = "APPROVE";
+    setBusy("sandbox");
+    try {
+      if (dirty && canDesign) {
+        const saved = await saveProcess({
+          id: detail.id,
+          key: detail.key,
+          name: detail.name,
+          description: detail.description,
+          xml: await currentXml(),
+          forms,
+        });
+        setIssues(saved.issues);
+        setDirty(false);
+      }
+      const run = await runSandbox(detail.id, {
+        ...variables,
+        decision,
+        ...(Object.keys(taskDecisions).length ? { task_decisions: taskDecisions } : {}),
+      });
+      setSandboxTasks(undefined);
+      setTab("process");
+      editor.current?.highlight(run.steps.map((s) => s.activity_id));
+      if (run.status === "COMPLETED")
+        message.success(`Chạy thử đạt: đi qua ${run.steps.length} bước tới “${run.steps.at(-1)?.name}”.`);
+      else message.error(`Chạy thử ${run.status === "FAILED" ? "lỗi" : "dừng"}: ${run.error ?? ""}`);
+      await loadDetail(detail.id);
+      editor.current?.highlight(run.steps.map((s) => s.activity_id));
+      void loadList();
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setBusy(undefined);
+    }
+  };
+
+  const showRun = (run: SandboxRun) => {
+    setTab("process");
+    editor.current?.highlight(run.steps.map((s) => s.activity_id));
+  };
+
+  const restore = (version: number) => {
+    if (!detail) return;
     modal.confirm({
-      title: "Chạy thử trong sandbox?",
-      content: (
-        <div className="flex flex-col gap-2 text-[13px]">
-          <p className="m-0">
-            Lưu bản nháp rồi deploy lên Flowable với khóa sandbox riêng, tự hoàn thành từng tác vụ người dùng với quyết
-            định dưới đây. Không ảnh hưởng quy trình đang chạy.
-          </p>
-          <Segmented
-            options={[
-              { value: "APPROVE", label: "Duyệt" },
-              { value: "REJECT", label: "Từ chối" },
-              { value: "RETURN", label: "Trả về" },
-            ]}
-            defaultValue="APPROVE"
-            onChange={(v) => (decision = v as string)}
-          />
-        </div>
-      ),
-      okText: "Chạy thử",
+      title: `Khôi phục v${version} về bản nháp?`,
+      content: "Nội dung bản nháp hiện tại sẽ bị thay bằng phiên bản này (chưa lưu cho tới khi bạn bấm Lưu bản nháp).",
+      okText: "Khôi phục",
       cancelText: "Hủy",
       onOk: async () => {
-        setBusy("sandbox");
         try {
-          if (dirty && canDesign) {
-            const saved = await saveProcess({
-              id: detail.id,
-              key: detail.key,
-              name: detail.name,
-              description: detail.description,
-              xml: await currentXml(),
-              forms,
-            });
-            setIssues(saved.issues);
-            setDirty(false);
-          }
-          const run = await runSandbox(detail.id, { decision });
-          editor.current?.highlight(run.steps.map((s) => s.activity_id));
-          if (run.status === "COMPLETED")
-            message.success(`Chạy thử đạt: đi qua ${run.steps.length} bước tới “${run.steps.at(-1)?.name}”.`);
-          else message.error(`Chạy thử ${run.status === "FAILED" ? "lỗi" : "dừng"}: ${run.error ?? ""}`);
-          await loadDetail(detail.id);
-          void loadList();
+          const v = await getProcessVersion(detail.id, version);
+          editor.current?.highlight([]);
+          setDetail({ ...detail, xml: v.xml });
+          setForms(v.forms);
+          setDirty(true);
+          setTab("process");
+          message.success(`Đã nạp v${version} vào bản nháp. Bấm “Lưu bản nháp” để giữ lại.`);
         } catch (e) {
           message.error((e as Error).message);
-        } finally {
-          setBusy(undefined);
         }
       },
     });
   };
 
-  const publish = () => {
+  const remove = () => {
     if (!detail) return;
-    let note = "";
     modal.confirm({
-      title: "Phát hành phiên bản mới?",
-      content: (
-        <Input.TextArea placeholder="Ghi chú phiên bản (không bắt buộc)" onChange={(e) => (note = e.target.value)} />
-      ),
-      okText: "Phát hành",
+      title: `Xóa quy trình “${detail.name}”?`,
+      content: "Chỉ xóa được quy trình chưa từng phát hành. Lịch sử chạy thử cũng bị xóa.",
+      okText: "Xóa",
+      okButtonProps: { danger: true },
       cancelText: "Hủy",
       onOk: async () => {
-        setBusy("publish");
         try {
-          if (dirty) await save();
-          const v = await publishProcess(detail.id, note);
-          message.success(`Đã phát hành v${v}.`);
-          await loadDetail(detail.id);
-          void loadList();
+          await deleteProcess(detail.id);
+          message.success("Đã xóa quy trình.");
+          setDetail(undefined);
+          setParams({});
+          await loadList();
         } catch (e) {
           message.error((e as Error).message);
-        } finally {
-          setBusy(undefined);
         }
       },
     });
+  };
+
+  const applyMeta = () => {
+    if (!detail || !meta) return;
+    if (meta.name.trim().length < 2) return message.error("Nhập tên quy trình");
+    setDetail({ ...detail, name: meta.name.trim(), description: meta.description.trim() || null });
+    setDirty(true);
+    setMeta(undefined);
+  };
+
+  const openPublish = () => {
+    if (!detail) return;
+    // Quy trình thuộc một đơn vị: mặc định báo trong đơn vị; quy trình toàn tập đoàn: mặc định báo tất cả
+    setPublishing({ audience: detail.audience ?? (detail.ownerUnit ? "UNIT" : "GROUP"), note: "" });
+  };
+
+  const publish = async () => {
+    if (!detail || !publishing) return;
+    setBusy("publish");
+    try {
+      if (dirty) await save();
+      const r = await publishProcess(detail.id, publishing.audience, publishing.note);
+      setPublishing(undefined);
+      message.success(`Đã phát hành v${r.version} và thông báo cho ${r.notified} người.`);
+      await loadDetail(detail.id);
+      void loadList();
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setBusy(undefined);
+    }
+  };
+
+  const toggleAutomation = async (fn: () => Promise<void>, ok: string) => {
+    if (!detail) return;
+    try {
+      await fn();
+      message.success(ok);
+      await loadDetail(detail.id);
+    } catch (e) {
+      message.error((e as Error).message);
+      throw e;
+    }
+  };
+
+  const sendChange = async (text: string) => {
+    if (!detail) return;
+    try {
+      await requestChange(detail.id, text);
+      setChanging(undefined);
+      message.success("Đã gửi yêu cầu sửa chữa tới người thiết kế quy trình.");
+      await loadDetail(detail.id);
+      setTab("requests");
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
+
+  const resolve = async (id: string, outcome: "RESOLVED" | "DECLINED", note: string) => {
+    try {
+      await resolveChange(id, outcome, note);
+      message.success(outcome === "RESOLVED" ? "Đã đánh dấu đã xử lý." : "Đã từ chối yêu cầu.");
+      if (detail) await loadDetail(detail.id);
+    } catch (e) {
+      message.error((e as Error).message);
+      throw e;
+    }
   };
 
   const create = async () => {
@@ -207,7 +328,13 @@ export const ProcessDesignPage = () => {
     if (name.length < 2) return message.error("Nhập tên quy trình");
     const key = keyFromName(name);
     try {
-      const r = await saveProcess({ key, name, xml: newProcessXml(key, name), forms: [] });
+      const r = await saveProcess({
+        key,
+        name,
+        xml: newProcessXml(key, name),
+        forms: [],
+        ownerUnitId: newUnit ?? list?.designUnits[0]?.id,
+      });
       setCreating(false);
       setNewName("");
       await loadList();
@@ -237,37 +364,62 @@ export const ProcessDesignPage = () => {
         subtitle={
           detail ? `${detail.name} · mã ${detail.key}${dirty ? " · có thay đổi chưa lưu" : ""}` : "Chưa chọn quy trình"
         }
-        canDesign={canDesign}
+        access={access}
         dirty={dirty}
         busy={busy}
         onSave={() => void save()}
         onValidate={() => void validate()}
-        onSandbox={sandbox}
-        onPublish={publish}
+        onSandbox={() => void openSandbox()}
+        onEditInfo={() => detail && setMeta({ name: detail.name, description: detail.description ?? "" })}
+        onDelete={remove}
+        deletable={Boolean(detail) && !detail?.versions.length}
+        hasModel={Boolean(detail)}
+        onPublish={openPublish}
+        onRequestChange={() => setChanging("")}
         onDownload={() => void currentXml().then((x) => downloadText(`${detail?.key ?? "quy-trinh"}.bpmn20.xml`, x))}
       />
 
-      <Segmented
-        className="self-start"
-        value={tab}
-        onChange={(v) => setTab(v as Tab)}
-        options={[
-          { value: "process", label: "Quy trình" },
-          { value: "forms", label: `Biểu mẫu (${forms.length})` },
-          { value: "runs", label: `Phiên bản & chạy thử (${detail?.runs.length ?? 0})` },
-        ]}
-      />
+      {detail && access !== "view" && (
+        <Segmented
+          className="self-start"
+          value={tab}
+          onChange={(v) => setTab(v as Tab)}
+          options={[
+            { value: "process", label: access === "design" ? "Quy trình" : `Sơ đồ v${detail.viewingVersion ?? ""}` },
+            ...(canDesign ? [{ value: "forms", label: `Biểu mẫu (${forms.length})` }] : []),
+            {
+              value: "runs",
+              label: canDesign
+                ? `Phiên bản & chạy thử (${detail.runs.length})`
+                : `Phiên bản & demo (${detail.runs.length})`,
+            },
+            { value: "auto", label: `Chạy tự động${detail.automation?.status === "ACTIVE" ? " (đang bật)" : ""}` },
+            {
+              value: "requests",
+              label: `Yêu cầu sửa chữa (${detail.changeRequests.filter((c) => c.status === "OPEN").length})`,
+            },
+          ]}
+        />
+      )}
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(200px,20fr)_minmax(0,80fr)]">
         <SidebarTools
           processes={list.models}
           activeId={detail?.id}
-          canDesign={canDesign}
+          canCreate={list.canDesign}
           onSelect={select}
           onCreate={() => setCreating(true)}
         />
-        <div className={tab === "process" ? "grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]" : "hidden"}>
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-line shadow-card">
+        <div
+          className={
+            tab !== "process" && access !== "view"
+              ? "hidden"
+              : access === "view"
+                ? "grid grid-cols-1 gap-4"
+                : "grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]"
+          }
+        >
+          <div className="min-w-0 self-start overflow-hidden rounded-2xl border border-line shadow-card">
             <Suspense fallback={<Spin className="block py-24" />}>
               {detail && (
                 <BpmnEditor
@@ -281,16 +433,19 @@ export const ProcessDesignPage = () => {
               )}
             </Suspense>
           </div>
-          <PropertiesPanel
-            element={selected}
-            forms={forms}
-            issues={issues}
-            readOnly={!canDesign}
-            onChange={(patch) => selected && editor.current?.update(selected.id, patch)}
-            onFocus={(id) => editor.current?.select(id)}
-          />
+          {access !== "view" && (
+            <PropertiesPanel
+              showChecks={canDesign}
+              element={selected}
+              forms={forms}
+              issues={issues}
+              readOnly={!canDesign}
+              onChange={(patch) => selected && editor.current?.update(selected.id, patch)}
+              onFocus={(id) => editor.current?.select(id)}
+            />
+          )}
         </div>
-        {tab === "forms" && (
+        {tab === "forms" && canDesign && (
           <FormsTab
             forms={forms}
             usedBy={usedBy}
@@ -301,8 +456,77 @@ export const ProcessDesignPage = () => {
             }}
           />
         )}
-        {tab === "runs" && detail && <RunsTab runs={detail.runs} versions={detail.versions} />}
+        {tab === "auto" && detail && access !== "view" && (
+          <AutomationTab
+            automation={detail.automation}
+            hasPublished={detail.versions.length > 0 || detail.viewingVersion !== null}
+            canManage={canDesign}
+            onEnable={() =>
+              toggleAutomation(() => enableAutomation(detail.id), "Đã bật chạy tự động cho phiên bản mới nhất.")
+            }
+            onDisable={() => toggleAutomation(() => disableAutomation(detail.id), "Đã tắt chạy tự động.")}
+            onEvents={(events) =>
+              toggleAutomation(() => setAutomationEvents(detail.id, events), "Đã lưu sự kiện khởi chạy.")
+            }
+            onWebhook={async () => {
+              const path = await createAutomationWebhook(detail.id);
+              await loadDetail(detail.id);
+              return path;
+            }}
+            onStart={(variables) =>
+              toggleAutomation(() => startAutomation(detail.id, variables), "Đã khởi chạy, hệ thống đang xử lý.")
+            }
+          />
+        )}
+        {tab === "requests" && detail && access !== "view" && (
+          <ChangeRequestsTab requests={detail.changeRequests} canResolve={canDesign} onResolve={resolve} />
+        )}
+        {tab === "runs" && detail && access !== "view" && (
+          <RunsTab
+            runs={detail.runs}
+            versions={detail.versions}
+            canDesign={canDesign}
+            onShowRun={showRun}
+            onRestore={restore}
+          />
+        )}
       </div>
+
+      <SandboxModal
+        open={Boolean(sandboxTasks)}
+        tasks={sandboxTasks ?? []}
+        busy={busy === "sandbox"}
+        onRun={(i) => void sandbox(i)}
+        onCancel={() => setSandboxTasks(undefined)}
+      />
+
+      <Modal
+        open={Boolean(meta)}
+        title="Thông tin quy trình"
+        okText="Áp dụng"
+        cancelText="Hủy"
+        onOk={applyMeta}
+        onCancel={() => setMeta(undefined)}
+        destroyOnHidden
+      >
+        <div className="flex flex-col gap-3">
+          <Input
+            aria-label="Tên quy trình"
+            value={meta?.name ?? ""}
+            onChange={(e) => meta && setMeta({ ...meta, name: e.target.value })}
+          />
+          <Input.TextArea
+            aria-label="Mô tả quy trình"
+            autoSize={{ minRows: 3 }}
+            placeholder="Mô tả ngắn (không bắt buộc)"
+            value={meta?.description ?? ""}
+            onChange={(e) => meta && setMeta({ ...meta, description: e.target.value })}
+          />
+          <p className="m-0 text-[12px] text-muted">
+            Mã quy trình <span className="font-mono">{detail?.key}</span> không đổi được sau khi tạo.
+          </p>
+        </div>
+      </Modal>
 
       <Modal
         open={creating}
@@ -313,15 +537,96 @@ export const ProcessDesignPage = () => {
         onCancel={() => setCreating(false)}
         destroyOnHidden
       >
-        <Input
-          aria-label="Tên quy trình mới"
-          placeholder="Ví dụ: Duyệt hợp đồng"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onPressEnter={() => void create()}
-        />
+        <div className="flex flex-col gap-3">
+          <Input
+            aria-label="Tên quy trình mới"
+            placeholder="Ví dụ: Duyệt hợp đồng"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onPressEnter={() => void create()}
+          />
+          <label className="block text-[12px] font-medium text-body">
+            Đơn vị sở hữu
+            <Select
+              aria-label="Đơn vị sở hữu quy trình"
+              className="mt-1 w-full"
+              showSearch
+              optionFilterProp="label"
+              value={newUnit ?? list.designUnits[0]?.id}
+              onChange={setNewUnit}
+              options={list.designUnits.map((u) => ({
+                value: u.id,
+                label: `${"— ".repeat(Math.max(u.path.split(".").length - 1, 0))}${u.name}`,
+              }))}
+            />
+          </label>
+          <p className="m-0 text-[12px] text-muted">
+            Chỉ chọn được đơn vị mà bạn có quyền thiết kế quy trình (ví dụ phòng do bạn làm trưởng).
+          </p>
+        </div>
         <p className="mt-2 text-[12px] text-muted">
           Mã quy trình: <span className="font-mono">{newName.trim() ? keyFromName(newName) : "—"}</span>
+        </p>
+      </Modal>
+
+      <Modal
+        open={Boolean(publishing)}
+        title="Phát hành phiên bản mới"
+        okText="Phát hành và thông báo"
+        cancelText="Hủy"
+        okButtonProps={{ loading: busy === "publish" }}
+        onOk={() => void publish()}
+        onCancel={() => setPublishing(undefined)}
+        destroyOnHidden
+      >
+        <div className="flex flex-col gap-3">
+          <p className="m-0 text-[13px] text-body">
+            Phiên bản được chụp bất biến. Mọi người trong đối tượng bạn chọn sẽ nhận thông báo và xem được sơ đồ; quản
+            lý, giám đốc còn yêu cầu sửa chữa hoặc chạy demo được.
+          </p>
+          <Radio.Group
+            value={publishing?.audience}
+            onChange={(e) => publishing && setPublishing({ ...publishing, audience: e.target.value as Audience })}
+            className="flex flex-col gap-2"
+          >
+            {AUDIENCE_OPTIONS.map((o) => (
+              <Radio key={o.value} value={o.value}>
+                <span className="font-medium">{o.label}</span>
+                <span className="ml-2 text-[12px] text-muted">{o.hint}</span>
+              </Radio>
+            ))}
+          </Radio.Group>
+          <Input.TextArea
+            aria-label="Ghi chú phiên bản"
+            placeholder="Ghi chú phiên bản, hiện trong thông báo (không bắt buộc)"
+            autoSize={{ minRows: 2 }}
+            value={publishing?.note ?? ""}
+            onChange={(e) => publishing && setPublishing({ ...publishing, note: e.target.value })}
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        open={changing !== undefined}
+        title="Yêu cầu sửa chữa quy trình"
+        okText="Gửi yêu cầu"
+        cancelText="Hủy"
+        okButtonProps={{ disabled: (changing ?? "").trim().length < 3 }}
+        onOk={() => void sendChange((changing ?? "").trim())}
+        onCancel={() => setChanging(undefined)}
+        destroyOnHidden
+      >
+        <Input.TextArea
+          aria-label="Nội dung yêu cầu sửa chữa"
+          autoSize={{ minRows: 4 }}
+          maxLength={2000}
+          showCount
+          placeholder="Nêu bước cần thêm, bớt hoặc sửa và lý do"
+          value={changing ?? ""}
+          onChange={(e) => setChanging(e.target.value)}
+        />
+        <p className="mt-2 text-[12px] text-muted">
+          Người thiết kế quy trình sẽ nhận thông báo và báo lại cho bạn khi đã xử lý.
         </p>
       </Modal>
     </div>

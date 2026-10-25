@@ -8,6 +8,7 @@ import gql from "graphql-tag";
 import { Globe } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
+import { useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
 import { BambooLogo } from "./BambooLogo";
 import { findActive, NAV_GROUPS, type NavItem } from "./nav";
@@ -40,12 +41,13 @@ const useInboxCount = () => {
 
 const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; active: boolean } & SiderProps) => {
   const Icon = item.icon;
+  const { t } = useLocale();
   const link = (
     <Link
       to={item.to}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      aria-label={collapsed ? item.label : undefined}
+      aria-label={collapsed ? t(item.label) : undefined}
       className={cn(
         "group relative flex h-9 items-center gap-3 rounded-[10px] text-[13.5px] transition-[background-color,box-shadow,color] duration-150",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
@@ -60,7 +62,7 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
         strokeWidth={1.75}
         aria-hidden
       />
-      {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+      {!collapsed && <span className="min-w-0 flex-1 truncate">{t(item.label)}</span>}
       {!collapsed && item.badge ? (
         <span
           className={cn(
@@ -77,7 +79,7 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
     </Link>
   );
   return collapsed ? (
-    <Tooltip title={item.label} placement="right">
+    <Tooltip title={t(item.label)} placement="right">
       {link}
     </Tooltip>
   ) : (
@@ -86,6 +88,7 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
 };
 
 export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
+  const { t } = useLocale();
   const { pathname } = useLocation();
   const activeKey = findActive(pathname)?.key;
   const inboxCount = useInboxCount();
@@ -97,7 +100,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         to="/"
         onClick={onNavigate}
         className={cn("flex h-16 shrink-0 items-center gap-2.5", collapsed ? "justify-center" : "px-5")}
-        aria-label="Bamboo — Trang chủ"
+        aria-label={t("Bamboo — Trang chủ")}
       >
         <BambooLogo className="h-8 w-8 shrink-0" />
         {!collapsed && (
@@ -108,7 +111,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         )}
       </Link>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label="Điều hướng chính">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label={t("Điều hướng chính")}>
         {NAV_GROUPS.map((group) => (
           <NavGate key={group.code} access={group.access}>
             <div className="mt-4 first:mt-1">
@@ -121,7 +124,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
                 <span className="w-[18px] text-center text-[10.5px] text-muted/80" aria-hidden={!collapsed}>
                   {group.code}
                 </span>
-                {!collapsed && <span className="truncate">{group.label}</span>}
+                {!collapsed && <span className="truncate">{t(group.label)}</span>}
               </div>
               <ul className="m-0 list-none space-y-0.5 p-0">
                 {group.items.map((item) => (
@@ -156,10 +159,10 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         </a>
         <div
           className={cn("flex items-center gap-2 text-[11.5px] text-muted", collapsed ? "justify-center" : "px-2.5")}
-          title="Kết nối trực tiếp · Phiên đã xác thực MFA"
+          title={t("Kết nối trực tiếp · Phiên đã xác thực MFA")}
         >
           <span className="h-2 w-2 shrink-0 rounded-full bg-bamboo-500 shadow-[0_0_0_3px_rgb(63_145_80/0.15)]" />
-          {!collapsed && <span>Trực tiếp · Phiên MFA ✓</span>}
+          {!collapsed && <span>{t("Trực tiếp · Phiên MFA ✓")}</span>}
         </div>
       </div>
     </div>

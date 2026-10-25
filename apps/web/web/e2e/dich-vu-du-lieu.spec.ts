@@ -8,7 +8,6 @@ const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 
 async function login(page: Page, username: string) {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
