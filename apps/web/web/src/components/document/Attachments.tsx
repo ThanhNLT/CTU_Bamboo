@@ -26,10 +26,27 @@ const MAX = 25 * 1024 * 1024;
 
 const SCAN: Record<string, { color: string; icon: ReactElement; label: string }> = {
   PENDING: { color: "processing", icon: <LoadingOutlined />, label: "Đang kiểm tra" },
-  CLEAN: { color: "success", icon: <CheckCircleOutlined />, label: "Sạch" },
+  CLEAN: { color: "success", icon: <CheckCircleOutlined />, label: "Đã quét – sạch" },
   INFECTED: { color: "error", icon: <BugOutlined />, label: "Nhiễm mã độc – đã xóa" },
   REJECTED: { color: "warning", icon: <StopOutlined />, label: "Bị loại – đã xóa" },
 };
+
+// Tệp cũ được nhận khi chưa có công cụ quét nào: chờ hệ thống quét lại, chưa tải về được
+const awaitingRescan = (a: { status: string; scan_engines?: string[] }) =>
+  a.status === "CLEAN" && (a.scan_engines ?? []).every((e) => e === "unscanned") && (a.scan_engines ?? []).length > 0;
+
+const scanTag = (a: { status: string; scan_engines?: string[] }) =>
+  awaitingRescan(a)
+    ? { color: "processing", icon: <LoadingOutlined />, label: "Chờ quét lại" }
+    : (SCAN[a.status] ?? SCAN.PENDING);
+
+const scanTip = (a: { scan_result: string | null; scan_engines?: string[] }) =>
+  [
+    a.scan_result,
+    a.scan_engines?.length && !a.scan_engines.includes("unscanned") ? `Công cụ: ${a.scan_engines.join("; ")}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
 const OCR_POLL_MS = 5000;
 
@@ -157,7 +174,8 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
           <p className="ant-upload-drag-icon">{uploading ? <LoadingOutlined /> : <CloudUploadOutlined />}</p>
           <p>Kéo thả hoặc bấm để đính kèm {hint} (PDF, ảnh, DOCX, XLSX, TXT; tối đa 25 MB)</p>
           <Typography.Text type="secondary">
-            Tệp được kiểm tra kích thước, định dạng và quét virus trước khi nhận.
+            Tệp được kiểm tra kích thước, định dạng, mã chủ động nhúng (macro, script, tệp thực thi) và quét virus xong
+            mới được xác nhận là sạch.
           </Typography.Text>
         </Upload.Dragger>
       )}
@@ -165,12 +183,12 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
         dataSource={doc.attachments}
         locale={{ emptyText: "Chưa có tệp đính kèm" }}
         renderItem={(a) => {
-          const s = SCAN[a.status] ?? SCAN.PENDING;
+          const s = scanTag(a);
           const o = a.ocr ? ocrTag(a.ocr) : null;
           return (
             <List.Item
               actions={[
-                a.status === "CLEAN" && (
+                a.status === "CLEAN" && !awaitingRescan(a) && (
                   <Button key="dl" type="link" icon={<DownloadOutlined />} onClick={() => download(a.id)}>
                     Tải về
                   </Button>
@@ -192,7 +210,7 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
                 title={a.file_name}
                 description={
                   <Space wrap size={4}>
-                    <Tooltip title={a.scan_result}>
+                    <Tooltip title={scanTip(a)}>
                       <Tag color={s.color} icon={s.icon}>
                         {s.label}
                       </Tag>

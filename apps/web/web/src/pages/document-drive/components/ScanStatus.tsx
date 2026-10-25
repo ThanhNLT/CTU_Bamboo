@@ -18,7 +18,7 @@ export const ScanStatus = ({ result }: { result: ScanResult }) =>
         }
         aria-hidden
       />
-      {result === "clean" ? "Sạch" : "Đang kiểm tra"}
+      {result === "clean" ? "Đã quét · sạch" : "Đang kiểm tra"}
     </span>
   ) : (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-red-50 px-2 py-0.5 text-[11.5px] font-medium text-red-700">

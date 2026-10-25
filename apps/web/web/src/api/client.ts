@@ -25,7 +25,10 @@ const headers = (withTenant = true): Record<string, string> => {
   const h: Record<string, string> = {};
   if (token) h.Authorization = `Bearer ${token}`;
   const tenant = withTenant ? getTenant() : null;
+  // Header rỗng ghi đè header tenant của client mặc định (graphql-request gộp header client trước, header yêu cầu sau);
+  // máy chủ coi rỗng là chưa chọn tenant.
   if (tenant) h["x-bamboo-tenant"] = tenant;
+  else if (!withTenant) h["x-bamboo-tenant"] = "";
   return h;
 };
 

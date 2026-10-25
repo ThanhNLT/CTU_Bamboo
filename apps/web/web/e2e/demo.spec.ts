@@ -23,7 +23,6 @@ async function login(_old: Page | null, username: string, pick?: RegExp): Promis
   });
   const page = await context.newPage();
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
@@ -38,10 +37,9 @@ test("chụp màn hình demo", async ({ browser, page: first }) => {
   browserRef = browser;
   let page = first;
   await page.goto("/login");
-  await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
+  await expect(page.locator("#username")).toBeVisible();
   await page.waitForTimeout(500);
   await shot(page, "01-dang-nhap");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await expect(page.locator("#username")).toBeVisible();
   await shot(page, "02-keycloak");
 

@@ -31,6 +31,16 @@ x-actions-env: &actions-env
   BAO_ADDR: http://openbao:8200
   BAO_APPROLE_FILE: /run/bms/approle.json
   CLAMAV_HOST: ${CLAMAV_HOST:-}
+  SCAN_REQUIRE_CLAMAV: ${SCAN_REQUIRE_CLAMAV:-false}
+  SMTP_HOST: ${SMTP_HOST-mailpit}
+  SMTP_PORT: ${SMTP_PORT:-1025}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-Bamboo DX-OS <no-reply@bamboo.local>}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+  SMS_GATEWAY_URL: ${SMS_GATEWAY_URL:-}
+  SMS_GATEWAY_TOKEN: ${SMS_GATEWAY_TOKEN:-}
+  WEBHOOK_ALLOW_PRIVATE: ${WEBHOOK_ALLOW_PRIVATE:-false}
   TRINO_URL: https://trino:8443
   TRINO_CA_FILE: /run/bms/trino-ca.pem
   OLLAMA_URL: ${OLLAMA_URL-http://ollama:11434}
@@ -291,6 +301,51 @@ services:
       interval: 3s
       timeout: 3s
       retries: 40
+
+  mailpit:
+    logging: *logging
+    image: axllent/mailpit:v1.27
+    # Hộp thư thử cho môi trường phát triển; đặt SMTP_HOST tới máy chủ thật khi triển khai (UI tại localhost:8025)
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
+
+  backup:
+    logging: *logging
+    image: postgis/postgis:17-3.5
+    platform: linux/amd64
+    # Sao lưu CSDL theo lịch rồi diễn tập khôi phục ngay bản vừa tạo (kết quả ghi vào audit.backup_run)
+    entrypoint: ["bash", "/ops/backup-scheduler.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: bms
+      PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      BACKUP_DIR: /backups
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
+      BACKUP_FIRST_DELAY: ${BACKUP_FIRST_DELAY:-600}
+    volumes:
+      - ./scripts/ops:/ops:ro
+      - backups:/backups
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  vector:
+    logging: *logging
+    profiles: [logs]
+    image: timberio/vector:0.46.1-debian
+    # Gom log của mọi container về obs.log_event qua actions (/obs/ingest); cần đọc socket Docker
+    command: ["--config", "/etc/vector/vector.yaml"]
+    environment:
+      ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
+    volumes:
+      - ./platform/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - actions
+    restart: unless-stopped
 
   clamav:
     logging: *logging
@@ -817,6 +872,7 @@ services:
     entrypoint: ["sh", "-c", "pip install -q -r requirements-dev.txt -c /repo/constraints.txt && python -m pytest -q \"$$@\"", "--"]
 
 volumes:
+  backups:
   pgdata:
   seaweedfs-data:
   seaweedfs-config:

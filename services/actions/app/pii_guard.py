@@ -7,7 +7,7 @@ import threading
 from dataclasses import dataclass
 
 from .common import ActionError
-from .pii import mask_tail
+from .pii import mask_address, mask_tail
 
 LANG = "vi"
 LABELS = {
@@ -17,6 +17,12 @@ LABELS = {
     "EMAIL_ADDRESS": "Email",
     "VN_BANK_ACCOUNT": "Số tài khoản",
     "CREDIT_CARD": "Số thẻ",
+    "VN_TAX_CODE": "Mã số thuế",
+    "VN_HEALTH_INSURANCE": "Số thẻ BHYT",
+    "VN_SOCIAL_INSURANCE": "Số sổ BHXH",
+    "VN_PASSPORT": "Số hộ chiếu",
+    "VN_PERSON": "Họ tên",
+    "VN_ADDRESS": "Địa chỉ",
 }
 SCORE_THRESHOLD = 0.5
 
@@ -27,6 +33,27 @@ PHONE = _START + r"(?:\+84[ .-]?|0)(?:[35789]\d(?:[ .-]?\d){7}|2\d(?:[ .-]?\d){8
 EMAIL = r"(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+"
 CMND = r"(?i)\b(?:cmnd|chứng minh(?: nhân dân| thư)?)\D{0,15}?(?P<pii>(?<!\d)\d{9}(?!\d))"
 BANK_ACCOUNT = r"(?i)\b(?:stk|số tài khoản|tài khoản(?: ngân hàng)?)\D{0,20}?(?P<pii>(?<!\d)\d(?:[ .-]?\d){5,19}(?!\d))"
+
+_UPPER = "A-ZĐÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ"
+_LOWER = "a-zđàáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ"
+_NAME = rf"[{_UPPER}][{_LOWER}]+(?:[ ][{_UPPER}][{_LOWER}]+){{1,4}}"
+# Nhận diện theo ngữ cảnh: chỉ khi có từ khóa đi trước, để không che nhầm mã chứng từ hay số liệu
+TAX_CODE = r"(?i:\b(?:mã số thuế|mst))\D{0,15}?(?P<pii>(?<!\d)\d{10}(?:[- ]?\d{3})?(?!\d))"
+HEALTH_INSURANCE = r"(?i:\b(?:bhyt|bảo hiểm y tế))\D{0,20}?(?P<pii>[A-Z]{2}(?:[ -]?\d){13}(?!\d))"
+SOCIAL_INSURANCE = r"(?i:\b(?:bhxh|sổ bảo hiểm xã hội))\D{0,15}?(?P<pii>(?<!\d)\d{10}(?!\d))"
+PASSPORT = r"(?i:\b(?:hộ chiếu|passport))\D{0,15}?(?P<pii>(?<![A-Z\d])[A-Z]\d{7,8}(?!\w))"
+PERSON = (
+    r"(?i:\b(?:họ và tên|họ tên|họ tên đầy đủ|ông|bà|anh|chị|đồng chí|bệnh nhân|khách hàng|bác sĩ))"
+    rf"\s*[:\-]?\s*(?P<pii>{_NAME})"
+)
+ADDRESS = (
+    r"(?i:\b(?:địa chỉ(?: thường trú| liên hệ| nhà riêng)?|nơi cư trú|nơi ở hiện nay))\s*[:\-]\s*"
+    r"(?P<pii>[^\n;]{8,120}?)(?=[\n;.]|$)"
+)
+STREET_ADDRESS = (
+    r"(?P<pii>(?<![\w/])\d+[A-Za-z]?(?:/\d+)*[ ]+(?i:đường|phố|ngõ|ngách|hẻm)[ ]+[^,\n;]{2,40}"
+    r"(?:,[ ]*[^,\n;]{2,40}){1,4})"
+)
 
 
 @dataclass(frozen=True)
@@ -49,7 +76,24 @@ def mask_value(entity: str, value: str) -> str:
         if value.lstrip().startswith("+84"):
             digits = "0" + digits[2:]
         return f"{digits[:4]} *** {digits[-3:]}" if len(digits) >= 7 else "***"
+    if entity == "VN_PERSON":
+        return " ".join(f"{word[:1]}•••" for word in value.split())
+    if entity == "VN_ADDRESS":
+        return mask_address(value)
+    if entity in ("VN_HEALTH_INSURANCE", "VN_PASSPORT"):
+        return mask_tail("".join(ch for ch in value if ch.isalnum()), 3)
     return mask_tail(digits, 4 if entity == "CREDIT_CARD" else 3)
+
+
+def merge(findings: list[Finding]) -> list[Finding]:
+    """Gộp các phát hiện cùng loại chồng lên nhau (hai luật cùng bắt một địa chỉ) thành một."""
+    out: list[Finding] = []
+    for f in sorted(findings, key=lambda x: (x.start, -x.end)):
+        if out and out[-1].entity == f.entity and f.start < out[-1].end:
+            out[-1] = Finding(f.entity, out[-1].start, max(out[-1].end, f.end))
+        else:
+            out.append(f)
+    return out
 
 
 class PiiGuard:
@@ -110,6 +154,13 @@ class PiiGuard:
                 pattern("EMAIL_ADDRESS", EMAIL, 0.8),
                 KeywordRecognizer("VN_CMND", CMND, 0.7),
                 KeywordRecognizer("VN_BANK_ACCOUNT", BANK_ACCOUNT, 0.7),
+                KeywordRecognizer("VN_TAX_CODE", TAX_CODE, 0.7),
+                KeywordRecognizer("VN_HEALTH_INSURANCE", HEALTH_INSURANCE, 0.7),
+                KeywordRecognizer("VN_SOCIAL_INSURANCE", SOCIAL_INSURANCE, 0.7),
+                KeywordRecognizer("VN_PASSPORT", PASSPORT, 0.7),
+                KeywordRecognizer("VN_PERSON", PERSON, 0.65),
+                KeywordRecognizer("VN_ADDRESS", ADDRESS, 0.65),
+                KeywordRecognizer("VN_ADDRESS", STREET_ADDRESS, 0.6),
                 CreditCardRecognizer(supported_language=LANG),
             ):
                 registry.add_recognizer(recognizer)
@@ -127,7 +178,7 @@ class PiiGuard:
     def analyze(self, text: str) -> list[Finding]:
         if not text or not text.strip():
             return []
-        return sorted((Finding(r.entity_type, r.start, r.end) for r in self._results(text)), key=lambda f: f.start)
+        return merge([Finding(r.entity_type, r.start, r.end) for r in self._results(text)])
 
     def mask(self, text: str) -> tuple[str, list[Finding]]:
         if not text or not text.strip():
@@ -136,7 +187,7 @@ class PiiGuard:
         if not results:
             return text, []
         masked = self._anonymizer.anonymize(text=text, analyzer_results=results, operators=self._operators).text
-        return masked, sorted((Finding(r.entity_type, r.start, r.end) for r in results), key=lambda f: f.start)
+        return masked, merge([Finding(r.entity_type, r.start, r.end) for r in results])
 
     def mask_json(self, value, found: set[str] | None = None):
         found = set() if found is None else found

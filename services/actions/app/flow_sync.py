@@ -10,7 +10,7 @@ import time
 import psycopg
 from psycopg.rows import dict_row
 
-from . import config, hr_account
+from . import anchoring, attachments, config, delivery, obs, hr_account, process_automation
 from .flowable import FlowableClient
 from .keycloak_sync import PROVISIONER_ID
 from .pii import PiiCipher
@@ -163,10 +163,18 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
     account_conn = psycopg.connect(settings.database_url) if accounts else None
     last_refresh = 0.0
     log.info("flow-sync đang chạy")
+    process_automation.start_background(settings)
+    attachments.start_rescan(settings)
+    delivery.start_background(settings)
+    anchoring.start_background(settings)
+    if settings.obs_enabled:
+        obs.install("flow-sync", settings.database_url)
+        obs.purge_forever(settings.database_url)
     while True:
         if time.monotonic() - last_refresh >= refresh_seconds:
             work.execute("SELECT wf.refresh_all()")
             work.execute("SELECT kpi.refresh()")
+            work.execute("SELECT kpi.freeze()")
             work.commit()
             last_refresh = time.monotonic()
         while run_once(work, flowable):

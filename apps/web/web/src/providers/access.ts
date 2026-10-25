@@ -35,8 +35,11 @@ const RULES: Record<string, Partial<Record<string, string | string[]>>> = {
   admin_org: { list: "core.org.manage" },
   admin_people: { list: "core.org.manage" },
   admin_roles: { list: "core.permission.manage" },
+  admin_queue: { list: "core.org.manage" },
+  admin_ops: { list: "audit.read" },
   admin_catalog: { list: ["core.org.manage", "mdm.manage"] },
   proc_purchase_request: { create: "proc.purchase_request.create" },
+  hr_transfer_request: { list: ["hr.transfer.read", "hr.transfer.create"] },
   hr_onboarding_request: { list: "hr.onboarding.read", create: "hr.onboarding.create" },
 };
 

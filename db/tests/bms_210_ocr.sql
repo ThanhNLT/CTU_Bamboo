@@ -17,7 +17,7 @@ SELECT test.put('docx', pg_temp.attach('k-docx', 'application/vnd.openxmlformats
 SELECT test.ok(NOT EXISTS (SELECT 1 FROM core.attachment_ocr WHERE attachment_id = test.id('scan')),
                'Chưa quét virus thì chưa xếp hàng OCR');
 
-UPDATE core.attachment SET status = 'CLEAN', sha256 = 'a', scanned_at = now() WHERE id IN (test.id('scan'), test.id('docx'));
+UPDATE core.attachment SET status = 'CLEAN', sha256 = 'a', scan_engines = ARRAY['test'], scanned_at = now() WHERE id IN (test.id('scan'), test.id('docx'));
 SELECT test.eq((SELECT status FROM core.attachment_ocr WHERE attachment_id = test.id('scan')), 'PENDING',
                'Ảnh sạch được xếp hàng OCR');
 SELECT test.ok(NOT EXISTS (SELECT 1 FROM core.attachment_ocr WHERE attachment_id = test.id('docx')),
