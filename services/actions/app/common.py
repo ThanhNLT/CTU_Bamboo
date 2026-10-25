@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .hr_account import KeycloakUsers
     from .ollama import Ollama
     from .pii import PiiCipher
+    from .receipts import Signer
     from .search import Meili
     from .trino import Trino
 
@@ -25,6 +26,7 @@ class Context:
     storage: Storage | None = None
     clamav_host: str = ""
     clamav_port: int = 3310
+    require_clamav: bool = False
     search: "Meili | None" = None
     search_index: str = "documents"
     gotenberg_url: str = ""
@@ -32,6 +34,10 @@ class Context:
     users: "KeycloakUsers | None" = None
     lakehouse: "Trino | None" = None
     ai: "Ollama | None" = None
+    channels: tuple[str, ...] = ()
+    signer: "Signer | None" = None
+    anchor_signer: "Signer | None" = None
+    anchor_url: str = ""
 
 
 class ActionError(Exception):

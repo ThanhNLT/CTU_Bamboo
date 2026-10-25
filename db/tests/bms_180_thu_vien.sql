@@ -25,9 +25,9 @@ $$;
 CREATE FUNCTION pg_temp.attach(p_key text) RETURNS void
 LANGUAGE sql AS $$
     INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key,
-                                 uploaded_by, status, sha256, scanned_at)
+                                 uploaded_by, status, sha256, scan_engines, scanned_at)
     VALUES (test.id('TDX'), 'collab.kb_document', test.id(p_key), p_key || '.pdf', 'application/pdf', 10,
-            'k-' || p_key, test.id('c'), 'CLEAN', repeat('a', 64), now())
+            'k-' || p_key, test.id('c'), 'CLEAN', repeat('a', 64), ARRAY['test'], now())
 $$;
 
 CREATE FUNCTION pg_temp.st(p_key text) RETURNS text

@@ -59,6 +59,17 @@ class Bao:
         b64 = base64.b64encode(plaintext.encode("utf-8")).decode()
         return self.request("POST", f"transit/encrypt/{key}", {"plaintext": b64})["data"]["ciphertext"]
 
+    def sign(self, data: bytes, key: str = "receipt") -> str:
+        """Chữ ký Ed25519 của khóa transit; trả về chuỗi `vault:v1:...`."""
+        b64 = base64.b64encode(data).decode()
+        return self.request("POST", f"transit/sign/{key}", {"input": b64})["data"]["signature"]
+
+    def verify(self, data: bytes, signature: str, key: str = "receipt") -> bool:
+        b64 = base64.b64encode(data).decode()
+        return bool(
+            self.request("POST", f"transit/verify/{key}", {"input": b64, "signature": signature})["data"]["valid"]
+        )
+
     def decrypt(self, ciphertext: str, key: str = "pii") -> str:
         b64 = self.request("POST", f"transit/decrypt/{key}", {"ciphertext": ciphertext})["data"]["plaintext"]
         return base64.b64decode(b64).decode("utf-8")

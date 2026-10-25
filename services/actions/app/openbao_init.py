@@ -31,6 +31,10 @@ path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 path "secret/data/bms/trino-actions" { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
+path "transit/sign/receipt"      { capabilities = ["update"] }
+path "transit/verify/receipt"    { capabilities = ["update"] }
+path "transit/sign/anchor"       { capabilities = ["update"] }
+path "transit/verify/anchor"     { capabilities = ["update"] }
 """,
     "bootstrap": """
 path "secret/data/bms/seaweedfs-admin" { capabilities = ["read"] }
@@ -133,6 +137,9 @@ def configure(root: Bao) -> None:
         root.request("POST", "sys/mounts/transit", {"type": "transit"})
     if root.request("GET", "transit/keys/pii", ok404=True) is None:
         root.request("POST", "transit/keys/pii", {"type": "aes256-gcm96"})
+    for key in ("receipt", "anchor"):  # chữ ký biên nhận giao tin và neo chuỗi kiểm toán
+        if root.request("GET", f"transit/keys/{key}", ok404=True) is None:
+            root.request("POST", f"transit/keys/{key}", {"type": "ed25519"})
     if "pki/" not in mounts:
         root.request("POST", "sys/mounts/pki", {"type": "pki", "config": {"max_lease_ttl": "87600h"}})
     if not root.request("LIST", "pki/issuers", ok404=True):

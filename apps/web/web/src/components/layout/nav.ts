@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  Activity,
   ArrowLeftRight,
+  BellRing,
   Bot,
   Cpu,
   Database,
@@ -15,13 +17,16 @@ import {
   Inbox,
   KeyRound,
   LibraryBig,
+  Mail,
   ListTree,
   Lock,
   Network,
   Route,
+  ScrollText,
   ScanText,
   Search,
   ShieldCheck,
+  Shuffle,
   ShoppingCart,
   Sparkles,
   UserPlus,
@@ -60,6 +65,15 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: UserPlus,
         access: { resource: "hr_onboarding_request", action: "list" },
       },
+      {
+        key: "transfer",
+        label: "Điều chuyển nhân sự",
+        to: "/h/transfer",
+        icon: Shuffle,
+        access: { resource: "hr_transfer_request", action: "list" },
+      },
+      { key: "decisions", label: "Quyết định nhân sự", to: "/h/decisions", icon: ScrollText },
+      { key: "notify-settings", label: "Thông báo ngoài ứng dụng", to: "/settings/notifications", icon: BellRing },
     ],
   },
   {
@@ -126,6 +140,20 @@ export const NAV_GROUPS: NavGroup[] = [
         to: "/admin/catalog",
         icon: ListTree,
         access: { resource: "admin_catalog", action: "list" },
+      },
+      {
+        key: "admin-queue",
+        label: "Hàng đợi tin nhắn",
+        to: "/admin/queue",
+        icon: Mail,
+        access: { resource: "admin_queue", action: "list" },
+      },
+      {
+        key: "admin-ops",
+        label: "Vận hành hệ thống",
+        to: "/admin/ops",
+        icon: Activity,
+        access: { resource: "admin_ops", action: "list" },
       },
       {
         key: "audit",

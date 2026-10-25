@@ -17,7 +17,11 @@ ADMIN_USER = "bms-admin"
 ACTIONS_USER = "bms-actions"
 TENANT_USER = "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 TENANT_OF_USER = "CAST(substr(current_user, 3) AS uuid)"
-CDC_EXCLUDED_COLUMNS = {("core", "attachment_ocr"): {"page_texts"}}
+CDC_EXCLUDED_COLUMNS = {
+    ("core", "attachment_ocr"): {"page_texts"},
+    ("collab", "notification_pref"): {"address"},
+    ("wf", "process_automation"): {"webhook_sha256"},
+}
 
 _COLUMNS = """
 SELECT pt.schemaname, pt.tablename, a.attname, t.typname, t.typcategory, a.atttypmod,

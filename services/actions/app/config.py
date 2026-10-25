@@ -49,6 +49,19 @@ class Settings:
     s3_documents_bucket: str
     clamav_host: str
     clamav_port: int
+    scan_require_clamav: bool
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
+    smtp_from: str
+    smtp_starttls: bool
+    sms_gateway_url: str
+    sms_gateway_token: str
+    webhook_allow_private: bool
+    anchor_url: str
+    anchor_interval: float
+    obs_enabled: bool
     keycloak_url: str
     keycloak_admin_user: str
     keycloak_admin_password: str
@@ -196,6 +209,19 @@ def _from_env() -> Settings:
         s3_documents_bucket=env("S3_DOCUMENTS_BUCKET", "bms-documents"),
         clamav_host=env("CLAMAV_HOST", ""),
         clamav_port=int(env("CLAMAV_PORT", "3310")),
+        scan_require_clamav=env("SCAN_REQUIRE_CLAMAV", "false").lower() in ("1", "true", "yes"),
+        smtp_host=env("SMTP_HOST", ""),
+        smtp_port=int(env("SMTP_PORT", "25")),
+        smtp_user=env("SMTP_USER", ""),
+        smtp_password=env("SMTP_PASSWORD", ""),
+        smtp_from=env("SMTP_FROM", "Bamboo DX-OS <no-reply@bamboo.local>"),
+        smtp_starttls=env("SMTP_STARTTLS", "false").lower() in ("1", "true", "yes"),
+        sms_gateway_url=env("SMS_GATEWAY_URL", ""),
+        sms_gateway_token=env("SMS_GATEWAY_TOKEN", ""),
+        webhook_allow_private=env("WEBHOOK_ALLOW_PRIVATE", "false").lower() in ("1", "true", "yes"),
+        anchor_url=env("ANCHOR_URL", ""),
+        anchor_interval=float(env("ANCHOR_INTERVAL_SECONDS", "300")),
+        obs_enabled=env("OBS_ENABLED", "true").lower() in ("1", "true", "yes"),
         keycloak_url=env("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080"),
         keycloak_admin_user=env("KEYCLOAK_ADMIN", "kcadmin"),
         keycloak_admin_password=env("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"),
