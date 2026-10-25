@@ -53,7 +53,8 @@ def kb_reindex(conn: psycopg.Connection, session: dict, args: dict, _ctx: Contex
     conn.execute("SELECT search.mark_chunk(%s, %s)", (tenant, args["id"]))
     conn.execute(
         """SELECT search.mark(tenant_id, 'core.attachment', id) FROM core.attachment
-           WHERE entity_type = %s AND entity_id = %s AND status = 'CLEAN' AND deleted_at IS NULL""",
+           WHERE entity_type = %s AND entity_id = %s AND status = 'CLEAN' AND scan_engines <> '{unscanned}'
+             AND deleted_at IS NULL""",
         (ENTITY, args["id"]),
     )
     return _result(conn, args["id"])
@@ -80,7 +81,7 @@ def kb_library(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Conte
                                                                 'size_bytes', a.size_bytes) ORDER BY a.created_at)
                             FROM core.attachment a
                             WHERE a.entity_type = 'collab.kb_document' AND a.entity_id = d.id
-                              AND a.status = 'CLEAN' AND a.deleted_at IS NULL), '[]') AS files,
+                              AND a.status = 'CLEAN' AND a.scan_engines <> '{unscanned}' AND a.deleted_at IS NULL), '[]') AS files,
                   coalesce((WITH RECURSIVE prev AS (
                                 SELECT o.id, o.version, o.doc_no, o.published_at, o.supersedes_id
                                 FROM collab.kb_document o WHERE o.id = d.supersedes_id

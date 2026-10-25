@@ -1,0 +1,60 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+SPDX-License-Identifier: Apache-2.0
+
+Quyết định nhân sự theo thể thức văn bản hành chính (quốc hiệu, tiêu ngữ, điều khoản, nơi nhận). Giá trị được Jinja2 escape.
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>{{ d.doc_no }}</title>
+<style>
+  @page { size: A4; }
+  body { font-family: "Noto Serif", "DejaVu Serif", "Times New Roman", serif; font-size: 12.5pt; color: #111; line-height: 1.5; }
+  .head { display: flex; justify-content: space-between; text-align: center; font-size: 11pt; }
+  .head div { width: 48%; }
+  .head strong { text-transform: uppercase; display: block; }
+  .nation { font-weight: 700; text-transform: uppercase; }
+  .motto { font-weight: 700; border-bottom: 1px solid #111; display: inline-block; padding-bottom: 2px; }
+  h1 { text-align: center; text-transform: uppercase; font-size: 15pt; margin: 22px 0 2px; }
+  .sub { text-align: center; font-weight: 700; margin-bottom: 14px; }
+  p { margin: 4px 0; text-align: justify; }
+  .basis { font-style: italic; }
+  h2 { font-size: 12.5pt; margin: 12px 0 2px; }
+  .foot { display: flex; justify-content: space-between; margin-top: 26px; break-inside: avoid; }
+  .foot .to { width: 55%; font-size: 10.5pt; }
+  .foot .sign { width: 40%; text-align: center; }
+  .sign .space { height: 70px; }
+</style>
+</head>
+<body>
+<div class="head">
+  <div>{{ d.company }}<strong>{{ d.issuer_position }}</strong><span>Số: {{ d.doc_no }}</span></div>
+  <div><span class="nation">Cộng hòa xã hội chủ nghĩa Việt Nam</span><br><span class="motto">Độc lập – Tự do – Hạnh phúc</span><br>
+    <em>{{ d.place }}, ngày {{ d.day }} tháng {{ d.month }} năm {{ d.year }}</em></div>
+</div>
+
+<h1>Quyết định</h1>
+<div class="sub">{{ d.title }}</div>
+
+<p class="basis">Căn cứ Điều lệ tổ chức và hoạt động của {{ d.company }};</p>
+<p class="basis">Căn cứ nhu cầu công tác và năng lực, phẩm chất của cán bộ, nhân viên;</p>
+<p class="basis">Xét đề nghị của người có thẩm quyền,</p>
+<p style="text-align:center;font-weight:700;text-transform:uppercase;margin:12px 0">Quyết định:</p>
+
+<h2>Điều 1.</h2>
+<p>{{ d.article1 }}</p>
+{% if d.reason %}<p>Lý do: {{ d.reason }}</p>{% endif %}
+<h2>Điều 2.</h2>
+<p>Quyết định này có hiệu lực kể từ ngày {{ d.effective }}.</p>
+<h2>Điều 3.</h2>
+<p>Các đơn vị, cá nhân có tên tại Điều 1 và những đơn vị liên quan chịu trách nhiệm thi hành quyết định này.</p>
+
+<div class="foot">
+  <div class="to"><strong><em>Nơi nhận:</em></strong><br>– Như Điều 3;<br>– Phòng Nhân sự;<br>– Lưu: VT.<br>
+    <span>Mã kiểm tra: {{ d.check_code }}</span></div>
+  <div class="sign"><strong>{{ d.issuer_position }}</strong><div class="space"></div><strong>{{ d.issuer }}</strong></div>
+</div>
+</body>
+</html>

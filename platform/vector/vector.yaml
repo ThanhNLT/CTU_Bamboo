@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Gom log của mọi container trong dự án về nhật ký tập trung của Bamboo (obs.log_event).
+# Bật bằng: docker compose --profile logs up -d vector
+sources:
+  containers:
+    type: docker_logs
+    include_labels:
+      - com.docker.compose.project=bamboo
+
+transforms:
+  normalize:
+    type: remap
+    inputs: [containers]
+    source: |
+      .service = string(.label."com.docker.compose.service") ?? "container"
+      msg = string(.message) ?? ""
+      parsed, err = parse_json(msg)
+      if err == null && is_object(parsed) {
+        .level = string(parsed.level) ?? string(parsed.severity) ?? "INFO"
+        .message = string(parsed.message) ?? string(parsed.msg) ?? msg
+        .trace_id = string(parsed.request_id) ?? string(parsed.trace_id) ?? null
+        .fields = parsed
+      } else {
+        .level = if match(msg, r'(?i)\b(error|fatal|exception|traceback)\b') { "ERROR" } else if match(msg, r'(?i)\bwarn') { "WARNING" } else { "INFO" }
+        .message = msg
+      }
+      . = {"timestamp": .timestamp, "service": .service, "level": .level, "message": .message, "trace_id": .trace_id, "fields": .fields}
+
+sinks:
+  bamboo:
+    type: http
+    inputs: [normalize]
+    uri: http://actions:8000/obs/ingest
+    method: post
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    batch:
+      max_events: 200
+      timeout_secs: 5
+    request:
+      headers:
+        x-actions-secret: "${ACTIONS_SECRET}"

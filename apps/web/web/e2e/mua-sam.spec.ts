@@ -9,7 +9,6 @@ const TITLE = `E2E mua linh kiện ${Date.now()}`;
 
 async function login(page: Page, username: string) {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
@@ -24,7 +23,7 @@ async function logout(page: Page) {
     .click();
   await page.getByRole("menuitem", { name: "Đăng xuất" }).click();
   await loggedOut;
-  await expect(page.getByRole("button", { name: /Đăng nhập/ })).toBeVisible();
+  await expect(page.locator("#username")).toBeVisible();
 }
 
 test("lập đề nghị, đính kèm, gửi duyệt và duyệt", async ({ page }) => {
@@ -79,7 +78,6 @@ test("lập đề nghị, đính kèm, gửi duyệt và duyệt", async ({ page
 
 test("một tài khoản hai tenant: chọn tenant, không thấy dữ liệu tenant kia", async ({ page }) => {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill("kiemnhiem");
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();

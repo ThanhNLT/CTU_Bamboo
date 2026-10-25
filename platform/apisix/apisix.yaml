@@ -11,6 +11,11 @@ upstreams:
     nodes:
       "hasura:8080": 1
     timeout: { connect: 5, send: 60, read: 60 }
+  - id: actions
+    type: roundrobin
+    nodes:
+      "actions:8000": 1
+    timeout: { connect: 5, send: 300, read: 300 }
   - id: keycloak
     type: roundrobin
     nodes:
@@ -130,6 +135,42 @@ routes:
         max_body_size: 1048576
       proxy-rewrite:
         uri: /v1/graphql
+
+  - id: ingest
+    uris: [/ingest/*]
+    priority: 15
+    methods: [POST, GET]
+    upstream_id: actions
+    plugins:
+      forward-auth:
+        uri: http://actions:8000/auth/gateway
+        request_method: GET
+        request_headers: [Authorization]
+        upstream_headers: [X-User-Sub]
+        timeout: 3000
+      limit-count:
+        count: 30
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều lần nạp dữ liệu, thử lại sau"
+      client-control:
+        max_body_size: 67108864
+
+  - id: automation-hooks
+    uris: [/hooks/*]
+    priority: 15
+    methods: [POST]
+    upstream_id: actions
+    plugins:
+      limit-count:
+        count: 60
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều lần gọi webhook, thử lại sau"
+      client-control:
+        max_body_size: 65536
 
   - id: keycloak-master
     uris: [/realms/master, /realms/master/*]

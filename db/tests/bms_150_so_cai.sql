@@ -13,7 +13,7 @@ RETURNING test.put('f1', id);
 
 SELECT test.ok((SELECT seq FROM audit.attachment_seal(test.id('f1'))) IS NULL, 'Tệp chưa sạch thì chưa có niêm phong');
 
-UPDATE core.attachment SET status = 'CLEAN', sha256 = repeat('a', 64), scanned_at = now() WHERE id = test.id('f1');
+UPDATE core.attachment SET status = 'CLEAN', sha256 = repeat('a', 64), scan_engines = ARRAY['test'], scanned_at = now() WHERE id = test.id('f1');
 SELECT test.eq((SELECT new_data ->> 'sha256' FROM audit.attachment_seal(test.id('f1'))), repeat('a', 64),
                'Niêm phong ghi SHA-256 lúc nhận tệp');
 

@@ -209,7 +209,7 @@ def _readable(conn: psycopg.Connection, person: str, hits: list[dict]) -> set[st
              AND (h.attachment_id IS NULL OR EXISTS (
                      SELECT 1 FROM core.attachment a
                      WHERE a.id = h.attachment_id AND a.entity_id = h.entity_id
-                       AND a.status = 'CLEAN' AND a.deleted_at IS NULL))""",
+                       AND a.status = 'CLEAN' AND a.scan_engines <> '{unscanned}' AND a.deleted_at IS NULL))""",
         (
             psycopg.types.json.Jsonb(
                 [{k: h.get(k) for k in ("id", "entity_type", "entity_id", "attachment_id")} for h in hits]

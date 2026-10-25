@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import datetime as dt
+import hashlib
 import json
 import logging
 import os
@@ -635,7 +636,14 @@ class Seeder:
                 self.x(
                     "INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, 'NHAN_SU', 'Nhân sự')", tid, role
                 )
-            for perm in ("hr.onboarding.create", "hr.onboarding.read", "hr.onboarding.private.read"):
+            for perm in (
+                "hr.onboarding.create",
+                "hr.onboarding.read",
+                "hr.onboarding.private.read",
+                "hr.transfer.create",
+                "hr.transfer.read",
+                "hr.decision.read",
+            ):
                 self.x(
                     """INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)
                           ON CONFLICT DO NOTHING""",
@@ -653,6 +661,7 @@ class Seeder:
                 unit_id = uid(t.code, "unit", unit)
                 if not self.x("SELECT 1 FROM core.org_unit WHERE id = %s AND tenant_id = %s", unit_id, tid).fetchone():
                     continue
+                self.x("UPDATE core.org_unit SET is_hr = true WHERE id = %s", unit_id)
                 if not self.x(
                     "SELECT 1 FROM core.role_grant WHERE role_id = %s AND org_unit_id = %s", role, unit_id
                 ).fetchone():
@@ -822,6 +831,22 @@ class Seeder:
             {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]},
         )
 
+    def decision_demo(self):
+        seats = {"TDX": ["TDX.HEAD", "TDX.DEP1"], "BVX": ["BVX.HEAD", "BVX.DEP1"]}
+        self.seat_role(
+            "QUYET_DINH_NHAN_SU",
+            "Quyết định nhân sự",
+            "hr.decision.issue",
+            seats,
+        )
+        for t in TENANTS:
+            self.x(
+                """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                      VALUES (%s, %s, 'hr.decision.read') ON CONFLICT DO NOTHING""",
+                self.tenant_id(t.code),
+                uid(t.code, "role", "QUYET_DINH_NHAN_SU"),
+            )
+
     def master_data_admin_demo(self):
         self.seat_role(
             "QUAN_LY_DU_LIEU_CHU",
@@ -872,6 +897,71 @@ class Seeder:
                 owner[0],
                 owner[0],
             )
+            # Quy trình mẫu đã phát hành toàn tập đoàn để nhân viên, quản lý xem được ngay
+            self.x(
+                """INSERT INTO wf.process_version (tenant_id, model_id, version, bpmn_xml, forms, sha256, note,
+                                                   published_by, audience)
+                   VALUES (%s, %s, 1, %s, %s::jsonb, %s, 'Bản mẫu mô tả luồng duyệt đề nghị mua sắm', %s, 'GROUP')
+                   ON CONFLICT (model_id, version) DO NOTHING""",
+                self.tenant_id(t.code),
+                uid(t.code, "process_model", "purchaseRequestApproval"),
+                xml,
+                json.dumps(forms, ensure_ascii=False),
+                hashlib.sha256(xml.encode()).hexdigest(),
+                owner[0],
+            )
+
+    def supervision_demo(self):
+        """Trưởng đơn vị thiết kế quy trình trong đơn vị mình; trưởng và phó đơn vị giám sát toàn tenant."""
+        for t in TENANTS:
+            tid = self.tenant_id(t.code)
+            roles = {
+                "QUAN_LY_QUY_TRINH": ("Quản lý thiết kế quy trình", "wf.process.design"),
+                "GIAM_SAT_QUY_TRINH": ("Giám sát quy trình", "wf.process.review"),
+            }
+            for code, (name, permission) in roles.items():
+                role = uid(t.code, "role", code)
+                if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
+                    self.x(
+                        "INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, %s, %s)", tid, role, code, name
+                    )
+                self.x(
+                    """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
+                          VALUES (%s, %s, %s) ON CONFLICT DO NOTHING""",
+                    tid,
+                    role,
+                    permission,
+                )
+            design, review = uid(t.code, "role", "QUAN_LY_QUY_TRINH"), uid(t.code, "role", "GIAM_SAT_QUY_TRINH")
+            leaders = self.x(
+                """SELECT p.id, p.org_unit_id, p.is_head FROM core.position p
+                   WHERE p.tenant_id = %s AND p.valid_period @> now() AND (p.is_head OR p.name ILIKE 'Phó %%')""",
+                tid,
+            ).fetchall()
+            for position, unit, is_head in leaders:
+                if is_head and not self.x(
+                    "SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", design, position
+                ).fetchone():
+                    self.x(
+                        """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope, scope_unit_id, valid_period)
+                              VALUES (%s, %s, %s, 'SUBTREE', %s, tstzrange(%s, NULL))""",
+                        tid,
+                        design,
+                        position,
+                        unit,
+                        START,
+                    )
+                if not self.x(
+                    "SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", review, position
+                ).fetchone():
+                    self.x(
+                        """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope, valid_period)
+                              VALUES (%s, %s, %s, 'TENANT', tstzrange(%s, NULL))""",
+                        tid,
+                        review,
+                        position,
+                        START,
+                    )
 
     def ops_demo(self):
         self.seat_role(
@@ -1190,10 +1280,12 @@ class Seeder:
         self.delegation()
         self.purchase_requests()
         self.hr_demo()
+        self.decision_demo()
         self.ic_demo()
         self.lakehouse_demo()
         self.master_data_admin_demo()
         self.process_design_demo()
+        self.supervision_demo()
         self.library_demo()
         self.ai_demo()
         self.ops_demo()
@@ -1208,16 +1300,19 @@ def seed(conn: psycopg.Connection) -> bool:
             for t in TENANTS:
                 seeder.master_data(t.code)
             seeder.hr_demo()
+            seeder.decision_demo()
             seeder.ic_demo()
             seeder.lakehouse_demo()
             seeder.master_data_admin_demo()
             seeder.process_design_demo()
+            seeder.supervision_demo()
             seeder.library_demo()
             seeder.ai_demo()
             seeder.ops_demo()
             seeder.approval_history_demo()
             demo_load.load(conn)
             conn.execute("SELECT kpi.refresh()")
+            conn.execute("SELECT kpi.freeze()")
         return False
     with conn.transaction():
         Seeder(conn).run()
