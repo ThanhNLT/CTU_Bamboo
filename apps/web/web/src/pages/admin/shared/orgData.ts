@@ -10,7 +10,7 @@ import { useGql } from "./useGql";
 const ORG = `
   query AdminOrg {
     core_org_unit(order_by: { name: asc }) {
-      id code name parent_id is_legal_entity province lat lng valid_period unit_type_id unit_type { code name }
+      id code name parent_id is_legal_entity is_hr province lat lng valid_period unit_type_id unit_type { code name }
     }
     core_catalog_item(order_by: [{ catalog: asc }, { name: asc }]) { id catalog code name }
     core_position(order_by: { name: asc }) {
@@ -30,6 +30,7 @@ export type Unit = {
   name: string;
   parent_id: string | null;
   is_legal_entity: boolean;
+  is_hr: boolean;
   province: string | null;
   lat: number | null;
   lng: number | null;

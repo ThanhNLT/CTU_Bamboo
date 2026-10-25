@@ -24,16 +24,14 @@ if [ -z "$mode" ]; then
     echo "Tự chọn mức RAM $mode (Docker thấy $((kb / 1024)) MB); đặt BAMBOO_RAM=8 hoặc 16 để chọn tay" >&2
 fi
 
-profiles=$(env_value COMPOSE_PROFILES)
-profiles=${COMPOSE_PROFILES:-$profiles}
-profiles=$(echo "$profiles" | tr ',' '\n' | grep -vx 'ai' | paste -sd, - || true)
-
+services=""
 case "$mode" in
     16)
-        profiles=${profiles:+$profiles,}ai
-        echo "Mức RAM 16: đầy đủ chức năng, gồm AI" >&2
+        echo "Mức RAM 16: đầy đủ chức năng, gồm AI (Ollama, OCR ngủ khi nhàn rỗi)" >&2
         ;;
     8)
+        # chỉ dựng và chạy các dịch vụ không thuộc AI (Makefile: AI_SERVICES)
+        services=$(docker compose config --services | grep -vxE 'ollama-core|ollama-init|ocr-core|ocr-init|ai-worker' | paste -sd' ' -)
         cat << 'VARS'
 export OLLAMA_URL=
 export KEYCLOAK_HEAP="${KEYCLOAK_HEAP:--Xms64m -Xmx384m}"
@@ -53,4 +51,4 @@ VARS
         ;;
 esac
 echo "export BAMBOO_RAM_MODE=$mode"
-echo "export COMPOSE_PROFILES='$profiles'"
+echo "export BAMBOO_SERVICES='$services'"

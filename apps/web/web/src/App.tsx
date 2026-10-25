@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { lazy, Suspense } from "react";
 import { Authenticated, Refine } from "@refinedev/core";
 import { RefineKbarProvider } from "@refinedev/kbar";
 import { ErrorComponent, useNotificationProvider } from "@refinedev/antd";
@@ -11,7 +12,7 @@ import routerProvider, {
   NavigateToResource,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
-import { App as AntdApp, ConfigProvider } from "antd";
+import { App as AntdApp, ConfigProvider, Spin } from "antd";
 import viVN from "antd/locale/vi_VN";
 import {
   AuditOutlined,
@@ -19,6 +20,7 @@ import {
   InboxOutlined,
   SearchOutlined,
   SwapOutlined,
+  SolutionOutlined,
   UserAddOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -29,7 +31,6 @@ import { useKeycloak } from "@react-keycloak/web";
 import "./styles/tailwind.css";
 import { TenantGate } from "./auth/session";
 import { BambooLayout } from "./components/layout";
-import { ComingSoon } from "./components/ui";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
 import { CatalogPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
@@ -42,13 +43,26 @@ import { DataLineagePage } from "./pages/data-lineage";
 import { LedgerPage } from "./pages/ledger";
 import { AiAssistantPage } from "./pages/ai-assistant";
 import { AiAgentsPage } from "./pages/ai-agents";
+import { OcrInputPage } from "./pages/ocr-input";
 import { OperationsCenterPage } from "./pages/operations-center";
+import { NotificationSettingsPage, QueuePage } from "./pages/messaging";
+import { OpsPage } from "./pages/ops";
+import { PersonnelDecisionPage } from "./pages/personnel-decision";
+import { ProcessDesignPage } from "./pages/process-design";
 import { RecordsPage } from "./pages/records";
 import { IcOrderList, IcOrderShow } from "./pages/ic-orders";
 import { InboxPage } from "./pages/inbox";
 import { InboxList } from "./pages/inbox/list";
 import { Login } from "./pages/login";
 import { OnboardingCreate, OnboardingEdit, OnboardingList, OnboardingShow } from "./pages/onboarding";
+import {
+  CrossTransferList,
+  CrossTransferShow,
+  TransferCreate,
+  TransferLegShow,
+  TransferList,
+  TransferShow,
+} from "./pages/transfer";
 import {
   PurchaseRequestCreate,
   PurchaseRequestEdit,
@@ -62,6 +76,8 @@ import { dataProvider, liveProvider } from "./providers/data";
 import { i18nProvider } from "./providers/i18n";
 
 dayjs.locale("vi");
+
+const ProcessDiagram = lazy(() => import("./pages/process/diagram"));
 
 function App() {
   const { initialized } = useKeycloak();
@@ -118,6 +134,18 @@ function App() {
                     show: "/h/onboarding/show/:id",
                     meta: { label: "Tiếp nhận nhân sự", icon: <UserAddOutlined /> },
                   },
+                  {
+                    name: "hr_transfer_request",
+                    list: "/h/transfer",
+                    create: "/h/transfer/create",
+                    show: "/h/transfer/show/:id",
+                    meta: { label: "Điều chuyển nhân sự", icon: <SwapOutlined /> },
+                  },
+                  {
+                    name: "hr_personnel_decision",
+                    list: "/h/decisions",
+                    meta: { label: "Quyết định nhân sự", icon: <SolutionOutlined /> },
+                  },
                   { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
                   { name: "search", list: "/i/search", meta: { label: "Tìm kiếm", icon: <SearchOutlined /> } },
                   {
@@ -128,6 +156,13 @@ function App() {
                   { name: "admin_org", list: "/admin/org", meta: { label: "Cơ cấu tổ chức" } },
                   { name: "admin_people", list: "/admin/people", meta: { label: "Người dùng" } },
                   { name: "admin_roles", list: "/admin/roles", meta: { label: "Vai trò & phân quyền" } },
+                  { name: "admin_queue", list: "/admin/queue", meta: { label: "Hàng đợi tin nhắn" } },
+                  { name: "admin_ops", list: "/admin/ops", meta: { label: "Vận hành hệ thống" } },
+                  {
+                    name: "notification_settings",
+                    list: "/settings/notifications",
+                    meta: { label: "Thông báo ngoài ứng dụng" },
+                  },
                   { name: "admin_catalog", list: "/admin/catalog", meta: { label: "Danh mục & dữ liệu chủ" } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
@@ -156,7 +191,7 @@ function App() {
                     <Route path="/h/library/proposals/:id" element={<ProposalPage />} />
                     <Route path="/p/records" element={<RecordsPage />} />
                     <Route path="/p/tasks" element={<InboxPage />} />
-                    <Route path="/p/process" element={<ComingSoon title="Thiết kế quy trình" />} />
+                    <Route path="/p/process" element={<ProcessDesignPage />} />
                     <Route path="/d/ops" element={<OperationsCenterPage />} />
                     <Route path="/d/map" element={<Navigate to="/d/ops" replace />} />
                     <Route path="/d/services" element={<DataServicesPage />} />
@@ -164,7 +199,7 @@ function App() {
                     <Route path="/d/lineage" element={<DataLineagePage />} />
                     <Route path="/d/ledger" element={<LedgerPage />} />
                     <Route path="/i/assistant" element={<AiAssistantPage />} />
-                    <Route path="/i/ocr" element={<ComingSoon title="Nhập liệu OCR" />} />
+                    <Route path="/i/ocr" element={<OcrInputPage />} />
                     <Route path="/i/agents" element={<AiAgentsPage />} />
                     <Route path="/p/documents">
                       <Route index element={<PurchaseRequestList />} />
@@ -182,13 +217,33 @@ function App() {
                       <Route path="edit/:id" element={<OnboardingEdit />} />
                       <Route path="show/:id" element={<OnboardingShow />} />
                     </Route>
+                    <Route path="/h/decisions" element={<PersonnelDecisionPage />} />
+                    <Route path="/h/transfer">
+                      <Route index element={<TransferList />} />
+                      <Route path="create" element={<TransferCreate />} />
+                      <Route path="show/:id" element={<TransferShow />} />
+                      <Route path="cross" element={<CrossTransferList />} />
+                      <Route path="cross/show/:id" element={<CrossTransferShow />} />
+                      <Route path="leg/in/:id" element={<TransferLegShow kind="in" />} />
+                      <Route path="leg/group/:id" element={<TransferLegShow kind="group" />} />
+                    </Route>
                     <Route path="/p/inbox" element={<InboxList />} />
-                    <Route path="/p/process/:id" element={<ComingSoon title="Sơ đồ quy trình" />} />
+                    <Route
+                      path="/p/process/:id"
+                      element={
+                        <Suspense fallback={<Spin />}>
+                          <ProcessDiagram />
+                        </Suspense>
+                      }
+                    />
                     <Route path="/i/search" element={<SearchPage />} />
                     <Route path="/admin/audit-logs" element={<AuditLogList />} />
                     <Route path="/admin/org" element={<OrgPage />} />
                     <Route path="/admin/people" element={<PeoplePage />} />
                     <Route path="/admin/roles" element={<RolesPage />} />
+                    <Route path="/admin/queue" element={<QueuePage />} />
+                    <Route path="/admin/ops" element={<OpsPage />} />
+                    <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
                     <Route path="/admin/catalog" element={<CatalogPage />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>

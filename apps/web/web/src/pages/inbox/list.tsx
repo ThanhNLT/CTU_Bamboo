@@ -62,6 +62,38 @@ const INBOX = gql`
           }
         }
       }
+      transfer_request {
+        id
+        doc_no
+        requester {
+          full_name
+        }
+        person {
+          full_name
+        }
+        target_unit {
+          name
+        }
+      }
+      transfer_out {
+        id
+        doc_no
+        person_name
+        target_unit_name
+      }
+      transfer_in {
+        id
+        doc_no
+        person_name
+        target_unit {
+          name
+        }
+      }
+      transfer_group {
+        id
+        doc_no
+        person_name
+      }
     }
     wf_v_inbox_aggregate(where: $where) {
       aggregate {
@@ -101,6 +133,16 @@ type Row = BaseRecord & {
     requester: { full_name: string } | null;
     target_position: { name: string; org_unit: { name: string } } | null;
   } | null;
+  transfer_request: {
+    id: string;
+    doc_no: string;
+    requester: { full_name: string } | null;
+    person: { full_name: string } | null;
+    target_unit: { name: string } | null;
+  } | null;
+  transfer_out: { id: string; doc_no: string; person_name: string; target_unit_name: string } | null;
+  transfer_in: { id: string; doc_no: string; person_name: string; target_unit: { name: string } | null } | null;
+  transfer_group: { id: string; doc_no: string; person_name: string } | null;
 };
 
 const describe = (r: Row) => {
@@ -113,6 +155,53 @@ const describe = (r: Row) => {
       docNo: k.doc_no,
       title: `Đề xuất tài liệu: ${k.title}`,
       sub: `${k.requester?.full_name ?? ""} · ${k.org_unit?.name ?? ""}`,
+      amount: "—",
+    };
+  }
+  if (r.transfer_out) {
+    const t = r.transfer_out;
+    return {
+      to: `/h/transfer/cross/show/${t.id}`,
+      resource: "hr_transfer_out",
+      id: t.id,
+      docNo: t.doc_no,
+      title: `Điều chuyển liên tập đoàn ${t.person_name}`,
+      sub: `đến ${t.target_unit_name}`,
+      amount: "—",
+    };
+  }
+  if (r.transfer_in) {
+    const t = r.transfer_in;
+    return {
+      to: `/h/transfer/leg/in/${t.id}`,
+      resource: "hr_transfer_in",
+      id: t.id,
+      docNo: t.doc_no,
+      title: `Tiếp nhận điều chuyển ${t.person_name}`,
+      sub: `vào ${t.target_unit?.name ?? ""}`,
+      amount: "—",
+    };
+  }
+  if (r.transfer_group) {
+    const t = r.transfer_group;
+    return {
+      to: `/h/transfer/leg/group/${t.id}`,
+      resource: "hr_transfer_group",
+      id: t.id,
+      docNo: t.doc_no,
+      title: `Quyết định điều chuyển ${t.person_name}`,
+      sub: "Liên tập đoàn",
+      amount: "—",
+    };
+  }
+  if (r.transfer_request) {
+    const t = r.transfer_request;
+    return {
+      resource: "hr_transfer_request",
+      id: t.id,
+      docNo: t.doc_no,
+      title: `Điều chuyển ${t.person?.full_name ?? ""}`,
+      sub: `${t.requester?.full_name ?? ""} · đến ${t.target_unit?.name ?? ""}`,
       amount: "—",
     };
   }

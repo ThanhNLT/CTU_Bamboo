@@ -4,6 +4,7 @@
 
 import socket
 import struct
+import time
 from urllib.parse import quote
 
 import boto3
@@ -154,6 +155,34 @@ def scan(data: bytes, host: str, port: int = 3310, timeout: float = 30.0) -> tup
     if text.endswith("FOUND"):
         return "INFECTED", text
     raise RuntimeError(f"ClamAV trả lời không hợp lệ: {text}")
+
+
+_VERSION_CACHE: dict[tuple[str, int], tuple[float, str]] = {}
+
+
+def clamav_label(host: str, port: int = 3310, timeout: float = 5.0) -> str:
+    """Tên và phiên bản ClamAV kèm bản cơ sở dữ liệu mẫu, ghi vào báo cáo quét; lỗi thì chỉ ghi tên."""
+    now = time.monotonic()
+    cached = _VERSION_CACHE.get((host, port))
+    if cached and now - cached[0] < 600:
+        return cached[1]
+    label = "ClamAV"
+    try:
+        with socket.create_connection((host, port), timeout=timeout) as sock:
+            sock.sendall(b"zVERSION\0")
+            reply = b""
+            while not reply.endswith(b"\0"):
+                part = sock.recv(1024)
+                if not part:
+                    break
+                reply += part
+        text = reply.rstrip(b"\0").decode("utf-8", "replace").strip()
+        if text:
+            label = text
+    except OSError:
+        pass
+    _VERSION_CACHE[(host, port)] = (now, label)
+    return label
 
 
 def s3_identities(settings: config.Settings) -> dict:

@@ -15,5 +15,5 @@ x-gpu: &gpu
             capabilities: [gpu]
 
 services:
-  ollama: *gpu
-  ocr: *gpu
+  ollama-core: *gpu
+  ocr-core: *gpu

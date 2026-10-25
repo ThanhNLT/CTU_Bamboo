@@ -9,6 +9,9 @@ from dataclasses import dataclass
 
 import httpx
 
+# Ollama ngủ khi nhàn rỗi (sleeper, ADR #53): lần gọi đầu chờ container dậy; dưới thời gian chờ 30 giây của Action Hasura
+WAKE_SECONDS = 25.0
+
 
 class OllamaUnavailable(Exception):
     def __init__(self, message: str, transient: bool = True):

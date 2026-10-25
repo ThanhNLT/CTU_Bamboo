@@ -3,19 +3,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import hashlib
+import json
 import logging
 import pathlib
+import threading
+import time
 import uuid
 
 import psycopg
 
-from . import storage
+from . import scanner, storage
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
 log = logging.getLogger("attachments")
 
 _COLUMNS = (
-    "id, tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, status, uploaded_by"
+    "id, tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, status, uploaded_by, "
+    "scan_engines"
 )
 
 
@@ -91,13 +95,52 @@ def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     }
 
 
-def _finish(conn, attachment_id: str, status: str, scan_result: str, sha256: str | None = None) -> dict:
+def _finish(
+    conn,
+    attachment_id: str,
+    status: str,
+    scan_result: str,
+    sha256: str | None = None,
+    engines: list[str] | None = None,
+    report: dict | None = None,
+) -> dict:
     conn.execute(
-        """UPDATE core.attachment SET status = %s, scan_result = %s, sha256 = %s, scanned_at = now()
-                    WHERE id = %s""",
-        (status, scan_result, sha256, attachment_id),
+        """UPDATE core.attachment SET status = %s, scan_result = %s, sha256 = %s, scan_engines = %s,
+                  scan_report = %s::jsonb, scanned_at = now() WHERE id = %s""",
+        (status, scan_result, sha256, engines or [], json.dumps(report, ensure_ascii=False) if report else None,
+         attachment_id),
     )
     return {"attachment_id": attachment_id, "status": status, "scan_result": scan_result}
+
+
+def scan_content(
+    content_type: str, data: bytes, clamav_host: str = "", clamav_port: int = 3310, require_clamav: bool = False
+) -> tuple[str, str, list[str], dict]:
+    """Quét một tệp bằng mọi công cụ đang bật; chỉ trả CLEAN khi mọi công cụ đã quét xong và không thấy gì.
+
+    Trả về (kết luận, mô tả, các công cụ đã quét, báo cáo). Công cụ bắt buộc mà không chạy được thì báo lỗi, không bao
+    giờ bỏ qua để coi tệp là sạch.
+    """
+    if require_clamav and not clamav_host:
+        raise ActionError(
+            "Chưa cấu hình ClamAV nhưng hệ thống yêu cầu quét bằng ClamAV (SCAN_REQUIRE_CLAMAV)", "scanner-unavailable", 503
+        )
+    report = scanner.scan_file(content_type, data)
+    if clamav_host:
+        try:
+            verdict, detail = storage.scan(data, clamav_host, clamav_port)
+        except (OSError, RuntimeError) as exc:
+            log.warning("ClamAV lỗi: %s", exc)
+            raise ActionError("Chưa quét được virus, thử lại sau", "scanner-unavailable", 503) from exc
+        report.engines.append(storage.clamav_label(clamav_host, clamav_port))
+        report.checked.append("ClamAV: đối chiếu cơ sở dữ liệu mẫu virus")
+        if verdict == "INFECTED":
+            report.findings.insert(0, scanner.Finding("infected", "clamav", detail))
+    verdict = report.verdict
+    summary = report.summary()
+    if verdict == "CLEAN" and clamav_host:
+        summary = f"Đã quét xong, không phát hiện vấn đề ({'; '.join(report.engines)})"
+    return verdict, summary, report.engines, report.as_dict()
 
 
 def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
@@ -129,19 +172,86 @@ def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
         return _finish(conn, attachment_id, "REJECTED", reason)
 
     digest = hashlib.sha256(data).hexdigest()
-    if ctx.clamav_host:
-        try:
-            verdict, detail = storage.scan(data, ctx.clamav_host, ctx.clamav_port)
-        except (OSError, RuntimeError) as exc:
-            log.warning("ClamAV lỗi: %s", exc)
-            raise ActionError("Chưa quét được virus, thử lại sau", "scanner-unavailable", 503) from exc
-    else:
-        verdict, detail = "CLEAN", "bỏ qua: ClamAV chưa được cấu hình"
-    if verdict == "INFECTED":
+    verdict, detail, engines, report = scan_content(
+        att["content_type"], data, ctx.clamav_host, ctx.clamav_port, ctx.require_clamav
+    )
+    if verdict != "CLEAN":
         s3.delete(key)
-        return _finish(conn, attachment_id, "INFECTED", detail, digest)
+        return _finish(conn, attachment_id, verdict, detail, digest, engines, report)
     s3.promote(key, att["content_type"])
-    return _finish(conn, attachment_id, "CLEAN", detail, digest)
+    return _finish(conn, attachment_id, "CLEAN", detail, digest, engines, report)
+
+
+def rescan_unscanned(
+    conn: psycopg.Connection,
+    s3: storage.Storage,
+    clamav_host: str = "",
+    clamav_port: int = 3310,
+    require_clamav: bool = False,
+    limit: int = 10,
+) -> int:
+    """Quét lại các tệp cũ được nhận khi chưa có công cụ quét nào. Phát hiện vấn đề thì gỡ tệp và đổi trạng thái."""
+    rows = conn.execute(
+        """SELECT id, storage_key, content_type, sha256 FROM core.attachment
+           WHERE status = 'CLEAN' AND scan_engines = '{unscanned}' AND deleted_at IS NULL
+           ORDER BY created_at LIMIT %s FOR UPDATE SKIP LOCKED""",
+        (limit,),
+    ).fetchall()
+    done = 0
+    for attachment_id, key, content_type, digest in rows:
+        data = s3.read_stored(key)
+        if data is None:
+            verdict, detail, engines, report = "REJECTED", "Không tìm thấy nội dung tệp trong kho để quét lại", [], {}
+        elif hashlib.sha256(data).hexdigest() != digest:
+            verdict, detail, engines, report = "REJECTED", "Nội dung tệp khác mã băm lúc nhận", [], {}
+        else:
+            try:
+                verdict, detail, engines, report = scan_content(
+                    content_type, data, clamav_host, clamav_port, require_clamav
+                )
+            except ActionError as exc:
+                log.warning("chưa quét lại được %s: %s", attachment_id, exc.message)
+                continue
+        if verdict == "CLEAN":
+            conn.execute(
+                """UPDATE core.attachment SET status = 'CLEAN', scan_result = %s, scan_engines = %s,
+                          scan_report = %s::jsonb, scanned_at = now() WHERE id = %s""",
+                (detail, engines, json.dumps(report, ensure_ascii=False), attachment_id),
+            )
+        else:
+            conn.execute("SELECT set_config('bms.rescan', 'on', true)")
+            conn.execute(
+                """UPDATE core.attachment SET status = %s, scan_result = %s, scan_engines = %s,
+                          scan_report = %s::jsonb, scanned_at = now() WHERE id = %s""",
+                (verdict, detail, engines, json.dumps(report, ensure_ascii=False) if report else None, attachment_id),
+            )
+            s3.delete(key)
+            log.warning("quét lại: tệp %s bị chuyển %s: %s", attachment_id, verdict, detail)
+        conn.commit()
+        done += 1
+    conn.commit()
+    return done
+
+
+def rescan_forever(settings, interval: float = 30.0) -> None:
+    s3 = storage.Storage(settings)
+    conn = psycopg.connect(settings.database_url)
+    log.info("quét lại tệp cũ đang chạy")
+    while True:
+        try:
+            rescan_unscanned(
+                conn, s3, settings.clamav_host, settings.clamav_port, settings.scan_require_clamav
+            )
+        except Exception as exc:  # noqa: BLE001
+            conn.rollback()
+            log.warning("vòng quét lại lỗi: %s", exc)
+        time.sleep(interval)
+
+
+def start_rescan(settings) -> threading.Thread:
+    thread = threading.Thread(target=rescan_forever, args=(settings,), name="attachment-rescan", daemon=True)
+    thread.start()
+    return thread
 
 
 def get_download_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
@@ -150,6 +260,8 @@ def get_download_url(conn: psycopg.Connection, session: dict, args: dict, ctx: C
     require_read(conn, att["entity_type"], att["entity_id"], person)
     if att["status"] != "CLEAN":
         raise ActionError(f"Tệp ở trạng thái {att['status']} không tải về được", "not-clean")
+    if not att["scan_engines"] or att["scan_engines"] == ["unscanned"]:
+        raise ActionError("Tệp đang chờ quét lại, thử lại sau ít phút", "not-scanned")
     return {
         "attachment_id": str(att["id"]),
         "expires_in": storage.DOWNLOAD_TTL,

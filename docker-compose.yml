@@ -31,6 +31,16 @@ x-actions-env: &actions-env
   BAO_ADDR: http://openbao:8200
   BAO_APPROLE_FILE: /run/bms/approle.json
   CLAMAV_HOST: ${CLAMAV_HOST:-}
+  SCAN_REQUIRE_CLAMAV: ${SCAN_REQUIRE_CLAMAV:-false}
+  SMTP_HOST: ${SMTP_HOST-mailpit}
+  SMTP_PORT: ${SMTP_PORT:-1025}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-Bamboo DX-OS <no-reply@bamboo.local>}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+  SMS_GATEWAY_URL: ${SMS_GATEWAY_URL:-}
+  SMS_GATEWAY_TOKEN: ${SMS_GATEWAY_TOKEN:-}
+  WEBHOOK_ALLOW_PRIVATE: ${WEBHOOK_ALLOW_PRIVATE:-false}
   TRINO_URL: https://trino:8443
   TRINO_CA_FILE: /run/bms/trino-ca.pem
   OLLAMA_URL: ${OLLAMA_URL-http://ollama:11434}
@@ -292,6 +302,51 @@ services:
       timeout: 3s
       retries: 40
 
+  mailpit:
+    logging: *logging
+    image: axllent/mailpit:v1.27
+    # Hộp thư thử cho môi trường phát triển; đặt SMTP_HOST tới máy chủ thật khi triển khai (UI tại localhost:8025)
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
+
+  backup:
+    logging: *logging
+    image: postgis/postgis:17-3.5
+    platform: linux/amd64
+    # Sao lưu CSDL theo lịch rồi diễn tập khôi phục ngay bản vừa tạo (kết quả ghi vào audit.backup_run)
+    entrypoint: ["bash", "/ops/backup-scheduler.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: bms
+      PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      BACKUP_DIR: /backups
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
+      BACKUP_FIRST_DELAY: ${BACKUP_FIRST_DELAY:-600}
+    volumes:
+      - ./scripts/ops:/ops:ro
+      - backups:/backups
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  vector:
+    logging: *logging
+    profiles: [logs]
+    image: timberio/vector:0.46.1-debian
+    # Gom log của mọi container về obs.log_event qua actions (/obs/ingest); cần đọc socket Docker
+    command: ["--config", "/etc/vector/vector.yaml"]
+    environment:
+      ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
+    volumes:
+      - ./platform/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - actions
+    restart: unless-stopped
+
   clamav:
     logging: *logging
     profiles: [scan]
@@ -421,9 +476,9 @@ services:
     command: ["python", "-m", "app.search_sync"]
     restart: unless-stopped
 
-  ollama:
+  # Ollama và OCR ngủ khi nhàn rỗi như các dịch vụ -core khác: tên mạng `ollama`, `ocr` và cổng công bố thuộc `sleeper`
+  ollama-core:
     logging: *logging
-    profiles: [ai]
     image: ollama/ollama:0.35.1
     environment:
       OLLAMA_NUM_PARALLEL: "1"
@@ -447,8 +502,6 @@ services:
         exec ollama serve
     volumes:
       - ollama-models:/root/.ollama
-    ports:
-      - "127.0.0.1:11434:11434"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "ollama", "list"]
@@ -458,10 +511,11 @@ services:
 
   ollama-init:
     logging: *logging
-    profiles: [ai]
     image: ollama/ollama:0.35.1
     depends_on:
-      ollama:
+      ollama-core:
+        condition: service_healthy
+      sleeper:
         condition: service_healthy
     environment:
       OLLAMA_HOST: http://ollama:11434
@@ -470,9 +524,8 @@ services:
     entrypoint: ["sh", "-c", "for m in \"$$AI_CHAT_MODEL\" \"$$AI_EMBED_MODEL\"; do ollama show \"$$m\" > /dev/null 2>&1 || ollama pull \"$$m\" || echo \"CẢNH BÁO: không tải được mô hình $$m, AI chưa dùng được\" >&2; done"]
     restart: "no"
 
-  ocr:
+  ocr-core:
     logging: *logging
-    profiles: [ai]
     build:
       context: .
       dockerfile: services/ocr/Dockerfile
@@ -485,8 +538,6 @@ services:
       OCR_IDLE_SECONDS: ${OCR_IDLE_SECONDS:-300}
     volumes:
       - ocr-models:/models
-    ports:
-      - "127.0.0.1:8866:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
@@ -497,7 +548,6 @@ services:
 
   ocr-init:
     logging: *logging
-    profiles: [ai]
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
     build:
       context: .
@@ -509,18 +559,20 @@ services:
 
   ai-worker:
     logging: *logging
-    profiles: [ai]
     <<: *actions-image
     depends_on:
       bootstrap:
         condition: service_completed_successfully
       ollama-init:
         condition: service_completed_successfully
-      ocr:
+      ocr-core:
         condition: service_started
+      sleeper:
+        condition: service_healthy
     environment:
       <<: *actions-env
       OCR_URL: http://ocr:8000
+      SLEEPER_URL: http://sleeper:9000
     volumes:
       - actions-secrets:/run/bms:ro
     command: ["python", "-m", "app.ai_worker"]
@@ -700,10 +752,10 @@ services:
     environment:
       SLEEPER_PROJECT: bamboo
       SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
-      SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000
+      SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000,11434=ollama-core:11434,8000=ocr-core:8000
     networks:
       default:
-        aliases: [trino, tika, gotenberg]
+        aliases: [trino, tika, gotenberg, ollama, ocr]
     # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn, và nó chỉ start/stop container thuộc SLEEPER_TARGETS
     user: "0"
     cap_drop: [ALL]
@@ -715,6 +767,8 @@ services:
       - "127.0.0.1:8085:8443"
       - "127.0.0.1:9998:9998"
       - "127.0.0.1:3000:3000"
+      - "127.0.0.1:11434:11434"
+      - "127.0.0.1:8866:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/healthz', timeout=2)"]
@@ -818,6 +872,7 @@ services:
     entrypoint: ["sh", "-c", "pip install -q -r requirements-dev.txt -c /repo/constraints.txt && python -m pytest -q \"$$@\"", "--"]
 
 volumes:
+  backups:
   pgdata:
   seaweedfs-data:
   seaweedfs-config:

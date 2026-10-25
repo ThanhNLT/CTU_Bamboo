@@ -11,7 +11,7 @@ import type { UploadItem } from "../types";
 const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
   uploading: (i) => `${i.progress}%`,
   scanning: () => "Đang quét mã độc…",
-  clean: () => "Sạch · đã lưu",
+  clean: () => "Đã quét sạch · đã lưu",
   blocked: () => "Bị chặn",
 };
 

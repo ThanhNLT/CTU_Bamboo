@@ -24,3 +24,13 @@ export const keyFromName = (name: string) => {
   const key = words.map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase())).join("");
   return /^[A-Za-z_]/.test(key) ? key.slice(0, 64) : `quyTrinh${key}`.slice(0, 64);
 };
+
+export type UserTaskRef = { id: string; name: string };
+
+export const userTasksOf = (xml: string): UserTaskRef[] => {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  return Array.from(doc.querySelectorAll("userTask")).map((t) => ({
+    id: t.getAttribute("id") ?? "",
+    name: t.getAttribute("name") || t.getAttribute("id") || "",
+  }));
+};

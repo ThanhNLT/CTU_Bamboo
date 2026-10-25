@@ -27,6 +27,7 @@ DOMAINS = {
     "mdm": "Dữ liệu chủ",
     "mfg": "Sản xuất",
     "collab": "Cộng tác",
+    "kpi": "Chỉ số KPI",
 }
 LABELS = {
     "collab_comment": "Trao đổi trên chứng từ",
@@ -48,6 +49,7 @@ LABELS = {
     "core_tenant": "Tenant",
     "ic_ic_order": "Đơn hàng nội bộ",
     "ic_ic_order_item": "Dòng đơn hàng nội bộ",
+    "kpi_snapshot": "KPI đã đóng băng",
     "mdm_item": "Vật tư, hàng hóa",
     "mdm_partner": "Nhà cung cấp",
     "mfg_lot": "Lô sản xuất",
