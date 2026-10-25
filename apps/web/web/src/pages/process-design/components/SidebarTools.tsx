@@ -7,18 +7,19 @@ import { Plus } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import type { ProcessSummary } from "../types";
 
+const AUDIENCE_SHORT = { UNIT: "trong đơn vị", COMPANY: "toàn công ty", GROUP: "toàn tập đoàn" } as const;
 const RUN_LABEL = { COMPLETED: "chạy thử đạt", STOPPED: "chạy thử dừng", FAILED: "chạy thử lỗi" } as const;
 
 export const SidebarTools = ({
   processes,
   activeId,
-  canDesign,
+  canCreate,
   onSelect,
   onCreate,
 }: {
   processes: ProcessSummary[];
   activeId?: string;
-  canDesign: boolean;
+  canCreate: boolean;
   onSelect: (id: string) => void;
   onCreate: () => void;
 }) => (
@@ -44,15 +45,21 @@ export const SidebarTools = ({
               <span className="block truncate text-[13.5px] font-semibold text-ink">{p.name}</span>
               <span className="mt-0.5 block truncate text-[11.5px] text-muted">
                 {p.publishedVersion ? `v${p.publishedVersion} đã phát hành` : "Chưa phát hành"}
-                {p.lastRunStatus ? ` · ${RUN_LABEL[p.lastRunStatus]}` : ""}
+                {p.access === "design" && p.lastRunStatus ? ` · ${RUN_LABEL[p.lastRunStatus]}` : ""}
               </span>
+              {(p.ownerUnit || p.audience) && (
+                <span className="block truncate text-[11.5px] text-muted">
+                  {p.ownerUnit ?? "Toàn tập đoàn"}
+                  {p.audience ? ` · ${AUDIENCE_SHORT[p.audience]}` : ""}
+                </span>
+              )}
             </button>
           </li>
         );
       })}
     </ul>
     {processes.length === 0 && <p className="m-0 px-3 py-2 text-[12.5px] text-muted">Chưa có quy trình nào.</p>}
-    {canDesign && (
+    {canCreate && (
       <button
         type="button"
         onClick={onCreate}

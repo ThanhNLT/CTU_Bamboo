@@ -35,7 +35,7 @@ INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, conte
 VALUES (test.id('TDX'), 'proc.purchase_request', test.id('pr'), 'bao-gia.pdf', 'application/pdf', 10, 'k-search', test.id('c'))
 RETURNING test.put('f', id);
 SELECT test.ok(NOT pg_temp.dirty('core.attachment', 'f'), 'Tệp chờ kiểm tra chưa vào chỉ mục');
-UPDATE core.attachment SET status = 'CLEAN', sha256 = 'abc', scanned_at = now() WHERE id = test.id('f');
+UPDATE core.attachment SET status = 'CLEAN', sha256 = 'abc', scan_engines = ARRAY['test'], scanned_at = now() WHERE id = test.id('f');
 SELECT test.ok(pg_temp.dirty('core.attachment', 'f'), 'Tệp sạch thì đánh dấu');
 SELECT pg_temp.clear();
 UPDATE core.attachment SET deleted_at = now() WHERE id = test.id('f');

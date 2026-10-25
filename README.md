@@ -2,7 +2,7 @@
 
 Bài thi OLP Phần mềm nguồn mở 2026, chủ đề *Xây dựng Hệ điều hành Chuyển đổi số bằng Công nghệ Lõi nguồn mở (DX-OS Open-Core)*.
 
-Bamboo là nền tảng lõi headless (Tầng 1) cùng ứng dụng mẫu **Đề nghị mua sắm – thanh toán** (Tầng 2, không gian [P]) cho một tập đoàn đa ngành hư cấu: công ty mẹ, ba công ty con công nghiệp và một bệnh viện tách tenant riêng. Cơ cấu tổ chức, phân quyền và hạn mức duyệt đều là dữ liệu doanh nghiệp tự khai báo, không viết cứng trong mã.
+Bamboo là nền tảng lõi headless (Tầng 1) cùng ứng dụng mẫu **Đề nghị mua sắm – thanh toán** (Tầng 2) cho một tập đoàn đa ngành hư cấu: công ty mẹ, ba công ty con công nghiệp và một bệnh viện tách tenant riêng. Ứng dụng đi qua đủ bốn bậc của chuỗi tiến hóa năng lực **H-P-D-I**: Con người số (hộp việc, ổ đĩa, thư viện tri thức, tiếp nhận nhân sự), Quy trình số (đề nghị mua sắm, đơn hàng nội bộ, hồ sơ chứng từ, quản trị tổ chức), Dữ liệu số (trung tâm điều hành kèm bản đồ, dịch vụ dữ liệu trên Lakehouse, phả hệ, bản sao số, sổ cái) và Trí tuệ số (tìm kiếm toàn văn và ngữ nghĩa, Trợ lý RAG có trích dẫn, OCR tiếng Việt, quản trị tác tử AI; mô hình chạy cục bộ). Cơ cấu tổ chức, phân quyền và hạn mức duyệt đều là dữ liệu doanh nghiệp tự khai báo, không viết cứng trong mã. Các giới hạn hiện tại ghi ở mục [Hiện trạng và giới hạn](#hiện-trạng-và-giới-hạn).
 
 - Mã nguồn: <https://github.com/ThanhNLT/Bamboo>
 - Báo lỗi, đề xuất: [GitHub Issues](https://github.com/ThanhNLT/Bamboo/issues)
@@ -28,6 +28,9 @@ Trình duyệt ──► Cổng API APISIX :8000 (một điểm vào; WAF Coraza
               Debezium ── WAL logic của PostgreSQL → Kafka (topic bms.<schema>.<bảng>)
               lakehouse-sink ── Kafka → Iceberg bronze (lịch sử thay đổi, Parquet trên SeaweedFS)
               Trino ── view silver (trạng thái hiện tại, có kiểu) trên cùng catalog Iceberg
+              ai-worker ── đoạn tài liệu → vector (bge-m3) → Meilisearch; Trợ lý RAG hỏi qwen3 (Ollama), trích dẫn nguồn
+              ocr ── PaddleOCR + VietOCR đọc tệp quét → chỉ mục tìm kiếm
+              sleeper ── cho Trino, Tika, Gotenberg, Ollama, OCR ngủ sau 5 phút nhàn rỗi, dậy khi được gọi
 ```
 
 | Thành phần | Công nghệ | Giấy phép |
@@ -43,7 +46,10 @@ Trình duyệt ──► Cổng API APISIX :8000 (một điểm vào; WAF Coraza
 | In phiếu PDF | Gotenberg 8 (Chromium), Jinja2 | MIT, BSD-3-Clause |
 | CDC, trục sự kiện | Debezium Server 3, Apache Kafka 4 (KRaft) | Apache-2.0 |
 | Lakehouse | Apache Iceberg (pyiceberg, pyarrow), JDBC catalog trên PostgreSQL, Trino 483 | Apache-2.0 |
-| Quét virus (tùy chọn) | ClamAV | GPL-2.0 |
+| AI cục bộ | Ollama 0.35, Qwen3-4B (chat), bge-m3 (vector) | MIT, Apache-2.0 |
+| OCR tiếng Việt | PaddleOCR + VietOCR (dịch vụ `ocr`) | Apache-2.0 |
+| Che dữ liệu cá nhân | Microsoft Presidio (nhận diện theo mẫu cho Việt Nam) | MIT |
+| Quét tệp trước khi nhận | Bộ quét nội bộ Bamboo Scan (luôn chạy), ClamAV (tùy chọn, mặc định tắt) | Apache-2.0, GPL-2.0 |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI | MIT |
 | Giao diện | Refine 5, React 19, Ant Design 5 | MIT |
 
@@ -51,7 +57,7 @@ Danh sách đầy đủ thư viện và giấy phép: [NOTICE](NOTICE). Lý do c
 
 ## Chạy bằng một lệnh
 
-Yêu cầu: Docker Engine 24+ với Docker Compose v2, khoảng 12 GB RAM trống, 10 GB đĩa. Trên Windows dùng WSL2 và đặt mã nguồn trong hệ thống file của WSL ([ADR #12](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)).
+Yêu cầu: Docker Engine 24+ với Docker Compose v2; RAM Docker thấy được từ 8 GB (mức cơ bản, không AI) đến 16 GB (đầy đủ, gồm AI); 20 GB đĩa trở lên (image OCR khoảng 14 GB). Trên Windows dùng WSL2 và đặt mã nguồn trong hệ thống file của WSL ([ADR #12](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)).
 
 ```bash
 git clone https://github.com/ThanhNLT/Bamboo.git
@@ -59,7 +65,7 @@ cd Bamboo
 make up        # tự chọn mức RAM: 8 GB chỉ chức năng cơ bản, 16 GB đầy đủ gồm AI (BAMBOO_RAM=8 hoặc 16 để chọn tay)
 ```
 
-Không cần tạo `.env` hay chạy migration tay. `make up` chạy `docker compose up -d --build` (chạy trực tiếp lệnh này thì không có AI nếu chưa đặt `COMPOSE_PROFILES=ai`, xem ADR #54). Lệnh trên build image từ mã nguồn (muốn bỏ qua bước build: xem mục *Chạy bằng image dựng sẵn* bên dưới), rồi tự chạy theo thứ tự: migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp metadata Hasura. Lần đầu mất khoảng 5–10 phút (tải image, build giao diện). Theo dõi tiến độ:
+Không cần tạo `.env` hay chạy migration tay. `docker compose up -d` cũng chạy đầy đủ mọi dịch vụ, gồm AI; `make up` chọn thêm mức RAM (ADR #54). Dịch vụ dùng thưa (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút không có yêu cầu và tự dậy khi được gọi, ví dụ khi mở trang Trợ lý AI (ADR #53). Lệnh trên build image từ mã nguồn (muốn bỏ qua bước build: xem mục *Chạy bằng image dựng sẵn* bên dưới), rồi tự chạy theo thứ tự: migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp metadata Hasura. Lần đầu mất khoảng 5–10 phút (tải image, build giao diện). Theo dõi tiến độ:
 
 ```bash
 docker compose ps          # mọi dịch vụ chạy lâu phải là "healthy"; migrate, seed, openbao-init, bootstrap "exited (0)"
@@ -149,7 +155,7 @@ Dừng: `docker compose down` (giữ dữ liệu) hoặc `docker compose down -v
 
 ### Chạy bằng image dựng sẵn (không cần mã nguồn)
 
-CI build sẵn mọi image của dự án cho `amd64` và `arm64` (kể cả Mac chip M; riêng image PostGIS của bên thứ ba chỉ có `amd64` nên chạy qua giả lập), đẩy lên GitHub Container Registry cùng tệp compose phát hành. Máy chỉ cần Docker Compose 2.34 trở lên:
+CI build sẵn mọi image của dự án cho `amd64` và `arm64` (kể cả Mac chip M; riêng image PostGIS của bên thứ ba chỉ có `amd64` nên chạy qua giả lập), đẩy lên GitHub Container Registry cùng tệp compose phát hành. Máy chỉ cần Docker Compose 2.40.2 trở lên (các bản 2.34.0–2.40.1 dính lỗ hổng CVE-2025-62725 khi chạy từ artifact OCI):
 
 ```bash
 docker compose -f oci://ghcr.io/thanhnlt/bamboo:latest up -d -y
@@ -157,7 +163,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:latest up -d -y
 
 Lệnh này kéo tệp compose và các image về rồi dựng toàn bộ hệ thống như khi build từ mã nguồn. Cờ `-y` (đặt sau `up`) bỏ qua câu hỏi xác nhận mà Docker Compose đặt ra với tệp compose lấy từ xa; bỏ cờ này nếu muốn xem trước danh sách biến cấu hình và giá trị mặc định. Thay `latest` bằng số phiên bản (ví dụ `0.1.0`) để chạy đúng một bản phát hành; bản của một pull request có thẻ `pr-<số>`. Docker Compose cũ hơn: tải tệp `compose.release.yml` (đính kèm mỗi bản phát hành) rồi chạy `docker compose -f compose.release.yml up -d`.
 
-Trong giai đoạn kho mã còn riêng tư, image cũng riêng tư: người chạy cần quyền đọc kho và đăng nhập registry một lần bằng token GitHub có quyền `read:packages`:
+Lệnh này chỉ chạy được khi kho và gói GHCR ở chế độ công khai. Trong giai đoạn kho mã còn riêng tư, image cũng riêng tư: người chạy cần quyền đọc kho và đăng nhập registry một lần bằng token GitHub có quyền `read:packages`:
 
 ```bash
 echo <token> | docker login ghcr.io -u <tài-khoản-github> --password-stdin
@@ -208,22 +214,40 @@ make test-db        # kiểm thử SQL: tổ chức, phân quyền, chuỗi duy�
 make test-seed      # dữ liệu demo đúng, chạy lại không trùng, khớp realm Keycloak
 make test-actions   # Hasura, Flowable, SeaweedFS, OpenBao, Meilisearch, Tika, Gotenberg, Kafka, Debezium, Iceberg, Trino thật
 make test-auth      # đăng nhập thật mọi tài khoản demo (cần `docker compose up -d` trước)
+make test-gateway   # cổng API: WAF, kiểm token, giới hạn tần suất
 make test-all
 ```
 
-Giao diện: `npm run lint`, `npm run build`. Tài liệu: `make -C docs check`. Giấy phép từng tệp: `reuse lint` ([REUSE](https://reuse.software)).
+Kiểm AI và OCR trên máy thật: `scripts/ai_smoke.sh`, `scripts/ocr_smoke.sh`; trước buổi demo chạy `scripts/demo_prepare.sh` (làm nóng mô hình, kiểm đã có tệp quét "Đã OCR"). Giao diện: `npm run lint`, `npm run build`. Tài liệu: `make -C docs check`. Giấy phép từng tệp: `reuse lint` ([REUSE](https://reuse.software)).
 
 ## Cấu trúc thư mục
 
 ```text
 apps/web/web/        Ứng dụng Refine (Tầng 2)
-services/actions/    Hasura Actions, auth webhook, flow-sync, job khởi tạo (bootstrap, openbao-init)
+services/actions/    Hasura Actions, auth webhook, flow-sync, search-sync, ai-worker, job khởi tạo (bootstrap, openbao-init)
+services/ocr/        Dịch vụ OCR tiếng Việt (PaddleOCR + VietOCR)
+services/sleeper/    Dịch vụ cho các dịch vụ dùng thưa ngủ khi nhàn rỗi, dậy khi được gọi
 services/seed/       Dữ liệu demo Tập đoàn X và realm Keycloak
 db/migrations/bms/   Migration CSDL (chạy theo thứ tự tên tệp)
 db/tests/            Kiểm thử SQL
-platform/            Cấu hình Keycloak, Hasura (metadata sinh tự động), Flowable (BPMN), OpenBao
+platform/            Cấu hình APISIX (route khai báo bằng YAML), Keycloak (kèm theme đăng nhập), Hasura (metadata sinh tự động), Flowable (BPMN), OpenBao, Kafka, Trino
+scripts/             Công cụ: sao lưu (ops/), kiểm AI (ai_smoke, ocr_smoke), chuẩn bị và dọn demo, đo RAM, phát hành
 docs/                Tài liệu Sphinx: yêu cầu, kiến trúc, thiết kế, ADR, timeline
 ```
+
+## Hiện trạng và giới hạn
+
+Phần nên biết trước khi đánh giá hoặc triển khai:
+
+- **Thiết kế quy trình BPMN:** vẽ bằng bpmn-js, kiểm lỗi, chạy thử sandbox và phát hành phiên bản ở trang `/p/process`; trưởng đơn vị thiết kế quy trình trong phạm vi đơn vị, phát hành thì phòng ban, công ty hoặc cả tập đoàn được thông báo và xem sơ đồ; quản lý, giám đốc yêu cầu sửa hoặc chạy demo; quy trình chỉ gồm tác vụ tự động và hẹn giờ có thể bật chạy tự động trên Flowable. Quy trình tự thiết kế chưa tự thay luồng duyệt đang chạy (ADR #47). Luồng duyệt mua sắm chạy trên Flowable bình thường.
+- **Nhập liệu OCR (`/i/ocr`):** tải bản quét hoặc ảnh báo giá, hóa đơn; hệ thống tạo đề nghị mua sắm nháp, quét an toàn, OCR, rút nhà cung cấp, mã số thuế, dòng hàng và số tiền (tự kiểm số lượng × đơn giá và tổng), gợi ý khớp danh mục, rồi điền vào đề nghị để người dùng kiểm tra và gửi duyệt. Phần rút trường chạy bằng quy tắc, không dùng mô hình; mẫu lạ hoặc chữ đọc sai thì hạ độ tin cậy và báo để nhập tay. Cần dịch vụ OCR chạy (máy 16 GB); bước OCR thật chưa được kiểm tự động trong CI.
+- **Dữ liệu mẫu:** Bản sao số phòng sạch, Phả hệ dữ liệu và chất lượng dữ liệu đọc từ dữ liệu nạp từ tệp mẫu (ADR #50), chưa tự thu thập từ pipeline. Chưa có báo cáo chi tiêu theo công ty, nhà cung cấp (dữ liệu có sẵn ở lớp silver của Trino).
+- **Quét tệp:** bộ quét nội bộ luôn chạy trước khi tệp được xác nhận sạch (chữ ký, tệp thực thi nhúng, cấu trúc, mã chủ động trong PDF, macro và đối tượng nhúng trong Office, bom nén); không quét hết thì không xác nhận là sạch. Chưa có cơ sở dữ liệu mẫu virus nên không thay được ClamAV: bật ClamAV bằng `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`, đặt `SCAN_REQUIRE_CLAMAV=true` để bắt buộc. Chưa có xử lý CDR (làm sạch tệp).
+- **Hạn mức duyệt mẫu** (50 triệu, 500 triệu) áp cho công ty thành viên. Đơn vị trực thuộc tập đoàn (HĐQT, các khối, Văn phòng Chuyển đổi số) từ 50 triệu lên thẳng Tổng giám đốc; Bệnh viện X có quy tắc riêng, nhóm thiết bị y tế luôn hai bước.
+- **Cổng quản trị** (Hasura Console, Keycloak admin, Trino, Kafka...) chỉ nghe `127.0.0.1`; triển khai thật đặt `HASURA_ENABLE_CONSOLE=false`.
+- **Đã có ở mức tối thiểu:** thông báo ngoài ứng dụng (email, SMS qua cổng HTTP, webhook; cần cấu hình `SMTP_*`, `SMS_GATEWAY_URL`), nhật ký tập trung trong CSDL (chưa có Prometheus, Grafana, OpenTelemetry), sao lưu theo lịch và diễn tập khôi phục, GitOps bằng script đối chiếu (không có k3s, Argo CD), kịch bản tự động trong phạm vi hành động có sẵn (thông báo, gọi API https, đặt biến), văn bản mẫu PDF (quyết định nhân sự, báo cáo KPI), lớp ngữ nghĩa trên Lakehouse, nhận diện thêm dữ liệu cá nhân bằng quy tắc theo từ khóa (không dùng mô hình NER), giao diện tiếng Anh cho phần khung.
+- **Chưa có:** mTLS giữa dịch vụ, ký số chứng thư công cộng, MQTT và NGSI-LD cho cảm biến thật, kịch bản tự động tùy ý do người dùng viết mã, dịch toàn bộ trang nghiệp vụ sang tiếng Anh, chính sách vòng đời và xóa dữ liệu Lakehouse, giao diện cho lớp ngữ nghĩa và báo cáo KPI.
+- **Cách ly tenant** là cách ly logic trong cùng một PostgreSQL (khóa kép `tenant_id`, `id`, phân quyền theo dòng), không phải CSDL riêng cho từng tenant.
 
 ## Đóng góp
 

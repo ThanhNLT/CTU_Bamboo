@@ -74,6 +74,16 @@
       "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
       "catalog": "lakehouse",
       "schema": "silver",
+      "table": "collab_notification_pref",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
       "table": "core_ai_agent",
       "privileges": [
         "SELECT"
@@ -145,6 +155,16 @@
       "catalog": "lakehouse",
       "schema": "silver",
       "table": "core_doc_sequence",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "core_ingest_job",
       "privileges": [
         "SELECT"
       ],
@@ -264,6 +284,16 @@
       "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
       "catalog": "lakehouse",
       "schema": "silver",
+      "table": "kpi_snapshot",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
       "table": "mdm_item",
       "privileges": [
         "SELECT"
@@ -364,7 +394,37 @@
       "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
       "catalog": "lakehouse",
       "schema": "silver",
+      "table": "wf_automation_run",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
       "table": "wf_flow_sync",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "wf_process_automation",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "wf_process_change_request",
       "privileges": [
         "SELECT"
       ],

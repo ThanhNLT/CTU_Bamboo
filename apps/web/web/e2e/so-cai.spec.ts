@@ -12,7 +12,6 @@ const CONTENT = Buffer.from(`Biên bản bàn giao ${STAMP}\nTệp kiểm thử 
 
 async function login(page: Page, username: string) {
   await page.goto("/login");
-  await page.getByRole("button", { name: /Đăng nhập/ }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
@@ -47,7 +46,7 @@ test("đối soát tệp theo số chứng từ và theo tệp, mở hồ sơ l�
     page.getByRole("navigation", { name: "Đường dẫn thư mục" }).getByText(TITLE, { exact: false }),
   ).toBeVisible();
   await page.locator('input[type="file"]').setInputFiles({ name: FILE, mimeType: "text/plain", buffer: CONTENT });
-  await expect(page.getByLabel("Tiến trình tải lên").getByText("Sạch · đã lưu")).toBeVisible();
+  await expect(page.getByLabel("Tiến trình tải lên").getByText("Đã quét sạch · đã lưu")).toBeVisible();
 
   await page.goto(`/d/ledger?doc=${docNo}`);
   const result = page.getByRole("region", { name: "Kết quả đối soát" });
