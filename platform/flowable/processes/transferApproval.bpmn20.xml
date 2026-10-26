@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bamboo="http://bamboo.local/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  <process id="transferApproval" name="Điều chuyển nhân sự nội bộ" isExecutable="true">
+    <documentation>Chuỗi duyệt điều chuyển nội bộ (DC-…): trưởng đơn vị tiếp nhận rồi trưởng phòng nhân sự của công ty chung gần nhất; ngày chuyển cách ngày gửi ít nhất 14 ngày.</documentation>
+    <startEvent id="start" name="Gửi đề nghị điều chuyển"/>
+    <serviceTask id="pre" name="Thông báo đơn vị tiếp nhận" bamboo:action="notify" bamboo:audience="UNIT" bamboo:message="Có đề nghị điều chuyển nhân sự mới chờ đơn vị tiếp nhận xem xét"/>
+    <userTask id="truongDonViDich" name="Đơn vị tiếp nhận xem xét, chọn vị trí" flowable:candidateGroups="TRUONG_DON_VI_TIEP_NHAN" flowable:dueDate="PT48H" flowable:formKey="duyet_dieu_chuyen"/>
+    <exclusiveGateway id="g_truongDonViDich" name="Quyết định?" default="ret_truongDonViDich"/>
+    <userTask id="truongNhanSu" name="Trưởng phòng nhân sự duyệt" flowable:candidateGroups="TRUONG_PHONG_NHAN_SU" flowable:dueDate="PT72H" flowable:formKey="duyet_dieu_chuyen"/>
+    <exclusiveGateway id="g_truongNhanSu" name="Quyết định?" default="ret_truongNhanSu"/>
+    <serviceTask id="post0" name="Báo người lập và nhân viên" bamboo:action="notify" bamboo:audience="INITIATOR" bamboo:message="Điều chuyển đã được duyệt: bổ nhiệm cũ kết thúc trước ngày chuyển, bổ nhiệm mới bắt đầu từ ngày chuyển"/>
+    <endEvent id="approved" name="Đã duyệt, điều chuyển"/>
+    <endEvent id="rej_truongDonViDich" name="Từ chối điều chuyển"/>
+    <endEvent id="ret_end_truongDonViDich" name="Trả về người lập"/>
+    <endEvent id="rej_truongNhanSu" name="Từ chối điều chuyển"/>
+    <endEvent id="ret_end_truongNhanSu" name="Trả về người lập"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="pre"/>
+    <sequenceFlow id="f2" sourceRef="pre" targetRef="truongDonViDich"/>
+    <sequenceFlow id="f3" sourceRef="truongDonViDich" targetRef="g_truongDonViDich"/>
+    <sequenceFlow id="f4" sourceRef="g_truongDonViDich" targetRef="truongNhanSu" name="Duyệt">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f5" sourceRef="truongNhanSu" targetRef="g_truongNhanSu"/>
+    <sequenceFlow id="f6" sourceRef="g_truongNhanSu" targetRef="post0" name="Duyệt">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f7" sourceRef="post0" targetRef="approved"/>
+    <sequenceFlow id="f8" sourceRef="g_truongDonViDich" targetRef="rej_truongDonViDich" name="Từ chối">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="ret_truongDonViDich" sourceRef="g_truongDonViDich" targetRef="ret_end_truongDonViDich" name="Trả về"/>
+    <sequenceFlow id="f10" sourceRef="g_truongNhanSu" targetRef="rej_truongNhanSu" name="Từ chối">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="ret_truongNhanSu" sourceRef="g_truongNhanSu" targetRef="ret_end_truongNhanSu" name="Trả về"/>
+  </process>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="transferApproval">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="40" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pre_di" bpmnElement="pre">
+        <dc:Bounds x="156" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="truongDonViDich_di" bpmnElement="truongDonViDich">
+        <dc:Bounds x="406" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_truongDonViDich_di" bpmnElement="g_truongDonViDich" isMarkerVisible="true">
+        <dc:Bounds x="656" y="245" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="589" y="220" width="84" height="16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="truongNhanSu_di" bpmnElement="truongNhanSu">
+        <dc:Bounds x="786" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_truongNhanSu_di" bpmnElement="g_truongNhanSu" isMarkerVisible="true">
+        <dc:Bounds x="1036" y="245" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="969" y="220" width="84" height="16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="post0_di" bpmnElement="post0">
+        <dc:Bounds x="1166" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approved_di" bpmnElement="approved">
+        <dc:Bounds x="1416" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1379" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rej_truongDonViDich_di" bpmnElement="rej_truongDonViDich">
+        <dc:Bounds x="663" y="372" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="626" y="412" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ret_end_truongDonViDich_di" bpmnElement="ret_end_truongDonViDich">
+        <dc:Bounds x="663" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="705" y="136" width="100" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rej_truongNhanSu_di" bpmnElement="rej_truongNhanSu">
+        <dc:Bounds x="1043" y="372" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1006" y="412" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ret_end_truongNhanSu_di" bpmnElement="ret_end_truongNhanSu">
+        <dc:Bounds x="1043" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1085" y="136" width="100" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="76" y="270"/>
+        <di:waypoint x="156" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="326" y="270"/>
+        <di:waypoint x="406" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="576" y="270"/>
+        <di:waypoint x="656" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="706" y="270"/>
+        <di:waypoint x="786" y="270"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="714" y="246" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="956" y="270"/>
+        <di:waypoint x="1036" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="1086" y="270"/>
+        <di:waypoint x="1166" y="270"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1094" y="246" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="1336" y="270"/>
+        <di:waypoint x="1416" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="681" y="295"/>
+        <di:waypoint x="681" y="372"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="689" y="322" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ret_truongDonViDich_di" bpmnElement="ret_truongDonViDich">
+        <di:waypoint x="681" y="245"/>
+        <di:waypoint x="681" y="168"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="689" y="210" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10">
+        <di:waypoint x="1061" y="295"/>
+        <di:waypoint x="1061" y="372"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1069" y="322" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ret_truongNhanSu_di" bpmnElement="ret_truongNhanSu">
+        <di:waypoint x="1061" y="245"/>
+        <di:waypoint x="1061" y="168"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1069" y="210" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

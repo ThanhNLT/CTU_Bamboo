@@ -2,7 +2,6 @@
   "realm": "bms",
   "enabled": true,
   "displayName": "Bamboo DX-OS",
-  "loginTheme": "dxos-login",
   "sslRequired": "external",
   "registrationAllowed": false,
   "resetPasswordAllowed": false,
@@ -509,6 +508,146 @@
       "firstName": "Toàn",
       "lastName": "Quách Văn",
       "email": "ns.benhvien@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "4797c119-0ea9-5649-8e3e-8ed453e6f565",
+      "username": "tp.nhansu.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Nhung",
+      "lastName": "Nguyễn Thị Hồng",
+      "email": "tp.nhansu.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "817f1d7a-7240-5e7f-9e7d-9b5cf827f70a",
+      "username": "tp.phanmem.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Bảo",
+      "lastName": "Trần Quốc",
+      "email": "tp.phanmem.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "ef291130-76bf-50aa-89ed-30e5f4ce86aa",
+      "username": "nv.phanmem.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Anh",
+      "lastName": "Lê Hoàng",
+      "email": "nv.phanmem.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "3ab872db-f065-5fb6-ac6d-6d7e7783c32a",
+      "username": "nv3.muahang.dienthoai",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Linh",
+      "lastName": "Cao Thị Mỹ",
+      "email": "nv3.muahang.dienthoai@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "eb7876bc-0d17-53d8-8878-f56e3772fd7c",
+      "username": "gd.nhansu.tapdoan",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Vân",
+      "lastName": "Phạm Thị Thanh",
+      "email": "gd.nhansu.tapdoan@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "caa593d7-f75f-5f88-a1e2-263758718803",
+      "username": "tp.tccb.benhvien",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Châu",
+      "lastName": "Đoàn Minh",
+      "email": "tp.tccb.benhvien@demo.bamboo.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${DEMO_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-bms"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "52df89db-c33e-50e6-a779-38798eac36ab",
+      "username": "tp.khth.benhvien",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Phước",
+      "lastName": "Vương Hữu",
+      "email": "tp.khth.benhvien@demo.bamboo.local",
       "credentials": [
         {
           "type": "password",
