@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bamboo="http://bamboo.local/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  <process id="icOrderConfirmation" name="Xác nhận đơn hàng nội bộ" isExecutable="true">
+    <documentation>Đơn mua nội bộ (IC-…) tự sinh khi đề nghị mua từ nhà cung cấp nội bộ được duyệt; bên bán xác nhận kèm lô xuất hoặc từ chối, người đặt hủy được khi còn chờ.</documentation>
+    <startEvent id="start" name="Đơn hàng nội bộ được sinh"/>
+    <userTask id="benBanXacNhan" name="Bên bán xác nhận kèm lô xuất" flowable:candidateGroups="BAN_HANG_NOI_BO" flowable:dueDate="PT24H" flowable:formKey="xac_nhan_don_noi_bo"/>
+    <exclusiveGateway id="g_benBanXacNhan" name="Quyết định?" default="ret_benBanXacNhan"/>
+    <serviceTask id="post0" name="Ghi trạng thái đã xác nhận" bamboo:action="setvar" bamboo:name="trangThai" bamboo:value="DA_XAC_NHAN"/>
+    <parallelGateway id="fork1"/>
+    <serviceTask id="par1_0" name="Báo bên mua" bamboo:action="notify" bamboo:audience="INITIATOR" bamboo:message="Bên bán đã xác nhận đơn hàng nội bộ và lô xuất"/>
+    <serviceTask id="par1_1" name="Ghi nhận công nợ nội bộ" bamboo:action="notify" bamboo:audience="GROUP" bamboo:message="Công nợ nội bộ phát sinh theo đơn đã xác nhận"/>
+    <parallelGateway id="join1"/>
+    <endEvent id="approved" name="Đã xác nhận"/>
+    <endEvent id="rej_benBanXacNhan" name="Bên bán từ chối"/>
+    <endEvent id="ret_end_benBanXacNhan" name="Người đặt hủy khi còn chờ"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="benBanXacNhan"/>
+    <sequenceFlow id="f2" sourceRef="benBanXacNhan" targetRef="g_benBanXacNhan"/>
+    <sequenceFlow id="f3" sourceRef="g_benBanXacNhan" targetRef="post0" name="Duyệt">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="post0" targetRef="fork1"/>
+    <sequenceFlow id="f5" sourceRef="fork1" targetRef="par1_0"/>
+    <sequenceFlow id="f6" sourceRef="par1_0" targetRef="join1"/>
+    <sequenceFlow id="f7" sourceRef="fork1" targetRef="par1_1"/>
+    <sequenceFlow id="f8" sourceRef="par1_1" targetRef="join1"/>
+    <sequenceFlow id="f9" sourceRef="join1" targetRef="approved"/>
+    <sequenceFlow id="f10" sourceRef="g_benBanXacNhan" targetRef="rej_benBanXacNhan" name="Từ chối">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="ret_benBanXacNhan" sourceRef="g_benBanXacNhan" targetRef="ret_end_benBanXacNhan" name="Trả về"/>
+  </process>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="icOrderConfirmation">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="40" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="benBanXacNhan_di" bpmnElement="benBanXacNhan">
+        <dc:Bounds x="156" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_benBanXacNhan_di" bpmnElement="g_benBanXacNhan" isMarkerVisible="true">
+        <dc:Bounds x="406" y="245" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="339" y="220" width="84" height="16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="post0_di" bpmnElement="post0">
+        <dc:Bounds x="536" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fork1_di" bpmnElement="fork1">
+        <dc:Bounds x="786" y="245" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="par1_0_di" bpmnElement="par1_0">
+        <dc:Bounds x="916" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="par1_1_di" bpmnElement="par1_1">
+        <dc:Bounds x="916" y="125" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="join1_di" bpmnElement="join1">
+        <dc:Bounds x="1166" y="245" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approved_di" bpmnElement="approved">
+        <dc:Bounds x="1296" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1259" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rej_benBanXacNhan_di" bpmnElement="rej_benBanXacNhan">
+        <dc:Bounds x="413" y="372" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="376" y="412" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ret_end_benBanXacNhan_di" bpmnElement="ret_end_benBanXacNhan">
+        <dc:Bounds x="413" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="455" y="136" width="100" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="76" y="270"/>
+        <di:waypoint x="156" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="326" y="270"/>
+        <di:waypoint x="406" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="456" y="270"/>
+        <di:waypoint x="536" y="270"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="464" y="246" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="706" y="270"/>
+        <di:waypoint x="786" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="836" y="270"/>
+        <di:waypoint x="916" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="1086" y="270"/>
+        <di:waypoint x="1166" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="836" y="270"/>
+        <di:waypoint x="876" y="270"/>
+        <di:waypoint x="876" y="165"/>
+        <di:waypoint x="916" y="165"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="1086" y="165"/>
+        <di:waypoint x="1126" y="165"/>
+        <di:waypoint x="1126" y="270"/>
+        <di:waypoint x="1166" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9">
+        <di:waypoint x="1216" y="270"/>
+        <di:waypoint x="1296" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10">
+        <di:waypoint x="431" y="295"/>
+        <di:waypoint x="431" y="372"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="322" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ret_benBanXacNhan_di" bpmnElement="ret_benBanXacNhan">
+        <di:waypoint x="431" y="245"/>
+        <di:waypoint x="431" y="168"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="210" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
