@@ -996,8 +996,16 @@ class Seeder:
             holder = holder.fetchone()
             if holder is None:
                 continue
+            previous = self.x("SELECT idp_subject FROM core.person WHERE id = %s", holder[0]).fetchone()
+            if previous and previous[0]:
+                log.warning(
+                    "%s: người giữ ghế %s đang gắn tài khoản %s, chuyển sang tài khoản demo",
+                    user.username,
+                    seat.position,
+                    previous[0],
+                )
             self.x(
-                "UPDATE core.person SET idp_subject = %s, full_name = %s WHERE id = %s AND idp_subject IS NULL",
+                "UPDATE core.person SET idp_subject = %s, full_name = %s WHERE id = %s",
                 subject,
                 user.full_name,
                 holder[0],
