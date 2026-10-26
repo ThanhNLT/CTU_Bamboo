@@ -382,12 +382,25 @@ HR_UNITS = [
     ("BVX", "BVX_TCCB", "Phòng Tổ chức cán bộ", "BVX", "PHONG", "Trưởng phòng", 2, "Chuyên viên tổ chức"),
 ]
 HR_SCOPE = {"CHIP_NS": "CHIP", "DT_NS": "DT", "GD_NS": "GD", "TDX_NS": "TDX", "BVX_TCCB": "BVX"}
+# Tài khoản cho kịch bản demo chuyển và tiếp nhận nhân sự (docs: data/demo/chuyen-tiep-nhan-nhan-su.md).
+# Các ghế này đã có người giữ; seed gắn tài khoản vào người đang giữ ghế (xem Seeder.transfer_demo_accounts).
+TRANSFER_DEMO_USERS = [
+    _u("tp.nhansu.dienthoai", "Nguyễn Thị Hồng Nhung", Seat("TDX", "DT_NS.HEAD")),
+    _u("tp.phanmem.dienthoai", "Trần Quốc Bảo", Seat("TDX", "DT_RD_PM.HEAD")),
+    _u("nv.phanmem.dienthoai", "Lê Hoàng Anh", Seat("TDX", "DT_RD_PM.S1")),
+    _u("nv3.muahang.dienthoai", "Cao Thị Mỹ Linh", Seat("TDX", "DT_MH.S3")),
+    _u("gd.nhansu.tapdoan", "Phạm Thị Thanh Vân", Seat("TDX", "TDX_NS.HEAD")),
+    _u("tp.tccb.benhvien", "Đoàn Minh Châu", Seat("BVX", "BVX_TCCB.HEAD")),
+    _u("tp.khth.benhvien", "Vương Hữu Phước", Seat("BVX", "BVX_KHTH.HEAD")),
+]
+
 OPEN_SEATS = [
     ("TDX", "DT_RD_PM.S4", "DT_RD_PM", "Kỹ sư phần mềm"),
     ("TDX", "DT_MH.S4", "DT_MH", "Chuyên viên"),
     ("TDX", "CHIP_RD_TK.S5", "CHIP_RD_TK", "Kỹ sư thiết kế"),
     ("TDX", "GD_NM.S4", "GD_NM", "Kỹ thuật viên"),
     ("BVX", "BVX_NOI.S4", "BVX_NOI", "Bác sĩ"),
+    ("BVX", "BVX_KHTH.S3", "BVX_KHTH", "Chuyên viên kế hoạch"),
 ]
 
 

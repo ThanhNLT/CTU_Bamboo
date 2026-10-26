@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bamboo="http://bamboo.local/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  <process id="kbDocumentProposal" name="Đề xuất tài liệu thư viện" isExecutable="true">
+    <documentation>Đề xuất tài liệu (TL-…): duyệt xong là xuất bản, bản bị thay thế ngừng hiệu lực.</documentation>
+    <startEvent id="start" name="Gửi đề xuất tài liệu"/>
+    <userTask id="quanLyThuVien" name="Quản lý thư viện duyệt nội dung" flowable:candidateGroups="QUAN_LY_THU_VIEN" flowable:dueDate="PT72H" flowable:formKey="duyet_tai_lieu"/>
+    <exclusiveGateway id="g_quanLyThuVien" name="Quyết định?" default="ret_quanLyThuVien"/>
+    <serviceTask id="post0" name="Xuất bản phiên bản mới" bamboo:action="setvar" bamboo:name="trangThai" bamboo:value="XUAT_BAN"/>
+    <serviceTask id="post1" name="Báo người đề xuất" bamboo:action="notify" bamboo:audience="INITIATOR" bamboo:message="Tài liệu đã xuất bản; bản bị thay thế ngừng hiệu lực"/>
+    <endEvent id="approved" name="Đã xuất bản"/>
+    <endEvent id="rej_quanLyThuVien" name="Từ chối đề xuất"/>
+    <endEvent id="ret_end_quanLyThuVien" name="Trả về người đề xuất"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="quanLyThuVien"/>
+    <sequenceFlow id="f2" sourceRef="quanLyThuVien" targetRef="g_quanLyThuVien"/>
+    <sequenceFlow id="f3" sourceRef="g_quanLyThuVien" targetRef="post0" name="Duyệt">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="post0" targetRef="post1"/>
+    <sequenceFlow id="f5" sourceRef="post1" targetRef="approved"/>
+    <sequenceFlow id="f6" sourceRef="g_quanLyThuVien" targetRef="rej_quanLyThuVien" name="Từ chối">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="ret_quanLyThuVien" sourceRef="g_quanLyThuVien" targetRef="ret_end_quanLyThuVien" name="Trả về"/>
+  </process>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="kbDocumentProposal">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="40" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="quanLyThuVien_di" bpmnElement="quanLyThuVien">
+        <dc:Bounds x="156" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_quanLyThuVien_di" bpmnElement="g_quanLyThuVien" isMarkerVisible="true">
+        <dc:Bounds x="406" y="245" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="339" y="220" width="84" height="16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="post0_di" bpmnElement="post0">
+        <dc:Bounds x="536" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="post1_di" bpmnElement="post1">
+        <dc:Bounds x="786" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approved_di" bpmnElement="approved">
+        <dc:Bounds x="1036" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="999" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rej_quanLyThuVien_di" bpmnElement="rej_quanLyThuVien">
+        <dc:Bounds x="413" y="372" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="376" y="412" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ret_end_quanLyThuVien_di" bpmnElement="ret_end_quanLyThuVien">
+        <dc:Bounds x="413" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="455" y="136" width="100" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="76" y="270"/>
+        <di:waypoint x="156" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="326" y="270"/>
+        <di:waypoint x="406" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="456" y="270"/>
+        <di:waypoint x="536" y="270"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="464" y="246" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="706" y="270"/>
+        <di:waypoint x="786" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="956" y="270"/>
+        <di:waypoint x="1036" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="431" y="295"/>
+        <di:waypoint x="431" y="372"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="322" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ret_quanLyThuVien_di" bpmnElement="ret_quanLyThuVien">
+        <di:waypoint x="431" y="245"/>
+        <di:waypoint x="431" y="168"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="210" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
