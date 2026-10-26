@@ -19,6 +19,7 @@ from .demo import (
     CONTRACT_SEATS,
     DEMO_USERS,
     HR_DEMO_USERS,
+    TRANSFER_DEMO_USERS,
     HR_SCOPE,
     HR_UNITS,
     OPEN_SEATS,
@@ -34,6 +35,78 @@ from .demo_library import EXTRA_DOCS
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
 BPMN_SAMPLE = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
+BPMN_DIR = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/processes"
+
+
+def _form(key: str, name: str) -> dict:
+    return {
+        "key": key,
+        "name": name,
+        "fields": [
+            {"label": "Quyết định", "type": "Danh mục", "required": True},
+            {"label": "Ý kiến", "type": "Đoạn văn", "required": False},
+        ],
+    }
+
+
+# Quy trình thiết kế sẵn ở Tập đoàn X: (mã, tên, mô tả, trạng thái, ghi chú phát hành, yêu cầu sửa, biểu mẫu).
+# Trạng thái: PUBLISHED (đã phát hành), CHANGE_REQUESTED (đã phát hành, giám sát đang yêu cầu sửa), DRAFT (bản nháp).
+PROCESS_CATALOG = [
+    (
+        "onboardingApproval",
+        "Tiếp nhận nhân sự",
+        "Chuỗi duyệt đề nghị tiếp nhận nhân sự: quản lý trực tiếp rồi giám đốc công ty",
+        "PUBLISHED",
+        "Bản đầu tiên theo quy tắc duyệt ONBOARDING",
+        None,
+        _form("duyet_tiep_nhan", "Duyệt đề nghị tiếp nhận"),
+    ),
+    (
+        "transferApproval",
+        "Điều chuyển nhân sự nội bộ",
+        "Trưởng đơn vị tiếp nhận rồi trưởng phòng nhân sự công ty chung gần nhất",
+        "PUBLISHED",
+        "Bản đầu tiên, ngày chuyển cách ngày gửi tối thiểu 14 ngày",
+        None,
+        _form("duyet_dieu_chuyen", "Duyệt điều chuyển"),
+    ),
+    (
+        "icOrderConfirmation",
+        "Xác nhận đơn hàng nội bộ",
+        "Bên bán xác nhận kèm lô xuất, ghi công nợ nội bộ; người đặt hủy được khi còn chờ",
+        "CHANGE_REQUESTED",
+        "Bản đầu tiên cho đơn hàng nội bộ giữa các công ty thành viên",
+        "Cần thêm bước kiểm tra tồn kho của lô xuất trước khi bên bán xác nhận, và hạn xử lý nên rút còn 12 giờ",
+        _form("xac_nhan_don_noi_bo", "Xác nhận đơn nội bộ"),
+    ),
+    (
+        "kbDocumentProposal",
+        "Đề xuất tài liệu thư viện",
+        "Quản lý thư viện duyệt rồi xuất bản; bản bị thay thế ngừng hiệu lực",
+        "CHANGE_REQUESTED",
+        "Bản đầu tiên cho Thư viện tri thức",
+        "Tài liệu quy chế cần thêm bước duyệt của trưởng đơn vị ban hành trước khi xuất bản",
+        _form("duyet_tai_lieu", "Duyệt đề xuất tài liệu"),
+    ),
+    (
+        "personnelDecision",
+        "Ban hành quyết định nhân sự",
+        "Bổ nhiệm, điều chuyển, miễn nhiệm do Tổng giám đốc ký; đang hoàn thiện, chưa phát hành",
+        "DRAFT",
+        None,
+        None,
+        _form("ky_quyet_dinh", "Ký quyết định nhân sự"),
+    ),
+    (
+        "crossGroupTransfer",
+        "Điều chuyển liên tập đoàn",
+        "Gộp ba chứng từ đi, tiếp nhận, quyết định thành một chuỗi; đang soạn, chưa phát hành",
+        "DRAFT",
+        None,
+        None,
+        _form("duyet_dieu_chuyen", "Duyệt điều chuyển"),
+    ),
+]
 
 ITEM_CATEGORIES = {
     "TDX": {
@@ -911,6 +984,74 @@ class Seeder:
                 owner[0],
             )
 
+    def transfer_demo_accounts(self):
+        """Gắn tài khoản demo vào người đang giữ ghế (trưởng phòng nhân sự, trưởng đơn vị, nhân viên) cho kịch bản
+        chuyển và tiếp nhận nhân sự; chạy lại trên CSDL đã có dữ liệu vẫn bổ sung được."""
+        for user in TRANSFER_DEMO_USERS:
+            seat = user.seats[0]
+            subject = str(user.id)
+            if self.x("SELECT 1 FROM core.person WHERE idp_subject = %s", subject).fetchone():
+                continue
+            holder = self.x("SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position))
+            holder = holder.fetchone()
+            if holder is None:
+                continue
+            self.x(
+                "UPDATE core.person SET idp_subject = %s, full_name = %s WHERE id = %s AND idp_subject IS NULL",
+                subject,
+                user.full_name,
+                holder[0],
+            )
+
+    def process_catalog_demo(self):
+        """Quy trình thiết kế sẵn ở trang Thiết kế quy trình: đã phát hành, đã phát hành kèm yêu cầu sửa, bản nháp."""
+        tenant = "TDX"
+        tid = self.tenant_id(tenant)
+        owner = self.x(
+            "SELECT person_id FROM core.assignment WHERE position_id = %s AND upper_inf(valid_period) LIMIT 1",
+            uid(tenant, "position", "TDX_CDS.HEAD"),
+        ).fetchone()
+        reviewer = self.x(
+            "SELECT person_id FROM core.assignment WHERE position_id = %s AND upper_inf(valid_period) LIMIT 1",
+            uid(tenant, "position", "TDX.HEAD"),
+        ).fetchone()
+        if owner is None or reviewer is None or not BPMN_DIR.exists():
+            return
+        for key, name, description, state, note, request, form in PROCESS_CATALOG:
+            xml = (BPMN_DIR / f"{key}.bpmn20.xml").read_text(encoding="utf-8")
+            forms = json.dumps([form], ensure_ascii=False)
+            model = uid(tenant, "process_model", key)
+            self.x(
+                """INSERT INTO wf.process_model (tenant_id, id, process_key, name, description, bpmn_xml, forms,
+                                                 created_by, updated_by)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s)
+                   ON CONFLICT (tenant_id, process_key) DO NOTHING""",
+                tid, model, key, name, description, xml, forms, owner[0], owner[0],
+            )
+            if state == "DRAFT":
+                continue
+            self.x(
+                """INSERT INTO wf.process_version (tenant_id, model_id, version, bpmn_xml, forms, sha256, note,
+                                                   published_by, audience)
+                   VALUES (%s, %s, 1, %s, %s::jsonb, %s, %s, %s, 'GROUP')
+                   ON CONFLICT (model_id, version) DO NOTHING""",
+                tid, model, xml, forms, hashlib.sha256(xml.encode()).hexdigest(), note, owner[0],
+            )
+            if state != "CHANGE_REQUESTED" or self.x(
+                "SELECT 1 FROM wf.process_change_request WHERE model_id = %s", model
+            ).fetchone():
+                continue
+            self.x(
+                """INSERT INTO wf.process_change_request (tenant_id, model_id, version, requested_by, message)
+                   VALUES (%s, %s, 1, %s, %s)""",
+                tid, model, reviewer[0], request,
+            )
+            who = self.x("SELECT full_name FROM core.person WHERE id = %s", reviewer[0]).fetchone()[0]
+            self.x(
+                "SELECT collab.notify(%s, %s, 'PROCESS_CHANGE_REQUESTED', 'wf.process_model', %s, %s, %s, %s)",
+                tid, owner[0], model, f"{who} yêu cầu sửa quy trình “{name}” (v1)", request, reviewer[0],
+            )
+
     def supervision_demo(self):
         """Trưởng đơn vị thiết kế quy trình trong đơn vị mình; trưởng và phó đơn vị giám sát toàn tenant."""
         for t in TENANTS:
@@ -1280,11 +1421,13 @@ class Seeder:
         self.delegation()
         self.purchase_requests()
         self.hr_demo()
+        self.transfer_demo_accounts()
         self.decision_demo()
         self.ic_demo()
         self.lakehouse_demo()
         self.master_data_admin_demo()
         self.process_design_demo()
+        self.process_catalog_demo()
         self.supervision_demo()
         self.library_demo()
         self.ai_demo()
@@ -1300,11 +1443,13 @@ def seed(conn: psycopg.Connection) -> bool:
             for t in TENANTS:
                 seeder.master_data(t.code)
             seeder.hr_demo()
+            seeder.transfer_demo_accounts()
             seeder.decision_demo()
             seeder.ic_demo()
             seeder.lakehouse_demo()
             seeder.master_data_admin_demo()
             seeder.process_design_demo()
+            seeder.process_catalog_demo()
             seeder.supervision_demo()
             seeder.library_demo()
             seeder.ai_demo()
