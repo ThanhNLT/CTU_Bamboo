@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bamboo="http://bamboo.local/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  <process id="onboardingApproval" name="Tiếp nhận nhân sự" isExecutable="true">
+    <documentation>Chuỗi duyệt đề nghị tiếp nhận nhân sự (TN-…): quản lý trực tiếp của vị trí được bổ nhiệm, rồi giám đốc công ty.</documentation>
+    <startEvent id="start" name="Phòng nhân sự gửi đề nghị tiếp nhận"/>
+    <userTask id="qlTrucTiep" name="Quản lý trực tiếp của vị trí duyệt" flowable:candidateGroups="QUAN_LY_TRUC_TIEP" flowable:dueDate="PT48H" flowable:formKey="duyet_tiep_nhan"/>
+    <exclusiveGateway id="g_qlTrucTiep" name="Quyết định?" default="ret_qlTrucTiep"/>
+    <userTask id="gdCongTy" name="Giám đốc công ty duyệt bổ nhiệm" flowable:candidateGroups="GIAM_DOC_CONG_TY" flowable:dueDate="PT72H" flowable:formKey="duyet_tiep_nhan"/>
+    <exclusiveGateway id="g_gdCongTy" name="Quyết định?" default="ret_gdCongTy"/>
+    <serviceTask id="post0" name="Báo phòng nhân sự" bamboo:action="notify" bamboo:audience="INITIATOR" bamboo:message="Đề nghị tiếp nhận đã được duyệt: ứng viên có bổ nhiệm giữ chính từ ngày vào làm"/>
+    <endEvent id="approved" name="Đã duyệt, bổ nhiệm"/>
+    <endEvent id="rej_qlTrucTiep" name="Từ chối tiếp nhận"/>
+    <endEvent id="ret_end_qlTrucTiep" name="Trả về phòng nhân sự"/>
+    <endEvent id="rej_gdCongTy" name="Từ chối tiếp nhận"/>
+    <endEvent id="ret_end_gdCongTy" name="Trả về phòng nhân sự"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="qlTrucTiep"/>
+    <sequenceFlow id="f2" sourceRef="qlTrucTiep" targetRef="g_qlTrucTiep"/>
+    <sequenceFlow id="f3" sourceRef="g_qlTrucTiep" targetRef="gdCongTy" name="Duyệt">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="gdCongTy" targetRef="g_gdCongTy"/>
+    <sequenceFlow id="f5" sourceRef="g_gdCongTy" targetRef="post0" name="Duyệt">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f6" sourceRef="post0" targetRef="approved"/>
+    <sequenceFlow id="f7" sourceRef="g_qlTrucTiep" targetRef="rej_qlTrucTiep" name="Từ chối">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="ret_qlTrucTiep" sourceRef="g_qlTrucTiep" targetRef="ret_end_qlTrucTiep" name="Trả về"/>
+    <sequenceFlow id="f9" sourceRef="g_gdCongTy" targetRef="rej_gdCongTy" name="Từ chối">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="ret_gdCongTy" sourceRef="g_gdCongTy" targetRef="ret_end_gdCongTy" name="Trả về"/>
+  </process>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="onboardingApproval">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="40" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="qlTrucTiep_di" bpmnElement="qlTrucTiep">
+        <dc:Bounds x="156" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_qlTrucTiep_di" bpmnElement="g_qlTrucTiep" isMarkerVisible="true">
+        <dc:Bounds x="406" y="245" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="339" y="220" width="84" height="16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gdCongTy_di" bpmnElement="gdCongTy">
+        <dc:Bounds x="536" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_gdCongTy_di" bpmnElement="g_gdCongTy" isMarkerVisible="true">
+        <dc:Bounds x="786" y="245" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="719" y="220" width="84" height="16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="post0_di" bpmnElement="post0">
+        <dc:Bounds x="916" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approved_di" bpmnElement="approved">
+        <dc:Bounds x="1166" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1129" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rej_qlTrucTiep_di" bpmnElement="rej_qlTrucTiep">
+        <dc:Bounds x="413" y="372" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="376" y="412" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ret_end_qlTrucTiep_di" bpmnElement="ret_end_qlTrucTiep">
+        <dc:Bounds x="413" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="455" y="136" width="100" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rej_gdCongTy_di" bpmnElement="rej_gdCongTy">
+        <dc:Bounds x="793" y="372" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="756" y="412" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ret_end_gdCongTy_di" bpmnElement="ret_end_gdCongTy">
+        <dc:Bounds x="793" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="835" y="136" width="100" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="76" y="270"/>
+        <di:waypoint x="156" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="326" y="270"/>
+        <di:waypoint x="406" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="456" y="270"/>
+        <di:waypoint x="536" y="270"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="464" y="246" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="706" y="270"/>
+        <di:waypoint x="786" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="836" y="270"/>
+        <di:waypoint x="916" y="270"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="844" y="246" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="1086" y="270"/>
+        <di:waypoint x="1166" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="431" y="295"/>
+        <di:waypoint x="431" y="372"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="322" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ret_qlTrucTiep_di" bpmnElement="ret_qlTrucTiep">
+        <di:waypoint x="431" y="245"/>
+        <di:waypoint x="431" y="168"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="210" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9">
+        <di:waypoint x="811" y="295"/>
+        <di:waypoint x="811" y="372"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="819" y="322" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ret_gdCongTy_di" bpmnElement="ret_gdCongTy">
+        <di:waypoint x="811" y="245"/>
+        <di:waypoint x="811" y="168"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="819" y="210" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
