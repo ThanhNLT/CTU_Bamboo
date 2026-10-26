@@ -11,7 +11,7 @@ import psycopg
 import pytest
 
 from app import realm, seed
-from app.demo import DEMO_USERS, HR_DEMO_USERS, OPEN_SEATS, account_id, uid
+from app.demo import DEMO_USERS, HR_DEMO_USERS, OPEN_SEATS, TRANSFER_DEMO_USERS, account_id, uid
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_seed_test")
@@ -304,3 +304,12 @@ def test_du_lieu_nhom5(conn):
     demo_load.clear(conn)
     assert demo_load.load(conn) is True
     assert one(conn, "SELECT count(*) FROM iot.entity") == 26
+
+
+def test_tai_khoan_demo_chuyen_tiep_nhan(conn):
+    for user in TRANSFER_DEMO_USERS:
+        seat = user.seats[0]
+        rows = conn.execute("SELECT tenant_code, person_id FROM core.account_tenants(%s)", (str(user.id),)).fetchall()
+        assert [r[0] for r in rows] == [seat.tenant], user.username
+        holder = one(conn, "SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position))
+        assert rows[0][1] == holder, user.username

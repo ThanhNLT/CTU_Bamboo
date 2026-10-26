@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bamboo="http://bamboo.local/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  <process id="personnelDecision" name="Ban hành quyết định nhân sự" isExecutable="true">
+    <documentation>Bổ nhiệm, điều chuyển, miễn nhiệm (QĐ-năm-số): có hiệu lực theo ngày chọn, bất biến, ghi nhật ký kiểm toán.</documentation>
+    <startEvent id="start" name="Soạn quyết định nhân sự"/>
+    <userTask id="tongGiamDocKy" name="Tổng giám đốc ký ban hành" flowable:candidateGroups="TONG_GIAM_DOC" flowable:dueDate="PT24H" flowable:formKey="ky_quyet_dinh"/>
+    <exclusiveGateway id="g_tongGiamDocKy" name="Quyết định?" default="ret_tongGiamDocKy"/>
+    <parallelGateway id="fork0"/>
+    <serviceTask id="par0_0" name="Báo người được ra quyết định" bamboo:action="notify" bamboo:audience="INITIATOR" bamboo:message="Quyết định nhân sự đã ban hành, hiệu lực theo ngày chọn"/>
+    <serviceTask id="par0_1" name="Báo phòng nhân sự" bamboo:action="notify" bamboo:audience="UNIT" bamboo:message="Quyết định nhân sự mới có hiệu lực tại đơn vị"/>
+    <parallelGateway id="join0"/>
+    <endEvent id="approved" name="Đã ban hành"/>
+    <endEvent id="rej_tongGiamDocKy" name="Hủy quyết định"/>
+    <endEvent id="ret_end_tongGiamDocKy" name="Trả về soạn lại"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="tongGiamDocKy"/>
+    <sequenceFlow id="f2" sourceRef="tongGiamDocKy" targetRef="g_tongGiamDocKy"/>
+    <sequenceFlow id="f3" sourceRef="g_tongGiamDocKy" targetRef="fork0" name="Duyệt">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVE'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="fork0" targetRef="par0_0"/>
+    <sequenceFlow id="f5" sourceRef="par0_0" targetRef="join0"/>
+    <sequenceFlow id="f6" sourceRef="fork0" targetRef="par0_1"/>
+    <sequenceFlow id="f7" sourceRef="par0_1" targetRef="join0"/>
+    <sequenceFlow id="f8" sourceRef="join0" targetRef="approved"/>
+    <sequenceFlow id="f9" sourceRef="g_tongGiamDocKy" targetRef="rej_tongGiamDocKy" name="Từ chối">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECT'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="ret_tongGiamDocKy" sourceRef="g_tongGiamDocKy" targetRef="ret_end_tongGiamDocKy" name="Trả về"/>
+  </process>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="personnelDecision">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="40" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="tongGiamDocKy_di" bpmnElement="tongGiamDocKy">
+        <dc:Bounds x="156" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_tongGiamDocKy_di" bpmnElement="g_tongGiamDocKy" isMarkerVisible="true">
+        <dc:Bounds x="406" y="245" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="339" y="220" width="84" height="16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fork0_di" bpmnElement="fork0">
+        <dc:Bounds x="536" y="245" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="par0_0_di" bpmnElement="par0_0">
+        <dc:Bounds x="666" y="230" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="par0_1_di" bpmnElement="par0_1">
+        <dc:Bounds x="666" y="125" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="join0_di" bpmnElement="join0">
+        <dc:Bounds x="916" y="245" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approved_di" bpmnElement="approved">
+        <dc:Bounds x="1046" y="252" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1009" y="292" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rej_tongGiamDocKy_di" bpmnElement="rej_tongGiamDocKy">
+        <dc:Bounds x="413" y="372" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="376" y="412" width="110" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ret_end_tongGiamDocKy_di" bpmnElement="ret_end_tongGiamDocKy">
+        <dc:Bounds x="413" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="455" y="136" width="100" height="28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="76" y="270"/>
+        <di:waypoint x="156" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="326" y="270"/>
+        <di:waypoint x="406" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="456" y="270"/>
+        <di:waypoint x="536" y="270"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="464" y="246" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="586" y="270"/>
+        <di:waypoint x="666" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="836" y="270"/>
+        <di:waypoint x="916" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="586" y="270"/>
+        <di:waypoint x="626" y="270"/>
+        <di:waypoint x="626" y="165"/>
+        <di:waypoint x="666" y="165"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="836" y="165"/>
+        <di:waypoint x="876" y="165"/>
+        <di:waypoint x="876" y="270"/>
+        <di:waypoint x="916" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="966" y="270"/>
+        <di:waypoint x="1046" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9">
+        <di:waypoint x="431" y="295"/>
+        <di:waypoint x="431" y="372"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="322" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ret_tongGiamDocKy_di" bpmnElement="ret_tongGiamDocKy">
+        <di:waypoint x="431" y="245"/>
+        <di:waypoint x="431" y="168"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="210" width="50" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
