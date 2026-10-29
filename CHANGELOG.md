@@ -4,6 +4,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+## [0.4.0] - 2026-10-29
+
 **Nâng cấp (tầng 1: thông báo ngoài ứng dụng, nhật ký, sao lưu, nạp lô, kịch bản tự động, văn bản mẫu, lớp ngữ nghĩa):** chạy `docker compose up -d --build`. Migration `035`–`041`: hàng đợi tin nhắn `msg.queue` và kênh thông báo `collab.notification_pref`; neo chuỗi kiểm toán `audit.anchor`; nhật ký tập trung `obs.log_event`; `audit.backup_run` (và sửa trigger `org_unit_after_move` để bản sao lưu khôi phục được); `core.ingest_job`; sự kiện nghiệp vụ `event.*`, mã webhook và đăng ký sự kiện cho quy trình tự động; `kpi.snapshot` vào publication CDC. Dịch vụ mới `mailpit` (hộp thư thử), `backup` (sao lưu theo lịch), `vector` (profile `logs`, gom log container). Biến môi trường mới: `SMTP_HOST/PORT/USER/PASSWORD/FROM/STARTTLS`, `SMS_GATEWAY_URL/TOKEN`, `WEBHOOK_ALLOW_PRIVATE`, `ANCHOR_URL`, `ANCHOR_INTERVAL_SECONDS`, `OBS_ENABLED`, `BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP`. Cổng API thêm tuyến `/ingest/*` (nạp lô) và `/hooks/*` (webhook khởi chạy quy trình tự động). Cần nạp lại metadata Hasura (`bootstrap` tự làm) và `make trino-sql` để view silver có các bảng mới; cột `collab.notification_pref.address` và `wf.process_automation.webhook_sha256` không đi vào Lakehouse.
 
 **Nâng cấp (thư viện tri thức, sơ đồ BPMN):** chạy `docker compose up -d` để seed bổ sung sáu tài liệu quy tắc công ty vào Thư viện tri thức (hạn mức duyệt, nhóm hàng, luồng duyệt, đơn hàng nội bộ, cơ cấu tổ chức, quy định của Bệnh viện X); nội dung khớp quy tắc đã nạp vào CSDL. Trang Thiết kế quy trình `/p/process` và Sơ đồ quy trình `/p/process/:id` hoạt động trở lại.
@@ -49,6 +51,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 **Nâng cấp (tiếp nhận nhân sự):** chạy lại như thường (`docker compose up -d`). Migration `013` tạo schema `hr`; `seed` bổ sung phòng nhân sự, vai trò `NHAN_SU`, quy tắc duyệt `ONBOARDING` và ghế tuyển mới vào dữ liệu demo có sẵn; `openbao-init` sinh secret cho client Keycloak `bms-provisioner`, `bootstrap` tạo client đó và thêm các tài khoản demo nhân sự còn thiếu vào realm (cần `DEMO_PASSWORD` như lần cài đầu).
 
 ### Thêm
+- **Sáu quy trình mẫu cho trang Thiết kế quy trình** (`platform/flowable/processes/`): tiếp nhận nhân sự, điều chuyển nội bộ, đơn hàng nội bộ, đề xuất tài liệu thư viện, quyết định nhân sự, điều chuyển liên tập đoàn. `seed` nạp vào Tập đoàn X: hai quy trình đã phát hành, hai đã phát hành kèm một yêu cầu sửa chữa đang mở, hai bản nháp (cùng quy trình duyệt mua sắm đã phát hành sẵn). Chạy lại `docker compose up -d` để nạp (không ghi đè quy trình đã có).
 - **Nhập liệu OCR** `/i/ocr` dùng dữ liệu thật (ADR #52), thay trang minh họa: tải ảnh hoặc PDF quét → tạo đề nghị mua sắm nháp, quét an toàn, OCR → rút nhà cung cấp, mã số thuế, địa chỉ, ngày, số chứng từ, dòng hàng và số tiền, mỗi trường kèm độ tin cậy; số tiền tự kiểm (số lượng × đơn giá = thành tiền, tổng các dòng = cộng tiền hàng, cộng tiền hàng + thuế = tổng cộng) và báo chỗ lệch; gợi ý khớp nhà cung cấp theo mã số thuế hoặc tên, vật tư theo mã; người dùng sửa rồi điền vào đề nghị nháp và gửi duyệt. PDF đã có chữ đọc thẳng lớp chữ. Có danh sách lần nhập gần đây. Action `ocr_document`; cần nạp lại metadata Hasura (`bootstrap` tự làm).
 - **Thông báo ngoài ứng dụng và hàng đợi tin nhắn có biên nhận**: thông báo trong ứng dụng được chuyển tiếp qua email (SMTP), SMS (cổng HTTP) và webhook theo lựa chọn của từng người (`/settings/notifications`, theo loại thông báo). Tin vào hàng đợi `msg.queue` (thuê tin, thử lại lùi dần, hàng chết) và mỗi tin giao xong có biên nhận ký Ed25519 bằng OpenBao gắn với mã băm nội dung; webhook chặn địa chỉ nội bộ (SSRF) và kết nối thẳng tới IP đã kiểm tra. Quản trị viên xem hàng đợi, đưa tin chết trở lại và xác minh biên nhận ở `/admin/queue`.
 - **Neo chuỗi kiểm toán, nhật ký tập trung, sao lưu và khôi phục** (`/admin/ops`): đầu chuỗi băm kiểm toán được ký và công bố ra kho đối tượng (và `ANCHOR_URL`), phát hiện cắt bớt hoặc viết lại lịch sử; log của dịch vụ và container (Vector) gom vào `obs.log_event` kèm mã truy vết `X-Request-Id`, che dữ liệu cá nhân; `backup-db.sh` / `restore-drill.sh` sao lưu và diễn tập khôi phục vào CSDL tạm; `scripts/gitops/reconcile.sh` đối chiếu cấu hình với kho mã (không dùng Argo/k3s).
@@ -104,8 +107,10 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 ### Thay đổi
 - **Mô hình AI chỉ nạp khi có việc** (ADR #52): Ollama và dịch vụ OCR không giữ mô hình trong RAM/VRAM lúc nhàn rỗi, tự gỡ sau `AI_KEEP_ALIVE` / `OCR_IDLE_SECONDS`; dùng GPU NVIDIA khi bật `docker-compose.gpu.yml`, không thì CPU. Mô hình sinh và bộ OCR không nạp cùng lúc: `ai-worker` gỡ mô hình chính đang nhàn rỗi để nhường chỗ, giữ `bge-m3` (`AI_CPU_MODELS`).
 - Mọi dịch vụ chạy lâu dài có cổng hiện trên Docker, chỉ nghe `127.0.0.1` của máy chạy compose: actions 8090, web 8088 (không qua cổng API), SeaweedFS 8333 / 9333 / 8888, Meilisearch 7700, Tika 9998, Gotenberg 3000, Debezium 8083, ClamAV 3310 (profile `scan`). Kafka thêm listener `HOST` `localhost:19092` (cùng SCRAM + ACL) cho công cụ trên máy dev. `flow-sync`, `search-sync`, `lakehouse-sink` là tiến trình nền, không nghe cổng.
+- **Tài liệu** cập nhật theo mã hiện tại: Thiết kế CSDL viết lại theo 41 migration; Dịch vụ nền tảng thêm quét tệp, OCR, `sleeper`, hàng đợi tin nhắn, neo kiểm toán, nhật ký, sao lưu, GitOps, quy trình tự động, nạp lô, văn bản mẫu, lớp ngữ nghĩa; API của nền tảng có danh mục đủ 99 Action; Yêu cầu và kiến trúc đối chiếu từng yêu cầu của đề thi và thể lệ với hiện trạng; ADR #55 và ghi chú hiện trạng cho ADR #15, #21, #22, #46. Bỏ timeline, kế hoạch AI, thiết kế giao diện (đã lạc hậu) và bản lưu đề thi của VFOSSA (thay bằng liên kết tới trang gốc).
 
 ### Sửa
+- Hai ảnh của theme đăng nhập (`bamboo-icon.svg`, `favicon.ico`) chưa khai báo giấy phép nên `reuse lint` báo lỗi: khai báo trong `REUSE.toml` (biểu tượng của dự án theo Apache-2.0, favicon là biểu tượng mẫu của Refine theo MIT).
 - `lakehouse-sink` giữ mọi snapshot Iceberg (mỗi lô 30 giây một snapshot), nên siêu dữ liệu bảng trong bộ nhớ và mỗi lần commit lớn dần không giới hạn: nay mỗi giờ bỏ snapshot cũ hơn 24 giờ, giữ snapshot hiện tại (chứa vị trí Kafka); dòng bronze không đổi.
 - `ai-worker` giữ tệp vừa OCR (tới 25 MB) trong bộ nhớ tới khi có tệp khác cần OCR: nay bỏ ngay khi việc OCR xong, lỗi hoặc tạm hoãn.
 - Ngừng một đơn vị / vị trí / bổ nhiệm vừa tạo (ví dụ ngay sau khi nhập Excel) vẫn hiện như còn hiệu lực tới khi tải lại trang: thời điểm kết thúc tối thiểu giảm từ 1 giây xuống 1 mili giây sau lúc bắt đầu.
@@ -204,7 +209,8 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.3.0...HEAD
+[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0

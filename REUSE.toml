@@ -4,19 +4,13 @@ version = 1
 
 [[annotations]]
 path = ["**.json", "**.md", "**.MD", "**/.gitkeep", "NOTICE", "platform/trino/jvm.config",
-        "services/seed/data/**"]
+        "services/seed/data/**", "platform/keycloak/themes/dxos-login/login/resources/img/bamboo-icon.svg"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 DX-OS Open-Core contributors"
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
-path = "apps/web/web/public/favicon.ico"
+path = ["apps/web/web/public/favicon.ico", "platform/keycloak/themes/dxos-login/login/resources/img/favicon.ico"]
 precedence = "override"
 SPDX-FileCopyrightText = "Refine Development Inc."
 SPDX-License-Identifier = "MIT"
-
-[[annotations]]
-path = "docs/tong-quan/00-de-thi-goc.pdf"
-precedence = "override"
-SPDX-FileCopyrightText = "2026 Hội Doanh nghiệp Phần mềm nguồn mở Việt Nam (VFOSSA)"
-SPDX-License-Identifier = "LicenseRef-VFOSSA-public-notice"
