@@ -9,7 +9,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | CPU | 4 vCPU | 8 vCPU |
 | RAM | 8 GB | 16 GB (thêm 2 GB nếu bật ClamAV) |
 | Đĩa | 20 GB SSD | 50 GB SSD, tách volume dữ liệu |
-| Phần mềm | Docker Engine 24+, Docker Compose 2.34+ | |
+| Phần mềm | Docker Engine 24+, Docker Compose 2.40.2+ (chạy từ artifact OCI; các bản 2.34.0–2.40.1 có lỗ hổng CVE-2025-62725) | |
 | Kiến trúc | amd64 hoặc arm64 (image PostGIS chạy qua giả lập trên arm64) | amd64 |
 
 ## 2. Danh sách kiểm tra trước khi mở cho người dùng
@@ -23,7 +23,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 5 | Keycloak chế độ production | `KEYCLOAK_MODE=start` (bắt buộc đi sau reverse proxy TLS) |
 | 6 | Redirect URI của ứng dụng | Job `bootstrap` tự bổ sung `WEB_ORIGIN` vào client `bms-web` mỗi lần khởi động (cả khi đổi tên miền sau lần import đầu). Giá trị cũ không bị xóa: gỡ `http://localhost:5173` (chỉ dùng cho `npm run dev`) và tên miền cũ trong Keycloak → realm `bms` → Clients → `bms-web` |
 | 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp) |
-| 8 | Quét virus | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav` |
+| 8 | Quét virus bằng ClamAV (bộ quét nội bộ luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus) | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
 | 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`, `CDC_DB_PASSWORD` (Debezium), `LAKEHOUSE_DB_PASSWORD` (catalog Iceberg); superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
@@ -92,6 +92,14 @@ docker compose -p bamboo start openbao seaweedfs && docker compose -p bamboo up 
 
 Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` vào đúng volume, chạy `docker compose ... up -d db`, nạp CSDL bằng `gunzip -c bamboo-db-*.sql.gz | docker compose -p bamboo exec -T db psql -U bms -d postgres` (bản của script: `docker compose -p bamboo cp postgres.sql db:/tmp/ && docker compose -p bamboo exec -T db psql -U bms -d postgres -f /tmp/postgres.sql`), rồi `up -d` toàn bộ.
 
+### Sao lưu theo lịch, diễn tập khôi phục và GitOps
+
+- Dịch vụ `backup` chạy `scripts/ops/backup-db.sh` theo chu kỳ `BACKUP_INTERVAL_HOURS` (mặc định 24 giờ, giữ `BACKUP_KEEP` bản) vào volume `backups`, ghi kết quả vào `audit.backup_run` (xem ở `/admin/ops`, tab Sao lưu).
+- `scripts/ops/restore-drill.sh` khôi phục bản sao lưu mới nhất vào CSDL tạm rồi đối chiếu số dòng và chuỗi băm kiểm toán; nên chạy định kỳ để biết bản sao lưu còn dùng được.
+- `scripts/gitops/reconcile.sh` so cấu hình trong kho mã với trạng thái đang chạy và chỉ chạy `docker compose up -d` khi có thay đổi. Đặt vào cron hoặc systemd timer. Đây là đối chiếu bằng script, không phải Argo CD hay k3s.
+- Thư mục thử mail: `mailpit` (cổng 8025 trên máy chủ) nhận thư khi chưa cấu hình `SMTP_HOST` thật.
+- Gom log container: `COMPOSE_PROFILES=ai,logs` bật `vector`; log vào `obs.log_event`, xem ở `/admin/ops`, tab Nhật ký.
+
 ## 6. Khóa OpenBao
 
 `openbao-init` khởi tạo OpenBao với một khóa unseal và lưu khóa cùng root token trong volume `openbao-keys` để tự unseal mỗi lần khởi động. Cách này phù hợp demo và máy chủ một node; ai đọc được volume này thì đọc được mọi secret. Giảm rủi ro:
@@ -140,9 +148,9 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 | `trino-core` | `platform/trino/jvm.config` | `-Xmx1G` |
 | `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m` |
 
-**Mức RAM 8 / 16** ([ADR #54](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-54)): máy 8 GB chạy chức năng cơ bản, không AI; máy 16 GB chạy đầy đủ. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 không chạy Ollama, `ocr`, `ai-worker` và hạ heap JVM; chuyển từ 16 xuống 8 thì `make up` dừng luôn các container AI. Chạy `docker compose up -d` trực tiếp thì mức 16 khi `.env` có `COMPOSE_PROFILES=ai`; mức 8 đặt `COMPOSE_PROFILES=` và `OLLAMA_URL=` (để trống).
+**Mức RAM 8 / 16** ([ADR #54](#adr-54)): máy 8 GB chạy chức năng cơ bản, không AI; máy 16 GB chạy đầy đủ. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 không chạy Ollama, `ocr`, `ai-worker` và hạ heap JVM; chuyển từ 16 xuống 8 thì `make up` dừng luôn các container AI. Chạy `docker compose up -d` trực tiếp thì mức 16 khi `.env` có `COMPOSE_PROFILES=ai`; mức 8 đặt `COMPOSE_PROFILES=` và `OLLAMA_URL=` (để trống).
 
-**Dịch vụ dùng thưa tự ngủ** ([ADR #53](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-53)): `trino-core`, `tika-core`, `gotenberg-core` chỉ chạy khi có yêu cầu; `sleeper` giữ tên mạng và cổng cũ (`trino`, `tika`, `gotenberg`), đánh thức khi có byte đầu tiên và cho ngủ sau `SLEEPER_IDLE_SECONDS` (mặc định 300) không có lưu lượng. Lần gọi đầu sau khi ngủ chậm thêm thời gian khởi động container. Xem trạng thái bằng `docker compose ps` hoặc `docker compose exec sleeper python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:9000/status').read().decode())"`. `sleeper` gắn `/var/run/docker.sock`; môi trường không cho phép thì bỏ `sleeper` và đặt lại tên ba dịch vụ thật như ADR #53 mô tả.
+**Dịch vụ dùng thưa tự ngủ** ([ADR #53](#adr-53)): `trino-core`, `tika-core`, `gotenberg-core` chỉ chạy khi có yêu cầu; `sleeper` giữ tên mạng và cổng cũ (`trino`, `tika`, `gotenberg`), đánh thức khi có byte đầu tiên và cho ngủ sau `SLEEPER_IDLE_SECONDS` (mặc định 300) không có lưu lượng. Lần gọi đầu sau khi ngủ chậm thêm thời gian khởi động container. Xem trạng thái bằng `docker compose ps` hoặc `docker compose exec sleeper python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:9000/status').read().decode())"`. `sleeper` gắn `/var/run/docker.sock`; môi trường không cho phép thì bỏ `sleeper` và đặt lại tên ba dịch vụ thật như ADR #53 mô tả.
 
 Các giới hạn bộ nhớ khác (đặt trong `.env`):
 
@@ -160,7 +168,7 @@ Các tiến trình Python chạy với `MALLOC_ARENA_MAX=2` để glibc không t
 
 Trợ lý RAG, tác tử AI (Ollama) và OCR tệp quét (dịch vụ `ocr`) khởi động cùng hệ thống bằng `docker compose up -d`. Mô hình đã có trong volume thì `ollama-init`, `ocr-init` bỏ qua, nên các lần sau chạy không cần Internet; tải lỗi chỉ ghi cảnh báo vào log, phần còn lại của hệ thống vẫn lên.
 
-**Mô hình chỉ nạp khi có việc** ([ADR #52](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-52)): lúc nhàn rỗi Ollama và `ocr` không giữ mô hình nào trong RAM/VRAM. Có lượt hỏi thì Ollama nạp mô hình sinh, có trang quét thì `ocr` nạp bộ OCR; hết việc quá `AI_KEEP_ALIVE` (mặc định `5m`) với Ollama, `OCR_IDLE_SECONDS` (mặc định 300) với OCR thì tự gỡ. Bật GPU (bên dưới) thì mô hình nạp lên GPU, không thì chạy CPU.
+**Mô hình chỉ nạp khi có việc** ([ADR #52](#adr-52)): lúc nhàn rỗi Ollama và `ocr` không giữ mô hình nào trong RAM/VRAM. Có lượt hỏi thì Ollama nạp mô hình sinh, có trang quét thì `ocr` nạp bộ OCR; hết việc quá `AI_KEEP_ALIVE` (mặc định `5m`) với Ollama, `OCR_IDLE_SECONDS` (mặc định 300) với OCR thì tự gỡ. Bật GPU (bên dưới) thì mô hình nạp lên GPU, không thì chạy CPU.
 
 ```bash
 docker compose up -d
@@ -219,7 +227,7 @@ Máy không có GPU thì đừng chép: Docker không tạo được container x
 
 1. Cài NVIDIA Container Toolkit như trên; GPU Blackwell cần driver đủ mới, image `ocr` dùng CUDA 12.8 và Ollama 0.35.1 đều hỗ trợ, nhưng chưa chạy thử trên máy này nên kiểm bằng `docker run --rm --gpus all ubuntu nvidia-smi`.
 2. Chạy `BAMBOO_RAM=16 make up-gpu`, không để tự dò. WSL2 mặc định chỉ cấp một nửa RAM máy: máy 16 GB sẽ bị tự chọn mức 8 và tắt AI mà không báo trên giao diện. Dùng WSL2 thì đặt `memory=12GB` (hoặc hơn) trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`. `BAMBOO_RAM=16` đặt trong `.env` cũng có hiệu lực với `make up`.
-3. Chạy `scripts/ai_smoke.sh --cold` rồi `scripts/ai_smoke.sh`; ghi số đo vào [kế hoạch AI](../quan-ly-du-an/06-ke-hoach-ai.md). Có nhóm câu nào trượt hoặc điểm của nhóm ngoài phạm vi chạm 0,7 thì hiệu chỉnh `AI_MIN_SCORE` như trên. Câu nào bị `error` do hết token thì tắt `think` cho tác tử demo ở trang Tác tử AI.
+3. Chạy `scripts/ai_smoke.sh --cold` rồi `scripts/ai_smoke.sh`; ghi số đo vào mục Bổ sung của [ADR #52](#adr-52). Có nhóm câu nào trượt hoặc điểm của nhóm ngoài phạm vi chạm 0,7 thì hiệu chỉnh `AI_MIN_SCORE` như trên. Câu nào bị `error` do hết token thì tắt `think` cho tác tử demo ở trang Tác tử AI.
 4. Đính kèm sẵn một báo giá quét vào một đề nghị mua sắm, chờ nhãn "Đã OCR" (không OCR trực tiếp trên sân khấu: OCR và mô hình sinh không nạp cùng lúc nên lượt hỏi ngay sau đó phải nạp lạnh).
 5. Ngay trước buổi demo chạy `scripts/demo_prepare.sh`: kiểm AI đang bật, giữ qwen3 và bge-m3 trong bộ nhớ 2 giờ, kiểm đã có tệp "Đã OCR".
 
