@@ -8,16 +8,17 @@ File này chỉ để đọc trên Git, không đưa vào trang Sphinx.
 ```text
 docs/
 ├── index.md                     Trang chủ, mục lục
-├── tong-quan/                   Đề thi, yêu cầu, kiến trúc 3 tầng, kịch bản nghiệp vụ
-├── thiet-ke/                    Thiết kế CSDL, dịch vụ nền tảng
-├── quan-ly-du-an/               Timeline, nhật ký quyết định kiến trúc (ADR)
+├── tong-quan/                   Yêu cầu đề thi và đối chiếu, kiến trúc 3 tầng, kịch bản nghiệp vụ
+├── thiet-ke/                    Thiết kế CSDL, dịch vụ nền tảng Tầng 1, API
+├── quan-ly-du-an/               Nhật ký quyết định kiến trúc (ADR)
+├── van-hanh/                    Triển khai production, khởi tạo cho công ty mới
 ├── _static/custom.css           CSS bổ sung
 ├── conf.py                      Cấu hình Sphinx
 ├── requirements.txt             Gói Python để build
 └── Makefile
 ```
 
-Tên file giữ số thứ tự cũ (`01-`…`06-`) để dễ tìm; thứ tự trên trang do `toctree` trong
+Tên file giữ số thứ tự cũ (`01-`…`08-`) để dễ tìm; thứ tự trên trang do `toctree` trong
 `index.md` của từng thư mục quyết định.
 
 ## Build
