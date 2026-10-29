@@ -1,8 +1,12 @@
-# API cho giao diện (Hasura GraphQL)
+# API của nền tảng (Hasura GraphQL)
 
-Giao diện Refine chỉ gọi một endpoint GraphQL: `/graphql` trên cổng API APISIX ([ADR #34](#adr-34)), cùng origin với trang. Trang này liệt kê
-những gì backend đang có, ánh xạ sang các màn hình trong [Thiết kế giao diện](07-thiet-ke-UI.md).
-Schema đầy đủ: Hasura Console (`http://localhost:8081`, cổng quản trị trên máy dev) hoặc introspection qua `/graphql`; sinh type bằng graphql-codegen.
+Tầng 1 không có giao diện người dùng cuối; mọi ứng dụng Tầng 2 (kể cả giao diện Refine trong `apps/web/web`) gọi nền tảng
+qua một endpoint GraphQL duy nhất: `/graphql` trên cổng API APISIX ([ADR #34](#adr-34)). Ngoài GraphQL chỉ có hai đường HTTP
+cho máy gọi máy: nạp dữ liệu theo lô `/ingest/*` và webhook khởi chạy quy trình tự động `/hooks/*`
+([Dịch vụ nền tảng mục 18–19](06-dich-vu-nen-tang.md)).
+
+Schema đầy đủ: introspection qua `/graphql` (sinh type bằng graphql-codegen) hoặc Hasura Console
+(`http://localhost:8081/console`, chỉ trên máy chủ). Trang này mô tả cách kết nối, các nhóm API và lưu ý khi dùng.
 
 ## 1. Kết nối và phiên
 
@@ -12,17 +16,17 @@ Schema đầy đủ: Hasura Console (`http://localhost:8081`, cổng quản tr�
 | Chọn tenant | thêm `x-bamboo-tenant: <tenant_id>` | `user` | toàn bộ API dưới đây |
 | Tài khoản quản trị (realm role `platform_admin`, OTP) | thêm `x-hasura-role: platform_admin` | `platform_admin` | như `user`, cộng bảng phân quyền và ghi dữ liệu chủ |
 
-- Token **không** mang claim Hasura ([ADR #32](#adr-32)): luật CASL dựng từ query `core_v_permission_grant` (chỉ trả quyền của chính người gọi), không đọc claim trong token như mục 2.3 của thiết kế giao diện.
+- Token **không** mang claim Hasura ([ADR #32](#adr-32)): giao diện dựng luật CASL từ query `core_v_permission_grant` (chỉ trả quyền của chính người gọi).
 - Một tài khoản có thể vào nhiều tenant ([ADR #30](#adr-30)); `my_tenants` trả `person_id` của người dùng trong từng tenant. Mọi cột người (`requester_id`, `assignee_id`, `recipient_id`...) so với `person_id` này.
-- Subscription: cùng header, qua websocket `/v1/graphql`; hạn kết nối theo hạn token.
+- Subscription: websocket (giao thức `graphql-ws`) cùng địa chỉ `/graphql`, header gửi trong `connectionParams`; cổng API chuyển tới `/v1/graphql` của Hasura; hạn kết nối theo hạn token.
 - Ứng dụng Refine (`apps/web/web`) mặc định gọi Keycloak (`/realms`) và Hasura (`/graphql`) cùng origin với trang; `npm run dev` dùng `.env.development` trỏ vào cổng `http://localhost:8000`. Ghi đè bằng `/config.js` lúc chạy hoặc biến `VITE_*` lúc build khi backend ở địa chỉ khác.
 - Cổng API trả **401** khi request `/graphql` không có token hợp lệ (trước khi tới Hasura), **429** khi vượt giới hạn tần suất, **403** khi WAF chặn; mọi phản hồi có `X-Request-Id` để đối chiếu log. Tenant đã chọn lưu ở `localStorage["bamboo.tenant"]` và gửi kèm mọi request (cả websocket).
 
-## 2. Ánh xạ màn hình
+## 2. Ánh xạ màn hình chính
 
-Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong `apps/web/web/src/pages` (kiểm thử đầu–cuối: `apps/web/web/e2e`).
+Ví dụ cách giao diện trong `apps/web/web/src/pages` dùng API cho luồng mua sắm, tiếp nhận nhân sự và đơn hàng nội bộ. Danh mục đầy đủ các Action ở mục 3.
 
-| Màn hình (07-thiet-ke-UI) | Backend hiện có |
+| Màn hình | API |
 |---|---|
 | `/p/documents` danh sách, chi tiết | `proc_purchase_request` (+ `purchase_request_items`, `approval_steps`, `approval_history`, `comments`, `partner`, `requester`, `org_unit`). Chỉ trả dòng người gọi được xem (`can_read`) |
 | `/p/documents/create`, `/edit/:id` | `insert_proc_purchase_request_one` (lồng `purchase_request_items`), `update_…_by_pk`, dòng hàng `insert/update/delete_proc_purchase_request_item`; gửi duyệt bằng Action `submit_purchase_request`; hủy bằng `cancel_purchase_request` |
@@ -31,7 +35,7 @@ Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong
 | `/p/process/:id` (`process-state`, nút **Sơ đồ quy trình** trên chi tiết đề nghị) | Action `process_state(request_id)`: `bpmn_xml`, `active_activity_ids`, `completed_activity_ids` cho bpmn-js; `source` = `flowable` hoặc `database` (Flowable chưa đồng bộ thì suy ra từ trạng thái chứng từ). Giao diện tải bpmn-js lười, giữ watermark bpmn.io |
 | Thông báo ở header | `collab_notification` (của mình), subscription; `collab_mark_notifications_read(args: {ids})` (bỏ `ids`: tất cả) |
 | Bình luận trên chứng từ | `insert_collab_comment_one` (`entity_type: "proc.purchase_request"`, `entity_id`, `body`, `parent_id`, `mentions`); sửa `body`, xóa mềm bằng cách đặt `deleted_at` |
-| Tệp đính kèm (`file-upload` mục 6.3 thiết kế giao diện) | `get_upload_url` → PUT tệp lên `upload_url` (header `Content-Type` = `content_type` trả về) → `confirm_upload` (trả `status`: `CLEAN`, `REJECTED`, `INFECTED` kèm `scan_result`); danh sách: quan hệ `attachments` của đề nghị; tải về: query `get_download_url`; xóa: `delete_attachment` |
+| Tệp đính kèm | `get_upload_url` → PUT tệp lên `upload_url` (header `Content-Type` = `content_type` trả về) → `confirm_upload` (trả `status`: `CLEAN`, `REJECTED`, `INFECTED` kèm `scan_result`); danh sách: quan hệ `attachments` của đề nghị; tải về: query `get_download_url`; xóa: `delete_attachment` |
 | `/admin/audit-logs` (`audit_events` trong thiết kế) | `audit_log` (+ `actor`), chỉ người có quyền `audit.read`; không có `old_data`, `new_data`: dữ liệu trước/sau đã che lấy bằng Action `audit_log_detail(log_ids: [Int!]!)` → `old_data`, `new_data` (jsonb), `masked` (loại dữ liệu đã che) ([ADR #43](#adr-43)) |
 | Ô trao đổi: kiểm tra trước khi gửi | Query `check_pii(text)` → `masked_text`, `entities` { `entity` `label` `start` `end` } |
 | `/d/ledger` (`verify-ledger`) | Action `verify_audit_chain`: `ok`, `checked`, `head_seq`, `head_hash`, `problems` ([ADR #33](#adr-33)) |
@@ -45,9 +49,27 @@ Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong
 | `/p/ic-orders` danh sách, chi tiết (đơn hàng nội bộ, [ADR #42](#adr-42)) | `ic_ic_order` (+ `seller_unit`, `buyer_unit`, `created_by_person`, `ic_order_items` { `lot` }, `purchase_requests`, `purchase_orders`, `comments`), computed field `can_confirm`; lọc "Chờ tôi xác nhận": `where: {can_confirm: {_eq: true}}`. Lô chọn được: `mfg_lot(where: {item_id: {_in: …}, status: {_eq: "RELEASED"}, org_unit: {path: {_descendant: <path công ty bán>}}})` |
 | Nút **Xác nhận và xuất lô**, **Từ chối**, **Hủy đơn** | Mutation `confirm_ic_order(order_id, lots: [{line_id, lot_id}])` → `status`, `purchase_order_id`; `reject_ic_order(order_id, reason)`, `cancel_ic_order(order_id, reason)` |
 | Đơn hàng nội bộ trên chi tiết đề nghị | `proc_purchase_request.ic_order` { `doc_no` `status` }; nhà cung cấp nội bộ: `partner.internal_unit_id` |
-| `/i/chat`, `/i/ocr`, `/d/*` | Chưa có |
 
-## 3. Lưu ý khi dùng
+## 3. Danh mục Hasura Action
+
+Nghiệp vụ nhiều bước đi qua 99 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
+
+| Nhóm | Query | Mutation |
+|---|---|---|
+| Phê duyệt, mua sắm | `process_state`, `get_purchase_request_pdf`, `proposed_partners` | `submit_purchase_request`, `act_on_task`, `cancel_purchase_request`, `adopt_proposed_partner` |
+| Đơn hàng nội bộ | – | `confirm_ic_order`, `reject_ic_order`, `cancel_ic_order` |
+| Nhân sự | `transfer_target_units`, `transfer_tenants`, `personnel_decisions`, `personnel_decision_context`, `get_personnel_decision_pdf` | `submit_onboarding_request`, `cancel_onboarding_request`, `save_onboarding_private`, `reveal_onboarding_private`, `retry_onboarding_account`, `create_person_accounts`, `create_transfer_request`, `submit_transfer_request`, `cancel_transfer_request`, `choose_transfer_position`, `create_transfer_out`, `submit_transfer_out`, `cancel_transfer_out`, `choose_transfer_in_position`, `issue_personnel_decision` |
+| Tệp, Ổ đĩa, tìm kiếm | `get_download_url`, `drive_usage`, `search_documents` | `get_upload_url`, `confirm_upload`, `delete_attachment` |
+| Thư viện tri thức | `kb_library` | `submit_kb_document`, `cancel_kb_document`, `retire_kb_document`, `kb_reindex` |
+| Quản trị tổ chức, dữ liệu chủ | `my_tenants`, `admin_import_template` | `admin_save`, `admin_close`, `admin_import`, `delete_person` |
+| Thiết kế, giám sát, chạy tự động quy trình | `process_models`, `process_model_get`, `process_model_validate`, `process_version_get` | `process_model_save`, `process_model_publish`, `process_model_delete`, `process_sandbox_run`, `process_change_request_create`, `process_change_request_resolve`, `process_automation_enable`, `process_automation_disable`, `process_automation_start`, `process_automation_webhook`, `process_automation_events` |
+| Kiểm toán, sổ cái, dữ liệu cá nhân | `audit_log_detail`, `verify_audit_chain`, `audit_anchors`, `audit_anchor_verify`, `ledger_overview`, `ledger_archive`, `check_pii` | `audit_anchor_now`, `ledger_verify`, `ledger_open_archive` |
+| Thông báo, hàng đợi tin nhắn | `notification_prefs`, `my_deliveries`, `queue_overview`, `queue_verify` | `save_notification_pref`, `delete_notification_pref`, `send_test_notification`, `queue_retry` |
+| Dữ liệu số: điều hành, Lakehouse, KPI, bản sao số | `ops_dashboard`, `lakehouse_datasets`, `lakehouse_preview`, `semantic_catalog`, `semantic_query`, `kpi_snapshots`, `get_kpi_report_pdf` | `iot_acknowledge` |
+| Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ocr_retry` |
+| Vận hành | `obs_logs`, `backup_runs` | – |
+
+## 4. Lưu ý khi dùng
 
 - **Tổng tiền sau khi tạo kèm dòng hàng:** phản hồi của `insert_proc_purchase_request_one` lồng `purchase_request_items` chụp dòng cha trước khi chèn dòng hàng nên `total_amount` còn là 0; đọc lại bằng `proc_purchase_request_by_pk` (Refine tự refetch sau create).
 - Có dòng hàng thì `total_amount` luôn bằng tổng các dòng; sửa tay bị ghi đè. `doc_no` do CSDL sinh, không gửi lên.
@@ -57,7 +79,7 @@ Các màn hình dưới đây (trừ dòng "Chưa có") đã hiện thực trong
 - **Tiếp nhận nhân sự:** duyệt xong CSDL tạo người và bổ nhiệm ngay trong giao dịch duyệt; tài khoản Keycloak tạo ở nền vài giây sau (`account_status` từ `PENDING` sang `CREATED`), nên tải lại hồ sơ cho tới khi có kết quả.
 - Trạng thái đề nghị (cả mua sắm và tiếp nhận nhân sự): `DRAFT`, `PENDING`, `RETURNED`, `APPROVED`, `REJECTED`, `CANCELLED`. Loại thông báo: `TASK_ASSIGNED`, `REQUEST_APPROVED`, `REQUEST_REJECTED`, `REQUEST_RETURNED`, `REQUEST_CANCELLED`, `COMMENT`, `MENTION`.
 
-## 4. Ví dụ
+## 5. Ví dụ
 
 ```graphql
 # Hộp việc, tự cập nhật

@@ -1,5 +1,0 @@
-Bản lưu thông báo công khai "Đề thi Phần mềm nguồn mở - OLP 2026" do VFOSSA đăng tại
-https://vfossa.vn/tin-tuc/de-thi-phan-mem-nguon-mo-olp-2026-798.html (30/09/2026).
-
-Bản quyền thuộc VFOSSA. Tệp được lưu nguyên vẹn trong kho mã chỉ để đội thi tham chiếu yêu cầu
-đề bài; không phải một phần của phần mềm và không được cấp phép theo Apache-2.0.

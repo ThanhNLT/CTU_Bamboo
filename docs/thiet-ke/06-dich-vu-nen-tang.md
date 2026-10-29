@@ -1,9 +1,25 @@
-# Dịch vụ nền tảng: OpenBao, SeaweedFS, Flowable, cổng API, tìm kiếm, phiếu PDF, CDC, Lakehouse, Trino, AI cục bộ
+# Dịch vụ nền tảng Tầng 1
 
-> **Hiện trạng repo (05/10/2026):** cả chín mục đã có trong repo. Image dùng chung là `docker/python.Dockerfile`; các job khởi tạo nằm trong `services/actions/app/` (`openbao_init.py`, `bootstrap.py`).
+Cấu hình và hoạt động của các dịch vụ lõi Tầng 1 ngoài CSDL. Tầng 1 không có giao diện người dùng cuối: ứng dụng chỉ gọi
+qua cổng API (mục 4). Mọi dịch vụ tự khởi tạo khi `docker compose up -d` (hoặc `make up`) bằng các job trong
+`services/actions/app/` (`openbao_init.py`, `bootstrap.py`); image Python dùng chung là `docker/python.Dockerfile`.
+Giao diện quản trị đi kèm một số dịch vụ (Hasura Console, Keycloak Admin, OpenBao UI, SeaweedFS, Mailpit) chỉ nghe
+`127.0.0.1` trên máy chủ và dành cho người vận hành.
 
-Cấu hình các dịch vụ lõi Tầng 1 ngoài CSDL. Tất cả tự khởi tạo khi `docker compose up -d`
-bằng các job trong `services/bootstrap/` (image dùng chung `docker/python.Dockerfile`).
+| Mục | Dịch vụ | Cụm dịch vụ trong đề thi |
+|---|---|---|
+| 1 | OpenBao | Két sắt mật mã, ký số |
+| 2, 12 | SeaweedFS, quét tệp | Lưu trữ đối tượng, kiểm dịch tệp |
+| 3, 18 | Flowable, quy trình tự động | Quy trình BPMN, kịch bản ngầm |
+| 4 | APISIX | Cửa ngõ API, WAF |
+| 5, 6, 20 | Meilisearch + Tika, Gotenberg, văn bản mẫu | Chỉ mục toàn văn, trộn mẫu |
+| 7, 8, 9, 21 | Debezium + Kafka, Iceberg, Trino, lớp ngữ nghĩa | Streaming, lịch sử dữ liệu, lớp ngữ nghĩa |
+| 10 | Presidio | Rà soát và che PII |
+| 11, 13 | Ollama, OCR | Trí tuệ số |
+| 14 | `sleeper` | Tiết kiệm tài nguyên |
+| 15 | Hàng đợi tin nhắn, thông báo đa kênh | Truyền thông, chống chối bỏ |
+| 16, 17 | Neo kiểm toán, nhật ký tập trung, sao lưu, GitOps | Vận hành, giám sát, kiểm toán |
+| 19 | API nạp lô | Thu nhận dữ liệu theo lô |
 
 ## 1. OpenBao – két sắt secret (ADR #25)
 
@@ -82,21 +98,21 @@ bao.encrypt("079123456789")     # "vault:v1:..."
 get_upload_url ──► core.attachment PENDING; link PUT có chữ ký vào bms-quarantine (15 phút)
       │            trình duyệt PUT tệp, header Content-Type đúng như đã khai báo
 confirm_upload ──► kích thước khớp khai báo? chữ ký đầu tệp khớp loại tệp? ── không ─► REJECTED, xóa tệp
-      │            sha256; quét ClamAV (INSTREAM) ── nhiễm ─► INFECTED, xóa tệp
-      │            sạch ─► chuyển sang bms-documents, CLEAN
+      │            sha256; bộ quét nội bộ (+ ClamAV nếu bật, mục 12) ── có vấn đề ─► INFECTED / REJECTED, xóa tệp
+      │            sạch ─► chuyển sang bms-documents, CLEAN (ghi scan_engines, scan_report)
 get_download_url ─► link GET có chữ ký 5 phút, tên tệp tiếng Việt (RFC 5987)
 ```
 
 | Action | Kiểm tra |
 |---|---|
 | `get_upload_url(entity_type, entity_id, file_name, content_type, size_bytes)` | Chứng từ cùng tenant và người gọi xem được (`wf.entity_can_read`); loại tệp: PDF, PNG, JPEG, DOCX, XLSX, TXT; tối đa 25 MB; tên tệp bỏ phần đường dẫn |
-| `confirm_upload(attachment_id)` | Chỉ người tải lên; chưa PUT thì báo `not-uploaded` và giữ PENDING; ClamAV không trả lời thì báo `scanner-unavailable`, tệp ở lại bucket cách ly để thử lại |
+| `confirm_upload(attachment_id)` | Chỉ người tải lên; chưa PUT thì báo `not-uploaded` và giữ PENDING; ClamAV đã bật mà không trả lời, hoặc `SCAN_REQUIRE_CLAMAV=true` mà chưa có ClamAV, thì báo `scanner-unavailable` (503), tệp ở lại bucket cách ly để thử lại |
 | `get_download_url(attachment_id)` | Cùng tenant, xem được chứng từ gốc, trạng thái `CLEAN` |
 | `delete_attachment(attachment_id)` | Chỉ người tải lên; đề nghị đã có kết quả (duyệt, từ chối, hủy) thì giữ tệp làm chứng cứ (CSDL chặn) |
 
-- Loại chứng từ đính kèm được: `proc.purchase_request` (`ENTITY_TYPES` trong `storage.py`); thêm loại mới thì bổ sung cả `collab.entity_tenant` và `wf.entity_can_read`.
+- Loại chứng từ đính kèm được: `proc.purchase_request`, `hr.onboarding_request`, `collab.kb_document` (`ENTITY_TYPES` trong `storage.py`); thêm loại mới thì bổ sung cả `collab.entity_tenant` và `wf.entity_can_read`.
 - Giao diện xem danh sách tệp qua quan hệ `attachments` của đề nghị hoặc bảng `core_attachment` (không có cột `storage_key`; tệp đã xóa không hiện).
-- **ClamAV tùy chọn**: chưa đặt `CLAMAV_HOST` thì `scan_result = "bỏ qua: ClamAV chưa được cấu hình"` và tệp vẫn được nhận sau khi qua kiểm tra kích thước và chữ ký đầu tệp. Bật: `docker compose --profile scan up -d` với `CLAMAV_HOST=clamav`.
+- **Quét tệp**: bộ quét nội bộ luôn chạy; ClamAV tùy chọn (`docker compose --profile scan up -d`, `CLAMAV_HOST=clamav`). Chi tiết ở mục 12.
 - Link có chữ ký dùng `S3_PUBLIC_ENDPOINT` (mặc định `http://localhost:8000`, cổng API). Cổng giữ nguyên đường dẫn và host khi chuyển tới SeaweedFS, vì chữ ký tính trên hai giá trị này.
 - Lỗi S3 trả về `storage-unavailable` (503).
 
@@ -146,7 +162,7 @@ Biến tiến trình: `entityType`, `entityId`, `round`, `stepCount`, `stepIndex
 
 Kết quả `PurchaseRequestActionResult { request_id, status, purchase_request }`. Lỗi nghiệp vụ trả về `400 {message, extensions.code}`; Hasura chuyển nguyên thông báo cho giao diện. Gọi Action phải kèm header `x-actions-secret` (Hasura gửi từ biến `ACTIONS_SECRET`).
 
-Giao diện chỉ gọi Hasura (Quy tắc 1). Flowable REST chỉ dịch vụ `actions` gọi được.
+Giao diện chỉ gọi Hasura qua cổng API; Flowable REST chỉ dịch vụ `actions` gọi được.
 
 ### Lệnh
 
@@ -407,7 +423,7 @@ trình duyệt ─► Hasura Action lakehouse_* ─► actions (kiểm data.lake
 
 ```bash
 make trino-password     # mật khẩu bms-admin; giao diện web https://127.0.0.1:8085 (chứng chỉ của CA nội bộ)
-docker compose exec trino bash -c 'TRINO_PASSWORD=$(cat /etc/trino/secrets/admin.password) trino \
+docker compose exec trino-core bash -c 'TRINO_PASSWORD=$(cat /etc/trino/secrets/admin.password) trino \
   --server https://localhost:8443 --truststore-path /etc/trino/secrets/ca.pem --user bms-admin --password \
   --catalog lakehouse --schema silver'
 ```
@@ -519,3 +535,110 @@ make up-gpu                                       # kèm GPU NVIDIA (docs/van-ha
 make test-actions T=tests/test_tro_ly_ai.py       # chia đoạn, guardrail, worker với Ollama giả
 scripts/ai_smoke.sh                               # hỏi thật 5 câu mẫu khi đã tải xong mô hình
 ```
+
+## 12. Quét tệp trước khi nhận (`services/actions/app/scanner.py`, migration 034)
+
+Mọi tệp tải lên nằm ở bucket `bms-quarantine` cho tới khi quét xong. **Bộ quét nội bộ** luôn chạy trong tiến trình
+`actions`: chữ ký thử nghiệm EICAR, tệp thực thi nhúng, cấu trúc đúng chuẩn của từng định dạng, dữ liệu thừa sau ảnh, mã chủ
+động trong PDF, macro / đối tượng nhúng / liên kết ngoài trong DOCX và XLSX, bom nén, đường dẫn nguy hiểm, DTD (XXE). Không
+quét hết được (hết thời gian, bị mã hóa, nén quá mức) thì tệp **không** được coi là sạch.
+
+Bộ quét nội bộ không có cơ sở dữ liệu mẫu virus nên không thay được ClamAV. Bật ClamAV: `docker compose --profile scan up -d`
+với `CLAMAV_HOST=clamav`; `SCAN_REQUIRE_CLAMAV=true` bắt buộc có ClamAV (thiếu thì không nhận tệp nào). CSDL chặn tệp `CLEAN`
+không có `scan_engines`; tệp cũ nhận khi chưa có bộ quét được đánh dấu `unscanned`, `flow-sync` quét lại rồi mới cho tải về.
+Chưa có xử lý CDR (làm sạch tệp).
+
+## 13. OCR tiếng Việt (`services/ocr`, ADR #52)
+
+Dịch vụ `ocr` không trạng thái (`POST /ocr` một trang ảnh, `POST /unload` gỡ mô hình): PaddleOCR phát hiện và xoay dòng,
+VietOCR nhận dạng, chạy trên PyTorch (CUDA nếu có, không thì CPU). `ai-worker` giữ một hàng đợi chung với lượt hỏi AI, OCR ảnh
+và trang PDF không có lớp chữ, lưu kết quả ở `core.attachment_ocr` và đưa văn bản vào chỉ mục tìm kiếm. Job `ocr-init` tải
+trọng số lần đầu (kiểm sha256). Trang Nhập liệu OCR (`/i/ocr`, Action `ocr_document`) rút nhà cung cấp, mã số thuế, dòng hàng
+và số tiền bằng quy tắc (`ocr_fields.py`), không dùng mô hình. Chỉ chạy ở mức RAM 16 (ADR #54).
+
+## 14. Dịch vụ tự ngủ – `sleeper` (ADR #53)
+
+`trino-core`, `tika-core`, `gotenberg-core`, `ollama-core`, `ocr-core` chỉ chạy khi có yêu cầu. `sleeper` giữ tên mạng và cổng
+cũ (`trino`, `tika`, `gotenberg`, `ollama`, `ocr`), start container thật khi nhận byte đầu tiên, chờ healthcheck rồi chuyển
+tiếp nguyên byte TCP; không có lưu lượng quá `SLEEPER_IDLE_SECONDS` (mặc định 300) thì stop. `sleeper` gắn
+`/var/run/docker.sock` nhưng chỉ gọi inspect/start/stop trên container thuộc `SLEEPER_TARGETS`. Trạng thái:
+`GET :9000/status` trong container.
+
+## 15. Hàng đợi tin nhắn và thông báo đa kênh (`messaging.py`, `delivery.py`, `receipts.py`, migration 035)
+
+- Thông báo trong ứng dụng (`collab.notification`) được chuyển tiếp qua **email** (SMTP), **SMS** (cổng HTTP) và **webhook**
+  theo lựa chọn của từng người ở `/settings/notifications` (`collab.notification_pref`).
+- Tin vào `msg.queue`; worker trong `flow-sync` thuê tin, gửi, lỗi tạm thì thử lại lùi dần, lỗi vĩnh viễn hoặc hết lượt thì vào
+  hàng chết. Quản trị viên xem hàng đợi, đưa tin chết trở lại và xác minh biên nhận ở `/admin/queue`
+  (`queue_overview`, `queue_retry`, `queue_verify`).
+- **Chống chối bỏ:** mỗi tin giao xong có biên nhận gồm mã băm nội dung, kênh, thời điểm và mã của nhà cung cấp, ký Ed25519 bằng
+  khóa transit `receipt` trong OpenBao (khóa riêng không rời két). Môi trường thử không có OpenBao thì dùng HMAC-SHA256 và ghi rõ
+  thuật toán.
+- Webhook: chỉ `https`, phân giải tên rồi từ chối địa chỉ nội bộ (SSRF) và kết nối thẳng tới IP đã kiểm, không theo chuyển hướng;
+  `WEBHOOK_ALLOW_PRIVATE=true` chỉ để thử trên máy dev.
+- Chưa cấu hình `SMTP_HOST` thì thư đi vào `mailpit` (hộp thư thử, cổng 8025 trên máy chủ).
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` | trống, `25`, …, `false` | Máy chủ thư |
+| `SMS_GATEWAY_URL`, `SMS_GATEWAY_TOKEN` | trống | Cổng SMS dạng HTTP |
+| `WEBHOOK_ALLOW_PRIVATE` | `false` | Cho phép webhook tới địa chỉ nội bộ |
+
+## 16. Neo chuỗi kiểm toán (`anchoring.py`, migration 036)
+
+Theo chu kỳ `ANCHOR_INTERVAL_SECONDS` (mặc định 300), mỗi tenant có bản ghi kiểm toán mới thì đầu chuỗi hash (tenant, số thứ
+tự, mã băm, thời điểm) được ký bằng khóa Ed25519 trong OpenBao, lưu vào `audit.anchor` và công bố ra kho đối tượng; đặt
+`ANCHOR_URL` để công bố thêm tới một điểm bên ngoài. Người chỉ có quyền ghi CSDL không ký lại được, nên lịch sử đã neo không
+viết lại hay cắt bớt mà không bị phát hiện (`audit.check_anchors`, Action `audit_anchor_verify`). Xem và neo ngay ở
+`/admin/ops`.
+
+## 17. Nhật ký tập trung, sao lưu, GitOps
+
+- **Nhật ký** (`obs.py`, migration 037): mọi dịch vụ Python ghi log vào `obs.log_event` qua một luồng riêng (hàng đợi đầy thì bỏ
+  bớt, không làm chậm yêu cầu), gắn `trace_id` lấy từ `X-Request-Id` do cổng API cấp, tenant, người dùng, đã che email, số điện
+  thoại, CCCD, token. Log container khác vào qua `POST /obs/ingest` từ `vector` (profile `logs`, cấu hình
+  `platform/vector/vector.yaml`). Xem ở `/admin/ops`, tab Nhật ký; tắt bằng `OBS_ENABLED=false`. Chưa có OpenTelemetry,
+  Prometheus, Grafana.
+- **Sao lưu** (`scripts/ops/backup-db.sh`, dịch vụ `backup`, migration 038): sao lưu CSDL theo chu kỳ `BACKUP_INTERVAL_HOURS`
+  (mặc định 24, giữ `BACKUP_KEEP` = 7 bản) vào volume `backups`; `scripts/ops/restore-drill.sh` khôi phục vào CSDL tạm rồi đối
+  chiếu số dòng, chuỗi hash và bản neo. Mỗi lần ghi `audit.backup_run`. Sao lưu volume và khôi phục thủ công:
+  [Triển khai production](../van-hanh/trien-khai.md).
+- **GitOps** (`scripts/gitops/reconcile.sh`): so cấu hình trong kho mã với trạng thái đang chạy, chỉ chạy `docker compose up -d`
+  khi có thay đổi; đặt vào cron hoặc systemd timer. Không dùng Argo CD hay Kubernetes. Dịch vụ có healthcheck và
+  `restart: unless-stopped` để tự khởi động lại khi lỗi.
+
+## 18. Quy trình tự động và kịch bản ngầm (`process_automation.py`, migration 033, 040)
+
+Phiên bản quy trình đã phát hành chỉ gồm sự kiện, cổng rẽ nhánh, hẹn giờ và tác vụ tự động thì bật **chạy tự động**
+(`process_automation_enable`): sơ đồ được chuyển thành định nghĩa Flowable; tác vụ tự động là external job, `flow-sync` nhận
+việc qua API tác vụ ngoài của Flowable, thực hiện rồi báo hoàn thành.
+
+- Cách bắt đầu: hẹn giờ ISO-8601 (Flowable tự kích hoạt), khởi chạy tay (`process_automation_start`), webhook
+  `POST /hooks/{mã}` qua cổng API (mã chỉ hiện một lần, CSDL giữ SHA-256; giới hạn 60 lần/phút, 64 KB), hoặc sự kiện nghiệp vụ
+  `event.*` (`purchase_request.*`, `onboarding.*`, `ic_order.*`, `personnel_decision.issued`) đăng ký bằng
+  `process_automation_events`.
+- Hành động có sẵn: `notify` (gửi thông báo, thay biến `{doc_no}`...), `setvar` (đặt biến quy trình), `http` (gọi https ra
+  ngoài, cùng kiểm SSRF như webhook). Người dùng chưa tự viết mã kịch bản được.
+- Mỗi lần chạy ghi `wf.automation_run`; xem ở tab **Chạy tự động** của trang Thiết kế quy trình (`/p/process`).
+
+## 19. API nạp dữ liệu theo lô (`ingest.py`, migration 039)
+
+`POST /ingest/{loại}` qua cổng API (token Keycloak, header `X-Bamboo-Tenant` và `Idempotency-Key` 8–128 ký tự), nội dung
+NDJSON hoặc CSV tới 64 MB, 200.000 dòng. Loại: `org_unit`, `position`, `person`, `assignment`, `role`, `role_grant`,
+`catalog_item`, `partner`, `item`, `storage_quota`; dùng lại bộ xử lý và kiểm quyền của trang nhập dữ liệu quản trị
+([ADR #44](#adr-44)). Tham số `mode=best-effort|atomic` (atomic: có lỗi thì hoàn tác hết), `dry_run=true` (không ghi). Dữ liệu
+đi từng lô 500 dòng, lỗi từng dòng ghi vào `core.ingest_job`; theo dõi bằng `GET /ingest/jobs/{id}`. Cổng API giới hạn 30 lần
+nạp mỗi phút.
+
+## 20. Văn bản mẫu (`documents.py`, `services/actions/app/templates/`)
+
+Cùng đường ống với phiếu đề nghị (mục 6): mẫu Jinja2 tự escape → Gotenberg/Chromium → PDF lưu trong kho tài liệu theo mã băm
+nội dung; nội dung không đổi thì không dựng lại, mã kiểm tra ở chân trang là mã băm đó. Mẫu hiện có: phiếu đề nghị mua sắm,
+quyết định nhân sự (`get_personnel_decision_pdf`), báo cáo KPI đã đóng băng (`get_kpi_report_pdf`).
+
+## 21. Lớp ngữ nghĩa trên Lakehouse (`semantic.py`)
+
+Người gọi chọn chỉ số, chiều, độ chi tiết thời gian (ngày, tuần, tháng) và bộ lọc theo tên nghiệp vụ (`semantic_catalog`,
+`semantic_query`); hệ thống sinh câu SQL trên view silver của Trino. Chỉ tên trong danh mục mới vào được câu SQL, giá trị lọc
+kiểm định dạng chặt, tối đa 1.000 dòng. Truy vấn chạy bằng tài khoản Trino của chính tenant nên luật lọc theo tenant
+([ADR #45](#adr-45)) vẫn áp dụng. Chưa có giao diện riêng.

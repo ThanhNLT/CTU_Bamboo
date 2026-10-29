@@ -79,6 +79,3 @@ Công cụ build (devDependencies, không nằm trong bản phát hành): Vite, 
 Nội dung khác
 ------------------------------------------------------------------------------------------------
 apps/web/web/public/   Biểu tượng mẫu create-refine-app, (c) Refine Development Inc., MIT
-docs/tong-quan/00-de-thi-goc.pdf
-                       Bản lưu đề thi do VFOSSA công bố, chỉ để tham chiếu
-                       (LICENSES/LicenseRef-VFOSSA-public-notice.txt)
