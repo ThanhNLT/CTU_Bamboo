@@ -57,6 +57,10 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [49](#adr-49) | 14/10/2026 | Trung tâm điều hành tính ở máy chủ từ dữ liệu có sẵn; bệnh viện chỉ số tổng hợp hành chính của tenant con; bản đồ cơ sở gộp vào Trung tâm điều hành |
 | [50](#adr-50) | 14/10/2026 | Bản sao số, Phả hệ dữ liệu, KPI ghim đọc bảng trong CSDL nạp từ tệp demo; ghi nhận sự cố, báo sự cố dữ liệu, ghim KPI là thao tác thật |
 | [51](#adr-51) | 16/10/2026 | Mô hình AI chạy cục bộ bằng Ollama; mô hình nhẹ mặc định chạy được bằng CPU, GPU chỉ để tăng tốc |
+| [52](#adr-52) | 20/10/2026 | Mô hình AI chỉ nạp khi có việc, GPU nếu có; OCR tiếng Việt bằng PaddleOCR + VietOCR trong dịch vụ riêng |
+| [53](#adr-53) | 23/10/2026 | Dịch vụ Tầng 1 dùng thưa (Trino, Tika, Gotenberg) tự ngủ khi nhàn rỗi qua dịch vụ `sleeper` |
+| [54](#adr-54) | 23/10/2026 | Hai mức RAM: 8 GB chỉ chức năng cơ bản (không AI), 16 GB đầy đủ |
+| [55](#adr-55) | 23/10/2026 | Giao diện đăng nhập riêng bằng theme Keycloak kế thừa `keycloak.v2`, chỉ thay CSS |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -180,6 +184,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Bệnh án ở database riêng `bms_hospital`; ra ngoài chỉ qua view khử định danh gắn role riêng; doanh nghiệp chỉ nhận kết luận đủ/không đủ
 - **Lý do:** Dữ liệu sức khỏe là dữ liệu cá nhân nhạy cảm, cần cách ly cứng và chứng minh được trước giám khảo
 - **Đã loại:** Schema riêng trong cùng database `bms`
+- **Hiện trạng (29/10/2026):** Chưa hiện thực. Kho mã chỉ có database `bms` (`db/migrations/bms/`), không có `bms_hospital` hay bảng bệnh án; Bệnh viện X là một tenant riêng trong `bms`, cách ly logic bằng `tenant_id` và phân quyền theo dòng như các tenant khác. Trang Trung tâm điều hành chỉ hiện chỉ số hành chính của tenant bệnh viện ([ADR #49](#adr-49))
 
 (adr-16)=
 ## ADR #16: Tự nạp dữ liệu mẫu bằng service `seed`
@@ -228,6 +233,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Quyền hiệu lực tính sẵn trong materialized view lưu kèm thời hạn; làm mới một lần khi commit thay đổi phân quyền; trong giao dịch đang sửa thì đọc trực tiếp
 - **Lý do:** Đo được nhanh 7,7 lần; lưu thời hạn nên không cần làm mới định kỳ; luôn đúng kể cả trong giao dịch chưa commit
 - **Đã loại:** Làm mới định kỳ bằng cron (sai lệch giữa hai lần chạy); bảng duy trì từng dòng bằng trigger (phức tạp, dễ sai)
+- **Hiện trạng (29/10/2026):** Migration hiện có không tạo materialized view: `core.has_permission` đọc thẳng view `core.v_permission_grant` (migration 002). Bản tính sẵn chỉ cần làm lại khi đo thấy chậm trên dữ liệu thật
 
 (adr-22)=
 ## ADR #22: CDC chỉ cho database `bms`
@@ -236,6 +242,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** CDC (Debezium) chỉ cho database `bms`; `bms_hospital` không có publication
 - **Lý do:** Bệnh án không được đi vào Kafka/Lakehouse dạng thô; công ty mẹ chỉ nhận số liệu tổng hợp qua view khử định danh
 - **Đã loại:** CDC cả hai database rồi che PII ở Kafka
+- **Hiện trạng (29/10/2026):** Không có `bms_hospital` ([ADR #15](#adr-15)); publication `bms_cdc` gồm schema `core, mdm, wf, proc, ic, mfg, collab, cdc` và bảng `kpi.snapshot` (migration 012, 014, 041)
 
 (adr-23)=
 ## ADR #23: Id cố định bằng `uuid5`, khớp Keycloak và CSDL
@@ -440,6 +447,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Mục tiêu của trang là chứng minh tài liệu không bị sửa sau khi nhận, và hệ thống đã có sẵn hai mảnh cần thiết: SHA-256 của từng tệp và chuỗi hash nhật ký chỉ ghi thêm. Fabric thêm cả một mạng (peer, orderer, CA, chaincode) để vận hành trong khi mọi nút vẫn do một tổ chức giữ, nên không thêm niềm tin so với chuỗi hash; cột `audit.log.sealed_at` vẫn để dành cho bước neo chuỗi ra ngoài (immudb hoặc dịch vụ đóng dấu thời gian) khi cần bên thứ ba làm chứng. Đọc lại tệp từ kho mỗi lần đối soát theo mã phát hiện được tệp bị thay hoặc mất ở tầng lưu trữ, không chỉ ở CSDL
 - **Đã loại:** Hyperledger Fabric (vận hành nặng, một tổ chức giữ mọi nút); lưu ảnh trang đã đóng dấu cho phòng đọc (cần dịch vụ dựng ảnh trang PDF/Word; link inline hạn ngắn + dấu chìm ở giao diện đủ cho giai đoạn này); bảng đối soát trong schema `core` (đi vào CDC và Lakehouse, Hasura tự mở bảng); tham số URL `?code=` (trùng tham số `code` của OAuth mà keycloak-js đọc khi tải trang, làm Keycloak báo `redirect_uri` không hợp lệ): dùng `?doc=`, đổi cả liên kết vào Hộp việc
 - **Giới hạn hiện tại:** Chuỗi hash chưa được neo ra ngoài, nên người có quyền superuser CSDL có thể dựng lại toàn bộ chuỗi (vẫn bị lộ khi so với bản sao lưu hoặc bằng chứng đã xuất); phòng đọc chỉ xem trực tiếp PDF, ảnh, văn bản (Word, Excel không xem trong phòng đọc), chặn tải xuống chỉ ở giao diện; tệp đã bị xóa mềm không còn đối soát được; số liệu "đối soát hôm nay" tính cho cả tenant
+- **Bổ sung (migration 036):** Đầu chuỗi hash của từng tenant được neo ra ngoài CSDL theo chu kỳ `ANCHOR_INTERVAL_SECONDS`: văn bản neo ký Ed25519 bằng khóa transit trong OpenBao, công bố tới kho đối tượng và tùy chọn `ANCHOR_URL`; `audit.check_anchors` phát hiện chuỗi bị cắt hoặc viết lại. Giới hạn "chưa neo ra ngoài" ở trên không còn
 
 (adr-47)=
 ## ADR #47: Thiết kế quy trình trên giao diện: BPMN XML là nguồn sự thật (bpmn-js), kiểm tra ở máy chủ, chạy thử bằng deployment sandbox tạm trên Flowable
@@ -514,6 +522,15 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Bộ AI chiếm 4–5 GB lúc có việc (ADR #52) và image `ocr` ~14 GB; máy 8 GB không chạy nổi cùng phần còn lại, nhưng phần nền tảng và ứng dụng không phụ thuộc AI. Chọn theo RAM Docker thấy được vì WSL2 mặc định chỉ cấp một nửa RAM máy (máy 16 GB thường thấy 8 GB; nâng bằng `.wslconfig` hoặc đặt `BAMBOO_RAM=16`).
 - **Đánh đổi:** Đảo một phần "Đã loại" của ADR #52 (AI trong profile `ai`): lần đó bị loại vì máy không có GPU mất AI, nay profile chỉ tắt theo RAM và `.env.example` mặc định bật nên máy không đặt gì vẫn có AI khi đủ RAM. Heap mức 8 là giá trị thận trọng, chưa đo tải thật; nâng bằng `KEYCLOAK_HEAP`, `FLOWABLE_JAVA_OPTS`... đặt trước khi chạy `make up` (script không ghi đè biến đã đặt trong môi trường, nhưng không đọc giá trị trong `.env`).
 - **Đã loại:** Tắt thêm Lakehouse (Kafka, Debezium, Trino) ở mức 8 (không thuộc AI; Trino đã tự ngủ theo ADR #53, giữ để báo cáo vẫn chạy); thêm mức trung gian 12 GB; `mem_limit` cứng theo mức (chưa đo, nguy cơ OOM-kill).
+
+(adr-55)=
+## ADR #55: Giao diện đăng nhập riêng bằng theme Keycloak kế thừa `keycloak.v2`, chỉ thay CSS
+
+- **Ngày:** 23/10/2026
+- **Quyết định:** Trang đăng nhập dùng theme `dxos-login` (`platform/keycloak/themes/dxos-login/login`): `parent=keycloak.v2` (PatternFly 5), chỉ thêm `css/bamboo.css` cùng biểu tượng và favicon; không chép, không sửa tệp FreeMarker của Keycloak. Màu lấy từ bảng màu `--color-bamboo-*` của ứng dụng web; có biến cho chế độ tối của PatternFly. Image `bamboo-keycloak` chép thư mục `themes/` vào `/opt/keycloak/themes/`. Tệp realm import không đặt theme; mỗi lần khởi động `bootstrap` đặt `loginTheme` cho realm `bms` qua Admin API (`keycloak_sync.ensure_login_theme`, chỉ ghi khi khác), nên realm mới và realm đã có đều nhận theme
+- **Lý do:** Người dùng đi từ ứng dụng sang trang đăng nhập không thấy giao diện mặc định của Keycloak. Chỉ thay CSS thì nâng cấp Keycloak không phải gộp lại mẫu, và không phải sửa mã của dự án phụ thuộc
+- **Đã loại:** Chép và sửa mẫu `.ftl` của theme gốc (phải gộp lại mỗi lần nâng cấp Keycloak); Keycloakify (thêm chuỗi build React riêng cho một trang); tự làm form đăng nhập trong ứng dụng bằng password grant (bỏ PKCE, MFA và các luồng của Keycloak)
+- **Giới hạn hiện tại:** Chỉ có theme `login`; email và trang tài khoản (`account`) vẫn dùng giao diện mặc định
 
 (adr-mau)=
 ## Mẫu cho quyết định mới

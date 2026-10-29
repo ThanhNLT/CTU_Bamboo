@@ -1,273 +1,301 @@
 # Thiết kế cơ sở dữ liệu
 
-Hai database PostgreSQL 17 + PostGIS 3.5, migration tự chạy khi `docker compose up -d`:
+Một database PostgreSQL 17 + PostGIS 3.5 tên `bms`. Migration ở `db/migrations/bms/`, chạy theo thứ tự tên tệp, tự chạy
+khi `docker compose up -d` (job `migrate`, script `scripts/db/migrate.sh`). Bệnh viện X là một tenant riêng trong cùng
+database, cách ly logic như mọi tenant khác (xem [ADR #15](#adr-15)).
 
-| Database | Thư mục migration | Nội dung |
-|---|---|---|
-| `bms` | `db/migrations/bms/` | Tổ chức, phân quyền, dữ liệu chủ, mua sắm, giao dịch nội bộ, sản xuất, kết luận khám sức khỏe, nhật ký |
-| `bms_hospital` | `db/migrations/hospital/` | Hồ sơ bệnh án (EMR) của Bệnh viện X, cách ly cứng ([ADR #15](#adr-15)) |
-
-**Hiện trạng repo (04/10/2026):** đã có migration `bms` 001–009: tổ chức, phân quyền, phê duyệt, Hasura và đồng bộ Flowable, mua sắm (dữ liệu chủ, số chứng từ, dòng hàng), nhật ký kiểm toán, bình luận và thông báo, tệp đính kèm. Các bảng và số migration ở mục 2–4 là thiết kế đích; phần chưa có trong repo: đơn mua – nhận hàng – hóa đơn – thanh toán, ngân sách, giao dịch nội bộ đầy đủ, sản xuất (`mfg`), `hr`, `bms_hospital`, CDC, bảng quyền tính sẵn.
-
-| Migration | Nội dung |
-|---|---|
-| `001_to_chuc.sql` | Tenant, quan hệ tenant, danh mục, đơn vị (ltree), vị trí (vị trí trưởng, báo cáo cho), người (tài khoản nhiều tenant – ADR #30), bổ nhiệm 4 loại (ADR #29); `core.position_holder`, `core.manager_position`, `core.company_of`, `core.account_tenants` |
-| `002_phan_quyen.sql` | Quyền, vai trò, nhóm, gán vai trò, ủy quyền một phần; `core.v_permission_grant`, `core.has_permission` (view thường, chưa tính sẵn theo ADR #21) |
-| `003_chung_tu.sql` | `proc.purchase_request` (tư cách lập), `ic.ic_order` tối thiểu |
-| `004_phe_duyet.sql` | `wf.approval_rule`, chuỗi duyệt theo vị trí (`wf.approval_step`), việc duyệt `wf.task`, lịch sử; `proc.submit_purchase_request`, `wf.act`, `wf.resolve_assignee`, `wf.refresh_position`, `wf.refresh_all`, `wf.v_inbox` (ADR #28) |
-| `005_hasura_flowable.sql` | Computed field `can_read` (`wf.entity_can_read`: người lập, người nhận việc kể cả qua ủy quyền, quyền xem trên đơn vị); kiểm tra lập nháp qua phiên Hasura (`hasura.user`); `wf.flow_sync` + `pg_notify` cho đồng bộ Flowable (ADR #31). Lỗi nghiệp vụ Hasura ghi thẳng chạm tới dùng `ERRCODE = 'data_exception'` để Hasura chuyển nguyên thông báo |
-| `006_mua_sam.sql` | `mdm.partner` (nhà cung cấp, nhà cung cấp nội bộ), `mdm.item`; số chứng từ `core.next_doc_no` (bảng đếm `core.doc_sequence`, không nhảy số); `proc.purchase_request` thêm `doc_no`, `description`, `needed_by`, `partner_id`; dòng hàng `proc.purchase_request_item` (tổng tiền đầu phiếu tự tính, khóa sau khi gửi duyệt); `proc.cancel_purchase_request` (người lập hủy, `wf.cancel_entity` ghi người hủy) |
-| `007_kiem_toan.sql` | `audit.log` nối chuỗi hash theo tenant, chỉ ghi thêm; `audit.enable`, `audit.verify_chain`, `audit.v_reader` (người có quyền `audit.read`) ([ADR #33](#adr-33)) |
-| `008_cong_tac.sql` | `collab.comment` (nhắc tên, trả lời, xóa mềm), `collab.notification` sinh bằng trigger trên `wf.task`, `proc.purchase_request`, `collab.comment` và `pg_notify('bms_notification')`; `collab.mark_notifications_read` |
-| `009_tep_dinh_kem.sql` | `core.attachment` (PENDING → CLEAN / INFECTED / REJECTED, chỉ đi tiếp từ PENDING), quyền xem theo chứng từ gốc, giữ tệp của đề nghị đã có kết quả ([ADR #26](#adr-26)) |
-
-Chạy thử: `docker compose up -d` (tự chạy migration), `make test-db` (hoặc `make test-db T=bms_031`). Cần chạy `SELECT wf.refresh_all()` định kỳ để xử lý bổ nhiệm hết hạn theo lịch.
-
-Kiểm thử: `make test-db` chạy mọi file `db/tests/bms_*.sql` và `hospital_*.sql` (tự rollback); hàm tiện ích dùng chung ở `db/tests/helpers.sql`.
-Dữ liệu mẫu: `services/seed/app/seed.py`, tự nạp sau migration bằng service `seed` ([ADR #16](#adr-16)): cây tổ chức 5 đơn vị, khoảng 140 người (Faker `vi_VN`, seed cố định), hạn mức, vai trò, ủy quyền và 10 đề nghị mua sắm dừng ở các bước khác nhau.
+- Kiểm thử: `make test-db` chạy mọi tệp `db/tests/bms_*.sql` (tự rollback), một tệp: `make test-db T=bms_031`; hàm dùng
+  chung ở `db/tests/helpers.sql`.
+- Dữ liệu demo: service `seed` (`services/seed/app/seed.py`, danh sách tài khoản ở `demo.py`) tự nạp sau migration
+  ([ADR #16](#adr-16)); dữ liệu bản sao số, phả hệ, KPI nạp từ
+  `services/seed/data/demo` ([ADR #50](#adr-50)).
+- Tài khoản CSDL: mỗi dịch vụ một role không phải superuser (`db/roles/`): `bamboo_hasura`, `bamboo_actions`,
+  `bamboo_keycloak`, `bamboo_flowable`, `bamboo_cdc` (REPLICATION, chỉ đọc), `bamboo_lakehouse`
+  ([ADR #35](#adr-35)). Superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị.
 
 ## 1. Nguyên tắc
 
-1. **Cấu trúc là dữ liệu, không phải mã nguồn.** Loại đơn vị, chức danh, ngạch bậc, vai trò, hạn mức duyệt, ngưỡng cảm biến đều do doanh nghiệp khai báo. Chỉ những gì nền tảng định nghĩa (danh sách quyền, trạng thái chứng từ) mới cố định.
-2. **Mọi bảng nghiệp vụ có `tenant_id`, khóa ngoại kiểm tra cùng tenant.** Dùng khóa kép `(tenant_id, id)`: một bản ghi không thể trỏ sang bản ghi của tenant khác, kể cả khi ứng dụng có lỗi ([ADR #14](#adr-14)). Ngoại lệ có chủ đích: `core.permission` (dùng chung toàn nền tảng), `core.tenant_relation` (nối hai tenant), `wf.status_transition`.
-3. **Cây không giới hạn độ sâu** bằng `ltree`; trigger tự tính `path`, chặn vòng lặp, kéo theo cây con khi tái cấu trúc.
-4. **Mọi quan hệ tổ chức có thời hạn** (`valid_period tstzrange`). Tái cấu trúc thì đóng thời hạn, không xóa.
-5. **Quyền gắn với vị trí, không gắn với người.** Luân chuyển nhân sự thì quyền tự đi theo vị trí mới.
-6. **Người duyệt tìm theo cây tổ chức và loại đơn vị**, không viết cứng tên người, không đếm số cấp ([ADR #17](#adr-17)).
-7. **Mỗi schema một miền nghiệp vụ** ([ADR #14](#adr-14)), Hasura track theo schema.
-8. **Mọi bảng có `created_at/by`, `updated_at/by`**; người thực hiện lấy từ session Hasura (`x-hasura-user-id`). Mọi thay đổi ghi vào `audit.log` có chuỗi hash.
+1. **Cấu trúc là dữ liệu, không phải mã.** Loại đơn vị, chức danh, vai trò, hạn mức duyệt, nhóm hàng, ngưỡng thiết bị đều
+   do doanh nghiệp khai báo. Chỉ những gì nền tảng định nghĩa (danh sách quyền, trạng thái chứng từ) mới cố định.
+2. **Mọi bảng nghiệp vụ có `tenant_id` và khóa kép `(tenant_id, id)`.** Khóa ngoại trỏ theo cặp này nên một bản ghi
+   không thể trỏ sang tenant khác, kể cả khi ứng dụng có lỗi ([ADR #14](#adr-14)).
+   Ngoại lệ có chủ đích: `core.permission` (dùng chung nền tảng), `core.tenant_relation` (nối hai tenant), mô hình thiết bị
+   và siêu dữ liệu phả hệ dùng chung.
+3. **Cây đơn vị không giới hạn độ sâu** bằng `ltree`: trigger tự tính `path`, chặn vòng lặp, kéo theo cây con khi chuyển.
+4. **Quan hệ tổ chức có thời hạn** (`valid_period tstzrange`). Tái cấu trúc thì đóng thời hạn, không xóa.
+5. **Quyền gắn với vị trí, không gắn với người**; người duyệt tìm theo cây tổ chức và loại đơn vị, không ghi cứng tên
+   người ([ADR #5](#adr-5), [ADR #17](#adr-17)).
+6. **Mỗi schema một miền nghiệp vụ**; Hasura track theo schema.
+7. **Ràng buộc nghiệp vụ nằm trong CSDL** (CHECK, EXCLUDE, trigger): thao tác sai bị chặn ngay cả khi gọi thẳng SQL.
+8. **Thay đổi quan trọng ghi vào `audit.log`** có chuỗi hash; người thực hiện lấy từ phiên Hasura.
 
 ## 2. Các schema
 
-| Schema | Migration | Vai trò |
+| Schema | Migration | Nội dung |
 |---|---|---|
-| `core` | 001, 002, 009 | Tenant, danh mục tự định nghĩa, cây tổ chức, nhân sự, vị trí, bổ nhiệm, nhóm, vai trò, phân quyền, ủy quyền, địa điểm, tệp đính kèm, số chứng từ |
-| `mdm` | 003 | Dữ liệu chủ: đơn vị tính, nhóm hàng, vật tư/hàng hóa, đối tác, ngân sách |
-| `wf` | 004 | Chuyển trạng thái hợp lệ, quy tắc hạn mức duyệt, lịch sử phê duyệt |
-| `proc` | 004 | Mua sắm – thanh toán: đề nghị → báo giá → đơn mua → nhận hàng → hóa đơn → thanh toán |
-| `ic` | 005 | Đơn hàng nội bộ, tự sinh đơn mua, đối trừ công nợ |
-| `mfg` | 006 | Thiết bị cảm biến, ngưỡng, lô sản xuất, phả hệ lô, serial, sự cố |
-| `hr` | 007 | Kết luận khám sức khỏe (chỉ đủ/không đủ) |
-| `audit` | 008 | Nhật ký thay đổi có chuỗi hash, nhật ký thao tác cho Refine |
-| `collab` (+ `wf.task`) | 010 | Bình luận trên chứng từ, thông báo, hộp việc cần duyệt |
-| `emr` (DB riêng) | hospital/001–002 | Bệnh nhân, lượt khám, chỉ số, chẩn đoán, giường, khám sức khỏe |
+| `core` | 001, 002, 006, 009, 015, 021, 024, 025, 027, 039 | Tenant và quan hệ tenant, danh mục, đơn vị, vị trí, người, bổ nhiệm, quyền, vai trò, nhóm, ủy quyền, số chứng từ, tệp đính kèm và OCR, tác tử AI, lượt hỏi, công việc nạp lô |
+| `mdm` | 006, 018 | Nhà cung cấp (kể cả nhà cung cấp nội bộ), vật tư |
+| `wf` | 004, 005, 019, 032, 033, 040 | Quy tắc hạn mức, chuỗi duyệt, việc duyệt, lịch sử duyệt, đồng bộ Flowable, thiết kế quy trình, yêu cầu sửa quy trình, quy trình tự động và lần chạy, sự kiện nghiệp vụ |
+| `proc` | 003, 006, 014, 018 | Đề nghị mua sắm và dòng hàng, đơn mua |
+| `ic` | 003, 014 | Đơn hàng nội bộ và dòng hàng |
+| `mfg` | 014 | Lô sản xuất |
+| `hr` | 013, 029, 030 | Tiếp nhận nhân sự, nhật ký xem dữ liệu nhạy cảm, điều chuyển nội bộ và liên tập đoàn, quyết định nhân sự |
+| `collab` | 008, 020, 035 | Bình luận, thông báo, tài liệu thư viện tri thức, kênh nhận thông báo |
+| `audit` | 007, 017, 036, 038 | Nhật ký kiểm toán chuỗi hash, đối soát sổ cái, truy cập phòng đọc, bản neo, nhật ký sao lưu |
+| `search` | 011, 025 | Hàng đợi đánh chỉ mục toàn văn và chỉ mục đoạn cho RAG |
+| `cdc` | 012 | Nhịp tim giữ replication slot |
+| `iot`, `meta`, `kpi` | 022, 023, 031 | Bản sao số (thiết bị, chuỗi đo, sự cố), phả hệ và chất lượng dữ liệu, KPI, ghim KPI, bản chụp KPI đã đóng băng |
+| `msg` | 035, 040 | Hàng đợi tin nhắn bất đồng bộ và các lần giao |
+| `obs` | 037 | Nhật ký ứng dụng tập trung |
 
-## 3. Sơ đồ quan hệ chính
+## 3. Danh sách migration
+
+| Migration | Nội dung |
+|---|---|
+| `001_to_chuc` | Tenant, quan hệ tenant, danh mục (`catalog_item`), đơn vị (`ltree`), vị trí (vị trí trưởng `is_head`, báo cáo cho `reports_to_id`), người (một tài khoản nhiều tenant, [ADR #30](#adr-30)), bổ nhiệm 4 loại `PRIMARY`/`CONCURRENT`/`ACTING`/`CONTRACT` ([ADR #29](#adr-29)); `core.position_holder`, `core.manager_position`, `core.company_of`, `core.account_tenants` |
+| `002_phan_quyen` | Quyền, vai trò, nhóm, gán vai trò (cho người, vị trí, đơn vị hoặc nhóm; phạm vi `TENANT`/`SUBTREE`/`UNIT`/`SELF`), ủy quyền một phần; `core.v_permission_grant`, `core.has_permission` |
+| `003_chung_tu` | `proc.purchase_request` (tư cách lập), `ic.ic_order` tối thiểu |
+| `004_phe_duyet` | `wf.approval_rule`, `wf.approval_step`, `wf.task`, `wf.approval_history`; `proc.submit_purchase_request`, `wf.resolve_approval_chain`, `wf.resolve_assignee`, `wf.act`, `wf.refresh_position`, `wf.refresh_all`, `wf.v_inbox` ([ADR #28](#adr-28)) |
+| `005_hasura_flowable` | Computed field `can_read` (`wf.entity_can_read`), kiểm tra phiên Hasura khi lập nháp, `wf.flow_sync` + `pg_notify` cho đồng bộ Flowable ([ADR #31](#adr-31)) |
+| `006_mua_sam` | `mdm.partner`, `mdm.item`; số chứng từ `core.next_doc_no` (bảng đếm `core.doc_sequence`); dòng hàng `proc.purchase_request_item` (tổng tiền tự tính, khóa sau khi gửi); `proc.cancel_purchase_request` |
+| `007_kiem_toan` | `audit.log` nối chuỗi hash theo tenant, chỉ ghi thêm; `audit.enable`, `audit.verify_chain`, `audit.v_reader` ([ADR #33](#adr-33)) |
+| `008_cong_tac` | `collab.comment` (nhắc tên, trả lời, xóa mềm), `collab.notification` sinh bằng trigger, `collab.mark_notifications_read` |
+| `009_tep_dinh_kem` | `core.attachment` (`PENDING` → `CLEAN`/`INFECTED`/`REJECTED`), quyền xem theo chứng từ gốc ([ADR #26](#adr-26)) |
+| `010_vai_tro` | `audit.log_change` chạy `SECURITY DEFINER`, thu quyền gọi trực tiếp |
+| `011_tim_kiem` | `search.pending`: hàng đợi đánh chỉ mục, trigger trên đề nghị, dòng hàng, tệp, tên nhà cung cấp/người/đơn vị ([ADR #36](#adr-36)) |
+| `012_cdc` | `cdc.heartbeat`, publication `bms_cdc` ([ADR #38](#adr-38)) |
+| `013_nhan_su` | `hr.onboarding_request` (số `TN-…`), dữ liệu nhạy cảm lưu bản mã hóa và bản che, `hr.private_access` ghi mỗi lần xem bản đầy đủ; duyệt xong tạo người (mã `NV-…`) và bổ nhiệm ([ADR #41](#adr-41)) |
+| `014_don_hang_noi_bo` | `mfg.lot`, `ic.ic_order_item`, `proc.purchase_order` (`PO-…`) và dòng hàng; xác nhận / từ chối / hủy đơn nội bộ; thêm `mfg` vào CDC ([ADR #42](#adr-42)) |
+| `015_quan_tri` | `core.v_admin` (người có quyền quản trị tổ chức, phân quyền, dữ liệu chủ); kiểm toán danh mục ([ADR #44](#adr-44)) |
+| `016_du_lieu_lakehouse` | Quyền `data.lakehouse.read` |
+| `017_so_cai` | `audit.ledger_check` (lần đối soát tệp), `audit.archive_access` (truy cập phòng đọc), niêm phong tệp ([ADR #46](#adr-46)) |
+| `018_ncc_de_xuat_han_muc` | Nhà cung cấp đề xuất (tên, mã số thuế) trên đề nghị, `mdm.adopt_proposed_partner`; hạn mức Ổ đĩa (`core.storage_used`) |
+| `019_thiet_ke_quy_trinh` | `wf.process_model`, `wf.process_version`, `wf.sandbox_run` ([ADR #47](#adr-47)) |
+| `020_thu_vien_tri_thuc` | `collab.kb_document` (đề xuất tài liệu số `TL-…` đi chuỗi duyệt, xuất bản, ngừng hiệu lực) ([ADR #48](#adr-48)) |
+| `021_dieu_hanh` | Tỉnh, tọa độ cơ sở; quyền `ops.group.read`; `core.child_tenants` ([ADR #49](#adr-49)) |
+| `022_ban_sao_so_pha_he_kpi` | Schema `iot`, `meta`, `kpi`; `iot.acknowledge`, giới hạn 6 ghim KPI ([ADR #50](#adr-50)) |
+| `023_kpi_tu_du_lieu` | KPI tính từ dữ liệu nghiệp vụ (`kpi.on_time_rate`, `kpi.refresh`) |
+| `024_tac_tu_ai` | `core.ai_agent`, quyền `core.ai.manage`, `core.v_ai_admin` ([ADR #51](#adr-51)) |
+| `025_luot_hoi_ai` | `core.ai_question`, `search.pending_chunk` |
+| `026_dong_suy_nghi_ai` | Dòng suy nghĩ của mô hình trong lượt hỏi |
+| `027_ocr_tep_dinh_kem` | `core.attachment_ocr` và hàng đợi OCR ([ADR #52](#adr-52)) |
+| `028_do_toc_do_ai` | `first_token_at`, `cold_start` của lượt hỏi |
+| `029_dieu_chuyen_nhan_su` | `hr.transfer_request` (`DC-…`); điều chuyển liên tập đoàn `hr.transfer_out` (`DL-…`), `hr.transfer_in`, `hr.transfer_group`; chặn sửa trực tiếp bổ nhiệm giữ chính (`core.assignment_transfer_guard`) |
+| `030_quyet_dinh_nhan_su` | `hr.personnel_decision` (`QD-…`), `hr.issue_personnel_decision` |
+| `031_dong_bang_kpi` | `kpi.snapshot` chỉ ghi thêm, `kpi.freeze`, `kpi.verify_snapshots` |
+| `032_giam_sat_quy_trinh` | Đơn vị sở hữu và đối tượng phát hành của quy trình, `wf.process_change_request`, `wf.process_access`, thông báo khi phát hành |
+| `033_tu_dong_hoa_quy_trinh` | `wf.process_automation`, `wf.automation_run` |
+| `034_quet_tep` | `scan_engines`, `scan_report` của tệp; tệp `CLEAN` phải có công cụ đã quét; tệp cũ chưa quét đánh dấu `unscanned` |
+| `035_kenh_thong_bao_hang_doi` | Schema `msg`: `msg.queue`, `msg.attempt`; `collab.notification_pref`; mỗi thông báo sinh tin cho kênh người nhận đã bật |
+| `036_neo_chuoi_kiem_toan` | `audit.anchor`, `audit.check_anchors` |
+| `037_nhat_ky_tap_trung` | `obs.log_event`, `obs.purge` |
+| `038_nhat_ky_sao_luu` | `audit.backup_run` (`BACKUP`/`DRILL`); sửa trigger `org_unit_after_move` để bản sao lưu khôi phục được |
+| `039_nap_du_lieu_theo_lo` | `core.ingest_job` |
+| `040_kich_ban_tu_dong` | Sự kiện nghiệp vụ `event.*` qua `msg.queue` (`wf.emit_event`), mã webhook lưu dạng băm, quy trình tự động đăng ký theo sự kiện |
+| `041_kpi_vao_lakehouse` | Thêm `kpi.snapshot` vào publication CDC |
+
+Quy ước số chứng từ (`core.next_doc_no(tenant, tiền tố)`, theo tenant, tiền tố và năm giờ Việt Nam, không nhảy số):
+`PR` đề nghị mua sắm, `IC` đơn hàng nội bộ, `PO` đơn mua, `TN` tiếp nhận nhân sự, `NV` mã nhân viên, `DC` điều chuyển nội
+bộ, `DL` điều chuyển liên tập đoàn, `QD` quyết định nhân sự, `TL` đề xuất tài liệu thư viện.
+
+## 4. Sơ đồ quan hệ chính
 
 ### Tổ chức và phân quyền
 
 ```mermaid
 erDiagram
+  tenant ||--o{ tenant_relation : "mẹ / con"
   tenant ||--o{ org_unit : ""
-  tenant ||--o{ tenant_relation : "parent/child"
   catalog_item ||--o{ org_unit : "loại đơn vị"
-  catalog_item ||--o{ position : "chức danh, ngạch"
   org_unit ||--o{ org_unit : "cha – con (ltree)"
-  org_unit ||--o{ org_relation : "ma trận"
   org_unit ||--o{ position : ""
   position ||--o{ position : "báo cáo cho"
   person ||--o{ assignment : ""
-  position ||--o{ assignment : "PRIMARY / CONCURRENT / ACTING"
+  position ||--o{ assignment : "PRIMARY / CONCURRENT / ACTING / CONTRACT"
   person ||--o{ delegation : "ủy quyền"
   position ||--o{ delegation : ""
   team ||--o{ team_member : ""
   person ||--o{ team_member : ""
   role ||--o{ role_permission : ""
   permission ||--o{ role_permission : ""
-  role ||--o{ role_grant : "cho PERSON / POSITION / ORG_UNIT / TEAM"
+  role ||--o{ role_grant : "cho người / vị trí / đơn vị / nhóm"
 ```
 
-### Mua sắm – thanh toán
+### Phê duyệt, mua sắm, giao dịch nội bộ
 
 ```mermaid
 erDiagram
+  approval_rule ||--o{ approval_step : "chốt lúc gửi"
+  purchase_request ||--o{ approval_step : "entity_id"
+  approval_step ||--o{ task : "giao cho người giữ vị trí"
+  approval_step ||--o{ approval_history : ""
   purchase_request ||--|{ purchase_request_item : ""
-  purchase_request ||--o{ quotation : ""
-  purchase_request ||--o{ purchase_order : ""
-  purchase_request ||--o{ approval_history : "entity_id"
-  approval_rule ||--o{ approval_history : ""
-  purchase_order ||--|{ purchase_order_item : ""
-  purchase_order ||--o{ goods_receipt : ""
-  goods_receipt ||--|{ goods_receipt_item : ""
-  purchase_order ||--o{ invoice : ""
-  invoice ||--o{ payment : ""
-  partner ||--o{ purchase_order : "nhà cung cấp"
+  partner ||--o{ purchase_request : "nhà cung cấp"
   item ||--o{ purchase_request_item : ""
-  ic_order ||--o| purchase_order : "tự sinh khi xác nhận"
+  purchase_request ||--o| ic_order : "NCC nội bộ, sinh khi duyệt"
   ic_order ||--|{ ic_order_item : ""
-  settlement ||--o{ ic_order : "đối trừ"
+  lot ||--o{ ic_order_item : "lô xuất"
+  ic_order ||--o| purchase_order : "sinh khi bên bán xác nhận"
+  purchase_order ||--|{ purchase_order_item : ""
 ```
 
-### Sản xuất và truy xuất
+`wf.approval_step`, `wf.task`, `wf.approval_history` dùng chung cho mọi loại chứng từ (`entity_type`, `entity_id`): đề nghị
+mua sắm, tiếp nhận nhân sự, điều chuyển, đề xuất tài liệu thư viện.
 
-```mermaid
-erDiagram
-  location ||--o{ location : "nhà máy – phòng sạch"
-  location ||--o{ device : ""
-  location ||--o{ sensor_threshold : ""
-  location ||--o{ lot : ""
-  lot ||--o{ lot_genealogy : "cha"
-  lot ||--o{ lot_genealogy : "con"
-  lot ||--o{ serial_unit : ""
-  lot ||--o{ ic_order_item : "lô bán nội bộ"
-  incident ||--o{ incident_lot : ""
-  lot ||--o{ incident_lot : "lô nghi lỗi"
-```
+## 5. Các cơ chế quan trọng
 
-## 4. Các cơ chế quan trọng
+### 5.1. Bổ nhiệm, kiêm nhiệm, ủy quyền
 
-### 4.1. Bổ nhiệm, kiêm nhiệm, ủy quyền
+- `core.assignment.assignment_type`: `PRIMARY` (mỗi người một vị trí chính tại một thời điểm, ràng buộc `EXCLUDE`),
+  `CONCURRENT`, `ACTING` (quyền trưởng khi vị trí trống), `CONTRACT` (bắt buộc số hợp đồng và ngày kết thúc, không bao giờ
+  là người duyệt). Hiệu lực theo ngày.
+- `core.delegation`: người giữ vị trí tạm giao một phần quyền (danh sách quyền) cho người cùng công ty; trigger chặn ủy quyền
+  vị trí mà người ủy quyền không giữ, và không nhận ủy quyền qua bổ nhiệm hợp đồng.
+- `core.v_permission_grant` gộp quyền của từng người kèm thời hạn hiệu lực, từ bổ nhiệm vào vị trí, vai trò gán cho
+  đơn vị, nhóm, ủy quyền (lọc theo danh sách quyền) và gán thẳng cho người (bắt buộc có ngày kết thúc).
+- `core.has_permission(person, quyền, đơn vị)` kiểm phạm vi `TENANT` / `SUBTREE` / `UNIT`; `SELF` kiểm ở tầng nghiệp vụ.
+- Người đã có bổ nhiệm giữ chính chỉ đổi vị trí chính qua đề nghị điều chuyển đã duyệt hoặc quyết định nhân sự
+  (`core.assignment_transfer_guard`).
 
-- `assignment.assignment_type`: `PRIMARY` (mỗi người một vị trí chính tại một thời điểm, ràng buộc `EXCLUDE`), `CONCURRENT` (kiêm nhiệm), `ACTING` (quyền trưởng khi vị trí trống).
-- `delegation`: người nhận tạm mang quyền của một vị trí. Trigger chặn ủy quyền vị trí mà người ủy quyền không giữ.
-- `v_effective_permission` gộp quyền từ: vị trí chính, kiêm nhiệm, quyền, ủy quyền, đơn vị, nhóm.
-- `has_permission(person, permission, unit)` kiểm tra phạm vi `TENANT` / `SUBTREE` / `UNIT`; `SELF` kiểm tra ở tầng nghiệp vụ (người tạo bản ghi).
+### 5.2. Chuỗi duyệt
 
-### 4.2. Hạn mức duyệt (nguồn dữ liệu cho DMN)
+`wf.approval_rule`: mỗi dòng là một bước, áp dụng khi `min_amount <= số tiền < max_amount`, theo `process_code`.
 
-`wf.approval_rule`: mỗi dòng là một bước duyệt, áp dụng khi `min_amount <= số tiền < max_amount`.
+- `approver_unit_type_id`: loại đơn vị của cấp duyệt; `NULL` nghĩa là quản lý trực tiếp của vị trí người lập.
+- `scope_unit_id`, `category_code`: quy tắc có phạm vi đơn vị sâu hơn hoặc theo nhóm hàng thắng quy tắc chung.
+- `wf.resolve_approval_chain(tenant, process, vị trí lập, số tiền, nhóm hàng)` trả danh sách **vị trí** duyệt; chuỗi chốt
+  lúc gửi duyệt.
+- `wf.resolve_assignee(vị trí, người lập, người xung đột)` tìm **người** khi đến lượt bước: vị trí trống
+  (`VACANT`), người giữ theo hợp đồng (`CONTRACT`), trùng người lập (`REQUESTER`) hoặc đã đứng phía bên kia của giao dịch
+  nội bộ (`CONFLICT`) thì đẩy lên vị trí quản lý kế tiếp, lý do ghi vào lịch sử
+  ([ADR #28](#adr-28)).
+- Bổ nhiệm thay đổi thì trigger `wf.assignment_after_change` gọi `wf.refresh_position`: việc đang chờ chuyển sang người giữ
+  mới. `wf.refresh_all()` xử lý bổ nhiệm hết hạn theo lịch.
+- `wf.v_inbox`: hộp việc của từng người, gồm cả việc nhận qua ủy quyền (`via_delegation`).
+- Sự kiện lịch sử: `SUBMITTED`, `ASSIGNED`, `ESCALATED`, `MERGED`, `TRANSFERRED`, `APPROVED`, `REJECTED`, `RETURNED`,
+  `CANCELLED`, `OWNER_TRANSFERRED`, `COMPLETED`.
 
-- `approver_unit_type`: mã loại đơn vị của cấp duyệt (`CONG_TY`, `TAP_DOAN`, `BENH_VIEN`...). `NULL` nghĩa là quản lý trực tiếp.
-- `scope_unit_id`, `category_id`: quy tắc có phạm vi sâu hơn hoặc theo nhóm hàng thay thế quy tắc chung.
-- Một người duyệt theo khoảng tiền: các khoảng không chồng nhau. Duyệt nhiều cấp: nhiều dòng cùng khớp, xếp theo `step_order`.
+Dữ liệu mẫu: dưới 50 triệu quản lý trực tiếp; 50 đến dưới 500 triệu giám đốc công ty; từ 500 triệu thêm Tổng giám đốc; đơn vị
+trực thuộc tập đoàn từ 50 triệu lên thẳng Tổng giám đốc; Bệnh viện X có quy tắc riêng, nhóm thiết bị y tế luôn hai bước
+([Kịch bản nghiệp vụ](../tong-quan/02-kich-ban-nghiep-vu.md)).
 
-Hàm:
+### 5.3. Chứng từ mua sắm và giao dịch nội bộ
 
-| Hàm | Dùng để |
-|---|---|
-| `core.resolve_approver(unit, unit_type, exclude_person)` | Trưởng đơn vị gần nhất thuộc loại yêu cầu; người lập trùng người duyệt thì lên cấp trên; ưu tiên PRIMARY rồi ACTING |
-| `wf.resolve_approval_chain(process, unit, amount, category, requester)` | Chuỗi người duyệt cho một yêu cầu bất kỳ |
-| `wf.resolve_pr_approvers(request_id)` | Chuỗi người duyệt cho một đề nghị mua sắm (Hasura Action / Flowable gọi) |
+- Tổng tiền đầu phiếu tự tính từ dòng hàng; dòng hàng chỉ sửa được khi đề nghị còn nháp hoặc bị trả về.
+- Người lập hủy được khi chưa duyệt xong (`proc.cancel_purchase_request`). Nhà cung cấp chưa có trong danh mục thì ghi
+  tên và mã số thuế đề xuất; người có `mdm.manage` đưa vào danh mục (`mdm.adopt_proposed_partner`).
+- Đề nghị chọn nhà cung cấp nội bộ: duyệt xong thì `ic.create_from_request` sinh `ic.ic_order`. Bên bán xác nhận kèm lô
+  (`ic.confirm_order`; lô phải của công ty bán, đúng mặt hàng, `RELEASED`, không xuất quá số lượng) thì
+  `proc.issue_purchase_order` sinh đơn mua; bên bán từ chối hoặc người đặt hủy khi còn `PENDING`, bắt buộc lý do.
+- Chưa có: nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ, phả hệ lô (lô cha – lô con).
 
-Dữ liệu mẫu cấu hình đúng ví dụ ở [Kịch bản nghiệp vụ](../tong-quan/02-kich-ban-nghiep-vu.md): dưới 50 triệu – quản lý trực tiếp; 50 đến dưới 500 triệu – giám đốc công ty; từ 500 triệu – Tổng giám đốc tập đoàn. Bệnh viện có thêm quy tắc thiết bị y tế duyệt 2 cấp.
+### 5.4. Nhân sự
 
-### 4.3. Chứng từ
+- **Tiếp nhận** (013): chuỗi duyệt tính từ vị trí được bổ nhiệm, không từ tư cách lập. CCCD, số tài khoản, địa chỉ lưu bản mã
+  hóa bằng OpenBao transit và bản che; chỉ phòng nhân sự xem bản đầy đủ, mỗi lần xem ghi `hr.private_access`.
+- **Điều chuyển** (029): người lập là chính nhân viên, quản lý trực tiếp hoặc người có `hr.transfer.create`; ngày chuyển
+  cách ngày gửi ít nhất 14 ngày; trưởng đơn vị tiếp nhận chọn vị trí rồi trưởng phòng nhân sự của công ty chung gần nhất duyệt.
+  Liên tập đoàn gồm ba chứng từ liên kết, mỗi chứng từ nằm ở tenant của người duyệt.
+- **Quyết định nhân sự** (030): lãnh đạo cao nhất của tenant ban hành bổ nhiệm, điều chuyển, miễn nhiệm, có hiệu lực ngay,
+  không qua chuỗi duyệt; in PDF từ mẫu.
 
-- Số chứng từ `PR-2026-000001` sinh bằng `core.next_doc_no()` theo tenant, loại, năm.
-- `wf.status_transition` + trigger `wf.check_transition()` chặn chuyển trạng thái sai quy trình.
-- Tổng tiền đầu phiếu tự tính từ dòng hàng (`core.recalc_header_total`).
-- Dòng hàng của đề nghị bị khóa sau khi gửi duyệt.
-- View phân tích: `proc.v_po_match` (đối chiếu đặt – nhận – hóa đơn – thanh toán), `proc.v_budget_usage` (ngân sách đã cam kết, đã chi), `proc.v_split_suspect` (nghi chia nhỏ đơn để né hạn mức – dùng cho cảnh báo [I]).
+### 5.5. Nhật ký kiểm toán, sổ cái và neo
 
-### 4.4. Giao dịch nội bộ
+- Trigger `audit.log_change()` (gắn bằng `CALL audit.enable('schema.bang')`) ghi dữ liệu cũ/mới, cột thay đổi, người và role.
+- Mỗi dòng có `seq` liên tục theo tenant và `hash = sha256(prev_hash || nội dung)` (`audit.compute_hash`). `audit.log` chỉ ghi
+  thêm (`audit.log_append_only`); `audit.verify_chain(tenant)` trả dòng hỏng
+  ([ADR #33](#adr-33)).
+- Sổ cái tệp (017): đối soát SHA-256 của tệp với chuỗi kiểm toán, phòng đọc chỉ đọc có nhật ký truy cập
+  ([ADR #46](#adr-46)).
+- Neo (036): đầu chuỗi được ký Ed25519 bằng OpenBao và công bố ra ngoài CSDL; nội dung đã ký bất biến;
+  `audit.check_anchors` phát hiện chuỗi bị cắt hoặc viết lại.
+- `audit.backup_run` (038) ghi từng lần sao lưu và diễn tập khôi phục, chỉ thêm.
+- Nhật ký trả cho giao diện luôn là bản che ([ADR #43](#adr-43)).
 
-Migration 014, [ADR #42](#adr-42).
+### 5.6. Cộng tác, thông báo và hàng đợi tin nhắn
 
-- Mỗi công ty con có một `mdm.partner` với `internal_unit_id` trỏ về chính công ty đó.
-- Đề nghị mua sắm chọn nhà cung cấp nội bộ: gửi duyệt bị chặn khi mua của chính công ty mình hoặc chưa có dòng hàng (`proc.purchase_request_internal_check`). Duyệt xong, `wf.set_entity_status` gọi `ic.create_from_request`: sinh `ic.ic_order` (`PENDING`, số `IC-…`) và `ic.ic_order_item`, gắn `ic_order_id` vào đề nghị.
-- `ic.confirm_order(order, actor, {dòng: lô})`: người có `ic.order.confirm` trên công ty bán xác nhận; lô phải của công ty bán (`core.company_of`), đúng mặt hàng, `RELEASED`, tổng số lượng đã xuất (đơn đã xác nhận) không vượt số lượng lô; mặt hàng bên bán có lô thì bắt buộc chọn lô. Xác nhận xong `proc.issue_purchase_order` sinh `proc.purchase_order` (`PO-…`) và dòng hàng mang lô.
-- `ic.reject_order` (bên bán), `ic.cancel_order` (người đặt): chỉ khi `PENDING`, bắt buộc lý do. Thông báo: đơn mới và đơn bị hủy báo người xác nhận được (`ic.confirmers`), xác nhận / từ chối báo người đặt.
-- Quyền xem: `ic.can_read` (người đặt, người xem được đề nghị nguồn, bên bán có `ic.order.read` hoặc `ic.order.confirm`); đơn mua: người xem được đề nghị nguồn.
-- Còn phải làm: `ic.settle(tenant, unit_a, unit_b, 'YYYY-MM')` đối trừ công nợ hai chiều, tạo `ic.settlement` và chuyển các đơn sang `SETTLED`. Báo cáo hợp nhất loại trừ các giao dịch này.
+- `collab.comment`: bình luận trên chứng từ bất kỳ (`entity_type`, `entity_id`), trả lời theo luồng, nhắc tên cùng tenant,
+  xóa mềm. Thêm loại chứng từ mới: bổ sung nhánh vào `collab.entity_owner`, `collab.entity_label`, `collab.entity_tenant`.
+- `collab.notification` sinh bằng trigger (việc được giao, chứng từ được duyệt / từ chối / trả về / hủy, bình luận, nhắc tên,
+  đơn nội bộ, quy trình phát hành, tác vụ tự động...).
+- `collab.notification_pref` (035): người dùng bật kênh email, SMS, webhook theo loại thông báo; `collab.notification_fanout`
+  sinh tin vào `msg.queue`.
+- `msg.queue`: mỗi tin có chủ đề, nội dung, mã băm nội dung, khóa chống trùng; trạng thái `PENDING` → `LEASED` →
+  `DELIVERED` hoặc `DEAD`; thuê tin (`msg.lease`), thử lại lùi dần (`msg.fail`, `msg.retry`), biên nhận có chữ ký khi giao
+  xong (`msg.complete`). `msg.attempt` ghi từng lần giao. Sự kiện nghiệp vụ `event.*` (040) đi chung hàng đợi này.
 
-### 4.5. Truy xuất lô
+### 5.7. Tệp đính kèm, tìm kiếm, OCR
 
-- Đã có (migration 014): `mfg.lot` (số lô, mặt hàng, đơn vị sản xuất, số lượng, ngày sản xuất, trạng thái `RELEASED` / `ON_HOLD` / `SCRAPPED`); lô xuất ghi ở `ic.ic_order_item.lot_id`, lô nhận về ở `proc.purchase_order_item.lot_id`. Các mục dưới đây chưa làm.
-- `mfg.lot_genealogy`: lô cha được dùng để tạo lô con (wafer → chip → điện thoại).
-- `mfg.trace_forward(lot)`, `mfg.trace_backward(lot)`, `mfg.affected_serials(lot)`: từ một lô wafer lỗi tìm ra các serial điện thoại đã bán.
-- `mfg.flag_lots_for_incident(incident)`: gắn cờ nghi lỗi cho các lô đang ở địa điểm xảy ra sự cố.
-- Chuỗi số đo cảm biến **không** lưu ở PostgreSQL: nằm ở Orion-LD và Lakehouse. PostgreSQL chỉ giữ thiết bị, ngưỡng và sự cố.
+- `core.attachment`: chỉ đi tiếp từ `PENDING`; `CLEAN` phải có `scan_engines` (034); tệp của chứng từ đã có kết quả được giữ
+  làm chứng cứ. Loại chứng từ đính kèm được: đề nghị mua sắm, tiếp nhận nhân sự, đề xuất tài liệu thư viện.
+- `search.pending` / `search.pending_chunk`: trigger đánh dấu bản ghi cần đánh chỉ mục lại; `search-sync` xử lý có thử lại.
+- `core.attachment_ocr` (027): việc OCR từng tệp (`PENDING`/`RUNNING`/`DONE`/`ERROR`/`SKIPPED`); văn bản OCR chỉ dùng để tìm,
+  không đi vào CDC.
 
-### 4.6. Cách ly dữ liệu bệnh viện
+### 5.8. Quy trình: thiết kế, giám sát, chạy tự động
 
-- Bệnh án nằm ở database `bms_hospital`, không có bảng nào trong `bms` chứa dữ liệu y tế (kiểm thử xác nhận).
-- Ra ngoài chỉ qua view, mỗi view một role:
-  - `hospital_analytics` → `emr.v_kpi_daily`, `emr.v_bed_occupancy`: số liệu tổng hợp, không định danh.
-  - `hospital_hr_export` → `emr.v_health_check_conclusion`: chỉ mã nhân viên bên doanh nghiệp và kết luận đủ/không đủ.
-- Phía doanh nghiệp chỉ lưu `hr.health_check_conclusion`.
+- `wf.process_model` / `wf.process_version`: BPMN XML là nguồn sự thật; phát hành tạo phiên bản bất biến
+  ([ADR #47](#adr-47)). Quy trình thuộc một đơn vị sở hữu; khi phát hành chọn đối
+  tượng `UNIT` / `COMPANY` / `GROUP` để thông báo và cho xem (`wf.process_access`).
+- `wf.process_change_request`: quản lý, giám đốc yêu cầu sửa quy trình.
+- `wf.process_automation` / `wf.automation_run` (033, 040): phiên bản đã phát hành chỉ gồm tác vụ tự động, cổng, hẹn giờ thì
+  bật chạy tự động trên Flowable; khởi chạy bằng hẹn giờ, tay, webhook (mã lưu SHA-256) hoặc sự kiện nghiệp vụ.
 
-### 4.7. Nhật ký kiểm toán
+### 5.9. Dữ liệu số: KPI, bản sao số, phả hệ
 
-- Trigger `audit.log_change()` gắn vào mọi bảng nghiệp vụ, ghi dữ liệu cũ/mới, danh sách cột thay đổi, người thực hiện.
-- Mỗi dòng có `hash = sha256(prev_hash || nội dung)`. `audit.verify_chain()` trả về dòng bị sửa; `audit.log` chỉ cho ghi thêm (trừ cột `sealed_at` khi đẩy sang immudb).
-- `audit.activity` phục vụ `auditLogProvider` của Refine.
-- Bảng mới: gọi `CALL core.enable_tracking('schema.bang')` và `CALL audit.enable('schema.bang')` trong migration.
+- `kpi.definition`, `kpi.value` (tính lại từ dữ liệu nguồn, `kpi.refresh`), `kpi.pin` (tối đa 6 ghim mỗi người).
+- `kpi.snapshot` (031): giá trị KPI của kỳ đã kết thúc chụp một lần bằng `kpi.freeze`, không sửa không xóa
+  (`kpi.snapshot_guard`), kiểm bằng `kpi.verify_snapshots`; đi vào Lakehouse qua CDC (041).
+- `iot.*`: mô hình thiết bị, cơ sở, thực thể, chuỗi đo, sự cố vượt ngưỡng; `iot.acknowledge` ghi nhận sự cố.
+- `meta.*`: nút / cạnh phả hệ, kiểm tra chất lượng, lần chạy pipeline, sự cố dữ liệu người dùng báo.
+- Dữ liệu `iot` và `meta` hiện nạp từ tệp demo, chưa thu từ cảm biến hay pipeline thật
+  ([ADR #50](#adr-50)).
 
-### 4.8. Cộng tác: bình luận, thông báo, hộp việc
+### 5.10. Trí tuệ số
 
-- `collab.comment`: bình luận gắn với chứng từ bất kỳ (`entity_type`, `entity_id`), trả lời theo luồng (`parent_id`), nhắc tên (`mentions`, kiểm tra cùng tenant), xóa mềm.
-- `wf.task`: bản sao task của Flowable để giao diện đọc qua Hasura (subscription realtime) mà không gọi thẳng Flowable. Flowable vẫn là nguồn sự thật; Hasura Action ghi/cập nhật bảng này khi tạo hoặc hoàn thành task ([ADR #20](#adr-20)).
-- `wf.v_inbox`: hộp việc của từng người, **gồm cả việc nhận qua ủy quyền** (`via_delegation`).
-- `collab.notification` sinh tự động bằng trigger, không cần ứng dụng gọi:
+- `core.ai_agent`: tác tử của tenant (mô hình Ollama, trạng thái, guardrail `scope_guard`/`pii_guard`/`prompt_guard`/`think`,
+  công cụ `search_docs`/`cite`); ghi qua Action, cần `core.ai.manage`.
+- `core.ai_question`: một lượt hỏi (`queued` → `running` → `done` / `refused` / `error`), câu trả lời ghi dần, trích dẫn,
+  token, `first_token_at`, `cold_start`; người dùng chỉ đọc lượt hỏi của chính mình
+  ([ADR #51](#adr-51), [ADR #52](#adr-52)).
 
-| Sự kiện | Người nhận |
-|---|---|
-| Bình luận | Người được nhắc tên (`MENTION`), chủ chứng từ (`COMMENT`) |
-| Task được giao / giao lại | Người được giao và người đang nhận ủy quyền của họ (`TASK_ASSIGNED`) |
-| Đề nghị được duyệt / từ chối / trả về | Người lập đề nghị, kèm người duyệt (`REQUEST_*`) |
-| Sự cố hiện trường | Mọi người có quyền `mfg.incident.manage` trên đơn vị quản lý địa điểm (`INCIDENT`) |
+### 5.11. Vận hành: nhật ký tập trung, nạp lô
 
-- Mỗi thông báo mới phát `pg_notify('bms_notification', …)` cho dịch vụ realtime.
-- `collab.mark_notifications_read(hasura_session, ids)`: Hasura track làm mutation, chỉ đánh dấu thông báo của người gọi.
-- Thêm loại chứng từ mới: bổ sung nhánh vào `collab.entity_owner()` và `collab.entity_label()`.
+- `obs.log_event` (037): log của dịch vụ và container (qua Vector) kèm `trace_id` = `X-Request-Id` của cổng API, đã che dữ liệu
+  cá nhân; `obs.purge` xóa theo thời hạn lưu.
+- `core.ingest_job` (039): mỗi lần nạp NDJSON/CSV là một công việc có khóa chống nạp trùng, tiến độ, số dòng nhận / từ chối,
+  lỗi từng dòng; có chạy thử và chế độ nguyên tử.
 
-### 4.9. CDC và hiệu năng
+### 5.12. CDC
 
-**CDC (migration 012, [ADR #38](#adr-38)).** PostgreSQL chạy `wal_level=logical`. Publication `bms_cdc` gồm mọi bảng (kể cả bảng tạo sau) trong `core, mdm, wf, proc, ic, mfg, collab` (`mfg` thêm ở migration 014) và bảng nhịp tim `cdc.heartbeat`; không gồm `audit`, `search`, `public`. Bảng giữ replica identity mặc định (khóa chính): sự kiện sửa có ảnh sau, không có ảnh trước. Role `bamboo_cdc` (REPLICATION, chỉ đọc, mật khẩu `CDC_DB_PASSWORD`) dành cho Debezium. `bms_hospital` không có publication ([ADR #22](#adr-22)). Kafka và Debezium: [Dịch vụ nền tảng mục 7](06-dich-vu-nen-tang.md).
+PostgreSQL chạy `wal_level=logical`. Publication `bms_cdc` gồm mọi bảng (kể cả bảng tạo sau) trong `core, mdm, wf, proc, ic,
+mfg, collab, cdc` và bảng `kpi.snapshot`; không gồm `audit`, `search`, `hr`, `iot`, `meta`, `msg`, `obs`. Debezium bỏ cột
+`core.attachment_ocr.page_texts`. Role `bamboo_cdc` (REPLICATION, chỉ đọc) dành cho Debezium; `cdc.heartbeat` giữ slot khi
+không có thay đổi. Kafka, Debezium, Lakehouse: [Dịch vụ nền tảng mục 7–9](06-dich-vu-nen-tang.md).
 
-**Bảng quyền tính sẵn (migration 012, [ADR #21](#adr-21)).**
+## 6. Tích hợp
 
-- `core.v_permission_grant`: quyền của từng người **kèm thời hạn hiệu lực** (giao của thời hạn bổ nhiệm, ủy quyền, thành viên nhóm và gán vai trò).
-- `core.mv_permission_grant`: bản tính sẵn. Vì lưu cả thời hạn nên chỉ cần làm mới khi dữ liệu phân quyền đổi, không phải làm mới theo giờ (ủy quyền từ ngày 20 tự có hiệu lực vào ngày 20).
-- Trigger trên 8 bảng phân quyền: trước câu lệnh bật cờ `bms.permission_dirty` của giao dịch; lúc commit làm mới bản tính sẵn đúng một lần (`CONCURRENTLY`, không chặn người đọc).
-- `core.v_effective_permission` giữ nguyên cột: khi cờ bật (giao dịch đang sửa phân quyền) đọc trực tiếp nên luôn đúng; bình thường đọc bản tính sẵn.
-- Đo trên dữ liệu mẫu, 7.306 lần `has_permission`: đọc trực tiếp 3.747 ms → bản tính sẵn 484 ms (nhanh 7,7 lần), kết quả giống hệt.
+- **Keycloak chỉ xác thực** ([ADR #6](#adr-6),
+  [ADR #32](#adr-32)): token chỉ cần `sub`; `core.person.idp_subject` = `sub`. Id
+  tài khoản demo và tenant sinh bằng `uuid5` để khớp giữa realm và CSDL
+  ([ADR #23](#adr-23)).
+- **Hasura xác thực bằng webhook** `GET /auth/hasura` của `actions`: kiểm token bằng JWKS của Keycloak, đọc tenant ở header
+  `x-bamboo-tenant`, tra `core.account_tenants(sub)`. Chưa chọn tenant: role `account` (chỉ `my_tenants`); đã chọn: role
+  `user` với `x-hasura-user-id` = `person.id` trong tenant; `platform_admin` khi có realm role tương ứng.
+- **Metadata Hasura** sinh bằng `services/actions/app/hasura_metadata.py` vào `platform/hasura/metadata.json` (`make
+  hasura-metadata`), job `bootstrap` nạp khi khởi động
+  ([ADR #24](#adr-24)). Hiện track 62 bảng/view (61 có quyền select lọc theo tenant
+  và computed field `can_read`) và 99 Action. Ghi trực tiếp qua Hasura chỉ cho các thao tác đơn giản trên bản ghi của chính
+  mình (nháp, dòng hàng, bình luận, đánh dấu đã đọc); thao tác nghiệp vụ đi qua Hasura Action.
+- **Flowable** không giữ người duyệt: CSDL là nguồn sự thật của chuỗi duyệt, `flow-sync` phản chiếu sang Flowable
+  ([ADR #31](#adr-31)).
 
-**Index khóa ngoại.** Mọi khóa ngoại nghiệp vụ có index. `core.v_unindexed_foreign_key` liệt kê khóa ngoại thiếu index; `make test-db` báo lỗi nếu view này có dòng.
+## 7. Quy ước khi thêm migration
 
-### 4.10. Trí tuệ số: tác tử AI và lượt hỏi (migration 024, 025, [ADR #51](../quan-ly-du-an/05-quyet-dinh-kien-truc.md#adr-51))
-
-- `core.ai_agent`: tác tử AI của tenant: `model` (tên mô hình trong Ollama), `status` (`active` | `inactive`), `guardrail_config` (`scope_guard`, `pii_guard`, `prompt_guard`, `think`), `tool_list` (`search_docs`, `cite`). Ghi qua Action `ai_agent_register/update/unregister`, cần `core.ai.manage` (view `core.v_ai_admin`); Hasura chỉ cho người có quyền này đọc.
-- `core.ai_question`: một **lượt hỏi**. `question` đã che PII khi bật `pii_guard`; `status` `queued` → `running` → `done` | `refused` | `error`; `answer` worker ghi dần; `citations` jsonb `[{n, kb_document_id, doc_no, title, attachment_id, file_name, heading, position}]`; `guard` (`scope` | `prompt`) khi bị chặn; token và mốc thời gian để tính số liệu. Index `(status, created_at)` cho hàng đợi, `(tenant_id, person_id, created_at desc)` cho lịch sử. Trigger `NOTIFY ai_question` khi thêm lượt chờ. Kiểm toán bằng trigger `audit_log` riêng: `INSERT`, `DELETE`, `UPDATE OF status` (không ghi mỗi lần câu trả lời dài thêm). Hasura: người dùng chỉ đọc (và subscription) lượt hỏi của chính mình, không ghi trực tiếp.
-- `search.pending_chunk`: hàng đợi nạp đoạn vào chỉ mục vector, mỗi tài liệu thư viện một dòng, cùng cột với `search.pending` (`dirty`, `attempts`, `next_attempt_at`, `last_error`). `search.mark_chunk()` gọi từ trigger tài liệu, tệp đính kèm và `kb_reindex`; `search.mark_all_chunks()` để nạp bù khi chỉ mục đoạn trống.
-
-## 5. Tích hợp
-
-- **Keycloak chỉ xác thực** ([ADR #6](#adr-6), [ADR #32](#adr-32)). Access token chỉ cần `sub`; `core.person.idp_subject` = `sub`. Tài khoản demo: id Keycloak = `sub` = `person.id` ở tenant giữ chính = `uuid5(DEMO_NS, 'account:<tên đăng nhập>')`; tenant id = `uuid5(DEMO_NS, 'tenant:<mã>')` ([ADR #23](#adr-23)). Danh sách ở `services/seed/app/demo.py`, dùng chung cho seed (`python -m app.seed`) và realm (`python -m app.realm`, `make realm`).
-- Realm `bms` (`platform/keycloak/realm/bms-realm.json`) tự import khi Keycloak khởi động lần đầu; mật khẩu demo lấy từ biến `DEMO_PASSWORD` lúc import. Client `bms-web` (PKCE S256) cho Refine; client `bms-e2e` (password grant) chỉ cho kiểm thử dev. Realm role `platform_admin` bắt buộc cài OTP ở lần đăng nhập đầu.
-- **Hasura xác thực bằng webhook** `GET /auth/hasura` của dịch vụ `actions` ([ADR #32](#adr-32)): kiểm tra token bằng JWKS của Keycloak, đọc tenant đã chọn ở header `x-bamboo-tenant`, tra `core.account_tenants(sub)`. Chưa chọn tenant: role `account`, chỉ gọi query `my_tenants`. Đã chọn: role `user` với `x-hasura-user-id` = `person.id` trong tenant đó; xin `x-hasura-role: platform_admin` khi có realm role tương ứng. `make test-auth` đăng nhập thử mọi tài khoản demo.
-- **Hasura** ([ADR #24](#adr-24)): metadata sinh bằng `services/actions/app/hasura_metadata.py` vào `platform/hasura/metadata.json`, job `bootstrap` nạp khi khởi động.
-
-**Tài khoản demo** (mật khẩu chung `DEMO_PASSWORD`, mặc định `demo-password`):
-
-| Tên đăng nhập | Vai trò |
-|---|---|
-| `tgd`, `pho.tgd` | Tổng giám đốc, Phó TGĐ Tập đoàn X |
-| `cdo`, `gd.taichinh` | Giám đốc chuyển đổi số, Giám đốc tài chính |
-| `gd.chip`, `pgd.chip` | Giám đốc Chip X (đang ủy quyền), Phó giám đốc (duyệt thay) |
-| `qd.phongsach.chip`, `kd.chip` | Quản đốc phòng sạch, Chuyên viên kinh doanh B2B |
-| `gd.dienthoai`, `tp.muahang.dienthoai`, `nv.muahang.dienthoai` | Giám đốc, Trưởng phòng mua hàng, Chuyên viên mua hàng Điện thoại X |
-| `gd.giadung`, `gd.baohanh.giadung` | Giám đốc Gia dụng X, Giám đốc trung tâm bảo hành (người quản lý hợp đồng) |
-| `gd.benhvien`, `tk.duoc.benhvien`, `bs.cdha.benhvien` | Bệnh viện X (tenant riêng) |
-| `kiemnhiem` | Một tài khoản, hai tenant: Tập đoàn X và Bệnh viện X ([ADR #30](#adr-30)) |
-| `hopdong` | Giữ chính ở Chip X, hợp đồng ngoài giờ cho Gia dụng X ([ADR #29](#adr-29)) |
-| `admin` | Đội nền tảng, realm role `platform_admin`, bắt buộc OTP |
-  - Source `bms` (58 bảng/view, 238 quan hệ suy ra từ khóa ngoại) cho role `user`; source `hospital` (`bms_hospital`) chỉ cho role `hospital_staff`. Tài khoản tập đoàn không có trường `emr_*` trong schema GraphQL.
-  - Mặc định lọc `tenant_id = X-Hasura-Tenant-Id`. Dữ liệu cần quyền chi tiết dùng computed field `can_read` (migration 013): đề nghị mua sắm và chuỗi đơn mua – nhận hàng – hóa đơn – thanh toán, bình luận, task, lịch sử duyệt, kết luận khám sức khỏe, nhật ký kiểm toán. `can_approve` cho biết đề nghị đang chờ chính người gọi duyệt.
-  - Ghi dữ liệu qua Hasura chỉ cho: tạo/sửa/xóa đề nghị nháp của mình và dòng hàng (người lập, tenant lấy từ token; chỉ lập cho đơn vị mình công tác), bình luận, đánh dấu thông báo đã đọc, nhật ký thao tác Refine. Duyệt, đặt hàng, nhận hàng, thanh toán đi qua Hasura Actions + Flowable.
-  - `core_v_effective_permission` trả quyền của chính người gọi để giao diện dựng CASL.
-  - Sinh lại sau khi đổi CSDL: `make hasura-metadata` (script `scripts/hasura/gen_metadata.py`, cấu hình phân quyền ở đầu file). Kiểm thử: `make test-api` (26 kiểm tra với token thật).
-  - Trigger lấy người thực hiện từ biến `hasura.user`.
-- **Flowable** không viết cứng người duyệt: gọi `wf.resolve_pr_approvers` qua Hasura Action; ghi kết quả vào `wf.approval_history`, `process_instance_id` lưu trên chứng từ.
-- **Debezium** đọc thay đổi các bảng → Kafka → Iceberg.
-
-## 6. Quy ước khi thêm migration
-
-1. Tên file `NNN_mo_ta.sql`, đặt trong `db/migrations/bms/` hoặc `db/migrations/hospital/`. Không sửa migration đã đẩy lên Git; tạo file mới.
-2. Mỗi file chạy trong một transaction; lỗi thì không để lại gì.
-3. Bảng mới: có `tenant_id`, khóa kép `(tenant_id, id)`, gọi `enable_tracking` trước khi tạo index/view dùng `created_at`; mỗi khóa ngoại có index (kiểm thử bắt buộc).
+1. Tên tệp `NNN_mo_ta.sql` trong `db/migrations/bms/`. Không sửa migration đã đẩy lên Git; tạo tệp mới.
+2. Mỗi tệp chạy trong một giao dịch; lỗi thì không để lại gì.
+3. Bảng mới: có `tenant_id`, khóa kép `(tenant_id, id)`, khóa ngoại theo cặp, index cho khóa ngoại; gọi `audit.enable` nếu cần
+   kiểm toán. `db/roles/grants.sql` tự cấp quyền cho mọi schema sau mỗi lần migrate.
 4. Hàm truy cập bảng: ghi đủ tên schema hoặc đặt `SET search_path`, vì Hasura gọi với `search_path` mặc định.
-5. Thêm kiểm thử vào `db/tests/` và chạy `make test-db`.
-
-## 7. Còn phải làm
-
-- [x] Metadata Hasura: track bảng, quan hệ, permission theo `tenant_id` + computed field quyền (migration 013, `platform/hasura/metadata`). Còn: role Hasura riêng thay cho user superuser của PostgreSQL khi triển khai.
-- [x] Realm Keycloak cho tài khoản demo (`platform/keycloak/realm/`). Còn: bật MFA (OTP) cho tài khoản quản trị, client `apisix` khi dựng gateway.
-- [x] Hasura Actions: `start_process`, `complete_task` (Flowable, gọi `wf.resolve_pr_approvers`), `get_upload_url`, `confirm_upload`, `get_download_url`, `delete_attachment` (xem [Dịch vụ nền tảng](06-dich-vu-nen-tang.md)).
-- [ ] (Tùy chọn, để trình diễn) Sinh bảng DMN chỉ-đọc từ `wf.approval_rule`; quyết định hạn mức vẫn ở CSDL ([ADR #17](#adr-17), [ADR #27](#adr-27)).
-- [x] CDC: publication, role, Debezium Server → Kafka (migration 012, [ADR #38](#adr-38)). Kafka → Iceberg bronze: [ADR #39](#adr-39); tầng silver (view Trino): [ADR #40](#adr-40).
-- [x] Nhật ký kiểm toán chuỗi hash theo tenant, đối soát qua Action `verify_audit_chain` (migration 007, [ADR #33](#adr-33)).
-- [x] Bình luận, thông báo bằng trigger (migration 008). Còn: dịch vụ realtime (Centrifugo) nghe kênh `bms_notification`.
-- [ ] Dịch vụ đồng bộ `audit.log` sang immudb (cột `sealed_at`).
-- [ ] Thay dữ liệu bệnh nhân Faker bằng Synthea (FHIR) nếu còn thời gian.
-- [x] Hiệu năng phân quyền: bảng quyền tính sẵn (migration 012).
+5. Lỗi nghiệp vụ trả về giao diện dùng `ERRCODE = 'data_exception'` để Hasura chuyển nguyên thông báo.
+6. Thêm kiểm thử vào `db/tests/`, chạy `make test-db`; đổi bảng thì chạy `make hasura-metadata` và `make trino-sql`.
