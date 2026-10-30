@@ -29,6 +29,10 @@ HIDDEN = {
     ("audit", "anchor"),
     ("audit", "backup_run"),
     ("obs", "log_event"),
+    ("core", "setup_code"),
+    ("core", "setup_application"),
+    ("core", "legal_verification"),
+    ("core", "module_install"),
 }
 ROLE = "user"
 ADMIN_ROLE = "platform_admin"
@@ -1541,6 +1545,33 @@ def build(conn: psycopg.Connection) -> dict:
                 "Danh mục mô-đun chức năng, đã cài trên máy và đã bật cho công ty chưa (ADR #56)",
                 timeout=10,
             ),
+            _action(
+                "legal_status",
+                "query",
+                [],
+                "LegalStatus!",
+                [ROLE, ADMIN_ROLE],
+                "Thông tin pháp lý của công ty và lần xác thực chữ ký số gần nhất (ADR #57)",
+                timeout=10,
+            ),
+            _action(
+                "legal_application",
+                "mutation",
+                [],
+                "LegalApplication!",
+                [ROLE, ADMIN_ROLE],
+                "Chủ sở hữu lập đơn xác thực thông tin doanh nghiệp (PDF) để ký số",
+                timeout=90,
+            ),
+            _action(
+                "legal_verify",
+                "mutation",
+                [("application_id", "uuid!"), ("content_base64", "String!")],
+                "LegalStatus!",
+                [ROLE, ADMIN_ROLE],
+                "Chủ sở hữu tải lên đơn đã ký số; hợp lệ thì công ty được xác thực pháp lý",
+                timeout=60,
+            ),
             *[
                 _action(name, "mutation", [("code", "String!")], "ModuleOverview!", [ROLE, ADMIN_ROLE], comment)
                 for name, comment in (
@@ -1599,6 +1630,39 @@ def build(conn: psycopg.Connection) -> dict:
                 },
             ],
             "objects": [
+                {
+                    "name": "LegalVerification",
+                    "fields": [
+                        {"name": "signer_name", "type": "String"},
+                        {"name": "signer_subject", "type": "String!"},
+                        {"name": "issuer", "type": "String!"},
+                        {"name": "signed_at", "type": "timestamptz"},
+                        {"name": "verified_at", "type": "timestamptz!"},
+                    ],
+                },
+                {
+                    "name": "LegalStatus",
+                    "fields": [
+                        {"name": "tax_code", "type": "String"},
+                        {"name": "legal_name", "type": "String"},
+                        {"name": "legal_rep_name", "type": "String"},
+                        {"name": "legal_status", "type": "String"},
+                        {"name": "is_owner", "type": "Boolean!"},
+                        {"name": "has_owner", "type": "Boolean!"},
+                        {"name": "signature_ready", "type": "Boolean!"},
+                        {"name": "verification", "type": "LegalVerification"},
+                    ],
+                },
+                {
+                    "name": "LegalApplication",
+                    "fields": [
+                        {"name": "application_id", "type": "uuid!"},
+                        {"name": "nonce", "type": "String!"},
+                        {"name": "expires_at", "type": "timestamptz!"},
+                        {"name": "pdf_base64", "type": "String!"},
+                        {"name": "file_name", "type": "String!"},
+                    ],
+                },
                 {
                     "name": "ModuleService",
                     "fields": [{"name": "name", "type": "String!"}, {"name": "running", "type": "Boolean"}],

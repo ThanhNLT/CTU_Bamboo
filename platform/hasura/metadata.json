@@ -2259,28 +2259,6 @@
         {
           "table": {
             "schema": "core",
-            "name": "module_install"
-          },
-          "array_relationships": [
-            {
-              "name": "tenant_modules",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "tenant_module"
-                  },
-                  "column_mapping": {
-                    "module": "module"
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "table": {
-            "schema": "core",
             "name": "org_unit"
           },
           "array_relationships": [
@@ -2893,6 +2871,21 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "enabled_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant_owners",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant_owner"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
                   }
                 }
               }
@@ -4270,20 +4263,6 @@
           },
           "object_relationships": [
             {
-              "name": "module_module_install",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "module_install"
-                  },
-                  "column_mapping": {
-                    "module": "module"
-                  }
-                }
-              }
-            },
-            {
               "name": "enabled_by_person",
               "using": {
                 "manual_configuration": {
@@ -4308,6 +4287,69 @@
                   },
                   "column_mapping": {
                     "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "tenant_owner"
+          },
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
                   }
                 }
               }
@@ -14847,6 +14889,93 @@
       "comment": "Danh mục mô-đun chức năng, đã cài trên máy và đã bật cho công ty chưa (ADR #56)"
     },
     {
+      "name": "legal_status",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/legal_status",
+        "arguments": [],
+        "output_type": "LegalStatus!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thông tin pháp lý của công ty và lần xác thực chữ ký số gần nhất (ADR #57)"
+    },
+    {
+      "name": "legal_application",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/legal_application",
+        "arguments": [],
+        "output_type": "LegalApplication!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 90
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chủ sở hữu lập đơn xác thực thông tin doanh nghiệp (PDF) để ký số"
+    },
+    {
+      "name": "legal_verify",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/legal_verify",
+        "arguments": [
+          {
+            "name": "application_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "content_base64",
+            "type": "String!"
+          }
+        ],
+        "output_type": "LegalStatus!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chủ sở hữu tải lên đơn đã ký số; hợp lệ thì công ty được xác thực pháp lý"
+    },
+    {
       "name": "module_enable",
       "definition": {
         "kind": "synchronous",
@@ -15074,6 +15203,93 @@
       }
     ],
     "objects": [
+      {
+        "name": "LegalVerification",
+        "fields": [
+          {
+            "name": "signer_name",
+            "type": "String"
+          },
+          {
+            "name": "signer_subject",
+            "type": "String!"
+          },
+          {
+            "name": "issuer",
+            "type": "String!"
+          },
+          {
+            "name": "signed_at",
+            "type": "timestamptz"
+          },
+          {
+            "name": "verified_at",
+            "type": "timestamptz!"
+          }
+        ]
+      },
+      {
+        "name": "LegalStatus",
+        "fields": [
+          {
+            "name": "tax_code",
+            "type": "String"
+          },
+          {
+            "name": "legal_name",
+            "type": "String"
+          },
+          {
+            "name": "legal_rep_name",
+            "type": "String"
+          },
+          {
+            "name": "legal_status",
+            "type": "String"
+          },
+          {
+            "name": "is_owner",
+            "type": "Boolean!"
+          },
+          {
+            "name": "has_owner",
+            "type": "Boolean!"
+          },
+          {
+            "name": "signature_ready",
+            "type": "Boolean!"
+          },
+          {
+            "name": "verification",
+            "type": "LegalVerification"
+          }
+        ]
+      },
+      {
+        "name": "LegalApplication",
+        "fields": [
+          {
+            "name": "application_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "nonce",
+            "type": "String!"
+          },
+          {
+            "name": "expires_at",
+            "type": "timestamptz!"
+          },
+          {
+            "name": "pdf_base64",
+            "type": "String!"
+          },
+          {
+            "name": "file_name",
+            "type": "String!"
+          }
+        ]
+      },
       {
         "name": "ModuleService",
         "fields": [

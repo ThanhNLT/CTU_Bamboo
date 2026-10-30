@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 import psycopg
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, Header, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 from starlette.concurrency import run_in_threadpool
@@ -46,6 +47,7 @@ from . import (
     process_design,
     receipts,
     search,
+    setup,
     semantic,
     trino,
     twin,
@@ -196,6 +198,7 @@ HANDLERS = {
     **ocr.HANDLERS,
     **ocr_import.HANDLERS,
     **modules.HANDLERS,
+    **setup.HANDLERS,
 }
 
 
@@ -274,6 +277,8 @@ def create_app(
         anchor_signer=receipts.Signer.from_env(settings.actions_secret, "anchor"),
         anchor_url=settings.anchor_url,
         sleeper_url=settings.sleeper_url,
+        signature_trust_dir=settings.signature_trust_dir,
+        signature_online=settings.signature_online,
     )
     verifier = verifier or auth.KeycloakVerifier(
         settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)
@@ -293,6 +298,12 @@ def create_app(
     memberships = auth.MembershipCache()
     app.state.verifier, app.state.memberships = verifier, memberships
     app.include_router(ingest.router)
+    app.include_router(setup.router(lambda: app.state.pool, settings, ctx))
+    origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
+    if origins:  # trang khởi tạo gọi /setup từ origin của web khi chạy dev (qua cổng API thì cùng origin)
+        app.add_middleware(
+            CORSMiddleware, allow_origins=origins, allow_methods=["GET", "POST"], allow_headers=["Content-Type"]
+        )
 
     @app.get("/healthz")
     def healthz():
