@@ -67,6 +67,16 @@ export type ChangeRequest = {
   resolvedAt: string | null;
 };
 
+export type Regulation = {
+  kind: "SOURCE" | "REGULATION";
+  version: number | null;
+  id: string;
+  docNo: string;
+  title: string;
+  status: "DRAFT" | "PENDING" | "RETURNED" | "APPROVED" | "REJECTED" | "CANCELLED" | "RETIRED";
+  publishedAt: string | null;
+};
+
 export type ProcessDetail = {
   id: string;
   key: string;
@@ -78,6 +88,7 @@ export type ProcessDetail = {
   viewingVersion: number | null;
   changeRequests: ChangeRequest[];
   automation: AutomationOverview | null;
+  regulations: Regulation[];
   xml: string;
   forms: FormDef[];
   issues: Issue[];
