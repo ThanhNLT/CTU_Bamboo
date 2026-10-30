@@ -161,9 +161,11 @@ def render_pdf(ctx: Context, application: dict) -> bytes:
     today = dt.datetime.now(TZ)
     html = forms._env.get_template("don_dang_ky_su_dung.html").render(
         a=application,
-        title="Đơn đăng ký sử dụng hệ thống"
-        if application["purpose"] == "SETUP"
-        else "Đơn xác thực thông tin doanh nghiệp",
+        title={
+            "SETUP": "Đơn đăng ký sử dụng hệ thống",
+            "VERIFY": "Đơn xác thực thông tin doanh nghiệp",
+            "RECOVER": "Đơn khôi phục tài khoản chủ sở hữu",
+        }[application["purpose"]],
         expires=expires.strftime("%H:%M ngày %d/%m/%Y"),
         place_date=f"Ngày {today.day} tháng {today.month} năm {today.year}",
     )
@@ -237,12 +239,18 @@ def _application(conn: psycopg.Connection, application_id: str, token: str, purp
         raise ActionError("Đơn đã được dùng", "application-used", 409)
     if row[7] < dt.datetime.now(dt.UTC):
         raise ActionError("Đơn đã hết hạn; lập đơn mới", "application-expired", 409)
-    return {"id": str(row[0]), "nonce": row[4], "data": row[5], "pdf": bytes(row[6])}
+    return {"id": str(row[0]), "tenant_id": row[2], "nonce": row[4], "data": row[5], "pdf": bytes(row[6])}
 
 
 def application_pdf(conn: psycopg.Connection, application_id: str, token: str) -> tuple[str, bytes]:
-    a = _application(conn, application_id, token, "SETUP")
-    return f"don-dang-ky-{a['data']['company']['tax_code']}-{a['nonce']}.pdf", a["pdf"]
+    purpose = conn.execute(
+        "SELECT purpose FROM core.setup_application WHERE id::text = %s", (application_id,)
+    ).fetchone()
+    if purpose is None or purpose[0] not in ("SETUP", "RECOVER"):
+        raise ActionError("Không tìm thấy đơn", "not-found", 404)
+    a = _application(conn, application_id, token, purpose[0])
+    kind = "don-dang-ky" if purpose[0] == "SETUP" else "don-khoi-phuc"
+    return f"{kind}-{a['data']['company']['tax_code']}-{a['nonce']}.pdf", a["pdf"]
 
 
 def _verify(ctx: Context, signed: bytes, original: bytes, tax_code: str) -> legal_sign.Signer:
@@ -375,6 +383,76 @@ def finish(
     }
 
 
+# ----- Khôi phục tài khoản chủ sở hữu bằng chữ ký số (công khai, khi chủ sở hữu mất mật khẩu hoặc OTP) -----
+
+
+def _owner_of_tax(conn: psycopg.Connection, tax_code: str):
+    return conn.execute(
+        """SELECT t.id, t.code, t.tax_code, t.legal_name, t.address, t.legal_rep_name, p.idp_subject
+           FROM core.tenant t JOIN core.tenant_owner o ON o.tenant_id = t.id JOIN core.person p ON p.id = o.person_id
+           WHERE t.tax_code = %s AND p.idp_subject IS NOT NULL""",
+        (tax_code,),
+    ).fetchone()
+
+
+def start_recovery(conn: psycopg.Connection, ctx: Context, body: dict) -> dict:
+    tax_code = re.sub(r"\s", "", str(body.get("tax_code") or ""))
+    if not legal_sign.TAX_CODE.match(tax_code):
+        raise ActionError("Mã số thuế gồm 10 chữ số (hoặc 13 với chi nhánh)")
+    if not legal_sign.load_trust_roots(ctx.signature_trust_dir):
+        raise ActionError(
+            "Máy chủ chưa cài chứng thư gốc để kiểm chữ ký số; nhờ người quản trị máy chủ cài trước",
+            "signature-unavailable",
+            503,
+        )
+    row = _owner_of_tax(conn, tax_code)
+    if row is None:
+        raise ActionError("Không có công ty nào có chủ sở hữu với mã số thuế này", "not-found", 404)
+    company = dict(zip(("code", "tax_code", "legal_name", "address", "legal_rep_name"), row[1:6], strict=True))
+    company["legal_rep_title"] = "Người đại diện theo pháp luật"
+    application, token, _pdf = _new_application(conn, ctx, "RECOVER", {"company": company}, row[0])
+    return {
+        "application_id": application["id"],
+        "token": token,
+        "nonce": application["nonce"],
+        "expires_at": application["expires_at"],
+        "tenant_name": company["legal_name"],
+    }
+
+
+def finish_recovery(pool: ConnectionPool, ctx: Context, application_id: str, token: str, signed: bytes) -> dict:
+    with pool.connection() as conn, conn.transaction():
+        a = _application(conn, application_id, token, "RECOVER")
+        tax_code = a["data"]["company"]["tax_code"]
+        row = _owner_of_tax(conn, tax_code)
+    if row is None or row[0] != a["tenant_id"]:
+        raise ActionError("Công ty không còn chủ sở hữu ứng với đơn này; lập đơn mới", "application-expired", 409)
+    signer = _verify(ctx, signed, a["pdf"], tax_code)
+    if ctx.users is None:
+        raise ActionError("Máy chủ chưa cấu hình tạo tài khoản đăng nhập (bms-provisioner)", "unavailable", 503)
+    password = temporary_password()
+    username = ctx.users.recover(row[6], password)
+    with pool.connection() as conn, conn.transaction():
+        _application(conn, application_id, token, "RECOVER")
+        verification = _record(conn, a["tenant_id"], signer, signed)
+        conn.execute("UPDATE core.tenant SET legal_status = 'VERIFIED' WHERE id = %s", (a["tenant_id"],))
+        conn.execute(
+            "UPDATE core.tenant_owner SET verification_id = %s WHERE tenant_id = %s", (verification, a["tenant_id"])
+        )
+        conn.execute("UPDATE core.setup_application SET finished_at = now() WHERE id = %s", (a["id"],))
+        conn.execute(
+            "SELECT core.notify_security(%s, %s, %s)",
+            (
+                a["tenant_id"],
+                "Đã khôi phục tài khoản chủ sở hữu bằng chữ ký số",
+                f"Mật khẩu và mã xác thực hai lớp của tài khoản {username} đã được đặt lại theo đơn ký bởi "
+                f"{signer.subject}. Nếu không phải do doanh nghiệp yêu cầu, báo ngay cho người đại diện theo pháp luật.",
+            ),
+        )
+    log.warning("đã khôi phục tài khoản chủ sở hữu công ty %s bằng chữ ký số", a["data"]["company"]["code"])
+    return {"tenant_name": a["data"]["company"]["legal_name"], "username": username, "password": password}
+
+
 # ----- API công khai /setup/* (cổng API giới hạn tần suất, không kiểm token) -----
 
 
@@ -417,6 +495,40 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings, ctx
             if exc.code == "setup-code-invalid":
                 log.warning("nhập sai mã thiết lập từ %s", request.client.host if request.client else "?")
                 await run_in_threadpool(failed)
+            return _error(exc)
+
+    @api.post("/recovery")
+    async def recovery(request: Request):
+        try:
+            body = await request.json()
+        except ValueError:
+            body = None
+        if not isinstance(body, dict):
+            return JSONResponse({"message": "Cần thân JSON"}, 400)
+
+        def run():
+            with pool_of().connection() as conn, conn.transaction():
+                return start_recovery(conn, ctx, body)
+
+        try:
+            return await run_in_threadpool(run)
+        except ActionError as exc:
+            return _error(exc)
+
+    @api.post("/recovery/{application_id}/finish")
+    async def recovered(application_id: str, request: Request):
+        try:
+            body = await request.json()
+            signed = base64.b64decode(body.get("signed_pdf_base64") or "", validate=True)
+        except (ValueError, AttributeError):
+            return JSONResponse({"message": "Cần thân JSON kèm đơn đã ký"}, 400)
+        if not signed:
+            return JSONResponse({"message": "Chưa có đơn đã ký"}, 400)
+        try:
+            return await run_in_threadpool(
+                finish_recovery, pool_of(), ctx, application_id, str(body.get("token") or ""), signed
+            )
+        except ActionError as exc:
             return _error(exc)
 
     @api.get("/applications/{application_id}/pdf")

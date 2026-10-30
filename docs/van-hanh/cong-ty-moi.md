@@ -51,6 +51,14 @@ Trước khi dùng cách này, người quản trị máy chủ đặt chứng t
 
 **Chủ sở hữu** là người duy nhất trao hoặc thu hồi quyền quản trị: cấp vai trò có quyền quản trị (cơ cấu tổ chức, phân quyền, quản lý chức năng), bổ nhiệm người vào vị trí có quyền quản trị, ủy quyền quản trị. Quản trị viên làm các việc khác như thường nhưng không tự nâng quyền cho ai. Chủ sở hữu giữ ghế Giám đốc và được cài/gỡ mô-đun trên máy chủ.
 
+Ở **Quản trị → Thông tin công ty**, chủ sở hữu:
+
+- **chuyển quyền chủ sở hữu** cho người khác khi đổi người đại diện theo pháp luật;
+- **tạo công ty thành viên** trực thuộc, kèm chủ sở hữu của công ty đó (tên đăng nhập đã có ở công ty mẹ thì dùng chung tài khoản);
+- nhận **cảnh báo** khi chủ sở hữu hoặc quản trị viên đăng nhập từ thiết bị mới, khi tài khoản chủ sở hữu được khôi phục, khi chuyển quyền chủ sở hữu.
+
+**Chủ sở hữu mất mật khẩu hoặc điện thoại cài OTP:** mở `/khoi-phuc`, nhập mã số thuế, tải **đơn khôi phục**, người đại diện ký số bằng chữ ký số doanh nghiệp rồi tải lên; hệ thống cấp mật khẩu tạm mới và bắt cài lại OTP. Không có cách khôi phục qua email.
+
 ### Cách 2: lệnh trên máy chủ
 
 ```bash
