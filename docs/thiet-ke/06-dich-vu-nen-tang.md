@@ -675,6 +675,9 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 - **Chủ sở hữu** (`core.tenant_owner`): trigger `core.guard_admin_change` chỉ cho chủ sở hữu thêm/bớt quyền `core.org.manage`, `core.permission.manage`, `core.module.manage` vào vai trò, cấp/thu hồi vai trò đó, bổ nhiệm vào vị trí có vai trò đó, ủy quyền quản trị. Công ty chưa có chủ sở hữu (dữ liệu cũ) không bị chặn.
 - **Đăng nhập hai lớp**: tài khoản tạo khi khởi tạo bắt buộc `CONFIGURE_TOTP`; `flow-sync` đặt yêu cầu này cho người được trao quyền quản trị sau đó (`hr_account.enforce_admin_otp`).
 - **Xác thực bổ sung**: Action `legal_status`, `legal_application` (đơn PDF base64), `legal_verify` (chỉ chủ sở hữu); trang **Quản trị → Thông tin công ty** (`/admin/company`).
+- **Cảnh báo thiết bị mới** (migration 044): webhook `/auth/hasura` gọi `core.record_login` cho chủ sở hữu và quản trị viên; thiết bị (header `x-bamboo-device` giao diện gửi, hoặc mô tả trình duyệt + dải mạng) chưa gặp thì chủ sở hữu nhận thông báo `SECURITY`. Bảng `core.login_device` không mở qua GraphQL.
+- **Khôi phục chủ sở hữu**: `POST /setup/recovery` (`tax_code`) → đơn khôi phục PDF (`GET /setup/applications/{id}/pdf`) → `POST /setup/recovery/{id}/finish` (đơn đã ký): mật khẩu tạm mới, gỡ OTP, bắt cài lại; trang `/khoi-phuc`.
+- **Chủ sở hữu** gọi được `transfer_ownership(person_id)` và `create_subsidiary(code, name, …, owner)`.
 
 | Biến | Mặc định | Ý nghĩa |
 |---|---|---|

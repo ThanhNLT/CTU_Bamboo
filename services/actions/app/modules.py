@@ -82,6 +82,8 @@ CORE_ACTIONS = frozenset(
         "legal_status",
         "legal_application",
         "legal_verify",
+        "transfer_ownership",
+        "create_subsidiary",
     }
 )
 

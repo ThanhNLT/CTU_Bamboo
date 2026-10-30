@@ -65,3 +65,23 @@ export const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = () => reject(reader.error ?? new Error("Không đọc được tệp"));
     reader.readAsDataURL(file);
   });
+
+export type Recovery = {
+  application_id: string;
+  token: string;
+  nonce: string;
+  expires_at: string;
+  tenant_name: string;
+};
+
+export const startRecovery = (taxCode: string) =>
+  call<Recovery>("/recovery", { method: "POST", body: JSON.stringify({ tax_code: taxCode }) });
+
+export const recoveryPdfUrl = (r: Recovery) =>
+  `${config.setupUrl}/applications/${r.application_id}/pdf?token=${encodeURIComponent(r.token)}`;
+
+export const finishRecovery = (r: Recovery, signedPdfBase64: string) =>
+  call<{ tenant_name: string; username: string; password: string }>(`/recovery/${r.application_id}/finish`, {
+    method: "POST",
+    body: JSON.stringify({ token: r.token, signed_pdf_base64: signedPdfBase64 }),
+  });
