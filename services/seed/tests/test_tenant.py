@@ -35,12 +35,14 @@ def test_tao_cong_ty_moi(conn):
     ids = tenant.create_tenant(conn, "ABC", "Công ty ABC", "sub-abc", "Nguyễn Văn A")
     tid, root, person = ids["tenant_id"], ids["root_unit_id"], ids["person_id"]
     assert one(conn, "SELECT tenant_code FROM core.account_tenants('sub-abc')") == "ABC"
-    for perm in ("core.org.manage", "core.permission.manage", "mdm.manage", "audit.read"):
+    for perm in ("core.org.manage", "core.permission.manage", "core.module.manage", "mdm.manage", "audit.read"):
         assert one(conn, "SELECT core.has_permission(%s, %s, %s)", person, perm, root), perm
     assert one(conn, "SELECT core.has_permission(%s, 'proc.purchase_request.create', %s)", person, root)
     assert one(conn, "SELECT count(*) FROM core.position WHERE tenant_id = %s AND is_head", tid) == 1
     assert one(conn, "SELECT count(*) FROM wf.approval_rule WHERE tenant_id = %s", tid) == 2
     assert one(conn, "SELECT count(*) FROM core.catalog_item WHERE tenant_id = %s AND catalog = 'UNIT_TYPE'", tid) > 0
+    # công ty mới chỉ có phần lõi; quản trị viên tự bật mô-đun cần dùng (ADR #56)
+    assert one(conn, "SELECT count(*) FROM core.tenant_module WHERE tenant_id = %s", tid) == 0
 
 
 def test_khong_tao_trung(conn):

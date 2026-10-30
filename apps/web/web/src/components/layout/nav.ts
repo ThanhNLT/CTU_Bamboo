@@ -5,6 +5,7 @@
 import {
   Activity,
   ArrowLeftRight,
+  Blocks,
   BellRing,
   Bot,
   Cpu,
@@ -41,6 +42,8 @@ export type NavItem = {
   icon: LucideIcon;
   badge?: number;
   access?: { resource: string; action: string };
+  /** Mô-đun chức năng chứa mục này (ADR #56); bỏ trống là phần lõi, luôn hiện */
+  module?: string;
 };
 
 export type NavGroup = {
@@ -56,13 +59,14 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Con người số",
     items: [
       { key: "home", label: "Trang chủ", to: "/", icon: House },
-      { key: "drive", label: "Ổ đĩa tài liệu", to: "/h/drive", icon: FolderClosed },
-      { key: "library", label: "Thư viện tri thức", to: "/h/library", icon: LibraryBig },
+      { key: "drive", label: "Ổ đĩa tài liệu", to: "/h/drive", icon: FolderClosed, module: "files" },
+      { key: "library", label: "Thư viện tri thức", to: "/h/library", icon: LibraryBig, module: "knowledge" },
       {
         key: "onboarding",
         label: "Tiếp nhận nhân sự",
         to: "/h/onboarding",
         icon: UserPlus,
+        module: "hr",
         access: { resource: "hr_onboarding_request", action: "list" },
       },
       {
@@ -70,9 +74,10 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Điều chuyển nhân sự",
         to: "/h/transfer",
         icon: Shuffle,
+        module: "hr",
         access: { resource: "hr_transfer_request", action: "list" },
       },
-      { key: "decisions", label: "Quyết định nhân sự", to: "/h/decisions", icon: ScrollText },
+      { key: "decisions", label: "Quyết định nhân sự", to: "/h/decisions", icon: ScrollText, module: "hr" },
       { key: "notify-settings", label: "Thông báo ngoài ứng dụng", to: "/settings/notifications", icon: BellRing },
     ],
   },
@@ -80,32 +85,32 @@ export const NAV_GROUPS: NavGroup[] = [
     code: "P",
     label: "Quy trình số",
     items: [
-      { key: "records", label: "Hồ sơ", to: "/p/records", icon: FileText },
-      { key: "inbox", label: "Hộp việc", to: "/p/tasks", icon: Inbox },
-      { key: "process", label: "Thiết kế quy trình", to: "/p/process", icon: Route },
-      { key: "purchase", label: "Đề nghị mua sắm", to: "/p/documents", icon: ShoppingCart },
-      { key: "ic-orders", label: "Đơn hàng nội bộ", to: "/p/ic-orders", icon: ArrowLeftRight },
+      { key: "records", label: "Hồ sơ", to: "/p/records", icon: FileText, module: "approval" },
+      { key: "inbox", label: "Hộp việc", to: "/p/tasks", icon: Inbox, module: "approval" },
+      { key: "process", label: "Thiết kế quy trình", to: "/p/process", icon: Route, module: "process" },
+      { key: "purchase", label: "Đề nghị mua sắm", to: "/p/documents", icon: ShoppingCart, module: "procurement" },
+      { key: "ic-orders", label: "Đơn hàng nội bộ", to: "/p/ic-orders", icon: ArrowLeftRight, module: "ic" },
     ],
   },
   {
     code: "D",
     label: "Dữ liệu số",
     items: [
-      { key: "ops", label: "Trung tâm điều hành", to: "/d/ops", icon: Gauge },
-      { key: "twin", label: "Bản sao số", to: "/d/twin", icon: Cpu },
-      { key: "data-services", label: "Dịch vụ dữ liệu", to: "/d/services", icon: Database },
-      { key: "lineage", label: "Phả hệ dữ liệu", to: "/d/lineage", icon: GitFork },
-      { key: "ledger", label: "Sổ cái", to: "/d/ledger", icon: Lock },
+      { key: "ops", label: "Trung tâm điều hành", to: "/d/ops", icon: Gauge, module: "data" },
+      { key: "twin", label: "Bản sao số", to: "/d/twin", icon: Cpu, module: "data" },
+      { key: "data-services", label: "Dịch vụ dữ liệu", to: "/d/services", icon: Database, module: "data" },
+      { key: "lineage", label: "Phả hệ dữ liệu", to: "/d/lineage", icon: GitFork, module: "data" },
+      { key: "ledger", label: "Sổ cái", to: "/d/ledger", icon: Lock, module: "ledger" },
     ],
   },
   {
     code: "I",
     label: "Trí tuệ số",
     items: [
-      { key: "assistant", label: "Trợ lý đa năng", to: "/i/assistant", icon: Sparkles },
-      { key: "search", label: "Tìm kiếm", to: "/i/search", icon: Search },
-      { key: "ocr", label: "Nhập liệu OCR", to: "/i/ocr", icon: ScanText },
-      { key: "agents", label: "Tác tử AI", to: "/i/agents", icon: Bot },
+      { key: "assistant", label: "Trợ lý đa năng", to: "/i/assistant", icon: Sparkles, module: "ai" },
+      { key: "search", label: "Tìm kiếm", to: "/i/search", icon: Search, module: "search" },
+      { key: "ocr", label: "Nhập liệu OCR", to: "/i/ocr", icon: ScanText, module: "ai" },
+      { key: "agents", label: "Tác tử AI", to: "/i/agents", icon: Bot, module: "ai" },
     ],
   },
   {
@@ -133,6 +138,13 @@ export const NAV_GROUPS: NavGroup[] = [
         to: "/admin/roles",
         icon: KeyRound,
         access: { resource: "admin_roles", action: "list" },
+      },
+      {
+        key: "admin-modules",
+        label: "Quản lý chức năng",
+        to: "/admin/modules",
+        icon: Blocks,
+        access: { resource: "admin_modules", action: "list" },
       },
       {
         key: "admin-catalog",
