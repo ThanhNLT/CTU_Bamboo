@@ -68,10 +68,11 @@ Chạy lại với mã đã có thì lệnh dừng, không tạo trùng. Lệnh 
 
 ## 3. Quản trị viên tự dựng công ty
 
-Đăng nhập bằng tài khoản vừa tạo, vào nhóm menu **Quản trị**. Thứ tự nên làm:
+Đăng nhập bằng tài khoản vừa tạo, vào nhóm menu **Quản trị**. Công ty mới chỉ có **phần lõi** (tổ chức, người dùng, phân quyền, danh mục); các chức năng khác (mua sắm, nghiệp vụ nhân sự, ổ đĩa, tìm kiếm, dữ liệu số, AI...) bật ở **Quản lý chức năng** khi cần dùng. Chức năng chưa bật không hiện trên menu, chức năng chưa cài trên máy thì dịch vụ của nó không chạy (ADR #56). Thứ tự nên làm:
 
 | Bước | Trang | Việc |
 |---|---|---|
+| 0 | **Quản lý chức năng** | Bật những chức năng công ty cần (ví dụ **Mua sắm** kéo theo **Phê duyệt**) |
 | 1 | **Danh mục & dữ liệu chủ** | Sửa loại đơn vị, chức danh cho hợp với công ty |
 | 2 | **Cơ cấu tổ chức** | Thêm khối, phòng, chi nhánh, nhà máy… dưới đơn vị gốc; thêm vị trí (ghế) cho từng đơn vị, đánh dấu **trưởng đơn vị** |
 | 3 | **Người dùng** | Thêm người, bổ nhiệm vào vị trí, bấm **Tạo tài khoản** (in mật khẩu tạm để gửi cho người đó) |
