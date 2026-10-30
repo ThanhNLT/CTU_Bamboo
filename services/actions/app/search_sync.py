@@ -4,6 +4,7 @@
 
 import logging
 import time
+import uuid
 
 import psycopg
 from psycopg.rows import dict_row
@@ -36,45 +37,58 @@ def kb_document_doc(conn: psycopg.Connection, entity_id) -> dict | None:
     return {**doc, "id": search.doc_id("collab.kb_document", entity_id), "kind": "kb_document"}
 
 
-def attachment_doc(conn: psycopg.Connection, settings: config.Settings, entity_id) -> dict | None:
+def attachment_docs(conn: psycopg.Connection, settings: config.Settings, entity_id) -> list[dict]:
     att = conn.execute(
         """SELECT tenant_id, entity_type, entity_id, file_name, content_type, storage_key,
+                  search.attachment_name_only(entity_type) AS name_only,
                   extract(epoch FROM created_at)::bigint AS created_at
            FROM core.attachment WHERE id = %s AND status = 'CLEAN' AND deleted_at IS NULL
-             AND search.attachment_indexable(entity_type) AND search.attachment_visible(entity_type, entity_id)""",
+             AND search.attachment_searchable(entity_type) AND search.attachment_visible(entity_type, entity_id)""",
         (entity_id,),
     ).fetchone()
     if att is None:
-        return None
+        return []
     content = ""
-    if att["content_type"] in search.TEXT_TYPES:
+    if att["name_only"]:
+        pass  # hồ sơ nhân sự: chỉ tìm theo tên tệp, nội dung không vào chỉ mục (nhạy cảm)
+    elif att["content_type"] in search.TEXT_TYPES:
         data = storage.read_document(settings, att["storage_key"])
         if data is None:
             log.warning("tệp %s không còn trong bucket tài liệu", entity_id)
         else:
             content = search.extract_text(settings.tika_url, data, att["content_type"])
-    if scanned := ocr.text_of(conn, entity_id):
-        content = " ".join(f"{content} {scanned}".split())[: search.MAX_TEXT]
-    return {
-        "id": search.doc_id("core.attachment", entity_id),
-        "kind": "attachment",
-        "tenant_id": str(att["tenant_id"]),
-        "entity_type": att["entity_type"],
-        "entity_id": str(att["entity_id"]),
-        "attachment_id": str(entity_id),
-        "file_name": att["file_name"],
-        "content": content,
-        "created_at": att["created_at"],
-    }
+    if not att["name_only"] and (scanned := ocr.text_of(conn, entity_id)):
+        content = " ".join(f"{content} {scanned}".split())
+    base = search.doc_id("core.attachment", entity_id)
+    return [
+        {
+            "id": search.part_id(base, n),
+            "kind": "attachment",
+            "tenant_id": str(att["tenant_id"]),
+            "entity_type": att["entity_type"],
+            "entity_id": str(att["entity_id"]),
+            "attachment_id": str(entity_id),
+            "file_name": att["file_name"],
+            "content": part,
+            "created_at": att["created_at"],
+        }
+        for n, part in enumerate(search.split_parts(content))
+    ]
 
 
 def sync_one(
     conn: psycopg.Connection, meili: search.Meili, settings: config.Settings, entity_type: str, entity_id
 ) -> bool:
+    if entity_type == "core.attachment":
+        docs = attachment_docs(conn, settings, entity_id)
+        conn.rollback()
+        # Xóa mọi phần cũ trước: nội dung ngắn đi thì không còn phần thừa
+        meili.delete_by_filter(settings.meili_index, f'attachment_id = "{uuid.UUID(str(entity_id))}"')
+        if docs:
+            meili.put_documents(settings.meili_index, docs)
+        return bool(docs)
     if entity_type == "proc.purchase_request":
         doc = purchase_request_doc(conn, entity_id)
-    elif entity_type == "core.attachment":
-        doc = attachment_doc(conn, settings, entity_id)
     elif entity_type == "collab.kb_document":
         doc = kb_document_doc(conn, entity_id)
     else:

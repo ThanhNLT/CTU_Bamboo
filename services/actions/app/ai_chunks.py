@@ -179,7 +179,7 @@ def records(conn: psycopg.Connection, settings: config.Settings, doc_id) -> list
                 log.warning("tệp %s không còn trong bucket tài liệu", f["id"])
                 continue
             text = search.extract_lines(settings.tika_url, data, f["content_type"])
-        text = "\n".join(t for t in (text, scanned[f["id"]]) if t)[: search.MAX_TEXT]
+        text = "\n".join(t for t in (text, scanned[f["id"]]) if t)[: search.MAX_FULL_TEXT]
         for n, c in enumerate(split(text)):
             out.append(
                 {
