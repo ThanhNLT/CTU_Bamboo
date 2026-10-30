@@ -57,7 +57,7 @@ export const UploadTargetModal = ({
           ref={inputRef}
           type="file"
           aria-label="Tệp tải lên"
-          accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt"
+          accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx,.txt,.csv,.md"
           multiple
           hidden
           onChange={(e) => {

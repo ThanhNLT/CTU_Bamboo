@@ -93,6 +93,7 @@ database, cách ly logic như mọi tenant khác (xem [ADR #15](#adr-15)).
 | `039_nap_du_lieu_theo_lo` | `core.ingest_job` |
 | `040_kich_ban_tu_dong` | Sự kiện nghiệp vụ `event.*` qua `msg.queue` (`wf.emit_event`), mã webhook lưu dạng băm, quy trình tự động đăng ký theo sự kiện |
 | `041_kpi_vao_lakehouse` | Thêm `kpi.snapshot` vào publication CDC |
+| `046_chi_muc_toan_van` | Chỉ mục toàn văn theo từng phần; tệp hồ sơ tiếp nhận nhân sự tìm theo tên tệp (`search.attachment_searchable`, `attachment_name_only`); đánh dấu lại mọi tệp |
 
 Quy ước số chứng từ (`core.next_doc_no(tenant, tiền tố)`, theo tenant, tiền tố và năm giờ Việt Nam, không nhảy số):
 `PR` đề nghị mua sắm, `IC` đơn hàng nội bộ, `PO` đơn mua, `TN` tiếp nhận nhân sự, `NV` mã nhân viên, `DC` điều chuyển nội

@@ -18,11 +18,12 @@ import {
 } from "@ant-design/icons";
 
 import { request } from "../../api/client";
+import { uploadContentType } from "../../utils/fileType";
 import { useModules } from "../../modules/useModules";
 import { formatDate } from "../../utils/format";
 import type { AttachmentOcr, DocumentFiles } from "./types";
 
-const ACCEPT = ".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt";
+const ACCEPT = ".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx,.txt,.csv,.md";
 const MAX = 25 * 1024 * 1024;
 
 const SCAN: Record<string, { color: string; icon: ReactElement; label: string }> = {
@@ -112,7 +113,7 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
           entity: entityType,
           id: doc.id,
           name: file.name,
-          type: file.type || "application/octet-stream",
+          type: uploadContentType(file),
           size: file.size,
         },
       );
