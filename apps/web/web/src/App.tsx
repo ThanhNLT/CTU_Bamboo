@@ -70,7 +70,7 @@ import {
   PurchaseRequestShow,
 } from "./pages/purchase-requests";
 import { SearchPage } from "./pages/search";
-import { SetupPage } from "./pages/setup";
+import { RecoveryPage, SetupPage } from "./pages/setup";
 import { ModulesProvider } from "./modules/context";
 import { RequireModule } from "./modules/RequireModule";
 import { accessControlProvider } from "./providers/access";
@@ -415,6 +415,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                   </Route>
                   <Route path="/khoi-tao" element={<SetupPage />} />
+                  <Route path="/khoi-phuc" element={<RecoveryPage />} />
                 </Routes>
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler

@@ -11,6 +11,7 @@ import { Panel } from "../../../components/ui/Panel";
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui/buttons";
 import { fileToBase64 } from "../../setup/api";
 import { AdminHeader } from "../shared/AdminHeader";
+import { OwnerTools } from "./OwnerTools";
 
 type LegalStatus = {
   tax_code: string | null;
@@ -138,6 +139,8 @@ export const CompanyPage = () => {
           {data.is_owner && " Bạn là chủ sở hữu của công ty."}
         </p>
       </Panel>
+
+      {data.is_owner && <OwnerTools onTransferred={() => void load()} />}
 
       {data.is_owner && data.legal_status === "UNVERIFIED" && (
         <Panel title="Xác thực bằng chữ ký số">
