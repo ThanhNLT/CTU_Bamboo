@@ -391,7 +391,10 @@ export const OcrInputPage = () => {
       )}
 
       {busy && (
-        <div role="status" className="rounded-2xl border border-line bg-white p-5 text-[13.5px] text-body shadow-card">
+        <div
+          role="status"
+          className="rounded-2xl border border-line bg-surface p-5 text-[13.5px] text-body shadow-card"
+        >
           {stage === "creating" && "Đang tạo đề nghị nháp…"}
           {stage === "uploading" && "Đang tải lên và quét an toàn…"}
           {stage === "waiting" &&
@@ -421,7 +424,7 @@ export const OcrInputPage = () => {
 
       {stage === "ready" && parsed && doc && (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-          <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Bản gốc">
+          <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Bản gốc">
             <div className="flex items-center justify-between gap-2">
               <h2 className="m-0 text-[14px] font-semibold text-ink">Bản gốc</h2>
               <button
@@ -437,13 +440,13 @@ export const OcrInputPage = () => {
                 <img
                   src={localUrl.url}
                   alt={`Bản quét ${doc.file_name}`}
-                  className="mx-auto block max-w-full rounded-md bg-white shadow-card"
+                  className="mx-auto block max-w-full rounded-md bg-surface shadow-card"
                 />
               ) : localUrl ? (
                 <iframe
                   title={`Bản quét ${doc.file_name}`}
                   src={localUrl.url}
-                  className="h-[520px] w-full rounded-md bg-white"
+                  className="h-[520px] w-full rounded-md bg-surface"
                 />
               ) : (
                 <p className="m-0 p-6 text-center text-[12.5px] text-muted">Bấm “Mở tệp gốc” để xem bản đã tải lên.</p>
@@ -452,7 +455,7 @@ export const OcrInputPage = () => {
           </section>
 
           <section
-            className="space-y-3 rounded-2xl border border-line bg-white p-4 shadow-card"
+            className="space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-card"
             aria-label="Trường đã rút"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -661,7 +664,7 @@ export const OcrInputPage = () => {
               <li key={r.id}>
                 <button
                   type="button"
-                  className="w-full rounded-xl border border-line bg-white p-3 text-left hover:bg-bamboo-50"
+                  className="w-full rounded-xl border border-line bg-surface p-3 text-left hover:bg-bamboo-50"
                   onClick={() => {
                     setRecentOpen(false);
                     setParams({ attachment: r.id });

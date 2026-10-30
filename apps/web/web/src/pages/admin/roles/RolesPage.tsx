@@ -175,7 +175,7 @@ export const RolesPage = () => {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(240px,1fr)_minmax(0,2.4fr)]">
         <nav
           aria-label="Vai trò"
-          className="rounded-2xl border border-line bg-white p-2 shadow-card lg:sticky lg:top-[84px] lg:self-start"
+          className="rounded-2xl border border-line bg-surface p-2 shadow-card lg:sticky lg:top-[84px] lg:self-start"
         >
           <ul className="m-0 list-none space-y-0.5 p-0">
             {roles.map((r) => {

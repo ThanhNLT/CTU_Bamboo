@@ -17,7 +17,7 @@ const StatusCell = ({ r }: { r: RecentRecord }) => (
 );
 
 const KindTag = ({ kind }: { kind: string }) => (
-  <span className="inline-flex whitespace-nowrap rounded-full border border-line bg-white px-2.5 py-0.5 text-[11.5px] font-medium text-body">
+  <span className="inline-flex whitespace-nowrap rounded-ui border border-line bg-surface px-2.5 py-0.5 text-[11.5px] font-medium text-body">
     {kind}
   </span>
 );

@@ -27,14 +27,14 @@ export const SearchInput = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="h-10 w-full rounded-xl border border-line bg-white pl-10 pr-9 text-[13.5px] text-ink shadow-card outline-none transition-colors placeholder:text-muted hover:border-bamboo-200 focus:border-bamboo-400 focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
+      className="h-10 w-full rounded-xl border border-line bg-surface pl-10 pr-9 text-[13.5px] text-ink shadow-card outline-none transition-colors placeholder:text-muted hover:border-bamboo-200 focus:border-bamboo-400 focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
     />
     {value && (
       <button
         type="button"
         onClick={() => onChange("")}
         aria-label="Xóa từ khóa"
-        className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink"
+        className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-ui text-muted hover:bg-canvas hover:text-ink"
       >
         <X className="h-3.5 w-3.5" />
       </button>

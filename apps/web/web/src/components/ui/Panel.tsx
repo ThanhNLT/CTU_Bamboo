@@ -22,7 +22,7 @@ export const Panel = ({
   bodyClassName?: string;
 }) => (
   <section
-    className={cn("min-w-0 rounded-2xl border border-line bg-white shadow-card", className)}
+    className={cn("min-w-0 rounded-2xl border border-line bg-surface shadow-card", className)}
     aria-label={typeof title === "string" ? title : undefined}
   >
     {(title || extra) && (
@@ -52,7 +52,7 @@ export const PanelLink = ({ to, onClick, children }: { to?: string; onClick?: ()
 export const Dot = ({ tone, size = "sm", className }: { tone: Tone; size?: "sm" | "md"; className?: string }) => (
   <span
     className={cn(
-      "inline-block shrink-0 rounded-full",
+      "inline-block shrink-0 rounded-ui",
       size === "md" ? "h-2 w-2" : "h-1.5 w-1.5",
       TONE_DOT[tone],
       className,

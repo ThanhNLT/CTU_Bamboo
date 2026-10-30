@@ -40,7 +40,7 @@ export const ChangeRequestsTab = ({
   };
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Yêu cầu sửa chữa">
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Yêu cầu sửa chữa">
       <h2 className="m-0 text-[14px] font-semibold text-ink">
         {canResolve ? "Yêu cầu sửa chữa từ người giám sát" : "Yêu cầu sửa chữa của bạn"}
       </h2>

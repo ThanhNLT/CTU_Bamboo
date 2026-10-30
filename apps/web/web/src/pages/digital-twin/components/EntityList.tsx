@@ -37,7 +37,7 @@ const EntityCard = ({
     className={cn(
       "flex w-full items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
-      selected ? "border-bamboo-200 bg-bamboo-50" : "border-line bg-white shadow-card hover:border-bamboo-200",
+      selected ? "border-bamboo-200 bg-bamboo-50" : "border-line bg-surface shadow-card hover:border-bamboo-200",
     )}
   >
     <Dot tone={ENTITY_STATUS[entity.status].tone} size="md" className="mt-[7px]" />
@@ -85,7 +85,7 @@ export const EntityList = ({
       />
 
       {entities.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-12 text-center">
           <RadioTower className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
           <p className="text-[13px] font-medium text-ink">Không có thực thể phù hợp</p>
           <p className="text-[12px] text-muted">Thử tìm theo mã (CR-02) hoặc địa điểm (Bắc Ninh).</p>

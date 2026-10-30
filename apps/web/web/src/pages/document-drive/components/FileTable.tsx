@@ -31,7 +31,7 @@ const DeleteButton = ({ file, onDelete }: { file: DriveFile; onDelete: (f: Drive
       aria-label={`Xóa ${file.name}`}
       title="Xóa tệp"
       onClick={(e) => e.stopPropagation()}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-red-50 hover:text-red-600"
+      className="inline-flex h-7 w-7 items-center justify-center rounded-ui text-muted hover:bg-red-50 hover:text-red-600"
     >
       <Trash2 className="h-4 w-4" aria-hidden />
     </button>

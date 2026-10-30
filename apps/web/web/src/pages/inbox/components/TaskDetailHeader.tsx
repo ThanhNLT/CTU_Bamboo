@@ -33,7 +33,7 @@ export const TaskDetailHeader = ({
   hasNext: boolean;
   to?: string;
 }) => (
-  <header className="flex flex-col gap-3 rounded-2xl border border-line bg-white px-5 py-4 shadow-card md:flex-row md:items-center">
+  <header className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-5 py-4 shadow-card md:flex-row md:items-center">
     <div className="min-w-0 flex-1">
       <div className="font-mono text-[11.5px] tracking-tight text-muted">
         {task.code} · Duyệt cấp {task.level}
@@ -50,7 +50,7 @@ export const TaskDetailHeader = ({
         <h2 className="text-[18px] font-semibold leading-snug text-ink">{task.title}</h2>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11.5px] font-medium",
+            "inline-flex items-center gap-1.5 whitespace-nowrap rounded-ui px-2.5 py-0.5 text-[11.5px] font-medium",
             SLA_PILL[task.sla.level],
           )}
         >
@@ -60,7 +60,7 @@ export const TaskDetailHeader = ({
       </div>
     </div>
 
-    <div className="flex shrink-0 self-start overflow-hidden rounded-full border border-line bg-white md:self-auto">
+    <div className="flex shrink-0 self-start overflow-hidden rounded-ui border border-line bg-surface md:self-auto">
       <button type="button" onClick={onPrev} disabled={!hasPrev} className={navBtn} aria-label="Việc trước (phím K)">
         <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
         Trước <Kbd>K</Kbd>

@@ -38,7 +38,7 @@ export const NotificationsPanel = ({
             <button type="button" onClick={() => void open(n)} className="group flex w-full gap-2.5 text-left">
               <span
                 className={cn(
-                  "mt-[6px] h-2 w-2 shrink-0 rounded-full",
+                  "mt-[6px] h-2 w-2 shrink-0 rounded-ui",
                   n.read ? "border border-gray-300 bg-transparent" : TONE_DOT[n.tone],
                 )}
                 aria-label={n.read ? "Đã đọc" : "Chưa đọc"}

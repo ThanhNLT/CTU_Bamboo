@@ -21,8 +21,8 @@ import type { Assistant, Question } from "./types";
 type Status = { loading: boolean; enabled: boolean; assistants: Assistant[] };
 
 const AiOff = ({ loading }: { loading: boolean }) => (
-  <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-white px-6 py-16 text-center shadow-card">
-    <span className="grid h-11 w-11 place-items-center rounded-full bg-black/[0.045] text-muted" aria-hidden>
+  <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface px-6 py-16 text-center shadow-card">
+    <span className="grid h-11 w-11 place-items-center rounded-ui bg-black/[0.045] text-muted" aria-hidden>
       <Bot className="h-5 w-5" />
     </span>
     {loading ? (

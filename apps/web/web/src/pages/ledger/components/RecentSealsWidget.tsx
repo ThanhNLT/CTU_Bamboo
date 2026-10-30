@@ -13,12 +13,12 @@ const ResultTag = ({ result }: { result: Seal["lastResult"] }) =>
     <span className="text-[12.5px] text-muted">Chưa đối soát</span>
   ) : result === "match" ? (
     <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink">
-      <span className="h-1.5 w-1.5 rounded-full bg-bamboo-500" aria-hidden />
+      <span className="h-1.5 w-1.5 rounded-ui bg-bamboo-500" aria-hidden />
       Khớp
     </span>
   ) : (
-    <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
-      <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-ui bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
+      <span className="h-1.5 w-1.5 rounded-ui bg-red-500" aria-hidden />
       Không khớp
     </span>
   );
@@ -28,7 +28,7 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: Seal[]; onPick: (row
   const visible = showAll ? rows : rows.slice(0, DEFAULT_ROWS);
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Niêm phong gần đây">
+    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Niêm phong gần đây">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-ink">Niêm phong gần đây</h2>
         {rows.length > DEFAULT_ROWS && (

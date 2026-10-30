@@ -22,7 +22,7 @@ export const RequireModule = ({ module, children }: { module: string; children: 
   if (enabled(module)) return <>{children}</>;
   const info = overview?.modules.find((m) => m.code === module);
   return (
-    <div className="mx-auto mt-16 max-w-[560px] rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center">
+    <div className="mx-auto mt-16 max-w-[560px] rounded-2xl border border-dashed border-line bg-surface px-6 py-14 text-center">
       <p className="text-[15px] font-semibold text-ink">Chức năng {info?.name ?? module} chưa được bật</p>
       <p className="mt-2 text-[13px] text-muted">
         {info?.description ? `${info.description}. ` : ""}

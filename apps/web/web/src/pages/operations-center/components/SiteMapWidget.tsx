@@ -54,7 +54,7 @@ const Marker = ({
     <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
       {site.status === "critical" && (
         <span
-          className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-400/30 motion-safe:animate-ping"
+          className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-ui bg-red-400/30 motion-safe:animate-ping"
           aria-hidden
         />
       )}
@@ -64,12 +64,12 @@ const Marker = ({
         aria-pressed={selected}
         aria-label={`${site.name} (${site.province ?? "chưa ghi tỉnh"}): ${st.label}${site.alerts.length ? ` — ${site.alerts.join("; ")}` : ""}`}
         className={cn(
-          "relative grid h-7 w-7 place-items-center rounded-full transition-colors",
+          "relative grid h-7 w-7 place-items-center rounded-ui transition-colors",
           "focus-visible:outline-2 focus-visible:outline-bamboo-500",
-          selected ? "bg-white shadow-card ring-2 ring-bamboo-200" : "hover:bg-white/70",
+          selected ? "bg-surface shadow-card ring-2 ring-bamboo-200" : "hover:bg-surface/70",
         )}
       >
-        <span className={cn("block h-3 w-3", site.subsidiary ? "rounded-[2px]" : "rounded-full", st.bg)} />
+        <span className={cn("block h-3 w-3", site.subsidiary ? "rounded-ui" : "rounded-ui", st.bg)} />
       </button>
       <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap text-[10.5px] font-medium text-ink/80">
         {site.province ?? site.name}
@@ -115,12 +115,12 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
         >
           {(Object.keys(STATUS) as OpsSite["status"][]).map((k) => (
             <li key={k} className="inline-flex items-center gap-1.5">
-              <span className={cn("h-2.5 w-2.5 rounded-full", STATUS[k].bg)} aria-hidden />
+              <span className={cn("h-2.5 w-2.5 rounded-ui", STATUS[k].bg)} aria-hidden />
               {STATUS[k].label}
             </li>
           ))}
           <li className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-[2px] bg-gray-500" aria-hidden />
+            <span className="h-2.5 w-2.5 rounded-ui bg-gray-500" aria-hidden />
             Tenant con (số tổng hợp)
           </li>
           <li className="ml-auto">
@@ -197,7 +197,7 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
                   >
                     <span className="flex items-center gap-1.5 font-semibold text-ink">
                       <span
-                        className={cn("h-2.5 w-2.5 shrink-0", s.subsidiary ? "rounded-[2px]" : "rounded-full", st.bg)}
+                        className={cn("h-2.5 w-2.5 shrink-0", s.subsidiary ? "rounded-ui" : "rounded-ui", st.bg)}
                         aria-hidden
                       />
                       <span className="truncate">{s.name}</span>

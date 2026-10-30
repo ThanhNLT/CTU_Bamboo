@@ -27,7 +27,7 @@ export const SidebarTools = ({
 }) => (
   <nav
     aria-label="Quy trình"
-    className="flex min-w-0 flex-col gap-2 rounded-2xl border border-line bg-white p-2 shadow-card"
+    className="flex min-w-0 flex-col gap-2 rounded-2xl border border-line bg-surface p-2 shadow-card"
   >
     <ul className="m-0 list-none p-0">
       {processes.map((p) => {

@@ -25,7 +25,7 @@ const ZOOM_STEPS = [50, 75, 100, 125, 150];
 
 const shortHash = (h: string) => `${h.slice(0, 4)}…${h.slice(-4)}`;
 
-const Line = ({ w }: { w: string }) => <div className={cn("h-2 rounded-full bg-gray-200/80", w)} />;
+const Line = ({ w }: { w: string }) => <div className={cn("h-2 rounded-ui bg-gray-200/80", w)} />;
 
 const PaperPage = ({ preview, page }: { preview: DocPreview; page: number }) => (
   <div className="flex flex-col gap-3">
@@ -69,7 +69,7 @@ const ImagePreview = ({ name, kind }: { name: string; kind: Attachment["kind"] }
 );
 
 const toolBtn =
-  "grid h-7 w-7 place-items-center rounded-full text-body transition-colors hover:bg-canvas disabled:cursor-default disabled:opacity-40 " +
+  "grid h-7 w-7 place-items-center rounded-ui text-body transition-colors hover:bg-canvas disabled:cursor-default disabled:opacity-40 " +
   "focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
 const useDownload = () => {
@@ -113,7 +113,7 @@ export const DocumentViewer = ({
   return (
     <section
       aria-label="Tài liệu đính kèm"
-      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white p-4 shadow-card", className)}
+      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface p-4 shadow-card", className)}
     >
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Tệp đính kèm">
         {attachments.map((a, i) => (
@@ -127,7 +127,7 @@ export const DocumentViewer = ({
               setPage(1);
             }}
             className={cn(
-              "h-7 max-w-full truncate rounded-full px-3 text-[12px] font-medium transition-colors",
+              "h-7 max-w-full truncate rounded-ui px-3 text-[12px] font-medium transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
               i === active ? "bg-bamboo-100 text-bamboo-800" : "bg-black/[0.045] text-body hover:bg-black/[0.07]",
             )}
@@ -164,7 +164,7 @@ export const DocumentViewer = ({
             <button
               type="button"
               onClick={() => void download(file.id)}
-              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-black/[0.045] px-3 text-[12px] font-medium text-ink hover:bg-black/[0.07] focus-visible:outline-2 focus-visible:outline-bamboo-500"
+              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-ui bg-black/[0.045] px-3 text-[12px] font-medium text-ink hover:bg-black/[0.07] focus-visible:outline-2 focus-visible:outline-bamboo-500"
             >
               <Download className="h-3.5 w-3.5" aria-hidden /> Tải tệp
             </button>
@@ -176,7 +176,7 @@ export const DocumentViewer = ({
         <div className="absolute inset-0 overflow-auto px-6 pb-20 pt-6">
           {!file || file.scan === "clean" ? (
             <div
-              className="mx-auto rounded-md bg-white p-6 shadow-[0_6px_24px_-6px_rgb(16_24_20/0.18)] transition-[width] duration-200"
+              className="mx-auto rounded-md bg-surface p-6 shadow-[0_6px_24px_-6px_rgb(16_24_20/0.18)] transition-[width] duration-200"
               style={{ width: `${(340 * zoom) / 100}px`, maxWidth: zoom <= 100 ? "100%" : undefined }}
             >
               {!file || file.kind === "pdf" ? (
@@ -197,7 +197,7 @@ export const DocumentViewer = ({
         </div>
 
         {(!file || file.scan === "clean") && (
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-line bg-white px-1.5 py-1 shadow-float">
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-ui border border-line bg-surface px-1.5 py-1 shadow-float">
             <button
               type="button"
               className={toolBtn}
