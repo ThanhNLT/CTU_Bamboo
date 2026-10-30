@@ -121,6 +121,29 @@ class KeycloakUsers:
         self.http.put(f"/users/{subject}", json=body, headers=self._headers()).raise_for_status()
         return True
 
+    def recover(self, subject: str, password: str) -> str:
+        """Khôi phục tài khoản chủ sở hữu (ADR #57): mật khẩu tạm mới, gỡ OTP cũ, bắt đổi mật khẩu và cài OTP lại.
+        Trả tên đăng nhập."""
+        user = self.http.get(f"/users/{subject}", headers=self._headers())
+        user.raise_for_status()
+        body = user.json()
+        creds = self.http.get(f"/users/{subject}/credentials", headers=self._headers())
+        creds.raise_for_status()
+        for cred in creds.json():
+            if cred.get("type") == "otp":
+                self.http.delete(
+                    f"/users/{subject}/credentials/{cred['id']}", headers=self._headers()
+                ).raise_for_status()
+        self.http.put(
+            f"/users/{subject}/reset-password",
+            headers=self._headers(),
+            json={"type": "password", "value": password, "temporary": True},
+        ).raise_for_status()
+        actions = [a for a in body.get("requiredActions", []) if a not in ("UPDATE_PASSWORD", "CONFIGURE_TOTP")]
+        body |= {"enabled": True, "requiredActions": [*actions, "UPDATE_PASSWORD", "CONFIGURE_TOTP"]}
+        self.http.put(f"/users/{subject}", json=body, headers=self._headers()).raise_for_status()
+        return body["username"]
+
     def disable(self, subject: str) -> bool:
         found = self.http.get(f"/users/{subject}", headers=self._headers())
         if found.status_code == 404:
