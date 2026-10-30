@@ -6,6 +6,7 @@ import {
   Activity,
   ArrowLeftRight,
   Blocks,
+  Building2,
   BellRing,
   Bot,
   Cpu,
@@ -138,6 +139,13 @@ export const NAV_GROUPS: NavGroup[] = [
         to: "/admin/roles",
         icon: KeyRound,
         access: { resource: "admin_roles", action: "list" },
+      },
+      {
+        key: "admin-company",
+        label: "Thông tin công ty",
+        to: "/admin/company",
+        icon: Building2,
+        access: { resource: "admin_company", action: "list" },
       },
       {
         key: "admin-modules",

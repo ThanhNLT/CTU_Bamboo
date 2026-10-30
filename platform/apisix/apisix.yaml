@@ -172,6 +172,21 @@ routes:
       client-control:
         max_body_size: 65536
 
+  - id: company-setup
+    uris: [/setup/*]
+    priority: 15
+    methods: [GET, POST]
+    upstream_id: actions
+    plugins:
+      limit-count:
+        count: 30
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều yêu cầu khởi tạo, thử lại sau"
+      client-control:
+        max_body_size: 8388608
+
   - id: keycloak-master
     uris: [/realms/master, /realms/master/*]
     priority: 40

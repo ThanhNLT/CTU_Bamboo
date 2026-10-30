@@ -79,6 +79,9 @@ CORE_ACTIONS = frozenset(
         "module_disable",
         "module_install",
         "module_uninstall",
+        "legal_status",
+        "legal_application",
+        "legal_verify",
     }
 )
 
@@ -335,9 +338,16 @@ class Manager:
         self.ctx = ctx
         self.person = session.get("x-hasura-user-id")
         self.tenant = session.get("x-hasura-tenant-id")
-        self.platform = session.get("x-hasura-role") == "platform_admin"
         if not self.person or not self.tenant:
             raise ActionError("Thiếu x-hasura-user-id hoặc x-hasura-tenant-id", "unauthorized", 401)
+        # chủ sở hữu công ty khởi tạo máy chủ tự cài (ADR #57) cài/gỡ mô-đun trên máy như quản trị nền tảng
+        self.platform = (
+            session.get("x-hasura-role") == "platform_admin"
+            or conn.execute(
+                "SELECT EXISTS (SELECT FROM core.tenant_owner WHERE tenant_id = %s AND person_id = %s AND platform)",
+                (self.tenant, self.person),
+            ).fetchone()[0]
+        )
 
     def can_manage(self) -> bool:
         return self.conn.execute(

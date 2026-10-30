@@ -33,7 +33,7 @@ import { TenantGate } from "./auth/session";
 import { BambooLayout } from "./components/layout";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
-import { CatalogPage, ModulesPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
+import { CatalogPage, CompanyPage, ModulesPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
 import { DashboardPage } from "./pages/dashboard";
 import { DocumentDrivePage } from "./pages/document-drive";
 import { KnowledgeLibraryPage, ProposalPage } from "./pages/knowledge-library";
@@ -70,6 +70,7 @@ import {
   PurchaseRequestShow,
 } from "./pages/purchase-requests";
 import { SearchPage } from "./pages/search";
+import { SetupPage } from "./pages/setup";
 import { ModulesProvider } from "./modules/context";
 import { RequireModule } from "./modules/RequireModule";
 import { accessControlProvider } from "./providers/access";
@@ -167,6 +168,7 @@ function App() {
                   },
                   { name: "admin_catalog", list: "/admin/catalog", meta: { label: "Danh mục & dữ liệu chủ" } },
                   { name: "admin_modules", list: "/admin/modules", meta: { label: "Quản lý chức năng" } },
+                  { name: "admin_company", list: "/admin/company", meta: { label: "Thông tin công ty" } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
                 options={{
@@ -400,6 +402,7 @@ function App() {
                     <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
                     <Route path="/admin/catalog" element={<CatalogPage />} />
                     <Route path="/admin/modules" element={<ModulesPage />} />
+                    <Route path="/admin/company" element={<CompanyPage />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                   <Route
@@ -411,6 +414,7 @@ function App() {
                   >
                     <Route path="/login" element={<Login />} />
                   </Route>
+                  <Route path="/khoi-tao" element={<SetupPage />} />
                 </Routes>
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler
