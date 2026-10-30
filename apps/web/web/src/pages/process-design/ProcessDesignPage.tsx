@@ -9,6 +9,7 @@ import { useSearchParams } from "react-router";
 import {
   deleteProcess,
   createAutomationWebhook,
+  draftRegulation,
   disableAutomation,
   enableAutomation,
   getProcess,
@@ -27,8 +28,10 @@ import type { BpmnEditorHandle } from "./components/BpmnEditor";
 import { AutomationTab } from "./components/AutomationTab";
 import { ChangeRequestsTab } from "./components/ChangeRequestsTab";
 import { FormsTab } from "./components/FormsTab";
+import { FromDocumentModal } from "./components/FromDocumentModal";
 import { ProcessHeader } from "./components/ProcessHeader";
 import { PropertiesPanel } from "./components/PropertiesPanel";
+import { RegulationTab } from "./components/RegulationTab";
 import { RunsTab } from "./components/RunsTab";
 import { SandboxModal, type SandboxInput } from "./components/SandboxModal";
 import { SidebarTools } from "./components/SidebarTools";
@@ -47,7 +50,7 @@ import { downloadText, keyFromName, userTasksOf, type UserTaskRef } from "./util
 
 const BpmnEditor = lazy(() => import("./components/BpmnEditor"));
 
-type Tab = "process" | "forms" | "runs" | "requests" | "auto";
+type Tab = "process" | "forms" | "runs" | "requests" | "auto" | "rules";
 
 const AUDIENCE_OPTIONS: { value: Audience; label: string; hint: string }[] = [
   { value: "UNIT", label: "Phòng ban", hint: "Đơn vị sở hữu quy trình và các đơn vị con" },
@@ -73,6 +76,7 @@ export const ProcessDesignPage = () => {
   const [newUnit, setNewUnit] = useState<string>();
   const [publishing, setPublishing] = useState<{ audience: Audience; note: string }>();
   const [changing, setChanging] = useState<string>();
+  const [fromDoc, setFromDoc] = useState(false);
   const editor = useRef<BpmnEditorHandle>(null);
   const activeId = params.get("id") ?? undefined;
   const access = detail?.access ?? "view";
@@ -345,6 +349,23 @@ export const ProcessDesignPage = () => {
     }
   };
 
+  const generateRegulation = async (submit: boolean) => {
+    if (!detail) return;
+    if (dirty) return void message.warning("Lưu bản nháp trước khi lập văn bản quy định.");
+    try {
+      const r = await draftRegulation(detail.id, submit);
+      message.success(
+        r.submitted
+          ? `Đã lập ${r.docNo} từ v${r.version} và gửi duyệt.`
+          : `Đã lập ${r.docNo} từ v${r.version}: vào Thư viện tri thức để gửi duyệt.`,
+      );
+      if (r.message) message.warning(r.message);
+      await loadDetail(detail.id);
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
+
   const usedBy = useMemo(() => {
     const out: Record<string, string[]> = {};
     if (!detail) return out;
@@ -395,6 +416,10 @@ export const ProcessDesignPage = () => {
             },
             { value: "auto", label: `Chạy tự động${detail.automation?.status === "ACTIVE" ? " (đang bật)" : ""}` },
             {
+              value: "rules",
+              label: `Quy định (${detail.regulations.filter((r) => r.kind === "REGULATION").length})`,
+            },
+            {
               value: "requests",
               label: `Yêu cầu sửa chữa (${detail.changeRequests.filter((c) => c.status === "OPEN").length})`,
             },
@@ -409,6 +434,7 @@ export const ProcessDesignPage = () => {
           canCreate={list.canDesign}
           onSelect={select}
           onCreate={() => setCreating(true)}
+          onFromDocument={() => setFromDoc(true)}
         />
         <div
           className={
@@ -454,6 +480,14 @@ export const ProcessDesignPage = () => {
               setForms(f);
               setDirty(true);
             }}
+          />
+        )}
+        {tab === "rules" && detail && access !== "view" && (
+          <RegulationTab
+            regulations={detail.regulations}
+            latestVersion={detail.versions[0]?.version ?? detail.viewingVersion}
+            canDraft={canDesign}
+            onDraft={generateRegulation}
           />
         )}
         {tab === "auto" && detail && access !== "view" && (
@@ -568,6 +602,18 @@ export const ProcessDesignPage = () => {
           Mã quy trình: <span className="font-mono">{newName.trim() ? keyFromName(newName) : "—"}</span>
         </p>
       </Modal>
+
+      <FromDocumentModal
+        open={fromDoc}
+        units={list.designUnits}
+        onClose={() => setFromDoc(false)}
+        onCreated={(r) => {
+          setFromDoc(false);
+          setTab("process");
+          void loadList().then(() => setParams({ id: r.id }));
+          message.success(`Đã dựng bản nháp “${r.name}” (${r.steps} bước). Kiểm tra, chỉnh sửa rồi phát hành.`);
+        }}
+      />
 
       <Modal
         open={Boolean(publishing)}

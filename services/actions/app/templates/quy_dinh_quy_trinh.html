@@ -1,0 +1,62 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+SPDX-License-Identifier: Apache-2.0
+
+Văn bản quy định quy trình lập từ sơ đồ BPMN đã phát hành, theo thể thức văn bản nội bộ của doanh nghiệp tư nhân (không quốc hiệu, tiêu ngữ). Giá trị được Jinja2 escape; chỉ `svg` là SVG do hệ thống tự dựng.
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>{{ d.title }}</title>
+<style>
+  @page { size: A4; }
+  body { font-family: "Noto Serif", "DejaVu Serif", "Times New Roman", serif; font-size: 12pt; color: #111; line-height: 1.5; }
+  .head { text-align: center; font-size: 11pt; }
+  .head strong { text-transform: uppercase; display: block; }
+  h1 { text-align: center; text-transform: uppercase; font-size: 15pt; margin: 20px 0 2px; }
+  .sub { text-align: center; font-weight: 700; margin-bottom: 14px; }
+  h2 { font-size: 12.5pt; margin: 16px 0 4px; text-transform: uppercase; }
+  p { margin: 4px 0; text-align: justify; }
+  table { width: 100%; border-collapse: collapse; font-size: 10.5pt; margin-top: 6px; }
+  th, td { border: 1px solid #555; padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: #eceff3; }
+  td.no { width: 36px; text-align: center; }
+  .diagram { margin-top: 8px; text-align: center; break-inside: avoid; }
+  .diagram svg { width: 100%; height: auto; }
+  .note { font-size: 10.5pt; color: #333; }
+  .branch { margin: 0; padding-left: 16px; }
+</style>
+</head>
+<body>
+<div class="head">{{ d.company }}<strong>{{ d.unit }}</strong><span>Số: {{ d.doc_no }} · Quy trình phiên bản v{{ d.version }}</span></div>
+
+<h1>Quy định quy trình</h1>
+<div class="sub">{{ d.name }}</div>
+
+{% if d.purpose %}<h2>1. Mục đích</h2><p>{{ d.purpose }}</p>{% endif %}
+<h2>{{ 2 if d.purpose else 1 }}. Phạm vi áp dụng</h2>
+<p>{{ d.scope }}</p>
+
+<h2>{{ 3 if d.purpose else 2 }}. Sơ đồ quy trình</h2>
+<div class="diagram">{{ d.svg|safe }}</div>
+
+<h2>{{ 4 if d.purpose else 3 }}. Các bước thực hiện</h2>
+<table>
+  <tr><th>Bước</th><th>Công việc</th><th>Người thực hiện</th><th>Thời hạn</th><th>Chuyển tiếp</th></tr>
+  {% for s in d.steps %}
+  <tr>
+    <td class="no">{{ s.no }}</td>
+    <td><strong>{{ s.name }}</strong>{% if s.note %}<br>{{ s.note }}{% endif %}</td>
+    <td>{{ s.role or "—" }}</td>
+    <td>{{ s.due or "—" }}</td>
+    <td>{% for t in s.transitions %}{{ t }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>{{ 5 if d.purpose else 4 }}. Hiệu lực thi hành</h2>
+<p>Quy định này có hiệu lực kể từ ngày được phê duyệt và đăng trong thư viện tri thức; thay thế bản quy định của phiên bản quy trình trước (nếu có). Các đơn vị, cá nhân có tên trong bảng trên thực hiện đúng quy trình đã phát hành trên hệ thống; việc thay đổi quy trình phải được thiết kế, phát hành phiên bản mới và lập lại quy định này.</p>
+<p class="note">Văn bản được lập tự động từ sơ đồ quy trình “{{ d.name }}” phiên bản v{{ d.version }} (mã kiểm tra nội dung sơ đồ: {{ d.sha }}).</p>
+</body>
+</html>

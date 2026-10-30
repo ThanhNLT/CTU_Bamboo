@@ -174,6 +174,8 @@ CATALOG: tuple[Module, ...] = (
                 "process_model_save",
                 "process_model_publish",
                 "process_model_delete",
+                "process_from_document",
+                "process_regulation_draft",
                 "process_version_get",
                 "process_sandbox_run",
                 "process_change_request_create",
