@@ -92,6 +92,7 @@ const NOTE_TONE: Record<string, Tone> = {
   IC_ORDER_REJECTED: "danger",
   TASK_ASSIGNED: "warning",
   IC_ORDER_NEW: "warning",
+  SECURITY: "danger",
 };
 
 const recordTone = (d: DocSummary): { tone: Tone; locked?: boolean } => {
@@ -195,7 +196,12 @@ export const useDashboard = () => {
     source: n.actor?.full_name,
     tone: NOTE_TONE[n.kind] ?? "neutral",
     read: n.read_at != null,
-    to: n.entity_type && n.entity_id && DETAIL[n.entity_type] ? DETAIL[n.entity_type] + n.entity_id : undefined,
+    to:
+      n.entity_type === "core.tenant"
+        ? "/admin/company"
+        : n.entity_type && n.entity_id && DETAIL[n.entity_type]
+          ? DETAIL[n.entity_type] + n.entity_id
+          : undefined,
   }));
   const unread = unreadQ.result.total ?? 0;
 

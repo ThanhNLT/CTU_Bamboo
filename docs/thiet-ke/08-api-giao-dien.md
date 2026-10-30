@@ -53,7 +53,7 @@ Ví dụ cách giao diện trong `apps/web/web/src/pages` dùng API cho luồng 
 
 ## 3. Danh mục Hasura Action
 
-Nghiệp vụ nhiều bước đi qua 107 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
+Nghiệp vụ nhiều bước đi qua 109 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
 
 | Nhóm | Query | Mutation |
 |---|---|---|
@@ -70,7 +70,7 @@ Nghiệp vụ nhiều bước đi qua 107 Hasura Action (dịch vụ `actions`, 
 | Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ocr_retry` |
 | Vận hành | `obs_logs`, `backup_runs` | – |
 | Mô-đun chức năng ([ADR #56](#adr-56)) | `modules` | `module_enable`, `module_disable`, `module_install`, `module_uninstall` |
-| Thông tin pháp lý ([ADR #57](#adr-57)) | `legal_status` | `legal_application`, `legal_verify` |
+| Thông tin pháp lý, chủ sở hữu ([ADR #57](#adr-57)) | `legal_status` | `legal_application`, `legal_verify`, `transfer_ownership`, `create_subsidiary` |
 
 ## 4. Lưu ý khi dùng
 

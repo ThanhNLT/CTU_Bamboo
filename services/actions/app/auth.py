@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import hashlib
+import ipaddress
 import time
 
 import jwt
@@ -97,3 +99,31 @@ def my_tenants(conn: psycopg.Connection, session: dict) -> list[dict]:
         {"tenant_id": str(r[0]), "tenant_code": r[1], "tenant_name": r[2], "person_id": str(r[3]), "full_name": r[4]}
         for r in rows
     ]
+
+
+def _network(ip: str) -> str:
+    """Dải mạng của địa chỉ: IPv4 /24, IPv6 /48 (đổi địa chỉ trong cùng mạng không coi là thiết bị mới)."""
+    try:
+        addr = ipaddress.ip_address(ip.strip())
+    except ValueError:
+        return ""
+    prefix = 24 if addr.version == 4 else 48
+    return str(ipaddress.ip_network(f"{addr}/{prefix}", strict=False).network_address)
+
+
+def record_login(conn: psycopg.Connection, session: dict, headers) -> bool:
+    """Ghi nhận phiên của chủ sở hữu/quản trị viên; thiết bị mới thì CSDL báo chủ sở hữu (ADR #57)."""
+    person, tenant = session.get("X-Hasura-User-Id"), session.get("X-Hasura-Tenant-Id")
+    if not person or not tenant:
+        return False
+    forwarded = headers.get("x-forwarded-for", "").split(",")[0] or headers.get("x-real-ip", "")
+    network = _network(forwarded)
+    # Hasura không chuyển User-Agent của trình duyệt sang webhook: giao diện tự gửi mã thiết bị ngẫu nhiên (lưu trong
+    # trình duyệt) và mô tả trình duyệt; máy khách khác không gửi thì nhận theo dải mạng
+    agent = (headers.get("x-bamboo-agent") or headers.get("user-agent", ""))[:300]
+    device_id = headers.get("x-bamboo-device", "")[:100]
+    device = hashlib.sha256((f"id|{device_id}" if device_id else f"{agent}|{network}").encode()).digest()
+    with conn.transaction():
+        return conn.execute(
+            "SELECT core.record_login(%s, %s, %s, %s, %s)", (tenant, person, device, agent or None, network or None)
+        ).fetchone()[0]

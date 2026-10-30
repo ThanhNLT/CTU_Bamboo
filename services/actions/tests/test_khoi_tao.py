@@ -45,6 +45,13 @@ class FakeUsers:
         self.disabled.append(subject)
         return True
 
+    def find(self, username):
+        return next(({"id": sub} for sub, u in self.created.items() if u["username"] == username), None)
+
+    def recover(self, subject, password):
+        self.recovered = (subject, password)
+        return self.created[subject]["username"]
+
 
 @pytest.fixture
 def empty_db():
@@ -258,3 +265,144 @@ def test_quan_tri_vien_bi_bat_cai_otp(env):
         assert sorted(users.asked) == ["sub-an.nguyen", "sub-it.abc"]
         # đã kiểm thì không hỏi lại Keycloak
         assert hr_account.enforce_admin_otp(conn, users, done) == 0 and len(users.asked) == 2
+
+
+def setup_signed(env, admin=True) -> dict:
+    client, db = env["client"], env["db"]
+    r = apply(client, issue_code(db), admin={"username": "it.abc", "full_name": "Trần Bình"} if admin else None)
+    app_id, token = r.json()["application_id"], r.json()["token"]
+    pdf = client.get(f"/setup/applications/{app_id}/pdf", params={"token": token}).content
+    signed = sign(pdf, env["leaf"], env["key"])
+    r = client.post(
+        f"/setup/applications/{app_id}/finish",
+        json={"token": token, "signed_pdf_base64": base64.b64encode(signed).decode()},
+    )
+    assert r.status_code == 200, r.text
+    with psycopg.connect(db) as conn:
+        ids = dict(conn.execute("SELECT idp_subject, id::text FROM core.person").fetchall())
+        tenant = str(conn.execute("SELECT id FROM core.tenant").fetchone()[0])
+    return {"tenant": tenant, "owner": ids["sub-an.nguyen"], "admin": ids.get("sub-it.abc")}
+
+
+def action(client, name, args, person, tenant):
+    payload = {
+        "action": {"name": name},
+        "input": args,
+        "session_variables": {"x-hasura-role": "user", "x-hasura-user-id": person, "x-hasura-tenant-id": tenant},
+    }
+    return client.post(f"/actions/{name}", json=payload, headers={"x-actions-secret": SETTINGS.actions_secret})
+
+
+def test_khoi_phuc_chu_so_huu_bang_ky_so(env):
+    client, db, users = env["client"], env["db"], env["users"]
+    setup_signed(env)
+    assert client.post("/setup/recovery", json={"tax_code": "0109999999"}).json()["code"] == "not-found"
+    r = client.post("/setup/recovery", json={"tax_code": TAX})
+    assert r.status_code == 200, r.text
+    app_id, token = r.json()["application_id"], r.json()["token"]
+    pdf = client.get(f"/setup/applications/{app_id}/pdf", params={"token": token})
+    assert pdf.status_code == 200 and "don-khoi-phuc" in pdf.headers["content-disposition"]
+
+    other = make_pki("0109999999")
+    bad = client.post(
+        f"/setup/recovery/{app_id}/finish",
+        json={"token": token, "signed_pdf_base64": base64.b64encode(sign(pdf.content, other[1], other[2])).decode()},
+    )
+    assert bad.status_code == 422 and not hasattr(users, "recovered")
+
+    signed = sign(pdf.content, env["leaf"], env["key"])
+    r = client.post(
+        f"/setup/recovery/{app_id}/finish",
+        json={"token": token, "signed_pdf_base64": base64.b64encode(signed).decode()},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["username"] == "an.nguyen" and users.recovered == ("sub-an.nguyen", r.json()["password"])
+    assert (
+        one(db, "SELECT count(*) FROM collab.notification WHERE kind = 'SECURITY' AND title LIKE 'Đã khôi phục%%'") == 2
+    )
+    again = client.post(
+        f"/setup/recovery/{app_id}/finish",
+        json={"token": token, "signed_pdf_base64": base64.b64encode(signed).decode()},
+    )
+    assert again.json()["code"] == "application-used"
+
+
+def test_thiet_bi_moi_cua_quan_tri_vien(env):
+    from app import auth
+
+    ids = setup_signed(env)
+    session = {"X-Hasura-User-Id": ids["admin"], "X-Hasura-Tenant-Id": ids["tenant"]}
+    headers = {"user-agent": "Mozilla/5.0 Firefox/140", "x-forwarded-for": "203.0.113.25, 10.0.0.1"}
+    with psycopg.connect(env["db"]) as conn:
+        assert auth.record_login(conn, session, headers) is True
+        assert auth.record_login(conn, session, {**headers, "x-forwarded-for": "203.0.113.99"}) is False  # cùng dải /24
+        assert auth.record_login(conn, session, {**headers, "x-forwarded-for": "198.51.100.7"}) is True
+        title, body = conn.execute(
+            "SELECT title, body FROM collab.notification WHERE kind = 'SECURITY' ORDER BY created_at LIMIT 1"
+        ).fetchone()
+    assert "Trần Bình" in title and "203.0.113.0" in body and "Firefox" in body
+    # giao diện gửi mã thiết bị: cùng trình duyệt đổi mạng không báo, trình duyệt khác thì báo
+    web = {
+        "x-bamboo-device": "6f1c-may-cong-ty",
+        "x-bamboo-agent": "Chrome trên Windows",
+        "x-forwarded-for": "10.1.1.1",
+    }
+    with psycopg.connect(env["db"]) as conn:
+        assert auth.record_login(conn, session, web) is True
+        assert auth.record_login(conn, session, {**web, "x-forwarded-for": "172.16.0.9"}) is False
+        assert auth.record_login(conn, session, {**web, "x-bamboo-device": "may-la"}) is True
+
+
+def test_chuyen_quyen_chu_so_huu(env):
+    client, db = env["client"], env["db"]
+    ids = setup_signed(env)
+    t = ids["tenant"]
+    assert (
+        action(client, "transfer_ownership", {"person_id": ids["owner"]}, ids["admin"], t).json()["extensions"]["code"]
+        == "forbidden"
+    )
+    r = action(client, "transfer_ownership", {"person_id": ids["admin"]}, ids["owner"], t)
+    assert r.status_code == 200 and r.json()["owner_name"] == "Trần Bình", r.text
+    assert str(one(db, "SELECT person_id FROM core.tenant_owner")) == ids["admin"]
+    # chủ sở hữu cũ không còn trao được quyền quản trị, chủ sở hữu mới thì được
+    role = str(one(db, "SELECT id FROM core.role WHERE code = 'QUAN_TRI_TO_CHUC'"))
+    seat = str(one(db, "SELECT id FROM core.position WHERE name = 'Quản trị hệ thống'"))
+    grant = {"entity": "role_grant", "data": {"role_id": role, "position_id": seat, "scope": "UNIT"}}
+    assert "Chỉ chủ sở hữu" in action(client, "admin_save", grant, ids["owner"], t).json()["message"]
+
+
+def test_tao_cong_ty_thanh_vien(env):
+    client, db, users = env["client"], env["db"], env["users"]
+    ids = setup_signed(env)
+    t = ids["tenant"]
+    body = {
+        "code": "ABC_SX",
+        "name": "Công ty Sản xuất ABC",
+        "tax_code": "0101234567-001",
+        "legal_name": "Chi nhánh Sản xuất ABC",
+        "address": "KCN Thăng Long",
+        "legal_rep_name": "Lê Văn Cường",
+        "owner": {"username": "cuong.le", "full_name": "Lê Văn Cường", "email": None},
+    }
+    assert action(client, "create_subsidiary", body, ids["admin"], t).json()["extensions"]["code"] == "forbidden"
+    r = action(client, "create_subsidiary", body, ids["owner"], t)
+    assert r.status_code == 200 and r.json()["password"], r.text
+    assert users.created["sub-cuong.le"]["required"] == ("UPDATE_PASSWORD", "CONFIGURE_TOTP")
+    child = one(db, "SELECT id FROM core.tenant WHERE code = 'ABC_SX'")
+    assert str(one(db, "SELECT parent_tenant_id FROM core.tenant_relation WHERE child_tenant_id = %s", child)) == t
+    assert one(db, "SELECT legal_status FROM core.tenant WHERE id = %s", child) == "UNVERIFIED"
+    assert one(db, "SELECT count(*) FROM core.tenant_module WHERE tenant_id = %s", child) == 0
+    assert action(client, "create_subsidiary", body, ids["owner"], t).json()["extensions"]["code"] == "conflict"
+
+    # dùng chung tài khoản của người ở công ty mẹ: không tạo tài khoản mới, người đó vào được cả hai công ty
+    shared = {**body, "code": "ABC_TM", "name": "Thương mại ABC", "tax_code": None}
+    shared["owner"] = {"username": "it.abc", "full_name": "Trần Bình"}
+    r = action(client, "create_subsidiary", shared, ids["owner"], t)
+    assert r.status_code == 200 and r.json()["password"] is None, r.text
+    assert one(db, "SELECT count(*) FROM core.account_tenants('sub-it.abc')") == 2
+    outsider = {**shared, "code": "ABC_X", "owner": {"username": "da-co-ngoai", "full_name": "Người ngoài"}}
+    users.created["sub-ngoai"] = {"username": "da-co-ngoai", "required": (), "attribute": ""}
+    assert (
+        action(client, "create_subsidiary", outsider, ids["owner"], t).json()["extensions"]["code"]
+        == "account-conflict"
+    )
