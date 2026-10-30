@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
 import type { ProcessSummary } from "../types";
@@ -16,12 +16,14 @@ export const SidebarTools = ({
   canCreate,
   onSelect,
   onCreate,
+  onFromDocument,
 }: {
   processes: ProcessSummary[];
   activeId?: string;
   canCreate: boolean;
   onSelect: (id: string) => void;
   onCreate: () => void;
+  onFromDocument?: () => void;
 }) => (
   <nav
     aria-label="Quy trình"
@@ -66,6 +68,15 @@ export const SidebarTools = ({
         className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-bamboo-700 hover:bg-bamboo-50"
       >
         <Plus className="h-4 w-4" aria-hidden /> Tạo quy trình
+      </button>
+    )}
+    {canCreate && onFromDocument && (
+      <button
+        type="button"
+        onClick={onFromDocument}
+        className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-bamboo-700 hover:bg-bamboo-50"
+      >
+        <FileText className="h-4 w-4" aria-hidden /> Dựng từ văn bản
       </button>
     )}
   </nav>
