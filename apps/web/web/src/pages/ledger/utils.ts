@@ -97,7 +97,7 @@ export const certificateHtml = (r: Exclude<VerifyResult, { kind: "not_found" }>)
 <style>
   body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#1b231e;margin:48px;}
   h1{font-size:22px;margin:0 0 4px} p{margin:0;color:#6b7670;font-size:13px}
-  .badge{display:inline-block;margin:20px 0;padding:6px 14px;border-radius:999px;font-weight:600;font-size:14px;
+  .badge{display:inline-block;margin:20px 0;padding:6px 14px;border-radius:10px;font-weight:600;font-size:14px;
     background:${ok ? "#f0f7f1" : "#fef2f2"};color:${ok ? "#1f512a" : "#b91c1c"};border:1px solid ${ok ? "#c3e0c8" : "#fecaca"}}
   table{border-collapse:collapse;width:100%;font-size:13px} td{padding:8px 0;border-bottom:1px solid #e4e9e5;vertical-align:top}
   td:first-child{width:180px;color:#6b7670} .mono{font-family:"JetBrains Mono",Menlo,Consolas,monospace;word-break:break-all}

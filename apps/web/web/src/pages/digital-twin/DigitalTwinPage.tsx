@@ -145,7 +145,7 @@ export const DigitalTwinPage = () => {
             <IncidentList incidents={selected.incidents} metrics={selected.metrics} onAcknowledge={acknowledge} />
           </section>
         ) : (
-          <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-white text-[13px] text-muted shadow-card">
+          <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-surface text-[13px] text-muted shadow-card">
             Chọn một thực thể để xem dữ liệu cảm biến.
           </div>
         )}

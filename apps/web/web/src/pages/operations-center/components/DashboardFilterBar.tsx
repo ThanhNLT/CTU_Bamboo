@@ -52,7 +52,7 @@ export const DashboardFilterBar = ({
         <div
           role="tablist"
           aria-label="Bảng điều hành"
-          className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+          className="inline-flex max-w-full flex-wrap gap-0.5 rounded-ui bg-black/[0.045] p-1"
         >
           {TABS.map((t) => (
             <button
@@ -62,9 +62,9 @@ export const DashboardFilterBar = ({
               aria-selected={t.key === tab}
               onClick={() => onTabChange(t.key)}
               className={cn(
-                "h-8 rounded-full px-3.5 text-[12.5px] transition-colors",
+                "h-8 rounded-ui px-3.5 text-[12.5px] transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-                t.key === tab ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:text-ink",
+                t.key === tab ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
               )}
             >
               {t.label}
@@ -100,26 +100,26 @@ export const DashboardFilterBar = ({
       {hasActive && (
         <div className="flex flex-wrap items-center gap-2" aria-label="Bộ lọc đang bật">
           {highlightLabel && (
-            <span className="inline-flex h-7 items-center gap-1 rounded-full border border-bamboo-200 bg-bamboo-50 pl-3 pr-1 text-[12px] font-medium text-bamboo-800">
+            <span className="inline-flex h-7 items-center gap-1 rounded-ui border border-bamboo-200 bg-bamboo-50 pl-3 pr-1 text-[12px] font-medium text-bamboo-800">
               Đang tô sáng: {highlightLabel}
               <button
                 type="button"
                 onClick={onClearHighlight}
                 aria-label="Bỏ tô sáng"
-                className="grid h-5 w-5 place-items-center rounded-full hover:bg-bamboo-100"
+                className="grid h-5 w-5 place-items-center rounded-ui hover:bg-bamboo-100"
               >
                 <X className="h-3 w-3" />
               </button>
             </span>
           )}
           {province !== "all" && (
-            <span className="inline-flex h-7 items-center gap-1 rounded-full border border-line bg-white pl-3 pr-1 text-[12px] font-medium text-ink">
+            <span className="inline-flex h-7 items-center gap-1 rounded-ui border border-line bg-surface pl-3 pr-1 text-[12px] font-medium text-ink">
               Cơ sở: {province}
               <button
                 type="button"
                 onClick={() => onProvinceChange("all")}
                 aria-label="Bỏ lọc cơ sở"
-                className="grid h-5 w-5 place-items-center rounded-full hover:bg-canvas"
+                className="grid h-5 w-5 place-items-center rounded-ui hover:bg-canvas"
               >
                 <X className="h-3 w-3" />
               </button>

@@ -8,10 +8,11 @@ export const bambooTableTheme: ThemeConfig = {
   components: {
     Table: {
       headerBg: "transparent",
-      headerColor: "#6b7670",
+      // Biến CSS để bảng đổi màu theo chế độ sáng/tối
+      headerColor: "var(--color-muted)",
       headerSplitColor: "transparent",
-      borderColor: "#eef1ee",
-      rowHoverBg: "#f5f8f5",
+      borderColor: "var(--color-line)",
+      rowHoverBg: "var(--color-bamboo-50)",
       cellPaddingBlockSM: 10,
       cellPaddingInlineSM: 8,
       cellFontSizeSM: 13,

@@ -12,8 +12,8 @@ const DEFAULT_ROWS = 3;
 const ResultBadge = ({ result }: { result: RunResult }) => {
   if (result === "check_failed") {
     return (
-      <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
-        <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
+      <span className="inline-flex h-6 items-center gap-1.5 rounded-ui border border-red-200 bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
+        <span className="h-1.5 w-1.5 rounded-ui bg-red-500" aria-hidden />
         Lỗi kiểm tra
       </span>
     );
@@ -26,7 +26,7 @@ const ResultBadge = ({ result }: { result: RunResult }) => {
   const m = map[result];
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-[12.5px]", m.text)}>
-      <span className={cn("h-1.5 w-1.5 rounded-full", m.dot)} aria-hidden />
+      <span className={cn("h-1.5 w-1.5 rounded-ui", m.dot)} aria-hidden />
       {m.label}
     </span>
   );
@@ -45,7 +45,7 @@ export const RecentRunsTable = ({
   const rows = showAll ? runs : runs.slice(0, DEFAULT_ROWS);
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Lần chạy gần đây">
+    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Lần chạy gần đây">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-ink">Lần chạy gần đây</h2>
         {runs.length > DEFAULT_ROWS && (

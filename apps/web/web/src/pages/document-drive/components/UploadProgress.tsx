@@ -18,7 +18,7 @@ const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
 const ProgressBar = ({ item }: { item: UploadItem }) => {
   if (item.status === "scanning") {
     return (
-      <div className="h-1.5 overflow-hidden rounded-full bg-bamboo-100">
+      <div className="h-1.5 overflow-hidden rounded-ui bg-bamboo-100">
         <div className="h-full w-full bg-[linear-gradient(45deg,var(--color-bamboo-300)_25%,var(--color-bamboo-200)_25%,var(--color-bamboo-200)_50%,var(--color-bamboo-300)_50%,var(--color-bamboo-300)_75%,var(--color-bamboo-200)_75%)] bg-[length:16px_16px] motion-safe:animate-stripes" />
       </div>
     );
@@ -26,7 +26,7 @@ const ProgressBar = ({ item }: { item: UploadItem }) => {
   const fill = item.status === "blocked" ? "bg-red-500" : item.status === "clean" ? "bg-bamboo-500" : "bg-bamboo-600";
   return (
     <div
-      className="h-1.5 overflow-hidden rounded-full bg-gray-200/80"
+      className="h-1.5 overflow-hidden rounded-ui bg-gray-200/80"
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
@@ -34,7 +34,7 @@ const ProgressBar = ({ item }: { item: UploadItem }) => {
       aria-label={item.name}
     >
       <div
-        className={cn("h-full rounded-full transition-[width] duration-500", fill)}
+        className={cn("h-full rounded-ui transition-[width] duration-500", fill)}
         style={{ width: `${item.progress}%` }}
       />
     </div>
@@ -52,7 +52,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
     <section
       aria-live="polite"
       aria-label="Tiến trình tải lên"
-      className="fixed bottom-4 left-4 right-4 z-30 rounded-2xl border border-line bg-white shadow-float sm:bottom-6 sm:left-auto sm:right-6 sm:w-[300px]"
+      className="fixed bottom-4 left-4 right-4 z-30 rounded-2xl border border-line bg-surface shadow-float sm:bottom-6 sm:left-auto sm:right-6 sm:w-[300px]"
     >
       <header className="flex items-center justify-between gap-2 px-4 py-3">
         <h2 className="text-[13.5px] font-semibold text-ink">{title}</h2>
@@ -62,7 +62,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? "Mở rộng" : "Thu gọn"}
             aria-expanded={!collapsed}
-            className="grid h-7 w-7 place-items-center rounded-full bg-canvas text-body hover:bg-gray-200/70"
+            className="grid h-7 w-7 place-items-center rounded-ui bg-canvas text-body hover:bg-gray-200/70"
           >
             {collapsed ? <ChevronUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
           </button>
@@ -71,7 +71,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
               type="button"
               onClick={onClose}
               aria-label="Đóng"
-              className="grid h-7 w-7 place-items-center rounded-full bg-canvas text-body hover:bg-gray-200/70"
+              className="grid h-7 w-7 place-items-center rounded-ui bg-canvas text-body hover:bg-gray-200/70"
             >
               <X className="h-4 w-4" />
             </button>

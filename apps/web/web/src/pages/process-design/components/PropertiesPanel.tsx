@@ -49,7 +49,7 @@ export const PropertiesPanel = ({
   const errors = issues.filter((i) => i.level === "error").length;
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Thuộc tính">
+      <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Thuộc tính">
         <h2 className="m-0 text-[14px] font-semibold text-ink">Thuộc tính</h2>
         {!element ? (
           <p className="m-0 mt-2 text-[12.5px] text-muted">Chọn một phần tử trên sơ đồ để xem và sửa thuộc tính.</p>
@@ -265,7 +265,7 @@ export const PropertiesPanel = ({
       </section>
 
       {showChecks && (
-        <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Kết quả kiểm tra">
+        <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Kết quả kiểm tra">
           <h2 className="m-0 flex items-center gap-2 text-[14px] font-semibold text-ink">
             Kiểm tra
             <span className={cn("text-[12px] font-medium", errors ? "text-red-700" : "text-bamboo-700")}>

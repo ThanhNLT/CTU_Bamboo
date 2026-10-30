@@ -32,7 +32,7 @@ export const ArchiveDocRow = ({
       type="button"
       onClick={onOpen}
       aria-label={`Mở chỉ đọc: ${doc.title}`}
-      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-canvas px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-ui bg-canvas px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
     >
       <Eye className="h-3.5 w-3.5" aria-hidden />
       Mở chỉ đọc

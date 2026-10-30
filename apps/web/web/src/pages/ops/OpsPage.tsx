@@ -294,7 +294,7 @@ export const OpsPage = () => {
           { value: "backups", label: "Sao lưu và khôi phục" },
         ]}
       />
-      <section className="rounded-2xl border border-line bg-white p-4 shadow-card">
+      <section className="rounded-2xl border border-line bg-surface p-4 shadow-card">
         {tab === "logs" && <LogsTab />}
         {tab === "anchors" && <AnchorsTab />}
         {tab === "backups" && <BackupsTab />}

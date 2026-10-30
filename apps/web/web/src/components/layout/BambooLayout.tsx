@@ -34,7 +34,7 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
   useEffect(() => setMobileOpen(false), [pathname]);
 
   return (
-    <div className="flex min-h-screen bg-[linear-gradient(135deg,#f4f8f4_0%,#f6f7f6_40%,#eef5ef_100%)] font-sans text-ink">
+    <div className="flex min-h-screen bg-[radial-gradient(1200px_600px_at_0%_0%,var(--color-bamboo-100)_0%,transparent_60%),radial-gradient(900px_500px_at_100%_100%,var(--color-bamboo-100)_0%,transparent_55%),linear-gradient(135deg,var(--color-bamboo-50)_0%,var(--color-canvas)_45%,var(--color-canvas)_100%)] font-sans text-ink">
       <AppSider collapsed={collapsed} />
 
       <Drawer
@@ -43,7 +43,10 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
         placement="left"
         width={272}
         closable={false}
-        styles={{ body: { padding: 0, background: "linear-gradient(180deg,#eaf5ec 0%,#f2f8f3 100%)" } }}
+        styles={{
+          body: { padding: 0, background: "transparent" },
+          content: { background: "var(--glass-bg)", backdropFilter: "blur(30px) saturate(180%)" },
+        }}
       >
         <SiderContent onNavigate={() => setMobileOpen(false)} />
       </Drawer>

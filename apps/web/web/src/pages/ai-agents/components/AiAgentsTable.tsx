@@ -9,7 +9,7 @@ import type { Agent, AgentStats } from "../types";
 import { GUARDS, STATUS, guardOn, num, seconds, statsOf } from "../utils";
 
 const iconBtn =
-  "grid h-8 w-8 place-items-center rounded-full text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
+  "grid h-8 w-8 place-items-center rounded-ui text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
 export const AiAgentsTable = ({
@@ -29,7 +29,7 @@ export const AiAgentsTable = ({
 }) => {
   const models = [...new Set(agents.map((a) => a.model))];
   return (
-    <section aria-label="Tác tử đã đăng ký" className="rounded-2xl border border-line bg-white p-5 shadow-card">
+    <section aria-label="Tác tử đã đăng ký" className="rounded-2xl border border-line bg-surface p-5 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[15px] font-semibold text-ink">Tác tử đã đăng ký</h2>
         {models.length > 0 && <span className="text-[11.5px] text-muted">Ollama · {models.join(", ")}</span>}
@@ -113,11 +113,11 @@ export const AiAgentsTable = ({
                   <td className="border-b border-line/70 px-3 py-2.5">
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px]",
+                        "inline-flex items-center gap-1.5 rounded-ui px-2 py-0.5 text-[11.5px]",
                         st.badge ?? "text-ink",
                       )}
                     >
-                      <span className={cn("h-1.5 w-1.5 rounded-full", st.dot)} aria-hidden />
+                      <span className={cn("h-1.5 w-1.5 rounded-ui", st.dot)} aria-hidden />
                       {st.label}
                     </span>
                   </td>

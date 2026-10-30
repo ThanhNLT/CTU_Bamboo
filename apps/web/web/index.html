@@ -10,12 +10,20 @@ SPDX-License-Identifier: Apache-2.0
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1677ff" />
+    <meta name="theme-color" content="#2f7a3e" />
     <meta
       name="description"
       content="Bamboo DX-OS: đề nghị mua sắm, phê duyệt theo hạn mức và kiểm toán cho Tập đoàn X."
     />
     <title>Bamboo DX-OS</title>
+    <script>
+      // Gắn chế độ sáng/tối trước khi vẽ trang để không nháy nền trắng (khớp contexts/color-mode)
+      try {
+        var m = localStorage.getItem("colorMode");
+        if (m !== "light" && m !== "dark") m = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = m;
+      } catch (e) {}
+    </script>
     <script src="/config.js"></script>
   </head>
   <body>

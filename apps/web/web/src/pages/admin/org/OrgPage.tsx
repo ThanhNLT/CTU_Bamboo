@@ -134,7 +134,7 @@ export const OrgPage = () => {
             onPosition={onPosition}
           />
         ) : (
-          <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-16 text-center text-[13px] text-muted">
+          <div className="rounded-2xl border border-dashed border-line bg-surface px-6 py-16 text-center text-[13px] text-muted">
             Tenant chưa có đơn vị gốc.
           </div>
         )}

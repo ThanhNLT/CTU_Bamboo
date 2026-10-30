@@ -33,7 +33,7 @@ const status = (m: ModuleInfo) =>
 
 const ServiceDot = ({ running }: { running: boolean | null }) => (
   <span
-    className={`inline-block h-2 w-2 rounded-full ${running ? "bg-bamboo-500" : running === false ? "bg-line" : "bg-red-400"}`}
+    className={`inline-block h-2 w-2 rounded-ui ${running ? "bg-bamboo-500" : running === false ? "bg-line" : "bg-red-400"}`}
     aria-hidden
   />
 );
@@ -145,7 +145,7 @@ export const ModulesPage = () => {
         <ul className="m-0 grid list-none gap-x-6 gap-y-1.5 p-0 text-[13px] text-body sm:grid-cols-2 lg:grid-cols-3">
           {CORE.map((c) => (
             <li key={c} className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-bamboo-500" aria-hidden />
+              <span className="h-1.5 w-1.5 shrink-0 rounded-ui bg-bamboo-500" aria-hidden />
               {c}
             </li>
           ))}
@@ -157,7 +157,7 @@ export const ModulesPage = () => {
           <section
             key={m.code}
             aria-label={m.name}
-            className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-white p-5 shadow-card"
+            className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card"
           >
             <header className="flex items-start justify-between gap-3">
               <h2 className="text-[15px] font-semibold text-ink">{m.name}</h2>

@@ -17,14 +17,14 @@ const STATE_TEXT: Record<StepState, string> = {
 const Marker = ({ state }: { state: StepState }) => {
   if (state === "done") {
     return (
-      <span className="grid h-[18px] w-[18px] place-items-center rounded-full bg-bamboo-600 text-white">
+      <span className="grid h-[18px] w-[18px] place-items-center rounded-ui bg-bamboo-600 text-white">
         <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
       </span>
     );
   }
   if (state === "returned") {
     return (
-      <span className="grid h-[18px] w-[18px] place-items-center rounded-full bg-red-500 text-white">
+      <span className="grid h-[18px] w-[18px] place-items-center rounded-ui bg-red-500 text-white">
         <CornerUpLeft className="h-2.5 w-2.5" strokeWidth={3} aria-hidden />
       </span>
     );
@@ -32,7 +32,7 @@ const Marker = ({ state }: { state: StepState }) => {
   return (
     <span
       className={cn(
-        "block h-[18px] w-[18px] rounded-full border-2 bg-white",
+        "block h-[18px] w-[18px] rounded-ui border-2 bg-surface",
         state === "current" ? "border-bamboo-600 shadow-[0_0_0_3px_var(--color-bamboo-100)]" : "border-gray-300",
       )}
     />

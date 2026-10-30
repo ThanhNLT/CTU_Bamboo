@@ -142,7 +142,7 @@ export const PeoplePage = () => {
       </div>
 
       <section
-        className="rounded-2xl border border-line bg-white px-3 pb-3 pt-1 shadow-card"
+        className="rounded-2xl border border-line bg-surface px-3 pb-3 pt-1 shadow-card"
         aria-label="Danh sách người dùng"
       >
         <ConfigProvider theme={bambooTableTheme}>

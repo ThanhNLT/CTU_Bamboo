@@ -4,11 +4,15 @@
 
 // Khóa là câu tiếng Việt gốc dùng trong giao diện; giá trị là bản tiếng Anh. Chuỗi chưa có bản dịch giữ nguyên tiếng Việt.
 export const EN: Record<string, string> = {
-  "Con người số": "Digital people",
-  "Quy trình số": "Digital process",
-  "Dữ liệu số": "Digital data",
-  "Trí tuệ số": "Digital intelligence",
+  "Làm việc hằng ngày": "Everyday work",
+  "Hồ sơ & quy trình": "Records & processes",
+  "Tài liệu & tri thức": "Documents & knowledge",
+  "Nhân sự": "People",
+  "Dữ liệu & điều hành": "Data & operations",
   "Quản trị": "Administration",
+  "Hệ thống & cài đặt": "System & settings",
+  "Chế độ tối": "Dark mode",
+  "Chế độ sáng": "Light mode",
   "Trang chủ": "Home",
   "Ổ đĩa tài liệu": "Document drive",
   "Thư viện tri thức": "Knowledge library",

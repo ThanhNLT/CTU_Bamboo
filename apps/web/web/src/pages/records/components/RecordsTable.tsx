@@ -45,7 +45,7 @@ export const RecordsTable = ({
   return (
     <section
       aria-label="Danh sách hồ sơ"
-      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white shadow-card", className)}
+      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface shadow-card", className)}
     >
       <header className="flex min-h-[56px] shrink-0 items-center justify-between gap-3 px-5 pt-2">
         <h2 className="text-[15px] font-semibold text-ink">
@@ -67,7 +67,7 @@ export const RecordsTable = ({
           </div>
         ) : (
           <table className="w-full min-w-[620px] table-fixed border-separate border-spacing-0 text-[13px]">
-            <thead className="sticky top-0 z-10 bg-white">
+            <thead className="sticky top-0 z-10 bg-surface">
               <tr>
                 <th scope="col" className={TH}>
                   Hồ sơ

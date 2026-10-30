@@ -50,16 +50,18 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? t(item.label) : undefined}
       className={cn(
-        "group relative flex h-9 items-center gap-3 rounded-[10px] text-[13.5px] transition-[background-color,box-shadow,color] duration-150",
-        "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
+        "group relative flex h-9 items-center gap-3 rounded-ui text-[13.5px] transition-[background-color,box-shadow,color] duration-150",
+        "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-400",
+        // Di chuột và đang chọn cùng một màu tương phản (Tre 600, chữ trắng 5,3:1); đang chọn thêm lớp kính bóng
+        "hover:bg-bamboo-600! hover:text-white!",
         active
-          ? "bg-bamboo-700/15 font-semibold text-ink ring-1 ring-inset ring-bamboo-700/10"
-          : "text-body hover:bg-bamboo-700/[0.07] hover:text-ink",
+          ? "bg-[linear-gradient(180deg,#3e8a4f_0%,#2f7a3e_55%,#1f5e2e_100%)] font-semibold text-white! shadow-glass-active"
+          : "text-body!",
         collapsed ? "justify-center" : "px-2.5",
       )}
     >
       <Icon
-        className={cn("h-[18px] w-[18px] shrink-0", active ? "text-bamboo-700" : "text-muted group-hover:text-ink")}
+        className={cn("h-[18px] w-[18px] shrink-0", active ? "text-white" : "text-muted group-hover:text-white")}
         strokeWidth={1.75}
         aria-hidden
       />
@@ -67,15 +69,23 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       {!collapsed && item.badge ? (
         <span
           className={cn(
-            "min-w-5 rounded-full px-1.5 text-center text-[11.5px] font-medium tabular-nums",
-            active ? "bg-bamboo-700/15 text-bamboo-800" : "bg-white/80 text-muted",
+            "min-w-5 rounded-ui px-1.5 text-center text-[11.5px] font-medium tabular-nums",
+            active
+              ? "bg-white/25 text-white"
+              : "bg-surface/80 text-muted group-hover:bg-white/25 group-hover:text-white",
           )}
         >
           {item.badge}
         </span>
       ) : null}
       {collapsed && item.badge ? (
-        <span className="absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full bg-bamboo-600" aria-hidden />
+        <span
+          className={cn(
+            "absolute right-2 top-1.5 h-1.5 w-1.5 rounded-ui",
+            active ? "bg-white" : "bg-bamboo-600 group-hover:bg-white",
+          )}
+          aria-hidden
+        />
       ) : null}
     </Link>
   );
@@ -119,19 +129,10 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label={t("Điều hướng chính")}>
         {groups.map((group) => (
           <NavGate key={group.code} access={group.access}>
-            <div className="mt-4 first:mt-1">
-              <div
-                className={cn(
-                  "mb-1 flex h-6 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted",
-                  collapsed ? "justify-center" : "px-2.5",
-                )}
-              >
-                <span className="w-[18px] text-center text-[10.5px] text-muted/80" aria-hidden={!collapsed}>
-                  {group.code}
-                </span>
-                {!collapsed && <span className="truncate">{t(group.label)}</span>}
-              </div>
-              <ul className="m-0 list-none space-y-0.5 p-0">
+            <div className="mt-3 first:mt-1 [&:first-child>[role=separator]]:hidden">
+              {/* Các nhóm ngăn bằng đường kẻ 2px thay cho tiêu đề nhóm (kiểu sidebar macOS) */}
+              <div role="separator" className={cn("mb-3 h-0.5 rounded-ui bg-line", collapsed ? "mx-2" : "mx-2.5")} />
+              <ul className="m-0 list-none space-y-0.5 p-0" aria-label={t(group.label)}>
                 {group.items.map((item) => (
                   <NavGate key={item.key} access={item.access}>
                     <li>
@@ -154,19 +155,23 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         <a
           href="#design-system"
           className={cn(
-            "flex h-8 items-center gap-3 rounded-[10px] text-[13px] text-body hover:bg-white/60 hover:text-ink",
+            "group flex h-8 items-center gap-3 rounded-ui text-[13px] text-body! hover:bg-bamboo-600! hover:text-white!",
             collapsed ? "justify-center" : "px-2.5",
           )}
           title="Bamboo Design System"
         >
-          <Globe className="h-[17px] w-[17px] shrink-0 text-muted" strokeWidth={1.75} aria-hidden />
+          <Globe
+            className="h-[17px] w-[17px] shrink-0 text-muted group-hover:text-white"
+            strokeWidth={1.75}
+            aria-hidden
+          />
           {!collapsed && <span>Bamboo Design System</span>}
         </a>
         <div
           className={cn("flex items-center gap-2 text-[11.5px] text-muted", collapsed ? "justify-center" : "px-2.5")}
           title={t("Kết nối trực tiếp · Phiên đã xác thực MFA")}
         >
-          <span className="h-2 w-2 shrink-0 rounded-full bg-bamboo-500 shadow-[0_0_0_3px_rgb(63_145_80/0.15)]" />
+          <span className="h-2 w-2 shrink-0 rounded-ui bg-bamboo-500 shadow-[0_0_0_3px_rgb(63_145_80/0.15)]" />
           {!collapsed && <span>{t("Trực tiếp · Phiên MFA ✓")}</span>}
         </div>
       </div>
@@ -177,8 +182,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
 export const AppSider = ({ collapsed = false }: { collapsed?: boolean }) => (
   <aside
     className={cn(
-      "sticky top-0 hidden h-screen shrink-0 border-r border-line md:block",
-      "bg-[linear-gradient(180deg,#eaf5ec_0%,#f2f8f3_45%,#e8f3ea_100%)]",
+      "glass sticky top-0 hidden h-screen shrink-0 border-r md:block",
       "transition-[width] duration-200 ease-out",
       collapsed ? "w-[76px]" : "w-[248px]",
     )}
