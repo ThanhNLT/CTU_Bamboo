@@ -36,6 +36,7 @@ from . import (
     lakehouse_query,
     ledger,
     messaging,
+    modules,
     obs,
     ocr,
     ocr_import,
@@ -194,6 +195,7 @@ HANDLERS = {
     **ai_agent.HANDLERS,
     **ocr.HANDLERS,
     **ocr_import.HANDLERS,
+    **modules.HANDLERS,
 }
 
 
@@ -205,6 +207,7 @@ def run_action(pool: ConnectionPool, name: str, payload: dict, ctx: Context | No
     args = payload.get("input") or {}
     try:
         with pool.connection() as conn, conn.transaction():
+            modules.require_action(conn, session, name)
             return handler(conn, session, args, ctx or Context())
     except psycopg.errors.InvalidTextRepresentation as exc:
         raise ActionError("Mã không hợp lệ", "bad-request") from exc
@@ -270,6 +273,7 @@ def create_app(
         signer=receipts.Signer.from_env(settings.actions_secret),
         anchor_signer=receipts.Signer.from_env(settings.actions_secret, "anchor"),
         anchor_url=settings.anchor_url,
+        sleeper_url=settings.sleeper_url,
     )
     verifier = verifier or auth.KeycloakVerifier(
         settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)
@@ -293,6 +297,12 @@ def create_app(
     @app.get("/healthz")
     def healthz():
         return {"ok": True}
+
+    @app.get("/modules/services")
+    def module_services():
+        """Container nào phải chạy, phải dừng theo mô-đun đã cài; sleeper hỏi định kỳ (chỉ mạng nội bộ, ADR #56)."""
+        with app.state.pool.connection() as conn:
+            return modules.desired_services(conn)
 
     @app.get("/auth/gateway")
     def gateway_auth(request: Request):

@@ -9,6 +9,7 @@ import { Globe } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { useLocale } from "../../i18n";
+import { useModules } from "../../modules/useModules";
 import { cn } from "../../utils/cn";
 import { BambooLogo } from "./BambooLogo";
 import { findActive, NAV_GROUPS, type NavItem } from "./nav";
@@ -93,6 +94,10 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   const activeKey = findActive(pathname)?.key;
   const inboxCount = useInboxCount();
   const badgeOf = (item: NavItem) => (item.key === "inbox" ? inboxCount : item.badge);
+  const { enabled } = useModules();
+  const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => enabled(i.module)) })).filter(
+    (g) => g.items.length > 0,
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -112,7 +117,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
       </Link>
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label={t("Điều hướng chính")}>
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <NavGate key={group.code} access={group.access}>
             <div className="mt-4 first:mt-1">
               <div

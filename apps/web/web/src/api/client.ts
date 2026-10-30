@@ -68,14 +68,12 @@ export const toHttpError = (error: unknown): HttpError => {
 export async function request<T = Record<string, unknown>>(
   document: string,
   variables?: Record<string, unknown>,
-  options: { withTenant?: boolean } = {},
+  options: { withTenant?: boolean; role?: "platform_admin" } = {},
 ): Promise<T> {
+  const requestHeaders = headers(options.withTenant ?? true);
+  if (options.role) requestHeaders["x-hasura-role"] = options.role;
   try {
-    return await client.request<T>({
-      document,
-      variables,
-      requestHeaders: headers(options.withTenant ?? true),
-    });
+    return await client.request<T>({ document, variables, requestHeaders });
   } catch (error) {
     throw toHttpError(error);
   }

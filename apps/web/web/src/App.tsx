@@ -33,7 +33,7 @@ import { TenantGate } from "./auth/session";
 import { BambooLayout } from "./components/layout";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { AuditLogList } from "./pages/audit/list";
-import { CatalogPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
+import { CatalogPage, ModulesPage, OrgPage, PeoplePage, RolesPage } from "./pages/admin";
 import { DashboardPage } from "./pages/dashboard";
 import { DocumentDrivePage } from "./pages/document-drive";
 import { KnowledgeLibraryPage, ProposalPage } from "./pages/knowledge-library";
@@ -70,6 +70,8 @@ import {
   PurchaseRequestShow,
 } from "./pages/purchase-requests";
 import { SearchPage } from "./pages/search";
+import { ModulesProvider } from "./modules/context";
+import { RequireModule } from "./modules/RequireModule";
 import { accessControlProvider } from "./providers/access";
 import { authProvider } from "./providers/auth";
 import { dataProvider, liveProvider } from "./providers/data";
@@ -164,6 +166,7 @@ function App() {
                     meta: { label: "Thông báo ngoài ứng dụng" },
                   },
                   { name: "admin_catalog", list: "/admin/catalog", meta: { label: "Danh mục & dữ liệu chủ" } },
+                  { name: "admin_modules", list: "/admin/modules", meta: { label: "Quản lý chức năng" } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
                 options={{
@@ -178,47 +181,182 @@ function App() {
                     element={
                       <Authenticated key="authenticated-inner" fallback={<CatchAllNavigate to="/login" />}>
                         <TenantGate>
-                          <BambooLayout>
-                            <Outlet />
-                          </BambooLayout>
+                          <ModulesProvider>
+                            <BambooLayout>
+                              <Outlet />
+                            </BambooLayout>
+                          </ModulesProvider>
                         </TenantGate>
                       </Authenticated>
                     }
                   >
                     <Route index element={<DashboardPage />} />
-                    <Route path="/h/drive" element={<DocumentDrivePage />} />
-                    <Route path="/h/library" element={<KnowledgeLibraryPage />} />
-                    <Route path="/h/library/proposals/:id" element={<ProposalPage />} />
-                    <Route path="/p/records" element={<RecordsPage />} />
-                    <Route path="/p/tasks" element={<InboxPage />} />
-                    <Route path="/p/process" element={<ProcessDesignPage />} />
-                    <Route path="/d/ops" element={<OperationsCenterPage />} />
+                    <Route
+                      path="/h/drive"
+                      element={
+                        <RequireModule module="files">
+                          <DocumentDrivePage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/h/library"
+                      element={
+                        <RequireModule module="knowledge">
+                          <KnowledgeLibraryPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/h/library/proposals/:id"
+                      element={
+                        <RequireModule module="knowledge">
+                          <ProposalPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/p/records"
+                      element={
+                        <RequireModule module="approval">
+                          <RecordsPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/p/tasks"
+                      element={
+                        <RequireModule module="approval">
+                          <InboxPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/p/process"
+                      element={
+                        <RequireModule module="process">
+                          <ProcessDesignPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/d/ops"
+                      element={
+                        <RequireModule module="data">
+                          <OperationsCenterPage />
+                        </RequireModule>
+                      }
+                    />
                     <Route path="/d/map" element={<Navigate to="/d/ops" replace />} />
-                    <Route path="/d/services" element={<DataServicesPage />} />
-                    <Route path="/d/twin" element={<DigitalTwinPage />} />
-                    <Route path="/d/lineage" element={<DataLineagePage />} />
-                    <Route path="/d/ledger" element={<LedgerPage />} />
-                    <Route path="/i/assistant" element={<AiAssistantPage />} />
-                    <Route path="/i/ocr" element={<OcrInputPage />} />
-                    <Route path="/i/agents" element={<AiAgentsPage />} />
-                    <Route path="/p/documents">
+                    <Route
+                      path="/d/services"
+                      element={
+                        <RequireModule module="data">
+                          <DataServicesPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/d/twin"
+                      element={
+                        <RequireModule module="data">
+                          <DigitalTwinPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/d/lineage"
+                      element={
+                        <RequireModule module="data">
+                          <DataLineagePage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/d/ledger"
+                      element={
+                        <RequireModule module="ledger">
+                          <LedgerPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/i/assistant"
+                      element={
+                        <RequireModule module="ai">
+                          <AiAssistantPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/i/ocr"
+                      element={
+                        <RequireModule module="ai">
+                          <OcrInputPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/i/agents"
+                      element={
+                        <RequireModule module="ai">
+                          <AiAgentsPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/p/documents"
+                      element={
+                        <RequireModule module="procurement">
+                          <Outlet />
+                        </RequireModule>
+                      }
+                    >
                       <Route index element={<PurchaseRequestList />} />
                       <Route path="create" element={<PurchaseRequestCreate />} />
                       <Route path="edit/:id" element={<PurchaseRequestEdit />} />
                       <Route path="show/:id" element={<PurchaseRequestShow />} />
                     </Route>
-                    <Route path="/p/ic-orders">
+                    <Route
+                      path="/p/ic-orders"
+                      element={
+                        <RequireModule module="ic">
+                          <Outlet />
+                        </RequireModule>
+                      }
+                    >
                       <Route index element={<IcOrderList />} />
                       <Route path="show/:id" element={<IcOrderShow />} />
                     </Route>
-                    <Route path="/h/onboarding">
+                    <Route
+                      path="/h/onboarding"
+                      element={
+                        <RequireModule module="hr">
+                          <Outlet />
+                        </RequireModule>
+                      }
+                    >
                       <Route index element={<OnboardingList />} />
                       <Route path="create" element={<OnboardingCreate />} />
                       <Route path="edit/:id" element={<OnboardingEdit />} />
                       <Route path="show/:id" element={<OnboardingShow />} />
                     </Route>
-                    <Route path="/h/decisions" element={<PersonnelDecisionPage />} />
-                    <Route path="/h/transfer">
+                    <Route
+                      path="/h/decisions"
+                      element={
+                        <RequireModule module="hr">
+                          <PersonnelDecisionPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/h/transfer"
+                      element={
+                        <RequireModule module="hr">
+                          <Outlet />
+                        </RequireModule>
+                      }
+                    >
                       <Route index element={<TransferList />} />
                       <Route path="create" element={<TransferCreate />} />
                       <Route path="show/:id" element={<TransferShow />} />
@@ -227,16 +365,32 @@ function App() {
                       <Route path="leg/in/:id" element={<TransferLegShow kind="in" />} />
                       <Route path="leg/group/:id" element={<TransferLegShow kind="group" />} />
                     </Route>
-                    <Route path="/p/inbox" element={<InboxList />} />
+                    <Route
+                      path="/p/inbox"
+                      element={
+                        <RequireModule module="approval">
+                          <InboxList />
+                        </RequireModule>
+                      }
+                    />
                     <Route
                       path="/p/process/:id"
                       element={
-                        <Suspense fallback={<Spin />}>
-                          <ProcessDiagram />
-                        </Suspense>
+                        <RequireModule module="procurement">
+                          <Suspense fallback={<Spin />}>
+                            <ProcessDiagram />
+                          </Suspense>
+                        </RequireModule>
                       }
                     />
-                    <Route path="/i/search" element={<SearchPage />} />
+                    <Route
+                      path="/i/search"
+                      element={
+                        <RequireModule module="search">
+                          <SearchPage />
+                        </RequireModule>
+                      }
+                    />
                     <Route path="/admin/audit-logs" element={<AuditLogList />} />
                     <Route path="/admin/org" element={<OrgPage />} />
                     <Route path="/admin/people" element={<PeoplePage />} />
@@ -245,6 +399,7 @@ function App() {
                     <Route path="/admin/ops" element={<OpsPage />} />
                     <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
                     <Route path="/admin/catalog" element={<CatalogPage />} />
+                    <Route path="/admin/modules" element={<ModulesPage />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                   <Route
