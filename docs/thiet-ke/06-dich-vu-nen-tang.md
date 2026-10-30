@@ -667,3 +667,18 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 - **Container:** `sleeper` hỏi `actions` `GET /modules/services` mỗi `SLEEPER_MODULES_EVERY` giây (mặc định 15), start container của mô-đun đã cài, stop container của mô-đun chưa cài; chỉ đụng tới dịch vụ trong `SLEEPER_MANAGED`. Dịch vụ ngủ (`trino-core`, `tika-core`, `ollama-core`, `ocr-core`) của mô-đun chưa cài không được đánh thức. Trạng thái container hiện trên trang Quản lý chức năng (với `platform_admin`).
 - **Thêm mô-đun dựng sẵn mới:** khai `Module(...)` trong `modules.py` (mã, tên, phụ thuộc, container, Action, việc dở), thêm bảng riêng vào `MODULE_TABLES`, thêm container vào `SLEEPER_MANAGED`, mã vào migration nâng cấp và `DEMO_MODULES` của seed, gắn `module` cho mục menu (`nav.ts`) và `RequireModule` cho route (`App.tsx`). `test_mo_dun.py` báo lỗi nếu thiếu bước nào ở phía máy chủ.
 
+## 23. Khởi tạo công ty và chủ sở hữu (`setup.py`, `legal_sign.py`, migration 043, ADR #57)
+
+- **API công khai** `/setup/*` (cổng API, không token, 30 yêu cầu/phút/IP), chỉ mở khi chưa có công ty: `GET /setup/status`; `POST /setup/applications` (mã thiết lập + thông tin, trả `application_id`, `token`, mã đơn); `GET /setup/applications/{id}/pdf?token=` (đơn PDF); `POST /setup/applications/{id}/finish` (`token`, `signed_pdf_base64` hoặc bỏ trống để tạo công ty chưa xác thực).
+- **Mã thiết lập**: `bootstrap` in ra log khi hệ thống trống; `make setup-code` (`python -m app.setup_code`) lấy mã mới. Chỉ lưu SHA-256, 24 giờ, khóa sau 10 lần sai.
+- **Kiểm chữ ký** (pyHanko): tệp đã ký phải bắt đầu bằng đúng byte đơn đã sinh, chữ ký phủ trọn đơn, chuỗi tới chứng thư gốc ở `SIGNATURE_TRUST_DIR` (mặc định `platform/trust` trong image), kiểm thu hồi khi `SIGNATURE_ONLINE=true`, mã số thuế trong chứng thư (`MST:…` ở UID, OU, CN hoặc serialNumber) trùng mã đã khai. Bằng chứng ở `core.legal_verification`.
+- **Chủ sở hữu** (`core.tenant_owner`): trigger `core.guard_admin_change` chỉ cho chủ sở hữu thêm/bớt quyền `core.org.manage`, `core.permission.manage`, `core.module.manage` vào vai trò, cấp/thu hồi vai trò đó, bổ nhiệm vào vị trí có vai trò đó, ủy quyền quản trị. Công ty chưa có chủ sở hữu (dữ liệu cũ) không bị chặn.
+- **Đăng nhập hai lớp**: tài khoản tạo khi khởi tạo bắt buộc `CONFIGURE_TOTP`; `flow-sync` đặt yêu cầu này cho người được trao quyền quản trị sau đó (`hr_account.enforce_admin_otp`).
+- **Xác thực bổ sung**: Action `legal_status`, `legal_application` (đơn PDF base64), `legal_verify` (chỉ chủ sở hữu); trang **Quản trị → Thông tin công ty** (`/admin/company`).
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `SIGNATURE_TRUST_DIR` | `/repo/platform/trust` | Thư mục chứng thư gốc tin cậy |
+| `SIGNATURE_ONLINE` | `true` | Kiểm thu hồi chứng thư qua OCSP/CRL (chặt) |
+| `SETUP_ALLOW_UNVERIFIED` | `true` | Cho tạo công ty chưa xác thực, ký bổ sung sau |
+

@@ -41,6 +41,9 @@ x-actions-env: &actions-env
   SMS_GATEWAY_URL: ${SMS_GATEWAY_URL:-}
   SMS_GATEWAY_TOKEN: ${SMS_GATEWAY_TOKEN:-}
   WEBHOOK_ALLOW_PRIVATE: ${WEBHOOK_ALLOW_PRIVATE:-false}
+  SIGNATURE_ONLINE: ${SIGNATURE_ONLINE:-true}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
+  SETUP_ALLOW_UNVERIFIED: ${SETUP_ALLOW_UNVERIFIED:-true}
   TRINO_URL: https://trino:8443
   TRINO_CA_FILE: /run/bms/trino-ca.pem
   OLLAMA_URL: ${OLLAMA_URL-http://ollama:11434}
@@ -818,6 +821,7 @@ services:
     environment:
       BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}
       BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8000/graphql}
+      BAMBOO_SETUP_URL: ${WEB_ORIGIN:-http://localhost:8000}/setup
     ports:
       - "127.0.0.1:8088:8080"
     restart: unless-stopped
