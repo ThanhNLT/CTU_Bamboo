@@ -17,7 +17,7 @@ import pytest
 import uvicorn
 from psycopg.rows import dict_row
 
-from app import bootstrap, config, main, search, storage
+from app import bootstrap, config, main, modules, search, storage
 from app.flowable import FlowableClient
 from app.openbao import Bao
 
@@ -52,6 +52,13 @@ def database() -> str:
             INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
             SELECT r.tenant_id, r.id, test.id('P_NV_MH_DT'), 'UNIT' FROM core.role r WHERE r.code = 'MUA_HANG';
         """)
+        # mọi mô-đun đã cài và đã bật cho mọi tenant thử nghiệm, như hệ thống demo (ADR #56)
+        conn.execute(
+            "INSERT INTO core.module_install (module) SELECT unnest(%s::text[])", ([m.code for m in modules.CATALOG],)
+        )
+        conn.execute(
+            "INSERT INTO core.tenant_module (tenant_id, module) SELECT t.id, i.module FROM core.tenant t, core.module_install i"
+        )
         conn.execute((ROOT / "db/roles/grants.sql").read_text(encoding="utf-8"))
     return TEST_DB_URL
 

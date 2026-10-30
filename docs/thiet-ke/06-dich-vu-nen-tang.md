@@ -642,3 +642,28 @@ Người gọi chọn chỉ số, chiều, độ chi tiết thời gian (ngày, 
 `semantic_query`); hệ thống sinh câu SQL trên view silver của Trino. Chỉ tên trong danh mục mới vào được câu SQL, giá trị lọc
 kiểm định dạng chặt, tối đa 1.000 dòng. Truy vấn chạy bằng tài khoản Trino của chính tenant nên luật lọc theo tenant
 ([ADR #45](#adr-45)) vẫn áp dụng. Chưa có giao diện riêng.
+
+## 22. Mô-đun chức năng (`modules.py`, migration 042, ADR #56)
+
+Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị → Quản lý chức năng** (`/admin/modules`).
+
+| Mô-đun | Cần | Container |
+|---|---|---|
+| `approval` Phê duyệt | – | – |
+| `procurement` Mua sắm | `approval` | `flowable` |
+| `ic` Đơn hàng nội bộ | `procurement` | – |
+| `hr` Nghiệp vụ nhân sự | `approval` | – |
+| `process` Thiết kế & tự động hóa quy trình | – | `flowable` |
+| `files` Ổ đĩa & tệp đính kèm | – | – |
+| `search` Tìm kiếm toàn văn | – | `meilisearch`, `search-sync`, `tika-core` |
+| `knowledge` Thư viện tri thức | `approval`, `files`, `search` | – |
+| `ledger` Sổ cái | – | – |
+| `data` Dữ liệu số | – | `kafka`, `debezium`, `lakehouse-sink`, `trino-core` |
+| `ai` Trí tuệ số | `files`, `search` | `ollama-core`, `ocr-core`, `ai-worker` |
+
+- **Hai tầng:** cài trên máy (`core.module_install`, chỉ `platform_admin`; container chạy) và bật cho công ty (`core.tenant_module`, quyền `core.module.manage`). Quản trị nền tảng bấm **Bật** với mô-đun chưa cài thì cài luôn.
+- **Chặn khi chưa bật:** Action trả `module-disabled` (403); bảng thuộc riêng mô-đun (`hasura_metadata.MODULE_TABLES`) không đọc, không ghi được qua GraphQL; menu ẩn, trang hiện thông báo "chưa bật".
+- **Không tắt được** khi mô-đun đang bật khác dựa vào nó (`module-in-use`) hoặc còn việc dở (`module-busy`: đề nghị chờ duyệt/bị trả về, việc duyệt đang mở, đơn hàng nội bộ chờ xác nhận, quy trình tự động đang bật). **Không gỡ được** khi còn công ty bật.
+- **Container:** `sleeper` hỏi `actions` `GET /modules/services` mỗi `SLEEPER_MODULES_EVERY` giây (mặc định 15), start container của mô-đun đã cài, stop container của mô-đun chưa cài; chỉ đụng tới dịch vụ trong `SLEEPER_MANAGED`. Dịch vụ ngủ (`trino-core`, `tika-core`, `ollama-core`, `ocr-core`) của mô-đun chưa cài không được đánh thức. Trạng thái container hiện trên trang Quản lý chức năng (với `platform_admin`).
+- **Thêm mô-đun dựng sẵn mới:** khai `Module(...)` trong `modules.py` (mã, tên, phụ thuộc, container, Action, việc dở), thêm bảng riêng vào `MODULE_TABLES`, thêm container vào `SLEEPER_MANAGED`, mã vào migration nâng cấp và `DEMO_MODULES` của seed, gắn `module` cho mục menu (`nav.ts`) và `RequireModule` cho route (`App.tsx`). `test_mo_dun.py` báo lỗi nếu thiếu bước nào ở phía máy chủ.
+
