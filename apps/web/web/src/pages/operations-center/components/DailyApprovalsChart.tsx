@@ -89,7 +89,7 @@ export const DailyApprovalsChart = ({
                 highlight === c.key ? "font-semibold text-ink" : "text-body",
               )}
             >
-              <span className="h-0.5 w-3.5 rounded-full" style={{ background: c.color }} aria-hidden />
+              <span className="h-0.5 w-3.5 rounded-ui" style={{ background: c.color }} aria-hidden />
               {c.name}
             </button>
           </li>
@@ -99,7 +99,7 @@ export const DailyApprovalsChart = ({
       {asTable ? (
         <div className="max-h-[240px] overflow-auto">
           <table className="w-full text-[12px]">
-            <thead className="sticky top-0 bg-white text-muted">
+            <thead className="sticky top-0 bg-surface text-muted">
               <tr>
                 <th className="py-1 text-left font-medium">Ngày</th>
                 {companies.map((c) => (

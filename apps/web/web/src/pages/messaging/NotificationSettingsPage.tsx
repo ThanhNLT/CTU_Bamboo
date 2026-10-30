@@ -54,7 +54,7 @@ const ChannelCard = ({ pref, kinds, onChanged }: { pref: ChannelPref; kinds: Kin
   };
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label={info.title}>
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label={info.title}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="m-0 text-[15px] font-semibold text-ink">{info.title}</h2>
         {!pref.configured && <Tag color="orange">Máy chủ chưa cấu hình kênh này</Tag>}
@@ -177,7 +177,7 @@ export const NotificationSettingsPage = () => {
           <ChannelCard key={`${c.channel}-${c.address}-${c.enabled}`} pref={c} kinds={data.kinds} onChanged={load} />
         ))}
       </div>
-      <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Tin đã gửi gần đây">
+      <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Tin đã gửi gần đây">
         <h2 className="m-0 mb-3 text-[15px] font-semibold text-ink">Tin đã gửi gần đây</h2>
         <Table<Delivery>
           rowKey="id"

@@ -19,7 +19,7 @@ export const IncidentList = ({
 }) => {
   const label = (key: string) => metrics.find((m) => m.key === key)?.label ?? key;
   return (
-    <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Sự cố gần đây">
+    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Sự cố gần đây">
       <h3 className="text-[14px] font-semibold text-ink">Sự cố gần đây</h3>
       {incidents.length === 0 ? (
         <p className="mt-3 text-[13px] text-muted">Không có lần vượt ngưỡng nào trong 24 giờ qua.</p>

@@ -29,11 +29,11 @@ const DueTag = ({ task }: { task: TaskItem }) => {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium",
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-ui px-2.5 py-1 text-[11.5px] font-medium",
         s.pill,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} aria-hidden />
+      <span className={cn("h-1.5 w-1.5 rounded-ui", s.dot)} aria-hidden />
       {task.dueLabel}
     </span>
   );
@@ -75,7 +75,7 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
       return (
         <div key={level} className="rounded-xl bg-canvas p-2.5">
           <div className="mb-2 flex items-center gap-2 px-1 text-[12px] font-semibold text-body">
-            <span className={cn("h-1.5 w-1.5 rounded-full", DUE_STYLE[level].dot)} aria-hidden />
+            <span className={cn("h-1.5 w-1.5 rounded-ui", DUE_STYLE[level].dot)} aria-hidden />
             {DUE_STYLE[level].column}
             <span className="ml-auto font-medium tabular-nums text-muted">{items.length}</span>
           </div>
@@ -84,7 +84,7 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
               <Link
                 key={t.code}
                 to={t.to}
-                className="block rounded-lg border border-line bg-white p-2.5 shadow-card hover:border-bamboo-200"
+                className="block rounded-lg border border-line bg-surface p-2.5 shadow-card hover:border-bamboo-200"
               >
                 <Code>{t.code}</Code>
                 <div className="mt-1 text-[13px] font-medium leading-snug text-ink">{t.title}</div>

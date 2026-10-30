@@ -8,7 +8,7 @@ import { cn } from "../../../utils/cn";
 import { pageList } from "../utils";
 
 const btn =
-  "grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-[12px] tabular-nums transition-colors " +
+  "grid h-7 min-w-7 place-items-center rounded-ui px-1.5 text-[12px] tabular-nums transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500 disabled:cursor-default disabled:opacity-40";
 
 export const Pagination = ({

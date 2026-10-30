@@ -43,7 +43,7 @@ export const SearchResultList = ({
 }) => {
   const remaining = total - results.length;
   return (
-    <section aria-label="Kết quả" className="min-w-0 rounded-2xl border border-line bg-white p-5 shadow-card">
+    <section aria-label="Kết quả" className="min-w-0 rounded-2xl border border-line bg-surface p-5 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[13px] text-muted" aria-live="polite">
           <b className="text-[16px] font-semibold text-ink">
@@ -87,7 +87,7 @@ export const SearchResultList = ({
             type="button"
             onClick={onShowMore}
             disabled={loading}
-            className="h-8 rounded-full bg-black/[0.045] px-4 text-[12.5px] font-semibold text-ink transition-colors hover:bg-bamboo-50 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
+            className="h-8 rounded-ui bg-black/[0.045] px-4 text-[12.5px] font-semibold text-ink transition-colors hover:bg-bamboo-50 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
           >
             {remaining > 0 ? `Xem thêm ${remaining} kết quả` : "Xem thêm"}
           </button>

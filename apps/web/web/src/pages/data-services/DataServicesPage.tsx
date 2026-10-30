@@ -16,7 +16,7 @@ import { domainCounts, filterDatasets } from "./utils";
 const Notice = ({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) => (
   <div
     role="status"
-    className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center"
+    className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-14 text-center"
   >
     {icon}
     <p className="text-[14px] font-medium text-ink">{title}</p>

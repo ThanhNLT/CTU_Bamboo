@@ -124,7 +124,7 @@ const LineageColumn = ({ title, items }: { title: string; items: string[] }) => 
       {items.map((s) => (
         <li
           key={s}
-          className="truncate rounded-lg border border-line bg-white px-2.5 py-1.5 font-mono text-[11.5px] text-ink"
+          className="truncate rounded-lg border border-line bg-surface px-2.5 py-1.5 font-mono text-[11.5px] text-ink"
           title={s}
         >
           {s}
@@ -163,7 +163,7 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
     return (
       <div
         className={cn(
-          "flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-white text-[13px] text-muted shadow-card",
+          "flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-surface text-[13px] text-muted shadow-card",
           className,
         )}
       >
@@ -176,7 +176,7 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
     <article
       aria-live="polite"
       className={cn(
-        "min-h-0 overflow-y-auto rounded-2xl border border-line bg-white p-5 shadow-card sm:p-6",
+        "min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6",
         className,
       )}
     >
@@ -195,7 +195,7 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
       <div
         role="tablist"
         aria-label="Nội dung tập dữ liệu"
-        className="mt-5 inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+        className="mt-5 inline-flex max-w-full flex-wrap gap-0.5 rounded-ui bg-black/[0.045] p-1"
       >
         {TABS.map((t) => (
           <button
@@ -205,9 +205,9 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
             aria-selected={t.key === tab}
             onClick={() => setTab(t.key)}
             className={cn(
-              "h-7 rounded-full px-3 text-[12px] transition-colors",
+              "h-7 rounded-ui px-3 text-[12px] transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-              t.key === tab ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:text-ink",
+              t.key === tab ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
             )}
           >
             {t.label}

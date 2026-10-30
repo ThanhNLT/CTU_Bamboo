@@ -39,7 +39,7 @@ export const DataFilterBar = ({
             aria-pressed={active}
             onClick={() => onDomainChange(d.key)}
             className={cn(
-              "h-7 rounded-full px-3 text-[12px] font-medium transition-colors",
+              "h-7 rounded-ui px-3 text-[12px] font-medium transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
               active
                 ? "bg-bamboo-100 text-bamboo-800"

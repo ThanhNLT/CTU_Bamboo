@@ -10,18 +10,38 @@
 @import "@refinedev/antd/dist/reset.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/* Chế độ tối bật bằng data-theme="dark" trên thẻ html (nút mặt trăng ở thanh trên) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
-  --color-bamboo-50: #f0f7f1;
-  --color-bamboo-100: #e1f0e3;
-  --color-bamboo-200: #c3e0c8;
-  --color-bamboo-300: #98c9a0;
-  --color-bamboo-400: #63ab70;
-  --color-bamboo-500: #3f9150;
+  /* Thang Tre (Bamboo Design System): 600 là màu chính, chữ trắng trên 600 đạt 5,3:1 */
+  --color-bamboo-50: #f1f8f2;
+  --color-bamboo-100: #e8f3e8;
+  --color-bamboo-200: #c3e2c9;
+  --color-bamboo-300: #94c89f;
+  --color-bamboo-400: #5fae6e;
+  --color-bamboo-500: #3e8a4f;
   --color-bamboo-600: #2f7a3e;
-  --color-bamboo-700: #276533;
-  --color-bamboo-800: #1f512a;
+  --color-bamboo-700: #1f5e2e;
+  --color-bamboo-800: #194b25;
+  --color-bamboo-900: #133a1e;
+
+  /* Một bán kính bo góc cho mọi thành phần: mọi lớp rounded-* đều ra 10px */
+  --radius: 10px;
+  --radius-ui: 10px;
+  --radius-xs: 10px;
+  --radius-sm: 10px;
+  --radius-md: 10px;
+  --radius-lg: 10px;
+  --radius-xl: 10px;
+  --radius-2xl: 10px;
+  --radius-3xl: 10px;
+  --radius-4xl: 10px;
 
   --color-canvas: #f5f7f5;
+  --color-surface: #ffffff;
+  /* Ô đang chọn trong thanh tab dạng phân đoạn (Tất cả / Nháp / Đang duyệt...) */
+  --color-segment: #ffffff;
   --color-line: #e4e9e5;
   --color-ink: #1b231e;
   --color-body: #36413a;
@@ -33,6 +53,12 @@
 
   --shadow-card: 0 1px 2px rgb(16 24 20 / 0.04), 0 1px 1px rgb(16 24 20 / 0.02);
   --shadow-float: 0 12px 32px -8px rgb(16 24 20 / 0.18), 0 2px 6px rgb(16 24 20 / 0.06);
+  /* Vật liệu kính (Liquid Glass): viền sáng phía trên, bóng mềm phía dưới */
+  --shadow-glass:
+    inset 0 1px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(16 24 20 / 0.04), 0 8px 24px -12px rgb(16 24 20 / 0.12);
+  --shadow-glass-active:
+    inset 0 1px 0 rgb(255 255 255 / 0.28), inset 0 -1px 0 rgb(0 0 0 / 0.12), 0 6px 16px -6px rgb(31 94 46 / 0.55),
+    0 1px 2px rgb(19 58 30 / 0.25);
 
   --animate-stripes: stripes 0.9s linear infinite;
   @keyframes stripes {
@@ -72,4 +98,98 @@
     background-color: var(--color-canvas);
     -webkit-font-smoothing: antialiased;
   }
+
+  :root {
+    color-scheme: light;
+    --glass-bg: rgb(255 255 255 / 0.72);
+    --glass-edge: rgb(255 255 255 / 0.6);
+  }
+
+  /*
+   * Chế độ tối: đổi giá trị token, mọi lớp tiện ích (bg-surface, text-ink, border-line...) tự đổi theo.
+   * Thang Tre đảo chiều: 50–300 thành nền xanh tối, 700–900 thành chữ xanh sáng; 600 giữ làm màu nút chính.
+   * Các màu trạng thái nhạt (red/amber/yellow-50...) thành nền tối cùng sắc, màu chữ đậm (700–900) sáng lên.
+   */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --glass-bg: rgb(24 32 27 / 0.72);
+    --glass-edge: rgb(255 255 255 / 0.08);
+
+    --color-canvas: #0f1511;
+    --color-surface: #18201b;
+    --color-segment: #34413a;
+    /* Lớp phủ mờ bg-black/[...] thành trắng mờ để vẫn thấy trên nền tối */
+    --color-black: #ffffff;
+    --color-line: #2a352e;
+    --color-ink: #e8efe9;
+    --color-body: #c3cdc6;
+    --color-muted: #a7b1aa;
+
+    --color-bamboo-50: #15241a;
+    --color-bamboo-100: #1a2e21;
+    --color-bamboo-200: #234030;
+    --color-bamboo-300: #2f5a3c;
+    --color-bamboo-400: #4f9e5f;
+    --color-bamboo-500: #5fae6e;
+    --color-bamboo-700: #4f9e5f;
+    --color-bamboo-800: #94c89f;
+    --color-bamboo-900: #c3e2c9;
+
+    --color-red-50: #2a1616;
+    --color-red-100: #3a1c1c;
+    --color-red-200: #5a2626;
+    --color-red-300: #7f3434;
+    --color-red-600: #f87171;
+    --color-red-700: #fca5a5;
+    --color-red-800: #fecaca;
+    --color-amber-50: #2a2212;
+    --color-amber-100: #3a2e14;
+    --color-amber-200: #5a4518;
+    --color-amber-600: #fbbf24;
+    --color-amber-700: #fcd34d;
+    --color-amber-800: #fde68a;
+    --color-amber-900: #fef3c7;
+    --color-yellow-50: #29260f;
+    --color-yellow-100: #3a3412;
+    --color-yellow-200: #4f4515;
+    --color-gray-100: #26302a;
+    --color-gray-200: #2f3a33;
+    --color-gray-300: #3f4a43;
+    --color-gray-600: #b4beb7;
+    --color-violet-50: #221a33;
+    --color-violet-100: #2e2245;
+    --color-violet-700: #c4b5fd;
+    --color-sky-50: #102530;
+    --color-sky-100: #15303f;
+    --color-sky-700: #7dd3fc;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  }
+}
+
+@layer components {
+  /* Kính: blur 30 · saturate 180% · độ trong 72% */
+  .glass {
+    background-color: var(--glass-bg);
+    border-color: var(--glass-edge);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
+    box-shadow: var(--shadow-glass);
+  }
+}
+
+/*
+ * Chế độ tối cho Tag trạng thái của Ant Design: Tag lấy chữ thẳng từ màu trạng thái (xanh, đỏ đậm) nên quá tối trên nền tối.
+ * Để ngoài @layer vì CSS của Ant Design không thuộc layer nào.
+ */
+:root[data-theme="dark"] .ant-tag.ant-tag-processing,
+:root[data-theme="dark"] .ant-tag.ant-tag-success {
+  color: #8fd19c;
+}
+:root[data-theme="dark"] .ant-tag.ant-tag-error {
+  color: #fca5a5;
+}
+:root[data-theme="dark"] .ant-tag.ant-tag-warning {
+  color: #fcd34d;
 }

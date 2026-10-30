@@ -28,8 +28,8 @@ export const InboxHeader = ({
         <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Hộp việc</h1>
         <p className="mt-1 text-[13px] text-muted">
           {mineCount} việc chờ bạn · sắp theo hạn SLA ({slaHours} giờ từ lúc giao) · phím{" "}
-          <kbd className="rounded border border-line bg-white px-1 font-sans text-[11px]">J</kbd> /{" "}
-          <kbd className="rounded border border-line bg-white px-1 font-sans text-[11px]">K</kbd> để chuyển việc
+          <kbd className="rounded border border-line bg-surface px-1 font-sans text-[11px]">J</kbd> /{" "}
+          <kbd className="rounded border border-line bg-surface px-1 font-sans text-[11px]">K</kbd> để chuyển việc
         </p>
       </div>
       <Segmented

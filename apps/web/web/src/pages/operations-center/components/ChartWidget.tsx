@@ -23,7 +23,7 @@ export const ChipButton = ({
     onClick={onClick}
     aria-pressed={pressed}
     className={cn(
-      "inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[11.5px] font-medium transition-colors",
+      "inline-flex h-7 items-center gap-1.5 rounded-ui px-3 text-[11.5px] font-medium transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
       pressed ? "bg-bamboo-100 text-bamboo-800" : "bg-canvas text-ink hover:bg-gray-200/70",
       className,
@@ -61,7 +61,7 @@ export const ChartWidget = ({
   className?: string;
 }) => (
   <section
-    className={cn("flex min-w-0 flex-col rounded-2xl border border-line bg-white p-5 shadow-card", className)}
+    className={cn("flex min-w-0 flex-col rounded-2xl border border-line bg-surface p-5 shadow-card", className)}
     aria-label={title}
   >
     <header className="flex items-start justify-between gap-3">

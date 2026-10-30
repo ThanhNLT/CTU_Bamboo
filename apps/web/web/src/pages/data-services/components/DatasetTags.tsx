@@ -11,7 +11,7 @@ import type { Dataset } from "../types";
 const Tag = ({ className, children }: { className: string; children: ReactNode }) => (
   <span
     className={cn(
-      "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium",
+      "inline-flex items-center gap-1 whitespace-nowrap rounded-ui px-2 py-0.5 text-[11px] font-medium",
       className,
     )}
   >
@@ -27,7 +27,7 @@ export const DatasetTags = ({ dataset }: { dataset: Dataset }) => {
     <div className="flex flex-wrap gap-1.5">
       {failed > 0 ? (
         <Tag className="bg-amber-50 text-amber-800">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+          <span className="h-1.5 w-1.5 rounded-ui bg-amber-500" aria-hidden />
           {failed} kiểm tra lỗi
         </Tag>
       ) : dataset.certified ? (

@@ -46,7 +46,7 @@ export const OverdueTable = ({
   highlight?: CompanyKey;
   onHighlight: (c?: CompanyKey) => void;
 }) => (
-  <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-labelledby="overdue-title">
+  <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-labelledby="overdue-title">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <h2 id="overdue-title" className="text-[15px] font-semibold text-ink">
         Hồ sơ quá hạn SLA – top 5
@@ -110,7 +110,7 @@ export const OverdueTable = ({
                 <td className={td}>
                   <span className="inline-flex items-center gap-2 text-ink">
                     <span
-                      className="h-2 w-2 rounded-full"
+                      className="h-2 w-2 rounded-ui"
                       style={{ background: COMPANY[r.company]?.color }}
                       aria-hidden
                     />

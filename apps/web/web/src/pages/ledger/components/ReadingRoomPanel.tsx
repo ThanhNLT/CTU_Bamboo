@@ -49,7 +49,7 @@ export const ReadingRoomPanel = ({
       aria-labelledby="ledger-tab-reading"
       className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,9fr)]"
     >
-      <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Hồ sơ lưu trữ">
+      <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Hồ sơ lưu trữ">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="text-[15px] font-semibold text-ink">Hồ sơ lưu trữ</h2>
@@ -71,7 +71,7 @@ export const ReadingRoomPanel = ({
       </section>
 
       <div className="flex min-w-0 flex-col gap-4">
-        <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Nhật ký truy cập">
+        <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Nhật ký truy cập">
           <h2 className="text-[15px] font-semibold text-ink">Nhật ký truy cập</h2>
           {logs.length === 0 && <p className="py-4 text-[12.5px] text-muted">Chưa có ai mở hồ sơ lưu trữ.</p>}
           <ul className="m-0 mt-2 list-none divide-y divide-line p-0">
@@ -89,7 +89,7 @@ export const ReadingRoomPanel = ({
           </ul>
         </section>
 
-        <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label="Quy tắc phòng đọc">
+        <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Quy tắc phòng đọc">
           <h2 className="text-[15px] font-semibold text-ink">Quy tắc phòng đọc</h2>
           <ul className="m-0 mt-3 list-none space-y-3 p-0">
             {RULES.map((r) => (

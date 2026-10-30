@@ -132,7 +132,7 @@ export const NotificationBell = () => {
       <button type="button" className={iconButtonClass} aria-label={`${unread} thông báo chưa đọc`}>
         <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
         {unread > 0 && (
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" aria-hidden />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-ui bg-red-500 ring-2 ring-surface" aria-hidden />
         )}
       </button>
     </Popover>

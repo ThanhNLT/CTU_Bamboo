@@ -37,7 +37,7 @@ export const RecordDetailPanel = ({
     return (
       <aside
         className={cn(
-          "flex min-h-[240px] flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-white p-6 text-center shadow-card",
+          "flex min-h-[240px] flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface p-6 text-center shadow-card",
           className,
         )}
       >
@@ -60,7 +60,7 @@ export const RecordDetailPanel = ({
       aria-label={`Chi tiết ${record.code}`}
       aria-live="polite"
       className={cn(
-        "flex min-h-0 flex-col overflow-y-auto rounded-2xl border border-line bg-white p-5 shadow-card",
+        "flex min-h-0 flex-col overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-card",
         className,
       )}
     >

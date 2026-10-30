@@ -31,7 +31,7 @@ export const BoardState = ({
   <>
     {error && <Alert type="error" showIcon message="Không tải được số liệu" description={error} />}
     {!ready && loading && (
-      <div className="rounded-2xl border border-line bg-white p-6 shadow-card">
+      <div className="rounded-2xl border border-line bg-surface p-6 shadow-card">
         <Skeleton active paragraph={{ rows: 6 }} />
       </div>
     )}

@@ -40,7 +40,7 @@ export const RunsTab = ({
   onRestore: (version: number) => void;
 }) => (
   <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Lần chạy thử">
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Lần chạy thử">
       <h2 className="m-0 text-[14px] font-semibold text-ink">Lần chạy thử</h2>
       {runs.length === 0 && <p className="m-0 mt-2 text-[12.5px] text-muted">Chưa chạy thử lần nào.</p>}
       <ol className="m-0 mt-2 list-none space-y-3 p-0">
@@ -85,7 +85,7 @@ export const RunsTab = ({
         ))}
       </ol>
     </section>
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Phiên bản phát hành">
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Phiên bản phát hành">
       <h2 className="m-0 text-[14px] font-semibold text-ink">Phiên bản phát hành</h2>
       {versions.length === 0 && <p className="m-0 mt-2 text-[12.5px] text-muted">Chưa phát hành phiên bản nào.</p>}
       <ul className="m-0 mt-2 list-none divide-y divide-line p-0">

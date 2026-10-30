@@ -7,7 +7,7 @@
 .bamboo-bpmn {
   height: 480px;
   border: 1px solid #d9d9d9;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
   position: relative;
 }
@@ -34,7 +34,7 @@
   content: "";
   width: 18px;
   height: 12px;
-  border-radius: 3px;
+  border-radius: 10px;
   border: 1px solid #8c8c8c;
   background: #fff;
 }
@@ -50,5 +50,5 @@
 .bamboo-step-picked {
   outline: 2px solid #1677ff;
   outline-offset: 4px;
-  border-radius: 4px;
+  border-radius: 10px;
 }

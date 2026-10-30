@@ -187,7 +187,7 @@ export const CatalogPage = () => {
 
       {tab.key === "partner" && <ProposedPartners onAdopted={() => void q.reload()} />}
 
-      <section className="rounded-2xl border border-line bg-white px-3 pb-3 pt-1 shadow-card" aria-label={tab.label}>
+      <section className="rounded-2xl border border-line bg-surface px-3 pb-3 pt-1 shadow-card" aria-label={tab.label}>
         <div className="px-2 pb-1 pt-2 text-[12px] tabular-nums text-muted">{count} mục</div>
         <ConfigProvider theme={bambooTableTheme}>
           {isCatalog && (

@@ -102,7 +102,7 @@ export const ProcessHeader = ({
     </div>
     <div
       role="note"
-      className="flex items-start gap-2.5 rounded-xl border border-line bg-white px-4 py-2.5 text-[12.5px] text-body"
+      className="flex items-start gap-2.5 rounded-xl border border-line bg-surface px-4 py-2.5 text-[12.5px] text-body"
     >
       <Info className="mt-px h-4 w-4 shrink-0 text-bamboo-600" strokeWidth={2} aria-hidden />
       <p className="m-0">{BANNER[access]}</p>

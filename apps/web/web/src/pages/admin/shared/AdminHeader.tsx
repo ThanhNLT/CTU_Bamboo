@@ -23,7 +23,7 @@ export const AdminHeader = ({
 );
 
 export const NoAccess = ({ permission }: { permission: string }) => (
-  <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-16 text-center">
+  <div className="rounded-2xl border border-dashed border-line bg-surface px-6 py-16 text-center">
     <p className="text-[13.5px] font-medium text-ink">Bạn chưa có quyền quản trị mục này.</p>
     <p className="mt-1 text-[12.5px] text-muted">
       Cần quyền <code className="rounded bg-canvas px-1 font-mono text-[12px]">{permission}</code> — nhờ quản trị viên

@@ -30,7 +30,7 @@ export const RecordStatusBadge = ({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 whitespace-nowrap",
-        pill ? cn("rounded-full px-2.5 py-0.5 text-[11.5px] font-medium", PILL[v.tone]) : "text-[12.5px] text-body",
+        pill ? cn("rounded-ui px-2.5 py-0.5 text-[11.5px] font-medium", PILL[v.tone]) : "text-[12.5px] text-body",
       )}
     >
       {v.locked ? <Lock className="h-3 w-3 text-muted" strokeWidth={2} aria-hidden /> : <Dot tone={v.tone} size="md" />}

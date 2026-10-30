@@ -46,24 +46,29 @@ const Body = ({ view }: { view: ArchiveView }) => {
       <iframe
         title={`Xem chỉ đọc: ${view.fileName}`}
         src={`${view.url}#toolbar=0&navpanes=0`}
-        className="h-[70vh] w-full rounded-md border-0 bg-white"
+        className="h-[70vh] w-full rounded-md border-0 bg-surface"
       />
     );
   }
   if (view.contentType.startsWith("image/")) {
     return (
-      <img src={view.url} alt={view.fileName} draggable={false} className="mx-auto max-h-[70vh] rounded-md bg-white" />
+      <img
+        src={view.url}
+        alt={view.fileName}
+        draggable={false}
+        className="mx-auto max-h-[70vh] rounded-md bg-surface"
+      />
     );
   }
   if (view.contentType === "text/plain") {
     return (
-      <article className="max-h-[70vh] overflow-auto rounded-md bg-white px-6 py-5 shadow-card">
+      <article className="max-h-[70vh] overflow-auto rounded-md bg-surface px-6 py-5 shadow-card">
         <TextBody url={view.url} />
       </article>
     );
   }
   return (
-    <div className="flex min-h-[240px] flex-col items-center justify-center gap-2 rounded-md bg-white text-center">
+    <div className="flex min-h-[240px] flex-col items-center justify-center gap-2 rounded-md bg-surface text-center">
       <FileWarning className="h-6 w-6 text-amber-600" aria-hidden />
       <p className="m-0 text-[13px] text-body">
         Tệp <b>{view.fileName}</b> (Word, Excel) không xem trực tiếp được trong phòng đọc.
@@ -84,7 +89,7 @@ export const ReadOnlyViewerModal = ({ view, onClose }: { view?: ArchiveView; onC
       <span className="flex items-center gap-2">
         <Lock className="h-4 w-4 text-muted" aria-hidden />
         <span className="truncate">{view?.title}</span>
-        <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-line px-2 text-[11px] font-medium text-body">
+        <span className="inline-flex h-5 shrink-0 items-center rounded-ui border border-line px-2 text-[11px] font-medium text-body">
           Chỉ đọc
         </span>
       </span>

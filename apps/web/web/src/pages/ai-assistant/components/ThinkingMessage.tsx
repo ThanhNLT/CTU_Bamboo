@@ -12,7 +12,7 @@ export const ThinkingMessage = ({ label }: { label: string }) => (
         {[0, 1, 2].map((d) => (
           <span
             key={d}
-            className="h-1.5 w-1.5 rounded-full bg-bamboo-500 motion-safe:animate-bounce"
+            className="h-1.5 w-1.5 rounded-ui bg-bamboo-500 motion-safe:animate-bounce"
             style={{ animationDelay: `${d * 120}ms` }}
           />
         ))}

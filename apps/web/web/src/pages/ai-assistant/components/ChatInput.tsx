@@ -38,7 +38,7 @@ export const ChatInput = ({
   }, [value]);
 
   return (
-    <div className="rounded-[22px] border border-line bg-white px-2 py-1.5 shadow-float">
+    <div className="rounded-ui border border-line bg-surface px-2 py-1.5 shadow-float">
       <div className="flex items-end gap-1.5">
         <textarea
           ref={ref}
@@ -64,7 +64,7 @@ export const ChatInput = ({
           disabled={!canSend}
           aria-label="Gửi"
           className={cn(
-            "grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition-colors",
+            "grid h-9 w-9 shrink-0 place-items-center rounded-ui text-white transition-colors",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
             canSend ? "bg-bamboo-600 hover:bg-bamboo-700" : "cursor-not-allowed bg-bamboo-300",
           )}

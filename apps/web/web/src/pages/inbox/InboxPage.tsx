@@ -177,7 +177,7 @@ export const InboxPage = () => {
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-line bg-white px-6 py-16 text-center text-[13px] text-muted shadow-card">
+          <div className="rounded-2xl border border-line bg-surface px-6 py-16 text-center text-[13px] text-muted shadow-card">
             {scope === "mine" ? "Không còn việc nào chờ bạn. Hết việc rồi!" : "Nhóm không còn việc nào đang chờ."}
           </div>
         )}

@@ -13,12 +13,16 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  Moon,
   Search,
   Sparkles,
+  Sun,
 } from "lucide-react";
+import { useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { useSession } from "../../auth/useSession";
+import { ColorModeContext } from "../../contexts/color-mode/context";
 import { LOCALES, setLocale, useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
 import { NotificationBell } from "../notifications/Bell";
@@ -46,13 +50,13 @@ const initials = (name: string) =>
 const SiderToggle = ({ collapsed, onCollapsedChange }: Pick<HeaderProps, "collapsed" | "onCollapsedChange">) => {
   const { t } = useLocale();
   return (
-    <div className="hidden h-9 items-center rounded-full border border-line bg-white p-0.5 shadow-card md:flex">
+    <div className="hidden h-9 items-center rounded-ui border border-line bg-surface p-0.5 shadow-card md:flex">
       <button
         type="button"
         onClick={() => onCollapsedChange(true)}
         disabled={collapsed}
         aria-label={t("Thu gọn menu")}
-        className="grid h-8 w-8 place-items-center rounded-full text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
+        className="grid h-8 w-8 place-items-center rounded-ui text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -61,7 +65,7 @@ const SiderToggle = ({ collapsed, onCollapsedChange }: Pick<HeaderProps, "collap
         onClick={() => onCollapsedChange(false)}
         disabled={!collapsed}
         aria-label={t("Mở rộng menu")}
-        className="grid h-8 w-8 place-items-center rounded-full text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
+        className="grid h-8 w-8 place-items-center rounded-ui text-body hover:bg-black/5 disabled:cursor-default disabled:text-muted/50 disabled:hover:bg-transparent"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
@@ -90,11 +94,11 @@ const SearchTrigger = () => {
     <button
       type="button"
       onClick={() => query.toggle()}
-      className="hidden h-9 w-full max-w-[340px] items-center gap-2 rounded-full border border-line bg-canvas px-3.5 text-left text-[13px] text-muted transition-colors hover:border-bamboo-200 hover:bg-white lg:flex"
+      className="hidden h-9 w-full max-w-[340px] items-center gap-2 rounded-ui border border-line bg-canvas px-3.5 text-left text-[13px] text-muted transition-colors hover:border-bamboo-200 hover:bg-surface lg:flex"
     >
       <Search className="h-4 w-4 shrink-0" aria-hidden />
       <span className="flex-1 truncate">{t("Tìm mọi thứ")}</span>
-      <kbd className="rounded-md border border-line bg-white px-1.5 py-px font-sans text-[11px] text-muted">
+      <kbd className="rounded-md border border-line bg-surface px-1.5 py-px font-sans text-[11px] text-muted">
         {IS_MAC ? "⌘K" : "Ctrl K"}
       </kbd>
     </button>
@@ -118,7 +122,7 @@ const CompanySwitcher = () => {
         className={cn(pillButtonClass, "max-w-[240px]")}
         aria-label={`Đơn vị: ${tenant.tenant_name}`}
       >
-        <span className="h-2 w-2 shrink-0 rounded-full bg-orange-500" aria-hidden />
+        <span className="h-2 w-2 shrink-0 rounded-ui bg-orange-500" aria-hidden />
         <span className="hidden truncate sm:inline">{tenant.tenant_name}</span>
         {tenants.length > 1 && <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />}
       </button>
@@ -136,9 +140,9 @@ const AppLauncher = () => {
             <NavGate key={key} access={access}>
               <Link
                 to={to}
-                className="flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[11.5px] leading-tight text-body hover:bg-bamboo-50 hover:text-ink"
+                className="group flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[11.5px] font-semibold leading-tight text-ink! hover:bg-bamboo-600! hover:text-white!"
               >
-                <Icon className="h-5 w-5 text-bamboo-700" strokeWidth={1.75} aria-hidden />
+                <Icon className="h-5 w-5 text-bamboo-700 group-hover:text-white" strokeWidth={1.75} aria-hidden />
                 {t(label)}
               </Link>
             </NavGate>
@@ -150,9 +154,9 @@ const AppLauncher = () => {
           <Link
             key={p.to}
             to={p.to}
-            className="block rounded-lg px-2 py-1.5 text-[13px] text-body hover:bg-bamboo-50 hover:text-ink"
+            className="group block rounded-lg px-2 py-1.5 text-[13px] font-semibold text-ink! hover:bg-bamboo-600! hover:text-white!"
           >
-            {t(p.label)} <span className="text-muted">· {t(p.group)}</span>
+            {t(p.label)} <span className="font-normal text-muted group-hover:text-white/80">· {t(p.group)}</span>
           </Link>
         ))}
       </div>
@@ -185,6 +189,36 @@ const LanguageSwitch = () => {
   );
 };
 
+// Nút sáng/tối kiểu macOS: ô vuông bo góc, sáng lên lớp kính xanh khi đang ở chế độ tối
+const ColorModeToggle = () => {
+  const { t } = useLocale();
+  const { mode, setMode } = useContext(ColorModeContext);
+  const dark = mode === "dark";
+  return (
+    <button
+      type="button"
+      onClick={() => setMode(dark ? "light" : "dark")}
+      aria-pressed={dark}
+      aria-label={t("Chế độ tối")}
+      title={t(dark ? "Chế độ sáng" : "Chế độ tối")}
+      className={cn(
+        "grid h-9 w-9 place-items-center rounded-ui transition-[background-color,box-shadow,color] duration-150",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
+        dark
+          ? "bg-[linear-gradient(180deg,#3e8a4f_0%,#2f7a3e_55%,#1f5e2e_100%)] text-white shadow-glass-active ring-1 ring-white/25"
+          : "text-body hover:bg-bamboo-600 hover:text-white",
+      )}
+    >
+      {/* Đang tối thì hiện mặt trời (bấm để về sáng), đang sáng thì hiện mặt trăng */}
+      {dark ? (
+        <Sun className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
+      ) : (
+        <Moon className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
+      )}
+    </button>
+  );
+};
+
 const UserMenu = () => {
   const { t } = useLocale();
   const { tenant } = useSession();
@@ -208,7 +242,7 @@ const UserMenu = () => {
       <button
         type="button"
         aria-label={`Tài khoản: ${tenant.full_name}`}
-        className="grid h-9 w-9 place-items-center rounded-full bg-bamboo-600 text-[12.5px] font-semibold text-white ring-2 ring-white transition-colors hover:bg-bamboo-700"
+        className="grid h-9 w-9 place-items-center rounded-ui bg-bamboo-600 text-[12.5px] font-semibold text-white ring-2 ring-surface transition-colors hover:bg-bamboo-700"
       >
         {initials(tenant.full_name)}
       </button>
@@ -220,7 +254,7 @@ export const AppHeader = ({ collapsed, onCollapsedChange, onOpenMobileNav }: Hea
   const { t } = useLocale();
   const navigate = useNavigate();
   return (
-    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-white/80 px-4 backdrop-blur-md md:px-5">
+    <header className="glass sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b px-4 md:px-5">
       <button
         type="button"
         className={cn(iconButtonClass, "md:hidden")}
@@ -243,6 +277,7 @@ export const AppHeader = ({ collapsed, onCollapsedChange, onOpenMobileNav }: Hea
           {t("Trợ lý")}
         </button>
         <LanguageSwitch />
+        <ColorModeToggle />
         <AppLauncher />
         <NotificationBell />
         <UserMenu />

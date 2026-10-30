@@ -31,7 +31,7 @@ export const DatasetCard = ({
     }}
     aria-current={selected ? "true" : undefined}
     className={cn(
-      "block w-full rounded-2xl border bg-white p-4 text-left transition-colors",
+      "block w-full rounded-2xl border bg-surface p-4 text-left transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
       selected
         ? "border-bamboo-500 shadow-[0_0_0_3px_var(--color-bamboo-100)]"
@@ -72,7 +72,7 @@ export const DatasetList = ({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center",
+          "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-14 text-center",
           className,
         )}
       >
