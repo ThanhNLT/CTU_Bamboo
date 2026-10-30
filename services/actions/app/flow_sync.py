@@ -162,6 +162,7 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
     accounts = _account_service(settings)
     account_conn = psycopg.connect(settings.database_url) if accounts else None
     last_refresh = 0.0
+    otp_checked: set[str] = set()
     log.info("flow-sync đang chạy")
     process_automation.start_background(settings)
     attachments.start_rescan(settings)
@@ -185,6 +186,11 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
             except Exception as exc:  # noqa: BLE001
                 account_conn.rollback()
                 log.warning("tạo tài khoản nhân viên lỗi: %s", exc)
+            try:
+                hr_account.enforce_admin_otp(account_conn, accounts[0], otp_checked)
+            except Exception as exc:  # noqa: BLE001
+                account_conn.rollback()
+                log.warning("kiểm đăng nhập hai lớp của quản trị viên lỗi: %s", exc)
         for _ in listen.notifies(timeout=idle_seconds, stop_after=1):
             pass
 

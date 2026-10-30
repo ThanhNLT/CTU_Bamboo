@@ -17,3 +17,4 @@ presidio-anonymizer
 openpyxl
 pypdfium2
 pillow
+pyhanko
