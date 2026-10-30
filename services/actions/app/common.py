@@ -39,6 +39,8 @@ class Context:
     anchor_signer: "Signer | None" = None
     anchor_url: str = ""
     sleeper_url: str = ""
+    signature_trust_dir: str = ""
+    signature_online: bool = True
 
 
 class ActionError(Exception):
