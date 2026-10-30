@@ -18,6 +18,7 @@ import {
 } from "@ant-design/icons";
 
 import { request } from "../../api/client";
+import { useModules } from "../../modules/useModules";
 import { formatDate } from "../../utils/format";
 import type { AttachmentOcr, DocumentFiles } from "./types";
 
@@ -86,6 +87,7 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
   const [uploading, setUploading] = useState(false);
   const locked = ["APPROVED", "REJECTED", "CANCELLED"].includes(doc.status);
   const ocrBusy = doc.attachments.some((a) => a.ocr && ["PENDING", "RUNNING"].includes(a.ocr.status));
+  const files = useModules().enabled("files");
 
   useEffect(() => {
     if (!ocrBusy) return;
@@ -159,6 +161,13 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
       message.error((e as Error).message);
     }
   };
+
+  if (!files)
+    return (
+      <Typography.Text type="secondary">
+        Chức năng Ổ đĩa & tệp đính kèm chưa được bật cho công ty; quản trị viên bật ở trang Quản lý chức năng.
+      </Typography.Text>
+    );
 
   return (
     <>

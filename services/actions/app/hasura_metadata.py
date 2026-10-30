@@ -132,6 +132,54 @@ SELECT_FILTER = {
     ("proc", "purchase_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
 }
 
+# Bảng thuộc riêng một mô-đun (ADR #56): mô-đun chưa bật cho tenant trong phiên thì không đọc, không ghi được qua GraphQL.
+# Bảng dùng chung (người, đơn vị, tệp đính kèm, việc duyệt...) thuộc phần lõi.
+MODULE_TABLES = {
+    **{
+        ("proc", t): "procurement"
+        for t in ("purchase_request", "purchase_request_item", "purchase_order", "purchase_order_item")
+    },
+    **{("ic", t): "ic" for t in ("ic_order", "ic_order_item")},
+    **{
+        ("hr", t): "hr"
+        for t in ("onboarding_request", "transfer_request", "transfer_out", "transfer_in", "transfer_group")
+    },
+    **{("wf", t): "process" for t in ("process_model", "process_version", "sandbox_run")},
+    ("collab", "kb_document"): "knowledge",
+    **{("iot", t): "data" for t in ("entity", "incident", "measurement", "model", "site")},
+    **{("kpi", t): "data" for t in ("definition", "pin", "value")},
+    **{("meta", t): "data" for t in ("data_issue", "lineage_edge", "lineage_node", "pipeline_run", "quality_check")},
+    **{("core", t): "ai" for t in ("ai_agent", "ai_question", "attachment_ocr")},
+}
+
+
+def module_on(code: str) -> dict:
+    return {
+        "_exists": {
+            "_table": {"schema": "core", "name": "tenant_module"},
+            "_where": {"_and": [{"tenant_id": {"_eq": "X-Hasura-Tenant-Id"}}, {"module": {"_eq": code}}]},
+        }
+    }
+
+
+def _gate_modules(entries: dict) -> None:
+    done = set()  # một quyền có thể dùng chung cho nhiều role
+    for key, code in MODULE_TABLES.items():
+        entry = entries[key]
+        for kind, field in (
+            ("select_permissions", "filter"),
+            ("insert_permissions", "check"),
+            ("update_permissions", "filter"),
+            ("delete_permissions", "filter"),
+        ):
+            for perm in entry.get(kind, []):
+                body = perm["permission"]
+                if id(body) in done:
+                    continue
+                done.add(id(body))
+                body[field] = {"_and": [body[field], module_on(code)]} if body.get(field) else module_on(code)
+
+
 MANUAL_RELATIONSHIPS = [
     ("object", ("wf", "approval_step"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
     ("object", ("wf", "approval_history"), "purchase_request", ("proc", "purchase_request"), {"entity_id": "id"}),
@@ -565,6 +613,8 @@ def build(conn: psycopg.Connection) -> dict:
         entries[key]["update_permissions"] = [
             {"role": ADMIN_ROLE, "permission": {"filter": TENANT, "check": {}, "columns": cols}}
         ]
+
+    _gate_modules(entries)
 
     return {
         "version": 3,
@@ -1482,6 +1532,27 @@ def build(conn: psycopg.Connection) -> dict:
                 [ROLE, ADMIN_ROLE],
                 "Xóa tác tử AI chưa có lượt hỏi, hoặc ngừng kích hoạt nếu đã có (cần core.ai.manage)",
             ),
+            _action(
+                "modules",
+                "query",
+                [],
+                "ModuleOverview!",
+                [ROLE, ADMIN_ROLE],
+                "Danh mục mô-đun chức năng, đã cài trên máy và đã bật cho công ty chưa (ADR #56)",
+                timeout=10,
+            ),
+            *[
+                _action(name, "mutation", [("code", "String!")], "ModuleOverview!", [ROLE, ADMIN_ROLE], comment)
+                for name, comment in (
+                    ("module_enable", "Bật mô-đun cho công ty, kèm các mô-đun nó phụ thuộc (cần core.module.manage)"),
+                    ("module_disable", "Tắt mô-đun của công ty; bị chặn khi còn mô-đun dựa vào nó hoặc chứng từ dở"),
+                    ("module_install", "Cài mô-đun trên máy, chạy container của nó (chỉ platform_admin)"),
+                    (
+                        "module_uninstall",
+                        "Gỡ mô-đun khỏi máy, dừng container (chỉ platform_admin, không công ty nào bật)",
+                    ),
+                )
+            ],
         ],
         "custom_types": {
             "input_objects": [
@@ -1528,6 +1599,32 @@ def build(conn: psycopg.Connection) -> dict:
                 },
             ],
             "objects": [
+                {
+                    "name": "ModuleService",
+                    "fields": [{"name": "name", "type": "String!"}, {"name": "running", "type": "Boolean"}],
+                },
+                {
+                    "name": "ModuleInfo",
+                    "fields": [
+                        {"name": "code", "type": "String!"},
+                        {"name": "name", "type": "String!"},
+                        {"name": "description", "type": "String!"},
+                        {"name": "depends", "type": "[String!]!"},
+                        {"name": "dependents", "type": "[String!]!"},
+                        {"name": "services", "type": "[ModuleService!]!"},
+                        {"name": "installed", "type": "Boolean!"},
+                        {"name": "enabled", "type": "Boolean!"},
+                    ],
+                },
+                {
+                    "name": "ModuleOverview",
+                    "fields": [
+                        {"name": "can_manage", "type": "Boolean!"},
+                        {"name": "can_install", "type": "Boolean!"},
+                        {"name": "modules", "type": "[ModuleInfo!]!"},
+                        {"name": "changed", "type": "[String!]!"},
+                    ],
+                },
                 {
                     "name": "AccountTenant",
                     "fields": [

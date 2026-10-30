@@ -656,13 +656,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "knowledge"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -680,13 +706,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "knowledge"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -702,7 +754,28 @@
             {
               "role": "user",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "knowledge"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "requester_id": "X-Hasura-User-Id"
@@ -722,7 +795,28 @@
             {
               "role": "platform_admin",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "knowledge"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "requester_id": "X-Hasura-User-Id"
@@ -747,21 +841,47 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_in": [
+                              "DRAFT",
+                              "RETURNED"
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_in": [
-                          "DRAFT",
-                          "RETURNED"
-                        ]
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "knowledge"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -791,21 +911,47 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_in": [
+                              "DRAFT",
+                              "RETURNED"
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_in": [
-                          "DRAFT",
-                          "RETURNED"
-                        ]
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "knowledge"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -837,18 +983,44 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_eq": "DRAFT"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_eq": "DRAFT"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "knowledge"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -861,18 +1033,44 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_eq": "DRAFT"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_eq": "DRAFT"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "knowledge"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -1092,26 +1290,52 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_ai_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
                       "_exists": {
                         "_table": {
                           "schema": "core",
-                          "name": "v_ai_admin"
+                          "name": "tenant_module"
                         },
                         "_where": {
                           "_and": [
                             {
-                              "person_id": {
-                                "_eq": "X-Hasura-User-Id"
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
                               }
                             },
                             {
-                              "tenant_id": {
-                                "_eq": "X-Hasura-Tenant-Id"
+                              "module": {
+                                "_eq": "ai"
                               }
                             }
                           ]
@@ -1130,26 +1354,52 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_ai_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
                       "_exists": {
                         "_table": {
                           "schema": "core",
-                          "name": "v_ai_admin"
+                          "name": "tenant_module"
                         },
                         "_where": {
                           "_and": [
                             {
-                              "person_id": {
-                                "_eq": "X-Hasura-User-Id"
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
                               }
                             },
                             {
-                              "tenant_id": {
-                                "_eq": "X-Hasura-Tenant-Id"
+                              "module": {
+                                "_eq": "ai"
                               }
                             }
                           ]
@@ -1234,13 +1484,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -1255,13 +1531,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -1564,14 +1866,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "attachment": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "attachment": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -1597,14 +1925,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "attachment": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "attachment": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -1898,6 +2252,28 @@
                   }
                 },
                 "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "module_install"
+          },
+          "array_relationships": [
+            {
+              "name": "tenant_modules",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant_module"
+                  },
+                  "column_mapping": {
+                    "module": "module"
+                  }
+                }
               }
             }
           ]
@@ -2502,6 +2878,21 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant_modules",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant_module"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "enabled_by"
                   }
                 }
               }
@@ -3875,6 +4266,83 @@
         {
           "table": {
             "schema": "core",
+            "name": "tenant_module"
+          },
+          "object_relationships": [
+            {
+              "name": "module_module_install",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "module_install"
+                  },
+                  "column_mapping": {
+                    "module": "module"
+                  }
+                }
+              }
+            },
+            {
+              "name": "enabled_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "enabled_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
             "name": "tenant_relation"
           },
           "object_relationships": [
@@ -4291,13 +4759,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4348,13 +4842,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4371,7 +4891,28 @@
             {
               "role": "user",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "hr"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "requester_id": "X-Hasura-User-Id"
@@ -4398,7 +4939,28 @@
             {
               "role": "platform_admin",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "hr"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "requester_id": "X-Hasura-User-Id"
@@ -4430,21 +4992,47 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_in": [
+                              "DRAFT",
+                              "RETURNED"
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_in": [
-                          "DRAFT",
-                          "RETURNED"
-                        ]
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4481,21 +5069,47 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_in": [
+                              "DRAFT",
+                              "RETURNED"
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_in": [
-                          "DRAFT",
-                          "RETURNED"
-                        ]
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4534,18 +5148,44 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_eq": "DRAFT"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_eq": "DRAFT"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4558,18 +5198,44 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_eq": "DRAFT"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_eq": "DRAFT"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4678,13 +5344,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4702,13 +5394,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4837,13 +5555,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -4861,13 +5605,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -5026,13 +5796,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -5050,13 +5846,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -5231,13 +6053,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -5255,13 +6103,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "hr"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -5448,13 +6322,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ic"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -5473,13 +6373,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ic"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -5567,14 +6493,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "order": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "order": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ic"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -5590,14 +6542,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "order": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "order": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ic"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -5711,9 +6689,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -5723,9 +6727,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -5775,9 +6805,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -5787,9 +6843,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -5824,9 +6906,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -5836,9 +6944,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -5871,7 +7005,28 @@
               "role": "user",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             },
@@ -5879,7 +7034,28 @@
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             }
@@ -5944,9 +7120,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -5956,9 +7158,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -6038,9 +7266,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -6050,9 +7304,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -6104,13 +7384,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -6125,13 +7431,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -6144,7 +7476,28 @@
             {
               "role": "user",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "person_id": "X-Hasura-User-Id"
@@ -6158,7 +7511,28 @@
             {
               "role": "platform_admin",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "person_id": "X-Hasura-User-Id"
@@ -6177,13 +7551,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -6213,13 +7613,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -6251,13 +7677,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -6270,13 +7722,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "person_id": {
-                        "_eq": "X-Hasura-User-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -6313,9 +7791,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -6325,9 +7829,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -6679,9 +8209,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -6691,9 +8247,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -6703,7 +8285,28 @@
             {
               "role": "user",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "reported_by": "X-Hasura-User-Id"
@@ -6718,7 +8321,28 @@
             {
               "role": "platform_admin",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "reported_by": "X-Hasura-User-Id"
@@ -6772,7 +8396,28 @@
               "role": "user",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             },
@@ -6780,7 +8425,28 @@
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             }
@@ -6882,7 +8548,28 @@
               "role": "user",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             },
@@ -6890,7 +8577,28 @@
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             }
@@ -6922,7 +8630,28 @@
               "role": "user",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             },
@@ -6930,7 +8659,28 @@
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             }
@@ -6962,7 +8712,28 @@
               "role": "user",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             },
@@ -6970,7 +8741,28 @@
               "role": "platform_admin",
               "permission": {
                 "columns": "*",
-                "filter": {},
+                "filter": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "allow_aggregations": true
               }
             }
@@ -7220,13 +9012,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7244,13 +9062,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7337,14 +9181,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "order": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "order": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -7360,14 +9230,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "order": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "order": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -7583,13 +9479,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7607,13 +9529,39 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
                     },
                     {
-                      "can_read": {
-                        "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7629,7 +9577,28 @@
             {
               "role": "user",
               "permission": {
-                "check": {},
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "procurement"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 "set": {
                   "tenant_id": "X-Hasura-Tenant-Id",
                   "requester_id": "X-Hasura-User-Id"
@@ -7655,21 +9624,47 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_in": [
+                              "DRAFT",
+                              "RETURNED"
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_in": [
-                          "DRAFT",
-                          "RETURNED"
-                        ]
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7702,18 +9697,44 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "requester_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        },
+                        {
+                          "status": {
+                            "_eq": "DRAFT"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "requester_id": {
-                        "_eq": "X-Hasura-User-Id"
-                      }
-                    },
-                    {
-                      "status": {
-                        "_eq": "DRAFT"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7781,14 +9802,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "request": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "request": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -7804,14 +9851,40 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "request": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
                     },
                     {
-                      "request": {
-                        "can_read": {
-                          "_eq": true
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -7828,32 +9901,58 @@
                 "check": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "request": {
+                            "_and": [
+                              {
+                                "tenant_id": {
+                                  "_eq": "X-Hasura-Tenant-Id"
+                                }
+                              },
+                              {
+                                "requester_id": {
+                                  "_eq": "X-Hasura-User-Id"
+                                }
+                              },
+                              {
+                                "status": {
+                                  "_in": [
+                                    "DRAFT",
+                                    "RETURNED"
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "request": {
-                        "_and": [
-                          {
-                            "tenant_id": {
-                              "_eq": "X-Hasura-Tenant-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
                             }
-                          },
-                          {
-                            "requester_id": {
-                              "_eq": "X-Hasura-User-Id"
-                            }
-                          },
-                          {
-                            "status": {
-                              "_in": [
-                                "DRAFT",
-                                "RETURNED"
-                              ]
-                            }
-                          }
-                        ]
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7881,32 +9980,58 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "request": {
+                            "_and": [
+                              {
+                                "tenant_id": {
+                                  "_eq": "X-Hasura-Tenant-Id"
+                                }
+                              },
+                              {
+                                "requester_id": {
+                                  "_eq": "X-Hasura-User-Id"
+                                }
+                              },
+                              {
+                                "status": {
+                                  "_in": [
+                                    "DRAFT",
+                                    "RETURNED"
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "request": {
-                        "_and": [
-                          {
-                            "tenant_id": {
-                              "_eq": "X-Hasura-Tenant-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
                             }
-                          },
-                          {
-                            "requester_id": {
-                              "_eq": "X-Hasura-User-Id"
-                            }
-                          },
-                          {
-                            "status": {
-                              "_in": [
-                                "DRAFT",
-                                "RETURNED"
-                              ]
-                            }
-                          }
-                        ]
+                          ]
+                        }
                       }
                     }
                   ]
@@ -7963,32 +10088,58 @@
                 "filter": {
                   "_and": [
                     {
-                      "tenant_id": {
-                        "_eq": "X-Hasura-Tenant-Id"
-                      }
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "request": {
+                            "_and": [
+                              {
+                                "tenant_id": {
+                                  "_eq": "X-Hasura-Tenant-Id"
+                                }
+                              },
+                              {
+                                "requester_id": {
+                                  "_eq": "X-Hasura-User-Id"
+                                }
+                              },
+                              {
+                                "status": {
+                                  "_in": [
+                                    "DRAFT",
+                                    "RETURNED"
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
                     },
                     {
-                      "request": {
-                        "_and": [
-                          {
-                            "tenant_id": {
-                              "_eq": "X-Hasura-Tenant-Id"
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "procurement"
+                              }
                             }
-                          },
-                          {
-                            "requester_id": {
-                              "_eq": "X-Hasura-User-Id"
-                            }
-                          },
-                          {
-                            "status": {
-                              "_in": [
-                                "DRAFT",
-                                "RETURNED"
-                              ]
-                            }
-                          }
-                        ]
+                          ]
+                        }
                       }
                     }
                   ]
@@ -8669,9 +10820,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "process"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -8681,9 +10858,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "process"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -8732,9 +10935,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "process"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -8744,9 +10973,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "process"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -8795,9 +11050,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "process"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -8807,9 +11088,35 @@
               "permission": {
                 "columns": "*",
                 "filter": {
-                  "tenant_id": {
-                    "_eq": "X-Hasura-Tenant-Id"
-                  }
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "process"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -12512,6 +14819,156 @@
         }
       ],
       "comment": "Xóa tác tử AI chưa có lượt hỏi, hoặc ngừng kích hoạt nếu đã có (cần core.ai.manage)"
+    },
+    {
+      "name": "modules",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/modules",
+        "arguments": [],
+        "output_type": "ModuleOverview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Danh mục mô-đun chức năng, đã cài trên máy và đã bật cho công ty chưa (ADR #56)"
+    },
+    {
+      "name": "module_enable",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/module_enable",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ModuleOverview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Bật mô-đun cho công ty, kèm các mô-đun nó phụ thuộc (cần core.module.manage)"
+    },
+    {
+      "name": "module_disable",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/module_disable",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ModuleOverview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tắt mô-đun của công ty; bị chặn khi còn mô-đun dựa vào nó hoặc chứng từ dở"
+    },
+    {
+      "name": "module_install",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/module_install",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ModuleOverview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Cài mô-đun trên máy, chạy container của nó (chỉ platform_admin)"
+    },
+    {
+      "name": "module_uninstall",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/module_uninstall",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ModuleOverview!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Gỡ mô-đun khỏi máy, dừng container (chỉ platform_admin, không công ty nào bật)"
     }
   ],
   "custom_types": {
@@ -12617,6 +15074,77 @@
       }
     ],
     "objects": [
+      {
+        "name": "ModuleService",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "running",
+            "type": "Boolean"
+          }
+        ]
+      },
+      {
+        "name": "ModuleInfo",
+        "fields": [
+          {
+            "name": "code",
+            "type": "String!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "description",
+            "type": "String!"
+          },
+          {
+            "name": "depends",
+            "type": "[String!]!"
+          },
+          {
+            "name": "dependents",
+            "type": "[String!]!"
+          },
+          {
+            "name": "services",
+            "type": "[ModuleService!]!"
+          },
+          {
+            "name": "installed",
+            "type": "Boolean!"
+          },
+          {
+            "name": "enabled",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
+        "name": "ModuleOverview",
+        "fields": [
+          {
+            "name": "can_manage",
+            "type": "Boolean!"
+          },
+          {
+            "name": "can_install",
+            "type": "Boolean!"
+          },
+          {
+            "name": "modules",
+            "type": "[ModuleInfo!]!"
+          },
+          {
+            "name": "changed",
+            "type": "[String!]!"
+          }
+        ]
+      },
       {
         "name": "AccountTenant",
         "fields": [
