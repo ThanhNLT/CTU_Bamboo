@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
+.PHONY: setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
 
@@ -66,3 +66,6 @@ release-compose:
 bao-token:
 	@docker compose run --rm --no-deps -v bamboo_openbao-keys:/openbao/keys:ro --entrypoint python openbao-init \
 		-c "import json; print(json.load(open('/openbao/keys/init.json'))['root_token'])"
+
+setup-code:
+	docker compose run --rm actions python -m app.setup_code

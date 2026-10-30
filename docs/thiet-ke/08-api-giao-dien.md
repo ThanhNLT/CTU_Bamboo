@@ -3,7 +3,8 @@
 Tầng 1 không có giao diện người dùng cuối; mọi ứng dụng Tầng 2 (kể cả giao diện Refine trong `apps/web/web`) gọi nền tảng
 qua một endpoint GraphQL duy nhất: `/graphql` trên cổng API APISIX ([ADR #34](#adr-34)). Ngoài GraphQL chỉ có hai đường HTTP
 cho máy gọi máy: nạp dữ liệu theo lô `/ingest/*` và webhook khởi chạy quy trình tự động `/hooks/*`
-([Dịch vụ nền tảng mục 18–19](06-dich-vu-nen-tang.md)).
+([Dịch vụ nền tảng mục 18–19](06-dich-vu-nen-tang.md)), cùng API công khai `/setup/*` của trang khởi tạo công ty lần đầu
+(mục 23).
 
 Schema đầy đủ: introspection qua `/graphql` (sinh type bằng graphql-codegen) hoặc Hasura Console
 (`http://localhost:8081/console`, chỉ trên máy chủ). Trang này mô tả cách kết nối, các nhóm API và lưu ý khi dùng.
@@ -52,7 +53,7 @@ Ví dụ cách giao diện trong `apps/web/web/src/pages` dùng API cho luồng 
 
 ## 3. Danh mục Hasura Action
 
-Nghiệp vụ nhiều bước đi qua 104 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
+Nghiệp vụ nhiều bước đi qua 107 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
 
 | Nhóm | Query | Mutation |
 |---|---|---|
@@ -69,6 +70,7 @@ Nghiệp vụ nhiều bước đi qua 104 Hasura Action (dịch vụ `actions`, 
 | Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ocr_retry` |
 | Vận hành | `obs_logs`, `backup_runs` | – |
 | Mô-đun chức năng ([ADR #56](#adr-56)) | `modules` | `module_enable`, `module_disable`, `module_install`, `module_uninstall` |
+| Thông tin pháp lý ([ADR #57](#adr-57)) | `legal_status` | `legal_application`, `legal_verify` |
 
 ## 4. Lưu ý khi dùng
 

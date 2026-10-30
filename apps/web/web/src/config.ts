@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-type RuntimeConfig = Partial<{ keycloakUrl: string; keycloakRealm: string; keycloakClient: string; hasuraUrl: string }>;
+type RuntimeConfig = Partial<{
+  keycloakUrl: string;
+  keycloakRealm: string;
+  keycloakClient: string;
+  hasuraUrl: string;
+  setupUrl: string;
+}>;
 
 const runtime: RuntimeConfig = (window as unknown as { __BAMBOO_CONFIG__?: RuntimeConfig }).__BAMBOO_CONFIG__ ?? {};
 
@@ -13,4 +19,5 @@ export const config = {
   keycloakRealm: pick(runtime.keycloakRealm, import.meta.env.VITE_KEYCLOAK_REALM, "bms"),
   keycloakClient: pick(runtime.keycloakClient, import.meta.env.VITE_KEYCLOAK_CLIENT, "bms-web"),
   hasuraUrl: pick(runtime.hasuraUrl, import.meta.env.VITE_HASURA_URL, `${window.location.origin}/graphql`),
+  setupUrl: pick(runtime.setupUrl, import.meta.env.VITE_SETUP_URL, `${window.location.origin}/setup`),
 };

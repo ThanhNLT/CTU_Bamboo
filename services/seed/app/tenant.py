@@ -21,25 +21,6 @@ log = logging.getLogger("tenant")
 
 REALM = "bms"
 
-ROLES = {
-    "NHAN_VIEN": ("Nhân viên", ["proc.purchase_request.create", "proc.purchase_request.read"]),
-    "QUAN_LY": ("Quản lý", ["proc.purchase_request.read", "wf.approval.act", "hr.onboarding.read", "ic.order.read"]),
-    "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read", "audit.read"]),
-    "QUAN_TRI_TO_CHUC": (
-        "Quản trị tổ chức",
-        [
-            "core.org.manage",
-            "core.permission.manage",
-            "core.module.manage",
-            "mdm.manage",
-            "audit.read",
-            "wf.process.design",
-        ],
-    ),
-}
-
-JOB_TITLES = {"GIAM_DOC": "Giám đốc", "QUAN_TRI_HE_THONG": "Quản trị hệ thống", "NHAN_VIEN": "Nhân viên"}
-
 
 class Keycloak:
     def __init__(self, base_url: str, user: str, password: str):
@@ -105,76 +86,23 @@ def create_tenant(
     root_type: str = "CONG_TY",
     parent: str | None = None,
 ) -> dict:
+    """Khung công ty dựng bằng core.create_tenant (dùng chung với trang khởi tạo, ADR #57). Người chạy lệnh trên máy chủ
+    có toàn quyền nên quản trị viên đầu tiên đồng thời là chủ sở hữu."""
     x = conn.execute
     if x("SELECT 1 FROM core.tenant WHERE code = %s", (code,)).fetchone():
         raise SystemExit(f"Công ty {code} đã có, không tạo lại")
     if root_type not in UNIT_TYPES:
         raise SystemExit(f"Loại đơn vị gốc {root_type} không hợp lệ: {', '.join(UNIT_TYPES)}")
+    if parent and not x("SELECT 1 FROM core.tenant WHERE code = %s", (parent,)).fetchone():
+        raise SystemExit(f"Không có công ty mẹ {parent}")
     with conn.transaction():
-        tid = x("INSERT INTO core.tenant (code, name) VALUES (%s, %s) RETURNING id", (code, name)).fetchone()[0]
-        if parent:
-            row = x("SELECT id FROM core.tenant WHERE code = %s", (parent,)).fetchone()
-            if row is None:
-                raise SystemExit(f"Không có công ty mẹ {parent}")
-            x("INSERT INTO core.tenant_relation (parent_tenant_id, child_tenant_id) VALUES (%s, %s)", (row[0], tid))
-
-        def catalog(kind: str, item_code: str, item_name: str):
-            return x(
-                "INSERT INTO core.catalog_item (tenant_id, catalog, code, name) VALUES (%s, %s, %s, %s) RETURNING id",
-                (tid, kind, item_code, item_name),
-            ).fetchone()[0]
-
-        unit_types = {c: catalog("UNIT_TYPE", c, n) for c, n in UNIT_TYPES.items()}
-        titles = {c: catalog("JOB_TITLE", c, n) for c, n in JOB_TITLES.items()}
-        root = x(
-            """INSERT INTO core.org_unit (tenant_id, unit_type_id, code, name, is_legal_entity)
-                  VALUES (%s, %s, %s, %s, true) RETURNING id""",
-            (tid, unit_types[root_type], code, name),
-        ).fetchone()[0]
-        x(
-            """INSERT INTO core.position (tenant_id, org_unit_id, job_title_id, name, is_head)
-                  VALUES (%s, %s, %s, 'Giám đốc', true)""",
-            (tid, root, titles["GIAM_DOC"]),
-        )
-        seat = x(
-            """INSERT INTO core.position (tenant_id, org_unit_id, job_title_id, name)
-                  VALUES (%s, %s, %s, 'Quản trị hệ thống') RETURNING id""",
-            (tid, root, titles["QUAN_TRI_HE_THONG"]),
-        ).fetchone()[0]
+        tid, root, _director, seat = x(
+            "SELECT * FROM core.create_tenant(%s, %s, %s, %s)", (code, name, root_type, parent)
+        ).fetchone()
         person = x(
-            """INSERT INTO core.person (tenant_id, idp_subject, full_name, employee_code)
-                  VALUES (%s, %s, %s, %s) RETURNING id""",
-            (tid, admin_subject, admin_name, f"{code}-0001"),
+            "SELECT core.place_person(%s, %s, %s, %s, %s)", (tid, admin_subject, admin_name, f"{code}-0001", seat)
         ).fetchone()[0]
-        x(
-            """INSERT INTO core.assignment (tenant_id, person_id, position_id, assignment_type, valid_period)
-                  VALUES (%s, %s, %s, 'PRIMARY', tstzrange(now(), NULL))""",
-            (tid, person, seat),
-        )
-        roles = {}
-        for role_code, (role_name, perms) in ROLES.items():
-            roles[role_code] = x(
-                "INSERT INTO core.role (tenant_id, code, name) VALUES (%s, %s, %s) RETURNING id",
-                (tid, role_code, role_name),
-            ).fetchone()[0]
-            for perm in perms:
-                x(
-                    "INSERT INTO core.role_permission (tenant_id, role_id, permission_code) VALUES (%s, %s, %s)",
-                    (tid, roles[role_code], perm),
-                )
-        x(
-            "INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope) VALUES (%s, %s, %s, 'UNIT')",
-            (tid, roles["NHAN_VIEN"], root),
-        )
-        x(
-            "INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope) VALUES (%s, %s, %s, 'TENANT')",
-            (tid, roles["QUAN_TRI_TO_CHUC"], seat),
-        )
-        for process in ("PURCHASE_REQUEST", "ONBOARDING"):
-            x(
-                "INSERT INTO wf.approval_rule (tenant_id, process_code, min_amount, step_order) VALUES (%s, %s, 0, 1)",
-                (tid, process),
-            )
+        x("INSERT INTO core.tenant_owner (tenant_id, person_id) VALUES (%s, %s)", (tid, person))
     return {"tenant_id": tid, "root_unit_id": root, "person_id": person}
 
 
