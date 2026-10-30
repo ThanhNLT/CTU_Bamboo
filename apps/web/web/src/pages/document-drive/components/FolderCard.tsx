@@ -11,7 +11,7 @@ export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (
   <button
     type="button"
     onClick={() => onOpen?.(folder)}
-    className="flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-white p-4 text-left shadow-card transition-colors hover:border-bamboo-200 hover:bg-bamboo-50/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
+    className="flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-left shadow-card transition-colors hover:border-bamboo-200 hover:bg-bamboo-50/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
   >
     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-canvas text-bamboo-700">
       <Folder className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />

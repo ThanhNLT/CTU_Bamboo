@@ -8,7 +8,7 @@ import { cn } from "../../../utils/cn";
 import type { Decision } from "../types";
 
 const base =
-  "inline-flex h-10 items-center justify-center rounded-full text-[13.5px] transition-colors " +
+  "inline-flex h-10 items-center justify-center rounded-ui text-[13.5px] transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const ActionWidget = ({
@@ -42,7 +42,7 @@ export const ActionWidget = ({
   const disabled = Boolean(disabledReason);
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-labelledby={`${id}-title`}>
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-labelledby={`${id}-title`}>
       <h3 id={`${id}-title`} className="text-[14px] font-semibold text-ink">
         Ý kiến
       </h3>
@@ -64,7 +64,7 @@ export const ActionWidget = ({
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
           "mt-2.5 block w-full resize-y rounded-xl border bg-canvas px-3 py-2 text-[13px] text-ink outline-none transition-colors",
-          "placeholder:text-muted focus:bg-white focus:ring-3 disabled:cursor-not-allowed disabled:opacity-60",
+          "placeholder:text-muted focus:bg-surface focus:ring-3 disabled:cursor-not-allowed disabled:opacity-60",
           error ? "border-red-300 focus:ring-red-100" : "border-line focus:border-bamboo-400 focus:ring-bamboo-100",
         )}
       />
@@ -104,7 +104,7 @@ export const ActionWidget = ({
             onClick={() => decide("reject")}
             className={cn(
               base,
-              "border border-red-300 bg-white font-medium text-red-600 hover:bg-red-50 focus-visible:outline-red-500",
+              "border border-red-300 bg-surface font-medium text-red-600 hover:bg-red-50 focus-visible:outline-red-500",
             )}
           >
             Từ chối

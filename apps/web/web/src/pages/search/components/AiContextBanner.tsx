@@ -51,7 +51,7 @@ export const AiContextBanner = ({
       <button
         type="button"
         onClick={onAsk}
-        className="inline-flex h-8 shrink-0 items-center self-start rounded-full bg-bamboo-600 px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-bamboo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500 sm:self-auto"
+        className="inline-flex h-8 shrink-0 items-center self-start rounded-ui bg-bamboo-600 px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-bamboo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500 sm:self-auto"
       >
         Hỏi trợ lý về kết quả này
       </button>

@@ -155,7 +155,7 @@ export const SearchPage = () => {
           </div>
         </>
       ) : (
-        <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center">
+        <div className="rounded-2xl border border-dashed border-line bg-surface px-6 py-14 text-center">
           <p className="text-[13.5px] font-medium text-ink">Nhập từ khóa để tìm trong mọi thứ bạn được xem.</p>
           <p className="mt-1 text-[12.5px] text-muted">Gõ không dấu cũng được. Thử:</p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
@@ -167,7 +167,7 @@ export const SearchPage = () => {
                   setText(ex);
                   setUrl({ q: ex });
                 }}
-                className="h-8 rounded-full bg-black/[0.045] px-3.5 text-[12.5px] font-medium text-ink hover:bg-bamboo-50"
+                className="h-8 rounded-ui bg-black/[0.045] px-3.5 text-[12.5px] font-medium text-ink hover:bg-bamboo-50"
               >
                 {ex}
               </button>

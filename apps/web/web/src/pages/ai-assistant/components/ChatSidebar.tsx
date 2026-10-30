@@ -32,7 +32,7 @@ export const ChatSidebar = ({
   return (
     <aside
       aria-label="Lịch sử lượt hỏi"
-      className={cn("min-h-0 flex-col rounded-2xl border border-line bg-white p-3 shadow-card", className)}
+      className={cn("min-h-0 flex-col rounded-2xl border border-line bg-surface p-3 shadow-card", className)}
     >
       <label className="relative block">
         <span className="sr-only">Tìm lượt hỏi</span>
@@ -46,7 +46,7 @@ export const ChatSidebar = ({
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           placeholder="Tìm lượt hỏi"
-          className="h-9 w-full rounded-xl border border-transparent bg-canvas pl-9 pr-3 text-[13px] text-ink outline-none placeholder:text-muted focus:border-bamboo-400 focus:bg-white focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
+          className="h-9 w-full rounded-xl border border-transparent bg-canvas pl-9 pr-3 text-[13px] text-ink outline-none placeholder:text-muted focus:border-bamboo-400 focus:bg-surface focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
         />
       </label>
 

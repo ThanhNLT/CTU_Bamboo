@@ -16,7 +16,7 @@ import { ASSIGNMENT_LABEL, type OrgData, type Position, type Unit } from "../sha
 import { periodLabel } from "../shared/period";
 
 const iconBtn =
-  "grid h-8 w-8 place-items-center rounded-full text-body hover:bg-canvas focus-visible:outline-2 focus-visible:outline-bamboo-500";
+  "grid h-8 w-8 place-items-center rounded-ui text-body hover:bg-canvas focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
 export type PositionAction = "edit" | "assign" | "end-assignment" | "close";
 
@@ -55,7 +55,7 @@ export const UnitDetail = ({
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <section
-        className="rounded-2xl border border-line bg-white px-5 py-4 shadow-card"
+        className="rounded-2xl border border-line bg-surface px-5 py-4 shadow-card"
         aria-label={`Đơn vị ${unit.name}`}
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-start">

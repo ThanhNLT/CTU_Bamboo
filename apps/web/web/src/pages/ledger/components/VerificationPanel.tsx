@@ -37,7 +37,7 @@ const Dropzone = ({ disabled, tall, onFile }: { disabled: boolean; tall: boolean
           "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-dashed px-4 text-center transition-colors",
           "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-bamboo-500",
           tall ? "py-10" : "py-6",
-          over ? "border-bamboo-500 bg-bamboo-50" : "border-line bg-white hover:border-bamboo-300 hover:bg-canvas",
+          over ? "border-bamboo-500 bg-bamboo-50" : "border-line bg-surface hover:border-bamboo-300 hover:bg-canvas",
           disabled && "pointer-events-none opacity-60",
         )}
       >
@@ -95,7 +95,7 @@ export const VerificationPanel = ({
       id="ledger-panel-verify"
       role="tabpanel"
       aria-labelledby="ledger-tab-verify"
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-5 shadow-card"
+      className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-card"
     >
       <header>
         <h2 className="text-[15px] font-semibold text-ink">Đối soát hồ sơ</h2>
@@ -107,7 +107,7 @@ export const VerificationPanel = ({
       <div
         role="group"
         aria-label="Cách đối soát"
-        className="inline-flex gap-0.5 self-start rounded-full bg-black/[0.045] p-1"
+        className="inline-flex gap-0.5 self-start rounded-ui bg-black/[0.045] p-1"
       >
         {MODES.map((m) => {
           const active = m.key === mode;
@@ -118,9 +118,9 @@ export const VerificationPanel = ({
               aria-pressed={active}
               onClick={() => setMode(m.key)}
               className={cn(
-                "h-7 rounded-full px-3 text-[12px] transition-colors",
+                "h-7 rounded-ui px-3 text-[12px] transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-                active ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:text-ink",
+                active ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
               )}
             >
               {m.label}
@@ -149,7 +149,7 @@ export const VerificationPanel = ({
               placeholder="PR-2026-000012"
               spellCheck={false}
               autoComplete="off"
-              className="h-10 w-full rounded-xl border border-transparent bg-canvas pl-10 pr-3 font-mono text-[13px] text-ink outline-none transition-colors placeholder:text-muted focus:border-bamboo-400 focus:bg-white focus:ring-3 focus:ring-bamboo-100"
+              className="h-10 w-full rounded-xl border border-transparent bg-canvas pl-10 pr-3 font-mono text-[13px] text-ink outline-none transition-colors placeholder:text-muted focus:border-bamboo-400 focus:bg-surface focus:ring-3 focus:ring-bamboo-100"
             />
           </label>
           <button type="submit" disabled={working || !code.trim()} className={cn(primaryButtonClass, "justify-center")}>

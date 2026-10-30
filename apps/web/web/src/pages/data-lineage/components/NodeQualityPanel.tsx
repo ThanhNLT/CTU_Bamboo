@@ -56,17 +56,17 @@ export const NodeQualityPanel = ({
   return (
     <aside
       aria-label={`Chi tiết ${node.fqn}`}
-      className={cn("flex flex-col rounded-2xl border border-line bg-white p-5 shadow-card", className)}
+      className={cn("flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-card", className)}
     >
       <div className="break-all font-mono text-[11.5px] text-muted">{node.fqn}</div>
       <h2 className="mt-1 text-[18px] font-semibold leading-snug tracking-[-0.01em] text-ink">{node.title}</h2>
       <span
         className={cn(
-          "mt-2 inline-flex h-6 items-center gap-1.5 self-start rounded-full px-2.5 text-[12px] font-medium",
+          "mt-2 inline-flex h-6 items-center gap-1.5 self-start rounded-ui px-2.5 text-[12px] font-medium",
           TAG_CLASS[status],
         )}
       >
-        <span className={cn("h-1.5 w-1.5 rounded-full", DOT_CLASS[status])} aria-hidden />
+        <span className={cn("h-1.5 w-1.5 rounded-ui", DOT_CLASS[status])} aria-hidden />
         {tag}
       </span>
 
@@ -140,7 +140,7 @@ export const NodeQualityPanel = ({
                     onClick={() => onSelect(n.id)}
                     className="group flex w-full items-start gap-2.5 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
                   >
-                    <span className={cn("mt-[7px] h-2 w-2 shrink-0 rounded-full", DOT_CLASS[s])} aria-hidden />
+                    <span className={cn("mt-[7px] h-2 w-2 shrink-0 rounded-ui", DOT_CLASS[s])} aria-hidden />
                     <span className="min-w-0">
                       <span
                         className={cn(

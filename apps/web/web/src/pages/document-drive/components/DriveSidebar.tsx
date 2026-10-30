@@ -14,7 +14,7 @@ export const DriveSidebar = ({
   active: DriveSection;
   onChange: (key: DriveSection) => void;
 }) => (
-  <nav aria-label="Vùng lưu trữ" className="rounded-2xl border border-line bg-white p-2 shadow-card">
+  <nav aria-label="Vùng lưu trữ" className="rounded-2xl border border-line bg-surface p-2 shadow-card">
     <ul className="m-0 list-none space-y-0.5 p-0">
       {items.map(({ key, label, icon: Icon, badge }) => {
         const selected = key === active;
@@ -25,7 +25,7 @@ export const DriveSidebar = ({
               onClick={() => onChange(key)}
               aria-current={selected ? "page" : undefined}
               className={cn(
-                "flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[13px] transition-colors",
+                "flex h-9 w-full items-center gap-2.5 rounded-ui px-2.5 text-left text-[13px] transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
                 selected ? "bg-bamboo-50 font-semibold text-ink" : "text-body hover:bg-canvas hover:text-ink",
               )}
@@ -37,7 +37,7 @@ export const DriveSidebar = ({
               />
               <span className="min-w-0 flex-1 truncate">{label}</span>
               {badge ? (
-                <span className="min-w-5 rounded-full bg-canvas px-1.5 text-center text-[11px] font-medium tabular-nums text-muted">
+                <span className="min-w-5 rounded-ui bg-canvas px-1.5 text-center text-[11px] font-medium tabular-nums text-muted">
                   {badge}
                 </span>
               ) : null}

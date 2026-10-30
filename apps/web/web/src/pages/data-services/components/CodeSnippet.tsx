@@ -26,7 +26,7 @@ export const CodeSnippet = ({ title, code, language }: { title: string; code: st
         <button
           type="button"
           onClick={copy}
-          className="inline-flex h-7 items-center gap-1.5 rounded-full bg-canvas px-3 text-[11.5px] font-medium text-ink transition-colors hover:bg-gray-200/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500"
+          className="inline-flex h-7 items-center gap-1.5 rounded-ui bg-canvas px-3 text-[11.5px] font-medium text-ink transition-colors hover:bg-gray-200/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500"
         >
           {copied ? (
             <Check className="h-3.5 w-3.5 text-bamboo-600" aria-hidden />

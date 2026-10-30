@@ -74,7 +74,7 @@ export const UnitTree = ({
   return (
     <section
       aria-label="Cây đơn vị"
-      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white p-3 shadow-card", className)}
+      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface p-3 shadow-card", className)}
     >
       <SearchInput
         value={query}
@@ -91,7 +91,11 @@ export const UnitTree = ({
         </Checkbox>
       </div>
       <div className="mt-2 min-h-0 flex-1 overflow-auto">
-        <ConfigProvider theme={{ components: { Tree: { nodeSelectedBg: "#e1f0e3", nodeHoverBg: "#f0f7f1" } } }}>
+        <ConfigProvider
+          theme={{
+            components: { Tree: { nodeSelectedBg: "var(--color-bamboo-100)", nodeHoverBg: "var(--color-bamboo-50)" } },
+          }}
+        >
           <Tree
             blockNode
             showLine={{ showLeafIcon: false }}

@@ -58,14 +58,14 @@ export const SearchBar = ({
         autoFocus
         autoComplete="off"
         placeholder="Hồ sơ, tài liệu, thiết bị, số chứng từ… (gõ không dấu được)"
-        className="h-11 w-full rounded-xl border border-line bg-white pl-11 pr-10 text-[14px] text-ink shadow-card outline-none transition-colors placeholder:text-muted hover:border-bamboo-200 focus:border-bamboo-400 focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
+        className="h-11 w-full rounded-xl border border-line bg-surface pl-11 pr-10 text-[14px] text-ink shadow-card outline-none transition-colors placeholder:text-muted hover:border-bamboo-200 focus:border-bamboo-400 focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (
         <button
           type="button"
           onClick={() => onChange("")}
           aria-label="Xóa nội dung đang tìm"
-          className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink"
+          className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-ui text-muted hover:bg-canvas hover:text-ink"
         >
           <X className="h-3.5 w-3.5" aria-hidden />
         </button>
@@ -73,7 +73,7 @@ export const SearchBar = ({
     </label>
 
     <div className="flex items-center gap-3">
-      <div role="group" aria-label="Cách tìm" className="inline-flex gap-0.5 rounded-full bg-black/[0.045] p-1">
+      <div role="group" aria-label="Cách tìm" className="inline-flex gap-0.5 rounded-ui bg-black/[0.045] p-1">
         {MODES.map((m) => {
           const active = m.key === mode;
           return (
@@ -84,9 +84,9 @@ export const SearchBar = ({
               aria-pressed={active}
               onClick={() => onModeChange(m.key)}
               className={cn(
-                "h-8 whitespace-nowrap rounded-full px-3.5 text-[12.5px] transition-colors",
+                "h-8 whitespace-nowrap rounded-ui px-3.5 text-[12.5px] transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-                active ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:text-ink",
+                active ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
               )}
             >
               {m.label}

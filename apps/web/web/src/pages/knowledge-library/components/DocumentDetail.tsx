@@ -79,7 +79,7 @@ export const DocumentDetail = ({
       aria-live="polite"
       aria-label="Chi tiết tài liệu"
       className={cn(
-        "min-h-0 overflow-y-auto rounded-2xl border border-line bg-white p-5 shadow-card sm:p-6",
+        "min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6",
         className,
       )}
     >
@@ -91,7 +91,7 @@ export const DocumentDetail = ({
       ) : (
         <div className="flex flex-col gap-5">
           <header>
-            <span className="inline-flex rounded-full bg-bamboo-50 px-2.5 py-0.5 text-[11.5px] font-medium text-bamboo-700">
+            <span className="inline-flex rounded-ui bg-bamboo-50 px-2.5 py-0.5 text-[11.5px] font-medium text-bamboo-700">
               {CATEGORY_SHORT[doc.category]}
             </span>
             <h2 className="mt-2 text-[20px] font-semibold leading-snug tracking-[-0.01em] text-ink">{doc.title}</h2>

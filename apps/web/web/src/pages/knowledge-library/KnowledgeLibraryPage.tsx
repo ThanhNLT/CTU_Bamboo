@@ -191,7 +191,7 @@ export const KnowledgeLibraryPage = () => {
           </div>
         </>
       ) : (
-        <section className="rounded-2xl border border-line bg-white p-3 shadow-card" aria-label="Đề xuất của tôi">
+        <section className="rounded-2xl border border-line bg-surface p-3 shadow-card" aria-label="Đề xuất của tôi">
           <Table<Proposal>
             rowKey="id"
             size="middle"

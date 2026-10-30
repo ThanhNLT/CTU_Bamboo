@@ -18,7 +18,7 @@ const ICON: Record<ResultType, { icon: LucideIcon; className: string }> = {
   data: { icon: Database, className: "bg-bamboo-50 text-bamboo-700" },
 };
 
-const MARK = "rounded-[3px] bg-yellow-100 text-ink";
+const MARK = "rounded-ui bg-yellow-100 text-ink";
 
 const Highlighted = ({ text, terms }: { text: string; terms: string[] }) => (
   <>
@@ -71,7 +71,7 @@ export const ResultItem = ({
 
         {result.snippetHtml ? (
           <p
-            className="mt-1.5 text-[13px] leading-relaxed text-body [&_mark]:rounded-[3px] [&_mark]:bg-yellow-100 [&_mark]:text-ink"
+            className="mt-1.5 text-[13px] leading-relaxed text-body [&_mark]:rounded-ui [&_mark]:bg-yellow-100 [&_mark]:text-ink"
             dangerouslySetInnerHTML={{ __html: result.snippetHtml }}
           />
         ) : result.snippet ? (
@@ -82,17 +82,17 @@ export const ResultItem = ({
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11.5px]">
           {result.semantic != null && (
-            <span className="inline-flex h-6 items-center rounded-full border border-bamboo-200 bg-bamboo-50 px-2.5 font-medium text-bamboo-800">
+            <span className="inline-flex h-6 items-center rounded-ui border border-bamboo-200 bg-bamboo-50 px-2.5 font-medium text-bamboo-800">
               Khớp ý nghĩa {fmtScore(result.semantic)}
             </span>
           )}
           {result.keyword && (
-            <span className="inline-flex h-6 items-center rounded-full border border-line bg-white px-2.5 font-medium text-body">
+            <span className="inline-flex h-6 items-center rounded-ui border border-line bg-surface px-2.5 font-medium text-body">
               {result.matchedField ? `Khớp từ khóa · ${result.matchedField}` : "Khớp từ khóa"}
             </span>
           )}
           {result.updatedLabel && (
-            <span className="inline-flex h-6 items-center rounded-full bg-black/[0.045] px-2.5 font-medium text-body">
+            <span className="inline-flex h-6 items-center rounded-ui bg-black/[0.045] px-2.5 font-medium text-body">
               {result.updatedLabel}
             </span>
           )}
@@ -100,7 +100,7 @@ export const ResultItem = ({
             <button
               type="button"
               onClick={() => result.attachmentId && onDownload(result.attachmentId)}
-              className="inline-flex h-6 items-center gap-1 rounded-full border border-line bg-white px-2.5 font-medium text-ink hover:bg-canvas"
+              className="inline-flex h-6 items-center gap-1 rounded-ui border border-line bg-surface px-2.5 font-medium text-ink hover:bg-canvas"
             >
               <Download className="h-3 w-3" aria-hidden />
               Tải tệp

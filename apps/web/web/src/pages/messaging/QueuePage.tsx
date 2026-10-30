@@ -69,7 +69,7 @@ export const QueuePage = () => {
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {(["PENDING", "LEASED", "DELIVERED", "DEAD"] as const).map((s) => (
-          <div key={s} className="rounded-2xl border border-line bg-white p-4 shadow-card">
+          <div key={s} className="rounded-2xl border border-line bg-surface p-4 shadow-card">
             <div className="text-[12px] text-muted">{STATUS[s].label}</div>
             <div className="text-[26px] font-semibold text-ink">{total(s)}</div>
           </div>

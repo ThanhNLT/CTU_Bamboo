@@ -43,7 +43,7 @@ export const StorageCard = ({
   };
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-labelledby="storage-title">
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-labelledby="storage-title">
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="storage-title" className="text-[14px] font-semibold text-ink">
           Dung lượng
@@ -58,7 +58,7 @@ export const StorageCard = ({
       {usage && (
         <>
           <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-gray-200/70"
+            className="mt-3 h-2 overflow-hidden rounded-ui bg-gray-200/70"
             role="progressbar"
             aria-label="Dung lượng đã dùng"
             aria-valuenow={Math.round(percent)}
@@ -81,7 +81,7 @@ export const StorageCard = ({
       <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
         {segments.map((s) => (
           <li key={s.key} className="flex items-center gap-2 text-[12px]">
-            <span className={cn("h-2 w-2 shrink-0 rounded-full", s.className)} aria-hidden />
+            <span className={cn("h-2 w-2 shrink-0 rounded-ui", s.className)} aria-hidden />
             <span className="flex-1 text-body">{s.label}</span>
             <span className="tabular-nums text-muted">{formatBytes(s.bytes)}</span>
           </li>

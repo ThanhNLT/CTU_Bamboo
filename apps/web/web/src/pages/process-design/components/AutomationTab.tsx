@@ -104,7 +104,7 @@ export const AutomationTab = ({
   };
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Chạy tự động">
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Chạy tự động">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="m-0 text-[14px] font-semibold text-ink">Chạy tự động</h2>

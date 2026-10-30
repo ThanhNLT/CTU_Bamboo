@@ -39,7 +39,7 @@ export const MetricCard = ({
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "flex min-w-0 flex-col rounded-2xl border bg-white p-4 text-left shadow-card transition-[border-color,box-shadow]",
+        "flex min-w-0 flex-col rounded-2xl border bg-surface p-4 text-left shadow-card transition-[border-color,box-shadow]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
         critical ? "border-red-300" : selected ? "border-bamboo-400" : "border-line hover:border-bamboo-200",
         selected && (critical ? "ring-3 ring-red-100" : "ring-3 ring-bamboo-100"),

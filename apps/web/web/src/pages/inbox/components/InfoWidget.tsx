@@ -24,7 +24,7 @@ export const InfoWidget = ({ info }: { info: TaskInfo }) => {
   if (info.phone) rows.push(["Điện thoại", <span className="tabular-nums">{info.phone}</span>]);
   if (info.dataTier) rows.push(["Dữ liệu", info.dataTier]);
   return (
-    <section className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-labelledby="inbox-info">
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-labelledby="inbox-info">
       <h3 id="inbox-info" className="text-[14px] font-semibold text-ink">
         Thông tin
       </h3>

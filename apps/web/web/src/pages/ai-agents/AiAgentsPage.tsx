@@ -100,7 +100,7 @@ export const AiAgentsPage = () => {
     return (
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
         <AiAgentsHeader onRegister={() => undefined} canRegister={false} />
-        <p className="rounded-2xl border border-line bg-white px-5 py-10 text-center text-[13px] text-muted shadow-card">
+        <p className="rounded-2xl border border-line bg-surface px-5 py-10 text-center text-[13px] text-muted shadow-card">
           Bạn cần quyền quản trị tác tử AI (core.ai.manage) để xem trang này.
         </p>
       </div>

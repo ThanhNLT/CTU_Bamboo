@@ -7,7 +7,7 @@ import { LAYERS, NODE_W, STATUS_LABEL, colLeft, edgePath, graphHeight, graphMetr
 import type { Direction, LineageEdge, LineageNode, NodeStatus } from "../types";
 
 const NODE_CLASS: Record<NodeStatus, string> = {
-  healthy: "border border-line bg-white",
+  healthy: "border border-line bg-surface",
   failed: "border-[1.5px] border-red-500 bg-red-50",
   affected: "border border-dashed border-yellow-500 bg-yellow-50",
 };
@@ -37,11 +37,7 @@ const DIRECTIONS: Array<{ key: Direction; label: string }> = [
 ];
 
 const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: Direction) => void }) => (
-  <div
-    role="group"
-    aria-label="Hướng phả hệ"
-    className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1"
-  >
+  <div role="group" aria-label="Hướng phả hệ" className="inline-flex shrink-0 gap-0.5 rounded-ui bg-black/[0.045] p-1">
     {DIRECTIONS.map(({ key, label }) => {
       const active = key === value;
       return (
@@ -51,9 +47,9 @@ const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: 
           aria-pressed={active}
           onClick={() => onChange(key)}
           className={cn(
-            "h-7 rounded-full px-3 text-[12px] transition-colors",
+            "h-7 rounded-ui px-3 text-[12px] transition-colors",
             "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-            active ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:text-ink",
+            active ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
           )}
         >
           {label}
@@ -65,7 +61,7 @@ const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: 
 
 const LegendDot = ({ className, label }: { className: string; label: string }) => (
   <span className="inline-flex items-center gap-1.5">
-    <span className={cn("h-2 w-2 rounded-full", className)} aria-hidden />
+    <span className={cn("h-2 w-2 rounded-ui", className)} aria-hidden />
     {label}
   </span>
 );
@@ -99,14 +95,14 @@ const NodeCard = ({
     title={`${node.fqn} · ${STATUS_LABEL[status]}`}
     style={{ left: `${colLeft(node.layer)}%`, width: `${NODE_W}%`, top, height }}
     className={cn(
-      "absolute flex flex-col justify-center rounded-[10px] px-2.5 text-left transition-[opacity,box-shadow]",
+      "absolute flex flex-col justify-center rounded-ui px-2.5 text-left transition-[opacity,box-shadow]",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500",
       NODE_CLASS[status],
       selected ? `${SELECTED_RING[status]} shadow-card` : matched ? "ring-2 ring-bamboo-400" : "hover:shadow-card",
       dimmed && "opacity-35",
     )}
   >
-    <span className={cn("absolute right-2 top-2 h-1.5 w-1.5 rounded-full", DOT_CLASS[status])} aria-hidden />
+    <span className={cn("absolute right-2 top-2 h-1.5 w-1.5 rounded-ui", DOT_CLASS[status])} aria-hidden />
     <span className={cn("block truncate pr-3 text-[10.5px] leading-tight", TECH_CLASS[status])}>{node.tech}</span>
     <span
       className={cn(
@@ -160,7 +156,10 @@ export const LineageGraphMock = ({
   const visible = (n: LineageNode) => inScope(n.id) && (!searching || matches(n));
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label={`Phả hệ của ${focus.fqn}`}>
+    <section
+      className="rounded-2xl border border-line bg-surface p-5 shadow-card"
+      aria-label={`Phả hệ của ${focus.fqn}`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="min-w-0 truncate text-[15px] font-semibold text-ink">Phả hệ của {focus.fqn}</h2>
         <DirectionToggle value={direction} onChange={onDirectionChange} />

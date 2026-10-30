@@ -24,7 +24,7 @@ export const TaskSidebar = ({
 }) => (
   <nav
     aria-label="Danh sách việc"
-    className={cn("min-h-0 overflow-y-auto rounded-2xl border border-line bg-white p-2 shadow-card", className)}
+    className={cn("min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-2 shadow-card", className)}
   >
     {tasks.length === 0 ? (
       <div className="flex flex-col items-center gap-2 px-4 py-14 text-center">

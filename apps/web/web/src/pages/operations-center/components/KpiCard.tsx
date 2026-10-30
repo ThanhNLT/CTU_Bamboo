@@ -18,7 +18,7 @@ export const KpiCard = ({ kpi }: { kpi: Kpi }) => {
   const d = kpi.delta;
   return (
     <section
-      className="flex min-w-0 flex-col rounded-2xl border border-line bg-white px-4 py-3.5 shadow-card"
+      className="flex min-w-0 flex-col rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card"
       aria-label={kpi.label}
     >
       <div className="flex items-start justify-between gap-2">
@@ -27,7 +27,7 @@ export const KpiCard = ({ kpi }: { kpi: Kpi }) => {
           <button
             type="button"
             aria-label={`Định nghĩa: ${kpi.label}`}
-            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink"
+            className="grid h-5 w-5 shrink-0 place-items-center rounded-ui text-muted hover:bg-canvas hover:text-ink"
           >
             <Info className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -48,7 +48,7 @@ export const KpiCard = ({ kpi }: { kpi: Kpi }) => {
           )}
           {d.dir === "dot" && (
             <span
-              className={cn("h-1.5 w-1.5 rounded-full", d.tone === "bad" ? "bg-red-500" : "bg-bamboo-500")}
+              className={cn("h-1.5 w-1.5 rounded-ui", d.tone === "bad" ? "bg-red-500" : "bg-bamboo-500")}
               aria-hidden
             />
           )}

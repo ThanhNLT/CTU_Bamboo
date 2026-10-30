@@ -27,7 +27,7 @@ const StatusTabs = ({
   <div
     role="tablist"
     aria-label="Trạng thái hồ sơ"
-    className="inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
+    className="inline-flex max-w-full flex-wrap gap-0.5 rounded-ui bg-black/[0.045] p-1"
   >
     {STATUS_TABS.map(({ key, label }) => {
       const active = key === value;
@@ -39,9 +39,9 @@ const StatusTabs = ({
           aria-selected={active}
           onClick={() => onChange(key)}
           className={cn(
-            "h-8 rounded-full px-3.5 text-[12.5px] transition-colors",
+            "h-8 rounded-ui px-3.5 text-[12.5px] transition-colors",
             "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-            active ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:text-ink",
+            active ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
           )}
         >
           {label} <span className={cn("tabular-nums", active ? "text-ink" : "text-muted")}>{counts[key]}</span>

@@ -24,7 +24,7 @@ const StatCard = ({ stat }: { stat: SummaryStat }) => {
       </div>
     </>
   );
-  const cls = "block min-w-0 rounded-2xl border border-line bg-white px-5 py-4 shadow-card";
+  const cls = "block min-w-0 rounded-2xl border border-line bg-surface px-5 py-4 shadow-card";
   return stat.to ? (
     <Link to={stat.to} className={cn(cls, "transition-colors hover:border-bamboo-200 hover:bg-bamboo-50/40")}>
       {body}

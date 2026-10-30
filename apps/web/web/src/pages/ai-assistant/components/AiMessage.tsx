@@ -13,13 +13,13 @@ import { RichText } from "./RichText";
 import { ThinkingMessage } from "./ThinkingMessage";
 
 export const AiAvatar = () => (
-  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-bamboo-50 text-bamboo-600" aria-hidden>
+  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-ui bg-bamboo-50 text-bamboo-600" aria-hidden>
     <Sparkles className="h-4 w-4" />
   </span>
 );
 
 const iconBtn =
-  "grid h-7 w-7 place-items-center rounded-full text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
+  "grid h-7 w-7 place-items-center rounded-ui text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
 const Notice = ({
@@ -69,7 +69,7 @@ export const ThinkingAccordion = ({
               {[0, 1, 2].map((d) => (
                 <span
                   key={d}
-                  className="h-1.5 w-1.5 rounded-full bg-bamboo-500 motion-safe:animate-bounce"
+                  className="h-1.5 w-1.5 rounded-ui bg-bamboo-500 motion-safe:animate-bounce"
                   style={{ animationDelay: `${d * 120}ms` }}
                 />
               ))}

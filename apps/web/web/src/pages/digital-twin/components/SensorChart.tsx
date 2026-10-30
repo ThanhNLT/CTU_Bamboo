@@ -36,7 +36,7 @@ const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { m
   const r = RANGES[range];
   const agg = aggregationOf(metric.threshold);
   return (
-    <div className="rounded-xl border border-line bg-white px-3 py-2 text-[12px] shadow-float">
+    <div className="rounded-xl border border-line bg-surface px-3 py-2 text-[12px] shadow-float">
       <div className="font-semibold text-ink">
         {range === "1h" ? formatTime(label) : formatDayTime(label)}
         {r.bucket > 1 && (
@@ -47,7 +47,7 @@ const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { m
         )}
       </div>
       <div className="mt-0.5 flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full" style={{ background: BAMBOO_DARK }} aria-hidden />
+        <span className="h-2 w-2 rounded-ui" style={{ background: BAMBOO_DARK }} aria-hidden />
         <span className="font-medium tabular-nums text-ink">
           {formatNumber(v, metric.decimals)} {metric.unitLong ?? metric.unit}
         </span>
@@ -61,7 +61,7 @@ const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: Time
   <div
     role="group"
     aria-label="Khoảng thời gian"
-    className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1"
+    className="inline-flex shrink-0 gap-0.5 rounded-ui bg-black/[0.045] p-1"
   >
     {(Object.keys(RANGES) as TimeRange[]).map((key) => {
       const active = key === value;
@@ -72,9 +72,9 @@ const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: Time
           aria-pressed={active}
           onClick={() => onChange(key)}
           className={cn(
-            "h-7 rounded-full px-3 text-[12px] transition-colors",
+            "h-7 rounded-ui px-3 text-[12px] transition-colors",
             "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-            active ? "bg-white font-semibold text-ink shadow-card" : "text-body hover:text-ink",
+            active ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
           )}
         >
           {RANGES[key].short}
@@ -140,7 +140,10 @@ export const SensorChart = ({
       : "Luôn trong ngưỡng.");
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-label={`Biểu đồ ${metric.label}`}>
+    <section
+      className="rounded-2xl border border-line bg-surface p-5 shadow-card"
+      aria-label={`Biểu đồ ${metric.label}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h3 className="text-[14px] font-semibold text-ink">
           {metric.label} · {r.label} ({metric.unitLong ?? metric.unit})

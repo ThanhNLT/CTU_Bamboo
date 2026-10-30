@@ -25,7 +25,7 @@ export const FormsTab = ({
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {forms.map((f, i) => (
-          <section key={i} className="rounded-2xl border border-line bg-white p-4 shadow-card" aria-label={f.name}>
+          <section key={i} className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label={f.name}>
             <div className="flex gap-2">
               <Input
                 aria-label="Tên biểu mẫu"

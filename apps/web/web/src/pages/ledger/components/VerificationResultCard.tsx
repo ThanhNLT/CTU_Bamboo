@@ -21,7 +21,7 @@ const Row = ({ label, children, mono }: { label: string; children: ReactNode; mo
 );
 
 const actionClass =
-  "inline-flex h-8 items-center gap-1.5 rounded-full border bg-white/70 px-3 text-[12px] font-medium text-ink transition-colors hover:bg-white " +
+  "inline-flex h-8 items-center gap-1.5 rounded-ui border bg-surface/70 px-3 text-[12px] font-medium text-ink transition-colors hover:bg-surface " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
 const STYLE = {
@@ -98,7 +98,7 @@ export const VerificationResultCard = ({
             {result.fileName && <Row label="Tệp đối soát">{result.fileName}</Row>}
           </dl>
           {result.kind === "mismatch" && result.problem && (
-            <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[12px] text-body">{result.problem}</p>
+            <p className="mt-2 rounded-xl bg-surface/70 px-3 py-2 text-[12px] text-body">{result.problem}</p>
           )}
         </>
       )}

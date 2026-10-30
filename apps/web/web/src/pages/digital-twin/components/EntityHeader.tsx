@@ -29,7 +29,7 @@ export const EntityHeader = ({
 }) => {
   const status = ENTITY_STATUS[entity.status];
   return (
-    <header className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-5 shadow-card md:flex-row md:items-start md:justify-between">
+    <header className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-card md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
         <div className="break-all font-mono text-[11.5px] text-muted">
           {entity.type} · {entity.urn}
@@ -39,7 +39,7 @@ export const EntityHeader = ({
         </h2>
         <span
           className={cn(
-            "mt-2.5 inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium",
+            "mt-2.5 inline-flex h-6 items-center gap-1.5 rounded-ui px-2.5 text-[12px] font-medium",
             TAG_CLASS[entity.status],
           )}
         >

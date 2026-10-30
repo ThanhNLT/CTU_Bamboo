@@ -32,7 +32,7 @@ export const DocumentList = ({
   return (
     <section
       aria-label="Danh sách tài liệu"
-      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white shadow-card", className)}
+      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface shadow-card", className)}
     >
       {docs.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">

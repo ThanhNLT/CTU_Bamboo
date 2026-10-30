@@ -52,7 +52,7 @@ export const ChatArea = ({
   return (
     <section
       aria-label="Hỏi trợ lý"
-      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-white shadow-card", className)}
+      className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface shadow-card", className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-5">
         {assistants.length > 1 ? (
@@ -61,7 +61,7 @@ export const ChatArea = ({
             <select
               value={assistantId}
               onChange={(e) => onAssistant(e.target.value)}
-              className="h-8 rounded-full border border-line bg-white px-3 text-[12.5px] font-semibold text-ink outline-none focus:border-bamboo-400 focus:ring-3 focus:ring-bamboo-100"
+              className="h-8 rounded-ui border border-line bg-surface px-3 text-[12.5px] font-semibold text-ink outline-none focus:border-bamboo-400 focus:ring-3 focus:ring-bamboo-100"
             >
               {assistants.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -77,7 +77,7 @@ export const ChatArea = ({
           </span>
         )}
         {current && (
-          <span className="inline-flex h-6 shrink-0 items-center rounded-full border border-line px-2.5 text-[11.5px] text-body">
+          <span className="inline-flex h-6 shrink-0 items-center rounded-ui border border-line px-2.5 text-[11.5px] text-body">
             Ollama · {current.model}
           </span>
         )}
@@ -85,12 +85,12 @@ export const ChatArea = ({
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-3 sm:px-5">
         {docLabel && (
-          <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-bamboo-200 bg-white pl-1.5 pr-3 text-[12px] font-semibold text-bamboo-800">
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-ui border border-bamboo-200 bg-surface pl-1.5 pr-3 text-[12px] font-semibold text-bamboo-800">
             <button
               type="button"
               onClick={onClearDoc}
               aria-label="Bỏ giới hạn tài liệu"
-              className="grid h-5 w-5 place-items-center rounded-full text-bamboo-700 hover:bg-bamboo-50"
+              className="grid h-5 w-5 place-items-center rounded-ui text-bamboo-700 hover:bg-bamboo-50"
             >
               <X className="h-3.5 w-3.5" aria-hidden />
             </button>
@@ -105,7 +105,7 @@ export const ChatArea = ({
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5" aria-live="polite">
         {empty ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-bamboo-50 text-bamboo-600" aria-hidden>
+            <span className="grid h-11 w-11 place-items-center rounded-ui bg-bamboo-50 text-bamboo-600" aria-hidden>
               <Sparkles className="h-5 w-5" />
             </span>
             <p className="text-[15px] font-semibold text-ink">Bạn cần hỏi gì?</p>
@@ -128,7 +128,7 @@ export const ChatArea = ({
                 type="button"
                 onClick={() => onSuggestion(s)}
                 disabled={!canAsk}
-                className="h-7 shrink-0 whitespace-nowrap rounded-full bg-black/[0.045] px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 hover:text-bamboo-800 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500"
+                className="h-7 shrink-0 whitespace-nowrap rounded-ui bg-black/[0.045] px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 hover:text-bamboo-800 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500"
               >
                 {s}
               </button>

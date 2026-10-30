@@ -69,7 +69,7 @@ export const SearchFilters = ({
   className?: string;
 }) => (
   <aside aria-label="Bộ lọc" className={className}>
-    <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
       <section>
         <GroupTitle>Loại</GroupTitle>
         {TYPES.map((t) => (
