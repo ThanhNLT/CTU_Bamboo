@@ -44,7 +44,7 @@ export const DriveHeader = ({
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt"
+          accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx,.txt,.csv,.md"
           multiple
           hidden
           onChange={(e) => {
