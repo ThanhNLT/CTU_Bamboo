@@ -72,6 +72,22 @@ const toResult = (h: Hit, i: number): SearchResult => {
       mono: file,
     };
   }
+  if (h.entity_type === "hr.onboarding_request") {
+    // Hồ sơ nhân sự chỉ tìm được theo tên tệp (nội dung không vào chỉ mục)
+    return {
+      key: `doc:${h.kind}:${h.attachment_id ?? h.entity_id}`,
+      type: "document",
+      title: h.file_name ?? h.entity_id,
+      breadcrumb: "Tệp đính kèm › Hồ sơ tiếp nhận nhân sự",
+      snippetHtml: h.snippet,
+      to: `/h/onboarding/show/${h.entity_id}`,
+      keyword: true,
+      score: Math.max(0.5, 0.86 - i * 0.01),
+      matchedField: h.matched_field ? (FIELD[h.matched_field] ?? h.matched_field) : undefined,
+      attachmentId: h.attachment_id ?? undefined,
+      mono: true,
+    };
+  }
   const pr = h.purchase_request;
   const meta = [pr?.requester?.full_name, pr?.org_unit?.name].filter(Boolean).join(" · ");
   return {

@@ -282,7 +282,7 @@ def _attr(tag: bytes, name: bytes) -> bytes:
 
 
 def _ooxml(report: Report, data: bytes, content_type: str, clock: _Clock) -> None:
-    kind = "docx" if "wordprocessingml" in content_type else "xlsx"
+    kind = "docx" if "wordprocessingml" in content_type else "pptx" if "presentationml" in content_type else "xlsx"
     report.checked.append(f"{kind.upper()}: cấu trúc zip, macro, đối tượng nhúng, liên kết ngoài, bom nén")
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
@@ -294,7 +294,7 @@ def _ooxml(report: Report, data: bytes, content_type: str, clock: _Clock) -> Non
         report.add("reject", "zip-entries", f"Quá nhiều mục trong tệp ({len(infos)})")
         return
     names = {i.filename for i in infos}
-    required = "word/document.xml" if kind == "docx" else "xl/workbook.xml"
+    required = {"docx": "word/document.xml", "pptx": "ppt/presentation.xml", "xlsx": "xl/workbook.xml"}[kind]
     if "[Content_Types].xml" not in names or required not in names:
         report.add("reject", "ooxml-structure", f"Không đúng cấu trúc {kind.upper()} (thiếu {required})")
         return
@@ -330,7 +330,7 @@ def _ooxml(report: Report, data: bytes, content_type: str, clock: _Clock) -> Non
             report.add("reject", "zip-corrupt", f"Mục {name[:60]} hỏng hoặc không đọc được: {exc}"[:200])
             continue
         _payload(report, body, f"mục {name[:60]}")
-        if body[:4] == b"PK\x03\x04" and ext not in ("docx", "xlsx"):
+        if body[:4] == b"PK\x03\x04" and ext not in ("docx", "xlsx", "pptx"):
             report.add("reject", "nested-zip", f"Có tệp nén lồng bên trong: {name[:60]}")
         if ext in ("xml", "rels"):
             if b"<!DOCTYPE" in body or b"<!ENTITY" in body:
@@ -371,7 +371,7 @@ def scan_file(content_type: str, data: bytes, budget: float = TIME_BUDGET) -> Re
             _jpeg(report, data)
         elif content_type.startswith("application/vnd.openxmlformats-officedocument."):
             _ooxml(report, data, content_type, clock)
-        elif content_type == "text/plain":
+        elif content_type in ("text/plain", "text/csv", "text/markdown"):
             _text(report, data)
         else:
             report.add("reject", "unsupported", f"Chưa có bộ kiểm tra cho loại tệp {content_type}")

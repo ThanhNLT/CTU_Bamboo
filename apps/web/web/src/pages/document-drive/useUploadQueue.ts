@@ -5,6 +5,7 @@
 import { useCallback, useState } from "react";
 
 import { request } from "../../api/client";
+import { uploadContentType } from "../../utils/fileType";
 import type { UploadItem } from "./types";
 
 const MAX_BYTES = 25 * 1024 * 1024;
@@ -43,7 +44,7 @@ export const useUploadQueue = () => {
           entity: target.entityType,
           id: target.entityId,
           name: file.name,
-          type: file.type || "application/octet-stream",
+          type: uploadContentType(file),
           size: file.size,
         },
       );
