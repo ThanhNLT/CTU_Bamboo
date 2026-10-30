@@ -3,7 +3,7 @@
 Trang này dành cho người muốn dùng Bamboo để quản lý **công ty hoặc tập đoàn của chính mình**, bắt đầu từ một hệ thống trống (không có dữ liệu demo Tập đoàn X). Làm theo thứ tự:
 
 1. Cài hệ thống và tắt dữ liệu demo.
-2. Tạo công ty và quản trị viên đầu tiên bằng một lệnh.
+2. Tạo công ty trên trang khởi tạo: nhập mã thiết lập, người đại diện ký số đơn đăng ký (hoặc dùng một lệnh trên máy chủ).
 3. Quản trị viên đăng nhập, tự dựng cơ cấu tổ chức, người dùng, phân quyền, danh mục.
 
 ## 1. Cài hệ thống trống
@@ -36,7 +36,22 @@ docker compose ps        # chờ các dịch vụ healthy, job khởi tạo exit
 
 Realm đăng nhập luôn có sẵn các tài khoản demo (`cdo`, `admin`, `nv.muahang.dienthoai`…). Với `SEED_DEMO=false` các tài khoản này không thuộc công ty nào nên không vào được dữ liệu, nhưng vẫn nên vô hiệu hóa: mở `http://localhost:8080` (đăng nhập bằng `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD`) → realm `bms` → **Users** → tắt **Enabled** từng tài khoản demo.
 
-## 2. Tạo công ty và quản trị viên đầu tiên
+## 2. Tạo công ty và chủ sở hữu
+
+### Cách 1: trang khởi tạo (khuyến nghị)
+
+Hệ thống chưa có công ty nào thì trang đăng nhập hiện nút **Tạo công ty mới** (ADR #57).
+
+1. Lấy **mã thiết lập**: `docker compose logs bootstrap | grep -A1 "MÃ THIẾT LẬP"`. Mã dùng một lần, hết hạn sau 24 giờ; lấy mã mới bằng `make setup-code`. Chỉ người có quyền trên máy chủ đọc được mã, nên người lạ mở trang trước không chiếm được hệ thống.
+2. Trên trang **Tạo công ty mới**, nhập mã thiết lập, thông tin theo giấy chứng nhận đăng ký doanh nghiệp (tên, **mã số thuế**, địa chỉ, người đại diện theo pháp luật), mã công ty trên hệ thống (viết hoa không dấu, không đổi được), tài khoản của **chủ sở hữu** (người đại diện) và tùy chọn một **quản trị viên** (nhân viên CNTT). Bấm **Lập đơn đăng ký**.
+3. Tải **đơn đăng ký PDF** (hiệu lực 30 phút). Người đại diện ký số tệp bằng **chữ ký số của doanh nghiệp** (USB token mang mã số thuế, dùng phần mềm ký của nhà cung cấp hoặc Adobe Acrobat Reader), không sửa tệp, rồi tải tệp đã ký lên.
+4. Hệ thống kiểm chữ ký (chuỗi chứng thư tới Root CA quốc gia, chưa bị thu hồi, đúng mã số thuế), tạo công ty ở trạng thái **đã xác thực** và hiện **mật khẩu tạm** của từng tài khoản (chỉ một lần). Lần đăng nhập đầu phải đổi mật khẩu và cài mã xác thực hai lớp (Google Authenticator, Microsoft Authenticator…).
+
+Trước khi dùng cách này, người quản trị máy chủ đặt chứng thư Root CA quốc gia vào `platform/trust` rồi dựng lại image `actions` (xem `platform/trust/README.md`). Máy chủ không có Internet thì đặt `SIGNATURE_ONLINE=false` (không kiểm thu hồi chứng thư). Chưa có chữ ký số hoặc chưa cài chứng thư gốc thì bấm **Chưa có chữ ký số: tạo công ty chưa xác thực**; chủ sở hữu ký bổ sung sau ở **Quản trị → Thông tin công ty**. Đặt `SETUP_ALLOW_UNVERIFIED=false` để bắt buộc ký số ngay.
+
+**Chủ sở hữu** là người duy nhất trao hoặc thu hồi quyền quản trị: cấp vai trò có quyền quản trị (cơ cấu tổ chức, phân quyền, quản lý chức năng), bổ nhiệm người vào vị trí có quyền quản trị, ủy quyền quản trị. Quản trị viên làm các việc khác như thường nhưng không tự nâng quyền cho ai. Chủ sở hữu giữ ghế Giám đốc và được cài/gỡ mô-đun trên máy chủ.
+
+### Cách 2: lệnh trên máy chủ
 
 ```bash
 docker compose run --rm seed python -m app.tenant \
@@ -55,12 +70,12 @@ docker compose run --rm seed python -m app.tenant \
 | `--parent` | Mã công ty mẹ, khi công ty mới là thành viên của một tập đoàn đã tạo (mục 4) |
 | `--admin-username`, `--admin-name`, `--admin-email` | Tài khoản quản trị viên; email không bắt buộc |
 
-Kết quả in ra tên đăng nhập và **mật khẩu tạm**, chỉ hiện một lần. Lần đăng nhập đầu hệ thống bắt đổi mật khẩu.
+Kết quả in ra tên đăng nhập và **mật khẩu tạm**, chỉ hiện một lần. Lần đăng nhập đầu hệ thống bắt đổi mật khẩu. Người chạy lệnh có quyền trên máy chủ nên quản trị viên đầu tiên đồng thời là chủ sở hữu; công ty tạo bằng lệnh chưa khai mã số thuế, chưa xác thực pháp lý.
 
-Lệnh tạo sẵn:
+Cả hai cách tạo sẵn:
 
 - công ty, đơn vị gốc (pháp nhân) cùng tên, danh mục loại đơn vị và ba chức danh cơ bản;
-- hai vị trí ở đơn vị gốc: **Giám đốc** (trưởng đơn vị, để trống) và **Quản trị hệ thống** (giao cho quản trị viên);
+- hai vị trí ở đơn vị gốc: **Giám đốc** (trưởng đơn vị; người đại diện khi tạo trên trang khởi tạo) và **Quản trị hệ thống** (quản trị viên), cả hai có vai trò Quản trị tổ chức;
 - bốn vai trò: **Nhân viên** (lập đề nghị mua sắm), **Quản lý** (duyệt), **Kiểm soát tài chính** (xem, kiểm toán), **Quản trị tổ chức** (cơ cấu, phân quyền, dữ liệu chủ, kiểm toán, thiết kế quy trình). Quản trị viên nhận vai trò Quản trị tổ chức trên toàn công ty; mọi vị trí ở đơn vị gốc nhận vai trò Nhân viên;
 - quy tắc duyệt mặc định cho đề nghị mua sắm và tiếp nhận nhân sự: một bước, do **cấp quản lý trực tiếp của người lập** (thường là trưởng đơn vị) duyệt. Đơn vị chưa có trưởng thì đề nghị không gửi duyệt được.
 

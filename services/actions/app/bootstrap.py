@@ -12,7 +12,7 @@ import time
 
 import httpx
 
-from . import ai_chunks, config, keycloak_sync, search, storage
+from . import ai_chunks, config, keycloak_sync, search, setup_code, storage
 from .flowable import FlowableClient
 
 log = logging.getLogger("bootstrap")
@@ -105,6 +105,7 @@ def main() -> int:
         settings.keycloak_admin_password,
         os.environ.get("DEMO_PASSWORD", ""),
     )
+    setup_code.announce(settings.database_url)
     return 0
 
 
