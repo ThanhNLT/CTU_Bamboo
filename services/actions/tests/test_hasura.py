@@ -94,3 +94,29 @@ def test_lich_su_theo_quyen_xem(hasura, conn, org):
     q = """query($id: uuid!) { wf_approval_history(where: {entity_id: {_eq: $id}}) { event } }"""
     assert hasura(q, {"id": pr_id}, person=i[k("nv")], tenant=i["TDX"])["data"]["wf_approval_history"]
     assert hasura(q, {"id": pr_id}, person=i[k("gd")], tenant=i["TDX"])["data"]["wf_approval_history"] == []
+
+
+def test_mo_dun_tat_thi_bang_cua_no_bi_chan(hasura, conn):
+    """Mô-đun chưa bật cho tenant (ADR #56): không đọc, không ghi bảng riêng của nó; bật lại thì như cũ."""
+    i = ids(conn, "TDX", "c", "P_NV_MH_DT")
+    pr_id = pr(conn, "md_hasura", "c", "P_NV_MH_DT", 5_000_000, submit=False)
+    conn.execute("DELETE FROM core.tenant_module WHERE tenant_id = %s AND module IN ('ic', 'procurement')", (i["TDX"],))
+    try:
+        data = hasura(PR_QUERY, {"id": pr_id}, person=i["c"], tenant=i["TDX"])
+        assert data["data"]["proc_purchase_request_by_pk"] is None, data
+        data = hasura(INSERT_PR, {"pos": i["P_NV_MH_DT"], "amount": 1}, person=i["c"], tenant=i["TDX"])
+        assert "errors" in data, data
+        data = hasura(
+            """mutation($id: uuid!) { submit_purchase_request(request_id: $id) { status } }""",
+            {"id": pr_id},
+            person=i["c"],
+            tenant=i["TDX"],
+        )
+        assert data["errors"][0]["extensions"]["code"] == "module-disabled", data
+    finally:
+        conn.execute(
+            "INSERT INTO core.tenant_module (tenant_id, module) VALUES (%s, 'procurement'), (%s, 'ic')",
+            (i["TDX"], i["TDX"]),
+        )
+    data = hasura(PR_QUERY, {"id": pr_id}, person=i["c"], tenant=i["TDX"])
+    assert data["data"]["proc_purchase_request_by_pk"]["id"] == pr_id
