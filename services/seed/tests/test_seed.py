@@ -41,6 +41,12 @@ def test_chay_lai_khong_trung(conn):
     assert one(conn, "SELECT count(*) FROM core.person") == before
 
 
+def test_demo_bat_moi_mo_dun(conn):
+    n = len(seed.DEMO_MODULES)
+    assert one(conn, "SELECT count(*) FROM core.module_install") == n
+    assert one(conn, "SELECT count(*) FROM core.tenant_module") == n * one(conn, "SELECT count(*) FROM core.tenant")
+
+
 def test_quy_mo(conn):
     assert one(conn, "SELECT count(*) FROM core.org_unit") >= 40
     assert 100 <= one(conn, "SELECT count(*) FROM core.person") <= 160

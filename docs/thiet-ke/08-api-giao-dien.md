@@ -52,7 +52,7 @@ Ví dụ cách giao diện trong `apps/web/web/src/pages` dùng API cho luồng 
 
 ## 3. Danh mục Hasura Action
 
-Nghiệp vụ nhiều bước đi qua 99 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
+Nghiệp vụ nhiều bước đi qua 104 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
 
 | Nhóm | Query | Mutation |
 |---|---|---|
@@ -68,12 +68,14 @@ Nghiệp vụ nhiều bước đi qua 99 Hasura Action (dịch vụ `actions`, k
 | Dữ liệu số: điều hành, Lakehouse, KPI, bản sao số | `ops_dashboard`, `lakehouse_datasets`, `lakehouse_preview`, `semantic_catalog`, `semantic_query`, `kpi_snapshots`, `get_kpi_report_pdf` | `iot_acknowledge` |
 | Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ocr_retry` |
 | Vận hành | `obs_logs`, `backup_runs` | – |
+| Mô-đun chức năng ([ADR #56](#adr-56)) | `modules` | `module_enable`, `module_disable`, `module_install`, `module_uninstall` |
 
 ## 4. Lưu ý khi dùng
 
 - **Tổng tiền sau khi tạo kèm dòng hàng:** phản hồi của `insert_proc_purchase_request_one` lồng `purchase_request_items` chụp dòng cha trước khi chèn dòng hàng nên `total_amount` còn là 0; đọc lại bằng `proc_purchase_request_by_pk` (Refine tự refetch sau create).
 - Có dòng hàng thì `total_amount` luôn bằng tổng các dòng; sửa tay bị ghi đè. `doc_no` do CSDL sinh, không gửi lên.
 - Đề nghị đang chờ duyệt hoặc đã xong thì update/delete trả về `null`/`affected_rows: 0` (không khớp quyền) hoặc lỗi "không sửa được dòng hàng".
+- **Mô-đun chưa bật:** Action của mô-đun trả `module-disabled` (403); bảng thuộc riêng mô-đun trả mảng rỗng, ghi bị từ chối. Đọc `modules` để biết mô-đun nào đang bật ([ADR #56](#adr-56)).
 - **Lỗi nghiệp vụ** trả về `errors[0].message` tiếng Việt, dùng thẳng được trên giao diện; `extensions.code`: `not-found`, `forbidden`, `note-required`, `rejected`, `unauthorized`, `constraint-violation`, `query-required`, `search-unavailable`, `pdf-unavailable`, `pii-unavailable` (két mã hóa không truy cập được).
 - **Hộp việc nhiều loại chứng từ:** `wf_v_inbox` có `entity_type`; quan hệ `purchase_request` hoặc `onboarding_request` (cái còn lại là `null`). Thông báo cũng có `entity_type` để mở đúng trang. `act_on_task` trả `request_id` là id của chứng từ, loại nào cũng vậy.
 - **Tiếp nhận nhân sự:** duyệt xong CSDL tạo người và bổ nhiệm ngay trong giao dịch duyệt; tài khoản Keycloak tạo ở nền vài giây sau (`account_status` từ `PENDING` sang `CREATED`), nên tải lại hồ sơ cho tới khi có kết quả.

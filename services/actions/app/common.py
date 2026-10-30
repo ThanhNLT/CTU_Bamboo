@@ -38,6 +38,7 @@ class Context:
     signer: "Signer | None" = None
     anchor_signer: "Signer | None" = None
     anchor_url: str = ""
+    sleeper_url: str = ""
 
 
 class ActionError(Exception):

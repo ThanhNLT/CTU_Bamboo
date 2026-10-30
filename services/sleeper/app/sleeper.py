@@ -9,6 +9,10 @@ qua proxy quá SLEEPER_IDLE_SECONDS thì docker stop để trả RAM. Chỉ ch�
 `com.docker.compose.service` nằm trong SLEEPER_TARGETS.
 
 SLEEPER_TARGETS: danh sách `cổng_nghe=dịch_vụ:cổng[@giây_nhàn_rỗi]` ngăn cách bằng dấu phẩy.
+
+Mô-đun chức năng (ADR #56): định kỳ hỏi `SLEEPER_MODULES_URL` (actions `/modules/services`) container nào phải chạy, phải
+dừng theo các mô-đun đã cài, rồi start/stop cho khớp. Chỉ chạm dịch vụ có tên trong SLEEPER_MANAGED. Dịch vụ ngủ (có trong
+SLEEPER_TARGETS) của mô-đun chưa cài thì bị khóa: có yêu cầu đến cũng không đánh thức.
 """
 
 import asyncio
@@ -18,7 +22,7 @@ import os
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 log = logging.getLogger("sleeper")
 
@@ -51,7 +55,11 @@ class Docker:
         return body
 
     async def find(self, service: str) -> str:
-        labels = [f"com.docker.compose.project={self.project}", f"com.docker.compose.service={service}"]
+        labels = [
+            f"com.docker.compose.project={self.project}",
+            f"com.docker.compose.service={service}",
+            "com.docker.compose.oneoff=False",
+        ]
         query = quote(json.dumps({"label": labels}))
         found = json.loads(await self._call("GET", f"/containers/json?all=1&filters={query}", (200,)))
         if not found:
@@ -99,6 +107,7 @@ class Target:
     awake_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     writers: set = field(default_factory=set)
     container: str = ""
+    blocked: bool = False  # mô-đun của dịch vụ chưa cài: không đánh thức
 
     def touch(self) -> None:
         self.last_activity = time.monotonic()
@@ -160,6 +169,9 @@ class Target:
             first = await reader.read(CHUNK)  # thăm dò TCP không gửi byte nào thì không đánh thức
             if not first:
                 return
+            if self.blocked:
+                log.info("%s thuộc mô-đun chưa cài: không đánh thức", self.service)
+                return
             self.touch()
             await self.ensure_awake(docker, timeout)
             up_reader, upstream = await asyncio.open_connection(self.service, self.port)
@@ -187,12 +199,115 @@ class Target:
             dst.close()
 
 
+async def http_get_json(url: str, timeout: float = 5.0) -> dict:
+    """GET một URL http:// trong mạng nội bộ, trả JSON (thư viện chuẩn, không thêm gói)."""
+    parts = urlparse(url)
+    if parts.scheme != "http" or not parts.hostname:
+        raise ValueError(f"chỉ hỗ trợ http://: {url}")
+    path = parts.path or "/"
+    if parts.query:
+        path += f"?{parts.query}"
+
+    async def call() -> bytes:
+        reader, writer = await asyncio.open_connection(parts.hostname, parts.port or 80)
+        try:
+            writer.write(f"GET {path} HTTP/1.0\r\nHost: {parts.hostname}\r\nAccept: application/json\r\n\r\n".encode())
+            await writer.drain()
+            return await reader.read()
+        finally:
+            writer.close()
+
+    raw = await asyncio.wait_for(call(), timeout)
+    head, _, body = raw.partition(b"\r\n\r\n")
+    status = int(head.split(b" ", 2)[1])
+    if status != 200:
+        raise OSError(f"GET {url} -> {status}")
+    return json.loads(body)
+
+
+class Modules:
+    """Đưa container của mô-đun về đúng trạng thái actions yêu cầu (ADR #56)."""
+
+    def __init__(self, docker: Docker, url: str, managed: set[str], targets: list[Target], fetch=http_get_json):
+        self.docker = docker
+        self.url = url
+        self.managed = managed
+        self.targets = {t.service: t for t in targets}
+        self.fetch = fetch
+        self.containers: dict[str, str] = {}
+
+    async def _state(self, service: str) -> dict:
+        container = self.containers.get(service) or await self.docker.find(service)
+        try:
+            state = await self.docker.state(container)
+        except DockerError:  # compose tạo lại container: tìm lại theo nhãn
+            container = await self.docker.find(service)
+            state = await self.docker.state(container)
+        self.containers[service] = container
+        return state
+
+    async def reconcile(self) -> dict:
+        """Một lượt đối chiếu; trả các dịch vụ vừa start/stop. actions chưa trả lời thì giữ nguyên hiện trạng."""
+        try:
+            desired = await self.fetch(self.url)
+        except (OSError, ValueError, asyncio.TimeoutError) as exc:
+            log.debug("chưa hỏi được mô-đun từ %s: %s", self.url, exc)
+            return {"started": [], "stopped": []}
+        order = [s for s in desired.get("run", []) if s in self.managed]  # actions trả theo thứ tự khởi động
+        run = set(order)
+        stop = (set(desired.get("stop", [])) & self.managed) - run
+        done = {"started": [], "stopped": []}
+        for service in sorted(stop) + order:
+            target = self.targets.get(service)
+            if target is not None:
+                target.blocked = service in stop
+            try:
+                state = await self._state(service)
+                if service in stop and state.get("Running"):
+                    log.info("dừng %s: mô-đun chưa cài", service)
+                    await self.docker.stop(self.containers[service])
+                    done["stopped"].append(service)
+                    if target is not None:
+                        for writer in list(target.writers):
+                            writer.close()
+                elif service in run and target is None and not state.get("Running"):
+                    log.info("chạy %s: mô-đun đã cài", service)
+                    await self.docker.start(self.containers[service])
+                    done["started"].append(service)
+            except (DockerError, OSError) as exc:
+                log.warning("không đưa được %s về trạng thái mô-đun: %s", service, exc)
+        return done
+
+    async def status(self) -> dict:
+        out = {}
+        for service in sorted(self.managed - set(self.targets)):
+            try:
+                running = bool((await self._state(service)).get("Running"))
+            except (DockerError, OSError):
+                running = None
+            out[service] = {"running": running}
+        return out
+
+    async def watch(self, every: float) -> None:
+        while True:
+            await self.reconcile()
+            await asyncio.sleep(every)
+
+
 class Sleeper:
-    def __init__(self, docker: Docker, targets: list[Target], wake_timeout: float = 180, check_every: float = 30):
+    def __init__(
+        self,
+        docker: Docker,
+        targets: list[Target],
+        wake_timeout: float = 180,
+        check_every: float = 30,
+        modules: Modules | None = None,
+    ):
         self.docker = docker
         self.targets = targets
         self.wake_timeout = wake_timeout
         self.check_every = check_every
+        self.modules = modules
 
     async def watch(self) -> None:
         while True:
@@ -210,7 +325,13 @@ class Sleeper:
                 running = bool((await target.inspect(self.docker))["Running"])
             except (DockerError, OSError):
                 running = None
-            out[target.service] = {"running": running, "idle_for": round(time.monotonic() - target.last_activity)}
+            out[target.service] = {
+                "running": running,
+                "idle_for": round(time.monotonic() - target.last_activity),
+                "blocked": target.blocked,
+            }
+        if self.modules is not None:
+            out.update(await self.modules.status())
         return out
 
     async def _admin(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
@@ -235,7 +356,11 @@ class Sleeper:
         servers.append(await asyncio.start_server(self._admin, "0.0.0.0", admin_port))
         for t in self.targets:
             log.info("cổng %d -> %s:%d, ngủ sau %.0f giây", t.listen_port, t.service, t.port, t.idle_seconds)
-        await self.watch()
+        if self.modules is None:
+            await self.watch()
+        else:
+            log.info("theo mô-đun từ %s, quản lý %s", self.modules.url, ", ".join(sorted(self.modules.managed)))
+            await asyncio.gather(self.watch(), self.modules.watch(float(os.environ.get("SLEEPER_MODULES_EVERY", "15"))))
 
 
 def main() -> None:
@@ -245,7 +370,10 @@ def main() -> None:
     docker = Docker(
         os.environ.get("DOCKER_SOCKET", "/var/run/docker.sock"), os.environ.get("SLEEPER_PROJECT", "bamboo")
     )
-    sleeper = Sleeper(docker, targets, float(os.environ.get("SLEEPER_WAKE_TIMEOUT", "180")))
+    modules_url = os.environ.get("SLEEPER_MODULES_URL", "")
+    managed = {s.strip() for s in os.environ.get("SLEEPER_MANAGED", "").split(",") if s.strip()}
+    modules = Modules(docker, modules_url, managed, targets) if modules_url and managed else None
+    sleeper = Sleeper(docker, targets, float(os.environ.get("SLEEPER_WAKE_TIMEOUT", "180")), modules=modules)
     asyncio.run(sleeper.run(int(os.environ.get("SLEEPER_ADMIN_PORT", "9000"))))
 
 
