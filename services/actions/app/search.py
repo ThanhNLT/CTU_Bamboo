@@ -21,14 +21,22 @@ SEARCH_ACTIONS = ["search"]
 INDEXER_ACTIONS = ["documents.add", "documents.get", "documents.delete", "indexes.get", "tasks.get", "stats.get"]
 
 MAX_TEXT = 100_000
+# Tệp dài được chia thành nhiều phần cho Meilisearch (mỗi thuộc tính chỉ xét được ~65 nghìn từ); phần đầu giữ mã cũ
+PART_CHARS = 50_000
+MAX_PARTS = 40
+MAX_FULL_TEXT = PART_CHARS * MAX_PARTS
 MAX_LIMIT = 50
 MAX_CANDIDATES = 1000
 TEXT_TYPES = {
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "text/plain",
+    "text/csv",
+    "text/markdown",
 }
+PLAIN_TYPES = {"text/plain", "text/csv", "text/markdown"}
 _PRE, _POST = "", ""
 _SNIPPET_FIELDS = ("content", "description", "items", "title", "file_name", "partner", "requester", "doc_no")
 
@@ -50,7 +58,7 @@ def index_settings() -> dict:
             "description",
             "content",
         ],
-        "filterableAttributes": ["tenant_id", "kind", "entity_type", "status"],
+        "filterableAttributes": ["tenant_id", "kind", "entity_type", "status", "attachment_id"],
         "sortableAttributes": ["created_at"],
         "displayedAttributes": [
             "id",
@@ -157,17 +165,43 @@ def config_toml(master_key: str) -> str:
     return f'master_key = "{master_key}"\nenv = "production"\ndb_path = "/meili_data/data.ms"\nno_analytics = true\n'
 
 
-def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0) -> str:
-    if content_type == "text/plain":
-        return data.decode("utf-8", "replace")[:MAX_TEXT]
-    return " ".join(extract_lines(tika_url, data, content_type, timeout).split())[:MAX_TEXT]
+def decode_text(data: bytes) -> str:
+    """Giải mã văn bản thuần theo các bảng mã trình quét tệp chấp nhận: UTF-8, UTF-16 (có BOM), Windows-1258."""
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return data.decode("utf-16", "replace")
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return data.decode("cp1258", "replace")
+
+
+def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0, limit: int = MAX_FULL_TEXT) -> str:
+    if content_type in PLAIN_TYPES:
+        return " ".join(decode_text(data).split())[:limit]
+    return " ".join(extract_lines(tika_url, data, content_type, timeout).split())[:limit]
+
+
+def split_parts(text: str, size: int = PART_CHARS, max_parts: int = MAX_PARTS) -> list[str]:
+    """Chia văn bản đã chuẩn hóa khoảng trắng thành các phần ≤ size ký tự, cắt ở khoảng trắng; luôn trả ít nhất một phần."""
+    parts: list[str] = []
+    while len(text) > size and len(parts) < max_parts:
+        cut = text.rfind(" ", size // 2, size)
+        cut = cut if cut > 0 else size
+        parts.append(text[:cut].strip())
+        text = text[cut:].lstrip()
+    parts.append(text[:size])
+    return parts
+
+
+def part_id(base: str, n: int) -> str:
+    return base if n == 0 else f"{base}-p{n}"
 
 
 def extract_lines(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0) -> str:
     if content_type not in TEXT_TYPES or not data:
         return ""
-    if content_type == "text/plain":
-        return data.decode("utf-8", "replace")
+    if content_type in PLAIN_TYPES:
+        return decode_text(data)
     try:
         resp = httpx.put(
             f"{tika_url.rstrip('/')}/tika",
@@ -251,6 +285,7 @@ def search_documents(conn: psycopg.Connection, session: dict, args: dict, ctx: C
         "showRankingScore": True,
     }
     results: list[dict] = []
+    seen_files: set[str] = set()
     page_size = min(max(2 * (offset + limit), 40), 200)
     start = 0
     while len(results) < offset + limit and start < MAX_CANDIDATES:
@@ -263,6 +298,10 @@ def search_documents(conn: psycopg.Connection, session: dict, args: dict, ctx: C
         for hit in hits:
             if hit["id"] not in allowed:
                 continue
+            if hit.get("attachment_id"):
+                if hit["attachment_id"] in seen_files:
+                    continue
+                seen_files.add(hit["attachment_id"])
             field, snippet = _snippet(hit)
             results.append(
                 {
