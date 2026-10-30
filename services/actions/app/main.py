@@ -41,6 +41,7 @@ from . import (
     obs,
     ocr,
     ocr_import,
+    ownership,
     ops,
     pii_guard,
     process_automation,
@@ -199,6 +200,7 @@ HANDLERS = {
     **ocr_import.HANDLERS,
     **modules.HANDLERS,
     **setup.HANDLERS,
+    **ownership.HANDLERS,
 }
 
 
@@ -349,6 +351,10 @@ def create_app(
                     request.headers.get("x-hasura-role"),
                     memberships,
                 )
+                try:
+                    auth.record_login(conn, session, request.headers)
+                except psycopg.Error as exc:
+                    log.warning("không ghi nhận được thiết bị đăng nhập: %s", exc)
         except auth.AuthError as exc:
             return JSONResponse({"message": str(exc)}, 401)
         except psycopg.errors.InvalidTextRepresentation:
