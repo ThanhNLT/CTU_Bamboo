@@ -14976,6 +14976,96 @@
       "comment": "Chủ sở hữu tải lên đơn đã ký số; hợp lệ thì công ty được xác thực pháp lý"
     },
     {
+      "name": "transfer_ownership",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/transfer_ownership",
+        "arguments": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "OwnershipTransfer!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chủ sở hữu chuyển quyền chủ sở hữu cho người khác trong công ty (ADR #57)"
+    },
+    {
+      "name": "create_subsidiary",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/create_subsidiary",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "root_type",
+            "type": "String"
+          },
+          {
+            "name": "tax_code",
+            "type": "String"
+          },
+          {
+            "name": "legal_name",
+            "type": "String"
+          },
+          {
+            "name": "address",
+            "type": "String"
+          },
+          {
+            "name": "legal_rep_name",
+            "type": "String"
+          },
+          {
+            "name": "owner",
+            "type": "SubsidiaryOwnerInput!"
+          }
+        ],
+        "output_type": "SubsidiaryResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chủ sở hữu tạo công ty thành viên trực thuộc, kèm chủ sở hữu của công ty đó"
+    },
+    {
       "name": "module_enable",
       "definition": {
         "kind": "synchronous",
@@ -15103,6 +15193,23 @@
   "custom_types": {
     "input_objects": [
       {
+        "name": "SubsidiaryOwnerInput",
+        "fields": [
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "full_name",
+            "type": "String!"
+          },
+          {
+            "name": "email",
+            "type": "String"
+          }
+        ]
+      },
+      {
         "name": "IcOrderLot",
         "fields": [
           {
@@ -15203,6 +15310,40 @@
       }
     ],
     "objects": [
+      {
+        "name": "OwnershipTransfer",
+        "fields": [
+          {
+            "name": "owner_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "owner_name",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "SubsidiaryResult",
+        "fields": [
+          {
+            "name": "tenant_code",
+            "type": "String!"
+          },
+          {
+            "name": "tenant_name",
+            "type": "String!"
+          },
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "password",
+            "type": "String"
+          }
+        ]
+      },
       {
         "name": "LegalVerification",
         "fields": [
