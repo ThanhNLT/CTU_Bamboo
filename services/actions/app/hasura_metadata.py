@@ -33,6 +33,7 @@ HIDDEN = {
     ("core", "setup_application"),
     ("core", "legal_verification"),
     ("core", "module_install"),
+    ("core", "login_device"),
 }
 ROLE = "user"
 ADMIN_ROLE = "platform_admin"
@@ -1572,6 +1573,32 @@ def build(conn: psycopg.Connection) -> dict:
                 "Chủ sở hữu tải lên đơn đã ký số; hợp lệ thì công ty được xác thực pháp lý",
                 timeout=60,
             ),
+            _action(
+                "transfer_ownership",
+                "mutation",
+                [("person_id", "uuid!")],
+                "OwnershipTransfer!",
+                [ROLE, ADMIN_ROLE],
+                "Chủ sở hữu chuyển quyền chủ sở hữu cho người khác trong công ty (ADR #57)",
+                timeout=10,
+            ),
+            _action(
+                "create_subsidiary",
+                "mutation",
+                [
+                    ("code", "String!"),
+                    ("name", "String!"),
+                    ("root_type", "String"),
+                    ("tax_code", "String"),
+                    ("legal_name", "String"),
+                    ("address", "String"),
+                    ("legal_rep_name", "String"),
+                    ("owner", "SubsidiaryOwnerInput!"),
+                ],
+                "SubsidiaryResult!",
+                [ROLE, ADMIN_ROLE],
+                "Chủ sở hữu tạo công ty thành viên trực thuộc, kèm chủ sở hữu của công ty đó",
+            ),
             *[
                 _action(name, "mutation", [("code", "String!")], "ModuleOverview!", [ROLE, ADMIN_ROLE], comment)
                 for name, comment in (
@@ -1587,6 +1614,14 @@ def build(conn: psycopg.Connection) -> dict:
         ],
         "custom_types": {
             "input_objects": [
+                {
+                    "name": "SubsidiaryOwnerInput",
+                    "fields": [
+                        {"name": "username", "type": "String!"},
+                        {"name": "full_name", "type": "String!"},
+                        {"name": "email", "type": "String"},
+                    ],
+                },
                 {
                     "name": "IcOrderLot",
                     "fields": [{"name": "line_id", "type": "uuid!"}, {"name": "lot_id", "type": "uuid!"}],
@@ -1630,6 +1665,19 @@ def build(conn: psycopg.Connection) -> dict:
                 },
             ],
             "objects": [
+                {
+                    "name": "OwnershipTransfer",
+                    "fields": [{"name": "owner_id", "type": "uuid!"}, {"name": "owner_name", "type": "String!"}],
+                },
+                {
+                    "name": "SubsidiaryResult",
+                    "fields": [
+                        {"name": "tenant_code", "type": "String!"},
+                        {"name": "tenant_name", "type": "String!"},
+                        {"name": "username", "type": "String!"},
+                        {"name": "password", "type": "String"},
+                    ],
+                },
                 {
                     "name": "LegalVerification",
                     "fields": [

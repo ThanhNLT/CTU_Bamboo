@@ -13,6 +13,46 @@ const TENANT_KEY = "bamboo.tenant";
 
 let token: string | undefined;
 
+const DEVICE_KEY = "bamboo.device";
+
+/** Mã ngẫu nhiên của trình duyệt này, để máy chủ nhận ra quản trị viên đăng nhập từ thiết bị mới (ADR #57). */
+const deviceId = (() => {
+  try {
+    const saved = localStorage.getItem(DEVICE_KEY);
+    if (saved) return saved;
+    const fresh = crypto.randomUUID();
+    localStorage.setItem(DEVICE_KEY, fresh);
+    return fresh;
+  } catch {
+    return "";
+  }
+})();
+
+const agent = (() => {
+  const ua = navigator.userAgent;
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /Firefox\//.test(ua)
+      ? "Firefox"
+      : /Chrome\//.test(ua)
+        ? "Chrome"
+        : /Safari\//.test(ua)
+          ? "Safari"
+          : "Trình duyệt khác";
+  const os = /Windows/.test(ua)
+    ? "Windows"
+    : /Android/.test(ua)
+      ? "Android"
+      : /iPhone|iPad/.test(ua)
+        ? "iOS"
+        : /Mac OS X/.test(ua)
+          ? "macOS"
+          : /Linux/.test(ua)
+            ? "Linux"
+            : "";
+  return os ? `${browser} trên ${os}` : browser;
+})();
+
 export const getTenant = (): string | null => {
   try {
     return localStorage.getItem(TENANT_KEY);
@@ -22,7 +62,8 @@ export const getTenant = (): string | null => {
 };
 
 const headers = (withTenant = true): Record<string, string> => {
-  const h: Record<string, string> = {};
+  const h: Record<string, string> = { "x-bamboo-agent": agent };
+  if (deviceId) h["x-bamboo-device"] = deviceId;
   if (token) h.Authorization = `Bearer ${token}`;
   const tenant = withTenant ? getTenant() : null;
   // Header rỗng ghi đè header tenant của client mặc định (graphql-request gộp header client trước, header yêu cầu sau);

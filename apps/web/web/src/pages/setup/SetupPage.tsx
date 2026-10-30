@@ -299,7 +299,12 @@ export const SetupPage = () => {
             showIcon
             message="Hệ thống đã có công ty"
             description="Trang khởi tạo chỉ dùng một lần khi cài đặt. Đăng nhập bằng tài khoản đã được cấp; công ty thành viên do chủ sở hữu tạo từ bên trong."
-            action={<a href="/login">Đăng nhập</a>}
+            action={
+              <div className="flex flex-col items-end gap-1">
+                <a href="/login">Đăng nhập</a>
+                <a href="/khoi-phuc">Khôi phục tài khoản chủ sở hữu</a>
+              </div>
+            }
           />
         ) : (
           <>
