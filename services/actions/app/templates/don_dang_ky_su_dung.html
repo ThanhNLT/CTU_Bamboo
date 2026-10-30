@@ -1,0 +1,78 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+SPDX-License-Identifier: Apache-2.0
+
+Đơn đăng ký sử dụng (khởi tạo công ty) hoặc đơn xác thực thông tin doanh nghiệp, để người đại diện theo pháp luật ký số
+bằng chữ ký số của doanh nghiệp (ADR #57). Mã đơn chống dùng lại đơn cũ. Giá trị được Jinja2 escape.
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>{{ title }} {{ a.nonce }}</title>
+<style>
+  @page { size: A4; }
+  body { font-family: "Noto Serif", "DejaVu Serif", "Times New Roman", serif; font-size: 12pt; color: #111; line-height: 1.4; }
+  .nation { text-align: center; font-weight: 700; text-transform: uppercase; }
+  .motto { text-align: center; font-weight: 700; }
+  .motto span { border-bottom: 1px solid #111; padding-bottom: 2px; }
+  h1 { text-align: center; text-transform: uppercase; font-size: 15pt; margin: 18px 0 4px; }
+  .to { text-align: center; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; }
+  td { border: 1px solid #555; padding: 4px 8px; vertical-align: top; }
+  td:first-child { width: 36%; font-weight: 700; }
+  h2 { font-size: 12.5pt; margin: 14px 0 4px; }
+  p { margin: 4px 0; text-align: justify; }
+  .code { font-family: "DejaVu Sans Mono", monospace; font-size: 14pt; letter-spacing: 1px; }
+  .sign { width: 52%; margin-left: auto; margin-top: 14px; text-align: center; break-inside: avoid; }
+  .sign .space { height: 64px; }
+  .note { font-size: 10pt; color: #333; margin-top: 12px; border-top: 1px solid #999; padding-top: 6px; }
+</style>
+</head>
+<body>
+<div class="nation">Cộng hòa xã hội chủ nghĩa Việt Nam</div>
+<div class="motto"><span>Độc lập – Tự do – Hạnh phúc</span></div>
+
+<h1>{{ title }}</h1>
+<div class="to">Kính gửi: Bộ phận quản trị hệ thống Bamboo DX-OS cài đặt tại doanh nghiệp</div>
+
+<h2>1. Thông tin doanh nghiệp</h2>
+<table>
+  <tr><td>Tên doanh nghiệp</td><td>{{ a.company.legal_name }}</td></tr>
+  <tr><td>Mã số thuế / mã số doanh nghiệp</td><td>{{ a.company.tax_code }}</td></tr>
+  <tr><td>Địa chỉ trụ sở chính</td><td>{{ a.company.address }}</td></tr>
+  <tr><td>Người đại diện theo pháp luật</td><td>{{ a.company.legal_rep_name }} — {{ a.company.legal_rep_title }}</td></tr>
+  {% if a.purpose == 'SETUP' %}<tr><td>Mã công ty trên hệ thống</td><td>{{ a.company.code }}</td></tr>{% endif %}
+</table>
+
+{% if a.purpose == 'SETUP' %}
+<h2>2. Tài khoản đề nghị cấp</h2>
+<table>
+  <tr><td>Chủ sở hữu (người đại diện)</td><td>{{ a.owner.username }}{% if a.owner.email %} · {{ a.owner.email }}{% endif %}</td></tr>
+  {% if a.admin %}<tr><td>Quản trị viên</td><td>{{ a.admin.full_name }} · {{ a.admin.username }}{% if a.admin.email %} · {{ a.admin.email }}{% endif %}</td></tr>{% endif %}
+</table>
+<h2>3. Cam kết</h2>
+<p>Doanh nghiệp đề nghị khởi tạo công ty trên hệ thống Bamboo DX-OS với các thông tin trên và cam kết các thông tin là đúng
+với đăng ký doanh nghiệp. Chủ sở hữu là người duy nhất được trao, thu hồi quyền quản trị; tài khoản chủ sở hữu và quản trị
+viên bắt buộc đăng nhập hai lớp. Doanh nghiệp chịu trách nhiệm quản lý các tài khoản này.</p>
+{% else %}
+<h2>2. Đề nghị</h2>
+<p>Doanh nghiệp đề nghị xác thực thông tin pháp lý của công ty trên hệ thống Bamboo DX-OS bằng chữ ký số của doanh nghiệp và
+cam kết các thông tin trên là đúng với đăng ký doanh nghiệp.</p>
+{% endif %}
+
+<p>Mã đơn: <span class="code">{{ a.nonce }}</span> — đơn hết hiệu lực lúc {{ expires }}.</p>
+
+<div class="sign">
+  <em>{{ place_date }}</em><br>
+  <strong>Người đại diện theo pháp luật</strong><br>
+  <em>(Ký số bằng chữ ký số của doanh nghiệp)</em>
+  <div class="space"></div>
+  <strong>{{ a.company.legal_rep_name }}</strong>
+</div>
+
+<p class="note">Hướng dẫn: ký số tệp PDF này bằng chữ ký số (USB token) của doanh nghiệp mang mã số thuế {{ a.company.tax_code }},
+dùng phần mềm ký của nhà cung cấp dịch vụ chứng thực hoặc Adobe Acrobat Reader, rồi tải tệp đã ký lên lại hệ thống. Không
+chỉnh sửa, không in rồi quét lại tệp.</p>
+</body>
+</html>

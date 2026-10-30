@@ -33,6 +33,7 @@ const RULES: Record<string, Partial<Record<string, string | string[]>>> = {
   audit_log: { list: "audit.read" },
   admin_area: { list: ["core.org.manage", "core.permission.manage", "core.module.manage", "mdm.manage", "audit.read"] },
   admin_modules: { list: "core.module.manage" },
+  admin_company: { list: ["core.org.manage", "core.permission.manage", "core.module.manage"] },
   admin_org: { list: "core.org.manage" },
   admin_people: { list: "core.org.manage" },
   admin_roles: { list: "core.permission.manage" },

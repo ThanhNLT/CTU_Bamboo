@@ -75,6 +75,7 @@ class KeycloakUsers:
         email: str | None,
         password: str,
         attribute: str = ATTRIBUTE,
+        required_actions: tuple[str, ...] = ("UPDATE_PASSWORD",),
     ) -> str:
         first, last = split_name(full_name)
         body = {
@@ -84,7 +85,7 @@ class KeycloakUsers:
             "lastName": last,
             "attributes": {attribute: [request_id]},
             "credentials": [{"type": "password", "value": password, "temporary": True}],
-            "requiredActions": ["UPDATE_PASSWORD"],
+            "requiredActions": list(required_actions),
         }
         if email:
             body |= {"email": email, "emailVerified": False}
@@ -102,6 +103,23 @@ class KeycloakUsers:
             json={"type": "password", "value": password, "temporary": True},
         ).raise_for_status()
         return existing["id"]
+
+    def ensure_otp(self, subject: str) -> bool:
+        """Bắt tài khoản cài OTP ở lần đăng nhập tới nếu chưa có; trả True nếu vừa đặt yêu cầu (ADR #57)."""
+        creds = self.http.get(f"/users/{subject}/credentials", headers=self._headers())
+        if creds.status_code == 404:
+            return False
+        creds.raise_for_status()
+        if any(c.get("type") == "otp" for c in creds.json()):
+            return False
+        user = self.http.get(f"/users/{subject}", headers=self._headers())
+        user.raise_for_status()
+        body = user.json()
+        if "CONFIGURE_TOTP" in body.get("requiredActions", []):
+            return False
+        body["requiredActions"] = [*body.get("requiredActions", []), "CONFIGURE_TOTP"]
+        self.http.put(f"/users/{subject}", json=body, headers=self._headers()).raise_for_status()
+        return True
 
     def disable(self, subject: str) -> bool:
         found = self.http.get(f"/users/{subject}", headers=self._headers())
@@ -171,3 +189,24 @@ def run_once(conn: psycopg.Connection, users: KeycloakUsers, cipher: PiiCipher, 
         conn.commit()
         done += 1
     return done
+
+
+def enforce_admin_otp(conn: psycopg.Connection, users: KeycloakUsers, done: set[str]) -> int:
+    """Chủ sở hữu và người có quyền quản trị ở công ty có chủ sở hữu phải đăng nhập hai lớp (ADR #57): tài khoản chưa có
+    OTP bị yêu cầu cài ở lần đăng nhập tới. `done` nhớ tài khoản đã kiểm trong tiến trình để không gọi Keycloak lặp lại."""
+    rows = conn.execute(
+        """SELECT DISTINCT p.idp_subject
+           FROM core.person p JOIN core.tenant_owner o ON o.tenant_id = p.tenant_id
+           WHERE p.idp_subject IS NOT NULL
+             AND (p.id = o.person_id OR EXISTS (SELECT FROM core.v_admin a WHERE a.person_id = p.id))"""
+    ).fetchall()
+    conn.commit()
+    changed = 0
+    for (subject,) in rows:
+        if subject in done:
+            continue
+        if users.ensure_otp(subject):
+            changed += 1
+            log.info("tài khoản quản trị %s phải cài OTP ở lần đăng nhập tới", subject)
+        done.add(subject)
+    return changed
