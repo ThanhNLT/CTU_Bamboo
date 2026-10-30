@@ -12246,6 +12246,88 @@
       "comment": "Tạo / lưu bản nháp quy trình; người có wf.process.design tại đơn vị sở hữu (trưởng phòng, giám đốc...)"
     },
     {
+      "name": "process_from_document",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_from_document",
+        "arguments": [
+          {
+            "name": "document_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "owner_unit_id",
+            "type": "uuid"
+          }
+        ],
+        "output_type": "ProcessFromDocumentResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đọc tài liệu đang hiệu lực trong thư viện tri thức theo mẫu quy trình và dựng bản nháp sơ đồ BPMN (ADR #59)"
+    },
+    {
+      "name": "process_regulation_draft",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_regulation_draft",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "version",
+            "type": "Int"
+          },
+          {
+            "name": "submit",
+            "type": "Boolean"
+          },
+          {
+            "name": "requester_position_id",
+            "type": "uuid"
+          },
+          {
+            "name": "effective_date",
+            "type": "date"
+          }
+        ],
+        "output_type": "ProcessRegulationResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 90
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập văn bản quy định từ phiên bản đã phát hành, đề xuất vào thư viện tri thức, có thể gửi duyệt luôn (ADR #59)"
+    },
+    {
       "name": "process_model_publish",
       "definition": {
         "kind": "synchronous",
@@ -16706,6 +16788,76 @@
           {
             "name": "automation",
             "type": "json"
+          },
+          {
+            "name": "regulations",
+            "type": "json!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessFromDocumentResult",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          },
+          {
+            "name": "process_key",
+            "type": "String!"
+          },
+          {
+            "name": "steps",
+            "type": "Int!"
+          },
+          {
+            "name": "source",
+            "type": "String!"
+          },
+          {
+            "name": "issues",
+            "type": "[ProcessIssue!]!"
+          },
+          {
+            "name": "warnings",
+            "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessRegulationResult",
+        "fields": [
+          {
+            "name": "document_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "doc_no",
+            "type": "String!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "version",
+            "type": "Int!"
+          },
+          {
+            "name": "files",
+            "type": "[String!]!"
+          },
+          {
+            "name": "submitted",
+            "type": "Boolean!"
+          },
+          {
+            "name": "message",
+            "type": "String"
           }
         ]
       },
