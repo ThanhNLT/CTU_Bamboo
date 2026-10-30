@@ -5,7 +5,7 @@ import asyncio
 import time
 import unittest
 
-from app.sleeper import DockerError, Sleeper, Target, parse_targets, started_at
+from app.sleeper import DockerError, Modules, Sleeper, Target, http_get_json, parse_targets, started_at
 
 
 class FakeDocker:
@@ -139,6 +139,106 @@ class SleeperTest(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.6)
         watcher.cancel()
         self.assertEqual(self.docker.stopped, 1)
+
+
+class ManyDocker:
+    """Docker giả nhiều container theo tên dịch vụ; dịch vụ không có trong `running` là chưa tạo container."""
+
+    def __init__(self, running: dict[str, bool]):
+        self.running = running
+        self.calls = []
+
+    async def find(self, service):
+        if service not in self.running:
+            raise DockerError(f"không thấy container của dịch vụ {service}")
+        return f"c-{service}"
+
+    async def state(self, container):
+        return {"Running": self.running[container[2:]]}
+
+    async def start(self, container):
+        self.calls.append(("start", container[2:]))
+        self.running[container[2:]] = True
+
+    async def stop(self, container, grace=30):
+        self.calls.append(("stop", container[2:]))
+        self.running[container[2:]] = False
+
+
+class ModulesTest(unittest.IsolatedAsyncioTestCase):
+    def make(self, desired, running, managed=("flowable", "kafka", "trino-core", "meilisearch")):
+        async def fetch(url):
+            if isinstance(desired, Exception):
+                raise desired
+            return desired
+
+        self.docker = ManyDocker(running)
+        self.lazy = Target(0, "trino-core", 8443, 300)
+        return Modules(self.docker, "http://actions:8000/modules/services", set(managed), [self.lazy], fetch)
+
+    async def test_stops_uninstalled_and_starts_installed(self):
+        modules = self.make(
+            {"run": ["flowable", "meilisearch"], "stop": ["kafka", "trino-core"]},
+            {"flowable": False, "kafka": True, "trino-core": True, "meilisearch": True},
+        )
+        done = await modules.reconcile()
+        self.assertEqual(done, {"started": ["flowable"], "stopped": ["kafka", "trino-core"]})
+        self.assertTrue(self.lazy.blocked)
+        # lần sau không còn gì để làm
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+
+    async def test_lazy_service_is_unblocked_but_not_started(self):
+        modules = self.make({"run": ["trino-core"], "stop": []}, {"trino-core": False})
+        self.lazy.blocked = True
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+        self.assertFalse(self.lazy.blocked)
+
+    async def test_ignores_services_not_managed(self):
+        modules = self.make({"run": [], "stop": ["db", "kafka"]}, {"db": True, "kafka": True}, managed=("kafka",))
+        await modules.reconcile()
+        self.assertEqual(self.docker.calls, [("stop", "kafka")])
+
+    async def test_keeps_state_when_actions_unreachable(self):
+        modules = self.make(OSError("connection refused"), {"kafka": True})
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+        self.assertEqual(self.docker.calls, [])
+
+    async def test_status_reports_missing_container(self):
+        modules = self.make({"run": [], "stop": []}, {"flowable": True})
+        status = await modules.status()
+        self.assertEqual(status["flowable"], {"running": True})
+        self.assertEqual(status["kafka"], {"running": None})
+        self.assertNotIn("trino-core", status)  # dịch vụ ngủ do Sleeper.status báo
+
+    async def test_blocked_target_does_not_wake(self):
+        docker = FakeDocker(free_port())
+        target = Target(free_port(), "127.0.0.1", docker.upstream_port, 300, blocked=True)
+        server = await asyncio.start_server(
+            lambda r, w: target.handle(r, w, docker, 5), "127.0.0.1", target.listen_port
+        )
+        try:
+            reader, writer = await asyncio.open_connection("127.0.0.1", target.listen_port)
+            writer.write(b"x")
+            await writer.drain()
+            self.assertEqual(await asyncio.wait_for(reader.read(10), 5), b"")
+            writer.close()
+            self.assertEqual(docker.started, 0)
+        finally:
+            server.close()
+
+    async def test_http_get_json(self):
+        async def reply(reader, writer):
+            await reader.readline()
+            writer.write(b'HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n\r\n{"run": ["a"]}')
+            await writer.drain()
+            writer.close()
+
+        port = free_port()
+        server = await asyncio.start_server(reply, "127.0.0.1", port)
+        try:
+            self.assertEqual(await http_get_json(f"http://127.0.0.1:{port}/modules/services"), {"run": ["a"]})
+        finally:
+            server.close()
 
 
 class ParseTest(unittest.TestCase):

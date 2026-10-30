@@ -4,6 +4,8 @@
 
 import { Alert, App } from "antd";
 
+import { useModules } from "../../modules/useModules";
+
 import { DashboardFooter } from "./components/DashboardFooter";
 import { HeroSection } from "./components/HeroSection";
 import { MyTasks } from "./components/MyTasks";
@@ -18,6 +20,7 @@ export const DashboardPage = () => {
   const d = useDashboard();
   const { message } = App.useApp();
   const kpi = useKpis();
+  const kpiOn = useModules().enabled("data");
   const saveKpis = async (keys: string[]) => {
     try {
       await kpi.save(keys);
@@ -46,7 +49,9 @@ export const DashboardPage = () => {
           aria-label="Thông báo và chỉ số"
         >
           <NotificationsPanel items={d.notifications} unread={d.unread} onRead={d.markRead} />
-          <PinnedKpis kpis={kpi.pinned} options={kpi.options} pinnedKeys={kpi.pinnedKeys} onSave={saveKpis} />
+          {kpiOn && (
+            <PinnedKpis kpis={kpi.pinned} options={kpi.options} pinnedKeys={kpi.pinnedKeys} onSave={saveKpis} />
+          )}
         </aside>
       </div>
 

@@ -362,7 +362,9 @@ services:
         condition: service_completed_successfully
       openbao-init:
         condition: service_completed_successfully
-    environment: *actions-env
+    environment:
+      <<: *actions-env
+      SLEEPER_URL: http://sleeper:9000
     volumes:
       - actions-secrets:/run/bms:ro
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
@@ -657,7 +659,8 @@ services:
       DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
       DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
       DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string
-      DEBEZIUM_SOURCE_SNAPSHOT_MODE: initial
+      # mô-đun Dữ liệu số tắt lâu làm mất slot (max_slot_wal_keep_size): bật lại thì chụp lại toàn bộ (ADR #56)
+      DEBEZIUM_SOURCE_SNAPSHOT_MODE: when_needed
       DEBEZIUM_FORMAT_KEY: json
       DEBEZIUM_FORMAT_VALUE: json
       DEBEZIUM_FORMAT_KEY_SCHEMAS_ENABLE: "false"
@@ -753,6 +756,10 @@ services:
       SLEEPER_PROJECT: bamboo
       SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
       SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000,11434=ollama-core:11434,8000=ocr-core:8000
+      # Mô-đun chức năng (ADR #56): dừng container của mô-đun chưa cài, chạy container của mô-đun đã cài.
+      # Danh sách phải khớp services/actions/app/modules.py (MANAGED_SERVICES; kiểm bởi test_mo_dun.py)
+      SLEEPER_MODULES_URL: http://actions:8000/modules/services
+      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
     networks:
       default:
         aliases: [trino, tika, gotenberg, ollama, ocr]

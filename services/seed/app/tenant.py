@@ -27,7 +27,14 @@ ROLES = {
     "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read", "audit.read"]),
     "QUAN_TRI_TO_CHUC": (
         "Quản trị tổ chức",
-        ["core.org.manage", "core.permission.manage", "mdm.manage", "audit.read", "wf.process.design"],
+        [
+            "core.org.manage",
+            "core.permission.manage",
+            "core.module.manage",
+            "mdm.manage",
+            "audit.read",
+            "wf.process.design",
+        ],
     ),
 }
 

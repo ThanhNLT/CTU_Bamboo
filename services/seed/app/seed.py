@@ -145,6 +145,9 @@ ITEMS = [
     ("BVX", "TBYT-SIEUAM", "Máy siêu âm 4D", "máy", "TBYT", 200_000_000),
 ]
 
+# Mô-đun dựng sẵn (ADR #56); mã khớp services/actions/app/modules.py, kiểm bởi test của actions
+DEMO_MODULES = ("approval", "procurement", "ic", "hr", "process", "files", "search", "knowledge", "ledger", "data", "ai")
+
 HISTORY_DAYS = 60
 HISTORY_PER_DAY = {"TDX": [0, 1, 1, 2, 2, 3], "BVX": [0, 0, 1, 1]}
 HISTORY_TITLES = [
@@ -436,7 +439,10 @@ class Seeder:
             "NHAN_VIEN": ("Nhân viên", ["proc.purchase_request.create", "proc.purchase_request.read"]),
             "QUAN_LY": ("Quản lý", ["proc.purchase_request.read", "wf.approval.act"]),
             "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read", "audit.read"]),
-            "QUAN_TRI_TO_CHUC": ("Quản trị tổ chức", ["core.org.manage", "core.permission.manage"]),
+            "QUAN_TRI_TO_CHUC": (
+                "Quản trị tổ chức",
+                ["core.org.manage", "core.permission.manage", "core.module.manage"],
+            ),
         }
         for code, (name, perms) in roles.items():
             rid = uid(tenant, "role", code)
@@ -1405,6 +1411,21 @@ class Seeder:
             self._holder("TDX", "TDX_CDS.HEAD"),
         )
 
+    def modules(self):
+        """Demo dùng mọi mô-đun dựng sẵn: cài trên máy và bật cho mọi công ty (ADR #56, danh mục ở actions/app/modules.py)."""
+        self.x(
+            """INSERT INTO core.module_install (module, installed_by) SELECT unnest(%s::text[]), 'seed'
+               ON CONFLICT DO NOTHING""",
+            list(DEMO_MODULES),
+        )
+        self.x(
+            """INSERT INTO core.tenant_module (tenant_id, module)
+               SELECT t.id, m FROM core.tenant t, unnest(%s::text[]) m WHERE t.code = ANY(%s)
+               ON CONFLICT DO NOTHING""",
+            list(DEMO_MODULES),
+            [t.code for t in TENANTS],
+        )
+
     def run(self):
         for t in TENANTS:
             self.x(
@@ -1441,6 +1462,7 @@ class Seeder:
         self.ai_demo()
         self.ops_demo()
         self.approval_history_demo()
+        self.modules()
 
 
 def seed(conn: psycopg.Connection) -> bool:
@@ -1463,6 +1485,7 @@ def seed(conn: psycopg.Connection) -> bool:
             seeder.ai_demo()
             seeder.ops_demo()
             seeder.approval_history_demo()
+            seeder.modules()
             demo_load.load(conn)
             conn.execute("SELECT kpi.refresh()")
             conn.execute("SELECT kpi.freeze()")
