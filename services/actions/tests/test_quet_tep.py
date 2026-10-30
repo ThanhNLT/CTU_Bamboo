@@ -50,7 +50,7 @@ def ooxml(kind: str = "docx", extra: dict[str, bytes] | None = None, document: b
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("[Content_Types].xml", "<Types/>")
-        z.writestr("word/document.xml" if kind == "docx" else "xl/workbook.xml", document)
+        z.writestr({"docx": "word/document.xml", "pptx": "ppt/presentation.xml"}.get(kind, "xl/workbook.xml"), document)
         for name, body in (extra or {}).items():
             z.writestr(name, body)
     return buf.getvalue()
@@ -166,3 +166,26 @@ def test_du_lieu_rac_khong_lam_hong_bo_quet(content_type):
         assert report.verdict in ("CLEAN", "REJECTED", "INFECTED")
         if content_type != TXT:
             assert report.verdict != "CLEAN", (content_type, junk[:8])
+
+
+PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
+
+def test_pptx_csv_markdown():
+    assert verdict(PPTX, ooxml("pptx", document=b"<p:presentation/>"))[0] == "CLEAN"
+    assert verdict(PPTX, ooxml("pptx", {"ppt/vbaProject.bin": b"x"}, b"<p:presentation/>"))[0] != "CLEAN"
+    assert verdict(PPTX, ooxml("docx"))[0] != "CLEAN", "thiếu ppt/presentation.xml"
+    for content_type in ("text/csv", "text/markdown"):
+        assert verdict(content_type, "ma,ten\nA1,Tụ điện".encode())[0] == "CLEAN"
+        assert verdict(content_type, b"a\x00b")[0] != "CLEAN"
+
+
+def test_decode_text_va_loai_tep_duoc_nhan():
+    from app import search, storage
+
+    assert search.decode_text("Tụ điện".encode("utf-16")) == "Tụ điện"
+    raw = "Tu điên Viêt".encode("cp1258")  # byte 0xD0 (đ) không hợp lệ UTF-8
+    assert search.decode_text(raw) == "Tu điên Viêt"
+    assert search.extract_text("http://khong-dung", b"a,b\n1,2", "text/csv") == "a,b 1,2"
+    assert PPTX in storage.ALLOWED_TYPES and PPTX in search.TEXT_TYPES
+    assert storage.content_matches(PPTX, b"PK\x03\x04...") and not storage.content_matches(PPTX, b"MZ")

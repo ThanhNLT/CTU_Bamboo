@@ -179,3 +179,40 @@ def test_chi_muc_trong_thi_danh_dau_lai(database, search_settings):
         assert not conn.execute("""SELECT 1 FROM proc.purchase_request r WHERE NOT EXISTS (
                                        SELECT 1 FROM search.pending p WHERE p.entity_id = r.id AND p.dirty)""").fetchone()
     admin.wait(admin.request("DELETE", f"/indexes/{index}"))
+
+
+def test_chia_van_ban_dai_thanh_nhieu_phan():
+    assert search.split_parts("") == [""]
+    text = " ".join(f"tu{n}" for n in range(30_000))
+    parts = search.split_parts(text, size=10_000)
+    assert len(parts) > 1 and all(len(p) <= 10_000 for p in parts)
+    assert " ".join(parts) == text
+    assert search.part_id("a-1", 0) == "a-1" and search.part_id("a-1", 2) == "a-1-p2"
+    capped = search.split_parts(text, size=1_000, max_parts=3)
+    assert len(capped) == 4
+
+
+def test_mot_tep_nhieu_phan_chi_hien_mot_ket_qua():
+    class FakeConn:
+        def execute(self, *_a, **_k):
+            class R:
+                def fetchall(self):
+                    return [("p0",), ("p1",)]
+
+            return R()
+
+    class FakeMeili:
+        def search(self, _index, body):
+            hit = {"kind": "attachment", "entity_type": "proc.purchase_request", "entity_id": "e", "attachment_id": "a"}
+            return {"hits": [{**hit, "id": "p0", "_rankingScore": 0.9}, {**hit, "id": "p1", "_rankingScore": 0.5}]}
+
+    ctx = type("C", (), {"search": FakeMeili(), "search_index": "documents"})()
+    session = {"x-hasura-tenant-id": "00000000-0000-0000-0000-000000000001", "x-hasura-person-id": "p"}
+    orig = search.session_identity, search._readable
+    search.session_identity = lambda *_: "p"
+    search._readable = lambda *_: {"p0", "p1"}
+    try:
+        out = search.search_documents(FakeConn(), session, {"query": "x"}, ctx)
+    finally:
+        search.session_identity, search._readable = orig
+    assert len(out) == 1 and out[0]["score"] == 0.9

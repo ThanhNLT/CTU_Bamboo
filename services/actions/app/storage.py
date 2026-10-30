@@ -25,7 +25,10 @@ ALLOWED_TYPES: dict[str, tuple[bytes, ...] | None] = {
     "image/jpeg": (b"\xff\xd8\xff",),
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": _ZIP,
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": _ZIP,
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": _ZIP,
     "text/plain": None,
+    "text/csv": None,
+    "text/markdown": None,
 }
 
 
