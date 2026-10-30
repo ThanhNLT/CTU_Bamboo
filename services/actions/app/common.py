@@ -30,6 +30,7 @@ class Context:
     search: "Meili | None" = None
     search_index: str = "documents"
     gotenberg_url: str = ""
+    tika_url: str = ""
     pii: "PiiCipher | None" = None
     users: "KeycloakUsers | None" = None
     lakehouse: "Trino | None" = None

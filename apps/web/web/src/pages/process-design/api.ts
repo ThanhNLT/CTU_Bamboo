@@ -13,10 +13,31 @@ import type {
   ProcessDetail,
   ProcessSummary,
   ProcessVersion,
+  Regulation,
   SandboxRun,
 } from "./types";
 
 type IssueRow = { level: Issue["level"]; message: string; element_id: string | null };
+
+type RegulationRow = {
+  kind: Regulation["kind"];
+  version: number | null;
+  id: string;
+  doc_no: string;
+  title: string;
+  status: Regulation["status"];
+  published_at: string | null;
+};
+
+const toRegulation = (r: RegulationRow): Regulation => ({
+  kind: r.kind,
+  version: r.version,
+  id: r.id,
+  docNo: r.doc_no,
+  title: r.title,
+  status: r.status,
+  publishedAt: r.published_at,
+});
 
 const toIssue = (i: IssueRow): Issue => ({ level: i.level, message: i.message, elementId: i.element_id });
 
@@ -158,12 +179,14 @@ export const getProcess = async (id: string): Promise<ProcessDetail> => {
       }[];
       change_requests: ChangeRequestRow[];
       automation: AutomationRow | null;
+      regulations: RegulationRow[];
     };
   }>(
     `query Get($id: uuid!) { process_model_get(id: $id) { id process_key name description access owner_unit audience
       viewing_version bpmn_xml forms issues { level message element_id }
       versions { version sha256 note audience published_by published_at }
-      runs { id status steps variables error version started_by started_at } change_requests automation } }`,
+      runs { id status steps variables error version started_by started_at } change_requests automation
+      regulations } }`,
     { id },
   );
   return {
@@ -197,6 +220,7 @@ export const getProcess = async (id: string): Promise<ProcessDetail> => {
       startedAt: r.started_at,
     })),
     automation: m.automation && toAutomation(m.automation),
+    regulations: m.regulations.map(toRegulation),
     changeRequests: (m.change_requests as unknown as ChangeRequestRow[]).map((c): ChangeRequest => ({
       id: c.id,
       version: c.version,
@@ -324,4 +348,64 @@ export const startAutomation = async (id: string, variables: Record<string, unkn
     `mutation Start($id: uuid!, $v: jsonb) { process_automation_start(id: $id, variables: $v) { id status version } }`,
     { id, v: variables },
   );
+};
+
+export type FromDocumentResult = {
+  id: string;
+  name: string;
+  steps: number;
+  source: string;
+  issues: Issue[];
+  warnings: string[];
+};
+
+/** Đọc tài liệu đang hiệu lực trong thư viện tri thức theo mẫu quy trình và dựng bản nháp sơ đồ. */
+export const processFromDocument = async (documentId: string, ownerUnitId?: string): Promise<FromDocumentResult> => {
+  const r = await request<{
+    process_from_document: Omit<FromDocumentResult, "issues"> & { issues: IssueRow[] };
+  }>(
+    `mutation FromDoc($d: uuid!, $u: uuid) { process_from_document(document_id: $d, owner_unit_id: $u) {
+      id name steps source warnings issues { level message element_id } } }`,
+    { d: documentId, u: ownerUnitId ?? null },
+  );
+  return { ...r.process_from_document, issues: r.process_from_document.issues.map(toIssue) };
+};
+
+export type RegulationResult = {
+  documentId: string;
+  docNo: string;
+  status: Regulation["status"];
+  version: number;
+  files: string[];
+  submitted: boolean;
+  message: string | null;
+};
+
+/** Lập văn bản quy định từ phiên bản đã phát hành và đề xuất vào thư viện tri thức (có thể gửi duyệt luôn). */
+export const draftRegulation = async (id: string, submit: boolean, version?: number): Promise<RegulationResult> => {
+  const r = await request<{
+    process_regulation_draft: {
+      document_id: string;
+      doc_no: string;
+      status: Regulation["status"];
+      version: number;
+      files: string[];
+      submitted: boolean;
+      message: string | null;
+    };
+  }>(
+    `mutation Reg($id: uuid!, $s: Boolean, $v: Int) { process_regulation_draft(id: $id, submit: $s, version: $v) {
+      document_id doc_no status version files submitted message } }`,
+    { id, s: submit, v: version ?? null },
+  );
+  const d = r.process_regulation_draft;
+  return {
+    documentId: d.document_id,
+    docNo: d.doc_no,
+    status: d.status,
+    version: d.version,
+    files: d.files,
+    submitted: d.submitted,
+    message: d.message,
+  };
 };

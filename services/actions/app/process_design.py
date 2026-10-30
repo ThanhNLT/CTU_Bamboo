@@ -467,6 +467,12 @@ def _automation(conn: psycopg.Connection, model_id: str) -> dict | None:
     return automation_overview(conn, model_id)
 
 
+def _regulations(conn: psycopg.Connection, model_id: str) -> list[dict]:
+    from .process_regulation import regulations  # nhập muộn: mô-đun kia nhập lại mô-đun này
+
+    return regulations(conn, model_id)
+
+
 def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
     person, tenant = _who(conn, session)
     m = _model(conn, tenant, args["id"])
@@ -491,6 +497,7 @@ def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx:
         "forms": [],
         "issues": [],
         "automation": None,
+        "regulations": [],
     }
     if access == "view":
         # Nhân viên chỉ xem sơ đồ của phiên bản đang áp dụng
@@ -521,6 +528,7 @@ def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx:
             "runs": [r for r in runs if r["version"] is not None],
             "change_requests": _change_requests(conn, args["id"], person),
             "automation": _automation(conn, args["id"]),
+            "regulations": _regulations(conn, args["id"]),
         }
     return {
         **base,
@@ -531,6 +539,7 @@ def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx:
         "runs": runs,
         "change_requests": _change_requests(conn, args["id"], None),
         "automation": _automation(conn, args["id"]),
+        "regulations": _regulations(conn, args["id"]),
     }
 
 
