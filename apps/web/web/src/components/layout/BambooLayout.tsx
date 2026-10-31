@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { RefineKbar } from "@refinedev/kbar";
 import { Drawer } from "antd";
 import { useEffect, useState, type PropsWithChildren } from "react";
 import { useLocation } from "react-router";
 
 import { AppHeader } from "./AppHeader";
 import { AppSider, SiderContent } from "./AppSider";
+import { CommandBar } from "./CommandBar";
 
 const COLLAPSED_KEY = "bamboo.sider.collapsed";
 
@@ -56,7 +56,7 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
         <main className="min-w-0 flex-1 px-4 py-5 md:px-6 md:py-6">{children}</main>
       </div>
 
-      <RefineKbar />
+      <CommandBar />
     </div>
   );
 };
