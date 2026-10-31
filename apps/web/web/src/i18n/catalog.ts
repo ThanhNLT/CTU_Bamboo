@@ -13,6 +13,7 @@ export const EN: Record<string, string> = {
   "Hệ thống & cài đặt": "System & settings",
   "Chế độ tối": "Dark mode",
   "Chế độ sáng": "Light mode",
+  "Gõ lệnh hoặc tìm kiếm…": "Type a command or search…",
   "Trang chủ": "Home",
   "Ổ đĩa tài liệu": "Document drive",
   "Thư viện tri thức": "Knowledge library",
