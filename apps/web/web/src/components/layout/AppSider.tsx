@@ -50,7 +50,10 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? t(item.label) : undefined}
       className={cn(
-        "group relative flex h-9 items-center gap-3 rounded-ui text-[13.5px] transition-[background-color,box-shadow,color] duration-150",
+        // Chuyển màu mượt kiểu macOS; cần ! vì CSS của Ant Design gắn "transition: color 0.3s" cho mọi thẻ <a>
+        "group relative flex h-9 items-center gap-3 rounded-ui text-[13.5px]",
+        "transition-[background-color,box-shadow,color,transform]! duration-300! ease-[cubic-bezier(0.22,1,0.36,1)]!",
+        "motion-safe:active:scale-[0.98]",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-400",
         // Di chuột và đang chọn cùng một màu tương phản (Tre 600, chữ trắng 5,3:1); đang chọn thêm lớp kính bóng
         "hover:bg-bamboo-600! hover:text-white!",
@@ -61,7 +64,10 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       )}
     >
       <Icon
-        className={cn("h-[18px] w-[18px] shrink-0", active ? "text-white" : "text-muted group-hover:text-white")}
+        className={cn(
+          "h-[18px] w-[18px] shrink-0 transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          active ? "text-white" : "text-muted group-hover:text-white",
+        )}
         strokeWidth={1.75}
         aria-hidden
       />
@@ -69,7 +75,7 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       {!collapsed && item.badge ? (
         <span
           className={cn(
-            "min-w-5 rounded-ui px-1.5 text-center text-[11.5px] font-medium tabular-nums",
+            "min-w-5 rounded-ui px-1.5 text-center text-[11.5px] font-medium tabular-nums transition-colors duration-300",
             active
               ? "bg-white/25 text-white"
               : "bg-surface/80 text-muted group-hover:bg-white/25 group-hover:text-white",
@@ -156,6 +162,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
           href="#design-system"
           className={cn(
             "group flex h-8 items-center gap-3 rounded-ui text-[13px] text-body! hover:bg-bamboo-600! hover:text-white!",
+            "transition-[background-color,color]! duration-300! ease-[cubic-bezier(0.22,1,0.36,1)]!",
             collapsed ? "justify-center" : "px-2.5",
           )}
           title="Bamboo Design System"
