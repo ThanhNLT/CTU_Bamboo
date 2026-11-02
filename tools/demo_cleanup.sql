@@ -5,7 +5,7 @@
 -- Xóa đề nghị mua sắm do người dùng lập qua ứng dụng (không phải dữ liệu seed) cùng mọi thứ đi kèm.
 -- Dữ liệu seed được lập khi CSDL không có phiên người dùng nên dòng INSERT trong audit.log không có actor_id;
 -- đề nghị lập qua giao diện thì có. Nhật ký kiểm toán chỉ cho ghi thêm nên được giữ nguyên (trigger sẽ ghi thêm
--- các dòng DELETE, chuỗi băm vẫn hợp lệ). Chạy bằng scripts/demo_cleanup.sh, không chạy tay.
+-- các dòng DELETE, chuỗi băm vẫn hợp lệ). Chạy bằng tools/demo_cleanup.sh, không chạy tay.
 \set ON_ERROR_STOP on
 BEGIN;
 

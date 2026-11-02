@@ -1,7 +1,7 @@
 # Thiết kế cơ sở dữ liệu
 
 Một database PostgreSQL 17 + PostGIS 3.5 tên `bms`. Migration ở `db/migrations/bms/`, chạy theo thứ tự tên tệp, tự chạy
-khi `docker compose up -d` (job `migrate`, script `scripts/db/migrate.sh`). Bệnh viện X là một tenant riêng trong cùng
+khi `docker compose up -d` (job `migrate`, script `tools/db/migrate.sh`). Bệnh viện X là một tenant riêng trong cùng
 database, cách ly logic như mọi tenant khác (xem [ADR #15](#adr-15)).
 
 - Kiểm thử: `make test-db` chạy mọi tệp `db/tests/bms_*.sql` (tự rollback), một tệp: `make test-db T=bms_031`; hàm dùng

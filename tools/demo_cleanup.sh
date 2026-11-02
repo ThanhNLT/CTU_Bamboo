@@ -5,8 +5,8 @@
 #
 # Xóa các đề nghị mua sắm do người dùng lập qua ứng dụng khi thử chức năng duyệt, đưa dữ liệu về như tài liệu demo.
 # Mặc định chỉ xem trước (không ghi gì). Thêm --apply để xóa thật.
-#   scripts/demo_cleanup.sh            # xem trước
-#   scripts/demo_cleanup.sh --apply    # xóa thật
+#   tools/demo_cleanup.sh            # xem trước
+#   tools/demo_cleanup.sh --apply    # xóa thật
 # Giữ nguyên dữ liệu seed, nhật ký kiểm toán (chỉ ghi thêm), người dùng và tệp khác. Xóa cả quy trình Flowable
 # tương ứng; chỉ mục tìm kiếm tự dọn bởi search-sync. Đề nghị seed mà bạn đã duyệt thử vẫn giữ trạng thái đã đổi:
 # muốn khôi phục cả phần đó thì phải nạp lại CSDL (docker compose down -v).
@@ -20,7 +20,7 @@ case "${1:-}" in
     *) echo "Cách dùng: $0 [--apply]" >&2; exit 2 ;;
 esac
 
-out=$(docker compose exec -T db psql -X -q -U bms -d bms -v finish=$mode -f - < scripts/demo_cleanup.sql 2>&1) || {
+out=$(docker compose exec -T db psql -X -q -U bms -d bms -v finish=$mode -f - < tools/demo_cleanup.sql 2>&1) || {
     echo "$out" >&2
     echo "Không xóa gì (giao dịch đã hủy)." >&2
     exit 1
