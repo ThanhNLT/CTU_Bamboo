@@ -34,10 +34,21 @@ RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
     cd /ws; \
     uv export --frozen --package "$pkg" --no-dev "$@" --no-emit-workspace --no-header -o /tmp/req.txt; \
     mkdir -p /opt/bamboo; \
+    uv export --frozen --package "$pkg" --no-dev "$@" --no-editable --no-hashes --no-header --no-annotate \
+      | { grep '^\./' || true; } > /opt/bamboo/workspace-deps.txt; \
     uv export --frozen --package "$pkg" --only-group dev --no-emit-workspace --no-hashes --no-header \
       -o /opt/bamboo/dev-pins.txt; \
     pip install --no-cache-dir -r /tmp/req.txt; \
     rm /tmp/req.txt
+# Gói dùng chung trong workspace (packages/*, vd. bamboo-common cho actions) mà package này phụ thuộc:
+# cài thường (không editable) vào site-packages nên các lệnh mount mã nguồn đè /repo không ảnh hưởng.
+# uv dựng trực tiếp backend uv_build, không tải gì từ mạng; phụ thuộc ngoài đã có ở lớp trên.
+RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
+    --mount=type=bind,source=packages,target=/ws/packages \
+    set -eu; cd /ws; \
+    if [ -s /opt/bamboo/workspace-deps.txt ]; then \
+      UV_NO_CACHE=1 uv pip install --system --offline --no-deps $(cat /opt/bamboo/workspace-deps.txt); \
+    fi
 COPY ${APP_DIR}/app ./app
 RUN python -m compileall -q app
 COPY infra/platform /repo/infra/platform

@@ -12,8 +12,9 @@ import time
 
 import httpx
 
+from bamboo_common.flowable import FlowableClient
+
 from . import ai_chunks, config, keycloak_sync, search, setup_code, storage
-from .flowable import FlowableClient
 
 log = logging.getLogger("bootstrap")
 ROOT = pathlib.Path(__file__).resolve().parents[3]

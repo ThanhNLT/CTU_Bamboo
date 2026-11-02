@@ -9,8 +9,9 @@ import uuid
 import psycopg
 from psycopg.rows import dict_row
 
+from bamboo_common.ollama import WAKE_SECONDS, Ollama, OllamaUnavailable
+
 from . import ai_chunks, config, ocr, search, storage
-from .ollama import WAKE_SECONDS, Ollama, OllamaUnavailable
 
 log = logging.getLogger("search_sync")
 MAX_BACKOFF = 300

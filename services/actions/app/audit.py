@@ -4,8 +4,9 @@
 
 import psycopg
 
+from bamboo_common.pii import mask_tail
+
 from .common import ActionError, Context, session_identity
-from .pii import mask_tail
 from .pii_guard import LABELS, guard
 
 MAX_IDS = 100

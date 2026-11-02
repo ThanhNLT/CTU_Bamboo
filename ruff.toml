@@ -7,4 +7,4 @@ target-version = "py313"
 extend-exclude = ["*.md"]
 
 [lint.isort]
-known-first-party = ["app", "conftest"]
+known-first-party = ["app", "conftest", "bamboo_common"]

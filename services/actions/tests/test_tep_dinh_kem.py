@@ -12,11 +12,12 @@ import pytest
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
-
-from app import attachments, config, main, scanner, storage
-from app.common import Context
-from conftest import SETTINGS, ids, pr
 from test_quet_tep import DOCX, MZ, ooxml, png
+
+from app import attachments, config, main, storage
+from app.common import Context
+from bamboo_common import scanner
+from conftest import SETTINGS, ids, pr
 
 PDF = b"%PDF-1.7\n" + b"x" * 2000 + b"\n%%EOF\n"
 
