@@ -42,6 +42,11 @@ class Module:
     services: tuple[str, ...] = ()
     actions: frozenset[str] = frozenset()
     open_work: tuple[OpenWork, ...] = ()
+    external: bool = False
+    vendor: str | None = None
+    version: str | None = None
+    scopes: tuple[str, ...] = ()
+    menu: tuple[tuple[str, str], ...] = ()
 
 
 def _pending(table: str, label: str, statuses: tuple[str, ...] = ("PENDING", "RETURNED")) -> OpenWork:
@@ -84,6 +89,9 @@ CORE_ACTIONS = frozenset(
         "legal_verify",
         "transfer_ownership",
         "create_subsidiary",
+        "ext_register",
+        "ext_rotate_key",
+        "ext_launch",
     }
 )
 
@@ -284,14 +292,36 @@ def closure(codes, edges) -> list[str]:
     return out
 
 
-def requires(code: str) -> list[str]:
+def requires(code: str, catalog: dict[str, Module] = BY_CODE) -> list[str]:
     """Mô-đun cùng mọi mô-đun nó phụ thuộc (trực tiếp hoặc gián tiếp), phụ thuộc đứng trước."""
-    return closure([code], lambda c: BY_CODE[c].depends)
+    return closure([code], lambda c: catalog[c].depends)
 
 
-def dependents(code: str) -> set[str]:
+def dependents(code: str, catalog: dict[str, Module] = BY_CODE) -> set[str]:
     """Mô-đun phụ thuộc (trực tiếp hoặc gián tiếp) vào `code`."""
-    return {m.code for m in CATALOG if m.code != code and code in requires(m.code)}
+    return {c for c in catalog if c != code and code in requires(c, catalog)}
+
+
+def load_catalog(conn: psycopg.Connection) -> dict[str, Module]:
+    """Mô-đun dựng sẵn cùng mô-đun ngoài đã đăng ký trên máy (ADR #58)."""
+    catalog = dict(BY_CODE)
+    for row in conn.execute(
+        """SELECT module, name, description, vendor, version, depends, scopes, menu
+           FROM core.external_module ORDER BY name"""
+    ):
+        code, name, description, vendor, version, depends, scopes, menu = row
+        catalog[code] = Module(
+            code,
+            name,
+            description,
+            depends=tuple(d for d in depends if d in BY_CODE),
+            external=True,
+            vendor=vendor,
+            version=version,
+            scopes=tuple(scopes),
+            menu=tuple((m["label"], m["path"]) for m in menu),
+        )
+    return catalog
 
 
 def enabled_modules(conn: psycopg.Connection, tenant) -> set[str]:
@@ -344,6 +374,7 @@ class Manager:
         self.tenant = session.get("x-hasura-tenant-id")
         if not self.person or not self.tenant:
             raise ActionError("Thiếu x-hasura-user-id hoặc x-hasura-tenant-id", "unauthorized", 401)
+        self.catalog = load_catalog(conn)
         # chủ sở hữu công ty khởi tạo máy chủ tự cài (ADR #57) cài/gỡ mô-đun trên máy như quản trị nền tảng
         self.platform = (
             session.get("x-hasura-role") == "platform_admin"
@@ -371,11 +402,10 @@ class Manager:
                 "Cài hoặc gỡ mô-đun trên máy cần tài khoản quản trị nền tảng (vai trò platform_admin)", "forbidden", 403
             )
 
-    @staticmethod
-    def module(code: str) -> Module:
-        if code not in BY_CODE:
+    def module(self, code: str) -> Module:
+        if code not in self.catalog:
             raise ActionError(f"Không có mô-đun {code}", "not-found", 404)
-        return BY_CODE[code]
+        return self.catalog[code]
 
     def lock(self) -> None:
         """Mọi thay đổi trạng thái mô-đun chạy tuần tự, tránh hai quản trị viên bật/tắt chéo nhau."""
@@ -394,7 +424,7 @@ class Manager:
                     "name": m.name,
                     "description": m.description,
                     "depends": list(m.depends),
-                    "dependents": sorted(dependents(m.code)),
+                    "dependents": sorted(dependents(m.code, self.catalog)),
                     "services": [
                         {
                             "name": s,
@@ -404,8 +434,13 @@ class Manager:
                     ],
                     "installed": m.code in installed,
                     "enabled": m.code in enabled,
+                    "external": m.external,
+                    "vendor": m.vendor,
+                    "version": m.version,
+                    "scopes": list(m.scopes),
+                    "menu": [{"label": label, "path": path} for label, path in m.menu],
                 }
-                for m in CATALOG
+                for m in self.catalog.values()
             ],
         }
 
@@ -414,7 +449,7 @@ class Manager:
         status = _service_status(self.ctx)
         if status is None:
             return
-        missing = [s for c in codes for s in BY_CODE[c].services if s in status and status[s].get("running") is None]
+        missing = [s for c in codes for s in self.catalog[c].services if s in status and status[s].get("running") is None]
         if missing:
             raise ActionError(
                 f"Máy chủ chưa có container {', '.join(sorted(set(missing)))}: chạy lại `make up` "
@@ -427,7 +462,7 @@ class Manager:
         self.require_platform()
         self.module(code)
         self.lock()
-        todo = [c for c in requires(code) if c not in installed_modules(self.conn)]
+        todo = [c for c in requires(code, self.catalog) if c not in installed_modules(self.conn)]
         self._check_services(todo)
         for c in todo:
             self.conn.execute(
@@ -442,10 +477,10 @@ class Manager:
         installed = installed_modules(self.conn)
         if code not in installed:
             return []
-        users = sorted(dependents(code) & installed)
+        users = sorted(dependents(code, self.catalog) & installed)
         if users:
             raise ActionError(
-                f"Không gỡ được {m.name}: mô-đun {', '.join(BY_CODE[c].name for c in users)} đang dựa vào nó",
+                f"Không gỡ được {m.name}: mô-đun {', '.join(self.catalog[c].name for c in users)} đang dựa vào nó",
                 "module-in-use",
                 409,
             )
@@ -470,12 +505,12 @@ class Manager:
         self.require_manage()
         self.module(code)
         self.lock()
-        chain = requires(code)
+        chain = requires(code, self.catalog)
         missing = [c for c in chain if c not in installed_modules(self.conn)]
         if missing:
             if not self.platform:
                 raise ActionError(
-                    f"Mô-đun {', '.join(BY_CODE[c].name for c in missing)} chưa được cài trên máy chủ; "
+                    f"Mô-đun {', '.join(self.catalog[c].name for c in missing)} chưa được cài trên máy chủ; "
                     "nhờ quản trị nền tảng cài trước",
                     "module-not-installed",
                     409,
@@ -497,10 +532,10 @@ class Manager:
         enabled = enabled_modules(self.conn, self.tenant)
         if code not in enabled:
             return []
-        users = sorted(dependents(code) & enabled)
+        users = sorted(dependents(code, self.catalog) & enabled)
         if users:
             raise ActionError(
-                f"Không tắt được {m.name}: mô-đun {', '.join(BY_CODE[c].name for c in users)} đang bật và dựa vào nó; "
+                f"Không tắt được {m.name}: mô-đun {', '.join(self.catalog[c].name for c in users)} đang bật và dựa vào nó; "
                 "tắt các mô-đun đó trước",
                 "module-in-use",
                 409,

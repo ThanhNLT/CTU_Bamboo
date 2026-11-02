@@ -4,6 +4,7 @@
 
 import pathlib
 import time
+import json
 import uuid
 
 import psycopg
@@ -210,6 +211,7 @@ def test_bat_chay_tu_dong_khoi_chay_va_he_thong_tu_xu_ly(app_conn, database, wor
     with pytest.raises(ActionError) as err:
         process_automation.process_automation_start(app_conn, nv, {"id": model, "variables": {"amount": 9}}, ctx)
     assert err.value.status == 403, "nhân viên chỉ xem, không khởi chạy được"
+    assert "người thiết kế" in err.value.message
     with pytest.raises(ActionError):
         process_automation.process_automation_start(app_conn, tp, {"id": model, "variables": {"execution": {"a": 1}}}, ctx)
 
@@ -368,7 +370,14 @@ def test_webhook_va_su_kien_khoi_chay(app_conn, database, world, flowable):
             "SELECT trigger, variables FROM wf.automation_run WHERE id = %s", (started["id"],)
         ).fetchone() == ("WEBHOOK", {"code": "X1"})
 
-        app_conn.execute("SELECT wf.emit_event(%s, 'ic_order.confirmed', %s, '{\"doc_no\": \"DH-9\"}')", (t, uuid.uuid4().hex))
+        app_conn.execute(
+            "SELECT wf.emit_event(%s, 'ic_order.confirmed', %s, %s::jsonb)",
+            (t, uuid.uuid4().hex, json.dumps({"doc_no": "DH-9", "unit_ids": [str(world["unit"])]})),
+        )
+        # Sự kiện không thuộc phạm vi quy trình (không mang đơn vị) thì không khởi chạy
+        app_conn.execute(
+            "SELECT wf.emit_event(%s, 'ic_order.confirmed', %s, '{\"doc_no\": \"DH-X\"}')", (t, uuid.uuid4().hex)
+        )
         app_conn.execute("SELECT wf.emit_event(%s, 'ic_order.settled', %s, '{}')", (t, uuid.uuid4().hex))
         assert _tick_until(
             database, flowable,
@@ -380,6 +389,9 @@ def test_webhook_va_su_kien_khoi_chay(app_conn, database, world, flowable):
             "SELECT variables FROM wf.automation_run WHERE trigger = 'EVENT' AND automation_id = %s", (hook["id"],)
         ).fetchone()
         assert row[0] == {"doc_no": "DH-9", "event": "ic_order.confirmed"}
+        assert app_conn.execute(
+            "SELECT count(*) FROM wf.automation_run WHERE automation_id = %s AND trigger = 'EVENT'", (hook["id"],)
+        ).fetchone()[0] == 1, "sự kiện ngoài phạm vi không khởi chạy"
 
         overview = process_design.process_model_get(app_conn, tp, {"id": model}, None)["automation"]
         assert overview["webhook"] is True and overview["events"] == ["ic_order.confirmed"]

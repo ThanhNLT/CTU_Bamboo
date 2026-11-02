@@ -172,6 +172,36 @@ routes:
       client-control:
         max_body_size: 65536
 
+  - id: external-module-ui
+    uris: [/ext/*]
+    priority: 15
+    methods: [GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS]
+    upstream_id: actions
+    plugins:
+      limit-count:
+        count: 600
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều yêu cầu tới mô-đun, thử lại sau"
+      client-control:
+        max_body_size: 10485760
+
+  - id: external-module-api
+    uris: [/ext-api/*]
+    priority: 15
+    methods: [GET, POST]
+    upstream_id: actions
+    plugins:
+      limit-count:
+        count: 300
+        time_window: 60
+        key: remote_addr
+        rejected_code: 429
+        rejected_msg: "Quá nhiều yêu cầu từ mô-đun, thử lại sau"
+      client-control:
+        max_body_size: 1048576
+
   - id: company-setup
     uris: [/setup/*]
     priority: 15
