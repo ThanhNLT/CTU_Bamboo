@@ -817,7 +817,8 @@ services:
   web:
     logging: *logging
     build:
-      context: ./apps/web
+      context: .
+      dockerfile: apps/web/Dockerfile
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-web:${BAMBOO_TAG:-dev}
     environment:
       BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}

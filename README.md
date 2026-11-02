@@ -290,8 +290,8 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 | PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`make psql`) |
 
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
-thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; giao diện `npm run lint`,
-`npm run build` trong `apps/web`, `npm run test:e2e` trong `tests/e2e`; AI và OCR `scripts/ai_smoke.sh`, `scripts/ocr_smoke.sh`.
+thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; giao diện `pnpm check` ở gốc repo
+(Turborepo: lint, format:check, build), `pnpm --filter @bamboo/e2e test:e2e`; AI và OCR `scripts/ai_smoke.sh`, `scripts/ocr_smoke.sh`.
 
 ## Chạy native (không dùng Docker)
 
@@ -306,6 +306,7 @@ mặc định của máy dev, giống bản Docker; tên dịch vụ đổi thà
 | PostgreSQL | 17, extension `ltree`, `btree_gist` | PostGIS 3.5 tùy chọn; `wal_level=logical` nếu chạy CDC |
 | Python | 3.13 | Dịch vụ `actions`, `seed` |
 | Node.js | 22 (tối thiểu 20) | Giao diện |
+| pnpm | 12.16.1 (ghim ở `packageManager` trong `package.json`) | Workspace JS: `npm install -g pnpm@12.16.1` |
 | Java | 21 | Keycloak, Flowable |
 | Keycloak | 26.8 | Bản phân phối `.zip`/`.tar.gz` |
 | Flowable REST | 8.0 | `flowable-rest.war` (Spring Boot) |
@@ -414,10 +415,10 @@ Trino). Biến môi trường đầy đủ: `services/actions/app/config.py`.
 ### 7. Giao diện
 
 ```bash
+pnpm install --frozen-lockfile   # ở gốc repo (workspace pnpm: apps/web, tests/e2e); pnpm ghim ở package.json
 cd apps/web
-npm ci
-VITE_KEYCLOAK_URL=http://localhost:8080 VITE_HASURA_URL=http://localhost:8081/v1/graphql npm run dev   # http://localhost:5173
-npm run build        # bản tĩnh trong dist/, phục vụ bằng web server bất kỳ
+VITE_KEYCLOAK_URL=http://localhost:8080 VITE_HASURA_URL=http://localhost:8081/v1/graphql pnpm dev   # http://localhost:5173
+pnpm build           # bản tĩnh trong dist/, phục vụ bằng web server bất kỳ
 ```
 
 Mở <http://localhost:5173> và đăng nhập bằng tài khoản demo.

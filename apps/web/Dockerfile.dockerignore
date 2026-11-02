@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Context của image web là gốc repo; chỉ đưa vào manifest workspace và mã apps/web.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tests/e2e/package.json
+!apps/web
+apps/web/node_modules
+apps/web/dist
+apps/web/.turbo
+apps/web/.env*
+apps/web/Dockerfile*
