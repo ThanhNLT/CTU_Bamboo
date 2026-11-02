@@ -287,8 +287,8 @@ def _start(conn, flowable: FlowableClient, automation: tuple, trigger: str, star
 def process_automation_start(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     person, tenant = _who(conn, session)
     m = _model(conn, tenant, args["id"])
-    if _access(conn, person, args["id"]) not in ("design", "review"):
-        raise ActionError("Chỉ người thiết kế hoặc giám sát được khởi chạy quy trình tự động", "forbidden", 403)
+    if _access(conn, person, args["id"]) != "design":
+        raise ActionError("Chỉ người thiết kế của đơn vị sở hữu được khởi chạy quy trình tự động", "forbidden", 403)
     if ctx.flowable is None:
         raise ActionError("Chưa cấu hình Flowable", "unavailable", 503)
     row = _active(conn, str(m["id"]))
@@ -512,8 +512,9 @@ def dispatch_events(conn: psycopg.Connection, flowable: FlowableClient) -> int:
         try:
             targets = conn.execute(
                 """SELECT id, flowable_deployment_id, flowable_definition_id, version FROM wf.process_automation
-                   WHERE tenant_id = %s AND status = 'ACTIVE' AND %s = ANY (events)""",
-                (message["tenant_id"], name),
+                   WHERE tenant_id = %s AND status = 'ACTIVE' AND %s = ANY (events)
+                     AND wf.automation_in_scope(id, %s::jsonb)""",
+                (message["tenant_id"], name, json.dumps((message["payload"] or {}).get("unit_ids") or [])),
             ).fetchall()
             variables = {**_scalar_variables(message["payload"]), "event": name}
             for target in targets:

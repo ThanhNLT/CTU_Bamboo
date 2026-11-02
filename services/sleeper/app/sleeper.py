@@ -12,7 +12,8 @@ SLEEPER_TARGETS: danh sách `cổng_nghe=dịch_vụ:cổng[@giây_nhàn_rỗi]`
 
 Mô-đun chức năng (ADR #56): định kỳ hỏi `SLEEPER_MODULES_URL` (actions `/modules/services`) container nào phải chạy, phải
 dừng theo các mô-đun đã cài, rồi start/stop cho khớp. Chỉ chạm dịch vụ có tên trong SLEEPER_MANAGED. Dịch vụ ngủ (có trong
-SLEEPER_TARGETS) của mô-đun chưa cài thì bị khóa: có yêu cầu đến cũng không đánh thức.
+SLEEPER_TARGETS) của mô-đun chưa cài thì bị khóa: có yêu cầu đến cũng không đánh thức. SLEEPER_HOLD_UNTIL (bootstrap): chưa
+dừng container compose vừa chạy cho tới khi dịch vụ này chạy xong sau lần khởi động đó.
 """
 
 import asyncio
@@ -88,9 +89,9 @@ def parse_targets(spec: str, default_idle: float) -> list["Target"]:
     return targets
 
 
-def started_at(state: dict) -> float:
-    """Epoch giây của lần khởi động gần nhất (Docker trả RFC 3339 nano giây)."""
-    text = state.get("StartedAt", "")
+def started_at(state: dict, key: str = "StartedAt") -> float:
+    """Epoch giây của lần khởi động gần nhất (hoặc `FinishedAt`); Docker trả RFC 3339 nano giây."""
+    text = state.get(key, "")
     if not text or text.startswith("0001"):
         return 0.0
     head, _, frac = text.rstrip("Z").partition(".")
@@ -228,13 +229,36 @@ async def http_get_json(url: str, timeout: float = 5.0) -> dict:
 class Modules:
     """Đưa container của mô-đun về đúng trạng thái actions yêu cầu (ADR #56)."""
 
-    def __init__(self, docker: Docker, url: str, managed: set[str], targets: list[Target], fetch=http_get_json):
+    def __init__(
+        self,
+        docker: Docker,
+        url: str,
+        managed: set[str],
+        targets: list[Target],
+        fetch=http_get_json,
+        hold_until: str = "",
+    ):
         self.docker = docker
         self.url = url
         self.managed = managed
         self.targets = {t.service: t for t in targets}
         self.fetch = fetch
+        self.hold_until = hold_until
         self.containers: dict[str, str] = {}
+        self.started_by_us: set[str] = set()
+
+    async def _held(self, service: str, state: dict) -> bool:
+        """Chưa dừng dịch vụ compose vừa chạy khi `hold_until` (bootstrap) chưa chạy xong sau lần khởi động đó:
+        bootstrap chờ Flowable, Meilisearch healthy để dựng BPMN, chỉ mục, nên dừng sớm làm `docker compose up` hỏng."""
+        if not self.hold_until or service in self.started_by_us:
+            return False
+        try:
+            done = await self.docker.state(await self.docker.find(self.hold_until))
+        except DockerError:
+            return True  # compose chưa tạo container bootstrap
+        if done.get("Running") or done.get("Status") in ("created", "restarting") or done.get("ExitCode"):
+            return True
+        return started_at(done, "FinishedAt") < started_at(state)
 
     async def _state(self, service: str) -> dict:
         container = self.containers.get(service) or await self.docker.find(service)
@@ -264,8 +288,12 @@ class Modules:
             try:
                 state = await self._state(service)
                 if service in stop and state.get("Running"):
+                    if await self._held(service, state):
+                        log.info("chưa dừng %s: chờ %s chạy xong", service, self.hold_until)
+                        continue
                     log.info("dừng %s: mô-đun chưa cài", service)
                     await self.docker.stop(self.containers[service])
+                    self.started_by_us.discard(service)
                     done["stopped"].append(service)
                     if target is not None:
                         for writer in list(target.writers):
@@ -273,6 +301,7 @@ class Modules:
                 elif service in run and target is None and not state.get("Running"):
                     log.info("chạy %s: mô-đun đã cài", service)
                     await self.docker.start(self.containers[service])
+                    self.started_by_us.add(service)
                     done["started"].append(service)
             except (DockerError, OSError) as exc:
                 log.warning("không đưa được %s về trạng thái mô-đun: %s", service, exc)
@@ -372,7 +401,8 @@ def main() -> None:
     )
     modules_url = os.environ.get("SLEEPER_MODULES_URL", "")
     managed = {s.strip() for s in os.environ.get("SLEEPER_MANAGED", "").split(",") if s.strip()}
-    modules = Modules(docker, modules_url, managed, targets) if modules_url and managed else None
+    hold_until = os.environ.get("SLEEPER_HOLD_UNTIL", "")
+    modules = Modules(docker, modules_url, managed, targets, hold_until=hold_until) if modules_url and managed else None
     sleeper = Sleeper(docker, targets, float(os.environ.get("SLEEPER_WAKE_TIMEOUT", "180")), modules=modules)
     asyncio.run(sleeper.run(int(os.environ.get("SLEEPER_ADMIN_PORT", "9000"))))
 
