@@ -42,6 +42,7 @@ class Context:
     sleeper_url: str = ""
     signature_trust_dir: str = ""
     signature_online: bool = True
+    actions_secret: str = ""
 
 
 class ActionError(Exception):
