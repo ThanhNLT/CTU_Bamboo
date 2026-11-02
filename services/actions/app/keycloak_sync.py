@@ -15,7 +15,7 @@ CLIENT_ID = "bms-web"
 LOGIN_THEME = "dxos-login"
 PROVISIONER_ID = "bms-provisioner"
 PROVISIONER_ROLES = ("manage-users", "view-users", "query-users")
-REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "platform/keycloak/realm/bms-realm.json"
+REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/keycloak/realm/bms-realm.json"
 
 
 def admin_token(base_url: str, user: str, password: str) -> str:

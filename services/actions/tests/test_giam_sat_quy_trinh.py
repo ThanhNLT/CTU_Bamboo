@@ -15,9 +15,9 @@ from app import process_automation, process_design
 from app.common import ActionError, Context
 from conftest import ids
 
-SAMPLE = (pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml").read_text(
-    encoding="utf-8"
-)
+SAMPLE = (
+    pathlib.Path(__file__).resolve().parents[3] / "infra/platform/flowable/purchase_request.bpmn20.xml"
+).read_text(encoding="utf-8")
 
 
 @pytest.fixture

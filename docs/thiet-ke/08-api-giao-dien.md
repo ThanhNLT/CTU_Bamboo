@@ -53,7 +53,7 @@ Ví dụ cách giao diện trong `apps/web/src/pages` dùng API cho luồng mua 
 
 ## 3. Danh mục Hasura Action
 
-Nghiệp vụ nhiều bước đi qua 109 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
+Nghiệp vụ nhiều bước đi qua 109 Hasura Action (dịch vụ `actions`, khai báo trong `infra/platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
 
 | Nhóm | Query | Mutation |
 |---|---|---|

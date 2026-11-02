@@ -72,7 +72,7 @@ ENTITY_TABLES = {
     "hr.transfer_group": "hr.transfer_group",
     "collab.kb_document": "collab.kb_document",
 }
-BPMN = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
+BPMN = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/flowable/purchase_request.bpmn20.xml"
 log = logging.getLogger("actions")
 
 _PATH = ["submitted", "toApprove", "approveStep", "toDecision", "decision"]

@@ -204,7 +204,7 @@ const SignStep = ({
           type="warning"
           showIcon
           message="Máy chủ chưa cài chứng thư gốc để kiểm chữ ký số"
-          description="Người quản trị máy chủ đặt chứng thư Root CA quốc gia vào thư mục platform/trust (xem hướng dẫn trong thư mục đó). Trong lúc chờ, có thể tạo công ty chưa xác thực rồi ký bổ sung sau."
+          description="Người quản trị máy chủ đặt chứng thư Root CA quốc gia vào thư mục infra/platform/trust (xem hướng dẫn trong thư mục đó). Trong lúc chờ, có thể tạo công ty chưa xác thực rồi ký bổ sung sau."
         />
       )}
       <Upload.Dragger

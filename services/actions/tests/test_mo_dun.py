@@ -68,7 +68,7 @@ def state(body: dict) -> dict:
 
 
 def test_moi_action_thuoc_loi_hoac_mot_mo_dun():
-    metadata = json.loads((ROOT / "platform/hasura/metadata.json").read_text(encoding="utf-8"))
+    metadata = json.loads((ROOT / "infra/platform/hasura/metadata.json").read_text(encoding="utf-8"))
     names = {a["name"] for a in metadata["actions"]}
     owned = [a for m in modules.CATALOG for a in m.actions]
     assert len(owned) == len(set(owned)), "một Action chỉ thuộc một mô-đun"
@@ -171,10 +171,14 @@ def test_container_can_chay_theo_mo_dun_da_cai(client, conn, admin):
 def test_sleeper_quan_ly_dung_container_cua_mo_dun():
     import yaml
 
-    compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
-    env = compose["services"]["sleeper"]["environment"]
+    # compose.yaml ở gốc chỉ include các tệp trong infra/compose/: gộp dịch vụ của chúng
+    root = yaml.safe_load((ROOT / "compose.yaml").read_text(encoding="utf-8"))
+    services = {}
+    for path in root["include"]:
+        services |= yaml.safe_load((ROOT / path).read_text(encoding="utf-8"))["services"]
+    env = services["sleeper"]["environment"]
     assert sorted(env["SLEEPER_MANAGED"].split(",")) == sorted(modules.MANAGED_SERVICES)
-    assert set(modules.MANAGED_SERVICES) <= set(compose["services"])
+    assert set(modules.MANAGED_SERVICES) <= set(services)
 
 
 def test_du_lieu_demo_bat_du_moi_mo_dun():

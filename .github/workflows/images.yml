@@ -27,17 +27,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: actions, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/actions" }
-          - { name: lakehouse, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/actions\nREQUIREMENTS=requirements-lakehouse.txt" }
-          - { name: seed, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/seed" }
-          - { name: migrate, context: ., file: docker/migrate.Dockerfile, args: "" }
-          - { name: keycloak, context: platform/keycloak, file: platform/keycloak/Dockerfile, args: "" }
-          - { name: openbao, context: platform/openbao, file: platform/openbao/Dockerfile, args: "" }
-          - { name: gateway, context: platform/apisix, file: platform/apisix/Dockerfile, args: "" }
-          - { name: trino, context: platform/trino, file: platform/trino/Dockerfile, args: "" }
-          - { name: sleeper, context: ., file: services/sleeper/Dockerfile, args: "" }
-          - { name: kafka, context: platform/kafka, file: platform/kafka/Dockerfile, args: "" }
-          - { name: web, context: ., file: apps/web/Dockerfile, args: "" }
+          - { name: actions, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions" }
+          - { name: lakehouse, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions\nREQUIREMENTS=requirements-lakehouse.txt" }
+          - { name: seed, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/seed" }
+          - { name: migrate, context: ., file: infra/docker/migrate.Dockerfile, args: "" }
+          - { name: keycloak, context: infra/platform/keycloak, file: infra/platform/keycloak/Dockerfile, args: "" }
+          - { name: openbao, context: infra/platform/openbao, file: infra/platform/openbao/Dockerfile, args: "" }
+          - { name: gateway, context: infra/platform/apisix, file: infra/platform/apisix/Dockerfile, args: "" }
+          - { name: trino, context: infra/platform/trino, file: infra/platform/trino/Dockerfile, args: "" }
+          - { name: sleeper, context: ., file: infra/docker/sleeper.Dockerfile, args: "" }
+          - { name: kafka, context: infra/platform/kafka, file: infra/platform/kafka/Dockerfile, args: "" }
+          - { name: web, context: ., file: infra/docker/web.Dockerfile, args: "" }
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
