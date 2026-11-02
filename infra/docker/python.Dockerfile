@@ -15,7 +15,7 @@ COPY ${APP_DIR}/requirements*.txt ./
 RUN pip install --no-cache-dir -r ${REQUIREMENTS} -c /repo/constraints.txt
 COPY ${APP_DIR}/app ./app
 RUN python -m compileall -q app
-COPY platform /repo/platform
+COPY infra/platform /repo/infra/platform
 COPY services/seed/data /repo/services/seed/data
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 USER 10001

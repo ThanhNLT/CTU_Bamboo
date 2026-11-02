@@ -2,7 +2,7 @@
 
 Cấu hình và hoạt động của các dịch vụ lõi Tầng 1 ngoài CSDL. Tầng 1 không có giao diện người dùng cuối: ứng dụng chỉ gọi
 qua cổng API (mục 4). Mọi dịch vụ tự khởi tạo khi `docker compose up -d` (hoặc `make up`) bằng các job trong
-`services/actions/app/` (`openbao_init.py`, `bootstrap.py`); image Python dùng chung là `docker/python.Dockerfile`.
+`services/actions/app/` (`openbao_init.py`, `bootstrap.py`); image Python dùng chung là `infra/docker/python.Dockerfile`.
 Giao diện quản trị đi kèm một số dịch vụ (Hasura Console, Keycloak Admin, OpenBao UI, SeaweedFS, Mailpit) chỉ nghe
 `127.0.0.1` trên máy chủ và dành cho người vận hành.
 
@@ -25,7 +25,7 @@ Giao diện quản trị đi kèm một số dịch vụ (Hasura Console, Keyclo
 
 ### Chế độ chạy
 
-- **Lưu bền**: integrated storage (raft) một node ở `/openbao/file` trên volume `openbao-data` (`platform/openbao/config.hcl`). Entrypoint của image tự thêm `-config=/openbao/config` và chown `/openbao/file`.
+- **Lưu bền**: integrated storage (raft) một node ở `/openbao/file` trên volume `openbao-data` (`infra/platform/openbao/config.hcl`). Entrypoint của image tự thêm `-config=/openbao/config` và chown `/openbao/file`.
 - **Job `openbao-init`** (`python -m app.openbao_init`) chạy mỗi lần `docker compose up`, chạy lại không tạo trùng:
   1. Lần đầu: khởi tạo với 1 khóa unseal (chỉ cho dev), lưu khóa và root token vào volume `openbao-keys` (`init.json`, quyền 0600), không in ra log. Lệnh khởi tạo raft có thể mất hơn 10 giây nên chờ tới 5 phút: hết giờ chờ giữa chừng là mất khóa.
   2. Mỗi lần: unseal nếu đang sealed, đợi raft có leader, rồi cấu hình lại mount, khóa transit, policy, AppRole.
@@ -130,7 +130,7 @@ CSDL quyết định toàn bộ luồng duyệt: chuỗi duyệt chốt theo v�
 
 ### Quy trình `purchaseRequestApproval`
 
-File `platform/flowable/purchase_request.bpmn20.xml` (có sơ đồ DI cho bpmn-js):
+File `infra/platform/flowable/purchase_request.bpmn20.xml` (có sơ đồ DI cho bpmn-js):
 
 ```text
 Gửi duyệt ─► [Duyệt bước i/n] ─► ◇ Quyết định?
@@ -175,7 +175,7 @@ Flowable REST (dev): http://localhost:8082/flowable-rest, tài khoản `FLOWABLE
 
 ## 4. Cổng API – Apache APISIX (ADR #34)
 
-Điểm vào duy nhất từ trình duyệt (`127.0.0.1:8000`). Chế độ standalone: `platform/apisix/config.yaml` (chế độ chạy, WAF) và `platform/apisix/apisix.yaml` (route), đóng gói vào image `bamboo-gateway`; không có Admin API, đổi route bằng commit rồi build lại image.
+Điểm vào duy nhất từ trình duyệt (`127.0.0.1:8000`). Chế độ standalone: `infra/platform/apisix/config.yaml` (chế độ chạy, WAF) và `infra/platform/apisix/apisix.yaml` (route), đóng gói vào image `bamboo-gateway`; không có Admin API, đổi route bằng commit rồi build lại image.
 
 | Route | Tới | Kiểm soát |
 |---|---|---|
@@ -301,7 +301,7 @@ PostgreSQL bms (wal_level=logical, publication bms_cdc)
 | Dịch vụ | Image | Ghi chú |
 |---|---|---|
 | `kafka` | `bamboo-kafka` (`apache/kafka:4.3.1` + JAAS, `start.sh`) | KRaft một node (broker + controller), `kafka:9092` SASL_PLAINTEXT (SCRAM-SHA-512) cho mạng nội bộ, `localhost:19092` (listener `HOST`, cùng SCRAM + ACL) cho công cụ trên máy dev; controller và listener `LOCAL` (`localhost:9094`) chỉ trong container. Giữ 7 ngày, heap 512 MB. Dữ liệu ở volume `kafka-data` |
-| `debezium` | `quay.io/debezium/server:3.7.0.Final` | Connector PostgreSQL (`pgoutput`), cấu hình bằng biến `DEBEZIUM_*` trong `docker-compose.yml`. Vị trí đọc ở volume `debezium-data`; xóa volume thì chụp ảnh lại toàn bộ |
+| `debezium` | `quay.io/debezium/server:3.7.0.Final` | Connector PostgreSQL (`pgoutput`), cấu hình bằng biến `DEBEZIUM_*` trong `infra/compose/data.yml`. Vị trí đọc ở volume `debezium-data`; xóa volume thì chụp ảnh lại toàn bộ |
 
 ### Sự kiện
 
@@ -328,7 +328,7 @@ PostgreSQL bms (wal_level=logical, publication bms_cdc)
 
 - `allow.everyone.if.no.acl.found=false`: tài khoản mới hay topic ngoài tiền tố đều bị từ chối. `start.sh` đặt lại mật khẩu và ACL mỗi lần khởi động; đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (Kafka, Debezium, `openbao-init`, `lakehouse-sink` nhận giá trị mới).
 - Mật khẩu không được chứa `,` `[` `]` `=` `"` `\` (cú pháp của `kafka-configs` và JAAS); Kafka dừng ngay với thông báo rõ nếu vi phạm.
-- Thêm dịch vụ đọc / ghi Kafka: thêm tài khoản và ACL trong `platform/kafka/start.sh`, mật khẩu trong `.env`.
+- Thêm dịch vụ đọc / ghi Kafka: thêm tài khoản và ACL trong `infra/platform/kafka/start.sh`, mật khẩu trong `.env`.
 - Xem ACL: `docker compose exec kafka /opt/kafka/bin/kafka-acls.sh --bootstrap-server localhost:9094 --list`.
 
 ### Lệnh
@@ -382,7 +382,7 @@ docker compose logs -f lakehouse-sink
 ## 9. Tầng silver và Trino (ADR #40)
 
 ```text
-platform/trino/silver.sql  (sinh bằng app.lakehouse_silver từ kiểu cột PostgreSQL, commit vào Git)
+infra/platform/trino/silver.sql  (sinh bằng app.lakehouse_silver từ kiểu cột PostgreSQL, commit vào Git)
    └─ trino-init (mỗi lần khởi động): CREATE TABLE IF NOT EXISTS bronze.* ; CREATE OR REPLACE VIEW silver.*
 Trino (catalog lakehouse = JDBC catalog Iceberg của lakehouse-sink) ─► lakehouse.silver.<schema>_<bảng>
 ```
@@ -390,7 +390,7 @@ Trino (catalog lakehouse = JDBC catalog Iceberg của lakehouse-sink) ─► lak
 | Dịch vụ | Image | Ghi chú |
 |---|---|---|
 | `trino` | `bamboo-trino` (`trinodb/trino:483` + cấu hình, `rules.json`) | Một node, heap 1 GB, HTTPS `trino:8443` (máy dev: `https://127.0.0.1:8085`, giao diện web). Catalog `/etc/trino/bms-catalog/lakehouse.properties` và bí mật `/etc/trino/secrets` (chứng chỉ TLS, `password.db`, khóa ký nội bộ) do `openbao-init` ghi |
-| `trino-init` | cùng image | Đăng nhập `bms-admin` qua HTTPS, chạy `platform/trino/silver.sql` rồi thoát |
+| `trino-init` | cùng image | Đăng nhập `bms-admin` qua HTTPS, chạy `infra/platform/trino/silver.sql` rồi thoát |
 
 ### View silver
 
@@ -597,7 +597,7 @@ viết lại hay cắt bớt mà không bị phát hiện (`audit.check_anchors`
 - **Nhật ký** (`obs.py`, migration 037): mọi dịch vụ Python ghi log vào `obs.log_event` qua một luồng riêng (hàng đợi đầy thì bỏ
   bớt, không làm chậm yêu cầu), gắn `trace_id` lấy từ `X-Request-Id` do cổng API cấp, tenant, người dùng, đã che email, số điện
   thoại, CCCD, token. Log container khác vào qua `POST /obs/ingest` từ `vector` (profile `logs`, cấu hình
-  `platform/vector/vector.yaml`). Xem ở `/admin/ops`, tab Nhật ký; tắt bằng `OBS_ENABLED=false`. Chưa có OpenTelemetry,
+  `infra/platform/vector/vector.yaml`). Xem ở `/admin/ops`, tab Nhật ký; tắt bằng `OBS_ENABLED=false`. Chưa có OpenTelemetry,
   Prometheus, Grafana.
 - **Sao lưu** (`scripts/ops/backup-db.sh`, dịch vụ `backup`, migration 038): sao lưu CSDL theo chu kỳ `BACKUP_INTERVAL_HOURS`
   (mặc định 24, giữ `BACKUP_KEEP` = 7 bản) vào volume `backups`; `scripts/ops/restore-drill.sh` khôi phục vào CSDL tạm rồi đối
@@ -671,7 +671,7 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 
 - **API công khai** `/setup/*` (cổng API, không token, 30 yêu cầu/phút/IP), chỉ mở khi chưa có công ty: `GET /setup/status`; `POST /setup/applications` (mã thiết lập + thông tin, trả `application_id`, `token`, mã đơn); `GET /setup/applications/{id}/pdf?token=` (đơn PDF); `POST /setup/applications/{id}/finish` (`token`, `signed_pdf_base64` hoặc bỏ trống để tạo công ty chưa xác thực).
 - **Mã thiết lập**: `bootstrap` in ra log khi hệ thống trống; `make setup-code` (`python -m app.setup_code`) lấy mã mới. Chỉ lưu SHA-256, 24 giờ, khóa sau 10 lần sai.
-- **Kiểm chữ ký** (pyHanko): tệp đã ký phải bắt đầu bằng đúng byte đơn đã sinh, chữ ký phủ trọn đơn, chuỗi tới chứng thư gốc ở `SIGNATURE_TRUST_DIR` (mặc định `platform/trust` trong image), kiểm thu hồi khi `SIGNATURE_ONLINE=true`, mã số thuế trong chứng thư (`MST:…` ở UID, OU, CN hoặc serialNumber) trùng mã đã khai. Bằng chứng ở `core.legal_verification`.
+- **Kiểm chữ ký** (pyHanko): tệp đã ký phải bắt đầu bằng đúng byte đơn đã sinh, chữ ký phủ trọn đơn, chuỗi tới chứng thư gốc ở `SIGNATURE_TRUST_DIR` (mặc định `infra/platform/trust` trong image), kiểm thu hồi khi `SIGNATURE_ONLINE=true`, mã số thuế trong chứng thư (`MST:…` ở UID, OU, CN hoặc serialNumber) trùng mã đã khai. Bằng chứng ở `core.legal_verification`.
 - **Chủ sở hữu** (`core.tenant_owner`): trigger `core.guard_admin_change` chỉ cho chủ sở hữu thêm/bớt quyền `core.org.manage`, `core.permission.manage`, `core.module.manage` vào vai trò, cấp/thu hồi vai trò đó, bổ nhiệm vào vị trí có vai trò đó, ủy quyền quản trị. Công ty chưa có chủ sở hữu (dữ liệu cũ) không bị chặn.
 - **Đăng nhập hai lớp**: tài khoản tạo khi khởi tạo bắt buộc `CONFIGURE_TOTP`; `flow-sync` đặt yêu cầu này cho người được trao quyền quản trị sau đó (`hr_account.enforce_admin_otp`).
 - **Xác thực bổ sung**: Action `legal_status`, `legal_application` (đơn PDF base64), `legal_verify` (chỉ chủ sở hữu); trang **Quản trị → Thông tin công ty** (`/admin/company`).
@@ -681,7 +681,7 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 
 | Biến | Mặc định | Ý nghĩa |
 |---|---|---|
-| `SIGNATURE_TRUST_DIR` | `/repo/platform/trust` | Thư mục chứng thư gốc tin cậy |
+| `SIGNATURE_TRUST_DIR` | `/repo/infra/platform/trust` | Thư mục chứng thư gốc tin cậy |
 | `SIGNATURE_ONLINE` | `true` | Kiểm thu hồi chứng thư qua OCSP/CRL (chặt) |
 | `SETUP_ALLOW_UNVERIFIED` | `true` | Cho tạo công ty chưa xác thực, ký bổ sung sau |
 

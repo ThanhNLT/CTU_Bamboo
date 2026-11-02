@@ -146,7 +146,8 @@ export const CompanyPage = () => {
         <Panel title="Xác thực bằng chữ ký số">
           {!data.signature_ready && (
             <p className="mt-0 text-[13px] text-amber-700">
-              Máy chủ chưa cài chứng thư gốc (thư mục platform/trust): nhờ người quản trị máy chủ cài trước khi ký.
+              Máy chủ chưa cài chứng thư gốc (thư mục infra/platform/trust): nhờ người quản trị máy chủ cài trước khi
+              ký.
             </p>
           )}
           <ol className="mt-0 list-decimal space-y-1.5 pl-5 text-[13px] text-body">

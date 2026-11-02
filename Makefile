@@ -13,7 +13,7 @@ up:
 		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 up-gpu:
-	eval "$$(scripts/ram_profile.sh)"; docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
+	eval "$$(scripts/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
 		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 down:

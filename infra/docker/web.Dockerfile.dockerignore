@@ -13,4 +13,3 @@ apps/web/node_modules
 apps/web/dist
 apps/web/.turbo
 apps/web/.env*
-apps/web/Dockerfile*
