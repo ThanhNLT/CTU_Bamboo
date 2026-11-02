@@ -100,7 +100,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); chưa có OpenTelemetry, Prometheus, Grafana | Một phần |
 | | Kiểm toán bất biến | Chuỗi hash theo tenant, neo có chữ ký công bố ra ngoài CSDL ([ADR #33](#adr-33), [ADR #46](#adr-46)) | Có |
 | | Trục sự kiện | Debezium Server + Kafka KRaft ([ADR #38](#adr-38)) | Có |
-| | GitOps | Script đối chiếu `scripts/gitops/reconcile.sh`; không dùng Argo CD, Kubernetes | Một phần |
+| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh`; không dùng Argo CD, Kubernetes | Một phần |
 | | Sao lưu, khôi phục | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash | Có |
 | Truyền thông | Định tuyến đa kênh | Email, SMS, webhook theo lựa chọn từng người | Có |
 | | Thời gian thực | Subscription GraphQL qua websocket | Có |

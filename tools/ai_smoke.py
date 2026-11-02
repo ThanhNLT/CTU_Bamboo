@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Smoke test Trợ lý RAG với Ollama thật (ADR #51, #52): chạy `scripts/ai_smoke.sh [--cold]`.
+"""Smoke test Trợ lý RAG với Ollama thật (ADR #51, #52): chạy `./tools/ai_smoke.sh [--cold]`.
 
 Hỏi bằng tác tử "Trợ lý quy chế" của Tập đoàn X dưới danh tính người tạo tác tử, gọi thẳng dịch vụ actions,
 chấm từng câu bằng luật trong `ai_smoke_cases.json` (trạng thái, từ khóa, tài liệu trích dẫn) và in số đo tốc độ:
