@@ -81,3 +81,15 @@ SELECT test.throws($$ SELECT test.issue('ptgd', 'DISMISS', 'c', 'P_NV_MH_DT', NU
 -- Quyết định bất biến
 SELECT test.throws($$ UPDATE hr.personnel_decision SET reason = 'sửa' $$, '%chỉ cho ghi thêm%', 'không sửa quyết định');
 SELECT test.throws($$ DELETE FROM hr.personnel_decision $$, '%chỉ cho ghi thêm%', 'không xóa quyết định');
+
+-- Phạm vi đơn vị: giám đốc Công ty Điện thoại chỉ ban hành trong cây của công ty mình
+SELECT test.position('TDX', 'P_NV_GD', 'GD_KT', 'Chuyên viên kỹ thuật Gia dụng');
+SELECT test.position('TDX', 'P_NV_X2', 'DT_MH', 'Chuyên viên mua hàng X2');
+SELECT test.person('TDX', 'newbie2', 'Nhân viên mới 2');
+INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope, scope_unit_id)
+SELECT test.id('TDX'), r.id, test.id('P_GD_DT'), 'SUBTREE', test.id('DT') FROM core.role r WHERE r.code = 'QD_NHAN_SU';
+SELECT test.ok(hr.can_issue_decision(test.id('gd_dt'), test.id('TDX')), 'giám đốc công ty con có quyền trong phạm vi của mình');
+SELECT test.throws($$ SELECT test.issue('gd_dt', 'APPOINT', 'newbie2', NULL, 'P_NV_GD', 'PRIMARY', 1) $$,
+                   '%vượt phạm vi%', 'không bổ nhiệm vào vị trí của công ty khác');
+SELECT test.ok(test.issue('gd_dt', 'APPOINT', 'newbie2', NULL, 'P_NV_X2', 'PRIMARY', 1) IS NOT NULL,
+               'bổ nhiệm trong công ty mình được');
