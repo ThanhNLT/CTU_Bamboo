@@ -15058,6 +15058,103 @@
       "comment": "Chủ sở hữu tải lên đơn đã ký số; hợp lệ thì công ty được xác thực pháp lý"
     },
     {
+      "name": "ext_register",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ext_register",
+        "arguments": [
+          {
+            "name": "manifest",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "ExtRegistered!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đăng ký hoặc cập nhật mô-đun ngoài theo manifest; trả khóa mô-đun một lần (ADR #58)"
+    },
+    {
+      "name": "ext_rotate_key",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ext_rotate_key",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ExtRegistered!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đổi khóa của mô-đun ngoài; khóa cũ hết hiệu lực ngay"
+    },
+    {
+      "name": "ext_launch",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ext_launch",
+        "arguments": [
+          {
+            "name": "code",
+            "type": "String!"
+          },
+          {
+            "name": "path",
+            "type": "String"
+          }
+        ],
+        "output_type": "ExtLaunch!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Cấp phiên 8 giờ để mở giao diện mô-đun ngoài trong khung nhúng"
+    },
+    {
       "name": "transfer_ownership",
       "definition": {
         "kind": "synchronous",
@@ -15527,6 +15624,57 @@
         ]
       },
       {
+        "name": "ModuleMenu",
+        "fields": [
+          {
+            "name": "label",
+            "type": "String!"
+          },
+          {
+            "name": "path",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "ExtRegistered",
+        "fields": [
+          {
+            "name": "code",
+            "type": "String!"
+          },
+          {
+            "name": "api_key",
+            "type": "String"
+          },
+          {
+            "name": "reachable",
+            "type": "Boolean!"
+          },
+          {
+            "name": "message",
+            "type": "String!"
+          },
+          {
+            "name": "updated",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
+        "name": "ExtLaunch",
+        "fields": [
+          {
+            "name": "path",
+            "type": "String!"
+          },
+          {
+            "name": "name",
+            "type": "String!"
+          }
+        ]
+      },
+      {
         "name": "ModuleInfo",
         "fields": [
           {
@@ -15560,6 +15708,26 @@
           {
             "name": "enabled",
             "type": "Boolean!"
+          },
+          {
+            "name": "external",
+            "type": "Boolean!"
+          },
+          {
+            "name": "vendor",
+            "type": "String"
+          },
+          {
+            "name": "version",
+            "type": "String"
+          },
+          {
+            "name": "scopes",
+            "type": "[String!]!"
+          },
+          {
+            "name": "menu",
+            "type": "[ModuleMenu!]!"
           }
         ]
       },

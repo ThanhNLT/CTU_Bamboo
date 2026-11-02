@@ -28,6 +28,7 @@ from . import (
     auth,
     config,
     documents,
+    ext,
     forms,
     hr,
     hr_account,
@@ -203,6 +204,7 @@ HANDLERS = {
     **modules.HANDLERS,
     **setup.HANDLERS,
     **ownership.HANDLERS,
+    **ext.HANDLERS,
 }
 
 
@@ -256,6 +258,20 @@ def _channels(settings: config.Settings) -> tuple[str, ...]:
     return tuple(out)
 
 
+class PathCORS:
+    """CORS chỉ cho một tiền tố đường dẫn; /ext tự trả CORS cho trang mô-đun chạy ở origin riêng (ADR #58)."""
+
+    def __init__(self, app, prefix: str, **options):
+        self.app = app
+        self.prefix = prefix
+        self.cors = CORSMiddleware(app, **options)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["path"].startswith(self.prefix):
+            return await self.cors(scope, receive, send)
+        return await self.app(scope, receive, send)
+
+
 def create_app(
     settings: config.Settings | None = None,
     pool: ConnectionPool | None = None,
@@ -284,6 +300,7 @@ def create_app(
         sleeper_url=settings.sleeper_url,
         signature_trust_dir=settings.signature_trust_dir,
         signature_online=settings.signature_online,
+        actions_secret=settings.actions_secret,
     )
     verifier = verifier or auth.KeycloakVerifier(
         settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)
@@ -304,10 +321,11 @@ def create_app(
     app.state.verifier, app.state.memberships = verifier, memberships
     app.include_router(ingest.router)
     app.include_router(setup.router(lambda: app.state.pool, settings, ctx))
+    app.include_router(ext.router(lambda: app.state.pool, settings))
     origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
     if origins:  # trang khởi tạo gọi /setup từ origin của web khi chạy dev (qua cổng API thì cùng origin)
         app.add_middleware(
-            CORSMiddleware, allow_origins=origins, allow_methods=["GET", "POST"], allow_headers=["Content-Type"]
+            PathCORS, prefix="/setup/", allow_origins=origins, allow_methods=["GET", "POST"], allow_headers=["Content-Type"]
         )
 
     @app.get("/healthz")

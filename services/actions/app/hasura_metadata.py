@@ -35,6 +35,7 @@ HIDDEN = {
     ("core", "legal_verification"),
     ("core", "module_install"),
     ("core", "login_device"),
+    ("core", "external_module"),
 }
 ROLE = "user"
 ADMIN_ROLE = "platform_admin"
@@ -1599,6 +1600,32 @@ def build(conn: psycopg.Connection) -> dict:
                 timeout=60,
             ),
             _action(
+                "ext_register",
+                "mutation",
+                [("manifest", "jsonb!")],
+                "ExtRegistered!",
+                [ROLE, ADMIN_ROLE],
+                "Đăng ký hoặc cập nhật mô-đun ngoài theo manifest; trả khóa mô-đun một lần (ADR #58)",
+            ),
+            _action(
+                "ext_rotate_key",
+                "mutation",
+                [("code", "String!")],
+                "ExtRegistered!",
+                [ROLE, ADMIN_ROLE],
+                "Đổi khóa của mô-đun ngoài; khóa cũ hết hiệu lực ngay",
+                timeout=10,
+            ),
+            _action(
+                "ext_launch",
+                "mutation",
+                [("code", "String!"), ("path", "String")],
+                "ExtLaunch!",
+                [ROLE, ADMIN_ROLE],
+                "Cấp phiên 8 giờ để mở giao diện mô-đun ngoài trong khung nhúng",
+                timeout=10,
+            ),
+            _action(
                 "transfer_ownership",
                 "mutation",
                 [("person_id", "uuid!")],
@@ -1741,6 +1768,24 @@ def build(conn: psycopg.Connection) -> dict:
                     "fields": [{"name": "name", "type": "String!"}, {"name": "running", "type": "Boolean"}],
                 },
                 {
+                    "name": "ModuleMenu",
+                    "fields": [{"name": "label", "type": "String!"}, {"name": "path", "type": "String!"}],
+                },
+                {
+                    "name": "ExtRegistered",
+                    "fields": [
+                        {"name": "code", "type": "String!"},
+                        {"name": "api_key", "type": "String"},
+                        {"name": "reachable", "type": "Boolean!"},
+                        {"name": "message", "type": "String!"},
+                        {"name": "updated", "type": "Boolean!"},
+                    ],
+                },
+                {
+                    "name": "ExtLaunch",
+                    "fields": [{"name": "path", "type": "String!"}, {"name": "name", "type": "String!"}],
+                },
+                {
                     "name": "ModuleInfo",
                     "fields": [
                         {"name": "code", "type": "String!"},
@@ -1751,6 +1796,11 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "services", "type": "[ModuleService!]!"},
                         {"name": "installed", "type": "Boolean!"},
                         {"name": "enabled", "type": "Boolean!"},
+                        {"name": "external", "type": "Boolean!"},
+                        {"name": "vendor", "type": "String"},
+                        {"name": "version", "type": "String"},
+                        {"name": "scopes", "type": "[String!]!"},
+                        {"name": "menu", "type": "[ModuleMenu!]!"},
                     ],
                 },
                 {
