@@ -14,7 +14,7 @@ docs/
 ├── van-hanh/                    Triển khai production, khởi tạo cho công ty mới
 ├── _static/custom.css           CSS bổ sung
 ├── conf.py                      Cấu hình Sphinx
-├── requirements.txt             Gói Python để build
+├── pyproject.toml               Gói Python để build (package bamboo-docs, phiên bản ghim trong uv.lock ở gốc)
 └── Makefile
 ```
 
@@ -23,7 +23,7 @@ Tên file giữ số thứ tự cũ (`01-`…`08-`) để dễ tìm; thứ tự 
 
 ## Build
 
-Lần đầu trên Ubuntu/WSL cần `sudo apt install python3-venv`. Sau đó:
+Cần [uv](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`). Sau đó:
 
 ```bash
 make -C docs html     # kết quả ở docs/_build/html/index.html
@@ -31,7 +31,7 @@ make -C docs live     # xem trực tiếp, tự tải lại: http://localhost:80
 make -C docs check    # cảnh báo = lỗi, dùng trong CI
 ```
 
-`make` tự tạo `docs/.venv` và cài `requirements.txt` ở lần chạy đầu.
+`make` tự tạo `docs/.venv` và cài đúng phiên bản trong `uv.lock` (`uv sync --package bamboo-docs`) ở lần chạy đầu.
 
 ## Quy ước viết
 

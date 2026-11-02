@@ -331,8 +331,8 @@ tools/db/up.sh
 ### 3. Môi trường Python
 
 ```bash
-python -m venv .venv && . .venv/bin/activate
-pip install -r services/actions/requirements.txt -r services/seed/requirements.txt -c constraints.txt
+# Cần uv (https://docs.astral.sh/uv/); phiên bản ghim trong uv.lock ở gốc
+uv sync --frozen --package bamboo-actions --package bamboo-seed && . .venv/bin/activate
 ```
 
 ### 4. OpenBao và SeaweedFS
