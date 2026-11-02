@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Gốc uv workspace (ảo, không phải package). Một uv.lock ghim phiên bản cho mọi gói Python (thay ADR #10);
+# mỗi image chỉ cài phụ thuộc của package nó chạy (`uv export --package …`, xem infra/docker/python.Dockerfile).
+# OCR (services/ocr) chạy trên Python 3.11 của image nền PyTorch nên có pyproject + uv.lock riêng, ngoài workspace.
+
+[tool.uv]
+required-version = ">=0.13"
+preview-features = ["package-conflicts"]
+# Tài liệu dùng myst-parser 4 (markdown-it-py < 4), còn actions cần markdown-it-py 4 (rich 15): giải riêng.
+conflicts = [[{ package = "bamboo-docs" }, { package = "bamboo-actions" }]]
+
+[tool.uv.workspace]
+members = ["services/actions", "services/seed", "services/sleeper", "docs", "packages/*"]
+
+[dependency-groups]
+# Công cụ kiểm tĩnh (CI, `make check`): `uv run --only-group lint ruff …`.
+lint = ["ruff", "reuse"]

@@ -65,5 +65,5 @@ services:
       - actions-secrets:/run/bms:ro
       - openbao-keys:/openbao/keys:ro
     user: "0"
-    entrypoint: ["sh", "-c", "pip install -q -r requirements-dev.txt -c /repo/constraints.txt && python -m pytest -q \"$$@\"", "--"]
+    entrypoint: ["sh", "-c", "pip install -q -r /opt/bamboo/dev-pins.txt && python -m pytest -q \"$$@\"", "--"]
 
