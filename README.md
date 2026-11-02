@@ -291,7 +291,7 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
 thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; giao diện `npm run lint`,
-`npm run build`, `npm run test:e2e` trong `apps/web/web`; AI và OCR `scripts/ai_smoke.sh`, `scripts/ocr_smoke.sh`.
+`npm run build` trong `apps/web`, `npm run test:e2e` trong `tests/e2e`; AI và OCR `scripts/ai_smoke.sh`, `scripts/ocr_smoke.sh`.
 
 ## Chạy native (không dùng Docker)
 
@@ -414,7 +414,7 @@ Trino). Biến môi trường đầy đủ: `services/actions/app/config.py`.
 ### 7. Giao diện
 
 ```bash
-cd apps/web/web
+cd apps/web
 npm ci
 VITE_KEYCLOAK_URL=http://localhost:8080 VITE_HASURA_URL=http://localhost:8081/v1/graphql npm run dev   # http://localhost:5173
 npm run build        # bản tĩnh trong dist/, phục vụ bằng web server bất kỳ
