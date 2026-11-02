@@ -183,7 +183,7 @@ services:
       service: actions-base
     build:
       args:
-        REQUIREMENTS: requirements-lakehouse.txt
+        DEP_GROUPS: lakehouse
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-lakehouse:${BAMBOO_TAG:-dev}
     depends_on:
       bootstrap:

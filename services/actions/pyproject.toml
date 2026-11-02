@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "bamboo-actions"
+version = "0.0.0"
+description = "Hasura Actions, webhook xác thực và worker nền (flow-sync, search-sync, ai-worker, lakehouse-sink)"
+requires-python = "==3.13.*"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "uvloop",
+    "httptools",
+    "psycopg[binary]",
+    "psycopg-pool",
+    "httpx",
+    "pyjwt[crypto]",
+    "boto3",
+    "jinja2",
+    "presidio-analyzer",
+    "presidio-anonymizer",
+    "openpyxl",
+    "pypdfium2",
+    "pillow",
+    "pyhanko",
+]
+
+[dependency-groups]
+# Image bamboo-lakehouse (dịch vụ lakehouse-sink).
+lakehouse = ["pyiceberg[pyarrow]", "sqlalchemy", "kafka-python"]
+dev = [{ include-group = "lakehouse" }, "pytest", "pyyaml"]
+
+[tool.uv]
+package = false
