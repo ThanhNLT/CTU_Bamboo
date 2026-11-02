@@ -3,7 +3,7 @@
 version = 1
 
 [[annotations]]
-path = ["**.json", "**.md", "**.MD", "**/.gitkeep", "NOTICE", "platform/trino/jvm.config",
+path = ["**.json", "pnpm-lock.yaml", "**.md", "**.MD", "**/.gitkeep", "NOTICE", "platform/trino/jvm.config",
         "services/seed/data/**", "platform/keycloak/themes/dxos-login/login/resources/img/bamboo-icon.svg"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 DX-OS Open-Core contributors"
