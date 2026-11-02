@@ -31,3 +31,6 @@ node_modules/
 dist/
 .env
 .env.local
+
+# Turborepo (nhật ký tác vụ)
+.turbo/

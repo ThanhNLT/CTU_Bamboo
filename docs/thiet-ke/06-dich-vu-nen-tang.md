@@ -83,7 +83,7 @@ bao.encrypt("079123456789")     # "vault:v1:..."
   - `bms-app` (`secret/bms/seaweedfs`): chỉ `Read/Write/List/Tagging` trên `bms-quarantine` và `bms-documents`, không tạo/xóa bucket (có kiểm thử).
   - `bms-search` (`secret/bms/seaweedfs-search`): chỉ `Read` trên `bms-documents` (dịch vụ `search-sync` đọc tệp để trích chữ).
 - `openbao-init` chỉ ghi lại `s3.json` khi nội dung đổi; healthcheck của SeaweedFS thấy tệp mới hơn lần nạp trước thì gửi `SIGHUP` cho `weed` để nạp lại định danh, nên nâng cấp thêm định danh không phải khởi động lại SeaweedFS.
-- **Truy cập từ trình duyệt** qua cổng API ([ADR #34](#adr-34)): route `/bms-quarantine/*` chỉ cho `PUT`, `/bms-documents/*` chỉ cho `GET`/`HEAD`; SeaweedFS không mở cổng ra ngoài. CORS (`-s3.allowedOrigins=${CORS_ORIGINS}`) chỉ cần cho `npm run dev` ở nguồn khác.
+- **Truy cập từ trình duyệt** qua cổng API ([ADR #34](#adr-34)): route `/bms-quarantine/*` chỉ cho `PUT`, `/bms-documents/*` chỉ cho `GET`/`HEAD`; SeaweedFS không mở cổng ra ngoài. CORS (`-s3.allowedOrigins=${CORS_ORIGINS}`) chỉ cần cho `pnpm dev` ở nguồn khác.
 - Volume nhỏ (`-master.volumeSizeLimitMB=256 -volume.max=64`): mỗi bucket là một collection cần volume riêng; mặc định 30 GB/volume làm máy dev hết chỗ cấp volume. Mỗi lần một collection cần chỗ, master cấp một lúc 7 volume (bản sao `000`); với các bucket tài liệu, cách ly, phiếu PDF, lakehouse và nhật ký của filer, 32 volume không đủ ("Not enough data nodes", ghi S3 lỗi `InternalError`). Volume cấp thưa nên 64 không chiếm thêm đĩa khi chưa có dữ liệu.
 - Job `bootstrap` tạo bucket nếu chưa có (`storage.ensure_buckets`).
 

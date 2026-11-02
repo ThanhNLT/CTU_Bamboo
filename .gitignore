@@ -13,3 +13,5 @@ compose.release.yml
 .agents/
 entities.json
 mempalace.yaml
+node_modules/
+.turbo/

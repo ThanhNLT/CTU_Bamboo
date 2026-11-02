@@ -63,9 +63,9 @@ Faker (chỉ service seed)                                    MIT
 pytest, PyYAML (chỉ kiểm thử)                               MIT
 
 ------------------------------------------------------------------------------------------------
-Thư viện JavaScript (apps/web và tests/e2e, phiên bản khóa trong package-lock.json, cài từ npm)
+Thư viện JavaScript (apps/web và tests/e2e, phiên bản khóa trong pnpm-lock.yaml, cài từ npm registry)
 ------------------------------------------------------------------------------------------------
-Phụ thuộc production (379 gói, kiểm bằng `npx license-checker --production --summary`):
+Phụ thuộc production của apps/web (289 gói, kiểm bằng `node tools/ci/check_licenses.mjs`):
 MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, BlueOak-1.0.0, 0BSD, CC0-1.0.
 Thư viện chính: Refine (@refinedev/core, antd, hasura, react-router, kbar) MIT; React, React DOM
 MIT; Ant Design MIT; keycloak-js Apache-2.0; @react-keycloak/web MIT; graphql MIT;
