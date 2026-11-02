@@ -10,7 +10,7 @@ SPDX-FileCopyrightText = "2026 DX-OS Open-Core contributors"
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
-path = ["apps/web/web/public/favicon.ico", "platform/keycloak/themes/dxos-login/login/resources/img/favicon.ico"]
+path = ["apps/web/public/favicon.ico", "platform/keycloak/themes/dxos-login/login/resources/img/favicon.ico"]
 precedence = "override"
 SPDX-FileCopyrightText = "Refine Development Inc."
 SPDX-License-Identifier = "MIT"

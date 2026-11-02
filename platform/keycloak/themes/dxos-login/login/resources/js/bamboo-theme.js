@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Chế độ sáng/tối của trang đăng nhập Bamboo, kèm nút mặt trăng/mặt trời cạnh ô chọn ngôn ngữ.
-// Dùng chung khóa "colorMode" với ứng dụng web (apps/web/web/src/contexts/color-mode): qua cổng API cùng một origin
+// Dùng chung khóa "colorMode" với ứng dụng web (apps/web/src/contexts/color-mode): qua cổng API cùng một origin
 // nên chọn ở đâu thì nơi kia theo. Thay cho script darkMode của keycloak.v2 (chỉ theo cài đặt hệ điều hành).
 (function () {
     var KEY = "colorMode";

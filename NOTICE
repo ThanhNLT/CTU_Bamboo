@@ -63,7 +63,7 @@ Faker (chỉ service seed)                                    MIT
 pytest, PyYAML (chỉ kiểm thử)                               MIT
 
 ------------------------------------------------------------------------------------------------
-Thư viện JavaScript (apps/web/web, phiên bản khóa trong package-lock.json, cài từ npm)
+Thư viện JavaScript (apps/web và tests/e2e, phiên bản khóa trong package-lock.json, cài từ npm)
 ------------------------------------------------------------------------------------------------
 Phụ thuộc production (379 gói, kiểm bằng `npx license-checker --production --summary`):
 MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, BlueOak-1.0.0, 0BSD, CC0-1.0.
@@ -78,4 +78,4 @@ Công cụ build (devDependencies, không nằm trong bản phát hành): Vite, 
 ------------------------------------------------------------------------------------------------
 Nội dung khác
 ------------------------------------------------------------------------------------------------
-apps/web/web/public/   Biểu tượng mẫu create-refine-app, (c) Refine Development Inc., MIT
+apps/web/public/       Biểu tượng mẫu create-refine-app, (c) Refine Development Inc., MIT

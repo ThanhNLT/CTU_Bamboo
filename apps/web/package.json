@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
-    "@playwright/test": "^1.63.0",
     "@refinedev/cli": "^2.16.52",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^20",
@@ -51,8 +50,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "refine": "refine",
-    "test:e2e": "playwright test"
+    "refine": "refine"
   },
   "browserslist": {
     "production": [
