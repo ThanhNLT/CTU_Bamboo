@@ -4,7 +4,7 @@
 
 import threading
 
-from .openbao import Bao, BaoError
+from bamboo_common.openbao import Bao, BaoError
 
 
 class PiiCipher:

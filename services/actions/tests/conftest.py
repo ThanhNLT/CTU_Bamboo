@@ -18,8 +18,8 @@ import uvicorn
 from psycopg.rows import dict_row
 
 from app import bootstrap, config, main, modules, search, storage
-from app.flowable import FlowableClient
-from app.openbao import Bao
+from bamboo_common.flowable import FlowableClient
+from bamboo_common.openbao import Bao
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms_hasura_test")

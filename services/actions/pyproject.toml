@@ -8,6 +8,7 @@ version = "0.0.0"
 description = "Hasura Actions, webhook xác thực và worker nền (flow-sync, search-sync, ai-worker, lakehouse-sink)"
 requires-python = "==3.13.*"
 dependencies = [
+    "bamboo-common",
     "fastapi",
     "uvicorn",
     "uvloop",
@@ -33,3 +34,6 @@ dev = [{ include-group = "lakehouse" }, "pytest", "pyyaml"]
 
 [tool.uv]
 package = false
+
+[tool.uv.sources]
+bamboo-common = { workspace = true }
