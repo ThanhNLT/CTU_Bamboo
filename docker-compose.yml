@@ -762,6 +762,7 @@ services:
       # Mô-đun chức năng (ADR #56): dừng container của mô-đun chưa cài, chạy container của mô-đun đã cài.
       # Danh sách phải khớp services/actions/app/modules.py (MANAGED_SERVICES; kiểm bởi test_mo_dun.py)
       SLEEPER_MODULES_URL: http://actions:8000/modules/services
+      SLEEPER_HOLD_UNTIL: bootstrap
       SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
     networks:
       default:
@@ -822,6 +823,7 @@ services:
       BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}
       BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8000/graphql}
       BAMBOO_SETUP_URL: ${WEB_ORIGIN:-http://localhost:8000}/setup
+      BAMBOO_EXT_URL: ${WEB_ORIGIN:-http://localhost:8000}/ext
     ports:
       - "127.0.0.1:8088:8080"
     restart: unless-stopped
