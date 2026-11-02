@@ -21,13 +21,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.13.6"
+      - name: Khóa phụ thuộc Python (uv.lock khớp pyproject)
+        run: |
+          uv lock --check
+          uv lock --check --project services/ocr
       - name: Giấy phép từng tệp (REUSE 3.3)
-        run: uvx --from 'reuse[charset-normalizer]==5.1.1' reuse lint
+        run: uv run --frozen --only-group lint reuse lint
       - name: Python (ruff)
         run: |
-          uvx ruff check services --select E,F,W,B --ignore E501
-          uvx ruff check . --select I
-          uvx ruff format --check .
+          uv run --frozen --only-group lint ruff check services --select E,F,W,B --ignore E501
+          uv run --frozen --only-group lint ruff check . --select I
+          uv run --frozen --only-group lint ruff format --check .
       - name: Docker Compose hợp lệ
         run: docker compose --profile test --profile scan config -q
       - uses: pnpm/action-setup@v6.1.0

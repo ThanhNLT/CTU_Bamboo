@@ -31,12 +31,12 @@ test-actions:
 
 test-seed:
 	docker compose run --rm --build -u 0 -v ./:/repo -e TEST_DATABASE_URL=postgresql://bms:$${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_seed_test \
-		seed sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q"
+		seed sh -c "pip install -q pytest -c /opt/bamboo/dev-pins.txt && python -m pytest -q"
 
 test-auth:
 	docker compose run --rm -u 0 -v ./:/repo -e DEMO_STACK=1 -e DEMO_PASSWORD=$(DEMO_PASSWORD) \
 		-e KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/bms/protocol/openid-connect/token \
-		actions sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q tests/test_demo_login.py"
+		actions sh -c "pip install -q pytest -c /opt/bamboo/dev-pins.txt && python -m pytest -q tests/test_demo_login.py"
 
 test-gateway:
 	tools/ci/gateway-smoke.sh

@@ -35,7 +35,7 @@ Node.js 22 (node:22-alpine, chỉ lúc build)       MIT
 Alpine Linux (alpine:3.22, chỉ lúc build image cổng API) MIT và các giấy phép của từng gói
 
 ------------------------------------------------------------------------------------------------
-Thư viện Python (phiên bản ghim trong constraints.txt, cài từ PyPI)
+Thư viện Python (phiên bản ghim trong uv.lock, cài từ PyPI)
 ------------------------------------------------------------------------------------------------
 FastAPI, Pydantic, Starlette, Uvicorn, AnyIO, h11           MIT / BSD-3-Clause
 uvloop (kèm libuv), httptools (kèm llhttp)                 MIT OR Apache-2.0 / MIT
