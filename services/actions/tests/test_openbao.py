@@ -10,7 +10,7 @@ import httpx
 import pytest
 
 from app import config, openbao_init, search
-from app.openbao import Bao, BaoError
+from bamboo_common.openbao import Bao, BaoError
 from conftest import _missing
 
 ADDR = os.environ.get("BAO_ADDR", "")

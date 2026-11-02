@@ -19,7 +19,7 @@ from psycopg.types.json import Jsonb
 
 from app import ai_agent, ai_chunks, ai_worker, config, search, search_sync
 from app.common import ActionError, Context
-from app.ollama import Ollama, OllamaUnavailable
+from bamboo_common.ollama import Ollama, OllamaUnavailable
 from conftest import TEST_APP_DB_URL, ids
 
 

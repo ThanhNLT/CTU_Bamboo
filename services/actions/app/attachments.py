@@ -12,7 +12,9 @@ import uuid
 
 import psycopg
 
-from . import scanner, storage
+from bamboo_common import scanner
+
+from . import storage
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
 log = logging.getLogger("attachments")

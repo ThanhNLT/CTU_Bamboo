@@ -16,9 +16,10 @@ import unicodedata
 import psycopg
 from psycopg.types.json import Jsonb
 
+from bamboo_common.ollama import WAKE_SECONDS, OllamaUnavailable
+
 from . import pii_guard
 from .common import ActionError, Context, bind_session
-from .ollama import WAKE_SECONDS, OllamaUnavailable
 
 log = logging.getLogger("ai_agent")
 

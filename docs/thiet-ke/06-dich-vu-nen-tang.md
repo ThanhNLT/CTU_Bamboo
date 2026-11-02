@@ -64,10 +64,10 @@ make test-actions T=tests/test_openbao.py   # khởi tạo lặp lại, đặc q
 make bao-token                              # in root token (dev) để vào UI http://localhost:8200
 ```
 
-Dùng trong code Python (`services/actions/app/openbao.py`):
+Dùng trong code Python (`packages/py-common/src/bamboo_common/openbao.py`, gói `bamboo-common`):
 
 ```python
-from app.openbao import Bao
+from bamboo_common.openbao import Bao
 bao = Bao.from_approle_file("http://openbao:8200", "/run/bms/approle.json")
 bao.read("bms/flowable")        # {"username": ..., "password": ...}
 bao.encrypt("079123456789")     # "vault:v1:..."
@@ -536,7 +536,7 @@ make test-actions T=tests/test_tro_ly_ai.py       # chia đoạn, guardrail, wor
 tools/ai_smoke.sh                                 # hỏi thật 5 câu mẫu khi đã tải xong mô hình
 ```
 
-## 12. Quét tệp trước khi nhận (`services/actions/app/scanner.py`, migration 034)
+## 12. Quét tệp trước khi nhận (`packages/py-common/src/bamboo_common/scanner.py`, migration 034)
 
 Mọi tệp tải lên nằm ở bucket `bms-quarantine` cho tới khi quét xong. **Bộ quét nội bộ** luôn chạy trong tiến trình
 `actions`: chữ ký thử nghiệm EICAR, tệp thực thi nhúng, cấu trúc đúng chuẩn của từng định dạng, dữ liệu thừa sau ảnh, mã chủ

@@ -7,7 +7,7 @@ import pathlib
 from dataclasses import dataclass, replace
 from urllib.parse import quote, urlparse, urlunparse
 
-from .openbao import Bao, BaoError
+from bamboo_common.openbao import Bao, BaoError
 
 SECRET_FIELDS = {
     "bms/actions": {"secret": "actions_secret"},
