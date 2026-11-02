@@ -54,7 +54,7 @@ def main() -> None:
         "# SPDX-License-Identifier: Apache-2.0\n"
         f"# Bamboo DX-OS {version}: toàn bộ hệ thống từ image dựng sẵn, không cần mã nguồn.\n"
         "#   docker compose -f compose.release.yml up -d\n"
-        "# Sinh tự động bằng scripts/release/compose_release.py; đừng sửa tay.\n"
+        "# Sinh tự động bằng tools/release/compose_release.py; đừng sửa tay.\n"
     )
     # REUSE-IgnoreEnd
     body = yaml.safe_dump(build(version), allow_unicode=True, sort_keys=False, width=120)

@@ -527,13 +527,13 @@ Giao diện ──ai_ask──▶ actions: kiểm tác tử, prompt_guard, che P
 
 ### Giới hạn
 
-Chạy CPU mất vài chục giây mỗi lượt; một lượt một lúc nên người sau phải chờ. Hàng đợi chung cho mọi tenant (một mô hình), nên vị trí chờ người hỏi thấy gồm cả lượt của tenant khác (chỉ là con số, không lộ nội dung). Chỉ chạy một `ai-worker`. Mô hình 4B có thể trả lời thiếu ý hoặc trích sai số đoạn; smoke test `scripts/ai_smoke.sh` dùng để kiểm bằng mắt. Chỉ lấy tài liệu thư viện đang hiệu lực, không lấy tệp chứng từ hay Ổ đĩa.
+Chạy CPU mất vài chục giây mỗi lượt; một lượt một lúc nên người sau phải chờ. Hàng đợi chung cho mọi tenant (một mô hình), nên vị trí chờ người hỏi thấy gồm cả lượt của tenant khác (chỉ là con số, không lộ nội dung). Chỉ chạy một `ai-worker`. Mô hình 4B có thể trả lời thiếu ý hoặc trích sai số đoạn; smoke test `tools/ai_smoke.sh` dùng để kiểm bằng mắt. Chỉ lấy tài liệu thư viện đang hiệu lực, không lấy tệp chứng từ hay Ổ đĩa.
 
 ```bash
 make up                                           # AI chạy cùng hệ thống (CPU)
 make up-gpu                                       # kèm GPU NVIDIA (docs/van-hanh/trien-khai.md)
 make test-actions T=tests/test_tro_ly_ai.py       # chia đoạn, guardrail, worker với Ollama giả
-scripts/ai_smoke.sh                               # hỏi thật 5 câu mẫu khi đã tải xong mô hình
+tools/ai_smoke.sh                                 # hỏi thật 5 câu mẫu khi đã tải xong mô hình
 ```
 
 ## 12. Quét tệp trước khi nhận (`services/actions/app/scanner.py`, migration 034)
@@ -599,11 +599,11 @@ viết lại hay cắt bớt mà không bị phát hiện (`audit.check_anchors`
   thoại, CCCD, token. Log container khác vào qua `POST /obs/ingest` từ `vector` (profile `logs`, cấu hình
   `infra/platform/vector/vector.yaml`). Xem ở `/admin/ops`, tab Nhật ký; tắt bằng `OBS_ENABLED=false`. Chưa có OpenTelemetry,
   Prometheus, Grafana.
-- **Sao lưu** (`scripts/ops/backup-db.sh`, dịch vụ `backup`, migration 038): sao lưu CSDL theo chu kỳ `BACKUP_INTERVAL_HOURS`
-  (mặc định 24, giữ `BACKUP_KEEP` = 7 bản) vào volume `backups`; `scripts/ops/restore-drill.sh` khôi phục vào CSDL tạm rồi đối
+- **Sao lưu** (`tools/ops/backup-db.sh`, dịch vụ `backup`, migration 038): sao lưu CSDL theo chu kỳ `BACKUP_INTERVAL_HOURS`
+  (mặc định 24, giữ `BACKUP_KEEP` = 7 bản) vào volume `backups`; `tools/ops/restore-drill.sh` khôi phục vào CSDL tạm rồi đối
   chiếu số dòng, chuỗi hash và bản neo. Mỗi lần ghi `audit.backup_run`. Sao lưu volume và khôi phục thủ công:
   [Triển khai production](../van-hanh/trien-khai.md).
-- **GitOps** (`scripts/gitops/reconcile.sh`): so cấu hình trong kho mã với trạng thái đang chạy, chỉ chạy `docker compose up -d`
+- **GitOps** (`tools/gitops/reconcile.sh`): so cấu hình trong kho mã với trạng thái đang chạy, chỉ chạy `docker compose up -d`
   khi có thay đổi; đặt vào cron hoặc systemd timer. Không dùng Argo CD hay Kubernetes. Dịch vụ có healthcheck và
   `restart: unless-stopped` để tự khởi động lại khi lỗi.
 

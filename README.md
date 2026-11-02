@@ -130,7 +130,7 @@ Mức: **Có** = đã hiện thực, có kiểm thử; **Một phần** = có nh
 | Che dữ liệu cá nhân | Microsoft Presidio | MIT | Nhận diện CCCD, điện thoại, tài khoản, email theo mẫu Việt Nam; bản che trong nhật ký và ô trao đổi | Có |
 | Thông báo đa kênh | Hàng đợi `msg.queue` trong PostgreSQL; Mailpit (hộp thư thử) | –; MIT | Email, SMS, webhook có thử lại, hàng chết, biên nhận có chữ ký chống chối bỏ | Có |
 | Nhật ký tập trung | Vector 0.46 (tùy chọn), bảng `obs.log_event` | MPL-2.0 | Gom log dịch vụ và container kèm mã truy vết `X-Request-Id`, đã che dữ liệu cá nhân | Một phần (chưa có OpenTelemetry, Prometheus, Grafana) |
-| Sao lưu, GitOps | Script `scripts/ops`, `scripts/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu cấu hình với kho mã | Một phần (không dùng Argo CD, Kubernetes) |
+| Sao lưu, GitOps | Script `tools/ops`, `tools/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu cấu hình với kho mã | Một phần (không dùng Argo CD, Kubernetes) |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI, psycopg | MIT, LGPL-3.0 (psycopg, dùng như thư viện) | Hasura Actions, xác thực, đồng bộ, worker nền, job khởi tạo | Có |
 | Giao diện | Refine 5, React 19, Ant Design 5 | MIT | Ứng dụng web Tầng 2, đa ngôn ngữ phần khung (Việt, Anh) | Có |
 
@@ -261,7 +261,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
 
 - **GPU NVIDIA:** cài `nvidia-container-toolkit` rồi chạy `make up-gpu`.
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
-  hơn. Trước buổi demo chạy `scripts/demo_prepare.sh` để làm nóng.
+  hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.
 - **Bật thêm:** ClamAV `docker compose --profile scan up -d` (đặt `CLAMAV_HOST=clamav`), gom log container
   `COMPOSE_PROFILES=ai,logs`.
 - **Dừng:** `docker compose down` (giữ dữ liệu), `docker compose down -v` (xóa sạch, kể cả khóa OpenBao).
@@ -291,7 +291,7 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
 thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; giao diện `pnpm check` ở gốc repo
-(Turborepo: lint, format:check, build), `pnpm --filter @bamboo/e2e test:e2e`; AI và OCR `scripts/ai_smoke.sh`, `scripts/ocr_smoke.sh`.
+(Turborepo: lint, format:check, build), `pnpm --filter @bamboo/e2e test:e2e`; AI và OCR `tools/ai_smoke.sh`, `tools/ocr_smoke.sh`.
 
 ## Chạy native (không dùng Docker)
 
@@ -325,7 +325,7 @@ từng dịch vụ:
 export PGHOST=localhost PGUSER=bms PGPASSWORD=bms-dev
 EXTRA_DATABASES="flowable keycloak hasura_meta lakehouse" \
 SERVICE_DATABASES="keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura lakehouse:bamboo_lakehouse" \
-scripts/db/up.sh
+tools/db/up.sh
 ```
 
 ### 3. Môi trường Python
@@ -441,7 +441,7 @@ và realm Keycloak.
 - **Hạn mức duyệt mẫu:** công ty thành viên dưới 50 triệu quản lý trực tiếp duyệt; 50–500 triệu thêm giám đốc công ty; từ 500
   triệu thêm Tổng giám đốc. Đơn vị trực thuộc tập đoàn từ 50 triệu lên thẳng Tổng giám đốc. Bệnh viện X: thiết bị y tế luôn hai
   bước.
-- **Dọn dữ liệu thử:** `scripts/demo_cleanup.sh` (xem trước), `scripts/demo_cleanup.sh --apply` (xóa đề nghị do người dùng lập
+- **Dọn dữ liệu thử:** `tools/demo_cleanup.sh` (xem trước), `tools/demo_cleanup.sh --apply` (xóa đề nghị do người dùng lập
   khi thử).
 
 ### Tài khoản demo

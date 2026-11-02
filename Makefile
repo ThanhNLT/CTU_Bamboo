@@ -9,11 +9,11 @@ DEMO_PASSWORD ?= demo-password
 AI_SERVICES := ollama-core ollama-init ocr-core ocr-init ai-worker
 
 up:
-	eval "$$(scripts/ram_profile.sh)"; docker compose up -d --build --remove-orphans $$BAMBOO_SERVICES \
+	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans $$BAMBOO_SERVICES \
 		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 up-gpu:
-	eval "$$(scripts/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
+	eval "$$(tools/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
 		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 down:
@@ -23,7 +23,7 @@ migrate:
 	docker compose run --rm --build migrate
 
 test-db:
-	docker compose run --rm --build --entrypoint /repo/scripts/db/test.sh migrate $(T)
+	docker compose run --rm --build --entrypoint /repo/tools/db/test.sh migrate $(T)
 
 test-actions:
 	docker compose --profile test up -d --build hasura-test flowable bootstrap
@@ -39,7 +39,7 @@ test-auth:
 		actions sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q tests/test_demo_login.py"
 
 test-gateway:
-	scripts/ci/gateway-smoke.sh
+	tools/ci/gateway-smoke.sh
 
 test-all: test-db test-seed test-actions test-auth
 
@@ -61,7 +61,7 @@ psql:
 	docker compose exec db psql -U bms -d bms
 
 release-compose:
-	python3 scripts/release/compose_release.py $(or $(VERSION),dev)
+	python3 tools/release/compose_release.py $(or $(VERSION),dev)
 
 bao-token:
 	@docker compose run --rm --no-deps -v bamboo_openbao-keys:/openbao/keys:ro --entrypoint python openbao-init \

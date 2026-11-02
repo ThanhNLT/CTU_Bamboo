@@ -7,5 +7,5 @@ LABEL org.opencontainers.image.title="bamboo-migrate" \
       org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 COPY db /repo/db
-COPY scripts/db /repo/scripts/db
-ENTRYPOINT ["/repo/scripts/db/up.sh"]
+COPY tools/db /repo/tools/db
+ENTRYPOINT ["/repo/tools/db/up.sh"]

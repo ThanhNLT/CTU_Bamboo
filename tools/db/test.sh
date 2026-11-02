@@ -12,7 +12,7 @@ DB="${TEST_DB:-bms_test}"
 FILTER="${1:-}"
 
 psql -X -q -d postgres -c "DROP DATABASE IF EXISTS $DB" -c "CREATE DATABASE $DB"
-"$ROOT/scripts/db/migrate.sh" "$DB" "$ROOT/db/migrations/bms" > /dev/null
+"$ROOT/tools/db/migrate.sh" "$DB" "$ROOT/db/migrations/bms" > /dev/null
 psql -X -q -v ON_ERROR_STOP=1 -d "$DB" -1 -f "$ROOT/db/tests/helpers.sql"
 if [[ -z "$(psql -X -At -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = 'bamboo_lakehouse'")" ]]; then
     psql -X -q -v ON_ERROR_STOP=1 -d postgres -f "$ROOT/db/roles/roles.sql" -v hasura_password=hasura-db-dev \

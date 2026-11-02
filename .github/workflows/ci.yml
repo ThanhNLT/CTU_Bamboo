@@ -58,7 +58,7 @@ jobs:
       - name: Một lệnh dựng toàn bộ hệ thống
         run: time docker compose up -d
       - name: Chờ sẵn sàng
-        run: scripts/ci/wait-ready.sh 1200
+        run: tools/ci/wait-ready.sh 1200
       - name: Đăng nhập thật mọi tài khoản demo (Keycloak + Hasura webhook)
         run: make test-auth
       - name: Kiểm thử CSDL
@@ -79,7 +79,7 @@ jobs:
           pnpm --filter @bamboo/e2e exec playwright install --with-deps chromium
           pnpm --filter @bamboo/e2e test:e2e
       - name: Kiểm thử cổng API (token tại biên, WAF, chặn dịch vụ nội bộ, giới hạn tần suất)
-        run: scripts/ci/gateway-smoke.sh
+        run: tools/ci/gateway-smoke.sh
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
