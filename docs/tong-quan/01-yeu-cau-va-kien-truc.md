@@ -49,9 +49,9 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |
 | Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` và `compose.release.yml`; [CHANGELOG](https://github.com/ThanhNLT/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
-| Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | README: chạy bằng một lệnh (`make up`) và build từng thành phần không dùng Docker; cấu hình bằng biến môi trường (`.env.example`); Docker Engine, Compose, make, npm, pip |
+| Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | README: chạy bằng một lệnh (`make up`) và build từng thành phần không dùng Docker; cấu hình bằng biến môi trường (`.env.example`); Docker Engine, Compose, make, pnpm, pip |
 | Chạy được ngoài thư mục mã nguồn | `compose.release.yml` chạy bằng image phát hành, không cần thư mục mã |
-| Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`constraints.txt`, `package-lock.json`); dịch vụ dùng image chính thức của upstream, không vá mã |
+| Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`constraints.txt`, `pnpm-lock.yaml`); dịch vụ dùng image chính thức của upstream, không vá mã |
 | Bug tracker, changelog, readme | GitHub Issues (có mẫu báo lỗi, đề xuất), `CHANGELOG.md`, `README.md`, tài liệu Sphinx (`make -C docs html`), `SECURITY.md` |
 
 ## 3. Kiến trúc 3 tầng

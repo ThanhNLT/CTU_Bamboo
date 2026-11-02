@@ -20,7 +20,7 @@ Schema đầy đủ: introspection qua `/graphql` (sinh type bằng graphql-code
 - Token **không** mang claim Hasura ([ADR #32](#adr-32)): giao diện dựng luật CASL từ query `core_v_permission_grant` (chỉ trả quyền của chính người gọi).
 - Một tài khoản có thể vào nhiều tenant ([ADR #30](#adr-30)); `my_tenants` trả `person_id` của người dùng trong từng tenant. Mọi cột người (`requester_id`, `assignee_id`, `recipient_id`...) so với `person_id` này.
 - Subscription: websocket (giao thức `graphql-ws`) cùng địa chỉ `/graphql`, header gửi trong `connectionParams`; cổng API chuyển tới `/v1/graphql` của Hasura; hạn kết nối theo hạn token.
-- Ứng dụng Refine (`apps/web`) mặc định gọi Keycloak (`/realms`) và Hasura (`/graphql`) cùng origin với trang; `npm run dev` dùng `.env.development` trỏ vào cổng `http://localhost:8000`. Ghi đè bằng `/config.js` lúc chạy hoặc biến `VITE_*` lúc build khi backend ở địa chỉ khác.
+- Ứng dụng Refine (`apps/web`) mặc định gọi Keycloak (`/realms`) và Hasura (`/graphql`) cùng origin với trang; `pnpm dev` dùng `.env.development` trỏ vào cổng `http://localhost:8000`. Ghi đè bằng `/config.js` lúc chạy hoặc biến `VITE_*` lúc build khi backend ở địa chỉ khác.
 - Cổng API trả **401** khi request `/graphql` không có token hợp lệ (trước khi tới Hasura), **429** khi vượt giới hạn tần suất, **403** khi WAF chặn; mọi phản hồi có `X-Request-Id` để đối chiếu log. Tenant đã chọn lưu ở `localStorage["bamboo.tenant"]` và gửi kèm mọi request (cả websocket).
 
 ## 2. Ánh xạ màn hình chính
