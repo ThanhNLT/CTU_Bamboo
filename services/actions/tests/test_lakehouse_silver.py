@@ -45,7 +45,7 @@ def test_ten_cot_duoc_trich_dan():
 def test_tep_sql_khop_csdl(database):
     with psycopg.connect(database) as conn:
         expected = silver.build(conn)
-    committed = (ROOT / "platform/trino/silver.sql").read_text(encoding="utf-8")
+    committed = (ROOT / "infra/platform/trino/silver.sql").read_text(encoding="utf-8")
     assert committed == expected, "chạy lại: python -m app.lakehouse_silver (make trino-sql)"
     assert "lakehouse.silver.proc_purchase_request" in expected and "audit_" not in expected
 
@@ -53,7 +53,7 @@ def test_tep_sql_khop_csdl(database):
 def test_quyen_trino_khop_csdl(database):
     with psycopg.connect(database) as conn:
         expected = silver.build_rules(conn)
-    committed = (ROOT / "platform/trino/rules.json").read_text(encoding="utf-8")
+    committed = (ROOT / "infra/platform/trino/rules.json").read_text(encoding="utf-8")
     assert committed == expected, "chạy lại: python -m app.lakehouse_silver (make trino-sql)"
     tables = {t["table"]: t for t in json.loads(expected)["tables"] if "table" in t}
     assert tables["proc_purchase_request"]["filter"] == f'"tenant_id" = {silver.TENANT_OF_USER}'

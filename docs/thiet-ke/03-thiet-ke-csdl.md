@@ -284,7 +284,7 @@ không có thay đổi. Kafka, Debezium, Lakehouse: [Dịch vụ nền tảng m�
 - **Hasura xác thực bằng webhook** `GET /auth/hasura` của `actions`: kiểm token bằng JWKS của Keycloak, đọc tenant ở header
   `x-bamboo-tenant`, tra `core.account_tenants(sub)`. Chưa chọn tenant: role `account` (chỉ `my_tenants`); đã chọn: role
   `user` với `x-hasura-user-id` = `person.id` trong tenant; `platform_admin` khi có realm role tương ứng.
-- **Metadata Hasura** sinh bằng `services/actions/app/hasura_metadata.py` vào `platform/hasura/metadata.json` (`make
+- **Metadata Hasura** sinh bằng `services/actions/app/hasura_metadata.py` vào `infra/platform/hasura/metadata.json` (`make
   hasura-metadata`), job `bootstrap` nạp khi khởi động
   ([ADR #24](#adr-24)). Hiện track 62 bảng/view (61 có quyền select lọc theo tenant
   và computed field `can_read`) và 99 Action. Ghi trực tiếp qua Hasura chỉ cho các thao tác đơn giản trên bản ghi của chính

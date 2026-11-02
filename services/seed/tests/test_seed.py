@@ -164,7 +164,7 @@ def test_uy_quyen_hien_trong_hop_viec(conn):
 
 
 def test_realm_khop_file_da_commit():
-    committed = json.loads((ROOT / "platform/keycloak/realm/bms-realm.json").read_text(encoding="utf-8"))
+    committed = json.loads((ROOT / "infra/platform/keycloak/realm/bms-realm.json").read_text(encoding="utf-8"))
     assert committed == realm.build(), "chạy lại `python -m app.realm` rồi commit"
     users = {u["username"]: u for u in committed["users"]}
     assert users["admin"]["requiredActions"] == ["CONFIGURE_TOTP"]

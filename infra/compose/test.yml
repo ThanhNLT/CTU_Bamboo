@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Kiểm thử tích hợp (profile test): Hasura và actions trỏ vào CSDL kiểm thử (make test-actions).
+# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
+# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
+# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  hasura-test:
+    logging: *logging
+    profiles: [test]
+    extends:
+      file: base.yml
+      service: hasura-base
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/hasura_meta_test
+      BMS_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/bms_hasura_test
+      ACTIONS_URL: http://bamboo-actions-test:8090
+      HASURA_GRAPHQL_AUTH_HOOK: http://bamboo-actions-test:8090/auth/hasura
+
+  actions-test:
+    logging: *logging
+    profiles: [test]
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      hasura-test:
+        condition: service_started
+      flowable:
+        condition: service_started
+      seaweedfs:
+        condition: service_started
+      meilisearch:
+        condition: service_started
+      sleeper:
+        condition: service_healthy
+      debezium:
+        condition: service_started
+      lakehouse-sink:
+        condition: service_started
+      trino-init:
+        condition: service_completed_successfully
+    environment:
+      S3_PUBLIC_ENDPOINT: http://seaweedfs:8333
+      BAO_KEYS_FILE: /openbao/keys/init.json
+      TEST_DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_hasura_test
+      TEST_APP_DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms_hasura_test
+      HASURA_URL: http://hasura-test:8080
+      ACTIONS_PORT: "8090"
+      REQUIRE_SERVICES: "1"
+    volumes:
+      - ../..:/repo
+      - actions-secrets:/run/bms:ro
+      - openbao-keys:/openbao/keys:ro
+    user: "0"
+    entrypoint: ["sh", "-c", "pip install -q -r requirements-dev.txt -c /repo/constraints.txt && python -m pytest -q \"$$@\"", "--"]
+

@@ -145,7 +145,7 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 | `tika-core` | `TIKA_JAVA_OPTS` | `-Xmx512m` |
 | `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m` |
 | `kafka` | `KAFKA_HEAP` | `-Xms128m -Xmx512m` |
-| `trino-core` | `platform/trino/jvm.config` | `-Xmx1G` |
+| `trino-core` | `infra/platform/trino/jvm.config` | `-Xmx1G` |
 | `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m` |
 
 **Mức RAM 8 / 16** ([ADR #54](#adr-54)): máy 8 GB chạy chức năng cơ bản, không AI; máy 16 GB chạy đầy đủ. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 không chạy Ollama, `ocr`, `ai-worker` và hạ heap JVM; chuyển từ 16 xuống 8 thì `make up` dừng luôn các container AI. Chạy `docker compose up -d` trực tiếp thì mức 16 khi `.env` có `COMPOSE_PROFILES=ai`; mức 8 đặt `COMPOSE_PROFILES=` và `OLLAMA_URL=` (để trống).
@@ -215,7 +215,7 @@ docker run --rm --gpus all ubuntu nvidia-smi   # thấy GPU là được
 Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chép tệp bổ sung một lần thành `docker-compose.override.yml` (Compose tự nạp, tệp này không đưa lên git), từ đó chỉ cần lệnh thường:
 
 ```bash
-cp docker-compose.gpu.yml docker-compose.override.yml
+cp infra/compose/gpu.yml docker-compose.override.yml
 docker compose up -d
 docker compose exec ollama ollama ps        # cột PROCESSOR ghi "100% GPU" khi đang trả lời
 curl 127.0.0.1:8866/health                  # "device" là tên GPU

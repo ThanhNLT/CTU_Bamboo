@@ -17,8 +17,8 @@ from .flowable import FlowableClient
 
 log = logging.getLogger("bootstrap")
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-BPMN = ROOT / "platform/flowable/purchase_request.bpmn20.xml"
-METADATA = ROOT / "platform/hasura/metadata.json"
+BPMN = ROOT / "infra/platform/flowable/purchase_request.bpmn20.xml"
+METADATA = ROOT / "infra/platform/hasura/metadata.json"
 
 
 def wait_for(name: str, check, timeout: float = 300.0) -> None:

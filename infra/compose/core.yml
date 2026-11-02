@@ -1,0 +1,433 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Lõi Tầng 1 + giao diện: CSDL, migrate/seed, định danh, quy trình, API, bí mật, lưu trữ tệp, actions và các tiến trình
+# nền dùng chung image actions, cổng API, web, thư thử, sao lưu, gom log (profile logs).
+# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
+# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
+# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-db-env: &db-env
+  PGHOST: db
+  PGUSER: bms
+  PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+
+x-bao-sync-env: &bao-sync-env
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+  ACTIONS_DB_PASSWORD: ${ACTIONS_DB_PASSWORD:-actions-db-dev}
+  HASURA_DB_PASSWORD: ${HASURA_DB_PASSWORD:-hasura-db-dev}
+  KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
+  FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
+  CDC_DB_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
+  LAKEHOUSE_DB_PASSWORD: ${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}
+  DEBEZIUM_KAFKA_PASSWORD: ${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}
+  LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
+  KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
+  KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
+  FLOWABLE_ADMIN: ${FLOWABLE_ADMIN:-rest-admin}
+  FLOWABLE_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
+  DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
+
+services:
+  db:
+    logging: *logging
+    image: postgis/postgis:17-3.5
+    platform: linux/amd64
+    environment:
+      POSTGRES_DB: bms
+      POSTGRES_USER: bms
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_wal_senders=10", "-c", "max_replication_slots=10",
+              "-c", "max_slot_wal_keep_size=1GB", "-c", "jit=off"]
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bms -d bms"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+  migrate:
+    logging: *logging
+    build:
+      context: ../..
+      dockerfile: infra/docker/migrate.Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-migrate:${BAMBOO_TAG:-dev}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      <<: *db-env
+      EXTRA_DATABASES: flowable keycloak hasura_meta hasura_meta_test bms_hasura_test lakehouse
+      SERVICE_DATABASES: keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura hasura_meta_test:bamboo_hasura lakehouse:bamboo_lakehouse
+      HASURA_DB_PASSWORD: ${HASURA_DB_PASSWORD:-hasura-db-dev}
+      ACTIONS_DB_PASSWORD: ${ACTIONS_DB_PASSWORD:-actions-db-dev}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
+      FLOWABLE_DB_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
+      CDC_DB_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
+      LAKEHOUSE_DB_PASSWORD: ${LAKEHOUSE_DB_PASSWORD:-lakehouse-db-dev}
+    restart: "no"
+
+  seed:
+    logging: *logging
+    build:
+      context: ../..
+      dockerfile: infra/docker/python.Dockerfile
+      args:
+        APP_DIR: services/seed
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-seed:${BAMBOO_TAG:-dev}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
+      SEED_DEMO: ${SEED_DEMO:-true}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
+    command: ["python", "-m", "app.seed"]
+    restart: "no"
+
+  keycloak:
+    logging: *logging
+    build:
+      context: ../platform/keycloak
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-keycloak:${BAMBOO_TAG:-dev}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["${KEYCLOAK_MODE:-start-dev}", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: bamboo_keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-db-dev}
+      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8000}
+      KC_HOSTNAME_ADMIN: ${KEYCLOAK_ADMIN_URL:-http://localhost:8080}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms64m -Xmx512m}
+      MALLOC_ARENA_MAX: "2"
+      KC_DB_POOL_MAX_SIZE: ${KEYCLOAK_DB_POOL:-20}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-kcadmin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3 && grep -q UP <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  flowable:
+    logging: *logging
+    image: flowable/flowable-rest:8.0.0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/flowable
+      SPRING_DATASOURCE_USERNAME: bamboo_flowable
+      SPRING_DATASOURCE_PASSWORD: ${FLOWABLE_DB_PASSWORD:-flowable-db-dev}
+      FLOWABLE_REST_APP_CREATE_DEMO_DEFINITIONS: "false"
+      FLOWABLE_REST_APP_ADMIN_USER_ID: ${FLOWABLE_ADMIN:-rest-admin}
+      FLOWABLE_REST_APP_ADMIN_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
+      JAVA_OPTS: ${FLOWABLE_JAVA_OPTS:--Xms64m -Xmx512m}
+      MALLOC_ARENA_MAX: "2"
+    ports:
+      - "127.0.0.1:8082:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+  hasura:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: hasura-base
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/hasura_meta
+      BMS_DATABASE_URL: postgres://bamboo_hasura:${HASURA_DB_PASSWORD:-hasura-db-dev}@db:5432/bms
+      ACTIONS_URL: http://actions:8000
+      HASURA_GRAPHQL_AUTH_HOOK: http://actions:8000/auth/hasura
+    ports:
+      - "127.0.0.1:8081:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3 && grep -q OK <&3"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+
+  openbao:
+    logging: *logging
+    build:
+      context: ../platform/openbao
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-openbao:${BAMBOO_TAG:-dev}
+    command: ["server"]
+    volumes:
+      - openbao-data:/openbao/file
+    ports:
+      - "127.0.0.1:8200:8200"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null 'http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200&standbycode=200'"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  openbao-init:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      openbao:
+        condition: service_healthy
+    environment:
+      <<: *bao-sync-env
+      BAO_APPROLE_FILE: ""
+      BAO_KEYS_FILE: /openbao/keys/init.json
+      APPROLE_UID: "10001"
+      APPROLE_OUTPUTS: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json,search=/run/bms-search/approle.json,lakehouse=/run/bms-lakehouse/approle.json
+      S3_CONFIG_PATH: /etc/bms/s3.json
+      MEILI_CONFIG_PATH: /etc/meilisearch/config.toml
+      TRINO_CATALOG_PATH: /etc/trino/bms-catalog/lakehouse.properties
+      TRINO_UID: "1000"
+      TRINO_SECRETS_DIR: /etc/trino/secrets
+      INTERNAL_CA_OUTPUTS: /run/bms-actions/trino-ca.pem
+    command: ["python", "-m", "app.openbao_init"]
+    user: "0"
+    volumes:
+      - openbao-keys:/openbao/keys
+      - actions-secrets:/run/bms-actions
+      - bootstrap-secrets:/run/bms-bootstrap
+      - search-secrets:/run/bms-search
+      - lakehouse-secrets:/run/bms-lakehouse
+      - seaweedfs-config:/etc/bms
+      - meilisearch-config:/etc/meilisearch
+      - trino-catalog:/etc/trino/bms-catalog
+      - trino-secrets:/etc/trino/secrets
+    restart: "no"
+
+  seaweedfs:
+    logging: *logging
+    image: chrislusf/seaweedfs:4.48
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    command: >-
+      server -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0
+      -master.volumeSizeLimitMB=256 -volume.max=64 -filer
+      -s3 -s3.port=8333 -s3.config=/etc/bms/s3.json -s3.allowedOrigins=${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
+    volumes:
+      - seaweedfs-data:/data
+      - seaweedfs-config:/etc/bms:ro
+    ports:
+      - "127.0.0.1:8333:8333"
+      - "127.0.0.1:9333:9333"
+      - "127.0.0.1:8888:8888"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333 && { [ ! /etc/bms/s3.json -nt /tmp/s3.json.loaded ] || { touch /tmp/s3.json.loaded && kill -HUP 1; }; }"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  mailpit:
+    logging: *logging
+    image: axllent/mailpit:v1.27
+    # Hộp thư thử cho môi trường phát triển; đặt SMTP_HOST tới máy chủ thật khi triển khai (UI tại localhost:8025)
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
+
+  backup:
+    logging: *logging
+    image: postgis/postgis:17-3.5
+    platform: linux/amd64
+    # Sao lưu CSDL theo lịch rồi diễn tập khôi phục ngay bản vừa tạo (kết quả ghi vào audit.backup_run)
+    entrypoint: ["bash", "/ops/backup-scheduler.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: bms
+      PGPASSWORD: ${POSTGRES_PASSWORD:-bms-dev}
+      BACKUP_DIR: /backups
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
+      BACKUP_FIRST_DELAY: ${BACKUP_FIRST_DELAY:-600}
+    volumes:
+      - ../../scripts/ops:/ops:ro
+      - backups:/backups
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  vector:
+    logging: *logging
+    profiles: [logs]
+    image: timberio/vector:0.46.1-debian
+    # Gom log của mọi container về obs.log_event qua actions (/obs/ingest); cần đọc socket Docker
+    command: ["--config", "/etc/vector/vector.yaml"]
+    environment:
+      ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
+    volumes:
+      - ../platform/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - actions
+    restart: unless-stopped
+
+  actions:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      openbao-init:
+        condition: service_completed_successfully
+    environment:
+      SLEEPER_URL: http://sleeper:9000
+    volumes:
+      - actions-secrets:/run/bms:ro
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    ports:
+      - "127.0.0.1:8090:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  flow-sync:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    volumes:
+      - actions-secrets:/run/bms:ro
+    command: ["python", "-m", "app.flow_sync"]
+    restart: unless-stopped
+
+  bootstrap:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      flowable:
+        condition: service_healthy
+      hasura:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      openbao-init:
+        condition: service_completed_successfully
+    environment:
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_URL: ${KEYCLOAK_ADMIN_URL:-http://localhost:8080}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8000}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
+    volumes:
+      - bootstrap-secrets:/run/bms:ro
+    command: ["python", "-m", "app.bootstrap"]
+    restart: "no"
+
+  gateway:
+    logging: *logging
+    build:
+      context: ../platform/apisix
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-gateway:${BAMBOO_TAG:-dev}
+    environment:
+      APISIX_WORKER_PROCESSES: ${GATEWAY_WORKERS:-2}
+    depends_on:
+      web:
+        condition: service_started
+      hasura:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      seaweedfs:
+        condition: service_started
+      actions:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8000}:9080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9080 && printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3 && grep -q ok <&3"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  web:
+    logging: *logging
+    build:
+      context: ../..
+      dockerfile: infra/docker/web.Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-web:${BAMBOO_TAG:-dev}
+    environment:
+      BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}
+      BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8000/graphql}
+      BAMBOO_SETUP_URL: ${WEB_ORIGIN:-http://localhost:8000}/setup
+      BAMBOO_EXT_URL: ${WEB_ORIGIN:-http://localhost:8000}/ext
+    ports:
+      - "127.0.0.1:8088:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+volumes:
+  backups:
+  pgdata:
+  seaweedfs-data:
+  seaweedfs-config:
+  openbao-data:
+  openbao-keys:
+  actions-secrets:
+  bootstrap-secrets:
+  search-secrets:
+  meilisearch-config:
+  lakehouse-secrets:
+  trino-catalog:
+  trino-secrets:
