@@ -282,7 +282,7 @@ services:
       BACKUP_KEEP: ${BACKUP_KEEP:-7}
       BACKUP_FIRST_DELAY: ${BACKUP_FIRST_DELAY:-600}
     volumes:
-      - ../../scripts/ops:/ops:ro
+      - ../../tools/ops:/ops:ro
       - backups:/backups
     depends_on:
       migrate:

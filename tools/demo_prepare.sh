@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Chuẩn bị máy trước khi lên sân khấu demo (bước 4: OCR + Trợ lý RAG), chạy ngay trước buổi demo:
-#   scripts/demo_prepare.sh
+#   tools/demo_prepare.sh
 # Kiểm AI đã bật, giữ qwen3 và bge-m3 trong bộ nhớ suốt buổi demo (lượt hỏi đầu không phải nạp lạnh),
 # và kiểm đã có ít nhất một tệp đính kèm quét ở trạng thái "Đã OCR". Không sửa dữ liệu nào.
 set -euo pipefail
