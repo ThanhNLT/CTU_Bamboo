@@ -59,7 +59,7 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | Tầng trong khung DX-OS | Trong Bamboo |
 |---|---|
 | Tầng 1: Nền tảng Dịch vụ Lõi số (headless) | Các dịch vụ trong `docker-compose.yml`, chỉ phục vụ qua cổng API APISIX `:8000`; không có giao diện người dùng cuối. Giao diện quản trị đi kèm một số dịch vụ chỉ nghe `127.0.0.1` |
-| Tầng 2: Không gian Năng lực số (H-P-D-I) | Ứng dụng Refine `apps/web/web`, gọi Tầng 1 qua `/graphql` ([API của nền tảng](../thiet-ke/08-api-giao-dien.md)) |
+| Tầng 2: Không gian Năng lực số (H-P-D-I) | Ứng dụng Refine `apps/web`, gọi Tầng 1 qua `/graphql` ([API của nền tảng](../thiet-ke/08-api-giao-dien.md)) |
 | Tầng 3: Nền tảng Kinh doanh số | Chưa làm; kịch bản Tập đoàn X dùng để nêu định hướng ([Kịch bản nghiệp vụ](02-kich-ban-nghiep-vu.md)) |
 
 ```text

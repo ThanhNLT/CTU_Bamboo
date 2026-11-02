@@ -37,7 +37,7 @@ jobs:
           - { name: trino, context: platform/trino, file: platform/trino/Dockerfile, args: "" }
           - { name: sleeper, context: ., file: services/sleeper/Dockerfile, args: "" }
           - { name: kafka, context: platform/kafka, file: platform/kafka/Dockerfile, args: "" }
-          - { name: web, context: apps/web/web, file: apps/web/web/Dockerfile, args: "" }
+          - { name: web, context: apps/web, file: apps/web/Dockerfile, args: "" }
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
@@ -130,9 +130,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: apps/web/web/package-lock.json
+          cache-dependency-path: tests/e2e/package-lock.json
       - name: Kiểm thử đầu–cuối qua giao diện (Playwright)
-        working-directory: apps/web/web
+        working-directory: tests/e2e
         run: |
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
