@@ -11,9 +11,9 @@ from fastapi.testclient import TestClient
 from app import config, main, process_design
 from conftest import SETTINGS, ids
 
-SAMPLE = (pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml").read_text(
-    encoding="utf-8"
-)
+SAMPLE = (
+    pathlib.Path(__file__).resolve().parents[3] / "infra/platform/flowable/purchase_request.bpmn20.xml"
+).read_text(encoding="utf-8")
 NS = 'xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn"'
 
 

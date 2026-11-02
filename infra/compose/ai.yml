@@ -1,0 +1,123 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# AI: Ollama, OCR và tiến trình trả lời trợ lý (ADR #52, #54). Bật/tắt theo mô-đun (ADR #56); `make up` ở mức RAM 8 GB dừng chúng.
+# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
+# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
+# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # Ollama và OCR ngủ khi nhàn rỗi như các dịch vụ -core khác: tên mạng `ollama`, `ocr` và cổng công bố thuộc `sleeper`
+  ollama-core:
+    logging: *logging
+    image: ollama/ollama:0.35.1
+    environment:
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      OLLAMA_KEEP_ALIVE: ${AI_KEEP_ALIVE:-5m}
+      OLLAMA_CONTEXT_LENGTH: "8192"
+      OLLAMA_FLASH_ATTENTION: "1"
+      OLLAMA_KV_CACHE_TYPE: ${AI_KV_CACHE_TYPE:-q8_0}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
+    # Sau khi máy chủ lên, đọc tệp hai mô hình mặc định vào page cache của hệ điều hành (không nạp lên RAM tiến trình
+    # hay VRAM, kernel tự thu hồi khi cần): lượt hỏi đầu tiên không phải đọc ~3,3 GB từ đĩa (ADR #52).
+    entrypoint:
+      - sh
+      - -c
+      - |
+        (until ollama list > /dev/null 2>&1; do sleep 1; done
+        for m in "$$AI_CHAT_MODEL" "$$AI_EMBED_MODEL"; do
+          ollama show --modelfile "$$m" 2> /dev/null | sed -n 's/^FROM \(\/.*\)/\1/p' | xargs -r cat > /dev/null
+        done) &
+        exec ollama serve
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  ollama-init:
+    logging: *logging
+    image: ollama/ollama:0.35.1
+    depends_on:
+      ollama-core:
+        condition: service_healthy
+      sleeper:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
+    entrypoint: ["sh", "-c", "for m in \"$$AI_CHAT_MODEL\" \"$$AI_EMBED_MODEL\"; do ollama show \"$$m\" > /dev/null 2>&1 || ollama pull \"$$m\" || echo \"CẢNH BÁO: không tải được mô hình $$m, AI chưa dùng được\" >&2; done"]
+    restart: "no"
+
+  ocr-core:
+    logging: *logging
+    build:
+      context: ../..
+      dockerfile: infra/docker/ocr.Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
+    depends_on:
+      ocr-init:
+        condition: service_completed_successfully
+    environment:
+      HF_HUB_OFFLINE: "1"
+      OCR_IDLE_SECONDS: ${OCR_IDLE_SECONDS:-300}
+    volumes:
+      - ocr-models:/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  ocr-init:
+    logging: *logging
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
+    build:
+      context: ../..
+      dockerfile: infra/docker/ocr.Dockerfile
+    volumes:
+      - ocr-models:/models
+    command: ["python", "-m", "app.download"]
+    restart: "no"
+
+  ai-worker:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      ollama-init:
+        condition: service_completed_successfully
+      ocr-core:
+        condition: service_started
+      sleeper:
+        condition: service_healthy
+    environment:
+      OCR_URL: http://ocr:8000
+      SLEEPER_URL: http://sleeper:9000
+    volumes:
+      - actions-secrets:/run/bms:ro
+    command: ["python", "-m", "app.ai_worker"]
+    restart: unless-stopped
+
+
+volumes:
+  ollama-models:
+  ocr-models:

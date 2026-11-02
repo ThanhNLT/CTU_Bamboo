@@ -10,7 +10,7 @@ import psycopg
 
 from . import config
 
-OUT = pathlib.Path(__file__).resolve().parents[3] / "platform/trino/silver.sql"
+OUT = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/trino/silver.sql"
 RULES_OUT = OUT.with_name("rules.json")
 CATALOG = "lakehouse"
 ADMIN_USER = "bms-admin"

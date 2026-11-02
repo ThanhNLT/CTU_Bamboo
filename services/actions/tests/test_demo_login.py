@@ -16,7 +16,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[3]
 TOKEN_URL = os.environ.get("KEYCLOAK_TOKEN_URL", "http://keycloak:8080/realms/bms/protocol/openid-connect/token")
 GRAPHQL = os.environ.get("HASURA_URL", "http://hasura:8080") + "/v1/graphql"
 PASSWORD = os.environ.get("DEMO_PASSWORD", "demo-password")
-USERS = json.loads((ROOT / "platform/keycloak/realm/bms-realm.json").read_text(encoding="utf-8"))["users"]
+USERS = json.loads((ROOT / "infra/platform/keycloak/realm/bms-realm.json").read_text(encoding="utf-8"))["users"]
 
 
 @pytest.fixture(scope="module", autouse=True)

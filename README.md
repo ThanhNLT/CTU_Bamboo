@@ -339,7 +339,7 @@ pip install -r services/actions/requirements.txt -r services/seed/requirements.t
 
 ```bash
 mkdir -p .local/{openbao,run,seaweedfs,meili}
-# Chép platform/openbao/config.hcl thành .local/openbao/config.hcl, đổi storage "raft" path thành .local/openbao/data,
+# Chép infra/platform/openbao/config.hcl thành .local/openbao/config.hcl, đổi storage "raft" path thành .local/openbao/data,
 # api_addr thành http://127.0.0.1:8200, cluster_addr thành http://127.0.0.1:8201
 bao server -config=.local/openbao/config.hcl &
 
@@ -362,8 +362,8 @@ Keycloak.
 
 ```bash
 # Keycloak: chép realm và theme vào bản phân phối rồi chạy
-cp platform/keycloak/realm/bms-realm.json <keycloak>/data/import/
-cp -r platform/keycloak/themes/dxos-login <keycloak>/themes/
+cp infra/platform/keycloak/realm/bms-realm.json <keycloak>/data/import/
+cp -r infra/platform/keycloak/themes/dxos-login <keycloak>/themes/
 KC_DB=postgres KC_DB_URL=jdbc:postgresql://127.0.0.1:5432/keycloak KC_DB_USERNAME=bamboo_keycloak \
 KC_DB_PASSWORD=keycloak-db-dev KC_HOSTNAME=http://localhost:8080 KC_HTTP_ENABLED=true \
 KC_BOOTSTRAP_ADMIN_USERNAME=kcadmin KC_BOOTSTRAP_ADMIN_PASSWORD=kcadmin-dev DEMO_PASSWORD=demo-password \

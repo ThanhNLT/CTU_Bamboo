@@ -8,7 +8,7 @@ import pytest
 
 from app import process_design
 
-PROCESSES = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/processes"
+PROCESSES = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/flowable/processes"
 FILES = sorted(PROCESSES.glob("*.bpmn20.xml"))
 
 
