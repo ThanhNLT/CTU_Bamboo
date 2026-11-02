@@ -10,10 +10,11 @@ import time
 import psycopg
 from psycopg.rows import dict_row
 
-from . import anchoring, attachments, config, delivery, obs, hr_account, process_automation
-from .flowable import FlowableClient
+from bamboo_common.flowable import FlowableClient
+from bamboo_common.pii import PiiCipher
+
+from . import anchoring, attachments, config, delivery, hr_account, obs, process_automation
 from .keycloak_sync import PROVISIONER_ID
-from .pii import PiiCipher
 
 PROCESS_KEY = "purchaseRequestApproval"
 MAX_ATTEMPTS = 20

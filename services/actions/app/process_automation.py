@@ -23,9 +23,10 @@ import xml.etree.ElementTree as ET
 import psycopg
 from psycopg.rows import dict_row
 
+from bamboo_common.flowable import FlowableClient
+
 from . import config, delivery
 from .common import ActionError, Context
-from .flowable import FlowableClient
 from .process_design import (
     AUTOMATION_ACTIONS,
     BAMBOO,

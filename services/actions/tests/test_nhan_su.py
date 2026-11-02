@@ -10,7 +10,7 @@ import psycopg
 import pytest
 
 from app import hr_account
-from app.pii import PiiCipher, mask_address, mask_tail
+from bamboo_common.pii import PiiCipher, mask_address, mask_tail
 from conftest import ids, open_task
 
 TENANT_SQL = "SELECT test.id('TDX') AS id"

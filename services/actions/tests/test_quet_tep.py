@@ -9,7 +9,7 @@ import zlib
 
 import pytest
 
-from app import scanner
+from bamboo_common import scanner
 
 PDF = "application/pdf"
 PNG = "image/png"
