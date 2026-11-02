@@ -154,11 +154,12 @@ class ManyDocker:
         return f"c-{service}"
 
     async def state(self, container):
-        return {"Running": self.running[container[2:]]}
+        state = self.running[container[2:]]
+        return state if isinstance(state, dict) else {"Running": state}
 
     async def start(self, container):
         self.calls.append(("start", container[2:]))
-        self.running[container[2:]] = True
+        self.running[container[2:]] = {"Running": True, "StartedAt": "2030-01-01T00:00:00Z"}
 
     async def stop(self, container, grace=30):
         self.calls.append(("stop", container[2:]))
@@ -166,7 +167,7 @@ class ManyDocker:
 
 
 class ModulesTest(unittest.IsolatedAsyncioTestCase):
-    def make(self, desired, running, managed=("flowable", "kafka", "trino-core", "meilisearch")):
+    def make(self, desired, running, managed=("flowable", "kafka", "trino-core", "meilisearch"), hold_until=""):
         async def fetch(url):
             if isinstance(desired, Exception):
                 raise desired
@@ -174,7 +175,9 @@ class ModulesTest(unittest.IsolatedAsyncioTestCase):
 
         self.docker = ManyDocker(running)
         self.lazy = Target(0, "trino-core", 8443, 300)
-        return Modules(self.docker, "http://actions:8000/modules/services", set(managed), [self.lazy], fetch)
+        return Modules(
+            self.docker, "http://actions:8000/modules/services", set(managed), [self.lazy], fetch, hold_until=hold_until
+        )
 
     async def test_stops_uninstalled_and_starts_installed(self):
         modules = self.make(
@@ -192,6 +195,33 @@ class ModulesTest(unittest.IsolatedAsyncioTestCase):
         self.lazy.blocked = True
         self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
         self.assertFalse(self.lazy.blocked)
+
+    async def test_waits_for_bootstrap_before_stopping(self):
+        """Hệ thống trống: chưa cài mô-đun nào nhưng bootstrap còn chờ Flowable healthy thì chưa dừng Flowable."""
+        flowable = {"Running": True, "StartedAt": "2026-10-30T08:00:00Z"}
+        bootstrap = {"Running": False, "Status": "exited", "ExitCode": 0, "FinishedAt": "2026-10-29T08:00:00Z"}
+        modules = self.make(
+            {"run": [], "stop": ["flowable"]}, {"flowable": flowable, "bootstrap": bootstrap}, hold_until="bootstrap"
+        )
+        # lần chạy trước của bootstrap đã xong trước khi Flowable được compose chạy lại
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+        bootstrap.update(Running=True, Status="running")
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+        bootstrap.update(Running=False, Status="exited", ExitCode=1, FinishedAt="2026-10-30T08:05:00Z")
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+        bootstrap.update(ExitCode=0)
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": ["flowable"]})
+
+    async def test_waits_while_bootstrap_not_created(self):
+        modules = self.make({"run": [], "stop": ["kafka"]}, {"kafka": True}, hold_until="bootstrap")
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+
+    async def test_service_started_by_sleeper_stops_without_waiting(self):
+        desired = {"run": ["flowable"], "stop": []}
+        modules = self.make(desired, {"flowable": False}, hold_until="bootstrap")
+        self.assertEqual((await modules.reconcile())["started"], ["flowable"])
+        desired.update(run=[], stop=["flowable"])
+        self.assertEqual((await modules.reconcile())["stopped"], ["flowable"])
 
     async def test_ignores_services_not_managed(self):
         modules = self.make({"run": [], "stop": ["db", "kafka"]}, {"db": True, "kafka": True}, managed=("kafka",))

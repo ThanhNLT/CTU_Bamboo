@@ -281,7 +281,6 @@ def issue_personnel_decision(conn: psycopg.Connection, session: dict, args: dict
 
 def personnel_decisions(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
     person, tenant = _decision_caller(conn, session)
-    can_all = conn.execute("SELECT hr.can_read_decisions(%s, %s)", (person, tenant)).fetchone()[0]
     rows = conn.execute(
         """SELECT d.id, d.doc_no, d.decision_type, d.assignment_type, d.effective_date, d.reason, d.created_at,
                   p.full_name, p.employee_code, i.full_name,
@@ -293,9 +292,11 @@ def personnel_decisions(conn: psycopg.Connection, session: dict, _args: dict, _c
            LEFT JOIN core.org_unit su ON su.id = src.org_unit_id
            LEFT JOIN core.position dst ON dst.id = d.target_position_id
            LEFT JOIN core.org_unit du ON du.id = dst.org_unit_id
-           WHERE d.tenant_id = %s AND (%s OR d.issuer_id = %s OR d.person_id = %s)
+           WHERE d.tenant_id = %s AND (d.issuer_id = %s OR d.person_id = %s OR EXISTS (
+                     SELECT 1 FROM core.position q WHERE q.id IN (d.source_position_id, d.target_position_id)
+                       AND core.has_permission(%s, 'hr.decision.read', q.org_unit_id)))
            ORDER BY d.created_at DESC LIMIT 500""",
-        (tenant, can_all, person, person),
+        (tenant, person, person, person),
     ).fetchall()
     keys = ("id", "doc_no", "decision_type", "assignment_type", "effective_date", "reason", "created_at",
             "person_name", "employee_code", "issuer_name", "source_position", "source_unit", "target_position",
@@ -325,8 +326,10 @@ def personnel_decision_context(conn: psycopg.Connection, session: dict, _args: d
            LEFT JOIN core.position pos ON pos.id = a.position_id
            LEFT JOIN core.org_unit u ON u.id = pos.org_unit_id
            WHERE p.tenant_id = %s AND p.id <> %s
-           GROUP BY p.id ORDER BY p.full_name LIMIT 3000""",
-        (tenant, person),
+           GROUP BY p.id
+           HAVING count(a.id) = 0 OR bool_or(core.has_permission(%s, 'hr.decision.issue', pos.org_unit_id))
+           ORDER BY p.full_name LIMIT 3000""",
+        (tenant, person, person),
     ).fetchall()
     positions = conn.execute(
         """SELECT pos.id, pos.name, u.name, pos.is_head,
@@ -335,9 +338,11 @@ def personnel_decision_context(conn: psycopg.Connection, session: dict, _args: d
                    WHERE a.position_id = pos.id AND a.valid_period @> now()
                      AND a.assignment_type IN ('PRIMARY', 'CONCURRENT', 'ACTING'))
            FROM core.position pos JOIN core.org_unit u ON u.id = pos.org_unit_id
-           WHERE pos.tenant_id = %s AND pos.valid_period @> now() ORDER BY u.path, pos.is_head DESC, pos.name
+           WHERE pos.tenant_id = %s AND pos.valid_period @> now()
+             AND core.has_permission(%s, 'hr.decision.issue', pos.org_unit_id)
+           ORDER BY u.path, pos.is_head DESC, pos.name
            LIMIT 5000""",
-        (tenant,),
+        (tenant, person),
     ).fetchall()
     return {
         "people": [
