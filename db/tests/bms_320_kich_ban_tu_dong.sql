@@ -33,3 +33,14 @@ SELECT test.throws($$INSERT INTO wf.process_automation (tenant_id, model_id, ver
 
 -- Sự kiện nhân sự
 SELECT test.eq((SELECT count(*)::int FROM msg.queue WHERE topic = 'event.personnel_decision.issued'), 0, 'chưa có quyết định nhân sự');
+
+-- Phạm vi: quy trình của Phòng Mua hàng chỉ nhận sự kiện của chứng từ thuộc phòng đó, không nhận của phòng khác
+INSERT INTO wf.process_version (tenant_id, model_id, version, bpmn_xml, forms, sha256, published_by, audience)
+VALUES (test.id('TDX'), test.id('MA'), 1, '<x/>', '[]', repeat('b', 64), test.id('tgd'), 'UNIT');
+UPDATE wf.process_model SET owner_unit_id = test.id('DT_MH') WHERE id = test.id('MA');
+SELECT test.eq(wf.automation_in_scope((SELECT id FROM wf.process_automation WHERE model_id = test.id('MA')),
+                                      jsonb_build_array(test.id('DT_MH'))), true, 'chứng từ của chính phòng: áp dụng');
+SELECT test.eq(wf.automation_in_scope((SELECT id FROM wf.process_automation WHERE model_id = test.id('MA')),
+                                      jsonb_build_array(test.id('GD_KT'))), false, 'chứng từ của phòng khác: không áp dụng');
+SELECT test.eq(wf.automation_in_scope((SELECT id FROM wf.process_automation WHERE model_id = test.id('MA')), '[]'), false,
+               'sự kiện không mang đơn vị: không áp dụng');
