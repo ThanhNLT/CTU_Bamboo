@@ -12,6 +12,7 @@ import { useSession } from "../../auth/useSession";
 import { OnboardingForm } from "./form";
 import { OB_DETAIL } from "./queries";
 import type { Onboarding } from "./types";
+import { tr, trf } from "../../i18n";
 
 export const OnboardingEdit = () => {
   const { id } = useParsed();
@@ -28,12 +29,12 @@ export const OnboardingEdit = () => {
 
   if (error) return <Alert type="error" message={error} />;
   if (record === undefined) return <Spin />;
-  if (record === null) return <Alert type="warning" message="Không tìm thấy hồ sơ" />;
+  if (record === null) return <Alert type="warning" message={tr("Không tìm thấy hồ sơ")} />;
   if (record.requester_id !== tenant.person_id || !["DRAFT", "RETURNED"].includes(record.status)) {
-    return <Alert type="info" showIcon message="Chỉ người lập sửa được hồ sơ đang nháp hoặc bị trả về." />;
+    return <Alert type="info" showIcon message={tr("Chỉ người lập sửa được hồ sơ đang nháp hoặc bị trả về.")} />;
   }
   return (
-    <Edit title={`Sửa ${record.doc_no}`} footerButtons={() => null} headerButtons={() => null}>
+    <Edit title={trf("Sửa {0}", [record.doc_no])} footerButtons={() => null} headerButtons={() => null}>
       <OnboardingForm
         record={record}
         onSaved={(savedId) => go({ to: { resource: "hr_onboarding_request", action: "show", id: savedId } })}

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { request } from "../../../api/client";
+import { tr, trf } from "../../../i18n";
 
 type Proposed = {
   request_id: string;
@@ -44,7 +45,7 @@ export const ProposedPartners = ({ onAdopted }: { onAdopted: () => void }) => {
     setBusy(r.request_id);
     try {
       await request(ADOPT, { id: r.request_id, code: codes[r.request_id]?.trim() || null });
-      message.success(`Đã thêm “${r.name}” vào danh mục nhà cung cấp.`);
+      message.success(trf("Đã thêm “{0}” vào danh mục nhà cung cấp.", [r.name]));
       await load();
       onAdopted();
     } catch (e) {
@@ -57,12 +58,13 @@ export const ProposedPartners = ({ onAdopted }: { onAdopted: () => void }) => {
   return (
     <section
       className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-card"
-      aria-label="Nhà cung cấp đề xuất"
+      aria-label={tr("Nhà cung cấp đề xuất")}
     >
-      <h2 className="m-0 text-[14px] font-semibold text-ink">Nhà cung cấp đề xuất · chờ thêm vào danh mục</h2>
+      <h2 className="m-0 text-[14px] font-semibold text-ink">{tr("Nhà cung cấp đề xuất · chờ thêm vào danh mục")}</h2>
       <p className="m-0 mt-0.5 text-[12.5px] text-muted">
-        Người lập đề nghị gõ tên nhà cung cấp chưa có trong danh mục. Đặt mã rồi thêm; đã có nhà cung cấp cùng mã số
-        thuế thì dùng lại nhà cung cấp đó.
+        {tr(
+          "Người lập đề nghị gõ tên nhà cung cấp chưa có trong danh mục. Đặt mã rồi thêm; đã có nhà cung cấp cùng mã số thuế thì dùng lại nhà cung cấp đó.",
+        )}
       </p>
       <ul className="m-0 mt-3 list-none divide-y divide-amber-200/70 p-0">
         {rows.map((r) => (
@@ -80,13 +82,13 @@ export const ProposedPartners = ({ onAdopted }: { onAdopted: () => void }) => {
             </span>
             <Input
               className="w-[180px]"
-              placeholder="Mã nhà cung cấp mới"
-              aria-label={`Mã nhà cung cấp cho ${r.name}`}
+              placeholder={tr("Mã nhà cung cấp mới")}
+              aria-label={trf("Mã nhà cung cấp cho {0}", [r.name])}
               value={codes[r.request_id] ?? ""}
               onChange={(e) => setCodes((c) => ({ ...c, [r.request_id]: e.target.value }))}
             />
             <Button type="primary" loading={busy === r.request_id} onClick={() => void adopt(r)}>
-              Thêm vào danh mục
+              {tr("Thêm vào danh mục")}
             </Button>
           </li>
         ))}

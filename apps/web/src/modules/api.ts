@@ -4,6 +4,7 @@
 
 import { request } from "../api/client";
 import { keycloak } from "../auth/keycloak";
+import { tr } from "../i18n";
 
 export type ModuleService = { name: string; running: boolean | null };
 
@@ -42,9 +43,16 @@ export const isPlatformAdmin = (): boolean =>
 
 const role = () => (isPlatformAdmin() ? ("platform_admin" as const) : undefined);
 
+// Tên và mô tả mô-đun dựng sẵn do máy chủ trả bằng tiếng Việt (danh mục cố định trong modules.py): dịch theo ngôn ngữ đang
+// chọn; mô-đun ngoài giữ nguyên tên nhà phát triển khai trong manifest
+export const localizeModule = <T extends { name: string; description: string; external?: boolean }>(m: T): T =>
+  m.external ? m : { ...m, name: tr(m.name), description: tr(m.description) };
+
+const localize = (o: ModuleOverview): ModuleOverview => ({ ...o, modules: o.modules.map(localizeModule) });
+
 export const fetchModules = () =>
   request<{ modules: ModuleOverview }>(`query Modules { modules { ${FIELDS} } }`, undefined, { role: role() }).then(
-    (r) => r.modules,
+    (r) => localize(r.modules),
   );
 
 export type ModuleChange = "module_enable" | "module_disable" | "module_install" | "module_uninstall";
@@ -54,12 +62,12 @@ export const changeModule = (action: ModuleChange, code: string) =>
     `mutation ChangeModule($code: String!) { ${action}(code: $code) { ${FIELDS} } }`,
     { code },
     { role: role() },
-  ).then((r) => r[action]);
+  ).then((r) => localize(r[action]));
 
 export const SCOPE_LABEL: Record<string, string> = {
-  "org.read": "Đọc cơ cấu tổ chức (đơn vị, vị trí)",
-  "people.read": "Đọc danh sách nhân sự (họ tên, mã nhân viên, vị trí)",
-  "notify.send": "Gửi thông báo cho người trong công ty",
+  "org.read": tr("Đọc cơ cấu tổ chức (đơn vị, vị trí)"),
+  "people.read": tr("Đọc danh sách nhân sự (họ tên, mã nhân viên, vị trí)"),
+  "notify.send": tr("Gửi thông báo cho người trong công ty"),
 };
 
 export type ExtRegistered = {

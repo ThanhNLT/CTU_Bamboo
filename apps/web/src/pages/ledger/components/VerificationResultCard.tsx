@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../../utils/cn";
 import type { VerifyResult } from "../types";
 import { shortHash } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 const Row = ({ label, children, mono }: { label: string; children: ReactNode; mono?: boolean }) => (
   <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 py-1.5 sm:grid-cols-[110px_minmax(0,1fr)]">
@@ -41,30 +42,34 @@ export const VerificationResultCard = ({
 }) => {
   const st = STYLE[result.kind];
   return (
-    <section aria-live="polite" aria-label="Kết quả đối soát" className={cn("rounded-2xl border p-4", st.box)}>
+    <section aria-live="polite" aria-label={tr("Kết quả đối soát")} className={cn("rounded-2xl border p-4", st.box)}>
       <h3 className={cn("flex items-center gap-2 text-[13.5px] font-semibold", st.title)}>
         {result.kind === "match" && <ShieldCheck className="h-4 w-4" aria-hidden />}
         {result.kind === "mismatch" && <ShieldAlert className="h-4 w-4" aria-hidden />}
         {result.kind === "not_found" && <SearchX className="h-4 w-4" aria-hidden />}
         {result.kind === "match"
-          ? "Khớp với bản niêm phong"
+          ? tr("Khớp với bản niêm phong")
           : result.kind === "mismatch"
-            ? "Không khớp với bản niêm phong"
-            : "Không tìm thấy bản niêm phong"}
+            ? tr("Không khớp với bản niêm phong")
+            : tr("Không tìm thấy bản niêm phong")}
       </h3>
 
       {result.kind === "not_found" ? (
         <div className="mt-2 text-[12.5px] text-body">
           {result.via === "code" ? (
             <p>
-              Không có bản niêm phong nào cho <b className="font-mono font-semibold">{result.query}</b> trong các chứng
-              từ bạn được xem. Kiểm tra lại số chứng từ (dạng PR-2026-000012, có thể thêm “v2” để chọn tệp thứ hai).
+              {tr("Không có bản niêm phong nào cho ")} <b className="font-mono font-semibold">{result.query}</b>{" "}
+              {tr(
+                " trong các chứng từ bạn được xem. Kiểm tra lại số chứng từ (dạng PR-2026-000012, có thể thêm “v2” để chọn tệp thứ hai).",
+              )}
             </p>
           ) : (
             <>
               <p>
-                Mã băm của tệp <b className="font-semibold">{result.fileName}</b> không khớp tệp nào đã được nhận vào hệ
-                thống (trong các chứng từ bạn được xem). Tệp có thể đã bị chỉnh sửa, hoặc chưa từng được tải lên.
+                {tr("Mã băm của tệp ")} <b className="font-semibold">{result.fileName}</b>{" "}
+                {tr(
+                  " không khớp tệp nào đã được nhận vào hệ thống (trong các chứng từ bạn được xem). Tệp có thể đã bị chỉnh sửa, hoặc chưa từng được tải lên.",
+                )}
               </p>
               {result.sha256 && (
                 <p className="mt-2 break-all font-mono text-[11.5px] text-muted">SHA-256 {result.sha256}</p>
@@ -75,10 +80,10 @@ export const VerificationResultCard = ({
       ) : (
         <>
           <dl className="m-0 mt-2">
-            <Row label="Hồ sơ" mono>{`${result.seal.code} · v${result.seal.version}`}</Row>
-            <Row label="Tệp">{result.seal.fileName}</Row>
-            <Row label="Niêm phong">{`${result.seal.sealedAt} · chuỗi ${result.seal.channel}`}</Row>
-            <Row label="Nhật ký" mono>
+            <Row label={tr("Hồ sơ")} mono>{`${result.seal.code} · v${result.seal.version}`}</Row>
+            <Row label={tr("Tệp")}>{result.seal.fileName}</Row>
+            <Row label={tr("Niêm phong")}>{trf("{0} · chuỗi {1}", [result.seal.sealedAt, result.seal.channel])}</Row>
+            <Row label={tr("Nhật ký")} mono>
               {result.seal.txId ? (
                 <span title={result.seal.txId}>
                   #{result.seal.block} · {shortHash(result.seal.txId)}
@@ -87,15 +92,15 @@ export const VerificationResultCard = ({
                 "—"
               )}
             </Row>
-            <Row label={result.kind === "mismatch" ? "SHA-256 niêm phong" : "SHA-256"} mono>
+            <Row label={result.kind === "mismatch" ? tr("SHA-256 niêm phong") : "SHA-256"} mono>
               {result.seal.sha256}
             </Row>
             {result.kind === "mismatch" && (
-              <Row label="SHA-256 tệp lưu" mono>
+              <Row label={tr("SHA-256 tệp lưu")} mono>
                 <span className="text-red-700">{result.actualSha256 ?? "—"}</span>
               </Row>
             )}
-            {result.fileName && <Row label="Tệp đối soát">{result.fileName}</Row>}
+            {result.fileName && <Row label={tr("Tệp đối soát")}>{result.fileName}</Row>}
           </dl>
           {result.kind === "mismatch" && result.problem && (
             <p className="mt-2 rounded-xl bg-surface/70 px-3 py-2 text-[12px] text-body">{result.problem}</p>
@@ -106,12 +111,12 @@ export const VerificationResultCard = ({
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" onClick={onCopy} className={cn(actionClass, st.action)}>
           <Copy className="h-3.5 w-3.5" aria-hidden />
-          Sao chép bằng chứng
+          {tr("Sao chép bằng chứng")}
         </button>
         {result.kind !== "not_found" && (
           <button type="button" onClick={onCertificate} className={cn(actionClass, st.action)}>
             <Download className="h-3.5 w-3.5" aria-hidden />
-            {result.kind === "match" ? "Tải chứng nhận PDF" : "Tải biên bản PDF"}
+            {result.kind === "match" ? tr("Tải chứng nhận PDF") : tr("Tải biên bản PDF")}
           </button>
         )}
       </div>

@@ -740,3 +740,111 @@ a,
         background: #1c261f;
     }
 }
+
+/* ----- Bố cục hai nửa (ADR #62): ô đăng nhập bên trái, lời chào cắt chéo bên phải, như trang /login của web ----- */
+.bb-greeting {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    color: var(--bb-text);
+    background: rgba(47, 122, 62, 0.1);
+    border-top: 1px solid var(--bb-line);
+}
+
+.pf-v5-theme-dark .bb-greeting {
+    background: rgba(95, 174, 110, 0.1);
+}
+
+.bb-greeting h2 {
+    margin: 0;
+    font-family: var(--bb-font);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+}
+
+.bb-greeting p {
+    max-width: 22rem;
+    margin: 0;
+    color: var(--bb-text-2);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+.bb-pill {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    height: 2.75rem;
+    padding: 0 1.5rem;
+    color: #fff !important;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    background: var(--bb-green-600);
+    border-radius: 999px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+        0 6px 16px -6px rgba(31, 94, 46, 0.55);
+    transition:
+        transform 0.15s ease,
+        background-color 0.2s ease;
+}
+
+.bb-pill:hover {
+    background: var(--bb-green-700);
+}
+
+.bb-pill:active {
+    transform: scale(0.97);
+}
+
+@media (min-width: 768px) {
+    .bb-split .pf-v5-c-login__container {
+        grid-template-columns: minmax(0, 55rem);
+    }
+
+    .bb-split .pf-v5-c-login__main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-content: center;
+    }
+
+    .bb-split .pf-v5-c-login__main > :not(.bb-greeting) {
+        grid-column: 1;
+        /* Mép chéo của nửa lời chào lấn 3rem vào cột trái: chừa chỗ để ô nhập và nút không bị cắt */
+        padding-right: 4.5rem;
+    }
+
+    .bb-split .bb-greeting {
+        position: relative;
+        grid-column: 2;
+        grid-row: 1 / span 10;
+        margin-left: -3rem;
+        padding: 3rem 3rem 3rem 5.5rem;
+        border-top: 0;
+        clip-path: polygon(3rem 0, 100% 0, 100% 100%, 0 100%);
+    }
+
+    .bb-split .bb-greeting::before {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 3rem;
+        content: "";
+        background: linear-gradient(
+            to bottom right,
+            transparent calc(50% - 0.5px),
+            var(--bb-glass-border) 50%,
+            transparent calc(50% + 0.5px)
+        );
+    }
+
+    .bb-split .bb-greeting h2 {
+        font-size: 2.125rem;
+    }
+}

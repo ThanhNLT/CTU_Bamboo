@@ -6,12 +6,13 @@ import { Sparkles } from "lucide-react";
 import { Link } from "react-router";
 
 import type { AiSuggestion } from "../types";
+import { tr } from "../../../i18n";
 
 export const AiSuggestionWidget = ({ suggestion }: { suggestion?: AiSuggestion }) => (
   <section className="rounded-2xl border border-bamboo-100 bg-bamboo-50/60 p-4" aria-labelledby="inbox-ai">
     <h3 id="inbox-ai" className="flex items-center gap-2 text-[14px] font-semibold text-ink">
       <Sparkles className="h-4 w-4 text-bamboo-600" strokeWidth={2} aria-hidden />
-      Gợi ý của trợ lý
+      {tr("Gợi ý của trợ lý")}
     </h3>
     {suggestion ? (
       <>
@@ -30,8 +31,8 @@ export const AiSuggestionWidget = ({ suggestion }: { suggestion?: AiSuggestion }
         )}
       </>
     ) : (
-      <p className="mt-2 text-[12.5px] text-muted">Trợ lý chưa có gợi ý cho hồ sơ này.</p>
+      <p className="mt-2 text-[12.5px] text-muted">{tr("Trợ lý chưa có gợi ý cho hồ sơ này.")}</p>
     )}
-    <p className="mt-2.5 text-[11.5px] text-muted">Chỉ là gợi ý – quyết định thuộc về bạn.</p>
+    <p className="mt-2.5 text-[11.5px] text-muted">{tr("Chỉ là gợi ý – quyết định thuộc về bạn.")}</p>
   </section>
 );

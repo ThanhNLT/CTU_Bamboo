@@ -9,11 +9,12 @@ import { useOpsTab, type QualityCheck } from "../api";
 import { ChartWidget } from "./ChartWidget";
 import { fmtNum } from "../boardFormat";
 import { BoardState } from "./BoardParts";
+import { tr, trf } from "../../../i18n";
 
 const SEVERITY: Record<QualityCheck["severity"], { label: string; color: string }> = {
-  critical: { label: "Nghiêm trọng", color: "red" },
-  warning: { label: "Cần sửa", color: "gold" },
-  info: { label: "Theo dõi", color: "blue" },
+  critical: { label: tr("Nghiêm trọng"), color: "red" },
+  warning: { label: tr("Cần sửa"), color: "gold" },
+  info: { label: tr("Theo dõi"), color: "blue" },
 };
 
 export const QualityBoard = () => {
@@ -22,7 +23,7 @@ export const QualityBoard = () => {
     <BoardState loading={loading} error={error} ready={Boolean(data)}>
       {data && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <ChartWidget title="Điểm chất lượng">
+          <ChartWidget title={tr("Điểm chất lượng")}>
             <div className="flex flex-col items-center gap-3 py-4">
               <Progress
                 type="dashboard"
@@ -31,13 +32,13 @@ export const QualityBoard = () => {
                 format={(p) => `${p}%`}
               />
               <p className="m-0 text-center text-[12.5px] text-muted">
-                {data.checks.filter((c) => c.count === 0).length}/{data.checks.length} kiểm tra đạt
+                {data.checks.filter((c) => c.count === 0).length}/{data.checks.length} {tr(" kiểm tra đạt")}
               </p>
             </div>
           </ChartWidget>
           <ChartWidget
-            title="Kiểm tra dữ liệu"
-            meta={data.admin ? "Kèm tên mẫu" : "Chỉ số lượng (tên mẫu dành cho người quản trị dữ liệu)"}
+            title={tr("Kiểm tra dữ liệu")}
+            meta={data.admin ? tr("Kèm tên mẫu") : tr("Chỉ số lượng (tên mẫu dành cho người quản trị dữ liệu)")}
           >
             <ul className="m-0 flex list-none flex-col divide-y divide-line/70 p-0">
               {data.checks.map((c) => (
@@ -57,19 +58,19 @@ export const QualityBoard = () => {
                       {c.count > 0 ? (
                         <Tag color={SEVERITY[c.severity].color}>{SEVERITY[c.severity].label}</Tag>
                       ) : (
-                        <Tag color="green">Đạt</Tag>
+                        <Tag color="green">{tr("Đạt")}</Tag>
                       )}
                     </div>
                     {c.samples.length > 0 && (
                       <p className="m-0 mt-0.5 truncate text-[12px] text-muted">
                         {c.samples.join(" · ")}
-                        {c.count > c.samples.length ? ` · và ${c.count - c.samples.length} khác` : ""}
+                        {c.count > c.samples.length ? trf(" · và {0} khác", [c.count - c.samples.length]) : ""}
                       </p>
                     )}
                   </div>
                   {c.count > 0 && (
                     <Link to={c.link} className="text-[12.5px] font-semibold text-bamboo-700 hover:underline">
-                      Xử lý
+                      {tr("Xử lý")}
                     </Link>
                   )}
                 </li>

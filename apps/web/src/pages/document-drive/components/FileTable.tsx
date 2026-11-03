@@ -12,6 +12,7 @@ import { formatBytes } from "../utils";
 import type { DriveView } from "./DriveToolbar";
 import { FileTypeBadge } from "./FileTypeBadge";
 import { ScanStatus } from "./ScanStatus";
+import { tr, trf } from "../../../i18n";
 
 type DeleteProps = { me: string; onDelete: (f: DriveFile) => void };
 
@@ -19,17 +20,17 @@ const canDelete = (f: DriveFile, me: string) => f.ownerId === me && !f.locked;
 
 const DeleteButton = ({ file, onDelete }: { file: DriveFile; onDelete: (f: DriveFile) => void }) => (
   <Popconfirm
-    title="Xóa tệp này?"
-    description="Tệp bị xóa khỏi chứng từ và kho lưu trữ."
-    okText="Xóa"
+    title={tr("Xóa tệp này?")}
+    description={tr("Tệp bị xóa khỏi chứng từ và kho lưu trữ.")}
+    okText={tr("Xóa")}
     okButtonProps={{ danger: true }}
-    cancelText="Không"
+    cancelText={tr("Không")}
     onConfirm={() => onDelete(file)}
   >
     <button
       type="button"
-      aria-label={`Xóa ${file.name}`}
-      title="Xóa tệp"
+      aria-label={trf("Xóa {0}", [file.name])}
+      title={tr("Xóa tệp")}
       onClick={(e) => e.stopPropagation()}
       className="inline-flex h-7 w-7 items-center justify-center rounded-ui text-muted hover:bg-red-50 hover:text-red-600"
     >
@@ -40,7 +41,7 @@ const DeleteButton = ({ file, onDelete }: { file: DriveFile; onDelete: (f: Drive
 
 const baseColumns: TableColumnsType<DriveFile> = [
   {
-    title: "Tên",
+    title: tr("Tên"),
     dataIndex: "name",
     ellipsis: true,
     render: (name: string, f) => (
@@ -53,26 +54,31 @@ const baseColumns: TableColumnsType<DriveFile> = [
     ),
   },
   {
-    title: "Chủ sở hữu",
+    title: tr("Chủ sở hữu"),
     dataIndex: "owner",
     width: 170,
     ellipsis: true,
     render: (v: string) => <span className="text-ink">{v}</span>,
   },
   {
-    title: "Cập nhật",
+    title: tr("Cập nhật"),
     dataIndex: "updatedLabel",
     width: 130,
     render: (v: string) => <span className="text-muted">{v}</span>,
   },
   {
-    title: "Dung lượng",
+    title: tr("Dung lượng"),
     dataIndex: "bytes",
     width: 100,
     align: "right",
     render: (v: number | null) => <span className="tabular-nums text-ink">{formatBytes(v)}</span>,
   },
-  { title: "Kiểm dịch", dataIndex: "scan", width: 160, render: (v: DriveFile["scan"]) => <ScanStatus result={v} /> },
+  {
+    title: tr("Kiểm dịch"),
+    dataIndex: "scan",
+    width: 160,
+    render: (v: DriveFile["scan"]) => <ScanStatus result={v} />,
+  },
 ];
 
 const columnsFor = ({ me, onDelete }: DeleteProps): TableColumnsType<DriveFile> => [
@@ -98,7 +104,7 @@ const FileCardGrid = ({
           type="button"
           onClick={() => onOpen(f)}
           disabled={f.scan !== "clean"}
-          title={f.scan === "clean" ? `Tải ${f.name}` : undefined}
+          title={f.scan === "clean" ? trf("Tải {0}", [f.name]) : undefined}
           className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 text-left hover:border-bamboo-200 hover:bg-bamboo-50/30 disabled:cursor-not-allowed"
         >
           <div className="flex items-start justify-between gap-2">
@@ -140,10 +146,10 @@ export const FileTable = ({
   const total = files.reduce((sum, f) => sum + (f.bytes ?? 0), 0);
   return (
     <Panel
-      title="Tệp"
+      title={tr("Tệp")}
       extra={
         <span className="text-[12px] tabular-nums text-muted">
-          {files.length} tệp · {formatBytes(total)}
+          {files.length} {tr(" tệp · ")} {formatBytes(total)}
         </span>
       }
       bodyClassName={view === "list" ? "px-3 pb-3" : undefined}

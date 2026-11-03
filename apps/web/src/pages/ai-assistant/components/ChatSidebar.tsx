@@ -8,6 +8,7 @@ import { cn } from "../../../utils/cn";
 import { fold } from "../../../utils/text";
 import { GROUP_LABEL, groupOf, titleFrom } from "../assistant";
 import type { HistoryGroup, Question } from "../types";
+import { tr } from "../../../i18n";
 
 const GROUPS: HistoryGroup[] = ["today", "yesterday", "lastWeek", "older"];
 
@@ -31,11 +32,11 @@ export const ChatSidebar = ({
 
   return (
     <aside
-      aria-label="Lịch sử lượt hỏi"
+      aria-label={tr("Lịch sử lượt hỏi")}
       className={cn("min-h-0 flex-col rounded-2xl border border-line bg-surface p-3 shadow-card", className)}
     >
       <label className="relative block">
-        <span className="sr-only">Tìm lượt hỏi</span>
+        <span className="sr-only">{tr("Tìm lượt hỏi")}</span>
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
           aria-hidden
@@ -45,7 +46,7 @@ export const ChatSidebar = ({
           type="search"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Tìm lượt hỏi"
+          placeholder={tr("Tìm lượt hỏi")}
           className="h-9 w-full rounded-xl border border-transparent bg-canvas pl-9 pr-3 text-[13px] text-ink outline-none placeholder:text-muted focus:border-bamboo-400 focus:bg-surface focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
         />
       </label>
@@ -53,7 +54,7 @@ export const ChatSidebar = ({
       <nav className="mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
         {visible.length === 0 && (
           <p className="px-2 py-6 text-center text-[12.5px] text-muted">
-            {questions.length ? "Không có lượt hỏi phù hợp." : "Chưa có lượt hỏi nào."}
+            {questions.length ? tr("Không có lượt hỏi phù hợp.") : tr("Chưa có lượt hỏi nào.")}
           </p>
         )}
         {GROUPS.map((g) => {
@@ -91,7 +92,7 @@ export const ChatSidebar = ({
       </nav>
 
       <p className="mt-2 border-t border-line px-2 pt-2.5 text-[11px] leading-snug text-muted">
-        Mỗi lượt hỏi độc lập, không dùng lại lượt trước. Thông tin cá nhân được che trước khi lưu.
+        {tr("Mỗi lượt hỏi độc lập, không dùng lại lượt trước. Thông tin cá nhân được che trước khi lưu.")}
       </p>
     </aside>
   );

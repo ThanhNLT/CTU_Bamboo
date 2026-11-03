@@ -12,6 +12,7 @@ import { DatasetList } from "./components/DatasetList";
 import type { DomainFilter } from "./types";
 import { useLakehouseDatasets } from "./useLakehouse";
 import { domainCounts, filterDatasets } from "./utils";
+import { tr } from "../../i18n";
 
 const Notice = ({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) => (
   <div
@@ -37,22 +38,24 @@ export const DataServicesPage = () => {
 
   let body: ReactNode;
   if (loading) {
-    body = <p className="text-[13px] text-muted">Đang tải danh mục tập dữ liệu…</p>;
+    body = <p className="text-[13px] text-muted">{tr("Đang tải danh mục tập dữ liệu…")}</p>;
   } else if (error?.statusCode === 403) {
     body = (
       <Notice
         icon={<Lock className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />}
-        title="Bạn chưa có quyền xem dữ liệu Lakehouse"
+        title={tr("Bạn chưa có quyền xem dữ liệu Lakehouse")}
       >
-        Cần quyền <span className="font-mono">data.lakehouse.read</span> (vai trò Phân tích dữ liệu). Liên hệ quản trị
-        tổ chức của công ty để được cấp; quyền được cấp ghi nhật ký kiểm toán.
+        {tr("Cần quyền ")} <span className="font-mono">data.lakehouse.read</span>{" "}
+        {tr(
+          " (vai trò Phân tích dữ liệu). Liên hệ quản trị tổ chức của công ty để được cấp; quyền được cấp ghi nhật ký kiểm toán.",
+        )}
       </Notice>
     );
   } else if (error) {
     body = (
       <Notice
         icon={<DatabaseZap className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />}
-        title="Không tải được danh mục"
+        title={tr("Không tải được danh mục")}
       >
         {error.message}
       </Notice>
@@ -84,9 +87,9 @@ export const DataServicesPage = () => {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <div className="min-w-0">
-        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Dịch vụ dữ liệu</h1>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">{tr("Dịch vụ dữ liệu")}</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Tập dữ liệu Lakehouse của công ty đang chọn · tìm, hiểu và dùng lại thay vì xin dữ liệu thô
+          {tr("Tập dữ liệu Lakehouse của công ty đang chọn · tìm, hiểu và dùng lại thay vì xin dữ liệu thô")}
         </p>
       </div>
       {body}

@@ -11,6 +11,7 @@ import { useSession } from "../../../auth/useSession";
 import { createProposal, updateProposal, type ProposalInput } from "../api";
 import { CATEGORY_LABEL } from "../labels";
 import type { DocCategory, DocScope } from "../types";
+import { tr, trf } from "../../../i18n";
 
 type Values = {
   title: string;
@@ -112,13 +113,13 @@ export const ProposeModal = ({
       open={open}
       title={
         draft?.id
-          ? "Sửa đề xuất tài liệu"
+          ? tr("Sửa đề xuất tài liệu")
           : draft?.supersedes_id
-            ? `Đề xuất bản thay thế “${draft.supersedes_title ?? ""}”`
-            : "Đề xuất tài liệu"
+            ? trf("Đề xuất bản thay thế “{0}”", [draft.supersedes_title ?? ""])
+            : tr("Đề xuất tài liệu")
       }
-      okText={draft?.id ? "Lưu" : "Lưu nháp"}
-      cancelText="Hủy"
+      okText={draft?.id ? tr("Lưu") : tr("Lưu nháp")}
+      cancelText={tr("Hủy")}
       confirmLoading={busy}
       onOk={() => void save()}
       onCancel={onClose}
@@ -126,11 +127,11 @@ export const ProposeModal = ({
       destroyOnHidden
     >
       <Form form={form} layout="vertical" requiredMark>
-        <Form.Item name="title" label="Tên tài liệu" rules={[{ required: true, whitespace: true, min: 2 }]}>
-          <Input placeholder="Ví dụ: Quy chế vận hành phòng sạch" />
+        <Form.Item name="title" label={tr("Tên tài liệu")} rules={[{ required: true, whitespace: true, min: 2 }]}>
+          <Input placeholder={tr("Ví dụ: Quy chế vận hành phòng sạch")} />
         </Form.Item>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-          <Form.Item name="category" label="Loại" rules={[{ required: true }]}>
+          <Form.Item name="category" label={tr("Loại")} rules={[{ required: true }]}>
             <Select
               options={(Object.keys(CATEGORY_LABEL) as DocCategory[]).map((c) => ({
                 value: c,
@@ -138,33 +139,41 @@ export const ProposeModal = ({
               }))}
             />
           </Form.Item>
-          <Form.Item name="effective_date" label="Ngày hiệu lực">
+          <Form.Item name="effective_date" label={tr("Ngày hiệu lực")}>
             <DatePicker format="DD/MM/YYYY" className="w-full" />
           </Form.Item>
         </div>
-        <Form.Item name="scope" label="Phạm vi đọc" rules={[{ required: true }]}>
+        <Form.Item name="scope" label={tr("Phạm vi đọc")} rules={[{ required: true }]}>
           <Radio.Group
             options={[
-              { value: "company", label: "Trong công ty của tôi" },
-              { value: "group", label: "Cả tập đoàn" },
+              { value: "company", label: tr("Trong công ty của tôi") },
+              { value: "group", label: tr("Cả tập đoàn") },
             ]}
           />
         </Form.Item>
         {!draft?.id && (
-          <Form.Item name="requester_position_id" label="Đơn vị ban hành (tư cách lập)" rules={[{ required: true }]}>
+          <Form.Item
+            name="requester_position_id"
+            label={tr("Đơn vị ban hành (tư cách lập)")}
+            rules={[{ required: true }]}
+          >
             <Select options={positions} />
           </Form.Item>
         )}
-        <Form.Item name="summary" label="Tóm tắt">
+        <Form.Item name="summary" label={tr("Tóm tắt")}>
           <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} maxLength={4000} />
         </Form.Item>
-        <Form.Item name="toc" label="Mục lục" tooltip="Mỗi dòng một mục">
-          <Input.TextArea autoSize={{ minRows: 3, maxRows: 10 }} placeholder={"Phạm vi áp dụng\nQuy định chung\n…"} />
+        <Form.Item name="toc" label={tr("Mục lục")} tooltip={tr("Mỗi dòng một mục")}>
+          <Input.TextArea
+            autoSize={{ minRows: 3, maxRows: 10 }}
+            placeholder={tr("Phạm vi áp dụng\nQuy định chung\n…")}
+          />
         </Form.Item>
       </Form>
       <p className="m-0 text-[12px] text-muted">
-        Sau khi lưu nháp: đính kèm tệp tài liệu (PDF, DOCX…, được kiểm dịch) rồi gửi duyệt. Duyệt xong, tài liệu vào thư
-        viện và tìm kiếm toàn văn được.
+        {tr(
+          "Sau khi lưu nháp: đính kèm tệp tài liệu (PDF, DOCX…, được kiểm dịch) rồi gửi duyệt. Duyệt xong, tài liệu vào thư viện và tìm kiếm toàn văn được.",
+        )}
       </p>
     </Modal>
   );

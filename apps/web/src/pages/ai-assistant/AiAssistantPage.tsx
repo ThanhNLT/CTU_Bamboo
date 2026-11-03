@@ -17,6 +17,7 @@ import { ChatInput } from "./components/ChatInput";
 import { ChatSidebar } from "./components/ChatSidebar";
 import { UserMessage } from "./components/UserMessage";
 import type { Assistant, Question } from "./types";
+import { tr } from "../../i18n";
 
 type Status = { loading: boolean; enabled: boolean; assistants: Assistant[] };
 
@@ -26,13 +27,16 @@ const AiOff = ({ loading }: { loading: boolean }) => (
       <Bot className="h-5 w-5" />
     </span>
     {loading ? (
-      <p className="text-[13px] text-muted">Đang khởi động trợ lý AI, lần đầu sau khi nghỉ có thể mất vài giây…</p>
+      <p className="text-[13px] text-muted">
+        {tr("Đang khởi động trợ lý AI, lần đầu sau khi nghỉ có thể mất vài giây…")}
+      </p>
     ) : (
       <>
-        <p className="text-[15px] font-semibold text-ink">Trợ lý AI chưa bật</p>
+        <p className="text-[15px] font-semibold text-ink">{tr("Trợ lý AI chưa bật")}</p>
         <p className="max-w-md text-[12.5px] text-muted">
-          Máy chủ chưa chạy mô hình AI cục bộ, hoặc chưa có trợ lý nào được cấu hình cho đơn vị của bạn. Liên hệ người
-          quản trị tác tử AI.
+          {tr(
+            "Máy chủ chưa chạy mô hình AI cục bộ, hoặc chưa có trợ lý nào được cấu hình cho đơn vị của bạn. Liên hệ người quản trị tác tử AI.",
+          )}
         </p>
       </>
     )}
@@ -105,7 +109,7 @@ export const AiAssistantPage = () => {
       if (isPending(q) && !map.has(id)) {
         map.set(
           id,
-          watchQuestion(id, update, () => message.error("Mất kết nối theo dõi câu trả lời. Tải lại trang để xem.")),
+          watchQuestion(id, update, () => message.error(tr("Mất kết nối theo dõi câu trả lời. Tải lại trang để xem."))),
         );
       } else if (!isPending(q) && map.has(id)) {
         map.get(id)?.();
@@ -176,9 +180,11 @@ export const AiAssistantPage = () => {
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Trợ lý đa năng</h1>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">
+            {tr("Trợ lý đa năng")}
+          </h1>
           <p className="mt-1 text-[13px] text-muted">
-            Hỏi đáp Thư viện tri thức · trả lời có trích nguồn, chỉ trong phạm vi quyền của bạn
+            {tr("Hỏi đáp Thư viện tri thức · trả lời có trích nguồn, chỉ trong phạm vi quyền của bạn")}
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2.5">
@@ -192,11 +198,11 @@ export const AiAssistantPage = () => {
             className={cn(secondaryButtonClass, "lg:hidden")}
           >
             <History className="h-4 w-4" aria-hidden />
-            Lịch sử
+            {tr("Lịch sử")}
           </button>
           <button type="button" onClick={startNew} className={primaryButtonClass} disabled={!status.enabled}>
             <Plus className="h-4 w-4" aria-hidden />
-            Hỏi mới
+            {tr("Hỏi mới")}
           </button>
         </div>
       </div>
@@ -220,7 +226,7 @@ export const AiAssistantPage = () => {
             assistants={status.assistants}
             assistantId={assistantId}
             onAssistant={setAssistantId}
-            docLabel={docId ? (docLabel ?? "tài liệu đã chọn") : undefined}
+            docLabel={docId ? (docLabel ?? tr("tài liệu đã chọn")) : undefined}
             onClearDoc={clearDoc}
             scrollKey={`${shown.length}:${last?.status}:${last?.answer.length ?? 0}`}
             empty={shown.length === 0}
@@ -236,7 +242,7 @@ export const AiAssistantPage = () => {
                   onRetry={() => void send(q.question)}
                   onCopy={() =>
                     void copyText(plainText(q)).then((ok) =>
-                      ok ? message.success("Đã sao chép câu trả lời.") : message.error("Không sao chép được."),
+                      ok ? message.success(tr("Đã sao chép câu trả lời.")) : message.error(tr("Không sao chép được.")),
                     )
                   }
                 />

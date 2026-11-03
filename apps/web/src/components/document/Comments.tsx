@@ -10,6 +10,7 @@ import { EyeInvisibleOutlined } from "@ant-design/icons";
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
 import type { DocumentComments } from "./types";
+import { tr } from "../../i18n";
 
 type Comment = DocumentComments["comments"][number];
 type PiiCheck = { masked_text: string; entities: { label: string }[] };
@@ -72,22 +73,23 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
     const labels = [...new Set(check.entities.map((e) => e.label))].join(", ");
     const masked = check.masked_text;
     const dialog = modal.confirm({
-      title: "Nội dung có dữ liệu cá nhân",
+      title: tr("Nội dung có dữ liệu cá nhân"),
       icon: <EyeInvisibleOutlined />,
       width: 520,
       content: (
         <>
           <Typography.Paragraph>
-            Phát hiện: <b>{labels}</b>. Mọi người xem được chứng từ đều đọc được trao đổi này.
+            {tr("Phát hiện: ")} <b>{labels}</b>
+            {tr(". Mọi người xem được chứng từ đều đọc được trao đổi này.")}
           </Typography.Paragraph>
           <Typography.Paragraph type="secondary" style={{ whiteSpace: "pre-wrap" }}>
-            Bản đã che: {masked}
+            {tr("Bản đã che: ")} {masked}
           </Typography.Paragraph>
         </>
       ),
       footer: (
         <Space style={{ marginTop: 16, width: "100%", justifyContent: "flex-end" }} wrap>
-          <Button onClick={() => dialog.destroy()}>Sửa lại</Button>
+          <Button onClick={() => dialog.destroy()}>{tr("Sửa lại")}</Button>
           <Button
             danger
             onClick={() => {
@@ -95,7 +97,7 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
               void post(text);
             }}
           >
-            Vẫn gửi nguyên văn
+            {tr("Vẫn gửi nguyên văn")}
           </Button>
           <Button
             type="primary"
@@ -104,7 +106,7 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
               void post(masked);
             }}
           >
-            Gửi bản đã che
+            {tr("Gửi bản đã che")}
           </Button>
         </Space>
       ),
@@ -130,14 +132,14 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
               {c.author?.full_name}
               <Typography.Text type="secondary">
                 {formatDate(c.created_at)}
-                {c.edited_at ? " · đã sửa" : ""}
+                {c.edited_at ? tr(" · đã sửa") : ""}
               </Typography.Text>
             </Space>
           }
           description={
             c.deleted_at ? (
               <Typography.Text type="secondary" italic>
-                Bình luận đã bị xóa
+                {tr("Bình luận đã bị xóa")}
               </Typography.Text>
             ) : (
               <>
@@ -147,13 +149,18 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
                 <Space size="small">
                   {depth === 0 && (
                     <Button size="small" type="link" onClick={() => setReplyTo(c)}>
-                      Trả lời
+                      {tr("Trả lời")}
                     </Button>
                   )}
                   {c.author_id === me && (
-                    <Popconfirm title="Xóa bình luận?" okText="Xóa" cancelText="Không" onConfirm={() => remove(c)}>
+                    <Popconfirm
+                      title={tr("Xóa bình luận?")}
+                      okText={tr("Xóa")}
+                      cancelText={tr("Không")}
+                      onConfirm={() => remove(c)}
+                    >
                       <Button size="small" type="link" danger>
-                        Xóa
+                        {tr("Xóa")}
                       </Button>
                     </Popconfirm>
                   )}
@@ -169,10 +176,10 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
 
   return (
     <>
-      <List locale={{ emptyText: "Chưa có trao đổi" }} dataSource={roots} renderItem={(c) => render(c)} />
+      <List locale={{ emptyText: tr("Chưa có trao đổi") }} dataSource={roots} renderItem={(c) => render(c)} />
       {replyTo && (
         <Typography.Text type="secondary">
-          Trả lời {replyTo.author?.full_name} · <a onClick={() => setReplyTo(null)}>bỏ</a>
+          {tr("Trả lời ")} {replyTo.author?.full_name} · <a onClick={() => setReplyTo(null)}>{tr("bỏ")}</a>
         </Typography.Text>
       )}
       <Flex gap={8} style={{ marginTop: 8 }}>
@@ -181,10 +188,10 @@ export const Comments = ({ doc, entityType, me, onChange }: Props) => {
           onChange={(e) => setBody(e.target.value)}
           rows={2}
           maxLength={4000}
-          placeholder="Trao đổi với người lập, người duyệt..."
+          placeholder={tr("Trao đổi với người lập, người duyệt...")}
         />
         <Button type="primary" onClick={send} loading={busy ? { delay: 200 } : false} disabled={!body.trim()}>
-          Gửi
+          {tr("Gửi")}
         </Button>
       </Flex>
     </>

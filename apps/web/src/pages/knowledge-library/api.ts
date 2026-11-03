@@ -4,6 +4,7 @@
 
 import { request } from "../../api/client";
 import type { DocCategory, DocScope, IndexState, LibraryDoc, LibraryFile } from "./types";
+import { tr } from "../../i18n";
 
 type Row = {
   id: string;
@@ -43,7 +44,7 @@ const toIndex = (r: Row): IndexState =>
   r.index_status === "indexed"
     ? { status: "indexed", at: r.indexed_at }
     : r.index_status === "error"
-      ? { status: "error", reason: r.index_error ?? "Lỗi không rõ" }
+      ? { status: "error", reason: r.index_error ?? tr("Lỗi không rõ") }
       : { status: r.index_status };
 
 export const fetchLibrary = async (): Promise<{ canPropose: boolean; docs: LibraryDoc[] }> => {

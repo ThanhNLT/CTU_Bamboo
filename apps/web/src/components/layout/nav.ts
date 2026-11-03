@@ -35,6 +35,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { tr } from "../../i18n";
 
 export type NavItem = {
   key: string;
@@ -59,41 +60,41 @@ export type NavGroup = {
 export const NAV_GROUPS: NavGroup[] = [
   {
     code: "daily",
-    label: "Làm việc hằng ngày",
+    label: tr("Làm việc hằng ngày"),
     items: [
-      { key: "home", label: "Trang chủ", to: "/", icon: House },
-      { key: "inbox", label: "Hộp việc", to: "/p/tasks", icon: Inbox, module: "approval" },
-      { key: "search", label: "Tìm kiếm", to: "/i/search", icon: Search, module: "search" },
-      { key: "assistant", label: "Trợ lý đa năng", to: "/i/assistant", icon: Sparkles, module: "ai" },
+      { key: "home", label: tr("Trang chủ"), to: "/", icon: House },
+      { key: "inbox", label: tr("Hộp việc"), to: "/p/tasks", icon: Inbox, module: "approval" },
+      { key: "search", label: tr("Tìm kiếm"), to: "/i/search", icon: Search, module: "search" },
+      { key: "assistant", label: tr("Trợ lý đa năng"), to: "/i/assistant", icon: Sparkles, module: "ai" },
     ],
   },
   {
     code: "process",
-    label: "Hồ sơ & quy trình",
+    label: tr("Hồ sơ & quy trình"),
     items: [
-      { key: "records", label: "Hồ sơ", to: "/p/records", icon: FileText, module: "approval" },
-      { key: "purchase", label: "Đề nghị mua sắm", to: "/p/documents", icon: ShoppingCart, module: "procurement" },
-      { key: "ic-orders", label: "Đơn hàng nội bộ", to: "/p/ic-orders", icon: ArrowLeftRight, module: "ic" },
-      { key: "process", label: "Thiết kế quy trình", to: "/p/process", icon: Route, module: "process" },
+      { key: "records", label: tr("Hồ sơ"), to: "/p/records", icon: FileText, module: "approval" },
+      { key: "purchase", label: tr("Đề nghị mua sắm"), to: "/p/documents", icon: ShoppingCart, module: "procurement" },
+      { key: "ic-orders", label: tr("Đơn hàng nội bộ"), to: "/p/ic-orders", icon: ArrowLeftRight, module: "ic" },
+      { key: "process", label: tr("Thiết kế quy trình"), to: "/p/process", icon: Route, module: "process" },
     ],
   },
   {
     code: "knowledge",
-    label: "Tài liệu & tri thức",
+    label: tr("Tài liệu & tri thức"),
     items: [
-      { key: "drive", label: "Ổ đĩa tài liệu", to: "/h/drive", icon: FolderClosed, module: "files" },
-      { key: "library", label: "Thư viện tri thức", to: "/h/library", icon: LibraryBig, module: "knowledge" },
-      { key: "ocr", label: "Nhập liệu OCR", to: "/i/ocr", icon: ScanText, module: "ai" },
-      { key: "agents", label: "Tác tử AI", to: "/i/agents", icon: Bot, module: "ai" },
+      { key: "drive", label: tr("Ổ đĩa tài liệu"), to: "/h/drive", icon: FolderClosed, module: "files" },
+      { key: "library", label: tr("Thư viện tri thức"), to: "/h/library", icon: LibraryBig, module: "knowledge" },
+      { key: "ocr", label: tr("Nhập liệu OCR"), to: "/i/ocr", icon: ScanText, module: "ai" },
+      { key: "agents", label: tr("Tác tử AI"), to: "/i/agents", icon: Bot, module: "ai" },
     ],
   },
   {
     code: "people",
-    label: "Nhân sự",
+    label: tr("Nhân sự"),
     items: [
       {
         key: "onboarding",
-        label: "Tiếp nhận nhân sự",
+        label: tr("Tiếp nhận nhân sự"),
         to: "/h/onboarding",
         icon: UserPlus,
         module: "hr",
@@ -101,62 +102,62 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         key: "transfer",
-        label: "Điều chuyển nhân sự",
+        label: tr("Điều chuyển nhân sự"),
         to: "/h/transfer",
         icon: Shuffle,
         module: "hr",
         access: { resource: "hr_transfer_request", action: "list" },
       },
-      { key: "decisions", label: "Quyết định nhân sự", to: "/h/decisions", icon: ScrollText, module: "hr" },
+      { key: "decisions", label: tr("Quyết định nhân sự"), to: "/h/decisions", icon: ScrollText, module: "hr" },
     ],
   },
   {
     code: "data",
-    label: "Dữ liệu & điều hành",
+    label: tr("Dữ liệu & điều hành"),
     items: [
-      { key: "ops", label: "Trung tâm điều hành", to: "/d/ops", icon: Gauge, module: "data" },
-      { key: "twin", label: "Bản sao số", to: "/d/twin", icon: Cpu, module: "data" },
-      { key: "data-services", label: "Dịch vụ dữ liệu", to: "/d/services", icon: Database, module: "data" },
-      { key: "lineage", label: "Phả hệ dữ liệu", to: "/d/lineage", icon: GitFork, module: "data" },
-      { key: "ledger", label: "Sổ cái", to: "/d/ledger", icon: Lock, module: "ledger" },
+      { key: "ops", label: tr("Trung tâm điều hành"), to: "/d/ops", icon: Gauge, module: "data" },
+      { key: "twin", label: tr("Bản sao số"), to: "/d/twin", icon: Cpu, module: "data" },
+      { key: "data-services", label: tr("Dịch vụ dữ liệu"), to: "/d/services", icon: Database, module: "data" },
+      { key: "lineage", label: tr("Phả hệ dữ liệu"), to: "/d/lineage", icon: GitFork, module: "data" },
+      { key: "ledger", label: tr("Sổ cái"), to: "/d/ledger", icon: Lock, module: "ledger" },
     ],
   },
   {
     code: "admin",
-    label: "Quản trị",
+    label: tr("Quản trị"),
     access: { resource: "admin_area", action: "list" },
     items: [
       {
         key: "admin-org",
-        label: "Cơ cấu tổ chức",
+        label: tr("Cơ cấu tổ chức"),
         to: "/admin/org",
         icon: Network,
         access: { resource: "admin_org", action: "list" },
       },
       {
         key: "admin-people",
-        label: "Người dùng",
+        label: tr("Người dùng"),
         to: "/admin/people",
         icon: Users,
         access: { resource: "admin_people", action: "list" },
       },
       {
         key: "admin-roles",
-        label: "Vai trò & phân quyền",
+        label: tr("Vai trò & phân quyền"),
         to: "/admin/roles",
         icon: KeyRound,
         access: { resource: "admin_roles", action: "list" },
       },
       {
         key: "admin-company",
-        label: "Thông tin công ty",
+        label: tr("Thông tin công ty"),
         to: "/admin/company",
         icon: Building2,
         access: { resource: "admin_company", action: "list" },
       },
       {
         key: "admin-catalog",
-        label: "Danh mục & dữ liệu chủ",
+        label: tr("Danh mục & dữ liệu chủ"),
         to: "/admin/catalog",
         icon: ListTree,
         access: { resource: "admin_catalog", action: "list" },
@@ -165,43 +166,43 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     code: "system",
-    label: "Hệ thống & cài đặt",
+    label: tr("Hệ thống & cài đặt"),
     items: [
       {
         key: "admin-modules",
-        label: "Quản lý chức năng",
+        label: tr("Quản lý chức năng"),
         to: "/admin/modules",
         icon: Blocks,
         access: { resource: "admin_modules", action: "list" },
       },
       {
         key: "admin-ops",
-        label: "Vận hành hệ thống",
+        label: tr("Vận hành hệ thống"),
         to: "/admin/ops",
         icon: Activity,
         access: { resource: "admin_ops", action: "list" },
       },
       {
         key: "admin-queue",
-        label: "Hàng đợi tin nhắn",
+        label: tr("Hàng đợi tin nhắn"),
         to: "/admin/queue",
         icon: Mail,
         access: { resource: "admin_queue", action: "list" },
       },
       {
         key: "audit",
-        label: "Kiểm toán",
+        label: tr("Kiểm toán"),
         to: "/admin/audit-logs",
         icon: ShieldCheck,
         access: { resource: "audit_log", action: "list" },
       },
-      { key: "notify-settings", label: "Thông báo ngoài ứng dụng", to: "/settings/notifications", icon: BellRing },
+      { key: "notify-settings", label: tr("Thông báo ngoài ứng dụng"), to: "/settings/notifications", icon: BellRing },
     ],
   },
 ];
 
 export const EXTRA_PAGES: Array<{ group: string; label: string; to: string }> = [
-  { group: "Làm việc hằng ngày", label: "Hộp việc duyệt (dữ liệu thật)", to: "/p/inbox" },
+  { group: tr("Làm việc hằng ngày"), label: tr("Hộp việc duyệt (dữ liệu thật)"), to: "/p/inbox" },
 ];
 
 const matches = (pathname: string, to: string) =>

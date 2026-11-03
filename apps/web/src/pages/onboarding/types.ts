@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ApprovalHistory, ApprovalStep, Attachment, Comment } from "../../components/document/types";
+import { tr } from "../../i18n";
 
 type Person = { full_name: string } | null;
 
@@ -55,15 +56,15 @@ export type OnboardingPrivate = {
   initial_password: string | null;
 };
 
-export const GENDER: Record<string, string> = { MALE: "Nam", FEMALE: "Nữ", OTHER: "Khác" };
+export const GENDER: Record<string, string> = { MALE: "Nam", FEMALE: tr("Nữ"), OTHER: tr("Khác") };
 export const CONTRACT_TYPE: Record<string, string> = {
-  PROBATION: "Thử việc",
-  FIXED_TERM: "Hợp đồng xác định thời hạn",
-  INDEFINITE: "Hợp đồng không xác định thời hạn",
+  PROBATION: tr("Thử việc"),
+  FIXED_TERM: tr("Hợp đồng xác định thời hạn"),
+  INDEFINITE: tr("Hợp đồng không xác định thời hạn"),
 };
 export const ACCOUNT_STATUS: Record<string, { label: string; color: string }> = {
-  NONE: { label: "Không tạo tài khoản", color: "default" },
-  PENDING: { label: "Đang tạo tài khoản", color: "processing" },
-  CREATED: { label: "Đã có tài khoản", color: "success" },
-  FAILED: { label: "Chưa tạo được tài khoản", color: "error" },
+  NONE: { label: tr("Không tạo tài khoản"), color: "default" },
+  PENDING: { label: tr("Đang tạo tài khoản"), color: "processing" },
+  CREATED: { label: tr("Đã có tài khoản"), color: "success" },
+  FAILED: { label: tr("Chưa tạo được tài khoản"), color: "error" },
 };

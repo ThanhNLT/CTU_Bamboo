@@ -9,6 +9,7 @@ import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui
 import { cn } from "../../../utils/cn";
 import { STATUS_LABEL, failedChecks } from "../graph";
 import type { LineageNode, NodeStatus } from "../types";
+import { tr, trf } from "../../../i18n";
 
 const TAG_CLASS: Record<NodeStatus, string> = {
   healthy: "bg-bamboo-50 text-bamboo-800",
@@ -51,11 +52,11 @@ export const NodeQualityPanel = ({
   className?: string;
 }) => {
   const failed = failedChecks(node).length;
-  const tag = status === "failed" ? `${failed} kiểm tra lỗi` : STATUS_LABEL[status];
+  const tag = status === "failed" ? trf("{0} kiểm tra lỗi", [failed]) : STATUS_LABEL[status];
 
   return (
     <aside
-      aria-label={`Chi tiết ${node.fqn}`}
+      aria-label={trf("Chi tiết {0}", [node.fqn])}
       className={cn("flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-card", className)}
     >
       <div className="break-all font-mono text-[11.5px] text-muted">{node.fqn}</div>
@@ -72,18 +73,18 @@ export const NodeQualityPanel = ({
 
       <dl className="m-0 mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-b border-line pb-4">
         <div className="min-w-0">
-          <dt className="text-[11.5px] text-muted">Chủ sở hữu</dt>
+          <dt className="text-[11.5px] text-muted">{tr("Chủ sở hữu")}</dt>
           <dd className="m-0 mt-0.5 truncate text-[13px] text-ink">{node.owner}</dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-[11.5px] text-muted">Cập nhật</dt>
+          <dt className="text-[11.5px] text-muted">{tr("Cập nhật")}</dt>
           <dd className="m-0 mt-0.5 text-[13px] tabular-nums text-ink">{node.updated}</dd>
         </div>
       </dl>
 
       {causes.length > 0 && (
         <p className="mt-4 rounded-xl border border-dashed border-yellow-500 bg-yellow-50 px-3 py-2 text-[12px] text-amber-900">
-          Bị ảnh hưởng bởi lỗi ở{" "}
+          {tr("Bị ảnh hưởng bởi lỗi ở")}{" "}
           {causes.map((c, i) => (
             <span key={c.id}>
               {i > 0 && ", "}
@@ -100,23 +101,23 @@ export const NodeQualityPanel = ({
       )}
 
       <section className="border-b border-line py-4" aria-labelledby="lineage-checks">
-        <SectionTitle id="lineage-checks">Kiểm tra chất lượng · Soda</SectionTitle>
+        <SectionTitle id="lineage-checks">{tr("Kiểm tra chất lượng · Soda")}</SectionTitle>
         {node.checks.length === 0 ? (
-          <p className="mt-2.5 text-[12.5px] text-muted">Chưa có kiểm tra Soda cho tài sản này.</p>
+          <p className="mt-2.5 text-[12.5px] text-muted">{tr("Chưa có kiểm tra Soda cho tài sản này.")}</p>
         ) : (
           <ul className="m-0 mt-2.5 list-none space-y-3 p-0">
             {node.checks.map((c) => (
               <li key={c.rule} className="flex items-start gap-2.5">
                 {c.passed ? (
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-bamboo-600" aria-label="Đạt" />
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-bamboo-600" aria-label={tr("Đạt")} />
                 ) : (
-                  <X className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-label="Lỗi" />
+                  <X className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-label={tr("Lỗi")} />
                 )}
                 <span className="min-w-0">
                   <span className="block break-all font-mono text-[12px] text-ink">{c.rule}</span>
                   <span className={cn("block text-[11.5px]", c.passed ? "text-muted" : "font-medium text-red-700")}>
                     {c.detail}
-                    {c.failedAt && ` · lúc ${c.failedAt}`}
+                    {c.failedAt && trf(" · lúc {0}", [c.failedAt])}
                   </span>
                 </span>
               </li>
@@ -126,9 +127,9 @@ export const NodeQualityPanel = ({
       </section>
 
       <section className="py-4" aria-labelledby="lineage-impact">
-        <SectionTitle id="lineage-impact">Tác động phía sau</SectionTitle>
+        <SectionTitle id="lineage-impact">{tr("Tác động phía sau")}</SectionTitle>
         {impacts.length === 0 ? (
-          <p className="mt-2.5 text-[12.5px] text-muted">Không có tài sản nào dùng dữ liệu này.</p>
+          <p className="mt-2.5 text-[12.5px] text-muted">{tr("Không có tài sản nào dùng dữ liệu này.")}</p>
         ) : (
           <ul className="m-0 mt-2.5 list-none space-y-2.5 p-0">
             {impacts.map((n) => {
@@ -165,18 +166,18 @@ export const NodeQualityPanel = ({
       <div className="mt-auto flex flex-col gap-2.5 pt-2">
         <button type="button" onClick={onNotify} disabled={notified} className={cn(primaryButtonClass, fullWidth)}>
           {notified ? <Check className="h-4 w-4" aria-hidden /> : <Bell className="h-4 w-4" aria-hidden />}
-          {notified ? "Đã báo chủ sở hữu" : "Báo chủ sở hữu"}
+          {notified ? tr("Đã báo chủ sở hữu") : tr("Báo chủ sở hữu")}
         </button>
         {node.datasetId ? (
           <Link
             to={`/d/services?dataset=${encodeURIComponent(node.datasetId)}`}
             className={cn(secondaryButtonClass, fullWidth)}
           >
-            Mở tập dữ liệu
+            {tr("Mở tập dữ liệu")}
           </Link>
         ) : node.appLink ? (
           <Link to={node.appLink} className={cn(secondaryButtonClass, fullWidth)}>
-            Mở trong ứng dụng
+            {tr("Mở trong ứng dụng")}
           </Link>
         ) : null}
       </div>

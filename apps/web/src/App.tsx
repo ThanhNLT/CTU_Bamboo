@@ -13,6 +13,7 @@ import routerProvider, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 import { App as AntdApp, ConfigProvider, Spin } from "antd";
+import enUS from "antd/locale/en_US";
 import viVN from "antd/locale/vi_VN";
 import {
   AuditOutlined,
@@ -77,21 +78,24 @@ import { RequireModule } from "./modules/RequireModule";
 import { accessControlProvider } from "./providers/access";
 import { authProvider } from "./providers/auth";
 import { dataProvider, liveProvider } from "./providers/data";
+import { getLocale, tr } from "./i18n";
 import { i18nProvider } from "./providers/i18n";
 
-dayjs.locale("vi");
+// Ngôn ngữ của Ant Design (lịch, phân trang, bảng trống…) và dayjs theo lựa chọn của người dùng; đổi ngôn ngữ thì trang tải lại
+const LOCALE = getLocale();
+dayjs.locale(LOCALE === "en" ? "en" : "vi");
 
 const ProcessDiagram = lazy(() => import("./pages/process/diagram"));
 
 function App() {
   const { initialized } = useKeycloak();
-  if (!initialized) return <div style={{ padding: 48 }}>Đang kết nối máy chủ đăng nhập...</div>;
+  if (!initialized) return <div style={{ padding: 48 }}>{tr("Đang kết nối máy chủ đăng nhập...")}</div>;
 
   return (
     <BrowserRouter>
       <RefineKbarProvider>
         <ColorModeContextProvider>
-          <ConfigProvider locale={viVN}>
+          <ConfigProvider locale={LOCALE === "en" ? enUS : viVN}>
             <AntdApp>
               <Refine
                 dataProvider={dataProvider}
@@ -102,33 +106,33 @@ function App() {
                 notificationProvider={useNotificationProvider}
                 routerProvider={routerProvider}
                 resources={[
-                  { name: "dashboard", list: "/", meta: { label: "Trang chủ" } },
-                  { name: "drive", list: "/h/drive", meta: { label: "Ổ đĩa tài liệu" } },
-                  { name: "library", list: "/h/library", meta: { label: "Thư viện tri thức" } },
-                  { name: "records", list: "/p/records", meta: { label: "Hồ sơ" } },
-                  { name: "tasks", list: "/p/tasks", meta: { label: "Hộp việc" } },
-                  { name: "process_design", list: "/p/process", meta: { label: "Thiết kế quy trình" } },
-                  { name: "operations", list: "/d/ops", meta: { label: "Trung tâm điều hành" } },
-                  { name: "data_services", list: "/d/services", meta: { label: "Dịch vụ dữ liệu" } },
-                  { name: "digital_twin", list: "/d/twin", meta: { label: "Bản sao số" } },
-                  { name: "data_lineage", list: "/d/lineage", meta: { label: "Phả hệ dữ liệu" } },
-                  { name: "ledger", list: "/d/ledger", meta: { label: "Sổ cái" } },
-                  { name: "assistant", list: "/i/assistant", meta: { label: "Trợ lý đa năng" } },
-                  { name: "ocr", list: "/i/ocr", meta: { label: "Nhập liệu OCR" } },
-                  { name: "agents", list: "/i/agents", meta: { label: "Tác tử AI" } },
+                  { name: "dashboard", list: "/", meta: { label: tr("Trang chủ") } },
+                  { name: "drive", list: "/h/drive", meta: { label: tr("Ổ đĩa tài liệu") } },
+                  { name: "library", list: "/h/library", meta: { label: tr("Thư viện tri thức") } },
+                  { name: "records", list: "/p/records", meta: { label: tr("Hồ sơ") } },
+                  { name: "tasks", list: "/p/tasks", meta: { label: tr("Hộp việc") } },
+                  { name: "process_design", list: "/p/process", meta: { label: tr("Thiết kế quy trình") } },
+                  { name: "operations", list: "/d/ops", meta: { label: tr("Trung tâm điều hành") } },
+                  { name: "data_services", list: "/d/services", meta: { label: tr("Dịch vụ dữ liệu") } },
+                  { name: "digital_twin", list: "/d/twin", meta: { label: tr("Bản sao số") } },
+                  { name: "data_lineage", list: "/d/lineage", meta: { label: tr("Phả hệ dữ liệu") } },
+                  { name: "ledger", list: "/d/ledger", meta: { label: tr("Sổ cái") } },
+                  { name: "assistant", list: "/i/assistant", meta: { label: tr("Trợ lý đa năng") } },
+                  { name: "ocr", list: "/i/ocr", meta: { label: tr("Nhập liệu OCR") } },
+                  { name: "agents", list: "/i/agents", meta: { label: tr("Tác tử AI") } },
                   {
                     name: "proc_purchase_request",
                     list: "/p/documents",
                     create: "/p/documents/create",
                     edit: "/p/documents/edit/:id",
                     show: "/p/documents/show/:id",
-                    meta: { label: "Đề nghị mua sắm", icon: <FileTextOutlined /> },
+                    meta: { label: tr("Đề nghị mua sắm"), icon: <FileTextOutlined /> },
                   },
                   {
                     name: "ic_ic_order",
                     list: "/p/ic-orders",
                     show: "/p/ic-orders/show/:id",
-                    meta: { label: "Đơn hàng nội bộ", icon: <SwapOutlined /> },
+                    meta: { label: tr("Đơn hàng nội bộ"), icon: <SwapOutlined /> },
                   },
                   {
                     name: "hr_onboarding_request",
@@ -136,40 +140,44 @@ function App() {
                     create: "/h/onboarding/create",
                     edit: "/h/onboarding/edit/:id",
                     show: "/h/onboarding/show/:id",
-                    meta: { label: "Tiếp nhận nhân sự", icon: <UserAddOutlined /> },
+                    meta: { label: tr("Tiếp nhận nhân sự"), icon: <UserAddOutlined /> },
                   },
                   {
                     name: "hr_transfer_request",
                     list: "/h/transfer",
                     create: "/h/transfer/create",
                     show: "/h/transfer/show/:id",
-                    meta: { label: "Điều chuyển nhân sự", icon: <SwapOutlined /> },
+                    meta: { label: tr("Điều chuyển nhân sự"), icon: <SwapOutlined /> },
                   },
                   {
                     name: "hr_personnel_decision",
                     list: "/h/decisions",
-                    meta: { label: "Quyết định nhân sự", icon: <SolutionOutlined /> },
+                    meta: { label: tr("Quyết định nhân sự"), icon: <SolutionOutlined /> },
                   },
-                  { name: "wf_v_inbox", list: "/p/inbox", meta: { label: "Hộp việc duyệt", icon: <InboxOutlined /> } },
-                  { name: "search", list: "/i/search", meta: { label: "Tìm kiếm", icon: <SearchOutlined /> } },
+                  {
+                    name: "wf_v_inbox",
+                    list: "/p/inbox",
+                    meta: { label: tr("Hộp việc duyệt"), icon: <InboxOutlined /> },
+                  },
+                  { name: "search", list: "/i/search", meta: { label: tr("Tìm kiếm"), icon: <SearchOutlined /> } },
                   {
                     name: "audit_log",
                     list: "/admin/audit-logs",
-                    meta: { label: "Kiểm toán", icon: <AuditOutlined /> },
+                    meta: { label: tr("Kiểm toán"), icon: <AuditOutlined /> },
                   },
-                  { name: "admin_org", list: "/admin/org", meta: { label: "Cơ cấu tổ chức" } },
-                  { name: "admin_people", list: "/admin/people", meta: { label: "Người dùng" } },
-                  { name: "admin_roles", list: "/admin/roles", meta: { label: "Vai trò & phân quyền" } },
-                  { name: "admin_queue", list: "/admin/queue", meta: { label: "Hàng đợi tin nhắn" } },
-                  { name: "admin_ops", list: "/admin/ops", meta: { label: "Vận hành hệ thống" } },
+                  { name: "admin_org", list: "/admin/org", meta: { label: tr("Cơ cấu tổ chức") } },
+                  { name: "admin_people", list: "/admin/people", meta: { label: tr("Người dùng") } },
+                  { name: "admin_roles", list: "/admin/roles", meta: { label: tr("Vai trò & phân quyền") } },
+                  { name: "admin_queue", list: "/admin/queue", meta: { label: tr("Hàng đợi tin nhắn") } },
+                  { name: "admin_ops", list: "/admin/ops", meta: { label: tr("Vận hành hệ thống") } },
                   {
                     name: "notification_settings",
                     list: "/settings/notifications",
-                    meta: { label: "Thông báo ngoài ứng dụng" },
+                    meta: { label: tr("Thông báo ngoài ứng dụng") },
                   },
-                  { name: "admin_catalog", list: "/admin/catalog", meta: { label: "Danh mục & dữ liệu chủ" } },
-                  { name: "admin_modules", list: "/admin/modules", meta: { label: "Quản lý chức năng" } },
-                  { name: "admin_company", list: "/admin/company", meta: { label: "Thông tin công ty" } },
+                  { name: "admin_catalog", list: "/admin/catalog", meta: { label: tr("Danh mục & dữ liệu chủ") } },
+                  { name: "admin_modules", list: "/admin/modules", meta: { label: tr("Quản lý chức năng") } },
+                  { name: "admin_company", list: "/admin/company", meta: { label: tr("Thông tin công ty") } },
                   { name: "collab_notification", meta: { hide: true } },
                 ]}
                 options={{

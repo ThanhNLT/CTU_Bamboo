@@ -7,6 +7,7 @@ import { Upload } from "lucide-react";
 import { useRef } from "react";
 
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
+import { tr } from "../../../i18n";
 
 export const DriveHeader = ({
   onUpload,
@@ -21,9 +22,9 @@ export const DriveHeader = ({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Ổ đĩa tài liệu</h1>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">{tr("Ổ đĩa tài liệu")}</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Tệp đính kèm của các chứng từ bạn được xem · mọi tệp được kiểm dịch (ClamAV) trước khi lưu
+          {tr("Tệp đính kèm của các chứng từ bạn được xem · mọi tệp được kiểm dịch (ClamAV) trước khi lưu")}
         </p>
       </div>
 
@@ -38,7 +39,7 @@ export const DriveHeader = ({
             }
           >
             <Upload className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            Tải lên
+            {tr("Tải lên")}
           </button>
         </Tooltip>
         <input

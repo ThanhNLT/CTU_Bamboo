@@ -28,6 +28,7 @@ import { parsePeriod, periodLabel, toDate, type Period } from "../shared/period"
 import { useGql } from "../shared/useGql";
 import { PERM, usePermissions } from "../shared/usePermissions";
 import { GrantModal } from "./GrantModal";
+import { tr } from "../../../i18n";
 
 const ROLES = `
   query AdminRoles {
@@ -59,13 +60,13 @@ type Role = {
 type Data = { core_role: Role[]; core_permission: { code: string; description: string }[] };
 
 const MODULE: Record<string, string> = {
-  core: "Tổ chức & phân quyền",
-  proc: "Mua sắm",
-  hr: "Nhân sự",
-  wf: "Phê duyệt",
-  ic: "Đơn hàng nội bộ",
-  mdm: "Dữ liệu chủ",
-  audit: "Kiểm toán",
+  core: tr("Tổ chức & phân quyền"),
+  proc: tr("Mua sắm"),
+  hr: tr("Nhân sự"),
+  wf: tr("Phê duyệt"),
+  ic: tr("Đơn hàng nội bộ"),
+  mdm: tr("Dữ liệu chủ"),
+  audit: tr("Kiểm toán"),
 };
 
 type Dialog =
@@ -123,7 +124,7 @@ export const RolesPage = () => {
     setSaving(true);
     try {
       await adminSave("role", { id: role.id, code: role.code, name: role.name, permission_codes: [...draft] });
-      message.success("Đã lưu bộ quyền. Áp dụng ngay cho mọi vị trí được cấp vai trò này.");
+      message.success(tr("Đã lưu bộ quyền. Áp dụng ngay cho mọi vị trí được cấp vai trò này."));
       reload();
     } catch (e) {
       message.error((e as Error).message);
@@ -136,15 +137,19 @@ export const RolesPage = () => {
     if (g.position_id) {
       const p = org.positions.find((x) => x.id === g.position_id);
       return {
-        kind: "Vị trí",
+        kind: tr("Vị trí"),
         name: p?.name ?? "—",
-        sub: `${org.unitPath(p?.org_unit_id)}${p?.holder ? ` · ${p.holder.person.full_name}` : " · ghế trống"}`,
+        sub: `${org.unitPath(p?.org_unit_id)}${p?.holder ? ` · ${p.holder.person.full_name}` : tr(" · ghế trống")}`,
       };
     }
     if (g.org_unit_id)
-      return { kind: "Đơn vị", name: org.unitById.get(g.org_unit_id)?.name ?? "—", sub: "Mọi vị trí trong đơn vị" };
+      return {
+        kind: tr("Đơn vị"),
+        name: org.unitById.get(g.org_unit_id)?.name ?? "—",
+        sub: tr("Mọi vị trí trong đơn vị"),
+      };
     const person = org.people.find((x) => x.id === g.person_id);
-    return { kind: "Người", name: person?.full_name ?? "—", sub: "Ngoại lệ ngoài cây tổ chức" };
+    return { kind: tr("Người"), name: person?.full_name ?? "—", sub: tr("Ngoại lệ ngoài cây tổ chức") };
   };
   const grants = (role?.role_grants ?? [])
     .map((g) => ({ ...g, period: parsePeriod(g.valid_period) }))
@@ -153,28 +158,33 @@ export const RolesPage = () => {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <AdminHeader
-        title="Vai trò & phân quyền"
-        subtitle={<>Vai trò là gói quyền; cấp vai trò cho vị trí trong {tenant.tenant_name}, phạm vi theo cây đơn vị</>}
+        title={tr("Vai trò & phân quyền")}
+        subtitle={
+          <>
+            {tr("Vai trò là gói quyền; cấp vai trò cho vị trí trong ")} {tenant.tenant_name}
+            {tr(", phạm vi theo cây đơn vị")}
+          </>
+        }
         actions={
           <>
             <button type="button" className={secondaryButtonClass} onClick={() => setDialog({ kind: "import" })}>
-              <FileSpreadsheet className="h-4 w-4 text-body" strokeWidth={1.75} aria-hidden /> Nhập cấp quyền
+              <FileSpreadsheet className="h-4 w-4 text-body" strokeWidth={1.75} aria-hidden /> {tr(" Nhập cấp quyền")}
             </button>
             <button
               type="button"
               className={primaryButtonClass}
               onClick={() => setDialog({ kind: "role", edit: false })}
             >
-              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Thêm vai trò
+              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden /> {tr(" Thêm vai trò")}
             </button>
           </>
         }
       />
-      {q.error && <Alert type="error" showIcon message="Không tải được vai trò" description={q.error} />}
+      {q.error && <Alert type="error" showIcon message={tr("Không tải được vai trò")} description={q.error} />}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(240px,1fr)_minmax(0,2.4fr)]">
         <nav
-          aria-label="Vai trò"
+          aria-label={tr("Vai trò")}
           className="rounded-2xl border border-line bg-surface p-2 shadow-card lg:sticky lg:top-[84px] lg:self-start"
         >
           <ul className="m-0 list-none space-y-0.5 p-0">
@@ -197,14 +207,16 @@ export const RolesPage = () => {
                       {r.name}
                     </span>
                     <span className="mt-0.5 block text-[11.5px] text-muted">
-                      <span className="font-mono">{r.code}</span> · {r.role_permissions.length} quyền · {active} nơi
-                      được cấp
+                      <span className="font-mono">{r.code}</span> · {r.role_permissions.length} {tr(" quyền · ")}{" "}
+                      {active} {tr(" nơi được cấp")}
                     </span>
                   </button>
                 </li>
               );
             })}
-            {roles.length === 0 && <li className="px-3 py-8 text-center text-[13px] text-muted">Chưa có vai trò.</li>}
+            {roles.length === 0 && (
+              <li className="px-3 py-8 text-center text-[13px] text-muted">{tr("Chưa có vai trò.")}</li>
+            )}
           </ul>
         </nav>
 
@@ -224,7 +236,7 @@ export const RolesPage = () => {
                     className={smallSecondaryButtonClass}
                     onClick={() => setDialog({ kind: "role", edit: true })}
                   >
-                    Đổi tên
+                    {tr("Đổi tên")}
                   </button>
                   <button
                     type="button"
@@ -232,7 +244,7 @@ export const RolesPage = () => {
                     disabled={!dirty || saving}
                     onClick={() => void savePermissions()}
                   >
-                    <Save className="h-3.5 w-3.5" aria-hidden /> {saving ? "Đang lưu…" : "Lưu bộ quyền"}
+                    <Save className="h-3.5 w-3.5" aria-hidden /> {saving ? tr("Đang lưu…") : tr("Lưu bộ quyền")}
                   </button>
                 </span>
               }
@@ -266,27 +278,27 @@ export const RolesPage = () => {
                   </fieldset>
                 ))}
               </div>
-              {dirty && <p className="mb-0 mt-3 text-[12px] text-amber-700">Có thay đổi chưa lưu.</p>}
+              {dirty && <p className="mb-0 mt-3 text-[12px] text-amber-700">{tr("Có thay đổi chưa lưu.")}</p>}
             </Panel>
 
             <Panel
               title={
                 <>
-                  Được cấp cho{" "}
+                  {tr("Được cấp cho")}{" "}
                   <span className="ml-1 text-[12.5px] font-normal tabular-nums text-muted">{grants.length}</span>
                 </>
               }
               extra={
                 <span className="flex items-center gap-3">
                   <Checkbox checked={showEnded} onChange={(e) => setShowEnded(e.target.checked)}>
-                    <span className="text-[12px] text-muted">Hiện đã thu hồi</span>
+                    <span className="text-[12px] text-muted">{tr("Hiện đã thu hồi")}</span>
                   </Checkbox>
                   <button
                     type="button"
                     className={smallPrimaryButtonClass}
                     onClick={() => setDialog({ kind: "grant" })}
                   >
-                    <ShieldPlus className="h-3.5 w-3.5" aria-hidden /> Cấp vai trò
+                    <ShieldPlus className="h-3.5 w-3.5" aria-hidden /> {tr(" Cấp vai trò")}
                   </button>
                 </span>
               }
@@ -299,10 +311,10 @@ export const RolesPage = () => {
                   pagination={false}
                   dataSource={grants}
                   scroll={{ x: 680 }}
-                  locale={{ emptyText: "Chưa cấp cho vị trí nào." }}
+                  locale={{ emptyText: tr("Chưa cấp cho vị trí nào.") }}
                   columns={[
                     {
-                      title: "Đối tượng",
+                      title: tr("Đối tượng"),
                       render: (_, g) => {
                         const t = target(g);
                         return (
@@ -316,21 +328,21 @@ export const RolesPage = () => {
                       },
                     },
                     {
-                      title: "Phạm vi",
+                      title: tr("Phạm vi"),
                       width: 220,
                       render: (_, g) => (
                         <span className="text-body">
                           {SCOPE_LABEL[g.scope]}
                           {g.scope_unit_id && (
                             <span className="block text-[11.5px] text-muted">
-                              tại {org.unitById.get(g.scope_unit_id)?.name}
+                              {tr("tại ")} {org.unitById.get(g.scope_unit_id)?.name}
                             </span>
                           )}
                         </span>
                       ),
                     },
                     {
-                      title: "Hiệu lực",
+                      title: tr("Hiệu lực"),
                       width: 200,
                       render: (_, g: Grant & { period: Period }) => (
                         <span className="inline-flex items-center gap-1.5 text-body">
@@ -349,7 +361,7 @@ export const RolesPage = () => {
                             className={smallSecondaryButtonClass}
                             onClick={() => setDialog({ kind: "revoke", grant: g })}
                           >
-                            Thu hồi
+                            {tr("Thu hồi")}
                           </button>
                         ),
                     },
@@ -363,13 +375,13 @@ export const RolesPage = () => {
 
       <FormModal<{ code: string; name: string }>
         open={dialog?.kind === "role"}
-        title={dialog?.kind === "role" && dialog.edit ? "Đổi tên vai trò" : "Thêm vai trò"}
+        title={dialog?.kind === "role" && dialog.edit ? tr("Đổi tên vai trò") : tr("Thêm vai trò")}
         initial={dialog?.kind === "role" && dialog.edit && role ? { code: role.code, name: role.name } : {}}
         onCancel={close}
         onSubmit={async (v) => {
           const edit = dialog?.kind === "role" && dialog.edit && role;
           const id = await adminSave("role", edit ? { id: role.id, ...v } : { ...v, permission_codes: [] });
-          message.success(edit ? "Đã đổi tên vai trò." : "Đã thêm vai trò. Chọn quyền rồi bấm Lưu bộ quyền.");
+          message.success(edit ? tr("Đã đổi tên vai trò.") : tr("Đã thêm vai trò. Chọn quyền rồi bấm Lưu bộ quyền."));
           close();
           await q.reload();
           select(id);
@@ -379,17 +391,17 @@ export const RolesPage = () => {
           <>
             <Form.Item
               name="code"
-              label="Mã vai trò"
-              rules={[{ required: true, pattern: /^[A-Z0-9_]+$/, message: "Chữ IN HOA không dấu, số, gạch dưới" }]}
+              label={tr("Mã vai trò")}
+              rules={[{ required: true, pattern: /^[A-Z0-9_]+$/, message: tr("Chữ IN HOA không dấu, số, gạch dưới") }]}
             >
               <Input className="font-mono" placeholder="KE_TOAN_TRUONG" />
             </Form.Item>
             <Form.Item
               name="name"
-              label="Tên vai trò"
-              rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}
+              label={tr("Tên vai trò")}
+              rules={[{ required: true, whitespace: true, message: tr("Nhập tên") }]}
             >
-              <Input placeholder="Kế toán trưởng" />
+              <Input placeholder={tr("Kế toán trưởng")} />
             </Form.Item>
           </>
         )}
@@ -402,7 +414,7 @@ export const RolesPage = () => {
           roleName={role.name}
           onClose={close}
           onSaved={() => {
-            message.success("Đã cấp vai trò.");
+            message.success(tr("Đã cấp vai trò."));
             close();
             reload();
           }}
@@ -410,15 +422,15 @@ export const RolesPage = () => {
       )}
       <EndModal
         open={dialog?.kind === "revoke"}
-        title="Thu hồi vai trò?"
-        description="Vị trí / người không còn các quyền của vai trò này từ thời điểm thu hồi."
-        okText="Thu hồi"
+        title={tr("Thu hồi vai trò?")}
+        description={tr("Vị trí / người không còn các quyền của vai trò này từ thời điểm thu hồi.")}
+        okText={tr("Thu hồi")}
         onCancel={close}
         onConfirm={async (d) => {
           if (dialog?.kind !== "revoke") return;
           try {
             await adminClose("role_grant", dialog.grant.id, toDate(d));
-            message.success("Đã thu hồi.");
+            message.success(tr("Đã thu hồi."));
             close();
             reload();
           } catch (e) {
@@ -427,7 +439,7 @@ export const RolesPage = () => {
         }}
       />
       {dialog?.kind === "import" && (
-        <ImportModal open kind="role_grant" label="cấp quyền" onClose={close} onDone={reload} />
+        <ImportModal open kind="role_grant" label={tr("cấp quyền")} onClose={close} onDone={reload} />
       )}
     </div>
   );

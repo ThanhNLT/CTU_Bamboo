@@ -6,27 +6,28 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 
 import type { TaskInfo } from "../types";
+import { tr } from "../../../i18n";
 
 export const InfoWidget = ({ info }: { info: TaskInfo }) => {
   const rows: Array<[string, ReactNode]> = [
-    ["Người nộp", info.submitter],
-    ["Đơn vị", info.unit],
+    [tr("Người nộp"), info.submitter],
+    [tr("Đơn vị"), info.unit],
   ];
-  if (info.amount) rows.push(["Số tiền", <span className="tabular-nums">{info.amount}</span>]);
+  if (info.amount) rows.push([tr("Số tiền"), <span className="tabular-nums">{info.amount}</span>]);
   if (info.device) {
     rows.push([
-      "Thiết bị",
+      tr("Thiết bị"),
       <Link to={info.device.to} className="text-bamboo-700 hover:underline underline-offset-2">
         {info.device.label}
       </Link>,
     ]);
   }
-  if (info.phone) rows.push(["Điện thoại", <span className="tabular-nums">{info.phone}</span>]);
-  if (info.dataTier) rows.push(["Dữ liệu", info.dataTier]);
+  if (info.phone) rows.push([tr("Điện thoại"), <span className="tabular-nums">{info.phone}</span>]);
+  if (info.dataTier) rows.push([tr("Dữ liệu"), info.dataTier]);
   return (
     <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-labelledby="inbox-info">
       <h3 id="inbox-info" className="text-[14px] font-semibold text-ink">
-        Thông tin
+        {tr("Thông tin")}
       </h3>
       <dl className="m-0 mt-2.5 grid grid-cols-[84px_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-[12.5px]">
         {rows.map(([k, v]) => (

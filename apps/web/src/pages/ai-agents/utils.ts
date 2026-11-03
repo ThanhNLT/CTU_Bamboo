@@ -3,22 +3,29 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { Agent, AgentStats, AgentStatus, GuardKey } from "./types";
+import { tr, trf } from "../../i18n";
 
 export const STATS_DAYS = 7;
 
 export const TOOLS: { key: string; label: string }[] = [
-  { key: "search_docs", label: "search_docs · tìm trong Thư viện tri thức" },
-  { key: "cite", label: "cite · trích dẫn nguồn" },
+  { key: "search_docs", label: tr("search_docs · tìm trong Thư viện tri thức") },
+  { key: "cite", label: tr("cite · trích dẫn nguồn") },
 ];
 
 export const GUARD_INFO: Record<GuardKey, { label: string; description: string }> = {
   scope_guard: {
     label: "scope_guard",
-    description: "Không tìm thấy tài liệu người hỏi được xem thì từ chối, không gọi mô hình",
+    description: tr("Không tìm thấy tài liệu người hỏi được xem thì từ chối, không gọi mô hình"),
   },
-  pii_guard: { label: "pii_guard", description: "Che số điện thoại, CCCD, số tài khoản trong câu hỏi và câu trả lời" },
-  prompt_guard: { label: "prompt_guard", description: "Chặn câu hỏi có dấu hiệu tiêm lệnh, bọc tài liệu làm dữ liệu" },
-  think: { label: "think", description: "Cho mô hình suy nghĩ trước khi trả lời (chậm hơn nhiều)" },
+  pii_guard: {
+    label: "pii_guard",
+    description: tr("Che số điện thoại, CCCD, số tài khoản trong câu hỏi và câu trả lời"),
+  },
+  prompt_guard: {
+    label: "prompt_guard",
+    description: tr("Chặn câu hỏi có dấu hiệu tiêm lệnh, bọc tài liệu làm dữ liệu"),
+  },
+  think: { label: "think", description: tr("Cho mô hình suy nghĩ trước khi trả lời (chậm hơn nhiều)") },
 };
 
 export const GUARDS = Object.keys(GUARD_INFO) as GuardKey[];
@@ -28,11 +35,11 @@ export const guardOn = (a: Agent, g: GuardKey) => a.guardrail_config[g] ?? g !==
 export const num = (n: number, decimals = 0) =>
   n.toLocaleString("vi-VN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
-export const seconds = (n: number | null) => (n == null ? "—" : `${num(n, 1)} giây`);
+export const seconds = (n: number | null) => (n == null ? "—" : trf("{0} giây", [num(n, 1)]));
 
 export const STATUS: Record<AgentStatus, { label: string; dot: string; badge?: string }> = {
-  active: { label: "Hoạt động", dot: "bg-bamboo-500" },
-  inactive: { label: "Ngừng", dot: "bg-gray-400", badge: "bg-canvas text-body" },
+  active: { label: tr("Hoạt động"), dot: "bg-bamboo-500" },
+  inactive: { label: tr("Ngừng"), dot: "bg-gray-400", badge: "bg-canvas text-body" },
 };
 
 const EMPTY: Omit<AgentStats, "agent_id"> = {

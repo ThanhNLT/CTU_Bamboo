@@ -8,6 +8,7 @@ import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { Metric, MetricStatus } from "../types";
 import { METRIC_TONE, formatNumber } from "../utils";
+import { tr } from "../../../i18n";
 
 const NOTE_CLASS: Record<MetricStatus, string> = {
   critical: "text-red-700",
@@ -47,7 +48,7 @@ export const MetricCard = ({
     >
       <span className="flex items-start justify-between gap-2">
         <span className="text-[12.5px] leading-snug text-muted">{metric.label}</span>
-        {selected && <Activity className="h-3.5 w-3.5 shrink-0 text-bamboo-600" aria-label="Đang xem biểu đồ" />}
+        {selected && <Activity className="h-3.5 w-3.5 shrink-0 text-bamboo-600" aria-label={tr("Đang xem biểu đồ")} />}
       </span>
       <span className="mt-2 flex items-baseline gap-1.5">
         <span

@@ -8,6 +8,7 @@ import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { CATEGORY_LABEL, SCOPE_OPTIONS } from "../labels";
 import type { CategoryFilter, DocCategory, ScopeFilter } from "../types";
+import { tr } from "../../../i18n";
 
 const CATEGORIES: CategoryFilter[] = ["all", ...(Object.keys(CATEGORY_LABEL) as DocCategory[])];
 
@@ -34,8 +35,8 @@ export const FilterSection = ({
         className="flex-1"
         value={query}
         onChange={onQueryChange}
-        placeholder="Tìm trong thư viện..."
-        label="Tìm trong thư viện"
+        placeholder={tr("Tìm trong thư viện...")}
+        label={tr("Tìm trong thư viện")}
       />
       <Segmented
         className="self-start md:self-auto"
@@ -45,7 +46,7 @@ export const FilterSection = ({
       />
     </div>
 
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Loại tài liệu">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={tr("Loại tài liệu")}>
       {CATEGORIES.map((c) => {
         const active = c === category;
         return (
@@ -62,7 +63,7 @@ export const FilterSection = ({
                 : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
             )}
           >
-            {c === "all" ? "Tất cả" : CATEGORY_LABEL[c]} · <span className="tabular-nums">{counts[c] ?? 0}</span>
+            {c === "all" ? tr("Tất cả") : CATEGORY_LABEL[c]} · <span className="tabular-nums">{counts[c] ?? 0}</span>
           </button>
         );
       })}

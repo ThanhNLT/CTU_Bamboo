@@ -11,6 +11,7 @@ import { MAX_PINS, type KpiOption } from "../useKpis";
 import type { PinnedKpi, Tone } from "../types";
 import { Dot, Panel, PanelLink } from "../../../components/ui";
 import { Sparkline } from "./Sparkline";
+import { tr, trf } from "../../../i18n";
 
 const NOTE_TEXT: Record<Tone, string> = {
   success: "text-bamboo-700",
@@ -32,8 +33,8 @@ const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
         </span>
       )}
       <span>
-        {kpi.noteMarker === "down" && <span className="sr-only">Giảm </span>}
-        {kpi.noteMarker === "up" && <span className="sr-only">Tăng </span>}
+        {kpi.noteMarker === "down" && <span className="sr-only">{tr("Giảm ")} </span>}
+        {kpi.noteMarker === "up" && <span className="sr-only">{tr("Tăng ")} </span>}
         {kpi.note}
       </span>
     </div>
@@ -41,7 +42,7 @@ const KpiBlock = ({ kpi }: { kpi: PinnedKpi }) => (
       className="mt-3"
       data={kpi.series}
       threshold={kpi.threshold}
-      label={`${kpi.label}: xu hướng 12 kỳ gần nhất, hiện tại ${kpi.value}`}
+      label={trf("{0}: xu hướng 12 kỳ gần nhất, hiện tại {1}", [kpi.label, kpi.value])}
     />
   </div>
 );
@@ -66,9 +67,9 @@ const PinPicker = ({
   return (
     <Modal
       open={open}
-      title="Chọn KPI ghim lên Trang chủ"
-      okText="Lưu"
-      cancelText="Hủy"
+      title={tr("Chọn KPI ghim lên Trang chủ")}
+      okText={tr("Lưu")}
+      cancelText={tr("Hủy")}
       confirmLoading={saving}
       onCancel={onCancel}
       onOk={async () => {
@@ -82,7 +83,7 @@ const PinPicker = ({
       destroyOnHidden
     >
       <p className="mb-3 text-[12.5px] text-muted">
-        Tích theo thứ tự muốn hiện, tối đa {MAX_PINS} KPI ({picked.length}/{MAX_PINS}).
+        {tr("Tích theo thứ tự muốn hiện, tối đa ")} {MAX_PINS} KPI ({picked.length}/{MAX_PINS}).
       </p>
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {options.map((o) => {
@@ -120,7 +121,7 @@ export const PinnedKpis = ({
   const [picking, setPicking] = useState(false);
   return (
     <Panel
-      title="KPI đã ghim"
+      title={tr("KPI đã ghim")}
       extra={
         <span className="inline-flex items-center gap-3">
           {options.length > 0 && (
@@ -130,16 +131,16 @@ export const PinnedKpis = ({
               className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-bamboo-700 hover:underline"
             >
               <Pin className="h-3.5 w-3.5" aria-hidden />
-              Chọn KPI
+              {tr("Chọn KPI")}
             </button>
           )}
-          <PanelLink to="/d/ops">Điều hành</PanelLink>
+          <PanelLink to="/d/ops">{tr("Điều hành")}</PanelLink>
         </span>
       }
     >
       {kpis.length === 0 ? (
         <p className="py-6 text-center text-[13px] text-muted">
-          {options.length ? "Chưa ghim KPI nào. Bấm “Chọn KPI” để ghim." : "Tenant chưa có KPI."}
+          {options.length ? tr("Chưa ghim KPI nào. Bấm “Chọn KPI” để ghim.") : tr("Tenant chưa có KPI.")}
         </p>
       ) : (
         <div className="divide-y divide-line">

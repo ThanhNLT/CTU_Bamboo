@@ -22,15 +22,16 @@ import { uploadContentType } from "../../utils/fileType";
 import { useModules } from "../../modules/useModules";
 import { formatDate } from "../../utils/format";
 import type { AttachmentOcr, DocumentFiles } from "./types";
+import { tr, trf } from "../../i18n";
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx,.txt,.csv,.md";
 const MAX = 25 * 1024 * 1024;
 
 const SCAN: Record<string, { color: string; icon: ReactElement; label: string }> = {
-  PENDING: { color: "processing", icon: <LoadingOutlined />, label: "Đang kiểm tra" },
-  CLEAN: { color: "success", icon: <CheckCircleOutlined />, label: "Đã quét – sạch" },
-  INFECTED: { color: "error", icon: <BugOutlined />, label: "Nhiễm mã độc – đã xóa" },
-  REJECTED: { color: "warning", icon: <StopOutlined />, label: "Bị loại – đã xóa" },
+  PENDING: { color: "processing", icon: <LoadingOutlined />, label: tr("Đang kiểm tra") },
+  CLEAN: { color: "success", icon: <CheckCircleOutlined />, label: tr("Đã quét – sạch") },
+  INFECTED: { color: "error", icon: <BugOutlined />, label: tr("Nhiễm mã độc – đã xóa") },
+  REJECTED: { color: "warning", icon: <StopOutlined />, label: tr("Bị loại – đã xóa") },
 };
 
 // Tệp cũ được nhận khi chưa có công cụ quét nào: chờ hệ thống quét lại, chưa tải về được
@@ -39,13 +40,15 @@ const awaitingRescan = (a: { status: string; scan_engines?: string[] }) =>
 
 const scanTag = (a: { status: string; scan_engines?: string[] }) =>
   awaitingRescan(a)
-    ? { color: "processing", icon: <LoadingOutlined />, label: "Chờ quét lại" }
+    ? { color: "processing", icon: <LoadingOutlined />, label: tr("Chờ quét lại") }
     : (SCAN[a.status] ?? SCAN.PENDING);
 
 const scanTip = (a: { scan_result: string | null; scan_engines?: string[] }) =>
   [
     a.scan_result,
-    a.scan_engines?.length && !a.scan_engines.includes("unscanned") ? `Công cụ: ${a.scan_engines.join("; ")}` : null,
+    a.scan_engines?.length && !a.scan_engines.includes("unscanned")
+      ? trf("Công cụ: {0}", [a.scan_engines.join("; ")])
+      : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -55,18 +58,18 @@ const OCR_POLL_MS = 5000;
 const ocrTag = (o: AttachmentOcr): { color: string; icon: ReactElement; label: string; tip: string | null } | null => {
   switch (o.status) {
     case "PENDING":
-      return { color: "default", icon: <FileSearchOutlined />, label: "Chờ OCR", tip: null };
+      return { color: "default", icon: <FileSearchOutlined />, label: tr("Chờ OCR"), tip: null };
     case "RUNNING":
       return {
         color: "processing",
         icon: <LoadingOutlined />,
-        label: `Đang OCR ${o.pages_done}/${o.pages_total ?? "?"} trang`,
+        label: trf("Đang OCR {0}/{1} trang", [o.pages_done, o.pages_total ?? "?"]),
         tip: o.note,
       };
     case "DONE":
-      return { color: "success", icon: <FileSearchOutlined />, label: "Đã OCR", tip: o.note };
+      return { color: "success", icon: <FileSearchOutlined />, label: tr("Đã OCR"), tip: o.note };
     case "ERROR":
-      return { color: "error", icon: <FileSearchOutlined />, label: "OCR lỗi", tip: o.error };
+      return { color: "error", icon: <FileSearchOutlined />, label: tr("OCR lỗi"), tip: o.error };
     default:
       return null;
   }
@@ -83,7 +86,7 @@ type Props = {
   hint?: string;
 };
 
-export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "báo giá, hóa đơn" }: Props) => {
+export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = tr("báo giá, hóa đơn") }: Props) => {
   const { message } = App.useApp();
   const [uploading, setUploading] = useState(false);
   const locked = ["APPROVED", "REJECTED", "CANCELLED"].includes(doc.status);
@@ -98,7 +101,7 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
 
   const upload = async (file: File) => {
     if (file.size > MAX) {
-      message.error("Tệp phải nhỏ hơn 25 MB");
+      message.error(tr("Tệp phải nhỏ hơn 25 MB"));
       return;
     }
     setUploading(true);
@@ -118,12 +121,12 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
         },
       );
       const put = await fetch(t.upload_url, { method: "PUT", body: file, headers: { "Content-Type": t.content_type } });
-      if (!put.ok) throw new Error(`Tải lên kho lưu trữ thất bại (${put.status})`);
+      if (!put.ok) throw new Error(trf("Tải lên kho lưu trữ thất bại ({0})", [put.status]));
       const { confirm_upload: r } = await request<{ confirm_upload: { status: string; scan_result: string | null } }>(
         `mutation Confirm($a: uuid!) { confirm_upload(attachment_id: $a) { status scan_result } }`,
         { a: t.attachment_id },
       );
-      if (r.status === "CLEAN") message.success(`Đã nhận ${file.name}`);
+      if (r.status === "CLEAN") message.success(trf("Đã nhận {0}", [file.name]));
       else message.warning(`${file.name}: ${r.scan_result ?? r.status}`);
     } catch (e) {
       message.error((e as Error).message);
@@ -182,16 +185,19 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
           }}
         >
           <p className="ant-upload-drag-icon">{uploading ? <LoadingOutlined /> : <CloudUploadOutlined />}</p>
-          <p>Kéo thả hoặc bấm để đính kèm {hint} (PDF, ảnh, DOCX, XLSX, TXT; tối đa 25 MB)</p>
+          <p>
+            {tr("Kéo thả hoặc bấm để đính kèm ")} {hint} {tr(" (PDF, ảnh, DOCX, XLSX, TXT; tối đa 25 MB)")}
+          </p>
           <Typography.Text type="secondary">
-            Tệp được kiểm tra kích thước, định dạng, mã chủ động nhúng (macro, script, tệp thực thi) và quét virus xong
-            mới được xác nhận là sạch.
+            {tr(
+              "Tệp được kiểm tra kích thước, định dạng, mã chủ động nhúng (macro, script, tệp thực thi) và quét virus xong mới được xác nhận là sạch.",
+            )}
           </Typography.Text>
         </Upload.Dragger>
       )}
       <List
         dataSource={doc.attachments}
-        locale={{ emptyText: "Chưa có tệp đính kèm" }}
+        locale={{ emptyText: tr("Chưa có tệp đính kèm") }}
         renderItem={(a) => {
           const s = scanTag(a);
           const o = a.ocr ? ocrTag(a.ocr) : null;
@@ -200,18 +206,18 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
               actions={[
                 a.status === "CLEAN" && !awaitingRescan(a) && (
                   <Button key="dl" type="link" icon={<DownloadOutlined />} onClick={() => download(a.id)}>
-                    Tải về
+                    {tr("Tải về")}
                   </Button>
                 ),
                 a.uploaded_by === me && !locked && (
                   <Popconfirm
                     key="rm"
-                    title="Xóa tệp này?"
-                    okText="Xóa"
-                    cancelText="Không"
+                    title={tr("Xóa tệp này?")}
+                    okText={tr("Xóa")}
+                    cancelText={tr("Không")}
                     onConfirm={() => remove(a.id)}
                   >
-                    <Button type="text" danger icon={<DeleteOutlined />} aria-label="Xóa tệp" />
+                    <Button type="text" danger icon={<DeleteOutlined />} aria-label={tr("Xóa tệp")} />
                   </Popconfirm>
                 ),
               ].filter(Boolean)}
@@ -234,7 +240,7 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = "
                     )}
                     {a.ocr?.status === "ERROR" && (
                       <Button size="small" type="link" icon={<RedoOutlined />} onClick={() => retryOcr(a.id)}>
-                        Thử lại OCR
+                        {tr("Thử lại OCR")}
                       </Button>
                     )}
                     <span>{size(a.size_bytes)}</span>·<span>{a.uploaded_by_person?.full_name}</span>·

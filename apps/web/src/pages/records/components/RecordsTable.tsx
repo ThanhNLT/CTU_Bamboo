@@ -9,6 +9,7 @@ import { DOC_KIND_LABEL } from "../../../api/documents";
 import type { EofficeRecord } from "../types";
 import { Pagination } from "./Pagination";
 import { RecordStatusBadge } from "./RecordStatusBadge";
+import { tr } from "../../../i18n";
 
 const TH = "px-3 pb-2 pt-1 text-left text-[12px] font-medium text-muted";
 
@@ -44,16 +45,16 @@ export const RecordsTable = ({
 
   return (
     <section
-      aria-label="Danh sách hồ sơ"
+      aria-label={tr("Danh sách hồ sơ")}
       className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface shadow-card", className)}
     >
       <header className="flex min-h-[56px] shrink-0 items-center justify-between gap-3 px-5 pt-2">
         <h2 className="text-[15px] font-semibold text-ink">
-          <span className="tabular-nums">{total}</span> hồ sơ
+          <span className="tabular-nums">{total}</span> {tr(" hồ sơ")}
         </h2>
         {loading && (
           <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden /> Đang tải
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden /> {tr(" Đang tải")}
           </span>
         )}
       </header>
@@ -62,24 +63,24 @@ export const RecordsTable = ({
         {rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
             <SearchX className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
-            <p className="text-[13px] font-medium text-ink">Không có hồ sơ phù hợp</p>
-            <p className="text-[12px] text-muted">Thử đổi tab trạng thái, khoảng thời gian hoặc từ khóa.</p>
+            <p className="text-[13px] font-medium text-ink">{tr("Không có hồ sơ phù hợp")}</p>
+            <p className="text-[12px] text-muted">{tr("Thử đổi tab trạng thái, khoảng thời gian hoặc từ khóa.")}</p>
           </div>
         ) : (
           <table className="w-full min-w-[620px] table-fixed border-separate border-spacing-0 text-[13px]">
             <thead className="sticky top-0 z-10 bg-surface">
               <tr>
                 <th scope="col" className={TH}>
-                  Hồ sơ
+                  {tr("Hồ sơ")}
                 </th>
                 <th scope="col" className={cn(TH, "w-[160px]")}>
-                  Trạng thái
+                  {tr("Trạng thái")}
                 </th>
                 <th scope="col" className={cn(TH, "w-[150px] text-right")}>
-                  Số tiền
+                  {tr("Số tiền")}
                 </th>
                 <th scope="col" className={cn(TH, "w-[110px]")}>
-                  Cập nhật
+                  {tr("Cập nhật")}
                 </th>
               </tr>
             </thead>

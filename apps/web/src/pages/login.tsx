@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useLogin } from "@refinedev/core";
-import { ThemedTitle } from "@refinedev/antd";
-import { Button, Layout, Space, Spin, Typography } from "antd";
+import { Spin } from "antd";
+import { ArrowRight, LogIn } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { useLocale } from "../i18n";
 import { LOGIN_ATTEMPT_KEY } from "../providers/auth";
 import { setupStatus } from "./setup/api";
+import { AuthGreeting, AuthShell } from "./setup/AuthShell";
 
 // Hai lần tự chuyển trong khoảng này coi như vòng lặp (Keycloak báo lỗi rồi quay về): dừng và cho bấm tay
 const LOOP_WINDOW_MS = 8000;
@@ -54,34 +55,59 @@ export const Login: React.FC = () => {
     login({});
   }, [login, manual, setupOpen]);
 
+  if (setupOpen) {
+    return (
+      <AuthShell>
+        <div className="auth-card auth-card--split">
+          <section className="flex flex-col justify-center gap-6 px-8 py-10 sm:px-12 md:py-16">
+            <div className="space-y-2">
+              <h1 className="text-[28px] font-semibold tracking-[-0.02em] text-ink">{t("Đăng nhập")}</h1>
+              <p className="text-[15px] leading-relaxed text-body">
+                {t("Hệ thống chưa có công ty nào. Bạn đã có tài khoản do quản trị viên cấp thì đăng nhập tại đây.")}
+              </p>
+            </div>
+            <button type="button" className="auth-pill auth-pill--ghost w-full" onClick={() => login({})}>
+              <LogIn className="h-[18px] w-[18px]" strokeWidth={1.75} />
+              {t("Đăng nhập")}
+            </button>
+            <p className="text-center text-[13px] text-muted">
+              {t("Chưa có tài khoản?")}{" "}
+              <a className="font-semibold text-ink underline underline-offset-2" href="/khoi-tao">
+                {t("Tạo tài khoản")}
+              </a>
+            </p>
+          </section>
+          <AuthGreeting
+            title={t("Xin chào!")}
+            text={t("Tạo tài khoản cho doanh nghiệp của bạn, thêm thành viên và bắt đầu làm việc chỉ trong vài phút.")}
+          >
+            <button type="button" className="auth-pill auth-pill--primary" onClick={() => navigate("/khoi-tao")}>
+              {t("Tạo tài khoản")}
+              <ArrowRight className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </AuthGreeting>
+        </div>
+      </AuthShell>
+    );
+  }
+
   return (
-    <Layout style={{ height: "100vh", justifyContent: "center", alignItems: "center" }}>
-      <Space direction="vertical" align="center">
-        <ThemedTitle collapsed={false} text="Bamboo DX-OS" wrapperStyles={{ fontSize: "22px", marginBottom: "36px" }} />
-        {setupOpen ? (
+    <AuthShell>
+      <div className="auth-card max-w-[420px] justify-items-center gap-4 px-8 py-12 text-center">
+        {manual ? (
           <>
-            <Typography.Text type="secondary">{t("Hệ thống chưa có công ty nào.")}</Typography.Text>
-            <Button style={{ width: "280px" }} type="primary" onClick={() => navigate("/khoi-tao")}>
-              {t("Tạo công ty mới")}
-            </Button>
-            <Button style={{ width: "280px" }} onClick={() => login({})}>
-              {t("Đăng nhập bằng tài khoản đã có")}
-            </Button>
-          </>
-        ) : manual ? (
-          <>
-            <Typography.Text type="secondary">{t("Không chuyển được tới trang đăng nhập.")}</Typography.Text>
-            <Button style={{ width: "240px" }} type="primary" onClick={() => login({})}>
+            <p className="text-[15px] text-body">{t("Không chuyển được tới trang đăng nhập.")}</p>
+            <button type="button" className="auth-pill auth-pill--primary" onClick={() => login({})}>
               {t("Thử đăng nhập lại")}
-            </Button>
+            </button>
           </>
         ) : (
           <>
             <Spin />
-            <Typography.Text type="secondary">{t("Đang chuyển tới trang đăng nhập…")}</Typography.Text>
+            <p className="text-[14px] text-muted">{t("Đang chuyển tới trang đăng nhập…")}</p>
           </>
         )}
-      </Space>
-    </Layout>
+      </div>
+    </AuthShell>
   );
 };

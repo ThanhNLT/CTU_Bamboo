@@ -6,12 +6,13 @@ import { App, Button, Spin, Table, Tag } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 import { queueOverview, retryMessage, verifyMessage, type QueueCount, type QueueMessage } from "./api";
+import { tr, trf } from "../../i18n";
 
 const STATUS = {
-  PENDING: { color: "processing", label: "Chờ gửi" },
-  LEASED: { color: "processing", label: "Đang gửi" },
-  DELIVERED: { color: "green", label: "Đã giao" },
-  DEAD: { color: "red", label: "Hàng chết" },
+  PENDING: { color: "processing", label: tr("Chờ gửi") },
+  LEASED: { color: "processing", label: tr("Đang gửi") },
+  DELIVERED: { color: "green", label: tr("Đã giao") },
+  DEAD: { color: "red", label: tr("Hàng chết") },
 } as const;
 
 export const QueuePage = () => {
@@ -35,10 +36,10 @@ export const QueuePage = () => {
     try {
       const r = await verifyMessage(id);
       modal.info({
-        title: r.valid ? "Biên nhận hợp lệ" : "Biên nhận không hợp lệ",
+        title: r.valid ? tr("Biên nhận hợp lệ") : tr("Biên nhận không hợp lệ"),
         content: r.valid
-          ? `Chữ ký ${r.alg} khớp nội dung đã gửi (giao lúc ${r.delivered_at}).`
-          : (r.reason ?? "Không xác minh được."),
+          ? trf("Chữ ký {0} khớp nội dung đã gửi (giao lúc {1}).", [r.alg, r.delivered_at])
+          : (r.reason ?? tr("Không xác minh được.")),
       });
     } catch (e) {
       message.error((e as Error).message);
@@ -48,7 +49,7 @@ export const QueuePage = () => {
   const retry = async (id: string) => {
     try {
       await retryMessage(id);
-      message.success("Đã đưa lại vào hàng đợi.");
+      message.success(tr("Đã đưa lại vào hàng đợi."));
       await load();
     } catch (e) {
       message.error((e as Error).message);
@@ -61,10 +62,13 @@ export const QueuePage = () => {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <div>
-        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Hàng đợi tin nhắn</h1>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">
+          {tr("Hàng đợi tin nhắn")}
+        </h1>
         <p className="mt-1 text-[13px] text-muted">
-          Tin gửi ra ngoài ứng dụng (email, SMS, webhook): thử lại lùi dần, hết lượt vào hàng chết, mỗi tin giao có biên
-          nhận ký số gắn với mã băm nội dung.
+          {tr(
+            "Tin gửi ra ngoài ứng dụng (email, SMS, webhook): thử lại lùi dần, hết lượt vào hàng chết, mỗi tin giao có biên nhận ký số gắn với mã băm nội dung.",
+          )}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -81,18 +85,18 @@ export const QueuePage = () => {
         dataSource={data.messages}
         pagination={{ pageSize: 20, hideOnSinglePage: true }}
         columns={[
-          { title: "Kênh", dataIndex: "topic", width: 150, render: (t: string) => t.replace("notify.", "") },
-          { title: "Nội dung", dataIndex: "title" },
-          { title: "Đến", dataIndex: "address", width: 170 },
+          { title: tr("Kênh"), dataIndex: "topic", width: 150, render: (t: string) => t.replace("notify.", "") },
+          { title: tr("Nội dung"), dataIndex: "title" },
+          { title: tr("Đến"), dataIndex: "address", width: 170 },
           {
-            title: "Trạng thái",
+            title: tr("Trạng thái"),
             dataIndex: "status",
             width: 130,
             render: (s: keyof typeof STATUS) => <Tag color={STATUS[s]?.color}>{STATUS[s]?.label ?? s}</Tag>,
           },
-          { title: "Lần thử", width: 90, render: (_: unknown, r) => `${r.attempts}/${r.max_attempts}` },
-          { title: "Lỗi", dataIndex: "last_error", ellipsis: true },
-          { title: "Tạo lúc", dataIndex: "created_at", width: 170 },
+          { title: tr("Lần thử"), width: 90, render: (_: unknown, r) => `${r.attempts}/${r.max_attempts}` },
+          { title: tr("Lỗi"), dataIndex: "last_error", ellipsis: true },
+          { title: tr("Tạo lúc"), dataIndex: "created_at", width: 170 },
           {
             title: "",
             width: 190,
@@ -100,12 +104,12 @@ export const QueuePage = () => {
               <>
                 {r.status === "DEAD" && (
                   <Button size="small" onClick={() => void retry(r.id)}>
-                    Gửi lại
+                    {tr("Gửi lại")}
                   </Button>
                 )}
                 {r.status === "DELIVERED" && (
                   <Button size="small" onClick={() => void verify(r.id)}>
-                    Xác minh biên nhận
+                    {tr("Xác minh biên nhận")}
                   </Button>
                 )}
               </>

@@ -6,15 +6,20 @@ import { Info } from "lucide-react";
 
 import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
 import type { Access } from "../types";
+import { tr } from "../../../i18n";
 
 type Busy = "save" | "validate" | "sandbox" | "publish";
 
 const BANNER: Record<Access, string> = {
-  design:
+  design: tr(
     "Bản nháp lưu trên máy chủ, mỗi lần lưu ghi nhật ký kiểm toán. Chạy thử deploy bản nháp lên Flowable với khóa sandbox riêng, tự đi qua các tác vụ rồi xóa, không ảnh hưởng quy trình đang chạy. Phát hành chụp bản nháp thành phiên bản bất biến và thông báo cho phòng ban, công ty hoặc cả tập đoàn mà bạn chọn.",
-  review:
+  ),
+  review: tr(
     "Bạn giám sát quy trình đã phát hành: xem sơ đồ, chạy demo trên đúng phiên bản đang áp dụng (không ảnh hưởng quy trình thật) hoặc yêu cầu người thiết kế sửa chữa. Bạn không sửa được sơ đồ.",
-  view: "Sơ đồ luồng công việc đang áp dụng cho đơn vị của bạn. Bấm vào từng bước để xem tên, kéo hoặc cuộn để di chuyển và phóng to.",
+  ),
+  view: tr(
+    "Sơ đồ luồng công việc đang áp dụng cho đơn vị của bạn. Bấm vào từng bước để xem tên, kéo hoặc cuộn để di chuyển và phóng to.",
+  ),
 };
 
 export const ProcessHeader = ({
@@ -52,7 +57,7 @@ export const ProcessHeader = ({
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
         <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">
-          {access === "design" ? "Thiết kế quy trình" : "Quy trình công việc"}
+          {access === "design" ? tr("Thiết kế quy trình") : tr("Quy trình công việc")}
         </h1>
         <p className="mt-1 text-[13px] text-muted">{subtitle}</p>
       </div>
@@ -66,35 +71,35 @@ export const ProcessHeader = ({
                 className={secondaryButtonClass}
                 disabled={busy === "validate"}
               >
-                Kiểm tra
+                {tr("Kiểm tra")}
               </button>
               <button type="button" onClick={onDownload} className={secondaryButtonClass}>
-                Tải tệp BPMN
+                {tr("Tải tệp BPMN")}
               </button>
               <button type="button" onClick={onEditInfo} className={secondaryButtonClass}>
-                Thông tin
+                {tr("Thông tin")}
               </button>
               {deletable && (
                 <button type="button" onClick={onDelete} className={secondaryButtonClass}>
-                  Xóa nháp
+                  {tr("Xóa nháp")}
                 </button>
               )}
               <button type="button" onClick={onSave} className={secondaryButtonClass} disabled={busy === "save"}>
-                {dirty ? "Lưu bản nháp •" : "Lưu bản nháp"}
+                {dirty ? tr("Lưu bản nháp •") : tr("Lưu bản nháp")}
               </button>
               <button type="button" onClick={onPublish} className={secondaryButtonClass} disabled={busy === "publish"}>
-                Phát hành
+                {tr("Phát hành")}
               </button>
             </>
           )}
           {access === "review" && (
             <button type="button" onClick={onRequestChange} className={secondaryButtonClass}>
-              Yêu cầu sửa chữa
+              {tr("Yêu cầu sửa chữa")}
             </button>
           )}
           {access !== "view" && (
             <button type="button" onClick={onSandbox} className={primaryButtonClass} disabled={busy === "sandbox"}>
-              {busy === "sandbox" ? "Đang chạy…" : access === "design" ? "Chạy thử sandbox" : "Chạy demo"}
+              {busy === "sandbox" ? tr("Đang chạy…") : access === "design" ? tr("Chạy thử sandbox") : tr("Chạy demo")}
             </button>
           )}
         </div>

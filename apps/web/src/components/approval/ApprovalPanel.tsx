@@ -6,6 +6,7 @@ import { Card, Space, Steps, Tag, Timeline, Typography } from "antd";
 
 import type { ApprovalHistory, ApprovalStep } from "../document/types";
 import { ESCALATION_REASON, formatDate, HISTORY_EVENT, STEP_STATUS } from "../../utils/format";
+import { tr, trf } from "../../i18n";
 
 const stepState = (s: string): "wait" | "process" | "finish" | "error" =>
   s === "ACTIVE" ? "process" : s === "APPROVED" ? "finish" : s === "REJECTED" || s === "RETURNED" ? "error" : "wait";
@@ -16,7 +17,7 @@ export const ApprovalPanel = ({ round, steps, history, emptyHint }: Props) => {
   const current = steps.filter((s) => s.round === round);
   return (
     <>
-      <Card size="small" title={round ? `Chuỗi duyệt (lần gửi ${round})` : "Chuỗi duyệt"}>
+      <Card size="small" title={round ? trf("Chuỗi duyệt (lần gửi {0})", [round]) : tr("Chuỗi duyệt")}>
         {current.length === 0 ? (
           <Typography.Text type="secondary">{emptyHint}</Typography.Text>
         ) : (
@@ -33,12 +34,14 @@ export const ApprovalPanel = ({ round, steps, history, emptyHint }: Props) => {
                     <span>
                       {STEP_STATUS[s.status] ?? s.status}
                       {s.acted_by_person ? `: ${s.acted_by_person.full_name}` : ""}
-                      {s.on_behalf_of_person ? ` (duyệt thay ${s.on_behalf_of_person.full_name})` : ""}
+                      {s.on_behalf_of_person ? trf(" (duyệt thay {0})", [s.on_behalf_of_person.full_name]) : ""}
                     </span>
                     {open?.escalated && (
-                      <Tag color="orange">Đẩy lên cấp trên: {ESCALATION_REASON[open.escalation_reason ?? ""]}</Tag>
+                      <Tag color="orange">
+                        {tr("Đẩy lên cấp trên: ")} {ESCALATION_REASON[open.escalation_reason ?? ""]}
+                      </Tag>
                     )}
-                    {open && !open.assignee_id && <Tag color="red">Chờ có người giữ vị trí</Tag>}
+                    {open && !open.assignee_id && <Tag color="red">{tr("Chờ có người giữ vị trí")}</Tag>}
                     {s.note && (
                       <Typography.Text type="secondary" italic>
                         “{s.note}”
@@ -52,7 +55,7 @@ export const ApprovalPanel = ({ round, steps, history, emptyHint }: Props) => {
           />
         )}
       </Card>
-      <Card size="small" title="Lịch sử" style={{ marginTop: 16 }}>
+      <Card size="small" title={tr("Lịch sử")} style={{ marginTop: 16 }}>
         <Timeline
           items={history.map((h) => ({
             children: (

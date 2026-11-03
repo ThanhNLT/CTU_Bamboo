@@ -9,6 +9,7 @@ import { request } from "../../../api/client";
 import { useSession } from "../../../auth/useSession";
 import { Panel } from "../../../components/ui/Panel";
 import { secondaryButtonClass } from "../../../components/ui/buttons";
+import { tr, trf } from "../../../i18n";
 
 type Person = { id: string; full_name: string; employee_code: string | null };
 
@@ -54,18 +55,19 @@ export const OwnerTools = ({ onTransferred }: { onTransferred: () => void }) => 
     const person = people.find((p) => p.id === target);
     if (!person) return;
     modal.confirm({
-      title: `Chuyển quyền chủ sở hữu cho ${person.full_name}?`,
-      content:
+      title: trf("Chuyển quyền chủ sở hữu cho {0}?", [person.full_name]),
+      content: tr(
         "Từ nay chỉ người này trao, thu hồi được quyền quản trị và cài/gỡ chức năng trên máy chủ; bạn mất các quyền đó. Mọi quản trị viên được thông báo. Việc này dùng khi đổi người đại diện theo pháp luật.",
-      okText: "Chuyển quyền",
+      ),
+      okText: tr("Chuyển quyền"),
       okButtonProps: { danger: true },
-      cancelText: "Hủy",
+      cancelText: tr("Hủy"),
       onOk: async () => {
         try {
           await request(`mutation Transfer($p: uuid!) { transfer_ownership(person_id: $p) { owner_name } }`, {
             p: person.id,
           });
-          message.success(`Đã chuyển quyền chủ sở hữu cho ${person.full_name}.`);
+          message.success(trf("Đã chuyển quyền chủ sở hữu cho {0}.", [person.full_name]));
           onTransferred();
         } catch (e) {
           message.error((e as Error).message);
@@ -83,19 +85,20 @@ export const OwnerTools = ({ onTransferred }: { onTransferred: () => void }) => 
       setOpen(false);
       form.resetFields();
       modal.success({
-        title: `Đã tạo công ty thành viên ${r.tenant_name}`,
+        title: trf("Đã tạo công ty thành viên {0}", [r.tenant_name]),
         content: r.password ? (
           <p>
-            Chủ sở hữu <Typography.Text code>{r.username}</Typography.Text>, mật khẩu tạm{" "}
+            {tr("Chủ sở hữu ")} <Typography.Text code>{r.username}</Typography.Text>
+            {tr(", mật khẩu tạm")}{" "}
             <Typography.Text code copyable>
               {r.password}
             </Typography.Text>{" "}
-            (chỉ hiện một lần; lần đăng nhập đầu phải đổi mật khẩu và cài mã xác thực hai lớp).
+            {tr("(chỉ hiện một lần; lần đăng nhập đầu phải đổi mật khẩu và cài mã xác thực hai lớp).")}
           </p>
         ) : (
           <p>
-            Tài khoản <Typography.Text code>{r.username}</Typography.Text> dùng chung với công ty mẹ: người này chọn
-            công ty ở góc trên khi đăng nhập.
+            {tr("Tài khoản ")} <Typography.Text code>{r.username}</Typography.Text>{" "}
+            {tr(" dùng chung với công ty mẹ: người này chọn công ty ở góc trên khi đăng nhập.")}
           </p>
         ),
       });
@@ -108,12 +111,12 @@ export const OwnerTools = ({ onTransferred }: { onTransferred: () => void }) => 
 
   return (
     <>
-      <Panel title="Chuyển quyền chủ sở hữu">
+      <Panel title={tr("Chuyển quyền chủ sở hữu")}>
         <div className="flex flex-wrap items-center gap-3">
           <Select
             showSearch
             optionFilterProp="label"
-            placeholder="Chọn người nhận (đã có tài khoản)"
+            placeholder={tr("Chọn người nhận (đã có tài khoản)")}
             className="min-w-[320px]"
             value={target}
             onChange={setTarget}
@@ -123,26 +126,26 @@ export const OwnerTools = ({ onTransferred }: { onTransferred: () => void }) => 
             }))}
           />
           <button type="button" className={secondaryButtonClass} disabled={!target} onClick={transfer}>
-            Chuyển quyền
+            {tr("Chuyển quyền")}
           </button>
         </div>
       </Panel>
 
-      <Panel title="Công ty thành viên">
+      <Panel title={tr("Công ty thành viên")}>
         <p className="mt-0 text-[13px] text-body">
-          Tạo công ty con trực thuộc {tenant.tenant_name}. Công ty mới có chủ sở hữu riêng, chỉ có phần lõi; chủ sở hữu
-          của nó tự bật chức năng cần dùng.
+          {tr("Tạo công ty con trực thuộc ")} {tenant.tenant_name}
+          {tr(". Công ty mới có chủ sở hữu riêng, chỉ có phần lõi; chủ sở hữu của nó tự bật chức năng cần dùng.")}
         </p>
         <button type="button" className={secondaryButtonClass} onClick={() => setOpen(true)}>
-          Tạo công ty thành viên
+          {tr("Tạo công ty thành viên")}
         </button>
       </Panel>
 
       <Modal
         open={open}
-        title="Tạo công ty thành viên"
-        okText="Tạo công ty"
-        cancelText="Hủy"
+        title={tr("Tạo công ty thành viên")}
+        okText={tr("Tạo công ty")}
+        cancelText={tr("Hủy")}
         confirmLoading={busy}
         onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
@@ -152,62 +155,62 @@ export const OwnerTools = ({ onTransferred }: { onTransferred: () => void }) => 
           <div className="grid gap-x-4 sm:grid-cols-2">
             <Form.Item
               name="code"
-              label="Mã công ty"
+              label={tr("Mã công ty")}
               normalize={(v: string) => v?.toUpperCase()}
               rules={[
-                { required: true, message: "Nhập mã công ty" },
-                { pattern: /^[A-Z][A-Z0-9_]{1,19}$/, message: "Chữ in hoa không dấu, số, gạch dưới; 2-20 ký tự" },
+                { required: true, message: tr("Nhập mã công ty") },
+                { pattern: /^[A-Z][A-Z0-9_]{1,19}$/, message: tr("Chữ in hoa không dấu, số, gạch dưới; 2-20 ký tự") },
               ]}
             >
               <Input placeholder="ABC_SX" />
             </Form.Item>
-            <Form.Item name="name" label="Tên hiển thị" rules={[{ required: true, message: "Nhập tên" }]}>
+            <Form.Item name="name" label={tr("Tên hiển thị")} rules={[{ required: true, message: tr("Nhập tên") }]}>
               <Input />
             </Form.Item>
           </div>
           <Typography.Text type="secondary" className="mb-2 block text-[12.5px]">
-            Thông tin pháp lý (không bắt buộc; khai thì chủ sở hữu công ty thành viên ký số xác thực sau)
+            {tr("Thông tin pháp lý (không bắt buộc; khai thì chủ sở hữu công ty thành viên ký số xác thực sau)")}
           </Typography.Text>
           <div className="grid gap-x-4 sm:grid-cols-2">
             <Form.Item
               name="tax_code"
-              label="Mã số thuế"
-              rules={[{ pattern: /^\d{10}(-\d{3})?$/, message: "10 chữ số, hoặc dạng 0101234567-001" }]}
+              label={tr("Mã số thuế")}
+              rules={[{ pattern: /^\d{10}(-\d{3})?$/, message: tr("10 chữ số, hoặc dạng 0101234567-001") }]}
             >
               <Input />
             </Form.Item>
-            <Form.Item name="legal_name" label="Tên doanh nghiệp">
+            <Form.Item name="legal_name" label={tr("Tên doanh nghiệp")}>
               <Input />
             </Form.Item>
-            <Form.Item name="address" label="Địa chỉ trụ sở">
+            <Form.Item name="address" label={tr("Địa chỉ trụ sở")}>
               <Input />
             </Form.Item>
-            <Form.Item name="legal_rep_name" label="Người đại diện theo pháp luật">
+            <Form.Item name="legal_rep_name" label={tr("Người đại diện theo pháp luật")}>
               <Input />
             </Form.Item>
           </div>
           <Typography.Text type="secondary" className="mb-2 block text-[12.5px]">
-            Chủ sở hữu công ty thành viên (tên đăng nhập đã có ở công ty mẹ thì dùng chung tài khoản)
+            {tr("Chủ sở hữu công ty thành viên (tên đăng nhập đã có ở công ty mẹ thì dùng chung tài khoản)")}
           </Typography.Text>
           <div className="grid gap-x-4 sm:grid-cols-3">
             <Form.Item
               name={["owner", "full_name"]}
-              label="Họ tên"
-              rules={[{ required: true, message: "Nhập họ tên" }]}
+              label={tr("Họ tên")}
+              rules={[{ required: true, message: tr("Nhập họ tên") }]}
             >
               <Input />
             </Form.Item>
             <Form.Item
               name={["owner", "username"]}
-              label="Tên đăng nhập"
-              rules={[{ required: true, message: "Nhập tên đăng nhập" }]}
+              label={tr("Tên đăng nhập")}
+              rules={[{ required: true, message: tr("Nhập tên đăng nhập") }]}
             >
               <Input autoComplete="off" />
             </Form.Item>
             <Form.Item
               name={["owner", "email"]}
               label="Email"
-              rules={[{ type: "email", message: "Email không hợp lệ" }]}
+              rules={[{ type: "email", message: tr("Email không hợp lệ") }]}
             >
               <Input />
             </Form.Item>
