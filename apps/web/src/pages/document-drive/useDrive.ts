@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import { DOC_KIND_LABEL, useDocuments, type DocKind } from "../../api/documents";
 import { formatAgo } from "../../utils/format";
 import type { DriveFile, DriveFolder, DriveSection, ScanResult, StorageSegment } from "./types";
+import { tr } from "../../i18n";
 
 const FILES = gql`
   query DriveFiles(
@@ -140,9 +141,9 @@ export const useDrive = (section: DriveSection, me: string, folderId?: string) =
     const sum = (key: string) =>
       all.filter((f) => f.scan === "clean" && category(f.contentType) === key).reduce((s, f) => s + (f.bytes ?? 0), 0);
     return [
-      { key: "docs", label: "Tài liệu", bytes: sum("docs"), className: "bg-bamboo-700" },
-      { key: "images", label: "Hình ảnh", bytes: sum("images"), className: "bg-bamboo-300" },
-      { key: "other", label: "Khác", bytes: sum("other"), className: "bg-gray-500" },
+      { key: "docs", label: tr("Tài liệu"), bytes: sum("docs"), className: "bg-bamboo-700" },
+      { key: "images", label: tr("Hình ảnh"), bytes: sum("images"), className: "bg-bamboo-300" },
+      { key: "other", label: tr("Khác"), bytes: sum("other"), className: "bg-gray-500" },
     ];
   }, [all]);
 

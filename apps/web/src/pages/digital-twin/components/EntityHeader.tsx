@@ -8,6 +8,7 @@ import { Dot, primaryButtonClass, secondaryButtonClass } from "../../../componen
 import { cn } from "../../../utils/cn";
 import type { EntityStatus, Incident, TwinEntity } from "../types";
 import { ENTITY_STATUS } from "../utils";
+import { tr } from "../../../i18n";
 
 const TAG_CLASS: Record<EntityStatus, string> = {
   critical: "bg-red-50 text-red-700",
@@ -51,17 +52,17 @@ export const EntityHeader = ({
       <div className="flex shrink-0 flex-wrap items-center gap-2.5">
         <button type="button" onClick={onAsk} className={secondaryButtonClass}>
           <Sparkles className="h-4 w-4 text-bamboo-600" aria-hidden />
-          Hỏi trợ lý
+          {tr("Hỏi trợ lý")}
         </button>
         {pending ? (
           <button type="button" onClick={() => onAcknowledge(pending)} className={primaryButtonClass}>
             <ClipboardCheck className="h-4 w-4" aria-hidden />
-            Ghi nhận sự cố {pending.code}
+            {tr("Ghi nhận sự cố ")} {pending.code}
           </button>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
             <CheckCircle2 className="h-4 w-4 text-bamboo-600" aria-hidden />
-            Không có sự cố chờ ghi nhận
+            {tr("Không có sự cố chờ ghi nhận")}
           </span>
         )}
       </div>

@@ -12,13 +12,14 @@ import { useLakehousePreview } from "../useLakehouse";
 import { cellText, formatInt } from "../utils";
 import { CodeSnippet } from "./CodeSnippet";
 import { SchemaTable } from "./SchemaTable";
+import { tr } from "../../../i18n";
 
 const TABS: Array<{ key: DetailTab; label: string }> = [
-  { key: "schema", label: "Lược đồ" },
-  { key: "sample", label: "Dữ liệu mẫu" },
-  { key: "usage", label: "Cách dùng" },
-  { key: "quality", label: "Chất lượng" },
-  { key: "lineage", label: "Phả hệ" },
+  { key: "schema", label: tr("Lược đồ") },
+  { key: "sample", label: tr("Dữ liệu mẫu") },
+  { key: "usage", label: tr("Cách dùng") },
+  { key: "quality", label: tr("Chất lượng") },
+  { key: "lineage", label: tr("Phả hệ") },
 ];
 
 const Meta = ({ label, value }: { label: string; value: string }) => (
@@ -32,18 +33,19 @@ const SampleTable = ({ dataset, preview, error }: { dataset: Dataset; preview?: 
   if (error)
     return (
       <p role="alert" className="text-[12.5px] text-red-700">
-        Không tải được dữ liệu mẫu: {error}
+        {tr("Không tải được dữ liệu mẫu: ")} {error}
       </p>
     );
-  if (!preview) return <p className="text-[12.5px] text-muted">Đang tải dữ liệu mẫu…</p>;
+  if (!preview) return <p className="text-[12.5px] text-muted">{tr("Đang tải dữ liệu mẫu…")}</p>;
   const rows = preview.rows;
   if (rows.length === 0)
-    return <p className="text-[12.5px] text-muted">Tập dữ liệu chưa có dòng nào của công ty này.</p>;
+    return <p className="text-[12.5px] text-muted">{tr("Tập dữ liệu chưa có dòng nào của công ty này.")}</p>;
   return (
     <div>
       <p className="mb-2.5 text-[12px] text-muted">
-        {rows.length} dòng thay đổi gần nhất của công ty đang chọn, dữ liệu cá nhân đã che
-        {preview.masked.length > 0 && <> ({preview.masked.join(", ")})</>}. Không tải xuống dữ liệu thô từ đây.
+        {rows.length} {tr(" dòng thay đổi gần nhất của công ty đang chọn, dữ liệu cá nhân đã che")}
+        {preview.masked.length > 0 && <> ({preview.masked.join(", ")})</>}
+        {tr(". Không tải xuống dữ liệu thô từ đây.")}
       </p>
       <div className="overflow-x-auto rounded-xl border border-line">
         <table className="w-full text-[12px]">
@@ -83,7 +85,7 @@ const SampleTable = ({ dataset, preview, error }: { dataset: Dataset; preview?: 
 
 const QualityList = ({ dataset }: { dataset: Dataset }) => {
   if (dataset.checks.length === 0) {
-    return <p className="text-[12.5px] text-muted">Chưa có kiểm tra chất lượng tự động cho tập dữ liệu này.</p>;
+    return <p className="text-[12.5px] text-muted">{tr("Chưa có kiểm tra chất lượng tự động cho tập dữ liệu này.")}</p>;
   }
   const failed = dataset.checks.filter((c) => !c.passed).length;
   return (
@@ -92,8 +94,13 @@ const QualityList = ({ dataset }: { dataset: Dataset }) => {
         <b className="font-semibold text-ink">
           {dataset.checks.length - failed}/{dataset.checks.length}
         </b>{" "}
-        kiểm tra đạt
-        {failed > 0 && <span className="text-amber-800"> · {failed} lỗi cần xử lý</span>}
+        {tr("kiểm tra đạt")}
+        {failed > 0 && (
+          <span className="text-amber-800">
+            {" "}
+            · {failed} {tr(" lỗi cần xử lý")}
+          </span>
+        )}
       </p>
       <ul className="m-0 list-none space-y-2 p-0">
         {dataset.checks.map((c) => (
@@ -102,9 +109,9 @@ const QualityList = ({ dataset }: { dataset: Dataset }) => {
             className={cn("flex items-start gap-2.5 rounded-xl px-3 py-2.5", c.passed ? "bg-canvas" : "bg-amber-50")}
           >
             {c.passed ? (
-              <CheckCircle2 className="mt-px h-4 w-4 shrink-0 text-bamboo-600" aria-label="Đạt" />
+              <CheckCircle2 className="mt-px h-4 w-4 shrink-0 text-bamboo-600" aria-label={tr("Đạt")} />
             ) : (
-              <XCircle className="mt-px h-4 w-4 shrink-0 text-amber-600" aria-label="Lỗi" />
+              <XCircle className="mt-px h-4 w-4 shrink-0 text-amber-600" aria-label={tr("Lỗi")} />
             )}
             <span className="min-w-0">
               <span className="block text-[12.5px] font-medium text-ink">{c.name}</span>
@@ -137,20 +144,20 @@ const LineageColumn = ({ title, items }: { title: string; items: string[] }) => 
 const Lineage = ({ dataset }: { dataset: Dataset }) => (
   <div>
     <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
-      <LineageColumn title="Nguồn" items={dataset.upstream} />
+      <LineageColumn title={tr("Nguồn")} items={dataset.upstream} />
       <ArrowRight className="mx-auto h-4 w-4 shrink-0 rotate-90 text-muted md:rotate-0" aria-hidden />
       <div className="rounded-xl border-2 border-bamboo-500 bg-bamboo-50 px-3 py-2 text-center">
         <Database className="mx-auto h-4 w-4 text-bamboo-700" aria-hidden />
         <div className="mt-1 font-mono text-[11.5px] font-semibold text-ink">{dataset.table}</div>
       </div>
       <ArrowRight className="mx-auto h-4 w-4 shrink-0 rotate-90 text-muted md:rotate-0" aria-hidden />
-      <LineageColumn title="Nơi dùng" items={dataset.downstream} />
+      <LineageColumn title={tr("Nơi dùng")} items={dataset.downstream} />
     </div>
     <Link
       to={`/d/lineage?asset=${encodeURIComponent(dataset.table)}`}
       className="mt-3 inline-block text-[12.5px] font-semibold text-bamboo-700 underline-offset-2 hover:underline"
     >
-      Mở Phả hệ dữ liệu
+      {tr("Mở Phả hệ dữ liệu")}
     </Link>
   </div>
 );
@@ -167,7 +174,7 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
           className,
         )}
       >
-        Chọn một tập dữ liệu để xem chi tiết.
+        {tr("Chọn một tập dữ liệu để xem chi tiết.")}
       </div>
     );
   }
@@ -186,15 +193,15 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
       </header>
 
       <dl className="m-0 mt-4 grid grid-cols-2 gap-x-6 gap-y-3">
-        <Meta label="Chủ sở hữu" value={dataset.owner} />
-        <Meta label="Làm mới" value={dataset.refresh} />
-        <Meta label="Số dòng" value={preview ? formatInt(preview.totalRows) : error ? "—" : "Đang đếm…"} />
-        <Meta label="Truy cập" value={dataset.access} />
+        <Meta label={tr("Chủ sở hữu")} value={dataset.owner} />
+        <Meta label={tr("Làm mới")} value={dataset.refresh} />
+        <Meta label={tr("Số dòng")} value={preview ? formatInt(preview.totalRows) : error ? "—" : tr("Đang đếm…")} />
+        <Meta label={tr("Truy cập")} value={dataset.access} />
       </dl>
 
       <div
         role="tablist"
-        aria-label="Nội dung tập dữ liệu"
+        aria-label={tr("Nội dung tập dữ liệu")}
         className="mt-5 inline-flex max-w-full flex-wrap gap-0.5 rounded-ui bg-black/[0.045] p-1"
       >
         {TABS.map((t) => (
@@ -219,7 +226,7 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
         {tab === "schema" && (
           <div className="flex flex-col gap-5">
             <SchemaTable columns={dataset.columns} />
-            <CodeSnippet title="Cách dùng · GraphQL" code={dataset.graphql} language="graphql" />
+            <CodeSnippet title={tr("Cách dùng · GraphQL")} code={dataset.graphql} language="graphql" />
           </div>
         )}
         {tab === "sample" && <SampleTable dataset={dataset} preview={preview} error={error} />}
@@ -228,8 +235,9 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
             <CodeSnippet title="GraphQL (Hasura)" code={dataset.graphql} language="graphql" />
             <CodeSnippet title="SQL (Trino)" code={dataset.sql} language="sql" />
             <p className="text-[12px] text-muted">
-              Truy vấn chạy bằng quyền của bạn; dữ liệu tự lọc theo công ty (tenant_id). Cần thêm quyền? Bấm “Yêu cầu
-              quyền truy cập”.
+              {tr(
+                "Truy vấn chạy bằng quyền của bạn; dữ liệu tự lọc theo công ty (tenant_id). Cần thêm quyền? Bấm “Yêu cầu quyền truy cập”.",
+              )}
             </p>
           </div>
         )}

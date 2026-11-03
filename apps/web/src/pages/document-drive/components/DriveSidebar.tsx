@@ -4,6 +4,7 @@
 
 import { cn } from "../../../utils/cn";
 import type { DriveNavItem, DriveSection } from "../types";
+import { tr } from "../../../i18n";
 
 export const DriveSidebar = ({
   items,
@@ -14,7 +15,7 @@ export const DriveSidebar = ({
   active: DriveSection;
   onChange: (key: DriveSection) => void;
 }) => (
-  <nav aria-label="Vùng lưu trữ" className="rounded-2xl border border-line bg-surface p-2 shadow-card">
+  <nav aria-label={tr("Vùng lưu trữ")} className="rounded-2xl border border-line bg-surface p-2 shadow-card">
     <ul className="m-0 list-none space-y-0.5 p-0">
       {items.map(({ key, label, icon: Icon, badge }) => {
         const selected = key === active;

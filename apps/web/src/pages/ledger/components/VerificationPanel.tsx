@@ -10,10 +10,11 @@ import { cn } from "../../../utils/cn";
 import type { VerifyMode, VerifyResult } from "../types";
 import { formatBytes } from "../utils";
 import { VerificationResultCard } from "./VerificationResultCard";
+import { tr } from "../../../i18n";
 
 const MODES: Array<{ key: VerifyMode; label: string }> = [
-  { key: "code", label: "Theo mã hồ sơ" },
-  { key: "file", label: "Tải tệp lên" },
+  { key: "code", label: tr("Theo mã hồ sơ") },
+  { key: "file", label: tr("Tải tệp lên") },
 ];
 
 const Dropzone = ({ disabled, tall, onFile }: { disabled: boolean; tall: boolean; onFile: (f: File) => void }) => {
@@ -52,14 +53,14 @@ const Dropzone = ({ disabled, tall, onFile }: { disabled: boolean; tall: boolean
           }}
         />
         <Upload className="h-5 w-5 text-bamboo-600" aria-hidden />
-        <span className="text-[13.5px] font-semibold text-ink">Kéo tệp vào đây để so khớp</span>
+        <span className="text-[13.5px] font-semibold text-ink">{tr("Kéo tệp vào đây để so khớp")}</span>
         <span className="text-[12px] text-muted">
-          Băm SHA-256 ngay trên máy bạn (Web Crypto) · tệp không rời khỏi máy
+          {tr("Băm SHA-256 ngay trên máy bạn (Web Crypto) · tệp không rời khỏi máy")}
         </span>
       </label>
       {tall && (
         <p className="mt-2 text-center text-[12px] text-muted">
-          Chỉ gửi mã SHA-256 lên máy chủ để tìm bản niêm phong có cùng mã.
+          {tr("Chỉ gửi mã SHA-256 lên máy chủ để tìm bản niêm phong có cùng mã.")}
         </p>
       )}
     </div>
@@ -98,15 +99,15 @@ export const VerificationPanel = ({
       className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-card"
     >
       <header>
-        <h2 className="text-[15px] font-semibold text-ink">Đối soát hồ sơ</h2>
+        <h2 className="text-[15px] font-semibold text-ink">{tr("Đối soát hồ sơ")}</h2>
         <p className="mt-0.5 text-[12.5px] text-muted">
-          So khớp tệp hoặc số chứng từ với bản niêm phong trong chuỗi hash kiểm toán
+          {tr("So khớp tệp hoặc số chứng từ với bản niêm phong trong chuỗi hash kiểm toán")}
         </p>
       </header>
 
       <div
         role="group"
-        aria-label="Cách đối soát"
+        aria-label={tr("Cách đối soát")}
         className="inline-flex gap-0.5 self-start rounded-ui bg-black/[0.045] p-1"
       >
         {MODES.map((m) => {
@@ -138,7 +139,7 @@ export const VerificationPanel = ({
           }}
         >
           <label className="relative block min-w-0 flex-1">
-            <span className="sr-only">Mã hồ sơ cần đối soát</span>
+            <span className="sr-only">{tr("Mã hồ sơ cần đối soát")}</span>
             <FileText
               className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
               aria-hidden
@@ -154,7 +155,7 @@ export const VerificationPanel = ({
           </label>
           <button type="submit" disabled={working || !code.trim()} className={cn(primaryButtonClass, "justify-center")}>
             {busy && <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" aria-hidden />}
-            {busy ? "Đang đối soát…" : "Đối soát"}
+            {busy ? tr("Đang đối soát…") : tr("Đối soát")}
           </button>
         </form>
       )}
@@ -171,7 +172,8 @@ export const VerificationPanel = ({
       {hashing && (
         <p className="flex items-center gap-2 text-[12.5px] text-body" role="status">
           <LoaderCircle className="h-4 w-4 text-bamboo-600 motion-safe:animate-spin" aria-hidden />
-          Đang băm <b className="font-semibold">{hashing.name}</b> ({formatBytes(hashing.size)}) và tra bản niêm phong…
+          {tr("Đang băm ")} <b className="font-semibold">{hashing.name}</b> ({formatBytes(hashing.size)}
+          {tr(") và tra bản niêm phong…")}
         </p>
       )}
 

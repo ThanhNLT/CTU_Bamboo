@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ReactNode } from "react";
+import { tr } from "../../../i18n";
 
 export const AdminHeader = ({
   title,
@@ -24,10 +25,10 @@ export const AdminHeader = ({
 
 export const NoAccess = ({ permission }: { permission: string }) => (
   <div className="rounded-2xl border border-dashed border-line bg-surface px-6 py-16 text-center">
-    <p className="text-[13.5px] font-medium text-ink">Bạn chưa có quyền quản trị mục này.</p>
+    <p className="text-[13.5px] font-medium text-ink">{tr("Bạn chưa có quyền quản trị mục này.")}</p>
     <p className="mt-1 text-[12.5px] text-muted">
-      Cần quyền <code className="rounded bg-canvas px-1 font-mono text-[12px]">{permission}</code> — nhờ quản trị viên
-      của tenant cấp vai trò cho vị trí của bạn.
+      {tr("Cần quyền ")} <code className="rounded bg-canvas px-1 font-mono text-[12px]">{permission}</code>{" "}
+      {tr(" — nhờ quản trị viên của tenant cấp vai trò cho vị trí của bạn.")}
     </p>
   </div>
 );

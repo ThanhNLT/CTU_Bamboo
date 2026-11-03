@@ -9,6 +9,7 @@ import { useParams } from "react-router";
 import { config } from "../../config";
 import { launchExternal } from "../../modules/api";
 import { RequireModule } from "../../modules/RequireModule";
+import { tr } from "../../i18n";
 
 /**
  * Giao diện mô-đun ngoài trong khung nhúng (ADR #58). Khung không có allow-same-origin và máy chủ còn ép CSP sandbox, nên
@@ -30,7 +31,7 @@ const Frame = ({ code, path }: { code: string; path: string }) => {
       .catch((e: Error) => setError(e.message));
   }, [code, path]);
 
-  if (error) return <Alert type="error" showIcon message="Không mở được mô-đun" description={error} />;
+  if (error) return <Alert type="error" showIcon message={tr("Không mở được mô-đun")} description={error} />;
   if (!src)
     return (
       <div className="flex justify-center py-24">

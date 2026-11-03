@@ -102,6 +102,8 @@ EXTRA_COMPUTED = {
 
 HIDDEN_COLUMNS = {
     ("core", "attachment"): {"storage_key"},
+    # Năm sinh khai lúc đăng ký (ADR #62): chỉ quản trị xem, đồng nghiệp chỉ thấy điện thoại, email
+    ("core", "person"): {"birth_year"},
     ("core", "attachment_ocr"): {"page_texts", "pages", "attempts", "next_attempt_at"},
     ("hr", "onboarding_request"): {
         "national_id_enc",

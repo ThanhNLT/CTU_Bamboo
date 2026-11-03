@@ -18,6 +18,7 @@ import { formatDate, formatDay } from "../../utils/format";
 import { isVacantFrom } from "./vacancy";
 import { REQUESTER_KIND, type Transfer } from "./types";
 import { TR_CANCEL, TR_CHOOSE, TR_DETAIL, TR_MY_TASK_FOR, TR_SUBMIT, TR_TARGET_POSITIONS } from "./queries";
+import { tr as trl, trf } from "../../i18n";
 
 const COLUMNS = { xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 };
 
@@ -76,7 +77,7 @@ export const TransferShow = () => {
   if (error) return <Alert type="error" showIcon message={error} />;
   if (tr === undefined) return <Spin />;
   if (tr === null)
-    return <Alert type="warning" showIcon message="Không tìm thấy đề nghị hoặc bạn không có quyền xem." />;
+    return <Alert type="warning" showIcon message={trl("Không tìm thấy đề nghị hoặc bạn không có quyền xem.")} />;
 
   const mine = tr.requester_id === tenant.person_id;
   const submittable = mine && ["DRAFT", "RETURNED"].includes(tr.status);
@@ -99,32 +100,32 @@ export const TransferShow = () => {
   const cancel = () => {
     let reason = "";
     modal.confirm({
-      title: `Hủy đề nghị ${tr.doc_no}?`,
+      title: trf("Hủy đề nghị {0}?", [tr.doc_no]),
       content: (
         <Input.TextArea
           rows={3}
-          placeholder="Lý do hủy (bắt buộc)"
+          placeholder={trl("Lý do hủy (bắt buộc)")}
           onChange={(e) => {
             reason = e.target.value;
           }}
         />
       ),
-      okText: "Hủy đề nghị",
+      okText: trl("Hủy đề nghị"),
       okButtonProps: { danger: true },
-      cancelText: "Không",
+      cancelText: trl("Không"),
       onOk: async () => {
         if (!reason.trim()) {
-          message.error("Phải ghi lý do hủy");
+          message.error(trl("Phải ghi lý do hủy"));
           throw new Error("missing reason");
         }
-        await run(TR_CANCEL, { id: tr.id, reason: reason.trim() }, "Đã hủy đề nghị");
+        await run(TR_CANCEL, { id: tr.id, reason: reason.trim() }, trl("Đã hủy đề nghị"));
       },
     });
   };
 
   const choose = async () => {
     if (!chosen) return;
-    await run(TR_CHOOSE, { id: tr.id, position: chosen }, "Đã chọn vị trí tiếp nhận");
+    await run(TR_CHOOSE, { id: tr.id, position: chosen }, trl("Đã chọn vị trí tiếp nhận"));
     setChosen(undefined);
   };
 
@@ -140,41 +141,49 @@ export const TransferShow = () => {
         <Space wrap>
           {task && (
             <Button type="primary" disabled={choosing} icon={<AuditOutlined />} onClick={() => setActing(true)}>
-              Xử lý duyệt
+              {trl("Xử lý duyệt")}
             </Button>
           )}
           {submittable && (
             <Button
               type="primary"
               icon={<SendOutlined />}
-              onClick={() => run(TR_SUBMIT, { id: tr.id }, "Đã gửi duyệt")}
+              onClick={() => run(TR_SUBMIT, { id: tr.id }, trl("Đã gửi duyệt"))}
             >
-              Gửi duyệt
+              {trl("Gửi duyệt")}
             </Button>
           )}
           {cancellable && (
             <Button danger icon={<StopOutlined />} onClick={cancel}>
-              Hủy
+              {trl("Hủy")}
             </Button>
           )}
         </Space>
       )}
     >
       {returnedNote && (
-        <Alert style={{ marginBottom: 16 }} type="warning" showIcon message="Bị trả về" description={returnedNote} />
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="warning"
+          showIcon
+          message={trl("Bị trả về")}
+          description={returnedNote}
+        />
       )}
       {choosing && (
         <Alert
           style={{ marginBottom: 16 }}
           type="info"
           showIcon
-          message="Chọn vị trí tiếp nhận"
-          description="Là trưởng đơn vị tiếp nhận, bạn chọn vị trí trong đơn vị cho nhân viên này trước khi duyệt."
+          message={trl("Chọn vị trí tiếp nhận")}
+          description={trl(
+            "Là trưởng đơn vị tiếp nhận, bạn chọn vị trí trong đơn vị cho nhân viên này trước khi duyệt.",
+          )}
           action={
             <Space.Compact>
               <Select
                 style={{ width: 240 }}
-                placeholder="Chọn vị trí trống"
+                placeholder={trl("Chọn vị trí trống")}
                 value={chosen}
                 onChange={setChosen}
                 options={positionOptions}
@@ -182,7 +191,7 @@ export const TransferShow = () => {
                 optionFilterProp="label"
               />
               <Button type="primary" disabled={!chosen} onClick={choose}>
-                Lưu vị trí
+                {trl("Lưu vị trí")}
               </Button>
             </Space.Compact>
           }
@@ -193,28 +202,37 @@ export const TransferShow = () => {
           style={{ marginBottom: 16 }}
           type="success"
           showIcon
-          message={`Đã điều chuyển đến ${tr.target_position?.name ?? ""}, ${tr.target_unit?.name ?? ""} từ ${formatDay(tr.effective_date)}`}
+          message={trf("Đã điều chuyển đến {0}, {1} từ {2}", [
+            tr.target_position?.name ?? "",
+            tr.target_unit?.name ?? "",
+            formatDay(tr.effective_date),
+          ])}
         />
       )}
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={15}>
-          <Descriptions bordered size="small" column={COLUMNS} title={`Điều chuyển ${tr.person?.full_name ?? ""}`}>
-            <Descriptions.Item label="Mã nhân viên">{tr.person?.employee_code ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Ngày chuyển">{formatDay(tr.effective_date)}</Descriptions.Item>
-            <Descriptions.Item label="Vị trí hiện tại">
+          <Descriptions
+            bordered
+            size="small"
+            column={COLUMNS}
+            title={trf("Điều chuyển {0}", [tr.person?.full_name ?? ""])}
+          >
+            <Descriptions.Item label={trl("Mã nhân viên")}>{tr.person?.employee_code ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label={trl("Ngày chuyển")}>{formatDay(tr.effective_date)}</Descriptions.Item>
+            <Descriptions.Item label={trl("Vị trí hiện tại")}>
               {tr.source_position?.name}, {tr.source_position?.org_unit.name}
             </Descriptions.Item>
-            <Descriptions.Item label="Đơn vị tiếp nhận">{tr.target_unit?.name}</Descriptions.Item>
-            <Descriptions.Item label="Vị trí tiếp nhận">
-              {tr.target_position?.name ?? <span style={{ color: "#999" }}>Chưa chọn</span>}
+            <Descriptions.Item label={trl("Đơn vị tiếp nhận")}>{tr.target_unit?.name}</Descriptions.Item>
+            <Descriptions.Item label={trl("Vị trí tiếp nhận")}>
+              {tr.target_position?.name ?? <span style={{ color: "#999" }}>{trl("Chưa chọn")}</span>}
             </Descriptions.Item>
-            <Descriptions.Item label="Người lập">
+            <Descriptions.Item label={trl("Người lập")}>
               {tr.requester?.full_name} – {tr.requester_position?.name}
               <br />
               {REQUESTER_KIND[tr.requester_kind]}
             </Descriptions.Item>
-            <Descriptions.Item label="Ngày lập">{formatDate(tr.created_at)}</Descriptions.Item>
-            <Descriptions.Item label="Lý do / nguyện vọng" span={2}>
+            <Descriptions.Item label={trl("Ngày lập")}>{formatDate(tr.created_at)}</Descriptions.Item>
+            <Descriptions.Item label={trl("Lý do / nguyện vọng")} span={2}>
               {tr.reason}
             </Descriptions.Item>
           </Descriptions>
@@ -224,14 +242,16 @@ export const TransferShow = () => {
             round={tr.approval_round}
             steps={tr.approval_steps}
             history={tr.approval_history}
-            emptyHint="Chưa gửi duyệt. Bước 1: trưởng đơn vị tiếp nhận; bước 2: trưởng phòng nhân sự của công ty."
+            emptyHint={trl(
+              "Chưa gửi duyệt. Bước 1: trưởng đơn vị tiếp nhận; bước 2: trưởng phòng nhân sự của công ty.",
+            )}
           />
         </Col>
       </Row>
       <ActModal
         taskId={acting ? (task?.task_id ?? null) : null}
         viaDelegation={task?.via_delegation}
-        title={`Xử lý ${tr.doc_no}`}
+        title={trf("Xử lý {0}", [tr.doc_no])}
         onClose={() => setActing(false)}
         onDone={() => {
           setActing(false);

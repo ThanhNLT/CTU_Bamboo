@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { tr } from "../../i18n";
+
 export const flowableModdle = {
   name: "Flowable",
   uri: "http://flowable.org/bpmn",
@@ -62,11 +64,11 @@ export const newProcessXml = (key: string, name: string) => `<?xml version="1.0"
   xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn"
   targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
   <process id="${key}" name="${name.replace(/[<&"]/g, "")}" isExecutable="true">
-    <startEvent id="start" name="Bắt đầu"/>
+    <startEvent id="start" name="${tr("Bắt đầu")}"/>
     <sequenceFlow id="toReview" sourceRef="start" targetRef="review"/>
-    <userTask id="review" name="Duyệt" flowable:candidateGroups="TRUONG_PHONG" flowable:dueDate="PT48H"/>
+    <userTask id="review" name="${tr("Duyệt")}" flowable:candidateGroups="TRUONG_PHONG" flowable:dueDate="PT48H"/>
     <sequenceFlow id="toEnd" sourceRef="review" targetRef="end"/>
-    <endEvent id="end" name="Hoàn tất"/>
+    <endEvent id="end" name="${tr("Hoàn tất")}"/>
   </process>
   <bpmndi:BPMNDiagram id="diagram">
     <bpmndi:BPMNPlane id="plane" bpmnElement="${key}">

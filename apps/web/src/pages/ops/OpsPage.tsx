@@ -6,6 +6,7 @@ import { App, Button, Input, Segmented, Select, Table, Tag, Typography } from "a
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
+import { tr, trf } from "../../i18n";
 
 type LogEvent = { id: number; ts: string; service: string; level: string; message: string; trace_id: string | null };
 type Anchor = {
@@ -68,39 +69,39 @@ const LogsTab = () => {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
         <Select
-          aria-label="Mức log"
+          aria-label={tr("Mức log")}
           value={filter.level}
           style={{ width: 130 }}
           onChange={(level) => setFilter({ ...filter, level })}
-          options={["DEBUG", "INFO", "WARNING", "ERROR"].map((v) => ({ value: v, label: `từ ${v}` }))}
+          options={["DEBUG", "INFO", "WARNING", "ERROR"].map((v) => ({ value: v, label: trf("từ {0}", [v]) }))}
         />
         <Select
-          aria-label="Dịch vụ"
+          aria-label={tr("Dịch vụ")}
           allowClear
-          placeholder="Mọi dịch vụ"
+          placeholder={tr("Mọi dịch vụ")}
           style={{ width: 170 }}
           value={filter.service || undefined}
           onChange={(service) => setFilter({ ...filter, service: service ?? "" })}
           options={services.map((v) => ({ value: v, label: v }))}
         />
         <Input
-          aria-label="Từ khóa"
-          placeholder="Từ khóa trong nội dung"
+          aria-label={tr("Từ khóa")}
+          placeholder={tr("Từ khóa trong nội dung")}
           style={{ width: 240 }}
           value={filter.q}
           onChange={(e) => setFilter({ ...filter, q: e.target.value })}
           onPressEnter={() => load()}
         />
         <Input
-          aria-label="Mã truy vết"
-          placeholder="Mã truy vết (X-Request-Id)"
+          aria-label={tr("Mã truy vết")}
+          placeholder={tr("Mã truy vết (X-Request-Id)")}
           style={{ width: 260 }}
           value={filter.trace}
           onChange={(e) => setFilter({ ...filter, trace: e.target.value })}
           onPressEnter={() => load()}
         />
         <Button type="primary" onClick={() => load()}>
-          Tìm
+          {tr("Tìm")}
         </Button>
       </div>
       <Table<LogEvent>
@@ -108,19 +109,19 @@ const LogsTab = () => {
         size="small"
         dataSource={rows}
         pagination={{ pageSize: 25, hideOnSinglePage: true }}
-        locale={{ emptyText: "Không có sự kiện nào trong 24 giờ qua." }}
+        locale={{ emptyText: tr("Không có sự kiện nào trong 24 giờ qua.") }}
         columns={[
-          { title: "Lúc", dataIndex: "ts", width: 150 },
-          { title: "Dịch vụ", dataIndex: "service", width: 110 },
+          { title: tr("Lúc"), dataIndex: "ts", width: 150 },
+          { title: tr("Dịch vụ"), dataIndex: "service", width: 110 },
           {
-            title: "Mức",
+            title: tr("Mức"),
             dataIndex: "level",
             width: 100,
             render: (l: string) => <Tag color={LEVEL_COLOR[l]}>{l}</Tag>,
           },
-          { title: "Nội dung", dataIndex: "message" },
+          { title: tr("Nội dung"), dataIndex: "message" },
           {
-            title: "Truy vết",
+            title: tr("Truy vết"),
             dataIndex: "trace_id",
             width: 130,
             render: (t: string | null) =>
@@ -167,9 +168,9 @@ const AnchorsTab = () => {
         }>(`query { audit_anchor_verify { ok checked problems } }`)
       ).audit_anchor_verify;
       modal.info({
-        title: r.ok ? "Chuỗi kiểm toán nguyên vẹn" : "Phát hiện bất thường",
+        title: r.ok ? tr("Chuỗi kiểm toán nguyên vẹn") : tr("Phát hiện bất thường"),
         content: r.ok
-          ? `${r.checked} bản neo đều khớp chuỗi hiện tại, chữ ký hợp lệ và bản công bố không bị đổi.`
+          ? trf("{0} bản neo đều khớp chuỗi hiện tại, chữ ký hợp lệ và bản công bố không bị đổi.", [r.checked])
           : r.problems.map((p) => `Seq ${p.seq}: ${p.problem}`).join("; "),
       });
     } catch (e) {
@@ -181,7 +182,7 @@ const AnchorsTab = () => {
       const r = (
         await request<{ audit_anchor_now: { anchored: boolean } }>(`mutation { audit_anchor_now { anchored seq } }`)
       ).audit_anchor_now;
-      message.success(r.anchored ? "Đã neo đầu chuỗi hiện tại." : "Chưa có bản ghi mới kể từ lần neo trước.");
+      message.success(r.anchored ? tr("Đã neo đầu chuỗi hiện tại.") : tr("Chưa có bản ghi mới kể từ lần neo trước."));
       await load();
     } catch (e) {
       message.error((e as Error).message);
@@ -191,15 +192,19 @@ const AnchorsTab = () => {
   return (
     <div className="flex flex-col gap-3">
       <Typography.Paragraph type="secondary" style={{ margin: 0 }}>
-        Định kỳ hệ thống ký mã băm đầu chuỗi kiểm toán bằng khóa Ed25519 trong két OpenBao và công bố ra kho đối tượng
-        (và điểm ngoài nếu cấu hình). Người sửa trực tiếp CSDL không ký lại được nên không viết lại được lịch sử đã neo.
+        {tr(
+          "Định kỳ hệ thống ký mã băm đầu chuỗi kiểm toán bằng khóa Ed25519 trong két OpenBao và công bố ra kho đối tượng (và điểm ngoài nếu cấu hình). Người sửa trực tiếp CSDL không ký lại được nên không viết lại được lịch sử đã neo.",
+        )}
       </Typography.Paragraph>
       <div className="flex gap-2">
         <Button type="primary" onClick={() => void verify()}>
-          Xác minh các bản neo
+          {tr("Xác minh các bản neo")}
         </Button>
         <Button onClick={() => void anchorNow()}>Neo ngay</Button>
-        <span className="self-center text-[12.5px] text-muted">Đầu chuỗi hiện tại: #{data?.head_seq ?? "—"}</span>
+        <span className="self-center text-[12.5px] text-muted">
+          {tr("Đầu chuỗi hiện tại: #")}
+          {data?.head_seq ?? "—"}
+        </span>
       </div>
       <Table<Anchor>
         rowKey="id"
@@ -207,17 +212,21 @@ const AnchorsTab = () => {
         dataSource={data?.anchors ?? []}
         pagination={false}
         columns={[
-          { title: "Thứ tự", dataIndex: "seq", width: 90 },
-          { title: "Mã băm đầu chuỗi", dataIndex: "head_hash", render: (h: string) => <code>{h.slice(0, 24)}…</code> },
-          { title: "Chữ ký", dataIndex: "alg", width: 130 },
-          { title: "Neo lúc", dataIndex: "anchored_at", width: 170 },
+          { title: tr("Thứ tự"), dataIndex: "seq", width: 90 },
           {
-            title: "Công bố",
+            title: tr("Mã băm đầu chuỗi"),
+            dataIndex: "head_hash",
+            render: (h: string) => <code>{h.slice(0, 24)}…</code>,
+          },
+          { title: tr("Chữ ký"), dataIndex: "alg", width: 130 },
+          { title: tr("Neo lúc"), dataIndex: "anchored_at", width: 170 },
+          {
+            title: tr("Công bố"),
             dataIndex: "published",
             render: (p: Anchor["published"]) =>
               p.map((x) => (
                 <Tag key={x.kind} color={x.ok ? "green" : "red"}>
-                  {x.kind === "s3" ? "Kho đối tượng" : "Điểm ngoài"}
+                  {x.kind === "s3" ? tr("Kho đối tượng") : tr("Điểm ngoài")}
                 </Tag>
               )),
           },
@@ -240,33 +249,34 @@ const BackupsTab = () => {
   return (
     <div className="flex flex-col gap-3">
       <Typography.Paragraph type="secondary" style={{ margin: 0 }}>
-        Dịch vụ sao lưu chạy theo lịch, sau mỗi lần sao lưu khôi phục bản vừa tạo vào CSDL tạm và đối chiếu chuỗi băm
-        kiểm toán, bản neo và số dòng. Bản sao lưu chưa qua diễn tập thì chưa nên tin là dùng được.
+        {tr(
+          "Dịch vụ sao lưu chạy theo lịch, sau mỗi lần sao lưu khôi phục bản vừa tạo vào CSDL tạm và đối chiếu chuỗi băm kiểm toán, bản neo và số dòng. Bản sao lưu chưa qua diễn tập thì chưa nên tin là dùng được.",
+        )}
       </Typography.Paragraph>
       <Table<Backup>
         rowKey="id"
         size="small"
         dataSource={rows}
         pagination={{ pageSize: 15, hideOnSinglePage: true }}
-        locale={{ emptyText: "Chưa có lần sao lưu nào." }}
+        locale={{ emptyText: tr("Chưa có lần sao lưu nào.") }}
         columns={[
           {
-            title: "Loại",
+            title: tr("Loại"),
             dataIndex: "kind",
             width: 130,
-            render: (k: string) => (k === "BACKUP" ? "Sao lưu" : "Diễn tập khôi phục"),
+            render: (k: string) => (k === "BACKUP" ? tr("Sao lưu") : tr("Diễn tập khôi phục")),
           },
           {
-            title: "Kết quả",
+            title: tr("Kết quả"),
             dataIndex: "status",
             width: 100,
-            render: (s: string) => <Tag color={s === "OK" ? "green" : "red"}>{s === "OK" ? "Đạt" : "Lỗi"}</Tag>,
+            render: (s: string) => <Tag color={s === "OK" ? "green" : "red"}>{s === "OK" ? tr("Đạt") : tr("Lỗi")}</Tag>,
           },
-          { title: "Bắt đầu", dataIndex: "started_at", width: 170 },
-          { title: "Dung lượng", dataIndex: "size_bytes", width: 110, render: mb },
-          { title: "Vị trí", dataIndex: "location", ellipsis: true },
+          { title: tr("Bắt đầu"), dataIndex: "started_at", width: 170 },
+          { title: tr("Dung lượng"), dataIndex: "size_bytes", width: 110, render: mb },
+          { title: tr("Vị trí"), dataIndex: "location", ellipsis: true },
           {
-            title: "Chi tiết",
+            title: tr("Chi tiết"),
             dataIndex: "detail",
             render: (d: Backup["detail"]) => d.problems?.join("; ") || d.error || d.databases || "",
           },
@@ -281,17 +291,21 @@ export const OpsPage = () => {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <div>
-        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Vận hành hệ thống</h1>
-        <p className="mt-1 text-[13px] text-muted">Nhật ký tập trung, neo chuỗi kiểm toán và sao lưu khôi phục.</p>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">
+          {tr("Vận hành hệ thống")}
+        </h1>
+        <p className="mt-1 text-[13px] text-muted">
+          {tr("Nhật ký tập trung, neo chuỗi kiểm toán và sao lưu khôi phục.")}
+        </p>
       </div>
       <Segmented
         className="self-start"
         value={tab}
         onChange={(v) => setTab(v as typeof tab)}
         options={[
-          { value: "logs", label: "Nhật ký hệ thống" },
-          { value: "anchors", label: "Neo chuỗi kiểm toán" },
-          { value: "backups", label: "Sao lưu và khôi phục" },
+          { value: "logs", label: tr("Nhật ký hệ thống") },
+          { value: "anchors", label: tr("Neo chuỗi kiểm toán") },
+          { value: "backups", label: tr("Sao lưu và khôi phục") },
         ]}
       />
       <section className="rounded-2xl border border-line bg-surface p-4 shadow-card">

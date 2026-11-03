@@ -6,6 +6,7 @@ import { Eye, Lock } from "lucide-react";
 
 import type { ArchiveDoc } from "../types";
 import { formatBytes } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 export const ArchiveDocRow = ({
   doc,
@@ -24,18 +25,18 @@ export const ArchiveDocRow = ({
       <div className="truncate text-[13.5px] font-semibold text-ink">{doc.title}</div>
       <div className="truncate text-[11.5px] text-muted">
         {detailed ? `${doc.code} · ` : ""}
-        {doc.fileName} · {formatBytes(doc.sizeBytes)} · Lưu trữ {doc.archivedYear}
-        {detailed ? ` · ${doc.unit} · ${doc.restricted ? "Hạn chế" : "Nội bộ"}` : ""}
+        {doc.fileName} · {formatBytes(doc.sizeBytes)} {tr(" · Lưu trữ ")} {doc.archivedYear}
+        {detailed ? ` · ${doc.unit} · ${doc.restricted ? tr("Hạn chế") : tr("Nội bộ")}` : ""}
       </div>
     </div>
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`Mở chỉ đọc: ${doc.title}`}
+      aria-label={trf("Mở chỉ đọc: {0}", [doc.title])}
       className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-ui bg-canvas px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
     >
       <Eye className="h-3.5 w-3.5" aria-hidden />
-      Mở chỉ đọc
+      {tr("Mở chỉ đọc")}
     </button>
   </div>
 );

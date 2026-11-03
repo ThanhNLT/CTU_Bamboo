@@ -6,6 +6,7 @@ import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { copyText } from "../utils";
+import { tr } from "../../../i18n";
 
 export const CodeSnippet = ({ title, code, language }: { title: string; code: string; language: string }) => {
   const [copied, setCopied] = useState(false);
@@ -33,7 +34,7 @@ export const CodeSnippet = ({ title, code, language }: { title: string; code: st
           ) : (
             <Copy className="h-3.5 w-3.5" aria-hidden />
           )}
-          <span aria-live="polite">{copied ? "Đã chép" : "Sao chép"}</span>
+          <span aria-live="polite">{copied ? tr("Đã chép") : tr("Sao chép")}</span>
         </button>
       </div>
       <pre

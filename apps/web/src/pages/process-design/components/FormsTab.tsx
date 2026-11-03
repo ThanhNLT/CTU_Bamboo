@@ -6,8 +6,17 @@ import { Button, Checkbox, Input, Select } from "antd";
 import { Plus, Trash2 } from "lucide-react";
 
 import type { FormDef } from "../types";
+import { tr, trf } from "../../../i18n";
 
-const FIELD_TYPES = ["Chữ", "Đoạn văn", "Số", "Ngày", "Danh mục", "Tệp (kiểm dịch)", "Tham chiếu chứng từ"];
+const FIELD_TYPES = [
+  tr("Chữ"),
+  tr("Đoạn văn"),
+  tr("Số"),
+  tr("Ngày"),
+  tr("Danh mục"),
+  tr("Tệp (kiểm dịch)"),
+  tr("Tham chiếu chứng từ"),
+];
 
 export const FormsTab = ({
   forms,
@@ -28,13 +37,13 @@ export const FormsTab = ({
           <section key={i} className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label={f.name}>
             <div className="flex gap-2">
               <Input
-                aria-label="Tên biểu mẫu"
+                aria-label={tr("Tên biểu mẫu")}
                 value={f.name}
                 disabled={readOnly}
                 onChange={(e) => patch(i, { name: e.target.value })}
               />
               <Input
-                aria-label="Mã biểu mẫu"
+                aria-label={tr("Mã biểu mẫu")}
                 className="w-[160px] font-mono"
                 value={f.key}
                 disabled={readOnly}
@@ -42,20 +51,20 @@ export const FormsTab = ({
               />
               {!readOnly && (
                 <Button
-                  aria-label="Xóa biểu mẫu"
+                  aria-label={tr("Xóa biểu mẫu")}
                   icon={<Trash2 className="h-4 w-4" />}
                   onClick={() => onChange(forms.filter((_, n) => n !== i))}
                 />
               )}
             </div>
             <p className="m-0 mt-1 text-[11.5px] text-muted">
-              {usedBy[f.key]?.length ? `Dùng ở: ${usedBy[f.key].join(", ")}` : "Chưa gắn vào tác vụ nào"}
+              {usedBy[f.key]?.length ? trf("Dùng ở: {0}", [usedBy[f.key].join(", ")]) : tr("Chưa gắn vào tác vụ nào")}
             </p>
             <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
               {f.fields.map((fd, j) => (
                 <li key={j} className="flex items-center gap-2">
                   <Input
-                    aria-label="Nhãn trường"
+                    aria-label={tr("Nhãn trường")}
                     size="small"
                     value={fd.label}
                     disabled={readOnly}
@@ -64,7 +73,7 @@ export const FormsTab = ({
                     }
                   />
                   <Select
-                    aria-label="Kiểu trường"
+                    aria-label={tr("Kiểu trường")}
                     size="small"
                     className="w-[150px] shrink-0"
                     value={fd.type}
@@ -79,12 +88,12 @@ export const FormsTab = ({
                       patch(i, { fields: f.fields.map((x, n) => (n === j ? { ...x, required: e.target.checked } : x)) })
                     }
                   >
-                    Bắt buộc
+                    {tr("Bắt buộc")}
                   </Checkbox>
                   {!readOnly && (
                     <button
                       type="button"
-                      aria-label="Xóa trường"
+                      aria-label={tr("Xóa trường")}
                       className="text-muted hover:text-red-600"
                       onClick={() => patch(i, { fields: f.fields.filter((_, n) => n !== j) })}
                     >
@@ -99,9 +108,9 @@ export const FormsTab = ({
                 size="small"
                 type="link"
                 className="mt-2 px-0"
-                onClick={() => patch(i, { fields: [...f.fields, { label: "", type: "Chữ", required: false }] })}
+                onClick={() => patch(i, { fields: [...f.fields, { label: "", type: tr("Chữ"), required: false }] })}
               >
-                + Thêm trường
+                {tr("+ Thêm trường")}
               </Button>
             )}
           </section>
@@ -116,17 +125,19 @@ export const FormsTab = ({
               ...forms,
               {
                 key: `bieu_mau_${forms.length + 1}`,
-                name: "Biểu mẫu mới",
-                fields: [{ label: "Ý kiến", type: "Đoạn văn", required: false }],
+                name: tr("Biểu mẫu mới"),
+                fields: [{ label: tr("Ý kiến"), type: tr("Đoạn văn"), required: false }],
               },
             ])
           }
         >
-          Thêm biểu mẫu
+          {tr("Thêm biểu mẫu")}
         </Button>
       )}
-      {forms.length === 0 && readOnly && <p className="text-[13px] text-muted">Quy trình chưa có biểu mẫu.</p>}
-      <p className="m-0 text-[12px] text-muted">Thay đổi biểu mẫu được lưu cùng bản nháp (nút “Lưu bản nháp”).</p>
+      {forms.length === 0 && readOnly && <p className="text-[13px] text-muted">{tr("Quy trình chưa có biểu mẫu.")}</p>}
+      <p className="m-0 text-[12px] text-muted">
+        {tr("Thay đổi biểu mẫu được lưu cùng bản nháp (nút “Lưu bản nháp”).")}
+      </p>
     </div>
   );
 };

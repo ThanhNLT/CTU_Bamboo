@@ -3181,7 +3181,16 @@
             {
               "role": "user",
               "permission": {
-                "columns": "*",
+                "columns": [
+                  "created_at",
+                  "email",
+                  "employee_code",
+                  "full_name",
+                  "id",
+                  "idp_subject",
+                  "phone",
+                  "tenant_id"
+                ],
                 "filter": {
                   "tenant_id": {
                     "_eq": "X-Hasura-Tenant-Id"
@@ -3193,7 +3202,16 @@
             {
               "role": "platform_admin",
               "permission": {
-                "columns": "*",
+                "columns": [
+                  "created_at",
+                  "email",
+                  "employee_code",
+                  "full_name",
+                  "id",
+                  "idp_subject",
+                  "phone",
+                  "tenant_id"
+                ],
                 "filter": {
                   "tenant_id": {
                     "_eq": "X-Hasura-Tenant-Id"

@@ -23,6 +23,7 @@ import type { DriveFile, DriveSection, SortKey } from "./types";
 import { useDrive } from "./useDrive";
 import { useUploadQueue } from "./useUploadQueue";
 import { sortFiles } from "./utils";
+import { tr, trf } from "../../i18n";
 
 const LOCKED = new Set(["APPROVED", "REJECTED", "CANCELLED"]);
 
@@ -63,7 +64,7 @@ export const DocumentDrivePage = () => {
   const remove = async (f: DriveFile) => {
     try {
       await request(`mutation Del($a: uuid!) { delete_attachment(attachment_id: $a) { status } }`, { a: f.id });
-      message.success(`Đã xóa ${f.name}`);
+      message.success(trf("Đã xóa {0}", [f.name]));
       drive.reload();
       void usage.reload();
     } catch (e) {
@@ -73,9 +74,9 @@ export const DocumentDrivePage = () => {
 
   const uploadDisabledReason =
     drive.folder && drive.folderStatus && LOCKED.has(drive.folderStatus)
-      ? "Chứng từ đã có kết quả, không thêm tệp được"
+      ? tr("Chứng từ đã có kết quả, không thêm tệp được")
       : !drive.folder && drive.targets.length === 0 && !drive.loading
-        ? "Bạn chưa có chứng từ nào nhận thêm tệp (lập đề nghị trước)"
+        ? tr("Bạn chưa có chứng từ nào nhận thêm tệp (lập đề nghị trước)")
         : undefined;
   const [picking, setPicking] = useState(false);
   const usage = useDriveUsage();
@@ -103,12 +104,12 @@ export const DocumentDrivePage = () => {
         }}
       />
 
-      {drive.error && <Alert type="error" showIcon message="Không tải được tệp" description={drive.error} />}
+      {drive.error && <Alert type="error" showIcon message={tr("Không tải được tệp")} description={drive.error} />}
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:sticky lg:top-[84px] lg:grid-cols-1"
-          aria-label="Ổ đĩa"
+          aria-label={tr("Ổ đĩa")}
         >
           <DriveSidebar
             items={DRIVE_NAV}
@@ -138,7 +139,7 @@ export const DocumentDrivePage = () => {
                   to={drive.folder.to}
                   className="inline-flex items-center gap-1 text-bamboo-700 hover:underline underline-offset-2"
                 >
-                  Mở chứng từ <ExternalLink className="h-3 w-3" aria-hidden />
+                  {tr("Mở chứng từ ")} <ExternalLink className="h-3 w-3" aria-hidden />
                 </Link>
               )}
             </p>
@@ -151,7 +152,13 @@ export const DocumentDrivePage = () => {
             onOpen={(f) => void download(f)}
             me={tenant.person_id}
             onDelete={(f) => void remove(f)}
-            emptyText={drive.loading ? "Đang tải…" : section === "mine" ? "Bạn chưa tải lên tệp nào." : "Không có tệp."}
+            emptyText={
+              drive.loading
+                ? tr("Đang tải…")
+                : section === "mine"
+                  ? tr("Bạn chưa tải lên tệp nào.")
+                  : tr("Không có tệp.")
+            }
           />
         </div>
       </div>

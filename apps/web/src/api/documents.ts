@@ -8,14 +8,15 @@ import { useMemo } from "react";
 
 import { formatMoney } from "../utils/format";
 import { IC_STATUS_LABEL, PR_STATUS_LABEL } from "../utils/status";
+import { tr, trf } from "../i18n";
 
 export type DocKind = "purchase_request" | "onboarding_request" | "ic_order" | "kb_document";
 
 export const DOC_KIND_LABEL: Record<DocKind, string> = {
-  purchase_request: "Đề nghị mua sắm",
-  onboarding_request: "Tiếp nhận nhân sự",
-  ic_order: "Đơn hàng nội bộ",
-  kb_document: "Đề xuất tài liệu",
+  purchase_request: tr("Đề nghị mua sắm"),
+  onboarding_request: tr("Tiếp nhận nhân sự"),
+  ic_order: tr("Đơn hàng nội bộ"),
+  kb_document: tr("Đề xuất tài liệu"),
 };
 
 export type DocStep = {
@@ -207,13 +208,13 @@ const fromOb = (r: ObRow): DocSummary => ({
   id: r.id,
   kind: "onboarding_request",
   code: r.doc_no,
-  title: `Tiếp nhận ${r.full_name}`,
+  title: trf("Tiếp nhận {0}", [r.full_name]),
   status: r.status,
   statusLabel: PR_STATUS_LABEL[r.status] ?? r.status,
   requester: r.requester?.full_name ?? "—",
   requesterId: r.requester_id,
   unit: r.target_position?.org_unit.name ?? "—",
-  amount: r.salary == null ? "—" : `${formatMoney(r.salary)}/tháng`,
+  amount: r.salary == null ? "—" : trf("{0}/tháng", [formatMoney(r.salary)]),
   createdAt: r.created_at,
   updatedAt: r.updated_at,
   to: `/h/onboarding/show/${r.id}`,
@@ -224,7 +225,7 @@ const fromIc = (r: IcRow): DocSummary => ({
   id: r.id,
   kind: "ic_order",
   code: r.doc_no,
-  title: `Đơn nội bộ ${r.buyer_unit?.name ?? "?"} → ${r.seller_unit?.name ?? "?"}`,
+  title: trf("Đơn nội bộ {0} → {1}", [r.buyer_unit?.name ?? "?", r.seller_unit?.name ?? "?"]),
   status: r.status,
   statusLabel: IC_STATUS_LABEL[r.status] ?? r.status,
   requester: r.created_by_person?.full_name ?? "—",
@@ -243,11 +244,11 @@ const fromKb = (r: KbRow): DocSummary => ({
   code: r.doc_no,
   title: r.title,
   status: r.status,
-  statusLabel: r.status === "APPROVED" ? "Đã xuất bản" : (PR_STATUS_LABEL[r.status] ?? "Ngừng hiệu lực"),
+  statusLabel: r.status === "APPROVED" ? tr("Đã xuất bản") : (PR_STATUS_LABEL[r.status] ?? tr("Ngừng hiệu lực")),
   requester: r.requester?.full_name ?? "—",
   requesterId: r.requester_id,
   unit: r.org_unit?.name ?? "—",
-  amount: `Phiên bản ${r.version}`,
+  amount: trf("Phiên bản {0}", [r.version]),
   createdAt: r.created_at,
   updatedAt: r.updated_at,
   to: `/h/library/proposals/${r.id}`,

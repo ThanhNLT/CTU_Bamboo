@@ -17,23 +17,24 @@ import { useModules } from "../../../modules/useModules";
 import { AdminHeader, NoAccess } from "../shared/AdminHeader";
 import { rotateKey } from "./externalKey";
 import { RegisterExternal } from "./RegisterExternal";
+import { tr, trf } from "../../../i18n";
 
 const CORE = [
-  "Cơ cấu tổ chức: đơn vị, vị trí, bổ nhiệm",
-  "Người dùng và tài khoản đăng nhập",
-  "Vai trò & phân quyền",
-  "Danh mục & dữ liệu chủ",
-  "Nhật ký kiểm toán, thông báo, vận hành hệ thống",
+  tr("Cơ cấu tổ chức: đơn vị, vị trí, bổ nhiệm"),
+  tr("Người dùng và tài khoản đăng nhập"),
+  tr("Vai trò & phân quyền"),
+  tr("Danh mục & dữ liệu chủ"),
+  tr("Nhật ký kiểm toán, thông báo, vận hành hệ thống"),
 ];
 
 const status = (m: ModuleInfo) =>
   m.enabled ? (
-    <Tag color="green">Đang bật</Tag>
+    <Tag color="green">{tr("Đang bật")}</Tag>
   ) : m.installed ? (
-    <Tag>Chưa bật</Tag>
+    <Tag>{tr("Chưa bật")}</Tag>
   ) : (
     <Tag color="default" className="border-dashed">
-      Chưa cài trên máy
+      {tr("Chưa cài trên máy")}
     </Tag>
   );
 
@@ -70,14 +71,14 @@ export const ModulesPage = () => {
       const changed = names(next.changed);
       message.success(
         {
-          module_enable: `Đã bật ${changed || m.name}.`,
-          module_disable: `Đã tắt ${m.name}. Dữ liệu vẫn được giữ, bật lại là dùng tiếp.`,
-          module_install: `Đã cài ${changed || m.name}; container sẽ khởi động trong ít phút.`,
-          module_uninstall: `Đã gỡ ${m.name}; container sẽ dừng trong ít phút.`,
+          module_enable: trf("Đã bật {0}.", [changed || m.name]),
+          module_disable: trf("Đã tắt {0}. Dữ liệu vẫn được giữ, bật lại là dùng tiếp.", [m.name]),
+          module_install: trf("Đã cài {0}; container sẽ khởi động trong ít phút.", [changed || m.name]),
+          module_uninstall: trf("Đã gỡ {0}; container sẽ dừng trong ít phút.", [m.name]),
         }[action],
       );
     } catch (e) {
-      modal.error({ title: "Không thực hiện được", content: (e as Error).message });
+      modal.error({ title: tr("Không thực hiện được"), content: (e as Error).message });
     } finally {
       setBusy(undefined);
     }
@@ -87,83 +88,95 @@ export const ModulesPage = () => {
     const extra = m.depends.filter((c) => !byCode.get(c)?.enabled);
     const needInstall = [m.code, ...m.depends].filter((c) => !byCode.get(c)?.installed);
     modal.confirm({
-      title: `Bật ${m.name} cho ${tenant.tenant_name}?`,
+      title: trf("Bật {0} cho {1}?", [m.name, tenant.tenant_name]),
       content: (
         <div className="space-y-2 text-[13px]">
           <p>{m.description}.</p>
           {m.external && (
             <div>
               <p className="m-0">
-                Mô-đun ngoài{m.vendor ? ` của ${m.vendor}` : ""}. Giao diện chạy trong khung tách biệt, không đọc được
-                phiên đăng nhập của Bamboo. Mô-đun được phép:
+                {tr("Mô-đun ngoài")}
+                {m.vendor ? trf(" của {0}", [m.vendor]) : ""}
+                {tr(
+                  ". Giao diện chạy trong khung tách biệt, không đọc được phiên đăng nhập của Bamboo. Mô-đun được phép:",
+                )}
               </p>
               <ul className="my-1 pl-5">
-                {m.scopes.length === 0 && <li>Không truy cập dữ liệu của Bamboo</li>}
+                {m.scopes.length === 0 && <li>{tr("Không truy cập dữ liệu của Bamboo")}</li>}
                 {m.scopes.map((sc) => (
                   <li key={sc}>{SCOPE_LABEL[sc] ?? sc}</li>
                 ))}
               </ul>
             </div>
           )}
-          {extra.length > 0 && <p>Hệ thống bật kèm các chức năng cần thiết: {names(extra)}.</p>}
+          {extra.length > 0 && (
+            <p>
+              {tr("Hệ thống bật kèm các chức năng cần thiết: ")} {names(extra)}.
+            </p>
+          )}
           {needInstall.length > 0 && (
             <p>
-              Chưa cài trên máy: {names(needInstall)}. Hệ thống sẽ cài và khởi động các dịch vụ đi kèm; lần đầu có thể
-              mất vài phút.
+              {tr("Chưa cài trên máy: ")} {names(needInstall)}
+              {tr(". Hệ thống sẽ cài và khởi động các dịch vụ đi kèm; lần đầu có thể mất vài phút.")}
             </p>
           )}
         </div>
       ),
-      okText: "Bật",
-      cancelText: "Hủy",
+      okText: tr("Bật"),
+      cancelText: tr("Hủy"),
       onOk: () => run("module_enable", m),
     });
   };
 
   const disable = (m: ModuleInfo) =>
     modal.confirm({
-      title: `Tắt ${m.name}?`,
+      title: trf("Tắt {0}?", [m.name]),
       content: (
         <p className="text-[13px]">
-          Menu và thao tác của chức năng này bị ẩn với mọi người trong {tenant.tenant_name}. Dữ liệu đã có được giữ
-          nguyên. Hệ thống không cho tắt khi còn chứng từ đang chờ duyệt hoặc chức năng khác đang dựa vào nó.
+          {tr("Menu và thao tác của chức năng này bị ẩn với mọi người trong ")} {tenant.tenant_name}
+          {tr(
+            ". Dữ liệu đã có được giữ nguyên. Hệ thống không cho tắt khi còn chứng từ đang chờ duyệt hoặc chức năng khác đang dựa vào nó.",
+          )}
         </p>
       ),
-      okText: "Tắt",
+      okText: tr("Tắt"),
       okButtonProps: { danger: true },
-      cancelText: "Hủy",
+      cancelText: tr("Hủy"),
       onOk: () => run("module_disable", m),
     });
 
   const uninstall = (m: ModuleInfo) =>
     modal.confirm({
-      title: `Gỡ ${m.name} khỏi máy chủ?`,
+      title: trf("Gỡ {0} khỏi máy chủ?", [m.name]),
       content: (
         <p className="text-[13px]">
-          Các dịch vụ đi kèm ({m.services.map((s) => s.name).join(", ") || "không có"}) sẽ dừng để trả RAM. Dữ liệu được
-          giữ; cài lại là dùng tiếp. Chỉ gỡ được khi không công ty nào trên máy còn bật chức năng này.
+          {tr("Các dịch vụ đi kèm (")}
+          {m.services.map((s) => s.name).join(", ") || tr("không có")}
+          {tr(
+            ") sẽ dừng để trả RAM. Dữ liệu được giữ; cài lại là dùng tiếp. Chỉ gỡ được khi không công ty nào trên máy còn bật chức năng này.",
+          )}
         </p>
       ),
-      okText: "Gỡ khỏi máy",
+      okText: tr("Gỡ khỏi máy"),
       okButtonProps: { danger: true },
-      cancelText: "Hủy",
+      cancelText: tr("Hủy"),
       onOk: () => run("module_uninstall", m),
     });
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <AdminHeader
-        title="Quản lý chức năng"
+        title={tr("Quản lý chức năng")}
         subtitle={
           <>
-            Bật những chức năng {tenant.tenant_name} cần dùng; chức năng chưa bật không hiện trên menu
-            {overview.can_install ? ", chưa cài thì dịch vụ của nó không chạy, không tốn tài nguyên máy chủ" : ""}
+            {tr("Bật những chức năng ")} {tenant.tenant_name} {tr(" cần dùng; chức năng chưa bật không hiện trên menu")}
+            {overview.can_install ? tr(", chưa cài thì dịch vụ của nó không chạy, không tốn tài nguyên máy chủ") : ""}
           </>
         }
         actions={
           overview.can_install && (
             <button type="button" className={secondaryButtonClass} onClick={() => setRegistering(true)}>
-              Thêm mô-đun ngoài
+              {tr("Thêm mô-đun ngoài")}
             </button>
           )
         }
@@ -171,7 +184,7 @@ export const ModulesPage = () => {
 
       <RegisterExternal open={registering} onClose={() => setRegistering(false)} onDone={reload} />
 
-      <Panel title="Phần lõi — luôn bật">
+      <Panel title={tr("Phần lõi — luôn bật")}>
         <ul className="m-0 grid list-none gap-x-6 gap-y-1.5 p-0 text-[13px] text-body sm:grid-cols-2 lg:grid-cols-3">
           {CORE.map((c) => (
             <li key={c} className="flex items-center gap-2">
@@ -195,9 +208,9 @@ export const ModulesPage = () => {
                 {m.external && (
                   <p className="m-0 text-[12px] text-muted">
                     <Tag color="purple" className="mr-1.5">
-                      Mô-đun ngoài
+                      {tr("Mô-đun ngoài")}
                     </Tag>
-                    {[m.vendor, m.version && `phiên bản ${m.version}`].filter(Boolean).join(" · ")}
+                    {[m.vendor, m.version && trf("phiên bản {0}", [m.version])].filter(Boolean).join(" · ")}
                   </p>
                 )}
               </div>
@@ -208,13 +221,13 @@ export const ModulesPage = () => {
               <dl className="m-0 space-y-1 text-[12.5px] text-muted">
                 {m.depends.length > 0 && (
                   <div>
-                    <dt className="inline">Cần: </dt>
+                    <dt className="inline">{tr("Cần: ")} </dt>
                     <dd className="inline">{names(m.depends)}</dd>
                   </div>
                 )}
                 {m.dependents.length > 0 && (
                   <div>
-                    <dt className="inline">Được dùng bởi: </dt>
+                    <dt className="inline">{tr("Được dùng bởi: ")} </dt>
                     <dd className="inline">{names(m.dependents)}</dd>
                   </div>
                 )}
@@ -233,7 +246,9 @@ export const ModulesPage = () => {
                   <li
                     key={s.name}
                     className="flex items-center gap-1.5"
-                    title={s.running ? "Đang chạy" : s.running === false ? "Đang dừng" : "Chưa có container"}
+                    title={
+                      s.running ? tr("Đang chạy") : s.running === false ? tr("Đang dừng") : tr("Chưa có container")
+                    }
                   >
                     <ServiceDot running={s.running} /> {s.name}
                   </li>
@@ -249,7 +264,7 @@ export const ModulesPage = () => {
                       disabled={!!busy}
                       onClick={() => disable(m)}
                     >
-                      {busy === m.code ? "Đang tắt..." : "Tắt"}
+                      {busy === m.code ? tr("Đang tắt...") : tr("Tắt")}
                     </button>
                   )
                 : overview.can_manage &&
@@ -260,7 +275,7 @@ export const ModulesPage = () => {
                       disabled={!!busy}
                       onClick={() => enable(m)}
                     >
-                      {busy === m.code ? "Đang bật..." : "Bật"}
+                      {busy === m.code ? tr("Đang bật...") : tr("Bật")}
                     </button>
                   )}
               {overview.can_install && m.external && (
@@ -270,7 +285,7 @@ export const ModulesPage = () => {
                   disabled={!!busy}
                   onClick={() => void rotateKey(modal, m.code, reload)}
                 >
-                  Đổi khóa
+                  {tr("Đổi khóa")}
                 </button>
               )}
               {overview.can_install && m.installed && !m.enabled && (
@@ -280,7 +295,7 @@ export const ModulesPage = () => {
                   disabled={!!busy}
                   onClick={() => uninstall(m)}
                 >
-                  Gỡ khỏi máy
+                  {tr("Gỡ khỏi máy")}
                 </button>
               )}
               {overview.can_install && !m.installed && !overview.can_manage && (
@@ -290,11 +305,11 @@ export const ModulesPage = () => {
                   disabled={!!busy}
                   onClick={() => void run("module_install", m)}
                 >
-                  Cài trên máy
+                  {tr("Cài trên máy")}
                 </button>
               )}
               {!m.installed && !overview.can_install && (
-                <span className="text-[12px] text-muted">Nhờ quản trị nền tảng cài trên máy chủ trước</span>
+                <span className="text-[12px] text-muted">{tr("Nhờ quản trị nền tảng cài trên máy chủ trước")}</span>
               )}
             </footer>
           </section>

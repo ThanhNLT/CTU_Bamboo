@@ -5,19 +5,20 @@
 import type { Tone } from "../../components/ui";
 import { fold } from "../../utils/text";
 import type { CategoryFilter, EntityCategory, EntityStatus, MetricStatus, Threshold, TwinEntity } from "./types";
+import { tr, trf } from "../../i18n";
 
 export const CATEGORY_TABS: Array<{ key: CategoryFilter; label: string }> = [
-  { key: "all", label: "Tất cả" },
-  { key: "smt", label: "Dây chuyền SMT" },
-  { key: "cleanroom", label: "Phòng sạch" },
-  { key: "medical", label: "Thiết bị y tế" },
+  { key: "all", label: tr("Tất cả") },
+  { key: "smt", label: tr("Dây chuyền SMT") },
+  { key: "cleanroom", label: tr("Phòng sạch") },
+  { key: "medical", label: tr("Thiết bị y tế") },
 ];
 
 export const ENTITY_STATUS: Record<EntityStatus, { label: string; tone: Tone }> = {
-  critical: { label: "Nguy cấp", tone: "danger" },
-  warning: { label: "Cảnh báo", tone: "warning" },
-  ok: { label: "Bình thường", tone: "success" },
-  offline: { label: "Mất tín hiệu", tone: "neutral" },
+  critical: { label: tr("Nguy cấp"), tone: "danger" },
+  warning: { label: tr("Cảnh báo"), tone: "warning" },
+  ok: { label: tr("Bình thường"), tone: "success" },
+  offline: { label: tr("Mất tín hiệu"), tone: "neutral" },
 };
 
 export const METRIC_TONE: Record<MetricStatus, Tone> = {
@@ -46,18 +47,18 @@ export const formatDay = (t: number) => `${pad2(vn(t).getUTCDate())}/${pad2(vn(t
 export const formatDayTime = (t: number) => `${formatDay(t)} ${formatTime(t)}`;
 
 export const formatDuration = (minutes: number) => {
-  if (minutes < 60) return `${minutes} phút`;
+  if (minutes < 60) return trf("{0} phút", [minutes]);
   const d = Math.floor(minutes / 1440);
   const h = Math.floor((minutes % 1440) / 60);
   const m = minutes % 60;
-  if (d > 0) return h > 0 ? `${d} ngày ${h} giờ` : `${d} ngày`;
-  return m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`;
+  if (d > 0) return h > 0 ? trf("{0} ngày {1} giờ", [d, h]) : trf("{0} ngày", [d]);
+  return m > 0 ? trf("{0} giờ {1} phút", [h, m]) : trf("{0} giờ", [h]);
 };
 
 export const thresholdText = (th: Threshold) => {
   if (th.min != null && th.max != null) return `${formatNumber(th.min)}–${formatNumber(th.max)}`;
-  if (th.max != null) return `ngưỡng ${formatNumber(th.max)}`;
-  if (th.min != null) return `tối thiểu ${formatNumber(th.min)}`;
+  if (th.max != null) return trf("ngưỡng {0}", [formatNumber(th.max)]);
+  if (th.min != null) return trf("tối thiểu {0}", [formatNumber(th.min)]);
   return "";
 };
 

@@ -29,6 +29,7 @@ import {
   reconciliationCsv,
   sha256Hex,
 } from "./utils";
+import { tr, trf } from "../../i18n";
 
 const FEATURED = 3;
 
@@ -50,14 +51,14 @@ export const LedgerPage = () => {
     () =>
       fetchOverview()
         .then(setOverview)
-        .catch((e: Error) => message.error(`Không tải được số liệu sổ cái: ${e.message}`)),
+        .catch((e: Error) => message.error(trf("Không tải được số liệu sổ cái: {0}", [e.message]))),
     [message],
   );
   const loadArchive = useCallback(
     () =>
       fetchArchive()
         .then(setArchive)
-        .catch((e: Error) => message.error(`Không tải được hồ sơ lưu trữ: ${e.message}`)),
+        .catch((e: Error) => message.error(trf("Không tải được hồ sơ lưu trữ: {0}", [e.message]))),
     [message],
   );
 
@@ -98,7 +99,7 @@ export const LedgerPage = () => {
 
   const verifyFile = async (file: File) => {
     if (file.size > MAX_FILE_BYTES) {
-      message.error("Tệp lớn hơn 200 MB — hãy đối soát theo số chứng từ.");
+      message.error(tr("Tệp lớn hơn 200 MB — hãy đối soát theo số chứng từ."));
       return;
     }
     setHashing({ name: file.name, size: file.size });
@@ -106,7 +107,7 @@ export const LedgerPage = () => {
     try {
       hash = await sha256Hex(file);
     } catch {
-      message.error("Không đọc được tệp. Thử lại hoặc chọn tệp khác.");
+      message.error(tr("Không đọc được tệp. Thử lại hoặc chọn tệp khác."));
       setHashing(undefined);
       return;
     }
@@ -120,21 +121,21 @@ export const LedgerPage = () => {
   const copyEvidence = async () => {
     if (!result) return;
     const ok = await copyText(evidenceText(result));
-    if (ok) message.success("Đã sao chép bằng chứng đối soát.");
-    else message.error("Không sao chép được. Trình duyệt chặn bộ nhớ tạm.");
+    if (ok) message.success(tr("Đã sao chép bằng chứng đối soát."));
+    else message.error(tr("Không sao chép được. Trình duyệt chặn bộ nhớ tạm."));
   };
 
   const openCertificate = () => {
     if (!result || result.kind === "not_found") return;
     const w = window.open("", "_blank");
     if (!w) {
-      message.error("Trình duyệt chặn cửa sổ mới. Cho phép cửa sổ bật lên rồi thử lại.");
+      message.error(tr("Trình duyệt chặn cửa sổ mới. Cho phép cửa sổ bật lên rồi thử lại."));
       return;
     }
     w.document.open();
     w.document.write(certificateHtml(result));
     w.document.close();
-    message.info("Trong hộp thoại In, chọn “Lưu dưới dạng PDF”.");
+    message.info(tr("Trong hộp thoại In, chọn “Lưu dưới dạng PDF”."));
   };
 
   const exportReport = async () => {
@@ -142,7 +143,7 @@ export const LedgerPage = () => {
       const all = await fetchOverview(100);
       const day = formatStamp(new Date()).slice(0, 10).split("/").reverse().join("-");
       downloadText(reconciliationCsv(all.recent), `doi-soat-so-cai-${day}.csv`, "text/csv;charset=utf-8");
-      message.success(`Đã xuất báo cáo đối soát (${all.recent.length} bản niêm phong mới nhất).`);
+      message.success(trf("Đã xuất báo cáo đối soát ({0} bản niêm phong mới nhất).", [all.recent.length]));
     } catch (e) {
       message.error((e as Error).message);
     }
@@ -154,8 +155,8 @@ export const LedgerPage = () => {
         `query { verify_audit_chain { ok checked problems { seq problem } } }`,
       );
       const v = r.verify_audit_chain;
-      if (v.ok) message.success(`Chuỗi hash kiểm toán nguyên vẹn (${formatInt(v.checked)} dòng).`);
-      else message.error(`Chuỗi hash có ${v.problems.length} chỗ không khớp — xem trang Kiểm toán.`);
+      if (v.ok) message.success(trf("Chuỗi hash kiểm toán nguyên vẹn ({0} dòng).", [formatInt(v.checked)]));
+      else message.error(trf("Chuỗi hash có {0} chỗ không khớp — xem trang Kiểm toán.", [v.problems.length]));
     } catch (e) {
       message.error((e as Error).message);
     }
@@ -174,46 +175,51 @@ export const LedgerPage = () => {
   const stats: LedgerStat[] = [
     {
       key: "sealed",
-      label: "Đã niêm phong",
+      label: tr("Đã niêm phong"),
       value: o?.sealed ?? 0,
-      note: `+${formatInt(o?.sealedThisWeek ?? 0)} trong 7 ngày`,
+      note: trf("+{0} trong 7 ngày", [formatInt(o?.sealedThisWeek ?? 0)]),
     },
     {
       key: "today",
-      label: "Đối soát hôm nay",
+      label: tr("Đối soát hôm nay"),
       value: o?.checkedToday ?? 0,
       tone: "success",
-      note: `${formatInt(o?.matchedToday ?? 0)} khớp · ${formatInt(o?.mismatchedToday ?? 0)} không khớp`,
+      note: trf("{0} khớp · {1} không khớp", [formatInt(o?.matchedToday ?? 0), formatInt(o?.mismatchedToday ?? 0)]),
     },
     {
       key: "mismatch",
-      label: "Không khớp · 30 ngày",
+      label: tr("Không khớp · 30 ngày"),
       value: o?.mismatch30d ?? 0,
       tone: "warning",
-      note: "Lần đối soát thấy tệp khác bản niêm phong",
+      note: tr("Lần đối soát thấy tệp khác bản niêm phong"),
     },
-    { key: "archived", label: "Hồ sơ lưu trữ", value: o?.archived ?? 0, note: "Chứng từ đã kết thúc · chỉ đọc" },
+    {
+      key: "archived",
+      label: tr("Hồ sơ lưu trữ"),
+      value: o?.archived ?? 0,
+      note: tr("Chứng từ đã kết thúc · chỉ đọc"),
+    },
   ];
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Sổ cái</h1>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">{tr("Sổ cái")}</h1>
           <p className="mt-1 text-[13px] text-muted">
-            Niêm phong SHA-256 trong chuỗi hash kiểm toán · đối soát toàn vẹn và phòng đọc ảo cho hồ sơ lưu trữ
+            {tr("Niêm phong SHA-256 trong chuỗi hash kiểm toán · đối soát toàn vẹn và phòng đọc ảo cho hồ sơ lưu trữ")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {o?.chainReader && (
             <button type="button" onClick={() => void verifyChain()} className={secondaryButtonClass}>
               <Link2 className="h-4 w-4" aria-hidden />
-              Kiểm tra toàn chuỗi hash
+              {tr("Kiểm tra toàn chuỗi hash")}
             </button>
           )}
           <button type="button" onClick={() => void exportReport()} className={secondaryButtonClass}>
             <Download className="h-4 w-4" aria-hidden />
-            Xuất báo cáo đối soát
+            {tr("Xuất báo cáo đối soát")}
           </button>
         </div>
       </div>

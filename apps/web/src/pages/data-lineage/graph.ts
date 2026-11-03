@@ -4,19 +4,20 @@
 
 import { fold } from "../../utils/text";
 import type { Direction, Layer, LineageEdge, LineageNode, NodeStatus, QualityCheck } from "./types";
+import { tr } from "../../i18n";
 
 export const LAYERS: Array<{ key: Layer; label: string }> = [
-  { key: "source", label: "Nguồn" },
-  { key: "stream", label: "Luồng sự kiện" },
-  { key: "lake", label: "Hồ dữ liệu" },
-  { key: "serving", label: "Phục vụ" },
-  { key: "consumer", label: "Tiêu thụ" },
+  { key: "source", label: tr("Nguồn") },
+  { key: "stream", label: tr("Luồng sự kiện") },
+  { key: "lake", label: tr("Hồ dữ liệu") },
+  { key: "serving", label: tr("Phục vụ") },
+  { key: "consumer", label: tr("Tiêu thụ") },
 ];
 
 export const STATUS_LABEL: Record<NodeStatus, string> = {
-  healthy: "Khỏe",
-  failed: "Kiểm tra lỗi",
-  affected: "Bị ảnh hưởng",
+  healthy: tr("Khỏe"),
+  failed: tr("Kiểm tra lỗi"),
+  affected: tr("Bị ảnh hưởng"),
 };
 
 const adjacency = (edges: LineageEdge[], dir: "down" | "up") => {

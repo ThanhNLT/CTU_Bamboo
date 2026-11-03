@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { request } from "../../api/client";
 import type { EntityCategory, EntityStatus, Incident, Metric, MetricStatus, SeriesPoint, TwinEntity } from "./types";
 import { ENTITY_STATUS, formatDuration, formatNumber, thresholdText, worstStatus } from "./utils";
+import { tr, trf } from "../../i18n";
 
 const REFRESH_MS = 60_000;
 const MINUTE = 60_000;
@@ -103,19 +104,23 @@ export const toEntity = (r: EntityRow, now: number): TwinEntity => {
     const value = latest?.value ?? NaN;
     const incident = incidents.find((i) => i.attribute === a.key && pressing(i, now));
     let status: MetricStatus = "ok";
-    let note = `Bình thường · ${thresholdText(threshold)}`;
+    let note = trf("Bình thường · {0}", [thresholdText(threshold)]);
     if (offlineMinutes) {
       status = "stale";
-      note = `Giá trị cuối · ${offlineMinutes} phút trước`;
+      note = trf("Giá trị cuối · {0} phút trước", [offlineMinutes]);
     } else if (incident) {
       status = "critical";
-      note = `${incident.side === "below" ? "Dưới" : "Vượt"} ${formatDuration(incident.minutes)} · ngưỡng ${formatNumber(incident.threshold)}`;
+      note = trf("{0} {1} · ngưỡng {2}", [
+        incident.side === "below" ? tr("Dưới") : tr("Vượt"),
+        formatDuration(incident.minutes),
+        formatNumber(incident.threshold),
+      ]);
     } else if (threshold.max != null && value > threshold.max) {
       status = "warning";
-      note = `Cao · tối đa ${formatNumber(threshold.max)}`;
+      note = trf("Cao · tối đa {0}", [formatNumber(threshold.max)]);
     } else if (threshold.min != null && value < threshold.min) {
       status = "warning";
-      note = `Thấp · tối thiểu ${formatNumber(threshold.min)}`;
+      note = trf("Thấp · tối thiểu {0}", [formatNumber(threshold.min)]);
     }
     return {
       key: a.key,
@@ -150,7 +155,9 @@ export const toEntity = (r: EntityRow, now: number): TwinEntity => {
     offlineMinutes,
     lastSeenAt: r.last_seen_at,
     status,
-    subtitle: offlineMinutes ? `Mất tín hiệu ${offlineMinutes} phút` : `${ENTITY_STATUS[status].label} · ${province}`,
+    subtitle: offlineMinutes
+      ? trf("Mất tín hiệu {0} phút", [offlineMinutes])
+      : `${ENTITY_STATUS[status].label} · ${province}`,
     metrics,
     incidents,
   };

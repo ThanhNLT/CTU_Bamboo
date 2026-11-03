@@ -16,6 +16,7 @@ import { DEFAULT_TYPES, EXAMPLE_QUERIES } from "./labels";
 import type { Company, ResultType, SearchMode, SortKey, TimeRange } from "./types";
 import { useDocumentSearch } from "./useDocumentSearch";
 import { useEntitySearch } from "./useEntitySearch";
+import { tr, trf } from "../../i18n";
 
 const NO_COMPANIES: Company[] = [];
 
@@ -101,9 +102,11 @@ export const SearchPage = () => {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
       <div>
-        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Tìm kiếm</h1>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">{tr("Tìm kiếm")}</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Tìm trong hồ sơ, tài liệu, tri thức, thiết bị và dữ liệu bạn được phép xem · từ khóa, gõ không dấu cũng được
+          {tr(
+            "Tìm trong hồ sơ, tài liệu, tri thức, thiết bị và dữ liệu bạn được phép xem · từ khóa, gõ không dấu cũng được",
+          )}
         </p>
       </div>
 
@@ -122,7 +125,7 @@ export const SearchPage = () => {
             query={q}
             mode={mode}
             concepts={[]}
-            onAsk={() => navigate(`/i/assistant?context=${encodeURIComponent(`Tìm kiếm · “${q}”`)}`)}
+            onAsk={() => navigate(`/i/assistant?context=${encodeURIComponent(trf("Tìm kiếm · “{0}”", [q]))}`)}
           />
 
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(220px,1fr)_minmax(0,3fr)]">
@@ -156,8 +159,8 @@ export const SearchPage = () => {
         </>
       ) : (
         <div className="rounded-2xl border border-dashed border-line bg-surface px-6 py-14 text-center">
-          <p className="text-[13.5px] font-medium text-ink">Nhập từ khóa để tìm trong mọi thứ bạn được xem.</p>
-          <p className="mt-1 text-[12.5px] text-muted">Gõ không dấu cũng được. Thử:</p>
+          <p className="text-[13.5px] font-medium text-ink">{tr("Nhập từ khóa để tìm trong mọi thứ bạn được xem.")}</p>
+          <p className="mt-1 text-[12.5px] text-muted">{tr("Gõ không dấu cũng được. Thử:")}</p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             {EXAMPLE_QUERIES.map((ex) => (
               <button
