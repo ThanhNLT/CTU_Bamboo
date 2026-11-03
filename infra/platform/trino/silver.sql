@@ -1694,6 +1694,38 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_regulation (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.wf_process_regulation COMMENT 'Trạng thái hiện tại của wf.process_regulation, dựng từ bronze.wf_process_regulation' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["model_id"]') AS uuid) AS "model_id",
+    CAST(json_extract_scalar(after, '$["version"]') AS integer) AS "version",
+    CAST(json_extract_scalar(after, '$["kb_document_id"]') AS uuid) AS "kb_document_id",
+    json_extract_scalar(after, '$["kind"]') AS "kind",
+    CAST(json_extract_scalar(after, '$["created_by"]') AS uuid) AS "created_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.wf_process_regulation
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.wf_process_version (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,

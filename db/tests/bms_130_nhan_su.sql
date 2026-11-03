@@ -145,5 +145,7 @@ SELECT set_config('hasura.user', '', true);
 INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, uploaded_by)
 VALUES (test.id('TDX'), 'hr.onboarding_request', test.id('o3'), 'cv.pdf', 'application/pdf', 10, 'k-cv', test.id('ns'));
 UPDATE core.attachment SET status = 'CLEAN', sha256 = 'x', scan_engines = ARRAY['test'] WHERE storage_key = 'k-cv';
-SELECT test.ok(NOT EXISTS (SELECT 1 FROM search.pending p JOIN core.attachment a ON a.id = p.entity_id
-                           WHERE a.storage_key = 'k-cv'), 'CV không vào hàng đợi tìm kiếm');
+-- Từ migration 046, tệp hồ sơ tiếp nhận vào chỉ mục nhưng chỉ theo tên tệp, nội dung (CCCD, tài khoản) không được đọc
+SELECT test.ok(EXISTS (SELECT 1 FROM search.pending p JOIN core.attachment a ON a.id = p.entity_id
+                       WHERE a.storage_key = 'k-cv'), 'CV vào hàng đợi tìm kiếm');
+SELECT test.ok(search.attachment_name_only('hr.onboarding_request'), 'CV chỉ lập chỉ mục tên tệp');

@@ -130,8 +130,9 @@ def get_personnel_decision_pdf(conn: psycopg.Connection, session: dict, args: di
     html = render_decision(d)
     digest = _digest(html)
     html = html.replace("{check_code}", digest[:16].upper())
-    out = _publish(ctx, f"{d['tenant_id']}/hr.personnel_decision/{d['id']}/forms", digest, html, d["doc_no"],
-                   f"{d['doc_no']}.pdf")
+    out = _publish(
+        ctx, f"{d['tenant_id']}/hr.personnel_decision/{d['id']}/forms", digest, html, d["doc_no"], f"{d['doc_no']}.pdf"
+    )
     return {"decision_id": str(d["id"]), "doc_no": d["doc_no"], **out}
 
 
@@ -164,18 +165,28 @@ def kpi_snapshots(conn: psycopg.Connection, session: dict, args: dict, _ctx: Con
     broken = {
         (r[0], r[1]) for r in conn.execute("SELECT kpi_key, period_start FROM kpi.verify_snapshots(%s)", (tenant,))
     }
-    rows = conn.cursor(row_factory=dict_row).execute(
-        """SELECT s.kpi_key, d.label, d.unit, s.grain, s.period_start, s.value, s.sha256,
+    rows = (
+        conn.cursor(row_factory=dict_row)
+        .execute(
+            """SELECT s.kpi_key, d.label, d.unit, s.grain, s.period_start, s.value, s.sha256,
                   to_char(s.frozen_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS frozen_at
            FROM kpi.snapshot s JOIN kpi.definition d ON d.tenant_id = s.tenant_id AND d.key = s.kpi_key
            WHERE s.tenant_id = %s AND s.kpi_key = %s ORDER BY s.period_start DESC LIMIT %s""",
-        (tenant, args["kpi_key"], limit),
-    ).fetchall()
+            (tenant, args["kpi_key"], limit),
+        )
+        .fetchall()
+    )
     return [
         {
-            "kpi_key": r["kpi_key"], "label": r["label"], "unit": r["unit"], "grain": r["grain"],
-            "period": period_label(r["grain"], r["period_start"]), "value": r["value"], "sha256": r["sha256"],
-            "frozen_at": r["frozen_at"], "valid": (r["kpi_key"], r["period_start"]) not in broken,
+            "kpi_key": r["kpi_key"],
+            "label": r["label"],
+            "unit": r["unit"],
+            "grain": r["grain"],
+            "period": period_label(r["grain"], r["period_start"]),
+            "value": r["value"],
+            "sha256": r["sha256"],
+            "frozen_at": r["frozen_at"],
+            "valid": (r["kpi_key"], r["period_start"]) not in broken,
         }
         for r in rows
     ]
@@ -192,7 +203,9 @@ def _kpi_report(conn: psycopg.Connection, tenant: str, month: str | None) -> dic
                      AND s.period_start < ((%s || '-01')::date + interval '1 month') AT TIME ZONE 'Asia/Ho_Chi_Minh'"""
         params += [month, month]
         label = f"Tháng {month[5:]}/{month[:4]}"
-    broken = {(r[0], r[1]) for r in conn.execute("SELECT kpi_key, period_start FROM kpi.verify_snapshots(%s)", (tenant,))}
+    broken = {
+        (r[0], r[1]) for r in conn.execute("SELECT kpi_key, period_start FROM kpi.verify_snapshots(%s)", (tenant,))
+    }
     rows = cur.execute(
         f"""SELECT d.key, d.label, d.unit, d.definition, d.good_direction, d.threshold, s.grain, s.period_start,
                    s.value, s.sha256
@@ -202,13 +215,19 @@ def _kpi_report(conn: psycopg.Connection, tenant: str, month: str | None) -> dic
     ).fetchall()
     grouped: dict[str, dict] = {}
     for r in rows:
-        k = grouped.setdefault(r["key"], {"label": r["label"], "unit": r["unit"], "definition": r["definition"], "rows": []})
+        k = grouped.setdefault(
+            r["key"], {"label": r["label"], "unit": r["unit"], "definition": r["definition"], "rows": []}
+        )
         if len(k["rows"]) < (500 if month else 12):
-            k["rows"].append({
-                "period": period_label(r["grain"], r["period_start"]), "value": r["value"], "sha256": r["sha256"],
-                "assessment": assess(r["value"], r["good_direction"], r["threshold"]),
-                "valid": (r["key"], r["period_start"]) not in broken,
-            })
+            k["rows"].append(
+                {
+                    "period": period_label(r["grain"], r["period_start"]),
+                    "value": r["value"],
+                    "sha256": r["sha256"],
+                    "assessment": assess(r["value"], r["good_direction"], r["threshold"]),
+                    "valid": (r["key"], r["period_start"]) not in broken,
+                }
+            )
     name = conn.execute("SELECT name FROM core.tenant WHERE id = %s", (tenant,)).fetchone()[0]
     return {"tenant_name": name, "period_label": label, "kpis": list(grouped.values())}
 

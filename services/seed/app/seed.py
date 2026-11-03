@@ -19,11 +19,11 @@ from .demo import (
     CONTRACT_SEATS,
     DEMO_USERS,
     HR_DEMO_USERS,
-    TRANSFER_DEMO_USERS,
     HR_SCOPE,
     HR_UNITS,
     OPEN_SEATS,
     TENANTS,
+    TRANSFER_DEMO_USERS,
     TREES,
     UNIT_TYPES,
     VACANT,
@@ -146,7 +146,19 @@ ITEMS = [
 ]
 
 # Mô-đun dựng sẵn (ADR #56); mã khớp services/actions/app/modules.py, kiểm bởi test của actions
-DEMO_MODULES = ("approval", "procurement", "ic", "hr", "process", "files", "search", "knowledge", "ledger", "data", "ai")
+DEMO_MODULES = (
+    "approval",
+    "procurement",
+    "ic",
+    "hr",
+    "process",
+    "files",
+    "search",
+    "knowledge",
+    "ledger",
+    "data",
+    "ai",
+)
 
 HISTORY_DAYS = 60
 HISTORY_PER_DAY = {"TDX": [0, 1, 1, 2, 2, 3], "BVX": [0, 0, 1, 1]}
@@ -998,7 +1010,9 @@ class Seeder:
             subject = str(user.id)
             if self.x("SELECT 1 FROM core.person WHERE idp_subject = %s", subject).fetchone():
                 continue
-            holder = self.x("SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position))
+            holder = self.x(
+                "SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position)
+            )
             holder = holder.fetchone()
             if holder is None:
                 continue
@@ -1040,7 +1054,15 @@ class Seeder:
                                                  created_by, updated_by)
                    VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s)
                    ON CONFLICT (tenant_id, process_key) DO NOTHING""",
-                tid, model, key, name, description, xml, forms, owner[0], owner[0],
+                tid,
+                model,
+                key,
+                name,
+                description,
+                xml,
+                forms,
+                owner[0],
+                owner[0],
             )
             if state == "DRAFT":
                 continue
@@ -1049,21 +1071,36 @@ class Seeder:
                                                    published_by, audience)
                    VALUES (%s, %s, 1, %s, %s::jsonb, %s, %s, %s, 'GROUP')
                    ON CONFLICT (model_id, version) DO NOTHING""",
-                tid, model, xml, forms, hashlib.sha256(xml.encode()).hexdigest(), note, owner[0],
+                tid,
+                model,
+                xml,
+                forms,
+                hashlib.sha256(xml.encode()).hexdigest(),
+                note,
+                owner[0],
             )
-            if state != "CHANGE_REQUESTED" or self.x(
-                "SELECT 1 FROM wf.process_change_request WHERE model_id = %s", model
-            ).fetchone():
+            if (
+                state != "CHANGE_REQUESTED"
+                or self.x("SELECT 1 FROM wf.process_change_request WHERE model_id = %s", model).fetchone()
+            ):
                 continue
             self.x(
                 """INSERT INTO wf.process_change_request (tenant_id, model_id, version, requested_by, message)
                    VALUES (%s, %s, 1, %s, %s)""",
-                tid, model, reviewer[0], request,
+                tid,
+                model,
+                reviewer[0],
+                request,
             )
             who = self.x("SELECT full_name FROM core.person WHERE id = %s", reviewer[0]).fetchone()[0]
             self.x(
                 "SELECT collab.notify(%s, %s, 'PROCESS_CHANGE_REQUESTED', 'wf.process_model', %s, %s, %s, %s)",
-                tid, owner[0], model, f"{who} yêu cầu sửa quy trình “{name}” (v1)", request, reviewer[0],
+                tid,
+                owner[0],
+                model,
+                f"{who} yêu cầu sửa quy trình “{name}” (v1)",
+                request,
+                reviewer[0],
             )
 
     def supervision_demo(self):
@@ -1078,7 +1115,11 @@ class Seeder:
                 role = uid(t.code, "role", code)
                 if not self.x("SELECT 1 FROM core.role WHERE id = %s", role).fetchone():
                     self.x(
-                        "INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, %s, %s)", tid, role, code, name
+                        "INSERT INTO core.role (tenant_id, id, code, name) VALUES (%s, %s, %s, %s)",
+                        tid,
+                        role,
+                        code,
+                        name,
                     )
                 self.x(
                     """INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
@@ -1094,9 +1135,12 @@ class Seeder:
                 tid,
             ).fetchall()
             for position, unit, is_head in leaders:
-                if is_head and not self.x(
-                    "SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", design, position
-                ).fetchone():
+                if (
+                    is_head
+                    and not self.x(
+                        "SELECT 1 FROM core.role_grant WHERE role_id = %s AND position_id = %s", design, position
+                    ).fetchone()
+                ):
                     self.x(
                         """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope, scope_unit_id, valid_period)
                               VALUES (%s, %s, %s, 'SUBTREE', %s, tstzrange(%s, NULL))""",
