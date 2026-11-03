@@ -12,13 +12,14 @@ import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget, DefinitionButton } from "./ChartWidget";
 import { fmtBucket, fmtHours, fmtMoneyShort, fmtNum, kpi } from "../boardFormat";
 import { BoardState, KpiRow, NumTable } from "./BoardParts";
+import { tr, trf } from "../../../i18n";
 
 const STATUS_NAME: Record<string, string> = {
-  RELEASED: "Đã xuất xưởng",
-  ON_HOLD: "Đang giữ",
-  SCRAPPED: "Hủy",
-  lots: "Lô sản xuất",
-  on_hold: "Trong đó đang giữ",
+  RELEASED: tr("Đã xuất xưởng"),
+  ON_HOLD: tr("Đang giữ"),
+  SCRAPPED: tr("Hủy"),
+  lots: tr("Lô sản xuất"),
+  on_hold: tr("Trong đó đang giữ"),
 };
 const HOLD = "#eda100";
 const SCRAP = "#c2410c";
@@ -37,63 +38,63 @@ export const ProductionBoard = ({ days }: { days: number }) => {
               kpi(
                 {
                   key: "lots",
-                  label: "Lô sản xuất trong kỳ",
+                  label: tr("Lô sản xuất trong kỳ"),
                   value: fmtNum(t.lots),
-                  definition: `Lô có ngày sản xuất trong ${days} ngày gần nhất (mọi trạng thái).`,
+                  definition: trf("Lô có ngày sản xuất trong {0} ngày gần nhất (mọi trạng thái).", [days]),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "hold",
-                  label: "Lô đang giữ",
+                  label: tr("Lô đang giữ"),
                   value: fmtNum(t.lots_on_hold),
                   delta: t.lots_on_hold
-                    ? { dir: "dot", tone: "bad", text: "chưa được xuất" }
-                    : { dir: "dot", tone: "good", text: "không có" },
-                  definition: "Lô ở trạng thái ON_HOLD (chờ kiểm tra chất lượng), không dùng được cho đơn nội bộ.",
+                    ? { dir: "dot", tone: "bad", text: tr("chưa được xuất") }
+                    : { dir: "dot", tone: "good", text: tr("không có") },
+                  definition: tr("Lô ở trạng thái ON_HOLD (chờ kiểm tra chất lượng), không dùng được cho đơn nội bộ."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "scrap",
-                  label: "Lô hủy trong kỳ",
+                  label: tr("Lô hủy trong kỳ"),
                   value: fmtNum(t.lots_scrapped),
-                  definition: "Lô sản xuất trong kỳ ở trạng thái SCRAPPED.",
+                  definition: tr("Lô sản xuất trong kỳ ở trạng thái SCRAPPED."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "ic_pending",
-                  label: "Đơn nội bộ chờ xác nhận",
+                  label: tr("Đơn nội bộ chờ xác nhận"),
                   value: fmtNum(t.ic_pending),
-                  definition: "Đơn hàng nội bộ bên bán chưa xác nhận hay từ chối (bạn được xem).",
+                  definition: tr("Đơn hàng nội bộ bên bán chưa xác nhận hay từ chối (bạn được xem)."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "ic_value",
-                  label: "Đơn nội bộ đã xác nhận",
+                  label: tr("Đơn nội bộ đã xác nhận"),
                   value: fmtMoneyShort(t.ic_confirmed_value),
                   delta: {
                     dir: "none",
                     tone: "neutral",
-                    text: `xác nhận TB sau ${fmtHours(t.ic_confirm_hours)}`,
+                    text: trf("xác nhận TB sau {0}", [fmtHours(t.ic_confirm_hours)]),
                   },
-                  definition: "Giá trị đơn nội bộ được bên bán xác nhận trong kỳ.",
+                  definition: tr("Giá trị đơn nội bộ được bên bán xác nhận trong kỳ."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "po",
-                  label: "Đơn mua phát hành",
+                  label: tr("Đơn mua phát hành"),
                   value: fmtNum(t.po_orders),
                   delta: { dir: "none", tone: "neutral", text: fmtMoneyShort(t.po_value) },
-                  definition: "Đơn mua (PO) sinh từ đề nghị mua sắm đã duyệt trong kỳ.",
+                  definition: tr("Đơn mua (PO) sinh từ đề nghị mua sắm đã duyệt trong kỳ."),
                 },
                 at,
               ),
@@ -101,11 +102,11 @@ export const ProductionBoard = ({ days }: { days: number }) => {
           />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <ChartWidget title="Lô sản xuất theo thời gian" meta={days <= 31 ? "Theo ngày" : "Theo tuần"}>
+            <ChartWidget title={tr("Lô sản xuất theo thời gian")} meta={days <= 31 ? tr("Theo ngày") : tr("Theo tuần")}>
               <div
                 className="h-[230px]"
                 role="img"
-                aria-label={trend.map((p) => `${p.label}: ${p.lots} lô`).join("; ")}
+                aria-label={trend.map((p) => trf("{0}: {1} lô", [p.label, p.lots])).join("; ")}
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={trend} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
@@ -132,12 +133,14 @@ export const ProductionBoard = ({ days }: { days: number }) => {
               </div>
             </ChartWidget>
 
-            <ChartWidget title="Lô theo công ty và trạng thái" meta="Hiện tại">
+            <ChartWidget title={tr("Lô theo công ty và trạng thái")} meta={tr("Hiện tại")}>
               <div
                 className="h-[230px]"
                 role="img"
                 aria-label={data.by_company
-                  .map((c) => `${c.company}: ${c.RELEASED} đã xuất, ${c.ON_HOLD} đang giữ, ${c.SCRAPPED} hủy`)
+                  .map((c) =>
+                    trf("{0}: {1} đã xuất, {2} đang giữ, {3} hủy", [c.company, c.RELEASED, c.ON_HOLD, c.SCRAPPED]),
+                  )
                   .join("; ")}
               >
                 <ResponsiveContainer width="100%" height="100%">
@@ -171,59 +174,63 @@ export const ProductionBoard = ({ days }: { days: number }) => {
               </div>
             </ChartWidget>
 
-            <ChartWidget title="Mặt hàng" meta="Theo số lô">
+            <ChartWidget title={tr("Mặt hàng")} meta={tr("Theo số lô")}>
               <NumTable
                 rows={data.items}
                 rowKey={(r) => `${r.item}-${r.uom}`}
-                empty="Chưa có lô sản xuất."
+                empty={tr("Chưa có lô sản xuất.")}
                 columns={[
-                  { title: "Mặt hàng", render: (r) => r.item },
-                  { title: "Số lô", render: (r) => fmtNum(r.lots) },
-                  { title: "Đã xuất xưởng", render: (r) => `${fmtNum(r.released)} ${r.uom}` },
-                  { title: "Đang giữ", render: (r) => (r.on_hold ? `${fmtNum(r.on_hold)} ${r.uom}` : "—") },
+                  { title: tr("Mặt hàng"), render: (r) => r.item },
+                  { title: tr("Số lô"), render: (r) => fmtNum(r.lots) },
+                  { title: tr("Đã xuất xưởng"), render: (r) => `${fmtNum(r.released)} ${r.uom}` },
+                  { title: tr("Đang giữ"), render: (r) => (r.on_hold ? `${fmtNum(r.on_hold)} ${r.uom}` : "—") },
                 ]}
               />
             </ChartWidget>
 
             <ChartWidget
-              title="Đơn hàng nội bộ giữa các công ty"
-              meta={`${days} ngày`}
+              title={tr("Đơn hàng nội bộ giữa các công ty")}
+              meta={trf("{0} ngày", [days])}
               footer={
-                <DefinitionButton text="Bên mua đặt qua đề nghị mua sắm chọn nhà cung cấp nội bộ; bên bán xác nhận kèm lô xuất (ADR #42). Số đơn: tạo trong kỳ hoặc đang chờ." />
+                <DefinitionButton
+                  text={tr(
+                    "Bên mua đặt qua đề nghị mua sắm chọn nhà cung cấp nội bộ; bên bán xác nhận kèm lô xuất (ADR #42). Số đơn: tạo trong kỳ hoặc đang chờ.",
+                  )}
+                />
               }
             >
               <NumTable
                 rows={data.flows}
                 rowKey={(r) => `${r.buyer}-${r.seller}`}
-                empty="Chưa có đơn hàng nội bộ bạn được xem."
+                empty={tr("Chưa có đơn hàng nội bộ bạn được xem.")}
                 columns={[
-                  { title: "Bên mua → bên bán", render: (r) => `${r.buyer} → ${r.seller}` },
-                  { title: "Đơn", render: (r) => fmtNum(r.orders) },
+                  { title: tr("Bên mua → bên bán"), render: (r) => `${r.buyer} → ${r.seller}` },
+                  { title: tr("Đơn"), render: (r) => fmtNum(r.orders) },
                   {
-                    title: "Chờ xác nhận",
+                    title: tr("Chờ xác nhận"),
                     render: (r) => (
                       <span className={r.pending ? "font-semibold text-amber-700" : ""}>{fmtNum(r.pending)}</span>
                     ),
                   },
-                  { title: "Đã xác nhận", render: (r) => formatMoney(r.confirmed_value) },
+                  { title: tr("Đã xác nhận"), render: (r) => formatMoney(r.confirmed_value) },
                 ]}
               />
             </ChartWidget>
           </div>
 
-          <ChartWidget title="Lô đang giữ" meta="Chờ kết luận chất lượng">
+          <ChartWidget title={tr("Lô đang giữ")} meta={tr("Chờ kết luận chất lượng")}>
             <NumTable
               rows={data.held}
               rowKey={(r) => r.lot_no}
-              empty="Không có lô nào đang giữ."
+              empty={tr("Không có lô nào đang giữ.")}
               columns={[
-                { title: "Số lô", render: (r) => <span className="font-mono">{r.lot_no}</span> },
-                { title: "Mặt hàng", render: (r) => r.item, align: "left" },
-                { title: "Công ty", render: (r) => r.company, align: "left" },
-                { title: "Số lượng", render: (r) => `${fmtNum(r.quantity)} ${r.uom}` },
-                { title: "Ngày sản xuất", render: (r) => formatDay(r.produced_on) },
+                { title: tr("Số lô"), render: (r) => <span className="font-mono">{r.lot_no}</span> },
+                { title: tr("Mặt hàng"), render: (r) => r.item, align: "left" },
+                { title: tr("Công ty"), render: (r) => r.company, align: "left" },
+                { title: tr("Số lượng"), render: (r) => `${fmtNum(r.quantity)} ${r.uom}` },
+                { title: tr("Ngày sản xuất"), render: (r) => formatDay(r.produced_on) },
                 {
-                  title: "Ghi chú",
+                  title: tr("Ghi chú"),
                   align: "left",
                   render: (r) => (r.note ? <Tag color="gold">{r.note}</Tag> : "—"),
                 },

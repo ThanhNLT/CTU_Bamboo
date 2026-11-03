@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 import { request } from "../../api/client";
 import { uploadContentType } from "../../utils/fileType";
 import type { UploadItem } from "./types";
+import { tr, trf } from "../../i18n";
 
 const MAX_BYTES = 25 * 1024 * 1024;
 
@@ -21,8 +22,8 @@ const put = (url: string, file: File, contentType: string, onProgress: (pct: num
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
     xhr.onload = () =>
-      xhr.status < 300 ? resolve() : reject(new Error(`Tải lên kho lưu trữ thất bại (${xhr.status})`));
-    xhr.onerror = () => reject(new Error("Mất kết nối khi tải lên"));
+      xhr.status < 300 ? resolve() : reject(new Error(trf("Tải lên kho lưu trữ thất bại ({0})", [xhr.status])));
+    xhr.onerror = () => reject(new Error(tr("Mất kết nối khi tải lên")));
     xhr.send(file);
   });
 
@@ -33,7 +34,7 @@ export const useUploadQueue = () => {
 
   const uploadOne = useCallback(async (id: string, file: File, target: Target) => {
     try {
-      if (file.size > MAX_BYTES) throw new Error("Tệp phải nhỏ hơn 25 MB");
+      if (file.size > MAX_BYTES) throw new Error(tr("Tệp phải nhỏ hơn 25 MB"));
       const { get_upload_url: t } = await request<{
         get_upload_url: { attachment_id: string; upload_url: string; content_type: string };
       }>(

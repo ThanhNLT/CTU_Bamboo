@@ -13,6 +13,7 @@ import type { EofficeRecord } from "../types";
 import { buildWorkflow } from "../utils";
 import { RecordStatusBadge } from "./RecordStatusBadge";
 import { VerticalTimeline } from "./VerticalTimeline";
+import { tr, trf } from "../../../i18n";
 
 const SectionTitle = ({ children }: { children: ReactNode }) => (
   <h3 className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</h3>
@@ -42,22 +43,22 @@ export const RecordDetailPanel = ({
         )}
       >
         <FileSearch className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
-        <p className="text-[13px] text-muted">Chọn một hồ sơ để xem chi tiết.</p>
+        <p className="text-[13px] text-muted">{tr("Chọn một hồ sơ để xem chi tiết.")}</p>
       </aside>
     );
   }
 
   const info: Array<[string, ReactNode]> = [
-    ["Loại", DOC_KIND_LABEL[record.type]],
-    ["Người lập", record.submitter],
-    ["Đơn vị", record.unit],
-    ["Số tiền", <span className="tabular-nums">{record.amount}</span>],
-    ["Cập nhật", formatDate(record.updatedAt)],
+    [tr("Loại"), DOC_KIND_LABEL[record.type]],
+    [tr("Người lập"), record.submitter],
+    [tr("Đơn vị"), record.unit],
+    [tr("Số tiền"), <span className="tabular-nums">{record.amount}</span>],
+    [tr("Cập nhật"), formatDate(record.updatedAt)],
   ];
 
   return (
     <aside
-      aria-label={`Chi tiết ${record.code}`}
+      aria-label={trf("Chi tiết {0}", [record.code])}
       aria-live="polite"
       className={cn(
         "flex min-h-0 flex-col overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-card",
@@ -73,7 +74,7 @@ export const RecordDetailPanel = ({
       </header>
 
       <section className="mt-5">
-        <SectionTitle>Thông tin</SectionTitle>
+        <SectionTitle>{tr("Thông tin")}</SectionTitle>
         <dl className="m-0 grid grid-cols-[84px_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-[12.5px]">
           {info.map(([k, v]) => (
             <div key={k} className="contents">
@@ -85,23 +86,23 @@ export const RecordDetailPanel = ({
       </section>
 
       <section className="mt-5">
-        <SectionTitle>Quy trình</SectionTitle>
+        <SectionTitle>{tr("Quy trình")}</SectionTitle>
         <VerticalTimeline steps={buildWorkflow(record)} />
       </section>
 
       <footer className="mt-5 flex flex-wrap gap-2">
         {canReview ? (
           <button type="button" onClick={() => onReview(record)} className={smallPrimaryButtonClass}>
-            Mở để duyệt
+            {tr("Mở để duyệt")}
           </button>
         ) : (
           <button type="button" onClick={() => onOpen(record)} className={smallPrimaryButtonClass}>
-            Mở hồ sơ
+            {tr("Mở hồ sơ")}
           </button>
         )}
         <button type="button" onClick={() => onAsk(record)} className={smallSecondaryButtonClass}>
           <Sparkles className="h-3.5 w-3.5 text-bamboo-600" aria-hidden />
-          Hỏi trợ lý
+          {tr("Hỏi trợ lý")}
         </button>
       </footer>
     </aside>

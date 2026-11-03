@@ -5,8 +5,9 @@
 import { Checkbox, Select } from "antd";
 
 import { SearchInput } from "../../../components/ui";
+import { tr, trf } from "../../../i18n";
 
-const DEPTH_OPTIONS = [1, 2, 3, 4, 5].map((d) => ({ value: d, label: `Độ sâu: ${d}` }));
+const DEPTH_OPTIONS = [1, 2, 3, 4, 5].map((d) => ({ value: d, label: trf("Độ sâu: {0}", [d]) }));
 
 export const DataLineageToolbar = ({
   query,
@@ -39,8 +40,8 @@ export const DataLineageToolbar = ({
       <SearchInput
         value={query}
         onChange={onQueryChange}
-        placeholder="Tìm bảng, cột, báo cáo"
-        label="Tìm bảng, cột, báo cáo trong sơ đồ"
+        placeholder={tr("Tìm bảng, cột, báo cáo")}
+        label={tr("Tìm bảng, cột, báo cáo trong sơ đồ")}
       />
     </form>
     <Select<number>
@@ -49,14 +50,14 @@ export const DataLineageToolbar = ({
       options={DEPTH_OPTIONS}
       style={{ width: 128 }}
       size="large"
-      aria-label="Độ sâu phả hệ"
+      aria-label={tr("Độ sâu phả hệ")}
     />
     <Checkbox checked={columnMode} onChange={(e) => onColumnModeChange(e.target.checked)}>
-      <span className="text-[13px] text-body">Phả hệ mức cột</span>
+      <span className="text-[13px] text-body">{tr("Phả hệ mức cột")}</span>
     </Checkbox>
     {query.trim() && (
       <span className="text-[12.5px] text-muted" aria-live="polite">
-        {matchCount > 0 ? `${matchCount} nút khớp · Enter để chọn nút đầu tiên` : "Không có nút nào khớp"}
+        {matchCount > 0 ? trf("{0} nút khớp · Enter để chọn nút đầu tiên", [matchCount]) : tr("Không có nút nào khớp")}
       </span>
     )}
   </div>

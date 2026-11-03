@@ -17,6 +17,7 @@ import {
   type Position,
 } from "../shared/orgData";
 import { periodLabel } from "../shared/period";
+import { tr, trf } from "../../../i18n";
 
 const SectionTitle = ({ children }: { children: string }) => (
   <h3 className="mb-2.5 mt-6 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted first:mt-0">
@@ -62,7 +63,7 @@ export const PersonDrawer = ({
     setBusy("info");
     try {
       await adminSave("person", { id: person.id, ...v, employee_code: v.employee_code?.trim() || null });
-      message.success("Đã lưu thông tin.");
+      message.success(tr("Đã lưu thông tin."));
       onChanged();
     } catch (e) {
       message.error((e as Error).message);
@@ -98,22 +99,23 @@ export const PersonDrawer = ({
   const holding = list.some(({ a }) => a.period.active);
   const remove = () =>
     modal.confirm({
-      title: `Xóa hẳn ${person.full_name}?`,
-      content:
+      title: trf("Xóa hẳn {0}?", [person.full_name]),
+      content: tr(
         "Chỉ xóa được người chưa có dữ liệu nghiệp vụ (chứng từ, duyệt, tệp, nhật ký…). Lịch sử bổ nhiệm đã kết thúc và cấp quyền riêng của người này bị xóa theo; tài khoản đăng nhập bị vô hiệu hóa nếu không còn dùng ở công ty khác trong tập đoàn.",
-      okText: "Xóa hẳn",
+      ),
+      okText: tr("Xóa hẳn"),
       okButtonProps: { danger: true },
-      cancelText: "Không",
+      cancelText: tr("Không"),
       onOk: async () => {
         setBusy("delete");
         try {
           const account = await deletePerson(person.id);
           message.success(
             account === "disabled"
-              ? "Đã xóa người và vô hiệu hóa tài khoản đăng nhập."
+              ? tr("Đã xóa người và vô hiệu hóa tài khoản đăng nhập.")
               : account === "kept"
-                ? "Đã xóa người; tài khoản vẫn dùng ở công ty khác trong tập đoàn."
-                : "Đã xóa người.",
+                ? tr("Đã xóa người; tài khoản vẫn dùng ở công ty khác trong tập đoàn.")
+                : tr("Đã xóa người."),
           );
           onDeleted();
         } catch (e) {
@@ -126,51 +128,60 @@ export const PersonDrawer = ({
 
   return (
     <Drawer open title={person.full_name} width={480} onClose={onClose} destroyOnHidden>
-      <SectionTitle>Thông tin</SectionTitle>
+      <SectionTitle>{tr("Thông tin")}</SectionTitle>
       <Form form={info} name="personInfo" layout="vertical" requiredMark="optional">
         <Form.Item
           name="full_name"
-          label="Họ tên"
-          rules={[{ required: true, whitespace: true, message: "Nhập họ tên" }]}
+          label={tr("Họ tên")}
+          rules={[{ required: true, whitespace: true, message: tr("Nhập họ tên") }]}
         >
           <Input />
         </Form.Item>
-        <Form.Item name="employee_code" label="Mã nhân viên" extra="Duy nhất trong tenant; dùng khi nhập từ Excel.">
+        <Form.Item
+          name="employee_code"
+          label={tr("Mã nhân viên")}
+          extra={tr("Duy nhất trong tenant; dùng khi nhập từ Excel.")}
+        >
           <Input className="font-mono" />
         </Form.Item>
         <Button onClick={() => void saveInfo()} loading={busy === "info"}>
-          Lưu thông tin
+          {tr("Lưu thông tin")}
         </Button>
       </Form>
 
-      <SectionTitle>Tài khoản đăng nhập</SectionTitle>
+      <SectionTitle>{tr("Tài khoản đăng nhập")}</SectionTitle>
       {person.idp_subject ? (
         <p className="flex items-center gap-2 text-[13px] text-body">
           <ShieldCheck className="h-4 w-4 text-bamboo-600" strokeWidth={1.75} aria-hidden />
-          Đã có tài khoản (đăng nhập qua Keycloak, bắt buộc MFA theo chính sách realm).
+          {tr("Đã có tài khoản (đăng nhập qua Keycloak, bắt buộc MFA theo chính sách realm).")}
         </p>
       ) : (
         <Form form={account} name="personAccount" layout="vertical" requiredMark="optional">
           <p className="mb-3 text-[12.5px] text-muted">
-            Chưa có tài khoản. Tạo mới với mật khẩu tạm (đổi ở lần đăng nhập đầu), hoặc liên kết tài khoản người này đã
-            có ở công ty khác trong tập đoàn.
+            {tr(
+              "Chưa có tài khoản. Tạo mới với mật khẩu tạm (đổi ở lần đăng nhập đầu), hoặc liên kết tài khoản người này đã có ở công ty khác trong tập đoàn.",
+            )}
           </p>
           <div className="grid grid-cols-2 gap-x-3">
             <Form.Item
               name="username"
-              label="Tên đăng nhập"
+              label={tr("Tên đăng nhập")}
               rules={[
-                { required: true, pattern: /^[a-z0-9._-]{3,}$/i, message: "Ít nhất 3 ký tự: chữ không dấu, số, . _ -" },
+                {
+                  required: true,
+                  pattern: /^[a-z0-9._-]{3,}$/i,
+                  message: tr("Ít nhất 3 ký tự: chữ không dấu, số, . _ -"),
+                },
               ]}
             >
               <Input className="font-mono" placeholder="an.nv" />
             </Form.Item>
-            <Form.Item name="email" label="Email" rules={[{ type: "email", message: "Email không hợp lệ" }]}>
+            <Form.Item name="email" label="Email" rules={[{ type: "email", message: tr("Email không hợp lệ") }]}>
               <Input placeholder="an.nv@congty.vn" />
             </Form.Item>
           </div>
           <Form.Item name="link_existing" valuePropName="checked" className="mb-3">
-            <Checkbox>Liên kết tài khoản đã có (không tạo mới)</Checkbox>
+            <Checkbox>{tr("Liên kết tài khoản đã có (không tạo mới)")}</Checkbox>
           </Form.Item>
           <button
             type="button"
@@ -178,19 +189,20 @@ export const PersonDrawer = ({
             onClick={() => void createAccount()}
             disabled={busy === "account"}
           >
-            <KeyRound className="h-3.5 w-3.5" aria-hidden /> {busy === "account" ? "Đang tạo…" : "Tạo tài khoản"}
+            <KeyRound className="h-3.5 w-3.5" aria-hidden />{" "}
+            {busy === "account" ? tr("Đang tạo…") : tr("Tạo tài khoản")}
           </button>
         </Form>
       )}
 
       <div className="mt-6 flex items-center justify-between">
-        <h3 className="m-0 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">Bổ nhiệm</h3>
+        <h3 className="m-0 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{tr("Bổ nhiệm")}</h3>
         <button type="button" className={smallSecondaryButtonClass} onClick={() => onAssign(person.id)}>
-          <Plus className="h-3.5 w-3.5" aria-hidden /> Bổ nhiệm
+          <Plus className="h-3.5 w-3.5" aria-hidden /> {tr(" Bổ nhiệm")}
         </button>
       </div>
       {list.length === 0 && (
-        <p className="mt-2 text-[12.5px] text-muted">Chưa giữ vị trí nào — chưa có quyền theo vị trí.</p>
+        <p className="mt-2 text-[12.5px] text-muted">{tr("Chưa giữ vị trí nào — chưa có quyền theo vị trí.")}</p>
       )}
       <ul className="m-0 mt-2 list-none space-y-2 p-0">
         {list.map(({ a, p }) => (
@@ -201,23 +213,25 @@ export const PersonDrawer = ({
               <div className="text-[11.5px] text-muted">{org.unitPath(p.org_unit_id)}</div>
               <div className="mt-0.5 text-[11.5px] text-muted">
                 {ASSIGNMENT_LABEL[a.assignment_type]} · {periodLabel(a.period)}
-                {a.contract_no ? ` · HĐ ${a.contract_no}` : ""}
+                {a.contract_no ? trf(" · HĐ {0}", [a.contract_no]) : ""}
               </div>
             </div>
             {a.period.active && (
               <button type="button" className={smallSecondaryButtonClass} onClick={() => onEndAssignment(a, p)}>
-                Kết thúc
+                {tr("Kết thúc")}
               </button>
             )}
           </li>
         ))}
       </ul>
 
-      <SectionTitle>Xóa người</SectionTitle>
+      <SectionTitle>{tr("Xóa người")}</SectionTitle>
       <p className="mb-3 text-[12.5px] text-muted">
         {holding
-          ? "Người này còn giữ vị trí: kết thúc bổ nhiệm trước khi xóa."
-          : "Dùng khi thêm nhầm. Người đã có dữ liệu nghiệp vụ không xóa được, chỉ kết thúc bổ nhiệm để ngừng hoạt động."}
+          ? tr("Người này còn giữ vị trí: kết thúc bổ nhiệm trước khi xóa.")
+          : tr(
+              "Dùng khi thêm nhầm. Người đã có dữ liệu nghiệp vụ không xóa được, chỉ kết thúc bổ nhiệm để ngừng hoạt động.",
+            )}
       </p>
       <Button
         danger
@@ -226,7 +240,7 @@ export const PersonDrawer = ({
         loading={busy === "delete"}
         onClick={remove}
       >
-        Xóa người
+        {tr("Xóa người")}
       </Button>
     </Drawer>
   );

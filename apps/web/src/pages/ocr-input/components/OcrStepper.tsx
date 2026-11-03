@@ -7,6 +7,7 @@ import { Fragment } from "react";
 
 import { cn } from "../../../utils/cn";
 import type { Step } from "../types";
+import { tr } from "../../../i18n";
 
 const Marker = ({ step, index }: { step: Step; index: number }) => {
   if (step.state === "done") {
@@ -39,11 +40,16 @@ const Marker = ({ step, index }: { step: Step; index: number }) => {
   );
 };
 
-const STATE_LABEL = { done: "đã xong", active: "đang thực hiện", running: "đang chạy", pending: "chưa tới" } as const;
+const STATE_LABEL = {
+  done: tr("đã xong"),
+  active: tr("đang thực hiện"),
+  running: tr("đang chạy"),
+  pending: tr("chưa tới"),
+} as const;
 
 export const OcrStepper = ({ steps }: { steps: Step[] }) => (
   <ol
-    aria-label="Tiến trình nhập liệu"
+    aria-label={tr("Tiến trình nhập liệu")}
     className="m-0 flex list-none flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card sm:flex-row sm:items-center sm:gap-0 sm:px-5"
   >
     {steps.map((s, i) => (

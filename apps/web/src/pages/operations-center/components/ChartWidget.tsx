@@ -6,6 +6,7 @@ import { Popover } from "antd";
 import type { ReactNode } from "react";
 
 import { cn } from "../../../utils/cn";
+import { tr } from "../../../i18n";
 
 export const ChipButton = ({
   children,
@@ -40,7 +41,7 @@ export const DefinitionButton = ({ text }: { text: string }) => (
     placement="topLeft"
   >
     <span>
-      <ChipButton>Định nghĩa và nguồn</ChipButton>
+      <ChipButton>{tr("Định nghĩa và nguồn")}</ChipButton>
     </span>
   </Popover>
 );

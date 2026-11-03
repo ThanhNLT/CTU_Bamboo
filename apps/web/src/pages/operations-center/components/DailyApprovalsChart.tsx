@@ -10,10 +10,11 @@ import type { Company, CompanyKey, DailyPoint } from "../types";
 import { AXIS_TICK, DIM, GRID_STROKE } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget, ChipButton, DefinitionButton } from "./ChartWidget";
+import { tr, trf } from "../../../i18n";
 
 const DEFINITION =
-  "Số hồ sơ hoàn tất toàn bộ chuỗi duyệt mỗi ngày (sự kiện COMPLETED), theo đơn vị cấp 1 của đơn vị lập. " +
-  "Nguồn: wf.approval_history, trong phạm vi bạn được xem.";
+  tr("Số hồ sơ hoàn tất toàn bộ chuỗi duyệt mỗi ngày (sự kiện COMPLETED), theo đơn vị cấp 1 của đơn vị lập. ") +
+  tr("Nguồn: wf.approval_history, trong phạm vi bạn được xem.");
 
 const EndLabel = (props: {
   x?: number | string;
@@ -64,19 +65,21 @@ export const DailyApprovalsChart = ({
 
   return (
     <ChartWidget
-      title="Hồ sơ được duyệt mỗi ngày"
+      title={tr("Hồ sơ được duyệt mỗi ngày")}
       meta={meta}
       footer={
         <>
           <ChipButton pressed={asTable} onClick={() => setAsTable((v) => !v)}>
-            {asTable ? "Xem dạng biểu đồ" : "Xem dạng bảng"}
+            {asTable ? tr("Xem dạng biểu đồ") : tr("Xem dạng bảng")}
           </ChipButton>
           <DefinitionButton text={DEFINITION} />
         </>
       }
     >
-      <ul className="m-0 mb-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0" aria-label="Chú giải">
-        {companies.length === 0 && <li className="text-[11.5px] text-muted">Chưa có hồ sơ duyệt xong trong kỳ.</li>}
+      <ul className="m-0 mb-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0" aria-label={tr("Chú giải")}>
+        {companies.length === 0 && (
+          <li className="text-[11.5px] text-muted">{tr("Chưa có hồ sơ duyệt xong trong kỳ.")}</li>
+        )}
         {companies.map((c) => (
           <li key={c.key}>
             <button
@@ -101,7 +104,7 @@ export const DailyApprovalsChart = ({
           <table className="w-full text-[12px]">
             <thead className="sticky top-0 bg-surface text-muted">
               <tr>
-                <th className="py-1 text-left font-medium">Ngày</th>
+                <th className="py-1 text-left font-medium">{tr("Ngày")}</th>
                 {companies.map((c) => (
                   <th key={c.key} className="py-1 text-right font-medium">
                     {c.short}
@@ -127,7 +130,7 @@ export const DailyApprovalsChart = ({
         <div
           className="h-[240px]"
           role="img"
-          aria-label={`Biểu đồ đường hồ sơ được duyệt mỗi ngày theo công ty, ${rangeLabel}`}
+          aria-label={trf("Biểu đồ đường hồ sơ được duyệt mỗi ngày theo công ty, {0}", [rangeLabel])}
         >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 8, right: 110, bottom: 0, left: -18 }}>

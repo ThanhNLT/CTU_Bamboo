@@ -8,6 +8,7 @@ import { cn } from "../../../utils/cn";
 import type { LibraryDoc } from "../types";
 import { docMeta } from "../utils";
 import { IndexStatus } from "./IndexStatus";
+import { tr } from "../../../i18n";
 
 export const DocumentList = ({
   docs,
@@ -31,14 +32,14 @@ export const DocumentList = ({
 
   return (
     <section
-      aria-label="Danh sách tài liệu"
+      aria-label={tr("Danh sách tài liệu")}
       className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface shadow-card", className)}
     >
       {docs.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">
           <SearchX className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
-          <p className="text-[13px] font-medium text-ink">Không tìm thấy tài liệu phù hợp</p>
-          <p className="text-[12px] text-muted">Thử từ khóa khác hoặc bỏ bớt bộ lọc.</p>
+          <p className="text-[13px] font-medium text-ink">{tr("Không tìm thấy tài liệu phù hợp")}</p>
+          <p className="text-[12px] text-muted">{tr("Thử từ khóa khác hoặc bỏ bớt bộ lọc.")}</p>
         </div>
       ) : (
         <ul

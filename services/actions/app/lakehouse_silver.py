@@ -22,6 +22,7 @@ CDC_EXCLUDED_COLUMNS = {
     ("collab", "notification_pref"): {"address"},
     ("wf", "process_automation"): {"webhook_sha256"},
     ("core", "external_module"): {"key_salt", "key_sha256"},
+    ("core", "person"): {"birth_year", "phone", "email"},
 }
 
 _COLUMNS = """

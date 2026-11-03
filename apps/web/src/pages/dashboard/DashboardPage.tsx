@@ -15,6 +15,7 @@ import { RecentRecords } from "./components/RecentRecords";
 import { SummaryCards } from "./components/SummaryCards";
 import { useKpis } from "./useKpis";
 import { useDashboard } from "./useDashboard";
+import { tr, trf } from "../../i18n";
 
 export const DashboardPage = () => {
   const d = useDashboard();
@@ -24,7 +25,7 @@ export const DashboardPage = () => {
   const saveKpis = async (keys: string[]) => {
     try {
       await kpi.save(keys);
-      message.success(keys.length ? `Đã ghim ${keys.length} KPI` : "Đã bỏ ghim mọi KPI");
+      message.success(keys.length ? trf("Đã ghim {0} KPI", [keys.length]) : tr("Đã bỏ ghim mọi KPI"));
     } catch (e) {
       message.error((e as Error).message);
       throw e;
@@ -34,7 +35,7 @@ export const DashboardPage = () => {
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <HeroSection user={d.user} />
 
-      {d.error && <Alert type="error" showIcon message="Không tải được một phần dữ liệu" description={d.error} />}
+      {d.error && <Alert type="error" showIcon message={tr("Không tải được một phần dữ liệu")} description={d.error} />}
 
       <SummaryCards stats={d.summary} />
 
@@ -46,7 +47,7 @@ export const DashboardPage = () => {
 
         <aside
           className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-1"
-          aria-label="Thông báo và chỉ số"
+          aria-label={tr("Thông báo và chỉ số")}
         >
           <NotificationsPanel items={d.notifications} unread={d.unread} onRead={d.markRead} />
           {kpiOn && (

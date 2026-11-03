@@ -10,6 +10,7 @@ import gql from "graphql-tag";
 import { request } from "../../api/client";
 import { formatDate } from "../../utils/format";
 import { iconButtonClass } from "../layout/styles";
+import { tr, trf } from "../../i18n";
 
 const NOTIFICATIONS = gql`
   query Notifications(
@@ -87,7 +88,7 @@ export const NotificationBell = () => {
   const content = (
     <div style={{ width: 360, maxHeight: 420, overflow: "auto" }}>
       {result.data.length === 0 ? (
-        <Empty description="Không có thông báo mới" />
+        <Empty description={tr("Không có thông báo mới")} />
       ) : (
         <List
           size="small"
@@ -120,17 +121,17 @@ export const NotificationBell = () => {
       placement="bottomRight"
       title={
         <span>
-          Thông báo{" "}
+          {tr("Thông báo")}{" "}
           {unread > 0 && (
             <Button size="small" type="link" onClick={() => markRead()}>
-              Đánh dấu đã đọc tất cả
+              {tr("Đánh dấu đã đọc tất cả")}
             </Button>
           )}
         </span>
       }
       content={content}
     >
-      <button type="button" className={iconButtonClass} aria-label={`${unread} thông báo chưa đọc`}>
+      <button type="button" className={iconButtonClass} aria-label={trf("{0} thông báo chưa đọc", [unread])}>
         <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
         {unread > 0 && (
           <span className="absolute right-2 top-2 h-2 w-2 rounded-ui bg-red-500 ring-2 ring-surface" aria-hidden />

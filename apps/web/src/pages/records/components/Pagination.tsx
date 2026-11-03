@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
 import { pageList } from "../utils";
+import { tr } from "../../../i18n";
 
 const btn =
   "grid h-7 min-w-7 place-items-center rounded-ui px-1.5 text-[12px] tabular-nums transition-colors " +
@@ -16,7 +17,7 @@ export const Pagination = ({
   pageSize,
   total,
   onChange,
-  unit = "hồ sơ",
+  unit = tr("hồ sơ"),
 }: {
   page: number;
   pageSize: number;
@@ -29,9 +30,9 @@ export const Pagination = ({
   const to = Math.min(total, page * pageSize);
 
   return (
-    <nav aria-label="Phân trang" className="flex flex-wrap items-center justify-between gap-3">
+    <nav aria-label={tr("Phân trang")} className="flex flex-wrap items-center justify-between gap-3">
       <span className="text-[12px] tabular-nums text-muted">
-        {from}–{to} trên {total} {unit}
+        {from}–{to} {tr(" trên ")} {total} {unit}
       </span>
       <div className="flex items-center gap-1">
         <button
@@ -39,7 +40,7 @@ export const Pagination = ({
           className={cn(btn, "bg-canvas text-body hover:bg-gray-200/70")}
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
-          aria-label="Trang trước"
+          aria-label={tr("Trang trước")}
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>

@@ -10,6 +10,7 @@ import { cn } from "../../../utils/cn";
 import { CATEGORY_SHORT, SCOPE_LABEL } from "../labels";
 import type { LibraryDoc, LibraryFile } from "../types";
 import { indexTone, VIEW } from "./indexState";
+import { tr, trf } from "../../../i18n";
 
 const size = (b: number) => (b < 1024 * 1024 ? `${Math.ceil(b / 1024)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
@@ -29,10 +30,12 @@ const IndexBox = ({ doc, onAsk, onReindex }: { doc: LibraryDoc; onAsk: () => voi
   }[index.status];
   const text =
     index.status === "indexed"
-      ? `Tìm kiếm toàn văn: đã vào chỉ mục${index.at ? ` lúc ${index.at}` : ""} (nội dung tệp, tóm tắt, mục lục)`
+      ? trf("Tìm kiếm toàn văn: đã vào chỉ mục{0} (nội dung tệp, tóm tắt, mục lục)", [
+          index.at ? trf(" lúc {0}", [index.at]) : "",
+        ])
       : index.status === "error"
-        ? `Tìm kiếm toàn văn: lỗi chỉ mục · ${index.reason}`
-        : `Tìm kiếm toàn văn: ${VIEW[index.status].label.toLowerCase()}`;
+        ? trf("Tìm kiếm toàn văn: lỗi chỉ mục · {0}", [index.reason])
+        : trf("Tìm kiếm toàn văn: {0}", [VIEW[index.status].label.toLowerCase()]);
   return (
     <div
       className={cn("flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center", box)}
@@ -45,12 +48,12 @@ const IndexBox = ({ doc, onAsk, onReindex }: { doc: LibraryDoc; onAsk: () => voi
       {doc.canManage && (
         <button type="button" onClick={onReindex} className={smallSecondaryButtonClass}>
           <RotateCw className="h-3.5 w-3.5" aria-hidden />
-          Nạp lại chỉ mục
+          {tr("Nạp lại chỉ mục")}
         </button>
       )}
       <button type="button" onClick={onAsk} className={smallPrimaryButtonClass}>
         <Sparkles className="h-3.5 w-3.5" aria-hidden />
-        Hỏi về tài liệu này
+        {tr("Hỏi về tài liệu này")}
       </button>
     </div>
   );
@@ -77,7 +80,7 @@ export const DocumentDetail = ({
   return (
     <article
       aria-live="polite"
-      aria-label="Chi tiết tài liệu"
+      aria-label={tr("Chi tiết tài liệu")}
       className={cn(
         "min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6",
         className,
@@ -86,7 +89,7 @@ export const DocumentDetail = ({
       {!doc ? (
         <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-2 text-center">
           <BookOpen className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
-          <p className="text-[13px] text-muted">Chọn một tài liệu để xem chi tiết.</p>
+          <p className="text-[13px] text-muted">{tr("Chọn một tài liệu để xem chi tiết.")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -96,15 +99,15 @@ export const DocumentDetail = ({
             </span>
             <h2 className="mt-2 text-[20px] font-semibold leading-snug tracking-[-0.01em] text-ink">{doc.title}</h2>
             <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
-              <MetaItem label="Số tài liệu" value={doc.code} />
-              <MetaItem label="Đơn vị ban hành" value={`${doc.unit} · ${doc.issuer}`} />
-              <MetaItem label="Hiệu lực" value={doc.effectiveDate ?? doc.publishedAt ?? "—"} />
+              <MetaItem label={tr("Số tài liệu")} value={doc.code} />
+              <MetaItem label={tr("Đơn vị ban hành")} value={`${doc.unit} · ${doc.issuer}`} />
+              <MetaItem label={tr("Hiệu lực")} value={doc.effectiveDate ?? doc.publishedAt ?? "—"} />
               <MetaItem
-                label="Phiên bản"
-                value={`v${doc.version}${doc.previous.length ? ` (${doc.previous.length} bản trước)` : ""}`}
+                label={tr("Phiên bản")}
+                value={`v${doc.version}${doc.previous.length ? trf(" ({0} bản trước)", [doc.previous.length]) : ""}`}
               />
-              <MetaItem label="Phạm vi" value={SCOPE_LABEL[doc.scope]} />
-              <MetaItem label="Người đề xuất" value={doc.requester} />
+              <MetaItem label={tr("Phạm vi")} value={SCOPE_LABEL[doc.scope]} />
+              <MetaItem label={tr("Người đề xuất")} value={doc.requester} />
             </div>
           </header>
 
@@ -113,7 +116,7 @@ export const DocumentDetail = ({
           {doc.summary && (
             <section aria-labelledby="kb-summary">
               <h3 id="kb-summary" className="text-[13.5px] font-semibold text-ink">
-                Tóm tắt
+                {tr("Tóm tắt")}
               </h3>
               <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed text-body">{doc.summary}</p>
             </section>
@@ -122,7 +125,7 @@ export const DocumentDetail = ({
           {doc.toc.length > 0 && (
             <section aria-labelledby="kb-toc">
               <h3 id="kb-toc" className="text-[13.5px] font-semibold text-ink">
-                Mục lục
+                {tr("Mục lục")}
               </h3>
               <ol className="m-0 mt-2 list-decimal space-y-0.5 pl-5 text-[13px] leading-relaxed text-body marker:text-muted">
                 {doc.toc.map((t) => (
@@ -134,10 +137,10 @@ export const DocumentDetail = ({
 
           <section aria-labelledby="kb-files">
             <h3 id="kb-files" className="text-[13.5px] font-semibold text-ink">
-              Toàn văn
+              {tr("Toàn văn")}
             </h3>
             {doc.files.length === 0 ? (
-              <p className="m-0 mt-2 text-[12.5px] text-muted">Tài liệu chưa có tệp đính kèm.</p>
+              <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Tài liệu chưa có tệp đính kèm.")}</p>
             ) : (
               <ul className="m-0 mt-2 list-none space-y-1.5 p-0">
                 {doc.files.map((f) => (
@@ -147,7 +150,7 @@ export const DocumentDetail = ({
                     </span>
                     <button type="button" onClick={() => onDownload(f)} className={smallSecondaryButtonClass}>
                       <Download className="h-3.5 w-3.5" aria-hidden />
-                      Mở toàn văn
+                      {tr("Mở toàn văn")}
                     </button>
                   </li>
                 ))}
@@ -156,15 +159,15 @@ export const DocumentDetail = ({
           </section>
 
           {history && (
-            <section aria-label="Phiên bản trước">
-              <h3 className="text-[13.5px] font-semibold text-ink">Phiên bản trước</h3>
+            <section aria-label={tr("Phiên bản trước")}>
+              <h3 className="text-[13.5px] font-semibold text-ink">{tr("Phiên bản trước")}</h3>
               {doc.previous.length === 0 ? (
-                <p className="m-0 mt-2 text-[12.5px] text-muted">Đây là phiên bản đầu tiên.</p>
+                <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Đây là phiên bản đầu tiên.")}</p>
               ) : (
                 <ul className="m-0 mt-2 list-none space-y-1 p-0 text-[12.5px] text-body">
                   {doc.previous.map((p) => (
                     <li key={p.id}>
-                      v{p.version} · <span className="font-mono">{p.doc_no}</span> · ngừng hiệu lực
+                      v{p.version} · <span className="font-mono">{p.doc_no}</span> {tr(" · ngừng hiệu lực")}
                     </li>
                   ))}
                 </ul>
@@ -175,18 +178,18 @@ export const DocumentDetail = ({
           <footer className="flex flex-wrap gap-2">
             <button type="button" onClick={() => setHistory((v) => !v)} className={smallSecondaryButtonClass}>
               <History className="h-3.5 w-3.5 text-muted" aria-hidden />
-              Lịch sử phiên bản
+              {tr("Lịch sử phiên bản")}
             </button>
             {onSupersede && (
               <button type="button" onClick={() => onSupersede(doc)} className={smallSecondaryButtonClass}>
                 <FilePlus2 className="h-3.5 w-3.5 text-muted" aria-hidden />
-                Đề xuất bản thay thế
+                {tr("Đề xuất bản thay thế")}
               </button>
             )}
             {doc.canManage && (
               <button type="button" onClick={() => onRetire(doc)} className={smallSecondaryButtonClass}>
                 <XCircle className="h-3.5 w-3.5 text-muted" aria-hidden />
-                Ngừng hiệu lực
+                {tr("Ngừng hiệu lực")}
               </button>
             )}
           </footer>

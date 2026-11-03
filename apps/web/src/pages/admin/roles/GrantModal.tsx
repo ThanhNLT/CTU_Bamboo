@@ -10,6 +10,7 @@ import { FormModal } from "../shared/FormModal";
 import { SCOPE_LABEL, type OrgData } from "../shared/orgData";
 import { useUnitTree } from "../shared/useUnitTree";
 import { toDate } from "../shared/period";
+import { tr, trf } from "../../../i18n";
 
 type Target = "position" | "org_unit" | "person";
 type Values = {
@@ -43,13 +44,13 @@ export const GrantModal = ({
     .filter((p) => p.period.active)
     .map((p) => ({
       value: p.id,
-      label: `${p.name} · ${org.unitPath(p.org_unit_id)}${p.holder ? ` — ${p.holder.person.full_name}` : " — (trống)"}`,
+      label: `${p.name} · ${org.unitPath(p.org_unit_id)}${p.holder ? ` — ${p.holder.person.full_name}` : tr(" — (trống)")}`,
     }));
   return (
     <FormModal<Values>
       open={open}
-      title={`Cấp vai trò ${roleName}`}
-      okText="Cấp vai trò"
+      title={trf("Cấp vai trò {0}", [roleName])}
+      okText={tr("Cấp vai trò")}
       width={600}
       initial={{ target: "position", scope: "SUBTREE" }}
       onCancel={onClose}
@@ -69,14 +70,14 @@ export const GrantModal = ({
     >
       {(form) => (
         <>
-          <Form.Item name="target" label="Cấp cho" rules={[{ required: true }]}>
+          <Form.Item name="target" label={tr("Cấp cho")} rules={[{ required: true }]}>
             <Radio.Group
               optionType="button"
               buttonStyle="solid"
               options={[
-                { value: "position", label: "Một vị trí" },
-                { value: "org_unit", label: "Mọi vị trí trong đơn vị" },
-                { value: "person", label: "Người ngoài cây tổ chức" },
+                { value: "position", label: tr("Một vị trí") },
+                { value: "org_unit", label: tr("Mọi vị trí trong đơn vị") },
+                { value: "person", label: tr("Người ngoài cây tổ chức") },
               ]}
             />
           </Form.Item>
@@ -87,9 +88,9 @@ export const GrantModal = ({
                 return (
                   <Form.Item
                     name="position_id"
-                    label="Vị trí"
-                    rules={[{ required: true, message: "Chọn vị trí" }]}
-                    extra="Người được bổ nhiệm vào ghế sau này tự có quyền; người rời ghế tự mất quyền."
+                    label={tr("Vị trí")}
+                    rules={[{ required: true, message: tr("Chọn vị trí") }]}
+                    extra={tr("Người được bổ nhiệm vào ghế sau này tự có quyền; người rời ghế tự mất quyền.")}
                   >
                     <Select showSearch optionFilterProp="label" options={positions} />
                   </Form.Item>
@@ -97,7 +98,11 @@ export const GrantModal = ({
               }
               if (t === "org_unit") {
                 return (
-                  <Form.Item name="org_unit_id" label="Đơn vị" rules={[{ required: true, message: "Chọn đơn vị" }]}>
+                  <Form.Item
+                    name="org_unit_id"
+                    label={tr("Đơn vị")}
+                    rules={[{ required: true, message: tr("Chọn đơn vị") }]}
+                  >
                     <TreeSelect treeData={tree} showSearch treeNodeFilterProp="title" />
                   </Form.Item>
                 );
@@ -105,9 +110,11 @@ export const GrantModal = ({
               return (
                 <Form.Item
                   name="person_id"
-                  label="Người"
-                  rules={[{ required: true, message: "Chọn người" }]}
-                  extra="Chỉ cho người không giữ ghế nào (kiểm toán viên ngoài, quản trị nền tảng…). Bắt buộc có ngày kết thúc."
+                  label={tr("Người")}
+                  rules={[{ required: true, message: tr("Chọn người") }]}
+                  extra={tr(
+                    "Chỉ cho người không giữ ghế nào (kiểm toán viên ngoài, quản trị nền tảng…). Bắt buộc có ngày kết thúc.",
+                  )}
                 >
                   <Select
                     showSearch
@@ -121,7 +128,7 @@ export const GrantModal = ({
               );
             }}
           </Form.Item>
-          <Form.Item name="scope" label="Phạm vi áp dụng" rules={[{ required: true }]}>
+          <Form.Item name="scope" label={tr("Phạm vi áp dụng")} rules={[{ required: true }]}>
             <Radio.Group
               className="flex flex-col gap-1.5"
               options={Object.entries(SCOPE_LABEL).map(([value, label]) => ({ value, label }))}
@@ -132,8 +139,8 @@ export const GrantModal = ({
               ["SUBTREE", "UNIT"].includes(form.getFieldValue("scope")) && (
                 <Form.Item
                   name="scope_unit_id"
-                  label="Neo phạm vi tại đơn vị"
-                  extra="Bỏ trống: neo tại đơn vị của vị trí / đơn vị được cấp."
+                  label={tr("Neo phạm vi tại đơn vị")}
+                  extra={tr("Bỏ trống: neo tại đơn vị của vị trí / đơn vị được cấp.")}
                 >
                   <TreeSelect allowClear treeData={tree} showSearch treeNodeFilterProp="title" />
                 </Form.Item>
@@ -141,16 +148,16 @@ export const GrantModal = ({
             }
           </Form.Item>
           <div className="grid grid-cols-2 gap-x-4">
-            <Form.Item name="valid_from" label="Từ ngày" extra="Bỏ trống: từ bây giờ">
+            <Form.Item name="valid_from" label={tr("Từ ngày")} extra={tr("Bỏ trống: từ bây giờ")}>
               <DatePicker format="DD/MM/YYYY" className="w-full" />
             </Form.Item>
             <Form.Item noStyle dependencies={["target"]}>
               {() => (
                 <Form.Item
                   name="valid_to"
-                  label="Đến ngày"
+                  label={tr("Đến ngày")}
                   rules={[
-                    { required: form.getFieldValue("target") === "person", message: "Cấp cho người phải có hạn" },
+                    { required: form.getFieldValue("target") === "person", message: tr("Cấp cho người phải có hạn") },
                   ]}
                 >
                   <DatePicker format="DD/MM/YYYY" className="w-full" />

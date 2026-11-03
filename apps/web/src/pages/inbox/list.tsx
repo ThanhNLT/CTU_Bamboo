@@ -10,6 +10,7 @@ import gql from "graphql-tag";
 
 import { ActModal } from "../../components/approval/ActModal";
 import { ESCALATION_REASON, formatDate, formatMoney } from "../../utils/format";
+import { tr, trf } from "../../i18n";
 
 const INBOX = gql`
   query Inbox($limit: Int, $offset: Int, $order_by: [wf_v_inbox_order_by!], $where: wf_v_inbox_bool_exp) {
@@ -153,7 +154,7 @@ const describe = (r: Row) => {
       resource: "collab_kb_document",
       id: k.id,
       docNo: k.doc_no,
-      title: `Đề xuất tài liệu: ${k.title}`,
+      title: trf("Đề xuất tài liệu: {0}", [k.title]),
       sub: `${k.requester?.full_name ?? ""} · ${k.org_unit?.name ?? ""}`,
       amount: "—",
     };
@@ -165,8 +166,8 @@ const describe = (r: Row) => {
       resource: "hr_transfer_out",
       id: t.id,
       docNo: t.doc_no,
-      title: `Điều chuyển liên tập đoàn ${t.person_name}`,
-      sub: `đến ${t.target_unit_name}`,
+      title: trf("Điều chuyển liên tập đoàn {0}", [t.person_name]),
+      sub: trf("đến {0}", [t.target_unit_name]),
       amount: "—",
     };
   }
@@ -177,8 +178,8 @@ const describe = (r: Row) => {
       resource: "hr_transfer_in",
       id: t.id,
       docNo: t.doc_no,
-      title: `Tiếp nhận điều chuyển ${t.person_name}`,
-      sub: `vào ${t.target_unit?.name ?? ""}`,
+      title: trf("Tiếp nhận điều chuyển {0}", [t.person_name]),
+      sub: trf("vào {0}", [t.target_unit?.name ?? ""]),
       amount: "—",
     };
   }
@@ -189,8 +190,8 @@ const describe = (r: Row) => {
       resource: "hr_transfer_group",
       id: t.id,
       docNo: t.doc_no,
-      title: `Quyết định điều chuyển ${t.person_name}`,
-      sub: "Liên tập đoàn",
+      title: trf("Quyết định điều chuyển {0}", [t.person_name]),
+      sub: tr("Liên tập đoàn"),
       amount: "—",
     };
   }
@@ -200,8 +201,8 @@ const describe = (r: Row) => {
       resource: "hr_transfer_request",
       id: t.id,
       docNo: t.doc_no,
-      title: `Điều chuyển ${t.person?.full_name ?? ""}`,
-      sub: `${t.requester?.full_name ?? ""} · đến ${t.target_unit?.name ?? ""}`,
+      title: trf("Điều chuyển {0}", [t.person?.full_name ?? ""]),
+      sub: trf("{0} · đến {1}", [t.requester?.full_name ?? "", t.target_unit?.name ?? ""]),
       amount: "—",
     };
   }
@@ -211,9 +212,9 @@ const describe = (r: Row) => {
       resource: "hr_onboarding_request",
       id: o.id,
       docNo: o.doc_no,
-      title: `Tiếp nhận ${o.full_name}`,
+      title: trf("Tiếp nhận {0}", [o.full_name]),
       sub: `${o.requester?.full_name ?? ""} · ${o.target_position?.name ?? ""}, ${o.target_position?.org_unit.name ?? ""}`,
-      amount: o.salary == null ? "—" : `${formatMoney(o.salary)}/tháng`,
+      amount: o.salary == null ? "—" : trf("{0}/tháng", [formatMoney(o.salary)]),
     };
   }
   const p = r.purchase_request;
@@ -240,10 +241,10 @@ export const InboxList = () => {
   });
 
   return (
-    <List title="Hộp việc cần duyệt">
+    <List title={tr("Hộp việc cần duyệt")}>
       <Table {...tableProps} rowKey={(r) => `${r.task_id}:${r.via_delegation}`}>
         <Table.Column<Row>
-          title="Chứng từ"
+          title={tr("Chứng từ")}
           render={(_, r) => {
             const d = describe(r);
             return (
@@ -259,23 +260,27 @@ export const InboxList = () => {
             );
           }}
         />
-        <Table.Column<Row> title="Số tiền / lương" align="right" render={(_, r) => describe(r).amount} />
+        <Table.Column<Row> title={tr("Số tiền / lương")} align="right" render={(_, r) => describe(r).amount} />
         <Table.Column<Row>
-          title="Duyệt với tư cách"
+          title={tr("Duyệt với tư cách")}
           render={(_, r) => (
             <Space direction="vertical" size={2}>
               <span>{r.assigned_position?.name}</span>
-              {r.via_delegation && <Tag color="purple">Duyệt thay (ủy quyền)</Tag>}
-              {r.escalated && <Tag color="orange">Đẩy lên: {ESCALATION_REASON[r.escalation_reason ?? ""]}</Tag>}
+              {r.via_delegation && <Tag color="purple">{tr("Duyệt thay (ủy quyền)")}</Tag>}
+              {r.escalated && (
+                <Tag color="orange">
+                  {tr("Đẩy lên: ")} {ESCALATION_REASON[r.escalation_reason ?? ""]}
+                </Tag>
+              )}
             </Space>
           )}
         />
-        <Table.Column dataIndex="created_at" title="Nhận lúc" sorter render={formatDate} responsive={["md"]} />
+        <Table.Column dataIndex="created_at" title={tr("Nhận lúc")} sorter render={formatDate} responsive={["md"]} />
         <Table.Column<Row>
           title=""
           render={(_, r) => (
             <Button type="primary" onClick={() => setActing(r)}>
-              Xử lý
+              {tr("Xử lý")}
             </Button>
           )}
         />
@@ -283,7 +288,7 @@ export const InboxList = () => {
       <ActModal
         taskId={acting?.task_id ?? null}
         viaDelegation={acting?.via_delegation}
-        title={acting ? `Xử lý ${describe(acting).docNo}` : undefined}
+        title={acting ? trf("Xử lý {0}", [describe(acting).docNo]) : undefined}
         onClose={() => setActing(null)}
         onDone={() => {
           setActing(null);

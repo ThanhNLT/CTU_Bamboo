@@ -34,7 +34,7 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
   useEffect(() => setMobileOpen(false), [pathname]);
 
   return (
-    <div className="flex min-h-screen bg-[radial-gradient(1200px_600px_at_0%_0%,var(--color-bamboo-100)_0%,transparent_60%),radial-gradient(900px_500px_at_100%_100%,var(--color-bamboo-100)_0%,transparent_55%),linear-gradient(135deg,var(--color-bamboo-50)_0%,var(--color-canvas)_45%,var(--color-canvas)_100%)] font-sans text-ink">
+    <div className="app-canvas flex min-h-screen font-sans text-ink">
       <AppSider collapsed={collapsed} />
 
       <Drawer
@@ -45,7 +45,7 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
         closable={false}
         styles={{
           body: { padding: 0, background: "transparent" },
-          content: { background: "var(--glass-bg)", backdropFilter: "blur(30px) saturate(180%)" },
+          content: { background: "var(--glass-strong)", backdropFilter: "var(--glass-blur)" },
         }}
       >
         <SiderContent onNavigate={() => setMobileOpen(false)} />
@@ -53,7 +53,7 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader collapsed={collapsed} onCollapsedChange={setCollapsed} onOpenMobileNav={() => setMobileOpen(true)} />
-        <main className="min-w-0 flex-1 px-4 py-5 md:px-6 md:py-6">{children}</main>
+        <main className="min-w-0 flex-1 px-3 pb-6 pt-4 sm:px-4 md:pl-1 md:pr-3 md:pt-5">{children}</main>
       </div>
 
       <CommandBar />

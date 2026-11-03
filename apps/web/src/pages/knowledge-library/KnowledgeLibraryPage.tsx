@@ -17,6 +17,7 @@ import { ProposeModal, type ProposalDraft } from "./components/ProposeModal";
 import { CATEGORY_SHORT, PROPOSAL_STATUS } from "./labels";
 import type { CategoryFilter, DocCategory, LibraryDoc, ScopeFilter } from "./types";
 import { filterDocs } from "./utils";
+import { tr, trf } from "../../i18n";
 
 type Tab = "library" | "mine";
 type Proposal = {
@@ -101,7 +102,7 @@ export const KnowledgeLibraryPage = () => {
   const reindex = async (d: LibraryDoc) => {
     try {
       await reindexDocument(d.id);
-      message.success(`Đã yêu cầu nạp lại chỉ mục cho “${d.title}”.`);
+      message.success(trf("Đã yêu cầu nạp lại chỉ mục cho “{0}”.", [d.title]));
       load();
     } catch (e) {
       message.error((e as Error).message);
@@ -111,19 +112,21 @@ export const KnowledgeLibraryPage = () => {
   const retire = (d: LibraryDoc) => {
     let reason = "";
     modal.confirm({
-      title: `Ngừng hiệu lực “${d.title}”?`,
-      content: <Input.TextArea rows={3} placeholder="Lý do (bắt buộc)" onChange={(e) => (reason = e.target.value)} />,
-      okText: "Ngừng hiệu lực",
+      title: trf("Ngừng hiệu lực “{0}”?", [d.title]),
+      content: (
+        <Input.TextArea rows={3} placeholder={tr("Lý do (bắt buộc)")} onChange={(e) => (reason = e.target.value)} />
+      ),
+      okText: tr("Ngừng hiệu lực"),
       okButtonProps: { danger: true },
-      cancelText: "Không",
+      cancelText: tr("Không"),
       onOk: async () => {
         if (!reason.trim()) {
-          message.error("Phải ghi lý do");
+          message.error(tr("Phải ghi lý do"));
           throw new Error("missing reason");
         }
         await retireDocument(d.id, reason.trim())
           .then(() => {
-            message.success("Đã ngừng hiệu lực tài liệu.");
+            message.success(tr("Đã ngừng hiệu lực tài liệu."));
             load();
           })
           .catch((e: Error) => message.error(e.message));
@@ -144,8 +147,8 @@ export const KnowledgeLibraryPage = () => {
         value={tab}
         onChange={(v) => setTab(v as Tab)}
         options={[
-          { value: "library", label: `Thư viện (${docs.length})` },
-          { value: "mine", label: `Đề xuất của tôi (${mine.length})` },
+          { value: "library", label: trf("Thư viện ({0})", [docs.length]) },
+          { value: "mine", label: trf("Đề xuất của tôi ({0})", [mine.length]) },
         ]}
       />
 
@@ -191,16 +194,19 @@ export const KnowledgeLibraryPage = () => {
           </div>
         </>
       ) : (
-        <section className="rounded-2xl border border-line bg-surface p-3 shadow-card" aria-label="Đề xuất của tôi">
+        <section
+          className="rounded-2xl border border-line bg-surface p-3 shadow-card"
+          aria-label={tr("Đề xuất của tôi")}
+        >
           <Table<Proposal>
             rowKey="id"
             size="middle"
             dataSource={mine}
             pagination={{ pageSize: 20, hideOnSinglePage: true }}
-            locale={{ emptyText: "Bạn chưa đề xuất tài liệu nào." }}
+            locale={{ emptyText: tr("Bạn chưa đề xuất tài liệu nào.") }}
             columns={[
               {
-                title: "Số",
+                title: tr("Số"),
                 dataIndex: "doc_no",
                 width: 170,
                 render: (v: string, r) => (
@@ -209,10 +215,10 @@ export const KnowledgeLibraryPage = () => {
                   </Link>
                 ),
               },
-              { title: "Tài liệu", dataIndex: "title" },
-              { title: "Loại", dataIndex: "category", width: 150, render: (v: DocCategory) => CATEGORY_SHORT[v] },
+              { title: tr("Tài liệu"), dataIndex: "title" },
+              { title: tr("Loại"), dataIndex: "category", width: 150, render: (v: DocCategory) => CATEGORY_SHORT[v] },
               {
-                title: "Trạng thái",
+                title: tr("Trạng thái"),
                 dataIndex: "status",
                 width: 150,
                 render: (v: string) => <Tag color={PROPOSAL_STATUS[v]?.color}>{PROPOSAL_STATUS[v]?.label ?? v}</Tag>,
@@ -228,7 +234,7 @@ export const KnowledgeLibraryPage = () => {
         onClose={() => setProposing(undefined)}
         onSaved={(id) => {
           setProposing(undefined);
-          message.success("Đã lưu nháp. Đính kèm tệp rồi gửi duyệt.");
+          message.success(tr("Đã lưu nháp. Đính kèm tệp rồi gửi duyệt."));
           navigate(`/h/library/proposals/${id}`);
         }}
       />

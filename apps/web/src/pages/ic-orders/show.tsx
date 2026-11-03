@@ -31,6 +31,7 @@ import type { Comment } from "../../components/document/types";
 import { formatDate, formatDay, formatMoney } from "../../utils/format";
 import { IC_STATUS_LABEL } from "../../utils/status";
 import { CANCEL_IC, CONFIRM_IC, IC_DETAIL, REJECT_IC, SELLER_LOTS } from "./queries";
+import { tr, trf } from "../../i18n";
 
 type Line = {
   id: string;
@@ -86,7 +87,7 @@ const askReason = (
     content: (
       <Input.TextArea
         rows={3}
-        placeholder="Lý do (bắt buộc)"
+        placeholder={tr("Lý do (bắt buộc)")}
         onChange={(e) => {
           reason = e.target.value;
         }}
@@ -94,10 +95,10 @@ const askReason = (
     ),
     okText,
     okButtonProps: { danger: true },
-    cancelText: "Không",
+    cancelText: tr("Không"),
     onOk: async () => {
       if (!reason.trim()) {
-        onError(new Error("Phải ghi lý do"));
+        onError(new Error(tr("Phải ghi lý do")));
         throw new Error("missing reason");
       }
       await run(reason.trim()).catch((e: Error) => {
@@ -149,7 +150,9 @@ export const IcOrderShow = () => {
   if (error) return <Alert type="error" showIcon message={error} />;
   if (order === undefined) return <Spin />;
   if (order === null)
-    return <Alert type="warning" showIcon message="Không tìm thấy đơn hàng nội bộ hoặc bạn không có quyền xem." />;
+    return (
+      <Alert type="warning" showIcon message={tr("Không tìm thấy đơn hàng nội bộ hoặc bạn không có quyền xem.")} />
+    );
 
   const lotsFor = (line: Line) => lots.filter((x) => x.item_id === line.item_id);
   const missing = order.can_confirm && order.ic_order_items.some((l) => lotsFor(l).length > 0 && !chosen[l.id]);
@@ -164,7 +167,7 @@ export const IcOrderShow = () => {
         id: order.id,
         lots: Object.entries(chosen).map(([line_id, lot_id]) => ({ line_id, lot_id })),
       });
-      message.success(`Đã xác nhận ${order.doc_no}`);
+      message.success(trf("Đã xác nhận {0}", [order.doc_no]));
       await load();
     } catch (e) {
       message.error((e as Error).message);
@@ -176,16 +179,16 @@ export const IcOrderShow = () => {
   const reject = () =>
     askReason(
       modal,
-      `Từ chối đơn ${order.doc_no}?`,
-      "Từ chối",
+      trf("Từ chối đơn {0}?", [order.doc_no]),
+      tr("Từ chối"),
       (reason) => request(REJECT_IC, { id: order.id, reason }).then(load),
       fail,
     );
   const cancel = () =>
     askReason(
       modal,
-      `Hủy đơn ${order.doc_no}?`,
-      "Hủy đơn",
+      trf("Hủy đơn {0}?", [order.doc_no]),
+      tr("Hủy đơn"),
       (reason) => request(CANCEL_IC, { id: order.id, reason }).then(load),
       fail,
     );
@@ -202,17 +205,17 @@ export const IcOrderShow = () => {
         <Space wrap>
           {order.can_confirm && (
             <Button type="primary" icon={<CheckOutlined />} loading={busy} disabled={missing} onClick={confirm}>
-              Xác nhận và xuất lô
+              {tr("Xác nhận và xuất lô")}
             </Button>
           )}
           {order.can_confirm && (
             <Button danger icon={<CloseOutlined />} onClick={reject}>
-              Từ chối
+              {tr("Từ chối")}
             </Button>
           )}
           {cancellable && (
             <Button danger icon={<StopOutlined />} onClick={cancel}>
-              Hủy đơn
+              {tr("Hủy đơn")}
             </Button>
           )}
         </Space>
@@ -223,7 +226,7 @@ export const IcOrderShow = () => {
           style={{ marginBottom: 16 }}
           type="error"
           showIcon
-          message="Bên bán từ chối"
+          message={tr("Bên bán từ chối")}
           description={order.decision_note}
         />
       )}
@@ -232,7 +235,7 @@ export const IcOrderShow = () => {
           style={{ marginBottom: 16 }}
           type="warning"
           showIcon
-          message="Bên mua đã hủy"
+          message={tr("Bên mua đã hủy")}
           description={order.decision_note}
         />
       )}
@@ -241,22 +244,22 @@ export const IcOrderShow = () => {
           style={{ marginBottom: 16 }}
           type="info"
           showIcon
-          message="Chọn lô xuất cho từng dòng hàng rồi xác nhận."
-          description="Xác nhận xong, hệ thống tự sinh đơn mua cho bên mua; lô xuất được ghi để truy xuất về sau."
+          message={tr("Chọn lô xuất cho từng dòng hàng rồi xác nhận.")}
+          description={tr("Xác nhận xong, hệ thống tự sinh đơn mua cho bên mua; lô xuất được ghi để truy xuất về sau.")}
         />
       )}
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={16}>
           <Descriptions bordered size="small" column={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 }}>
-            <Descriptions.Item label="Bên mua">{order.buyer_unit.name}</Descriptions.Item>
-            <Descriptions.Item label="Bên bán">{order.seller_unit.name}</Descriptions.Item>
-            <Descriptions.Item label="Người đặt">{order.created_by_person?.full_name}</Descriptions.Item>
-            <Descriptions.Item label="Ngày đặt">{formatDate(order.created_at)}</Descriptions.Item>
-            <Descriptions.Item label="Tổng tiền">
+            <Descriptions.Item label={tr("Bên mua")}>{order.buyer_unit.name}</Descriptions.Item>
+            <Descriptions.Item label={tr("Bên bán")}>{order.seller_unit.name}</Descriptions.Item>
+            <Descriptions.Item label={tr("Người đặt")}>{order.created_by_person?.full_name}</Descriptions.Item>
+            <Descriptions.Item label={tr("Ngày đặt")}>{formatDate(order.created_at)}</Descriptions.Item>
+            <Descriptions.Item label={tr("Tổng tiền")}>
               <Typography.Text strong>{formatMoney(order.total_amount)}</Typography.Text>
             </Descriptions.Item>
             {pr && (
-              <Descriptions.Item label="Đề nghị nguồn">
+              <Descriptions.Item label={tr("Đề nghị nguồn")}>
                 <Typography.Link
                   onClick={() => go({ to: { resource: "proc_purchase_request", action: "show", id: pr.id } })}
                 >
@@ -265,12 +268,12 @@ export const IcOrderShow = () => {
               </Descriptions.Item>
             )}
             {order.decided_by_person && (
-              <Descriptions.Item label={order.status === "CANCELLED" ? "Người hủy" : "Bên bán xử lý"}>
+              <Descriptions.Item label={order.status === "CANCELLED" ? tr("Người hủy") : tr("Bên bán xử lý")}>
                 {order.decided_by_person.full_name} – {formatDate(order.decided_at)}
               </Descriptions.Item>
             )}
             {po && (
-              <Descriptions.Item label="Đơn mua">
+              <Descriptions.Item label={tr("Đơn mua")}>
                 <Tag color="blue">{po.doc_no}</Tag>
               </Descriptions.Item>
             )}
@@ -285,7 +288,7 @@ export const IcOrderShow = () => {
             columns={[
               { title: "#", dataIndex: "line_no", width: 40 },
               {
-                title: "Mô tả",
+                title: tr("Mô tả"),
                 render: (_, l) => (
                   <>
                     {l.item && <Tag>{l.item.code}</Tag>}
@@ -293,28 +296,29 @@ export const IcOrderShow = () => {
                   </>
                 ),
               },
-              { title: "ĐVT", dataIndex: "uom", width: 70 },
+              { title: tr("ĐVT"), dataIndex: "uom", width: 70 },
               {
-                title: "Số lượng",
+                title: tr("Số lượng"),
                 dataIndex: "quantity",
                 align: "right",
                 width: 100,
                 render: (v) => Number(v).toLocaleString("vi-VN"),
               },
-              { title: "Thành tiền", dataIndex: "amount", align: "right", render: formatMoney },
+              { title: tr("Thành tiền"), dataIndex: "amount", align: "right", render: formatMoney },
               {
-                title: "Lô xuất",
+                title: tr("Lô xuất"),
                 width: 260,
                 render: (_, l) => {
                   if (!order.can_confirm) return l.lot ? <Tag color="purple">{l.lot.lot_no}</Tag> : "—";
                   const options = lotsFor(l);
-                  if (options.length === 0) return <Typography.Text type="secondary">Không quản lý lô</Typography.Text>;
+                  if (options.length === 0)
+                    return <Typography.Text type="secondary">{tr("Không quản lý lô")}</Typography.Text>;
                   return (
                     <Select
                       style={{ width: "100%" }}
-                      placeholder="Chọn lô"
+                      placeholder={tr("Chọn lô")}
                       value={chosen[l.id]}
-                      aria-label={`Lô dòng ${l.line_no}`}
+                      aria-label={trf("Lô dòng {0}", [l.line_no])}
                       onChange={(v) => setChosen((c) => ({ ...c, [l.id]: v }))}
                       options={options.map((x) => ({
                         value: x.id,
@@ -329,7 +333,7 @@ export const IcOrderShow = () => {
           <Card
             style={{ marginTop: 16 }}
             size="small"
-            title={`Trao đổi (${order.comments.filter((c) => !c.deleted_at).length})`}
+            title={trf("Trao đổi ({0})", [order.comments.filter((c) => !c.deleted_at).length])}
           >
             <Comments doc={order} entityType="ic.ic_order" me={tenant.person_id} onChange={load} />
           </Card>

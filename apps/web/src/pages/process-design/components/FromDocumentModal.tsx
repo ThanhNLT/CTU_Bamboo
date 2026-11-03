@@ -11,6 +11,7 @@ import { processFromDocument, type FromDocumentResult } from "../api";
 import { SAMPLE_REGULATION } from "../sample";
 import type { DesignUnit } from "../types";
 import { downloadText } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 /** Dựng bản nháp sơ đồ BPMN từ một tài liệu đang hiệu lực trong thư viện tri thức. */
 export const FromDocumentModal = ({
@@ -58,9 +59,9 @@ export const FromDocumentModal = ({
   return (
     <Modal
       open={open}
-      title="Dựng sơ đồ từ văn bản trong thư viện tri thức"
-      okText={done ? "Mở sơ đồ" : "Đọc văn bản và dựng sơ đồ"}
-      cancelText={done ? "Đóng" : "Hủy"}
+      title={tr("Dựng sơ đồ từ văn bản trong thư viện tri thức")}
+      okText={done ? tr("Mở sơ đồ") : tr("Đọc văn bản và dựng sơ đồ")}
+      cancelText={done ? tr("Đóng") : tr("Hủy")}
       okButtonProps={{ loading: busy, disabled: done ? false : !docId }}
       onOk={() => (done ? onCreated(done) : void build())}
       onCancel={onClose}
@@ -69,31 +70,31 @@ export const FromDocumentModal = ({
     >
       <div className="flex flex-col gap-3">
         <p className="m-0 text-[13px] text-body">
-          Hệ thống đọc tài liệu đang hiệu lực (tệp đính kèm, chữ OCR, tóm tắt, mục lục) theo mẫu quy trình, rồi tự dựng
-          sơ đồ BPMN có làn theo người thực hiện và đường nối không chồng nhau. Không dùng mô hình AI: chỗ nào không
-          hiểu sẽ được báo lại.
+          {tr(
+            "Hệ thống đọc tài liệu đang hiệu lực (tệp đính kèm, chữ OCR, tóm tắt, mục lục) theo mẫu quy trình, rồi tự dựng sơ đồ BPMN có làn theo người thực hiện và đường nối không chồng nhau. Không dùng mô hình AI: chỗ nào không hiểu sẽ được báo lại.",
+          )}
         </p>
         {!done && (
           <>
             <label className="block text-[12px] font-medium text-body">
-              Tài liệu nguồn
+              {tr("Tài liệu nguồn")}
               <Select
-                aria-label="Tài liệu nguồn"
+                aria-label={tr("Tài liệu nguồn")}
                 className="mt-1 w-full"
                 showSearch
                 optionFilterProp="label"
                 loading={!docs && !error}
                 value={docId}
                 onChange={setDocId}
-                placeholder="Chọn tài liệu trong thư viện tri thức"
+                placeholder={tr("Chọn tài liệu trong thư viện tri thức")}
                 options={(docs ?? []).map((d) => ({ value: d.id, label: `${d.code} · ${d.title}` }))}
               />
             </label>
             {units.length > 1 && (
               <label className="block text-[12px] font-medium text-body">
-                Đơn vị sở hữu quy trình
+                {tr("Đơn vị sở hữu quy trình")}
                 <Select
-                  aria-label="Đơn vị sở hữu quy trình"
+                  aria-label={tr("Đơn vị sở hữu quy trình")}
                   className="mt-1 w-full"
                   showSearch
                   optionFilterProp="label"
@@ -108,7 +109,7 @@ export const FromDocumentModal = ({
               className="self-start text-[12.5px] font-medium text-bamboo-700 underline"
               onClick={() => downloadText("quy-trinh-mau.txt", SAMPLE_REGULATION)}
             >
-              Tải văn bản mẫu (cách ghi các bước)
+              {tr("Tải văn bản mẫu (cách ghi các bước)")}
             </button>
           </>
         )}
@@ -117,16 +118,18 @@ export const FromDocumentModal = ({
             <Alert
               type={errors ? "warning" : "success"}
               showIcon
-              message={`Đã dựng bản nháp “${done.name}” từ ${done.source}: ${done.steps} bước`}
+              message={trf("Đã dựng bản nháp “{0}” từ {1}: {2} bước", [done.name, done.source, done.steps])}
               description={
-                errors ? `Còn ${errors} lỗi cần sửa trước khi phát hành.` : "Sơ đồ đã qua kiểm tra, chưa có lỗi."
+                errors
+                  ? trf("Còn {0} lỗi cần sửa trước khi phát hành.", [errors])
+                  : tr("Sơ đồ đã qua kiểm tra, chưa có lỗi.")
               }
             />
             {done.warnings.length > 0 && (
               <Alert
                 type="warning"
                 showIcon
-                message="Chỗ cần xem lại"
+                message={tr("Chỗ cần xem lại")}
                 description={
                   <ul className="m-0 pl-4">
                     {done.warnings.map((w) => (

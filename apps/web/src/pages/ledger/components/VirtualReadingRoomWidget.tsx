@@ -5,6 +5,7 @@
 import type { ArchiveDoc } from "../types";
 import { READING_ROOM_RULES } from "../utils";
 import { ArchiveDocRow } from "./ArchiveDocRow";
+import { tr } from "../../../i18n";
 
 export const VirtualReadingRoomWidget = ({
   docs,
@@ -15,15 +16,15 @@ export const VirtualReadingRoomWidget = ({
   onOpen: (doc: ArchiveDoc) => void;
   onShowAll: () => void;
 }) => (
-  <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Phòng đọc ảo">
+  <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label={tr("Phòng đọc ảo")}>
     <div className="flex items-center justify-between gap-3">
-      <h2 className="text-[15px] font-semibold text-ink">Phòng đọc ảo</h2>
+      <h2 className="text-[15px] font-semibold text-ink">{tr("Phòng đọc ảo")}</h2>
       <span className="inline-flex h-6 items-center rounded-ui border border-line px-2.5 text-[11.5px] font-medium text-body">
-        Chỉ đọc
+        {tr("Chỉ đọc")}
       </span>
     </div>
     {docs.length === 0 && (
-      <p className="py-4 text-[12.5px] text-muted">Chưa có chứng từ đã kết thúc nào có tệp đính kèm.</p>
+      <p className="py-4 text-[12.5px] text-muted">{tr("Chưa có chứng từ đã kết thúc nào có tệp đính kèm.")}</p>
     )}
     <div className="mt-1 divide-y divide-line">
       {docs.map((d) => (
@@ -37,7 +38,7 @@ export const VirtualReadingRoomWidget = ({
         onClick={onShowAll}
         className="font-semibold text-bamboo-700 underline-offset-2 hover:underline"
       >
-        Tất cả hồ sơ lưu trữ
+        {tr("Tất cả hồ sơ lưu trữ")}
       </button>
     </div>
   </section>

@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import { useSession } from "../../auth/useSession";
 import { formatDate, formatMoney } from "../../utils/format";
 import type { Attachment, InboxTask, SlaLevel } from "./types";
+import { trf } from "../../i18n";
 
 export const SLA_HOURS = 48;
 const URGENT_HOURS = 8;
@@ -120,12 +121,12 @@ const slaOf = (dueAt: number, now: number): { level: SlaLevel; label: string } =
   const minutes = Math.floor((abs % HOUR) / 60_000);
   const span =
     days > 0
-      ? `${days} ngày${hours ? ` ${hours} giờ` : ""}`
+      ? trf("{0} ngày{1}", [days, hours ? trf(" {0} giờ", [hours]) : ""])
       : hours > 0
-        ? `${hours} giờ${minutes ? ` ${minutes} phút` : ""}`
-        : `${Math.max(minutes, 1)} phút`;
-  if (left < 0) return { level: "overdue", label: `quá hạn ${span}` };
-  return { level: left < URGENT_HOURS * HOUR ? "urgent" : "ok", label: `còn ${span}` };
+        ? trf("{0} giờ{1}", [hours, minutes ? trf(" {0} phút", [minutes]) : ""])
+        : trf("{0} phút", [Math.max(minutes, 1)]);
+  if (left < 0) return { level: "overdue", label: trf("quá hạn {0}", [span]) };
+  return { level: left < URGENT_HOURS * HOUR ? "urgent" : "ok", label: trf("còn {0}", [span]) };
 };
 
 type Base = {
@@ -157,8 +158,8 @@ const toTask = (b: Base, d: Docs, org: string, now: number): InboxTask | null =>
       info: { submitter: p.requester?.full_name ?? "—", unit: unit || "—", amount: formatMoney(p.total_amount) },
       preview: {
         org: [org, unit].filter(Boolean).join(" · "),
-        heading: `ĐỀ NGHỊ MUA SẮM · ${p.title.toLocaleUpperCase("vi")}`,
-        subline: `Số tiền: ${formatMoney(p.total_amount)} · ${formatDate(p.created_at)}`,
+        heading: trf("ĐỀ NGHỊ MUA SẮM · {0}", [p.title.toLocaleUpperCase("vi")]),
+        subline: trf("Số tiền: {0} · {1}", [formatMoney(p.total_amount), formatDate(p.created_at)]),
       },
     };
   }
@@ -168,18 +169,18 @@ const toTask = (b: Base, d: Docs, org: string, now: number): InboxTask | null =>
     return {
       ...common,
       code: o.doc_no,
-      title: `Tiếp nhận ${o.full_name}`,
+      title: trf("Tiếp nhận {0}", [o.full_name]),
       to: `/h/onboarding/show/${o.id}`,
       attachments: o.attachments.map(toAttachment),
       info: {
         submitter: o.requester?.full_name ?? "—",
         unit: unit || "—",
-        amount: o.salary == null ? undefined : `${formatMoney(o.salary)}/tháng`,
+        amount: o.salary == null ? undefined : trf("{0}/tháng", [formatMoney(o.salary)]),
       },
       preview: {
         org: [org, unit].filter(Boolean).join(" · "),
-        heading: `ĐỀ NGHỊ TIẾP NHẬN NHÂN SỰ · ${o.full_name.toLocaleUpperCase("vi")}`,
-        subline: `Vị trí: ${o.target_position?.name ?? "—"} · ${formatDate(o.created_at)}`,
+        heading: trf("ĐỀ NGHỊ TIẾP NHẬN NHÂN SỰ · {0}", [o.full_name.toLocaleUpperCase("vi")]),
+        subline: trf("Vị trí: {0} · {1}", [o.target_position?.name ?? "—", formatDate(o.created_at)]),
       },
     };
   }
@@ -189,14 +190,14 @@ const toTask = (b: Base, d: Docs, org: string, now: number): InboxTask | null =>
     return {
       ...common,
       code: k.doc_no,
-      title: `Đề xuất tài liệu: ${k.title}`,
+      title: trf("Đề xuất tài liệu: {0}", [k.title]),
       to: `/h/library/proposals/${k.id}`,
       attachments: k.attachments.map(toAttachment),
       info: { submitter: k.requester?.full_name ?? "—", unit: unit || "—" },
       preview: {
         org: [org, unit].filter(Boolean).join(" · "),
-        heading: `ĐỀ XUẤT TÀI LIỆU · ${k.title.toLocaleUpperCase("vi")}`,
-        subline: `Phiên bản ${k.version} · ${formatDate(k.created_at)}`,
+        heading: trf("ĐỀ XUẤT TÀI LIỆU · {0}", [k.title.toLocaleUpperCase("vi")]),
+        subline: trf("Phiên bản {0} · {1}", [k.version, formatDate(k.created_at)]),
       },
     };
   }

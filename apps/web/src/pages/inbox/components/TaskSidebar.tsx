@@ -8,6 +8,7 @@ import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { InboxTask } from "../types";
 import { SLA_TONE } from "./slaStyle";
+import { tr } from "../../../i18n";
 
 export const TaskSidebar = ({
   tasks,
@@ -23,14 +24,14 @@ export const TaskSidebar = ({
   className?: string;
 }) => (
   <nav
-    aria-label="Danh sách việc"
+    aria-label={tr("Danh sách việc")}
     className={cn("min-h-0 overflow-y-auto rounded-2xl border border-line bg-surface p-2 shadow-card", className)}
   >
     {tasks.length === 0 ? (
       <div className="flex flex-col items-center gap-2 px-4 py-14 text-center">
         <Inbox className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
-        <p className="text-[13px] font-medium text-ink">Hộp việc trống</p>
-        <p className="text-[12px] text-muted">Bạn đã xử lý hết việc.</p>
+        <p className="text-[13px] font-medium text-ink">{tr("Hộp việc trống")}</p>
+        <p className="text-[12px] text-muted">{tr("Bạn đã xử lý hết việc.")}</p>
       </div>
     ) : (
       <ul className="m-0 list-none p-0">
@@ -61,7 +62,7 @@ export const TaskSidebar = ({
                     t.sla.level === "overdue" ? "text-red-700" : "text-muted",
                   )}
                 >
-                  Cấp {t.level} · {t.sla.label}
+                  {tr("Cấp ")} {t.level} · {t.sla.label}
                   {t.assignee !== me && ` · ${t.assignee}`}
                 </span>
               </button>

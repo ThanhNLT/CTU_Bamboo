@@ -12,6 +12,7 @@ import { adminSave } from "../admin/shared/api";
 import { useSession } from "../../auth/useSession";
 import { formatMoney } from "../../utils/format";
 import { FORM_OPTIONS, INSERT_PR, SUBMIT_PR, UPDATE_PR } from "./queries";
+import { tr, trf } from "../../i18n";
 
 type Item = {
   item_id?: string | null;
@@ -69,10 +70,10 @@ const categoryCode = (name: string, taken: Set<string>) => {
   return code;
 };
 const ASSIGNMENT: Record<string, string> = {
-  PRIMARY: "giữ chính",
-  CONCURRENT: "kiêm nhiệm",
-  ACTING: "quyền trưởng",
-  CONTRACT: "hợp đồng",
+  PRIMARY: tr("giữ chính"),
+  CONCURRENT: tr("kiêm nhiệm"),
+  ACTING: tr("quyền trưởng"),
+  CONTRACT: tr("hợp đồng"),
 };
 
 type Props = {
@@ -115,7 +116,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
       await adminSave("catalog_item", { catalog: "ITEM_CATEGORY", code, name });
       setOptions({ ...options, core_catalog_item: [...options.core_catalog_item, { code, name }] });
       form.setFieldValue("category_code", code);
-      message.success(`Đã thêm nhóm hàng “${name}”`);
+      message.success(trf("Đã thêm nhóm hàng “{0}”", [name]));
     } catch (e) {
       form.setFieldValue("category_code", null);
       message.error((e as Error).message);
@@ -183,9 +184,9 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
       }
       if (submit) {
         await request(SUBMIT_PR, { id: savedId });
-        message.success("Đã gửi duyệt");
+        message.success(tr("Đã gửi duyệt"));
       } else {
-        message.success("Đã lưu nháp");
+        message.success(tr("Đã lưu nháp"));
       }
       onSaved(savedId!);
     } catch (e) {
@@ -206,8 +207,8 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
         <Col xs={24} md={16}>
           <Form.Item
             name="title"
-            label="Tiêu đề"
-            rules={[{ required: true, whitespace: true, message: "Nhập tiêu đề" }]}
+            label={tr("Tiêu đề")}
+            rules={[{ required: true, whitespace: true, message: tr("Nhập tiêu đề") }]}
           >
             <Input maxLength={200} />
           </Form.Item>
@@ -215,9 +216,9 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
         <Col xs={24} md={8}>
           <Form.Item
             name="requester_position_id"
-            label="Tư cách lập"
-            tooltip="Vị trí bạn lập đề nghị; chuỗi duyệt tính từ vị trí này"
-            rules={[{ required: true, message: "Chọn tư cách lập" }]}
+            label={tr("Tư cách lập")}
+            tooltip={tr("Vị trí bạn lập đề nghị; chuỗi duyệt tính từ vị trí này")}
+            rules={[{ required: true, message: tr("Chọn tư cách lập") }]}
           >
             <Select
               disabled={!!id}
@@ -232,34 +233,34 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
         <Col xs={24} md={8}>
           <Form.Item
             name="partner_id"
-            label="Nhà cung cấp đề xuất"
-            tooltip="Gõ để tìm trong danh mục; chưa có thì gõ tên rồi chọn dòng “Dùng nhà cung cấp mới”"
+            label={tr("Nhà cung cấp đề xuất")}
+            tooltip={tr("Gõ để tìm trong danh mục; chưa có thì gõ tên rồi chọn dòng “Dùng nhà cung cấp mới”")}
           >
             <Select
               allowClear
               showSearch
               optionFilterProp="label"
-              placeholder="Gõ tên hoặc mã nhà cung cấp"
+              placeholder={tr("Gõ tên hoặc mã nhà cung cấp")}
               onSearch={setPartnerSearch}
               onChange={() => setPartnerSearch("")}
               notFoundContent={
                 <Typography.Text type="secondary">
-                  Chưa có nhà cung cấp trong danh mục. Gõ tên để dùng nhà cung cấp mới.
+                  {tr("Chưa có nhà cung cấp trong danh mục. Gõ tên để dùng nhà cung cấp mới.")}
                 </Typography.Text>
               }
               options={[
                 ...(options?.mdm_partner.map((p) => ({
                   value: p.id,
-                  label: `${p.code} – ${p.name}${p.internal_unit_id ? " (nội bộ)" : ""}`,
+                  label: `${p.code} – ${p.name}${p.internal_unit_id ? tr(" (nội bộ)") : ""}`,
                 })) ?? []),
                 ...(proposedName && proposedName !== partnerSearch.trim()
-                  ? [{ value: NEW_PARTNER + proposedName, label: `${proposedName} (chưa có trong danh mục)` }]
+                  ? [{ value: NEW_PARTNER + proposedName, label: trf("{0} (chưa có trong danh mục)", [proposedName]) }]
                   : []),
                 ...(partnerSearch.trim().length >= 1
                   ? [
                       {
                         value: NEW_PARTNER + partnerSearch.trim(),
-                        label: `＋ Dùng nhà cung cấp mới “${partnerSearch.trim()}”`,
+                        label: trf("＋ Dùng nhà cung cấp mới “{0}”", [partnerSearch.trim()]),
                       },
                     ]
                   : []),
@@ -269,21 +270,27 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
           {proposedName != null && (
             <Form.Item
               name="proposed_partner_tax_code"
-              label="Mã số thuế nhà cung cấp mới"
-              tooltip="Không bắt buộc. Người quản lý dữ liệu chủ dùng để thêm vào danh mục"
-              rules={[{ pattern: /^\d{10}(-\d{3})?$/, message: "Mã số thuế gồm 10 chữ số (chi nhánh: 10 số-3 số)" }]}
+              label={tr("Mã số thuế nhà cung cấp mới")}
+              tooltip={tr("Không bắt buộc. Người quản lý dữ liệu chủ dùng để thêm vào danh mục")}
+              rules={[
+                { pattern: /^\d{10}(-\d{3})?$/, message: tr("Mã số thuế gồm 10 chữ số (chi nhánh: 10 số-3 số)") },
+              ]}
             >
               <Input placeholder="0101234567" />
             </Form.Item>
           )}
         </Col>
         <Col xs={24} md={8}>
-          <Form.Item name="category_code" label="Nhóm hàng" tooltip="Một số nhóm hàng có hạn mức duyệt riêng">
+          <Form.Item
+            name="category_code"
+            label={tr("Nhóm hàng")}
+            tooltip={tr("Một số nhóm hàng có hạn mức duyệt riêng")}
+          >
             <Select
               allowClear
               showSearch
               optionFilterProp="label"
-              placeholder={canManageCatalog ? "Chọn hoặc gõ để thêm nhóm hàng" : "Gõ để tìm nhóm hàng"}
+              placeholder={canManageCatalog ? tr("Chọn hoặc gõ để thêm nhóm hàng") : tr("Gõ để tìm nhóm hàng")}
               onSearch={setCategorySearch}
               onChange={(v: string | undefined) => {
                 setCategorySearch("");
@@ -292,8 +299,10 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
               notFoundContent={
                 <Typography.Text type="secondary">
                   {canManageCatalog
-                    ? "Chưa có nhóm hàng. Gõ tên để thêm nhóm hàng mới."
-                    : "Chưa có nhóm hàng phù hợp; có thể để trống. Người quản lý dữ liệu chủ thêm nhóm hàng ở Quản trị → Danh mục."}
+                    ? tr("Chưa có nhóm hàng. Gõ tên để thêm nhóm hàng mới.")
+                    : tr(
+                        "Chưa có nhóm hàng phù hợp; có thể để trống. Người quản lý dữ liệu chủ thêm nhóm hàng ở Quản trị → Danh mục.",
+                      )}
                 </Typography.Text>
               }
               options={[
@@ -304,7 +313,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                   ? [
                       {
                         value: NEW_CATEGORY + categorySearch.trim(),
-                        label: `＋ Thêm nhóm hàng “${categorySearch.trim()}”`,
+                        label: trf("＋ Thêm nhóm hàng “{0}”", [categorySearch.trim()]),
                       },
                     ]
                   : []),
@@ -313,7 +322,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
           </Form.Item>
         </Col>
         <Col xs={24} md={8}>
-          <Form.Item name="needed_by" label="Ngày cần hàng">
+          <Form.Item name="needed_by" label={tr("Ngày cần hàng")}>
             <DatePicker
               format="DD/MM/YYYY"
               style={{ width: "100%" }}
@@ -322,19 +331,19 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
           </Form.Item>
         </Col>
         <Col span={24}>
-          <Form.Item name="description" label="Mô tả, lý do mua">
+          <Form.Item name="description" label={tr("Mô tả, lý do mua")}>
             <Input.TextArea rows={2} maxLength={2000} />
           </Form.Item>
         </Col>
       </Row>
 
-      <Typography.Title level={5}>Dòng hàng</Typography.Title>
+      <Typography.Title level={5}>{tr("Dòng hàng")}</Typography.Title>
       <Form.List
         name="items"
         rules={[
           {
             validator: async (_, v) => {
-              if (!v?.length) throw new Error("Cần ít nhất một dòng hàng");
+              if (!v?.length) throw new Error(tr("Cần ít nhất một dòng hàng"));
             },
           },
         ]}
@@ -350,7 +359,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
               columns={[
                 { title: "#", width: 40, render: (_, __, i) => i + 1 },
                 {
-                  title: "Vật tư",
+                  title: tr("Vật tư"),
                   width: 220,
                   render: (_, f) => (
                     <Form.Item name={[f.name, "item_id"]} noStyle>
@@ -359,7 +368,9 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                         showSearch
                         optionFilterProp="label"
                         placeholder={
-                          !items[f.name]?.item_id && items[f.name]?.description ? "Ngoài danh mục" : "Chọn hoặc gõ tên"
+                          !items[f.name]?.item_id && items[f.name]?.description
+                            ? tr("Ngoài danh mục")
+                            : tr("Chọn hoặc gõ tên")
                         }
                         style={{ width: "100%" }}
                         popupMatchSelectWidth={360}
@@ -370,7 +381,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                         }}
                         notFoundContent={
                           <Typography.Text type="secondary">
-                            Danh mục vật tư trống. Gõ tên để ghi vật tư ngoài danh mục.
+                            {tr("Danh mục vật tư trống. Gõ tên để ghi vật tư ngoài danh mục.")}
                           </Typography.Text>
                         }
                         options={[
@@ -380,7 +391,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                             ? [
                                 {
                                   value: NEW_ITEM + itemSearch.text.trim(),
-                                  label: `＋ Ghi vật tư ngoài danh mục “${itemSearch.text.trim()}”`,
+                                  label: trf("＋ Ghi vật tư ngoài danh mục “{0}”", [itemSearch.text.trim()]),
                                 },
                               ]
                             : []),
@@ -390,15 +401,15 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                   ),
                 },
                 {
-                  title: "Mô tả",
+                  title: tr("Mô tả"),
                   render: (_, f) => (
                     <Form.Item name={[f.name, "description"]} noStyle rules={[{ required: true, whitespace: true }]}>
-                      <Input placeholder="Mô tả" />
+                      <Input placeholder={tr("Mô tả")} />
                     </Form.Item>
                   ),
                 },
                 {
-                  title: "ĐVT",
+                  title: tr("ĐVT"),
                   width: 90,
                   render: (_, f) => (
                     <Form.Item name={[f.name, "uom"]} noStyle rules={[{ required: true, whitespace: true }]}>
@@ -407,7 +418,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                   ),
                 },
                 {
-                  title: "Số lượng",
+                  title: tr("Số lượng"),
                   width: 110,
                   render: (_, f) => (
                     <Form.Item name={[f.name, "quantity"]} noStyle rules={[{ required: true }]}>
@@ -416,7 +427,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                   ),
                 },
                 {
-                  title: "Đơn giá (VNĐ)",
+                  title: tr("Đơn giá (VNĐ)"),
                   width: 160,
                   render: (_, f) => (
                     <Form.Item name={[f.name, "unit_price"]} noStyle rules={[{ required: true }]}>
@@ -431,7 +442,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                   ),
                 },
                 {
-                  title: "Thành tiền",
+                  title: tr("Thành tiền"),
                   width: 150,
                   align: "right",
                   render: (_, f) =>
@@ -445,7 +456,7 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                       type="text"
                       danger
                       icon={<DeleteOutlined />}
-                      aria-label="Xóa dòng"
+                      aria-label={tr("Xóa dòng")}
                       onClick={() => remove(f.name)}
                     />
                   ),
@@ -457,9 +468,11 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
                 icon={<PlusOutlined />}
                 onClick={() => add({ description: "", uom: "", quantity: 1, unit_price: 0 })}
               >
-                Thêm dòng
+                {tr("Thêm dòng")}
               </Button>
-              <Typography.Text strong>Tổng cộng: {formatMoney(total)}</Typography.Text>
+              <Typography.Text strong>
+                {tr("Tổng cộng: ")} {formatMoney(total)}
+              </Typography.Text>
             </Space>
             <Form.ErrorList errors={errors} />
           </>
@@ -468,10 +481,10 @@ export const PurchaseRequestForm = ({ id, initial, onSaved }: Props) => {
 
       <Space style={{ marginTop: 24 }}>
         <Button onClick={() => save(false)} loading={busy}>
-          Lưu nháp
+          {tr("Lưu nháp")}
         </Button>
         <Button type="primary" onClick={() => save(true)} loading={busy}>
-          Lưu và gửi duyệt
+          {tr("Lưu và gửi duyệt")}
         </Button>
       </Space>
     </Form>

@@ -18,11 +18,12 @@ import { TaskDetailHeader } from "./components/TaskDetailHeader";
 import { TaskSidebar } from "./components/TaskSidebar";
 import type { Decision, InboxScope, InboxTask } from "./types";
 import { SLA_HOURS, useInboxTasks } from "./useInboxTasks";
+import { tr, trf } from "../../i18n";
 
 const DECISION_TEXT: Record<Decision, { verb: string; done: string; api: "APPROVE" | "RETURN" | "REJECT" }> = {
-  approve: { verb: "Duyệt", done: "Đã duyệt", api: "APPROVE" },
-  return: { verb: "Trả lại", done: "Đã trả lại", api: "RETURN" },
-  reject: { verb: "Từ chối", done: "Đã từ chối", api: "REJECT" },
+  approve: { verb: tr("Duyệt"), done: tr("Đã duyệt"), api: "APPROVE" },
+  return: { verb: tr("Trả lại"), done: tr("Đã trả lại"), api: "RETURN" },
+  reject: { verb: tr("Từ chối"), done: tr("Đã từ chối"), api: "REJECT" },
 };
 
 const isTyping = (el: EventTarget | null) =>
@@ -90,17 +91,26 @@ export const InboxPage = () => {
       content: (
         <div className="space-y-1.5 text-[13px]">
           <p className="font-medium text-ink">{task.title}</p>
-          {comment && <p className="text-body">Ý kiến: “{comment}”</p>}
-          {task.viaDelegation && (
+          {comment && (
             <p className="text-body">
-              Bạn đang <b>duyệt thay {task.assignee}</b> theo ủy quyền; lịch sử sẽ ghi rõ.
+              {tr("Ý kiến: “")}
+              {comment}”
             </p>
           )}
-          <p className="text-muted">Quyết định được ghi nhật ký kiểm toán và không hoàn tác từ trang này.</p>
+          {task.viaDelegation && (
+            <p className="text-body">
+              {tr("Bạn đang ")}{" "}
+              <b>
+                {tr("duyệt thay ")} {task.assignee}
+              </b>{" "}
+              {tr(" theo ủy quyền; lịch sử sẽ ghi rõ.")}
+            </p>
+          )}
+          <p className="text-muted">{tr("Quyết định được ghi nhật ký kiểm toán và không hoàn tác từ trang này.")}</p>
         </div>
       ),
       okText: t.verb,
-      cancelText: "Hủy",
+      cancelText: tr("Hủy"),
       okButtonProps: decision === "reject" ? { danger: true } : undefined,
       onOk: async () => {
         try {
@@ -118,7 +128,7 @@ export const InboxPage = () => {
 
   const readOnly =
     selected && !selected.actionable
-      ? `Việc của ${selected.assignee} — bạn chỉ xem, không quyết định thay.`
+      ? trf("Việc của {0} — bạn chỉ xem, không quyết định thay.", [selected.assignee])
       : undefined;
 
   if (inbox.loading && inbox.team.length === 0) {
@@ -178,7 +188,9 @@ export const InboxPage = () => {
           </div>
         ) : (
           <div className="rounded-2xl border border-line bg-surface px-6 py-16 text-center text-[13px] text-muted shadow-card">
-            {scope === "mine" ? "Không còn việc nào chờ bạn. Hết việc rồi!" : "Nhóm không còn việc nào đang chờ."}
+            {scope === "mine"
+              ? tr("Không còn việc nào chờ bạn. Hết việc rồi!")
+              : tr("Nhóm không còn việc nào đang chờ.")}
           </div>
         )}
       </div>

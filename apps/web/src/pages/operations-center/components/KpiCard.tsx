@@ -7,6 +7,7 @@ import { Info } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
 import type { Kpi } from "../types";
+import { tr, trf } from "../../../i18n";
 
 const TONE: Record<"good" | "bad" | "neutral", string> = {
   good: "text-bamboo-700",
@@ -26,7 +27,7 @@ export const KpiCard = ({ kpi }: { kpi: Kpi }) => {
         <Tooltip title={kpi.definition} placement="topRight">
           <button
             type="button"
-            aria-label={`Định nghĩa: ${kpi.label}`}
+            aria-label={trf("Định nghĩa: {0}", [kpi.label])}
             className="grid h-5 w-5 shrink-0 place-items-center rounded-ui text-muted hover:bg-canvas hover:text-ink"
           >
             <Info className="h-3.5 w-3.5" aria-hidden />
@@ -37,12 +38,12 @@ export const KpiCard = ({ kpi }: { kpi: Kpi }) => {
       {d && (
         <div className="mt-2 flex min-w-0 items-center gap-1 text-[11.5px] text-muted">
           {d.dir === "up" && (
-            <span className={cn("text-[10px]", TONE[d.tone])} aria-label="tăng">
+            <span className={cn("text-[10px]", TONE[d.tone])} aria-label={tr("tăng")}>
               ▲
             </span>
           )}
           {d.dir === "down" && (
-            <span className={cn("text-[10px]", TONE[d.tone])} aria-label="giảm">
+            <span className={cn("text-[10px]", TONE[d.tone])} aria-label={tr("giảm")}>
               ▼
             </span>
           )}
@@ -56,7 +57,7 @@ export const KpiCard = ({ kpi }: { kpi: Kpi }) => {
         </div>
       )}
       <div className="mt-auto pt-2 text-[11px] text-muted">
-        {kpi.freshness.tier} · {kpi.freshness.at}
+        {tr(kpi.freshness.tier)} · {kpi.freshness.at}
       </div>
     </section>
   );

@@ -10,6 +10,7 @@ import { PR_LIST } from "./queries";
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, formatMoney } from "../../utils/format";
 import { PR_STATUS_LABEL } from "../../utils/status";
+import { tr } from "../../i18n";
 
 type Row = BaseRecord & {
   doc_no: string;
@@ -34,15 +35,15 @@ export const PurchaseRequestList = () => {
   const status = (filters.find((f) => "field" in f && f.field === "status")?.value as string) ?? "ALL";
 
   return (
-    <List title="Đề nghị mua sắm" headerButtons={<CreateButton>Lập đề nghị</CreateButton>}>
+    <List title={tr("Đề nghị mua sắm")} headerButtons={<CreateButton>{tr("Lập đề nghị")}</CreateButton>}>
       <Space style={{ marginBottom: 16 }} wrap>
         <Segmented
           value={status}
-          options={STATUS_FILTERS.map((s) => ({ value: s, label: s === "ALL" ? "Tất cả" : PR_STATUS_LABEL[s] }))}
+          options={STATUS_FILTERS.map((s) => ({ value: s, label: s === "ALL" ? tr("Tất cả") : PR_STATUS_LABEL[s] }))}
           onChange={(v) => setFilters(v === "ALL" ? [] : [{ field: "status", operator: "eq", value: v }], "replace")}
         />
         <Input.Search
-          placeholder="Tìm theo số hoặc tiêu đề"
+          placeholder={tr("Tìm theo số hoặc tiêu đề")}
           allowClear
           style={{ width: 280 }}
           onSearch={(q) =>
@@ -66,7 +67,7 @@ export const PurchaseRequestList = () => {
       <Table {...tableProps} rowKey="id">
         <Table.Column
           dataIndex="doc_no"
-          title="Số"
+          title={tr("Số")}
           sorter
           render={(v: string) => (
             <Typography.Text code style={{ whiteSpace: "nowrap" }}>
@@ -74,12 +75,12 @@ export const PurchaseRequestList = () => {
             </Typography.Text>
           )}
         />
-        <Table.Column dataIndex="title" title="Tiêu đề" />
-        <Table.Column dataIndex={["requester", "full_name"]} title="Người lập" />
-        <Table.Column dataIndex={["org_unit", "name"]} title="Đơn vị" responsive={["lg"]} />
-        <Table.Column dataIndex="total_amount" title="Tổng tiền" align="right" sorter render={formatMoney} />
-        <Table.Column dataIndex="status" title="Trạng thái" render={(s: string) => <StatusTag status={s} />} />
-        <Table.Column dataIndex="created_at" title="Ngày lập" sorter render={formatDate} responsive={["md"]} />
+        <Table.Column dataIndex="title" title={tr("Tiêu đề")} />
+        <Table.Column dataIndex={["requester", "full_name"]} title={tr("Người lập")} />
+        <Table.Column dataIndex={["org_unit", "name"]} title={tr("Đơn vị")} responsive={["lg"]} />
+        <Table.Column dataIndex="total_amount" title={tr("Tổng tiền")} align="right" sorter render={formatMoney} />
+        <Table.Column dataIndex="status" title={tr("Trạng thái")} render={(s: string) => <StatusTag status={s} />} />
+        <Table.Column dataIndex="created_at" title={tr("Ngày lập")} sorter render={formatDate} responsive={["md"]} />
         <Table.Column<Row> title="" render={(_, r) => <ShowButton hideText size="small" recordItemId={r.id} />} />
       </Table>
     </List>

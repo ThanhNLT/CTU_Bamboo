@@ -41,6 +41,7 @@ import { StatusTag } from "../../components/StatusTag";
 import { formatDate, formatDay, formatMoney } from "../../utils/format";
 import { MY_TASK_FOR, OB_CANCEL, OB_DETAIL, OB_RETRY, OB_REVEAL, OB_SUBMIT } from "./queries";
 import { ACCOUNT_STATUS, CONTRACT_TYPE, GENDER, type Onboarding, type OnboardingPrivate } from "./types";
+import { tr, trf } from "../../i18n";
 
 const ENTITY = "hr.onboarding_request";
 const COLUMNS = { xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 };
@@ -84,7 +85,8 @@ export const OnboardingShow = () => {
 
   if (error) return <Alert type="error" showIcon message={error} />;
   if (ob === undefined) return <Spin />;
-  if (ob === null) return <Alert type="warning" showIcon message="Không tìm thấy hồ sơ hoặc bạn không có quyền xem." />;
+  if (ob === null)
+    return <Alert type="warning" showIcon message={tr("Không tìm thấy hồ sơ hoặc bạn không có quyền xem.")} />;
 
   const mine = ob.requester_id === tenant.person_id;
   const editable = mine && ["DRAFT", "RETURNED"].includes(ob.status);
@@ -108,25 +110,25 @@ export const OnboardingShow = () => {
   const cancel = () => {
     let reason = "";
     modal.confirm({
-      title: `Hủy hồ sơ ${ob.doc_no}?`,
+      title: trf("Hủy hồ sơ {0}?", [ob.doc_no]),
       content: (
         <Input.TextArea
           rows={3}
-          placeholder="Lý do hủy (bắt buộc)"
+          placeholder={tr("Lý do hủy (bắt buộc)")}
           onChange={(e) => {
             reason = e.target.value;
           }}
         />
       ),
-      okText: "Hủy hồ sơ",
+      okText: tr("Hủy hồ sơ"),
       okButtonProps: { danger: true },
-      cancelText: "Không",
+      cancelText: tr("Không"),
       onOk: async () => {
         if (!reason.trim()) {
-          message.error("Phải ghi lý do hủy");
+          message.error(tr("Phải ghi lý do hủy"));
           throw new Error("missing reason");
         }
-        await run(OB_CANCEL, { id: ob.id, reason: reason.trim() }, "Đã hủy hồ sơ");
+        await run(OB_CANCEL, { id: ob.id, reason: reason.trim() }, tr("Đã hủy hồ sơ"));
       },
     });
   };
@@ -143,21 +145,22 @@ export const OnboardingShow = () => {
   const retry = () => {
     let username = ob.username ?? "";
     modal.confirm({
-      title: "Tạo lại tài khoản đăng nhập",
+      title: tr("Tạo lại tài khoản đăng nhập"),
       content: (
         <Space direction="vertical" style={{ width: "100%" }}>
           {ob.account_error && <Alert type="error" message={ob.account_error} />}
           <Input
             defaultValue={username}
-            addonBefore="Tên đăng nhập"
+            addonBefore={tr("Tên đăng nhập")}
             onChange={(e) => {
               username = e.target.value;
             }}
           />
         </Space>
       ),
-      okText: "Tạo lại",
-      onOk: () => run(OB_RETRY, { id: ob.id, username: username.trim().toLowerCase() || null }, "Đang tạo tài khoản"),
+      okText: tr("Tạo lại"),
+      onOk: () =>
+        run(OB_RETRY, { id: ob.id, username: username.trim().toLowerCase() || null }, tr("Đang tạo tài khoản")),
     });
   };
 
@@ -173,12 +176,12 @@ export const OnboardingShow = () => {
         <Space wrap>
           {task && (
             <Button type="primary" icon={<AuditOutlined />} onClick={() => setActing(true)}>
-              Xử lý duyệt
+              {tr("Xử lý duyệt")}
             </Button>
           )}
           {ob.can_read_private && (
             <Button icon={<EyeOutlined />} onClick={reveal}>
-              Xem đầy đủ
+              {tr("Xem đầy đủ")}
             </Button>
           )}
           {editable && (
@@ -186,28 +189,34 @@ export const OnboardingShow = () => {
               icon={<EditOutlined />}
               onClick={() => go({ to: { resource: "hr_onboarding_request", action: "edit", id: ob.id } })}
             >
-              Sửa
+              {tr("Sửa")}
             </Button>
           )}
           {editable && (
             <Button
               type="primary"
               icon={<SendOutlined />}
-              onClick={() => run(OB_SUBMIT, { id: ob.id }, "Đã gửi duyệt")}
+              onClick={() => run(OB_SUBMIT, { id: ob.id }, tr("Đã gửi duyệt"))}
             >
-              Gửi duyệt
+              {tr("Gửi duyệt")}
             </Button>
           )}
           {cancellable && (
             <Button danger icon={<StopOutlined />} onClick={cancel}>
-              Hủy
+              {tr("Hủy")}
             </Button>
           )}
         </Space>
       )}
     >
       {returnedNote && (
-        <Alert style={{ marginBottom: 16 }} type="warning" showIcon message="Bị trả về" description={returnedNote} />
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="warning"
+          showIcon
+          message={tr("Bị trả về")}
+          description={returnedNote}
+        />
       )}
       {ob.status === "APPROVED" && (
         <Alert
@@ -216,7 +225,10 @@ export const OnboardingShow = () => {
           type={ob.account_status === "FAILED" ? "error" : "success"}
           message={
             <Space wrap>
-              <span>Đã tiếp nhận{ob.person?.employee_code ? `: mã nhân viên ${ob.person.employee_code}` : ""}.</span>
+              <span>
+                {tr("Đã tiếp nhận")}
+                {ob.person?.employee_code ? trf(": mã nhân viên {0}", [ob.person.employee_code]) : ""}.
+              </span>
               <Tag color={account?.color}>
                 {account?.label}
                 {ob.username ? `: ${ob.username}` : ""}
@@ -227,13 +239,13 @@ export const OnboardingShow = () => {
             ob.account_status === "FAILED"
               ? ob.account_error
               : ob.account_status === "CREATED"
-                ? 'Nhân viên đăng nhập bằng mật khẩu tạm (phòng nhân sự xem ở "Xem đầy đủ") và phải đổi ở lần đầu.'
+                ? tr('Nhân viên đăng nhập bằng mật khẩu tạm (phòng nhân sự xem ở "Xem đầy đủ") và phải đổi ở lần đầu.')
                 : undefined
           }
           action={
             ob.account_status === "FAILED" && ob.can_read_private ? (
               <Button size="small" icon={<RedoOutlined />} onClick={retry}>
-                Tạo lại
+                {tr("Tạo lại")}
               </Button>
             ) : undefined
           }
@@ -241,13 +253,13 @@ export const OnboardingShow = () => {
       )}
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={15}>
-          <Descriptions bordered size="small" column={COLUMNS} title={`Tiếp nhận ${ob.full_name}`}>
-            <Descriptions.Item label="Giới tính">{ob.gender ? GENDER[ob.gender] : "—"}</Descriptions.Item>
-            <Descriptions.Item label="Ngày sinh">{formatDay(ob.date_of_birth)}</Descriptions.Item>
-            <Descriptions.Item label="Điện thoại">{ob.phone ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Email công việc">{ob.work_email ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Trình độ">{ob.education ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Chuyên ngành">{ob.major ?? "—"}</Descriptions.Item>
+          <Descriptions bordered size="small" column={COLUMNS} title={trf("Tiếp nhận {0}", [ob.full_name])}>
+            <Descriptions.Item label={tr("Giới tính")}>{ob.gender ? GENDER[ob.gender] : "—"}</Descriptions.Item>
+            <Descriptions.Item label={tr("Ngày sinh")}>{formatDay(ob.date_of_birth)}</Descriptions.Item>
+            <Descriptions.Item label={tr("Điện thoại")}>{ob.phone ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label={tr("Email công việc")}>{ob.work_email ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label={tr("Trình độ")}>{ob.education ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label={tr("Chuyên ngành")}>{ob.major ?? "—"}</Descriptions.Item>
           </Descriptions>
           <Descriptions
             style={{ marginTop: 16 }}
@@ -257,38 +269,40 @@ export const OnboardingShow = () => {
             title={
               <Space>
                 <LockOutlined />
-                Dữ liệu cá nhân nhạy cảm (đã che)
+                {tr("Dữ liệu cá nhân nhạy cảm (đã che)")}
               </Space>
             }
           >
-            <Descriptions.Item label="Số CCCD">
+            <Descriptions.Item label={tr("Số CCCD")}>
               <span style={nowrap}>{ob.national_id_masked ?? "—"}</span>
             </Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ">{ob.address_masked ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Ngân hàng">{ob.bank_name ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Số tài khoản">
+            <Descriptions.Item label={tr("Địa chỉ")}>{ob.address_masked ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label={tr("Ngân hàng")}>{ob.bank_name ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label={tr("Số tài khoản")}>
               <span style={nowrap}>{ob.bank_account_masked ?? "—"}</span>
             </Descriptions.Item>
           </Descriptions>
-          <Descriptions style={{ marginTop: 16 }} bordered size="small" column={COLUMNS} title="Đề xuất bổ nhiệm">
-            <Descriptions.Item label="Vị trí">{ob.target_position?.name}</Descriptions.Item>
-            <Descriptions.Item label="Đơn vị">{ob.target_position?.org_unit.name}</Descriptions.Item>
-            <Descriptions.Item label="Ngày vào làm">{formatDay(ob.start_date)}</Descriptions.Item>
-            <Descriptions.Item label="Loại hợp đồng">
+          <Descriptions style={{ marginTop: 16 }} bordered size="small" column={COLUMNS} title={tr("Đề xuất bổ nhiệm")}>
+            <Descriptions.Item label={tr("Vị trí")}>{ob.target_position?.name}</Descriptions.Item>
+            <Descriptions.Item label={tr("Đơn vị")}>{ob.target_position?.org_unit.name}</Descriptions.Item>
+            <Descriptions.Item label={tr("Ngày vào làm")}>{formatDay(ob.start_date)}</Descriptions.Item>
+            <Descriptions.Item label={tr("Loại hợp đồng")}>
               {CONTRACT_TYPE[ob.contract_type] ?? ob.contract_type}
             </Descriptions.Item>
-            <Descriptions.Item label="Lương đề xuất">
-              <Typography.Text strong>{ob.salary == null ? "—" : `${formatMoney(ob.salary)}/tháng`}</Typography.Text>
+            <Descriptions.Item label={tr("Lương đề xuất")}>
+              <Typography.Text strong>
+                {ob.salary == null ? "—" : trf("{0}/tháng", [formatMoney(ob.salary)])}
+              </Typography.Text>
             </Descriptions.Item>
-            <Descriptions.Item label="Tên đăng nhập">
+            <Descriptions.Item label={tr("Tên đăng nhập")}>
               <span style={nowrap}>{ob.username ?? "—"}</span>
             </Descriptions.Item>
-            <Descriptions.Item label="Người lập">
+            <Descriptions.Item label={tr("Người lập")}>
               {ob.requester?.full_name} – {ob.requester_position?.name}, {ob.org_unit?.name}
             </Descriptions.Item>
-            <Descriptions.Item label="Ngày lập">{formatDate(ob.created_at)}</Descriptions.Item>
+            <Descriptions.Item label={tr("Ngày lập")}>{formatDate(ob.created_at)}</Descriptions.Item>
             {ob.note && (
-              <Descriptions.Item label="Ghi chú" span={2}>
+              <Descriptions.Item label={tr("Ghi chú")} span={2}>
                 {ob.note}
               </Descriptions.Item>
             )}
@@ -298,7 +312,7 @@ export const OnboardingShow = () => {
               items={[
                 {
                   key: "files",
-                  label: `Hồ sơ đính kèm (${ob.attachments.length})`,
+                  label: trf("Hồ sơ đính kèm ({0})", [ob.attachments.length]),
                   children: (
                     <Attachments
                       doc={ob}
@@ -306,13 +320,13 @@ export const OnboardingShow = () => {
                       me={tenant.person_id}
                       canUpload
                       onChange={load}
-                      hint="CV, bằng cấp, chứng chỉ"
+                      hint={tr("CV, bằng cấp, chứng chỉ")}
                     />
                   ),
                 },
                 {
                   key: "comments",
-                  label: `Trao đổi (${ob.comments.filter((c) => !c.deleted_at).length})`,
+                  label: trf("Trao đổi ({0})", [ob.comments.filter((c) => !c.deleted_at).length]),
                   children: <Comments doc={ob} entityType={ENTITY} me={tenant.person_id} onChange={load} />,
                 },
               ]}
@@ -324,14 +338,16 @@ export const OnboardingShow = () => {
             round={ob.approval_round}
             steps={ob.approval_steps}
             history={ob.approval_history}
-            emptyHint="Chưa gửi duyệt. Chuỗi duyệt tính từ vị trí bổ nhiệm: quản lý trực tiếp rồi giám đốc công ty."
+            emptyHint={tr(
+              "Chưa gửi duyệt. Chuỗi duyệt tính từ vị trí bổ nhiệm: quản lý trực tiếp rồi giám đốc công ty.",
+            )}
           />
         </Col>
       </Row>
       <ActModal
         taskId={acting ? (task?.task_id ?? null) : null}
         viaDelegation={task?.via_delegation}
-        title={`Xử lý ${ob.doc_no}`}
+        title={trf("Xử lý {0}", [ob.doc_no])}
         onClose={() => setActing(false)}
         onDone={() => {
           setActing(false);
@@ -343,29 +359,29 @@ export const OnboardingShow = () => {
         title={
           <Space>
             <LockOutlined />
-            Dữ liệu đầy đủ của {ob.full_name}
+            {tr("Dữ liệu đầy đủ của ")} {ob.full_name}
           </Space>
         }
         onCancel={() => setSecret(null)}
-        footer={<Button onClick={() => setSecret(null)}>Đóng</Button>}
+        footer={<Button onClick={() => setSecret(null)}>{tr("Đóng")}</Button>}
         destroyOnClose
       >
         <Alert
           style={{ marginBottom: 12 }}
           type="info"
           showIcon
-          message="Lượt xem này đã được ghi vào nhật ký kiểm toán."
+          message={tr("Lượt xem này đã được ghi vào nhật ký kiểm toán.")}
         />
         <Descriptions bordered size="small" column={1}>
-          <Descriptions.Item label="Số CCCD">
+          <Descriptions.Item label={tr("Số CCCD")}>
             <Typography.Text copyable>{secret?.national_id ?? "—"}</Typography.Text>
           </Descriptions.Item>
-          <Descriptions.Item label="Địa chỉ">{secret?.address ?? "—"}</Descriptions.Item>
-          <Descriptions.Item label="Số tài khoản">
+          <Descriptions.Item label={tr("Địa chỉ")}>{secret?.address ?? "—"}</Descriptions.Item>
+          <Descriptions.Item label={tr("Số tài khoản")}>
             <Typography.Text copyable>{secret?.bank_account ?? "—"}</Typography.Text>
           </Descriptions.Item>
           {secret?.initial_password && (
-            <Descriptions.Item label={`Mật khẩu tạm (${secret.username})`}>
+            <Descriptions.Item label={trf("Mật khẩu tạm ({0})", [secret.username])}>
               <Typography.Text code copyable>
                 {secret.initial_password}
               </Typography.Text>

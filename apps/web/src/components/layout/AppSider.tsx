@@ -8,7 +8,7 @@ import gql from "graphql-tag";
 import { Globe, Puzzle } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
-import { useLocale } from "../../i18n";
+import { tr, useLocale } from "../../i18n";
 import { useModules } from "../../modules/useModules";
 import { cn } from "../../utils/cn";
 import { BambooLogo } from "./BambooLogo";
@@ -51,7 +51,7 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       aria-label={collapsed ? t(item.label) : undefined}
       className={cn(
         // Chuyển màu mượt kiểu macOS; cần ! vì CSS của Ant Design gắn "transition: color 0.3s" cho mọi thẻ <a>
-        "group relative flex h-9 items-center gap-3 rounded-ui text-[13.5px]",
+        "group relative flex h-9 items-center gap-3 rounded-xl text-[13.5px]",
         "transition-[background-color,box-shadow,color,transform]! duration-300! ease-[cubic-bezier(0.22,1,0.36,1)]!",
         "motion-safe:active:scale-[0.98]",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-400",
@@ -114,7 +114,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   // mô-đun ngoài đã bật: nhóm menu "Mở rộng", mỗi mục menu manifest khai là một trang trong khung nhúng (ADR #58)
   const external: NavGroup = {
     code: "E",
-    label: "Mở rộng",
+    label: tr("Mở rộng"),
     items: (overview?.modules ?? [])
       .filter((m) => m.external && m.enabled)
       .flatMap((m) =>
@@ -151,12 +151,15 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         )}
       </Link>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label={t("Điều hướng chính")}>
+      <nav
+        className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 [mask-image:linear-gradient(to_bottom,black_calc(100%-28px),transparent)]"
+        aria-label={t("Điều hướng chính")}
+      >
         {groups.map((group) => (
           <NavGate key={group.code} access={group.access}>
             <div className="mt-3 first:mt-1 [&:first-child>[role=separator]]:hidden">
               {/* Các nhóm ngăn bằng đường kẻ 2px thay cho tiêu đề nhóm (kiểu sidebar macOS) */}
-              <div role="separator" className={cn("mb-3 h-0.5 rounded-ui bg-line", collapsed ? "mx-2" : "mx-2.5")} />
+              <div role="separator" className={cn("mb-3 h-px bg-line", collapsed ? "mx-2" : "mx-2.5")} />
               <ul className="m-0 list-none space-y-0.5 p-0" aria-label={t(group.label)}>
                 {group.items.map((item) => (
                   <NavGate key={item.key} access={item.access}>
@@ -180,7 +183,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         <a
           href="#design-system"
           className={cn(
-            "group flex h-8 items-center gap-3 rounded-ui text-[13px] text-body! hover:bg-bamboo-600! hover:text-white!",
+            "group flex h-8 items-center gap-3 rounded-xl text-[13px] text-body! hover:bg-bamboo-600! hover:text-white!",
             "transition-[background-color,color]! duration-300! ease-[cubic-bezier(0.22,1,0.36,1)]!",
             collapsed ? "justify-center" : "px-2.5",
           )}
@@ -205,14 +208,13 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   );
 };
 
+// Thanh bên nổi kiểu macOS: tấm kính tách khỏi mép màn hình, bo góc rộng
 export const AppSider = ({ collapsed = false }: { collapsed?: boolean }) => (
-  <aside
-    className={cn(
-      "glass sticky top-0 hidden h-screen shrink-0 border-r md:block",
-      "transition-[width] duration-200 ease-out",
-      collapsed ? "w-[76px]" : "w-[248px]",
-    )}
-  >
-    <SiderContent collapsed={collapsed} />
-  </aside>
+  <div className={cn("sticky top-0 hidden h-screen shrink-0 p-3 pr-4 md:block", collapsed ? "w-[92px]" : "w-[264px]")}>
+    <aside
+      className={cn("glass-bar h-full overflow-hidden rounded-[24px]", "transition-[width] duration-200 ease-out")}
+    >
+      <SiderContent collapsed={collapsed} />
+    </aside>
+  </div>
 );

@@ -6,6 +6,7 @@ import { useMemo } from "react";
 
 import { parsePeriod, type Period } from "./period";
 import { useGql } from "./useGql";
+import { tr } from "../../../i18n";
 
 const ORG = `
   query AdminOrg {
@@ -77,10 +78,10 @@ type Raw = {
 };
 
 export const ASSIGNMENT_LABEL: Record<string, string> = {
-  PRIMARY: "Giữ chính",
-  CONCURRENT: "Kiêm nhiệm",
-  ACTING: "Quyền",
-  CONTRACT: "Hợp đồng",
+  PRIMARY: tr("Giữ chính"),
+  CONCURRENT: tr("Kiêm nhiệm"),
+  ACTING: tr("Quyền"),
+  CONTRACT: tr("Hợp đồng"),
 };
 
 export const useOrgData = () => {
@@ -133,8 +134,8 @@ export const assignmentsOf = (org: OrgData, personId: string) =>
     );
 
 export const SCOPE_LABEL: Record<string, string> = {
-  TENANT: "Cả tenant",
-  SUBTREE: "Nhánh (đơn vị và cấp dưới)",
-  UNIT: "Chỉ một đơn vị",
-  SELF: "Chỉ chứng từ của chính mình",
+  TENANT: tr("Cả tenant"),
+  SUBTREE: tr("Nhánh (đơn vị và cấp dưới)"),
+  UNIT: tr("Chỉ một đơn vị"),
+  SELF: tr("Chỉ chứng từ của chính mình"),
 };

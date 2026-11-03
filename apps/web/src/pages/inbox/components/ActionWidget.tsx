@@ -6,6 +6,7 @@ import { useEffect, useId, useState } from "react";
 
 import { cn } from "../../../utils/cn";
 import type { Decision } from "../types";
+import { tr } from "../../../i18n";
 
 const base =
   "inline-flex h-10 items-center justify-center rounded-ui text-[13.5px] transition-colors " +
@@ -31,7 +32,7 @@ export const ActionWidget = ({
 
   const decide = (d: Decision) => {
     if (d !== "approve" && !comment.trim()) {
-      setError(d === "return" ? "Nhập ý kiến để người nộp biết cần bổ sung gì." : "Nhập lý do từ chối.");
+      setError(d === "return" ? tr("Nhập ý kiến để người nộp biết cần bổ sung gì.") : tr("Nhập lý do từ chối."));
       document.getElementById(`${id}-comment`)?.focus();
       return;
     }
@@ -44,10 +45,10 @@ export const ActionWidget = ({
   return (
     <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-labelledby={`${id}-title`}>
       <h3 id={`${id}-title`} className="text-[14px] font-semibold text-ink">
-        Ý kiến
+        {tr("Ý kiến")}
       </h3>
       <label htmlFor={`${id}-comment`} className="sr-only">
-        Ý kiến của bạn
+        {tr("Ý kiến của bạn")}
       </label>
       <textarea
         id={`${id}-comment`}
@@ -59,7 +60,7 @@ export const ActionWidget = ({
         disabled={disabled}
         rows={3}
         maxLength={2000}
-        placeholder="Bắt buộc khi trả lại hoặc từ chối"
+        placeholder={tr("Bắt buộc khi trả lại hoặc từ chối")}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
@@ -84,7 +85,7 @@ export const ActionWidget = ({
             "w-full bg-bamboo-600 font-semibold text-white shadow-[0_1px_2px_rgb(31_81_42/0.25)] hover:bg-bamboo-700 focus-visible:outline-bamboo-500",
           )}
         >
-          Duyệt
+          {tr("Duyệt")}
         </button>
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -96,7 +97,7 @@ export const ActionWidget = ({
               "border border-line bg-canvas font-medium text-ink hover:bg-gray-200/60 focus-visible:outline-bamboo-500",
             )}
           >
-            Trả lại
+            {tr("Trả lại")}
           </button>
           <button
             type="button"
@@ -107,13 +108,13 @@ export const ActionWidget = ({
               "border border-red-300 bg-surface font-medium text-red-600 hover:bg-red-50 focus-visible:outline-red-500",
             )}
           >
-            Từ chối
+            {tr("Từ chối")}
           </button>
         </div>
       </div>
 
       <p className="mt-3 text-[11.5px] leading-relaxed text-muted">
-        {disabledReason ?? "Mọi quyết định đều qua hộp xác nhận và ghi nhật ký kiểm toán."}
+        {disabledReason ?? tr("Mọi quyết định đều qua hộp xác nhận và ghi nhật ký kiểm toán.")}
       </p>
     </section>
   );
