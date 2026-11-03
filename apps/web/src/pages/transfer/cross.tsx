@@ -16,6 +16,7 @@ import { StatusTag } from "../../components/StatusTag";
 import { formatDate, formatDay } from "../../utils/format";
 import { REQUESTER_KIND, STAGE_LABEL, type CrossTransfer } from "./types";
 import { TRO_CANCEL, TRO_DETAIL, TRO_LIST, TRO_SUBMIT, TR_MY_TASK_FOR } from "./queries";
+import { tr as trl, trf } from "../../i18n";
 
 const COLUMNS = { xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 };
 const STAGES = ["SOURCE", "TARGET", "GROUP", "DONE"] as const;
@@ -41,33 +42,33 @@ export const CrossTransferList = () => {
   });
   return (
     <List
-      title="Điều chuyển liên tập đoàn"
+      title={trl("Điều chuyển liên tập đoàn")}
       headerButtons={
         <Space>
-          <Button onClick={() => go({ to: "/h/transfer" })}>Điều chuyển nội bộ</Button>
-          <CreateButton resource="hr_transfer_request">Lập đề nghị</CreateButton>
+          <Button onClick={() => go({ to: "/h/transfer" })}>{trl("Điều chuyển nội bộ")}</Button>
+          <CreateButton resource="hr_transfer_request">{trl("Lập đề nghị")}</CreateButton>
         </Space>
       }
     >
       <Table {...tableProps} rowKey="id" scroll={{ x: 720 }}>
         <Table.Column
           dataIndex="doc_no"
-          title="Số"
+          title={trl("Số")}
           render={(v: string) => (
             <Typography.Text code style={{ whiteSpace: "nowrap" }}>
               {v}
             </Typography.Text>
           )}
         />
-        <Table.Column dataIndex="person_name" title="Nhân viên" />
-        <Table.Column dataIndex="target_unit_name" title="Đơn vị nơi đến" />
-        <Table.Column dataIndex="effective_date" title="Ngày chuyển" render={formatDay} responsive={["md"]} />
+        <Table.Column dataIndex="person_name" title={trl("Nhân viên")} />
+        <Table.Column dataIndex="target_unit_name" title={trl("Đơn vị nơi đến")} />
+        <Table.Column dataIndex="effective_date" title={trl("Ngày chuyển")} render={formatDay} responsive={["md"]} />
         <Table.Column<Row>
-          title="Đang ở"
+          title={trl("Đang ở")}
           render={(_, r) => (r.status === "PENDING" ? STAGE_LABEL[r.stage] : <StatusTag status={r.status} />)}
         />
-        <Table.Column dataIndex={["requester", "full_name"]} title="Người lập" responsive={["lg"]} />
-        <Table.Column dataIndex="created_at" title="Ngày lập" render={formatDate} responsive={["lg"]} />
+        <Table.Column dataIndex={["requester", "full_name"]} title={trl("Người lập")} responsive={["lg"]} />
+        <Table.Column dataIndex="created_at" title={trl("Ngày lập")} render={formatDate} responsive={["lg"]} />
         <Table.Column<Row> title="" render={(_, r) => <ShowButton hideText size="small" recordItemId={r.id} />} />
       </Table>
     </List>
@@ -103,7 +104,7 @@ export const CrossTransferShow = () => {
   if (error) return <Alert type="error" showIcon message={error} />;
   if (tr === undefined) return <Spin />;
   if (tr === null)
-    return <Alert type="warning" showIcon message="Không tìm thấy đề nghị hoặc bạn không có quyền xem." />;
+    return <Alert type="warning" showIcon message={trl("Không tìm thấy đề nghị hoặc bạn không có quyền xem.")} />;
 
   const mine = tr.requester_id === tenant.person_id;
   const submittable = mine && ["DRAFT", "RETURNED"].includes(tr.status);
@@ -127,25 +128,25 @@ export const CrossTransferShow = () => {
   const cancel = () => {
     let reason = "";
     modal.confirm({
-      title: `Hủy đề nghị ${tr.doc_no}?`,
+      title: trf("Hủy đề nghị {0}?", [tr.doc_no]),
       content: (
         <Input.TextArea
           rows={3}
-          placeholder="Lý do hủy (bắt buộc)"
+          placeholder={trl("Lý do hủy (bắt buộc)")}
           onChange={(e) => {
             reason = e.target.value;
           }}
         />
       ),
-      okText: "Hủy đề nghị",
+      okText: trl("Hủy đề nghị"),
       okButtonProps: { danger: true },
-      cancelText: "Không",
+      cancelText: trl("Không"),
       onOk: async () => {
         if (!reason.trim()) {
-          message.error("Phải ghi lý do hủy");
+          message.error(trl("Phải ghi lý do hủy"));
           throw new Error("missing reason");
         }
-        await run(TRO_CANCEL, { id: tr.id, reason: reason.trim() }, "Đã hủy đề nghị");
+        await run(TRO_CANCEL, { id: tr.id, reason: reason.trim() }, trl("Đã hủy đề nghị"));
       },
     });
   };
@@ -162,38 +163,48 @@ export const CrossTransferShow = () => {
         <Space wrap>
           {task && (
             <Button type="primary" icon={<AuditOutlined />} onClick={() => setActing(true)}>
-              Xử lý duyệt
+              {trl("Xử lý duyệt")}
             </Button>
           )}
           {submittable && (
             <Button
               type="primary"
               icon={<SendOutlined />}
-              onClick={() => run(TRO_SUBMIT, { id: tr.id }, "Đã gửi duyệt")}
+              onClick={() => run(TRO_SUBMIT, { id: tr.id }, trl("Đã gửi duyệt"))}
             >
-              Gửi duyệt
+              {trl("Gửi duyệt")}
             </Button>
           )}
           {cancellable && (
             <Button danger icon={<StopOutlined />} onClick={cancel}>
-              Hủy
+              {trl("Hủy")}
             </Button>
           )}
         </Space>
       )}
     >
       {returnedNote && (
-        <Alert style={{ marginBottom: 16 }} type="warning" showIcon message="Bị trả về" description={returnedNote} />
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="warning"
+          showIcon
+          message={trl("Bị trả về")}
+          description={returnedNote}
+        />
       )}
       {tr.status === "APPROVED" && (
         <Alert
           style={{ marginBottom: 16 }}
           type="success"
           showIcon
-          message={`Đã điều chuyển ${tr.person_name} đến ${tr.target_unit_name} từ ${formatDay(tr.effective_date)}`}
+          message={trf("Đã điều chuyển {0} đến {1} từ {2}", [
+            tr.person_name,
+            tr.target_unit_name,
+            formatDay(tr.effective_date),
+          ])}
         />
       )}
-      <Card title="Tiến trình">
+      <Card title={trl("Tiến trình")}>
         <Steps
           size="small"
           current={current}
@@ -202,24 +213,25 @@ export const CrossTransferShow = () => {
         />
         {(tr.status === "REJECTED" || tr.status === "CANCELLED") && (
           <Typography.Paragraph style={{ marginTop: 12 }} type="secondary">
-            Đề nghị đã {tr.status === "REJECTED" ? "bị từ chối" : "bị hủy"}; nhân viên giữ nguyên vị trí cũ.
+            {trl("Đề nghị đã ")} {tr.status === "REJECTED" ? trl("bị từ chối") : trl("bị hủy")}
+            {trl("; nhân viên giữ nguyên vị trí cũ.")}
           </Typography.Paragraph>
         )}
       </Card>
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={15}>
-          <Descriptions bordered size="small" column={COLUMNS} title={`Điều chuyển ${tr.person_name}`}>
-            <Descriptions.Item label="Vị trí hiện tại">
+          <Descriptions bordered size="small" column={COLUMNS} title={trf("Điều chuyển {0}", [tr.person_name])}>
+            <Descriptions.Item label={trl("Vị trí hiện tại")}>
               {tr.source_position?.name}, {tr.source_position?.org_unit.name}
             </Descriptions.Item>
-            <Descriptions.Item label="Đơn vị nơi đến">{tr.target_unit_name}</Descriptions.Item>
-            <Descriptions.Item label="Ngày chuyển">{formatDay(tr.effective_date)}</Descriptions.Item>
-            <Descriptions.Item label="Người lập">
+            <Descriptions.Item label={trl("Đơn vị nơi đến")}>{tr.target_unit_name}</Descriptions.Item>
+            <Descriptions.Item label={trl("Ngày chuyển")}>{formatDay(tr.effective_date)}</Descriptions.Item>
+            <Descriptions.Item label={trl("Người lập")}>
               {tr.requester?.full_name} – {tr.requester_position?.name}
               <br />
               {REQUESTER_KIND[tr.requester_kind]}
             </Descriptions.Item>
-            <Descriptions.Item label="Lý do / nguyện vọng" span={2}>
+            <Descriptions.Item label={trl("Lý do / nguyện vọng")} span={2}>
               {tr.reason}
             </Descriptions.Item>
           </Descriptions>
@@ -229,14 +241,14 @@ export const CrossTransferShow = () => {
             round={tr.approval_round}
             steps={tr.approval_steps}
             history={tr.approval_history}
-            emptyHint="Chưa gửi duyệt. Bước 1: quản lý trực tiếp; bước 2: HR của công ty nguồn."
+            emptyHint={trl("Chưa gửi duyệt. Bước 1: quản lý trực tiếp; bước 2: HR của công ty nguồn.")}
           />
         </Col>
       </Row>
       <ActModal
         taskId={acting ? (task?.task_id ?? null) : null}
         viaDelegation={task?.via_delegation}
-        title={`Xử lý ${tr.doc_no}`}
+        title={trf("Xử lý {0}", [tr.doc_no])}
         onClose={() => setActing(false)}
         onDone={() => {
           setActing(false);

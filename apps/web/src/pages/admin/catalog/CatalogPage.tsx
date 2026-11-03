@@ -32,35 +32,36 @@ import { useOrgData } from "../shared/orgData";
 import { useUnitTree } from "../shared/useUnitTree";
 import { useGql } from "../shared/useGql";
 import { MDM, ORG, usePermissions } from "../shared/usePermissions";
+import { tr, trf } from "../../../i18n";
 
 type Tab = "UNIT_TYPE" | "JOB_TITLE" | "ITEM_CATEGORY" | "partner" | "item";
 
 const TABS: { key: Tab; label: string; permission: string; hint: string }[] = [
   {
     key: "UNIT_TYPE",
-    label: "Loại đơn vị",
+    label: tr("Loại đơn vị"),
     permission: ORG,
-    hint: "Tập đoàn, công ty, khối, phòng, tổ… — dùng khi thêm đơn vị.",
+    hint: tr("Tập đoàn, công ty, khối, phòng, tổ… — dùng khi thêm đơn vị."),
   },
   {
     key: "JOB_TITLE",
-    label: "Chức danh",
+    label: tr("Chức danh"),
     permission: ORG,
-    hint: "Gắn cho vị trí (ghế); quy tắc duyệt có thể dựa vào chức danh.",
+    hint: tr("Gắn cho vị trí (ghế); quy tắc duyệt có thể dựa vào chức danh."),
   },
   {
     key: "ITEM_CATEGORY",
-    label: "Nhóm vật tư",
+    label: tr("Nhóm vật tư"),
     permission: MDM,
-    hint: "Phân nhóm vật tư; quy tắc duyệt mua sắm theo nhóm.",
+    hint: tr("Phân nhóm vật tư; quy tắc duyệt mua sắm theo nhóm."),
   },
   {
     key: "partner",
-    label: "Nhà cung cấp",
+    label: tr("Nhà cung cấp"),
     permission: MDM,
-    hint: "Nhà cung cấp bên ngoài, hoặc công ty trong tập đoàn (đơn hàng nội bộ).",
+    hint: tr("Nhà cung cấp bên ngoài, hoặc công ty trong tập đoàn (đơn hàng nội bộ)."),
   },
-  { key: "item", label: "Vật tư", permission: MDM, hint: "Hàng hóa, dịch vụ dùng trong đề nghị mua sắm." },
+  { key: "item", label: tr("Vật tư"), permission: MDM, hint: tr("Hàng hóa, dịch vụ dùng trong đề nghị mua sắm.") },
 ];
 
 const DATA = `
@@ -97,7 +98,7 @@ type Data = { core_catalog_item: Catalog[]; mdm_partner: Partner[]; mdm_item: It
 
 const Active = ({ on }: { on: boolean }) => (
   <span className="inline-flex items-center gap-1.5 text-[12.5px] text-body">
-    <Dot tone={on ? "success" : "neutral"} /> {on ? "Đang dùng" : "Ngừng dùng"}
+    <Dot tone={on ? "success" : "neutral"} /> {on ? tr("Đang dùng") : tr("Ngừng dùng")}
   </span>
 );
 
@@ -119,7 +120,7 @@ export const CatalogPage = () => {
       </div>
     );
   const tabs = TABS.filter((t) => perms.has(t.permission));
-  if (!tabs.length) return <NoAccess permission={`${ORG} hoặc ${MDM}`} />;
+  if (!tabs.length) return <NoAccess permission={trf("{0} hoặc {1}", [ORG, MDM])} />;
   const tab = tabs.find((t) => t.key === params.get("tab")) ?? tabs[0];
   const setTab = (key: Tab) => {
     setQuery("");
@@ -152,20 +153,20 @@ export const CatalogPage = () => {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <AdminHeader
-        title="Danh mục & dữ liệu chủ"
-        subtitle="Danh mục dùng chung của tenant · mã là khóa, nhập lại cùng mã là cập nhật"
+        title={tr("Danh mục & dữ liệu chủ")}
+        subtitle={tr("Danh mục dùng chung của tenant · mã là khóa, nhập lại cùng mã là cập nhật")}
         actions={
           <>
             <button type="button" className={secondaryButtonClass} onClick={() => setImporting(true)}>
-              <FileSpreadsheet className="h-4 w-4 text-body" strokeWidth={1.75} aria-hidden /> Nhập từ Excel
+              <FileSpreadsheet className="h-4 w-4 text-body" strokeWidth={1.75} aria-hidden /> {tr(" Nhập từ Excel")}
             </button>
             <button type="button" className={primaryButtonClass} onClick={() => setEditing({})}>
-              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Thêm {tab.label.toLowerCase()}
+              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden /> {tr(" Thêm ")} {tab.label.toLowerCase()}
             </button>
           </>
         }
       />
-      {q.error && <Alert type="error" showIcon message="Không tải được danh mục" description={q.error} />}
+      {q.error && <Alert type="error" showIcon message={tr("Không tải được danh mục")} description={q.error} />}
 
       <div className="flex flex-col gap-3">
         <Segmented<Tab>
@@ -179,7 +180,7 @@ export const CatalogPage = () => {
             className="w-full sm:w-[320px]"
             value={query}
             onChange={setQuery}
-            placeholder={`Tìm ${tab.label.toLowerCase()} theo mã, tên`}
+            placeholder={trf("Tìm {0} theo mã, tên", [tab.label.toLowerCase()])}
           />
           <span className="text-[12.5px] text-muted">{tab.hint}</span>
         </div>
@@ -188,7 +189,9 @@ export const CatalogPage = () => {
       {tab.key === "partner" && <ProposedPartners onAdopted={() => void q.reload()} />}
 
       <section className="rounded-2xl border border-line bg-surface px-3 pb-3 pt-1 shadow-card" aria-label={tab.label}>
-        <div className="px-2 pb-1 pt-2 text-[12px] tabular-nums text-muted">{count} mục</div>
+        <div className="px-2 pb-1 pt-2 text-[12px] tabular-nums text-muted">
+          {count} {tr(" mục")}
+        </div>
         <ConfigProvider theme={bambooTableTheme}>
           {isCatalog && (
             <Table<Catalog>
@@ -199,13 +202,13 @@ export const CatalogPage = () => {
               onRow={(r) => ({ onClick: () => setEditing({ row: r }), style: { cursor: "pointer" } })}
               columns={[
                 {
-                  title: "Mã",
+                  title: tr("Mã"),
                   dataIndex: "code",
                   width: 220,
                   render: (v: string) => <span className="font-mono text-[12px] text-body">{v}</span>,
                 },
                 {
-                  title: "Tên",
+                  title: tr("Tên"),
                   dataIndex: "name",
                   render: (v: string) => <span className="font-medium text-ink">{v}</span>,
                 },
@@ -222,30 +225,32 @@ export const CatalogPage = () => {
               onRow={(r) => ({ onClick: () => setEditing({ row: r }), style: { cursor: "pointer" } })}
               columns={[
                 {
-                  title: "Mã",
+                  title: tr("Mã"),
                   dataIndex: "code",
                   width: 140,
                   render: (v: string) => <span className="font-mono text-[12px] text-body">{v}</span>,
                 },
                 {
-                  title: "Nhà cung cấp",
+                  title: tr("Nhà cung cấp"),
                   render: (_, p) => (
                     <span className="flex flex-col">
                       <span className="font-medium text-ink">{p.name}</span>
                       {p.internal_unit && (
-                        <span className="text-[11.5px] text-bamboo-700">Nội bộ · {p.internal_unit.name}</span>
+                        <span className="text-[11.5px] text-bamboo-700">
+                          {tr("Nội bộ · ")} {p.internal_unit.name}
+                        </span>
                       )}
                     </span>
                   ),
                 },
                 {
-                  title: "Mã số thuế",
+                  title: tr("Mã số thuế"),
                   dataIndex: "tax_code",
                   width: 140,
                   render: (v: string | null) => <span className="tabular-nums text-body">{v ?? "—"}</span>,
                 },
                 {
-                  title: "Liên hệ",
+                  title: tr("Liên hệ"),
                   width: 220,
                   render: (_, p) => (
                     <span className="text-[12.5px] text-body">
@@ -253,7 +258,12 @@ export const CatalogPage = () => {
                     </span>
                   ),
                 },
-                { title: "Trạng thái", dataIndex: "is_active", width: 130, render: (v: boolean) => <Active on={v} /> },
+                {
+                  title: tr("Trạng thái"),
+                  dataIndex: "is_active",
+                  width: 130,
+                  render: (v: boolean) => <Active on={v} />,
+                },
               ]}
             />
           )}
@@ -267,25 +277,25 @@ export const CatalogPage = () => {
               onRow={(r) => ({ onClick: () => setEditing({ row: r }), style: { cursor: "pointer" } })}
               columns={[
                 {
-                  title: "Mã",
+                  title: tr("Mã"),
                   dataIndex: "code",
                   width: 140,
                   render: (v: string) => <span className="font-mono text-[12px] text-body">{v}</span>,
                 },
                 {
-                  title: "Vật tư",
+                  title: tr("Vật tư"),
                   dataIndex: "name",
                   render: (v: string) => <span className="font-medium text-ink">{v}</span>,
                 },
-                { title: "ĐVT", dataIndex: "uom", width: 90 },
+                { title: tr("ĐVT"), dataIndex: "uom", width: 90 },
                 {
-                  title: "Nhóm",
+                  title: tr("Nhóm"),
                   dataIndex: "category_code",
                   width: 160,
                   render: (v: string | null) => categories.find((c) => c.code === v)?.name ?? v ?? "—",
                 },
                 {
-                  title: "Giá tham khảo",
+                  title: tr("Giá tham khảo"),
                   dataIndex: "ref_price",
                   width: 150,
                   align: "right",
@@ -293,7 +303,12 @@ export const CatalogPage = () => {
                     <span className="tabular-nums">{v == null ? "—" : formatMoney(v)}</span>
                   ),
                 },
-                { title: "Trạng thái", dataIndex: "is_active", width: 130, render: (v: boolean) => <Active on={v} /> },
+                {
+                  title: tr("Trạng thái"),
+                  dataIndex: "is_active",
+                  width: 130,
+                  render: (v: boolean) => <Active on={v} />,
+                },
               ]}
             />
           )}
@@ -303,24 +318,30 @@ export const CatalogPage = () => {
       {isCatalog && (
         <FormModal<{ code: string; name: string }>
           open={Boolean(editing)}
-          title={editing?.row ? `Sửa ${tab.label.toLowerCase()}` : `Thêm ${tab.label.toLowerCase()}`}
+          title={editing?.row ? trf("Sửa {0}", [tab.label.toLowerCase()]) : trf("Thêm {0}", [tab.label.toLowerCase()])}
           initial={(editing?.row as Partial<{ code: string; name: string }>) ?? {}}
           onCancel={close}
           onSubmit={async (v) => {
             await adminSave("catalog_item", { id: editing?.row?.id, catalog: tab.key, ...v });
-            saved("Đã lưu.");
+            saved(tr("Đã lưu."));
           }}
         >
           {() => (
             <>
               <Form.Item
                 name="code"
-                label="Mã"
-                rules={[{ required: true, pattern: /^[A-Za-z0-9_.-]+$/, message: "Mã không dấu, không khoảng trắng" }]}
+                label={tr("Mã")}
+                rules={[
+                  { required: true, pattern: /^[A-Za-z0-9_.-]+$/, message: tr("Mã không dấu, không khoảng trắng") },
+                ]}
               >
                 <Input className="font-mono" placeholder="TRUONG_PHONG" />
               </Form.Item>
-              <Form.Item name="name" label="Tên" rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}>
+              <Form.Item
+                name="name"
+                label={tr("Tên")}
+                rules={[{ required: true, whitespace: true, message: tr("Nhập tên") }]}
+              >
                 <Input />
               </Form.Item>
             </>
@@ -330,53 +351,61 @@ export const CatalogPage = () => {
       {tab.key === "partner" && (
         <FormModal<Partial<Partner>>
           open={Boolean(editing)}
-          title={editing?.row ? "Sửa nhà cung cấp" : "Thêm nhà cung cấp"}
+          title={editing?.row ? tr("Sửa nhà cung cấp") : tr("Thêm nhà cung cấp")}
           width={640}
           initial={(editing?.row as Partial<Partner>) ?? { is_active: true }}
           onCancel={close}
           onSubmit={async (v) => {
             await adminSave("partner", { id: editing?.row?.id, ...v, internal_unit_id: v.internal_unit_id ?? null });
-            saved("Đã lưu nhà cung cấp.");
+            saved(tr("Đã lưu nhà cung cấp."));
           }}
         >
           {() => (
             <>
               <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
-                <Form.Item name="code" label="Mã" rules={[{ required: true, whitespace: true, message: "Nhập mã" }]}>
+                <Form.Item
+                  name="code"
+                  label={tr("Mã")}
+                  rules={[{ required: true, whitespace: true, message: tr("Nhập mã") }]}
+                >
                   <Input className="font-mono" />
                 </Form.Item>
-                <Form.Item name="name" label="Tên" rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}>
+                <Form.Item
+                  name="name"
+                  label={tr("Tên")}
+                  rules={[{ required: true, whitespace: true, message: tr("Nhập tên") }]}
+                >
                   <Input />
                 </Form.Item>
               </div>
               <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
-                <Form.Item name="tax_code" label="Mã số thuế">
+                <Form.Item name="tax_code" label={tr("Mã số thuế")}>
                   <Input />
                 </Form.Item>
-                <Form.Item name="email" label="Email" rules={[{ type: "email", message: "Email không hợp lệ" }]}>
+                <Form.Item name="email" label="Email" rules={[{ type: "email", message: tr("Email không hợp lệ") }]}>
                   <Input />
                 </Form.Item>
-                <Form.Item name="phone" label="Điện thoại">
+                <Form.Item name="phone" label={tr("Điện thoại")}>
                   <Input />
                 </Form.Item>
               </div>
-              <Form.Item name="address" label="Địa chỉ">
+              <Form.Item name="address" label={tr("Địa chỉ")}>
                 <Input />
               </Form.Item>
               <Form.Item
                 name="internal_unit_id"
-                label="Là công ty trong tập đoàn"
-                extra="Chọn đơn vị bán: đề nghị mua từ nhà cung cấp này tự sinh đơn hàng nội bộ (ADR #42)."
+                label={tr("Là công ty trong tập đoàn")}
+                extra={tr("Chọn đơn vị bán: đề nghị mua từ nhà cung cấp này tự sinh đơn hàng nội bộ (ADR #42).")}
               >
                 <TreeSelect
                   allowClear
                   treeData={tree}
                   showSearch
                   treeNodeFilterProp="title"
-                  placeholder="Nhà cung cấp bên ngoài"
+                  placeholder={tr("Nhà cung cấp bên ngoài")}
                 />
               </Form.Item>
-              <Form.Item name="is_active" label="Đang dùng" valuePropName="checked">
+              <Form.Item name="is_active" label={tr("Đang dùng")} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </>
@@ -386,7 +415,7 @@ export const CatalogPage = () => {
       {tab.key === "item" && (
         <FormModal<Partial<Item>>
           open={Boolean(editing)}
-          title={editing?.row ? "Sửa vật tư" : "Thêm vật tư"}
+          title={editing?.row ? tr("Sửa vật tư") : tr("Thêm vật tư")}
           initial={(editing?.row as Partial<Item>) ?? { is_active: true }}
           onCancel={close}
           onSubmit={async (v) => {
@@ -396,28 +425,36 @@ export const CatalogPage = () => {
               category_code: v.category_code ?? null,
               ref_price: v.ref_price ?? null,
             });
-            saved("Đã lưu vật tư.");
+            saved(tr("Đã lưu vật tư."));
           }}
         >
           {() => (
             <>
               <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
-                <Form.Item name="code" label="Mã" rules={[{ required: true, whitespace: true, message: "Nhập mã" }]}>
+                <Form.Item
+                  name="code"
+                  label={tr("Mã")}
+                  rules={[{ required: true, whitespace: true, message: tr("Nhập mã") }]}
+                >
                   <Input className="font-mono" />
                 </Form.Item>
-                <Form.Item name="name" label="Tên" rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}>
+                <Form.Item
+                  name="name"
+                  label={tr("Tên")}
+                  rules={[{ required: true, whitespace: true, message: tr("Nhập tên") }]}
+                >
                   <Input />
                 </Form.Item>
               </div>
               <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
                 <Form.Item
                   name="uom"
-                  label="Đơn vị tính"
-                  rules={[{ required: true, whitespace: true, message: "Nhập ĐVT" }]}
+                  label={tr("Đơn vị tính")}
+                  rules={[{ required: true, whitespace: true, message: tr("Nhập ĐVT") }]}
                 >
-                  <Input placeholder="cái" />
+                  <Input placeholder={tr("cái")} />
                 </Form.Item>
-                <Form.Item name="category_code" label="Nhóm vật tư">
+                <Form.Item name="category_code" label={tr("Nhóm vật tư")}>
                   <Select
                     allowClear
                     showSearch
@@ -425,7 +462,7 @@ export const CatalogPage = () => {
                     options={categories.map((c) => ({ value: c.code, label: c.name }))}
                   />
                 </Form.Item>
-                <Form.Item name="ref_price" label="Giá tham khảo">
+                <Form.Item name="ref_price" label={tr("Giá tham khảo")}>
                   <InputNumber<number>
                     className="w-full"
                     min={0}
@@ -435,7 +472,7 @@ export const CatalogPage = () => {
                   />
                 </Form.Item>
               </div>
-              <Form.Item name="is_active" label="Đang dùng" valuePropName="checked">
+              <Form.Item name="is_active" label={tr("Đang dùng")} valuePropName="checked">
                 <Switch />
               </Form.Item>
             </>
@@ -446,7 +483,7 @@ export const CatalogPage = () => {
         <ImportModal
           open
           kind={importKind}
-          label={isCatalog ? "danh mục" : tab.label.toLowerCase()}
+          label={isCatalog ? tr("danh mục") : tab.label.toLowerCase()}
           onClose={() => setImporting(false)}
           onDone={() => void q.reload()}
         />

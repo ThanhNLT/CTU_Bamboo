@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { request } from "../../../api/client";
 import { cn } from "../../../utils/cn";
 import type { Attachment, DocPreview } from "../types";
+import { tr } from "../../../i18n";
 
 const ZOOM_STEPS = [50, 75, 100, 125, 150];
 
@@ -112,10 +113,10 @@ export const DocumentViewer = ({
 
   return (
     <section
-      aria-label="Tài liệu đính kèm"
+      aria-label={tr("Tài liệu đính kèm")}
       className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface p-4 shadow-card", className)}
     >
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Tệp đính kèm">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label={tr("Tệp đính kèm")}>
         {attachments.map((a, i) => (
           <button
             key={a.id}
@@ -137,7 +138,9 @@ export const DocumentViewer = ({
         ))}
       </div>
 
-      {attachments.length === 0 && <p className="m-0 text-[12px] text-muted">Chứng từ không có tệp đính kèm.</p>}
+      {attachments.length === 0 && (
+        <p className="m-0 text-[12px] text-muted">{tr("Chứng từ không có tệp đính kèm.")}</p>
+      )}
 
       {file && (
         <div className="mt-3 flex items-center gap-1.5 text-[12px] text-muted">
@@ -149,7 +152,11 @@ export const DocumentViewer = ({
             <ShieldAlert className="h-4 w-4 text-red-600" strokeWidth={1.75} aria-hidden />
           )}
           <span className="min-w-0 flex-1 truncate">
-            {file.scan === "clean" ? "Sạch (ClamAV)" : file.scan === "pending" ? "Đang kiểm dịch" : "Bị chặn · mã độc"}
+            {file.scan === "clean"
+              ? tr("Sạch (ClamAV)")
+              : file.scan === "pending"
+                ? tr("Đang kiểm dịch")
+                : tr("Bị chặn · mã độc")}
             {file.sha256 && (
               <>
                 {" "}
@@ -166,7 +173,7 @@ export const DocumentViewer = ({
               onClick={() => void download(file.id)}
               className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-ui bg-black/[0.045] px-3 text-[12px] font-medium text-ink hover:bg-black/[0.07] focus-visible:outline-2 focus-visible:outline-bamboo-500"
             >
-              <Download className="h-3.5 w-3.5" aria-hidden /> Tải tệp
+              <Download className="h-3.5 w-3.5" aria-hidden /> {tr(" Tải tệp")}
             </button>
           )}
         </div>
@@ -187,11 +194,11 @@ export const DocumentViewer = ({
             </div>
           ) : file.scan === "pending" ? (
             <div className="flex h-full items-center justify-center text-[13px] text-muted">
-              Tệp đang được kiểm dịch, chưa xem được.
+              {tr("Tệp đang được kiểm dịch, chưa xem được.")}
             </div>
           ) : (
             <div className="flex h-full items-center justify-center text-[13px] text-red-700">
-              Tệp bị chặn, không hiển thị nội dung.
+              {tr("Tệp bị chặn, không hiển thị nội dung.")}
             </div>
           )}
         </div>
@@ -203,7 +210,7 @@ export const DocumentViewer = ({
               className={toolBtn}
               onClick={() => setZoom(ZOOM_STEPS[z - 1])}
               disabled={z <= 0}
-              aria-label="Thu nhỏ"
+              aria-label={tr("Thu nhỏ")}
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
@@ -213,7 +220,7 @@ export const DocumentViewer = ({
               className={toolBtn}
               onClick={() => setZoom(ZOOM_STEPS[z + 1])}
               disabled={z >= ZOOM_STEPS.length - 1}
-              aria-label="Phóng to"
+              aria-label={tr("Phóng to")}
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -223,7 +230,7 @@ export const DocumentViewer = ({
               className={toolBtn}
               onClick={() => setPage((p) => p - 1)}
               disabled={page <= 1}
-              aria-label="Trang trước"
+              aria-label={tr("Trang trước")}
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>

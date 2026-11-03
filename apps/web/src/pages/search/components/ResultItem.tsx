@@ -9,6 +9,7 @@ import { StatusTag } from "../../../components/StatusTag";
 import { cn } from "../../../utils/cn";
 import { highlight } from "../engine";
 import type { ResultType, SearchResult } from "../types";
+import { tr, trf } from "../../../i18n";
 
 const ICON: Record<ResultType, { icon: LucideIcon; className: string }> = {
   twin: { icon: Cpu, className: "bg-bamboo-50 text-bamboo-700" },
@@ -83,12 +84,12 @@ export const ResultItem = ({
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11.5px]">
           {result.semantic != null && (
             <span className="inline-flex h-6 items-center rounded-ui border border-bamboo-200 bg-bamboo-50 px-2.5 font-medium text-bamboo-800">
-              Khớp ý nghĩa {fmtScore(result.semantic)}
+              {tr("Khớp ý nghĩa ")} {fmtScore(result.semantic)}
             </span>
           )}
           {result.keyword && (
             <span className="inline-flex h-6 items-center rounded-ui border border-line bg-surface px-2.5 font-medium text-body">
-              {result.matchedField ? `Khớp từ khóa · ${result.matchedField}` : "Khớp từ khóa"}
+              {result.matchedField ? trf("Khớp từ khóa · {0}", [result.matchedField]) : tr("Khớp từ khóa")}
             </span>
           )}
           {result.updatedLabel && (
@@ -103,7 +104,7 @@ export const ResultItem = ({
               className="inline-flex h-6 items-center gap-1 rounded-ui border border-line bg-surface px-2.5 font-medium text-ink hover:bg-canvas"
             >
               <Download className="h-3 w-3" aria-hidden />
-              Tải tệp
+              {tr("Tải tệp")}
             </button>
           )}
         </div>

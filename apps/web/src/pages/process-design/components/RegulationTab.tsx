@@ -9,6 +9,7 @@ import { Link } from "react-router";
 import { primaryButtonClass } from "../../../components/ui";
 import { PROPOSAL_STATUS } from "../../knowledge-library/labels";
 import type { Regulation } from "../types";
+import { tr, trf } from "../../../i18n";
 
 /** Văn bản quy định của quy trình: lập từ phiên bản đã phát hành, đi qua chuỗi duyệt rồi thành quy định đang hiệu lực. */
 export const RegulationTab = ({
@@ -42,28 +43,29 @@ export const RegulationTab = ({
   return (
     <section
       className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card"
-      aria-label="Quy định"
+      aria-label={tr("Quy định")}
     >
       <div>
-        <h2 className="m-0 text-[14px] font-semibold text-ink">Văn bản quy định của quy trình</h2>
+        <h2 className="m-0 text-[14px] font-semibold text-ink">{tr("Văn bản quy định của quy trình")}</h2>
         <p className="m-0 mt-1 text-[12.5px] text-body">
-          Từ phiên bản đã phát hành, hệ thống lập văn bản quy định (các bước, người thực hiện, thời hạn, chuyển tiếp,
-          kèm hình sơ đồ) và đề xuất vào thư viện tri thức. Văn bản đi theo chuỗi duyệt tài liệu; duyệt xong là quy định
-          đang hiệu lực của công ty, thay thế quy định của phiên bản trước.
+          {tr(
+            "Từ phiên bản đã phát hành, hệ thống lập văn bản quy định (các bước, người thực hiện, thời hạn, chuyển tiếp, kèm hình sơ đồ) và đề xuất vào thư viện tri thức. Văn bản đi theo chuỗi duyệt tài liệu; duyệt xong là quy định đang hiệu lực của công ty, thay thế quy định của phiên bản trước.",
+          )}
         </p>
       </div>
 
       <div className="rounded-xl border border-line/80 p-3 text-[13px]">
         {live ? (
           <>
-            <Tag color="green">Đang hiệu lực</Tag>
+            <Tag color="green">{tr("Đang hiệu lực")}</Tag>
             <Link to={`/h/library?doc=${live.id}`} className="font-mono text-[12.5px]">
               {live.docNo}
             </Link>{" "}
-            · quy trình v{live.version} · {live.publishedAt}
+            {tr("· quy trình v")}
+            {live.version} · {live.publishedAt}
           </>
         ) : (
-          <span className="text-muted">Chưa có quy định nào đang hiệu lực cho quy trình này.</span>
+          <span className="text-muted">{tr("Chưa có quy định nào đang hiệu lực cho quy trình này.")}</span>
         )}
       </div>
 
@@ -75,13 +77,15 @@ export const RegulationTab = ({
             disabled={busy || latestVersion === null || open}
             onClick={() => void draft()}
           >
-            {busy ? "Đang lập…" : `Lập văn bản quy định${latestVersion ? ` cho v${latestVersion}` : ""}`}
+            {busy ? tr("Đang lập…") : trf("Lập văn bản quy định{0}", [latestVersion ? ` cho v${latestVersion}` : ""])}
           </button>
           <Checkbox checked={submit} onChange={(e) => setSubmit(e.target.checked)}>
-            Gửi duyệt ngay
+            {tr("Gửi duyệt ngay")}
           </Checkbox>
-          {latestVersion === null && <span className="text-[12.5px] text-muted">Phát hành quy trình trước.</span>}
-          {open && <span className="text-[12.5px] text-muted">Phiên bản này đã có văn bản quy định.</span>}
+          {latestVersion === null && (
+            <span className="text-[12.5px] text-muted">{tr("Phát hành quy trình trước.")}</span>
+          )}
+          {open && <span className="text-[12.5px] text-muted">{tr("Phiên bản này đã có văn bản quy định.")}</span>}
         </div>
       )}
 
@@ -98,14 +102,17 @@ export const RegulationTab = ({
               >
                 {r.docNo}
               </Link>
-              <span className="text-muted">quy trình v{r.version}</span>
+              <span className="text-muted">
+                {tr("quy trình v")}
+                {r.version}
+              </span>
             </li>
           ))}
         </ul>
       )}
       {sources.length > 0 && (
         <p className="m-0 text-[12.5px] text-muted">
-          Dựng từ văn bản:{" "}
+          {tr("Dựng từ văn bản:")}{" "}
           {sources.map((r, i) => (
             <span key={r.id}>
               {i > 0 && ", "}

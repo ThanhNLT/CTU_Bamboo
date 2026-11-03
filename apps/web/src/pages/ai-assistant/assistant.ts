@@ -4,6 +4,7 @@
 
 import { request, wsClient } from "../../api/client";
 import type { Assistant, Citation, HistoryGroup, Question } from "./types";
+import { tr, trf } from "../../i18n";
 
 const FIELDS = `id question status answer thinking citations guard error model kb_document_id created_at started_at finished_at`;
 
@@ -72,18 +73,18 @@ export const citationLink = (c: Citation) => `/h/library?doc=${encodeURIComponen
 export const plainText = (q: Question) =>
   [
     q.answer.replace(/\*\*/g, ""),
-    ...(q.citations.length ? ["", "Nguồn:", ...q.citations.map((c) => `[${c.n}] ${citationLabel(c)}`)] : []),
+    ...(q.citations.length ? ["", tr("Nguồn:"), ...q.citations.map((c) => `[${c.n}] ${citationLabel(c)}`)] : []),
   ].join("\n");
 
 export const refusalText = (q: Question) =>
   q.guard === "prompt"
-    ? "Câu hỏi bị chặn vì có dấu hiệu cố tình thay đổi chỉ dẫn của trợ lý."
-    : q.answer || "Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem.";
+    ? tr("Câu hỏi bị chặn vì có dấu hiệu cố tình thay đổi chỉ dẫn của trợ lý.")
+    : q.answer || tr("Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem.");
 
 export const elapsed = (q: Question) => {
   if (!q.started_at || !q.finished_at) return null;
   const s = (new Date(q.finished_at).getTime() - new Date(q.started_at).getTime()) / 1000;
-  return `${s.toFixed(1).replace(".", ",")} giây`;
+  return trf("{0} giây", [s.toFixed(1).replace(".", ",")]);
 };
 
 export const titleFrom = (text: string) => (text.length > 60 ? `${text.slice(0, 57).trimEnd()}…` : text);
@@ -95,8 +96,8 @@ export const groupOf = (iso: string, now = new Date()): HistoryGroup => {
 };
 
 export const GROUP_LABEL: Record<HistoryGroup, string> = {
-  today: "Hôm nay",
-  yesterday: "Hôm qua",
-  lastWeek: "7 ngày qua",
-  older: "Cũ hơn",
+  today: tr("Hôm nay"),
+  yesterday: tr("Hôm qua"),
+  lastWeek: tr("7 ngày qua"),
+  older: tr("Cũ hơn"),
 };

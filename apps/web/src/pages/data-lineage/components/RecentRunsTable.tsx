@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { cn } from "../../../utils/cn";
 import type { RunResult, RunRow } from "../types";
+import { tr } from "../../../i18n";
 
 const DEFAULT_ROWS = 3;
 
@@ -14,14 +15,14 @@ const ResultBadge = ({ result }: { result: RunResult }) => {
     return (
       <span className="inline-flex h-6 items-center gap-1.5 rounded-ui border border-red-200 bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
         <span className="h-1.5 w-1.5 rounded-ui bg-red-500" aria-hidden />
-        Lỗi kiểm tra
+        {tr("Lỗi kiểm tra")}
       </span>
     );
   }
   const map: Record<Exclude<RunResult, "check_failed">, { dot: string; label: string; text: string }> = {
-    success: { dot: "bg-bamboo-500", label: "Thành công", text: "text-ink" },
-    failed: { dot: "bg-red-500", label: "Thất bại", text: "text-red-700" },
-    running: { dot: "bg-sky-500 motion-safe:animate-pulse", label: "Đang chạy", text: "text-ink" },
+    success: { dot: "bg-bamboo-500", label: tr("Thành công"), text: "text-ink" },
+    failed: { dot: "bg-red-500", label: tr("Thất bại"), text: "text-red-700" },
+    running: { dot: "bg-sky-500 motion-safe:animate-pulse", label: tr("Đang chạy"), text: "text-ink" },
   };
   const m = map[result];
   return (
@@ -45,9 +46,9 @@ export const RecentRunsTable = ({
   const rows = showAll ? runs : runs.slice(0, DEFAULT_ROWS);
 
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Lần chạy gần đây">
+    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label={tr("Lần chạy gần đây")}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-ink">Lần chạy gần đây</h2>
+        <h2 className="text-[15px] font-semibold text-ink">{tr("Lần chạy gần đây")}</h2>
         {runs.length > DEFAULT_ROWS && (
           <button
             type="button"
@@ -55,7 +56,7 @@ export const RecentRunsTable = ({
             aria-expanded={showAll}
             className="rounded-md text-[12.5px] font-semibold text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
           >
-            {showAll ? "Thu gọn" : "Xem tất cả"}
+            {showAll ? tr("Thu gọn") : tr("Xem tất cả")}
           </button>
         )}
       </div>
@@ -65,16 +66,16 @@ export const RecentRunsTable = ({
           <thead>
             <tr className="text-left text-[11.5px] text-muted">
               <th scope="col" className="border-b border-line py-2 pr-3 font-medium">
-                Tác vụ
+                {tr("Tác vụ")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Bắt đầu
+                {tr("Bắt đầu")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Thời lượng
+                {tr("Thời lượng")}
               </th>
               <th scope="col" className="border-b border-line py-2 pl-3 font-medium">
-                Kết quả
+                {tr("Kết quả")}
               </th>
             </tr>
           </thead>

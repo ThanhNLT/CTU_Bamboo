@@ -13,6 +13,7 @@ import { useSession } from "../../auth/useSession";
 import { PurchaseRequestForm, type PrFormValues, NEW_PARTNER } from "./form";
 import { PR_DETAIL } from "./queries";
 import type { PurchaseRequest } from "./types";
+import { tr, trf } from "../../i18n";
 
 export const PurchaseRequestEdit = () => {
   const { id } = useParsed();
@@ -29,9 +30,9 @@ export const PurchaseRequestEdit = () => {
 
   if (error) return <Alert type="error" message={error} />;
   if (pr === undefined) return <Spin />;
-  if (pr === null) return <Alert type="warning" message="Không tìm thấy đề nghị" />;
+  if (pr === null) return <Alert type="warning" message={tr("Không tìm thấy đề nghị")} />;
   if (pr.requester_id !== tenant.person_id || !["DRAFT", "RETURNED"].includes(pr.status)) {
-    return <Alert type="info" showIcon message="Chỉ người lập sửa được đề nghị đang nháp hoặc bị trả về." />;
+    return <Alert type="info" showIcon message={tr("Chỉ người lập sửa được đề nghị đang nháp hoặc bị trả về.")} />;
   }
 
   const initial: Partial<PrFormValues> = {
@@ -52,13 +53,15 @@ export const PurchaseRequestEdit = () => {
     })),
   };
   return (
-    <Edit title={`Sửa ${pr.doc_no}`} footerButtons={() => null} headerButtons={() => null}>
+    <Edit title={trf("Sửa {0}", [pr.doc_no])} footerButtons={() => null} headerButtons={() => null}>
       {pr.status === "RETURNED" && (
         <Alert
           style={{ marginBottom: 16 }}
           type="warning"
           showIcon
-          message="Đề nghị bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại (chuỗi duyệt tính lại theo hạn mức hiện hành)."
+          message={tr(
+            "Đề nghị bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại (chuỗi duyệt tính lại theo hạn mức hiện hành).",
+          )}
         />
       )}
       <PurchaseRequestForm

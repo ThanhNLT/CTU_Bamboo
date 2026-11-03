@@ -8,13 +8,14 @@ import type { MonthlyPoint } from "../types";
 import { AXIS_TICK, BAMBOO_DARK, GRID_STROKE } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget } from "./ChartWidget";
+import { tr, trf } from "../../../i18n";
 
 export const MonthlyApprovalsChart = ({ data, year, meta }: { data: MonthlyPoint[]; year: number; meta: string }) => {
   const names: Record<string, string> = { current: String(year), previous: String(year - 1) };
   const max = Math.max(4, ...data.map((d) => Math.max(d.current ?? 0, d.previous)));
   return (
-    <ChartWidget title="Hồ sơ duyệt theo tháng" meta={meta}>
-      <ul className="m-0 mb-2 flex list-none gap-4 p-0 text-[11.5px] text-body" aria-label="Chú giải">
+    <ChartWidget title={tr("Hồ sơ duyệt theo tháng")} meta={meta}>
+      <ul className="m-0 mb-2 flex list-none gap-4 p-0 text-[11.5px] text-body" aria-label={tr("Chú giải")}>
         <li className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: BAMBOO_DARK }} aria-hidden />
           {year}
@@ -29,7 +30,7 @@ export const MonthlyApprovalsChart = ({ data, year, meta }: { data: MonthlyPoint
       <div
         className="h-[230px]"
         role="img"
-        aria-label={`Biểu đồ cột hồ sơ duyệt theo tháng năm ${year}, so với đường năm ${year - 1}`}
+        aria-label={trf("Biểu đồ cột hồ sơ duyệt theo tháng năm {0}, so với đường năm {1}", [year, year - 1])}
       >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }} barCategoryGap="28%">
@@ -46,7 +47,7 @@ export const MonthlyApprovalsChart = ({ data, year, meta }: { data: MonthlyPoint
             <Tooltip
               cursor={{ fill: "rgba(47,122,62,0.06)" }}
               content={(p) => (
-                <ChartTooltip {...(p as unknown as TipProps)} nameOf={(k) => names[k] ?? k} unit=" hồ sơ" />
+                <ChartTooltip {...(p as unknown as TipProps)} nameOf={(k) => names[k] ?? k} unit={tr(" hồ sơ")} />
               )}
             />
             <Bar dataKey="current" fill={BAMBOO_DARK} radius={[4, 4, 0, 0]} isAnimationActive={false} />

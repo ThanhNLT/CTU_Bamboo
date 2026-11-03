@@ -10,6 +10,7 @@ import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import { fold } from "../../../utils/text";
 import type { Unit } from "../shared/orgData";
+import { tr, trf } from "../../../i18n";
 
 type Node = { key: string; title: ReactNode; children: Node[]; isLeaf?: boolean };
 
@@ -73,7 +74,7 @@ export const UnitTree = ({
 
   return (
     <section
-      aria-label="Cây đơn vị"
+      aria-label={tr("Cây đơn vị")}
       className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface p-3 shadow-card", className)}
     >
       <SearchInput
@@ -82,12 +83,14 @@ export const UnitTree = ({
           setQuery(v);
           setExpanded(undefined);
         }}
-        placeholder="Tìm đơn vị theo tên, mã"
+        placeholder={tr("Tìm đơn vị theo tên, mã")}
       />
       <div className="mt-2 flex items-center justify-between px-1 text-[11.5px] text-muted">
-        <span>{query ? `${matches} kết quả` : `${units.filter((u) => !u.period.ended).length} đơn vị`}</span>
+        <span>
+          {query ? trf("{0} kết quả", [matches]) : trf("{0} đơn vị", [units.filter((u) => !u.period.ended).length])}
+        </span>
         <Checkbox checked={showEnded} onChange={(e) => onShowEndedChange(e.target.checked)}>
-          <span className="text-[11.5px] text-muted">Hiện đã ngừng</span>
+          <span className="text-[11.5px] text-muted">{tr("Hiện đã ngừng")}</span>
         </Checkbox>
       </div>
       <div className="mt-2 min-h-0 flex-1 overflow-auto">

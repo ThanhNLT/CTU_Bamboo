@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { request } from "../../api/client";
 import type { SearchResult } from "./types";
+import { tr, trf } from "../../i18n";
 
 const PAGE = 20;
 
@@ -40,15 +41,15 @@ type Hit = {
 };
 
 const FIELD: Record<string, string> = {
-  doc_no: "Số chứng từ",
-  title: "Tiêu đề",
-  description: "Mô tả",
-  items: "Dòng hàng",
-  partner: "Nhà cung cấp",
-  requester: "Người lập",
-  org_unit: "Đơn vị",
-  content: "Nội dung tệp",
-  file_name: "Tên tệp",
+  doc_no: tr("Số chứng từ"),
+  title: tr("Tiêu đề"),
+  description: tr("Mô tả"),
+  items: tr("Dòng hàng"),
+  partner: tr("Nhà cung cấp"),
+  requester: tr("Người lập"),
+  org_unit: tr("Đơn vị"),
+  content: tr("Nội dung tệp"),
+  file_name: tr("Tên tệp"),
 };
 
 const toResult = (h: Hit, i: number): SearchResult => {
@@ -61,8 +62,8 @@ const toResult = (h: Hit, i: number): SearchResult => {
       title: file && h.file_name ? h.file_name : (kb?.title ?? h.entity_id),
       code: kb?.doc_no,
       breadcrumb: file
-        ? `Thư viện tri thức › ${kb ? `${kb.doc_no} ${kb.title}` : h.entity_id}`
-        : `Thư viện tri thức${kb?.org_unit ? ` · ${kb.org_unit.name}` : ""}`,
+        ? trf("Thư viện tri thức › {0}", [kb ? `${kb.doc_no} ${kb.title}` : h.entity_id])
+        : trf("Thư viện tri thức{0}", [kb?.org_unit ? ` · ${kb.org_unit.name}` : ""]),
       snippetHtml: h.snippet,
       to: `/h/library?doc=${h.entity_id}`,
       keyword: true,
@@ -78,7 +79,7 @@ const toResult = (h: Hit, i: number): SearchResult => {
       key: `doc:${h.kind}:${h.attachment_id ?? h.entity_id}`,
       type: "document",
       title: h.file_name ?? h.entity_id,
-      breadcrumb: "Tệp đính kèm › Hồ sơ tiếp nhận nhân sự",
+      breadcrumb: tr("Tệp đính kèm › Hồ sơ tiếp nhận nhân sự"),
       snippetHtml: h.snippet,
       to: `/h/onboarding/show/${h.entity_id}`,
       keyword: true,
@@ -97,8 +98,8 @@ const toResult = (h: Hit, i: number): SearchResult => {
     code: pr?.doc_no,
     breadcrumb:
       h.kind === "attachment"
-        ? `Tệp đính kèm › ${pr ? `${pr.doc_no} ${pr.title}` : h.entity_id}`
-        : `Hồ sơ › Đề nghị mua sắm${meta ? ` · ${meta}` : ""}`,
+        ? trf("Tệp đính kèm › {0}", [pr ? `${pr.doc_no} ${pr.title}` : h.entity_id])
+        : trf("Hồ sơ › Đề nghị mua sắm{0}", [meta ? ` · ${meta}` : ""]),
     snippetHtml: h.snippet,
     to: `/p/documents/show/${h.entity_id}`,
     keyword: true,

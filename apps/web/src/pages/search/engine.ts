@@ -4,6 +4,7 @@
 
 import { fold } from "../../utils/text";
 import type { Company, ResultType, SearchResult, SortKey, TimeRange } from "./types";
+import { trf } from "../../i18n";
 
 const STOPWORDS = new Set([
   "may",
@@ -100,4 +101,4 @@ export const highlight = (text: string, terms: string[]): Segment[] => {
   return out;
 };
 
-export const formatSeconds = (ms: number) => `${(Math.max(ms, 10) / 1000).toFixed(2).replace(".", ",")} giây`;
+export const formatSeconds = (ms: number) => trf("{0} giây", [(Math.max(ms, 10) / 1000).toFixed(2).replace(".", ",")]);

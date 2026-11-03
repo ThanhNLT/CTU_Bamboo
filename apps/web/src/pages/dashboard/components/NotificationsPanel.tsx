@@ -7,6 +7,7 @@ import { useNavigate } from "react-router";
 import { cn } from "../../../utils/cn";
 import type { NotificationItem } from "../types";
 import { Panel, PanelLink, TONE_DOT } from "../../../components/ui";
+import { tr } from "../../../i18n";
 
 export const NotificationsPanel = ({
   items,
@@ -27,11 +28,11 @@ export const NotificationsPanel = ({
 
   return (
     <Panel
-      title="Thông báo"
-      extra={<PanelLink onClick={unread > 0 ? () => void onRead() : undefined}>Đọc hết</PanelLink>}
+      title={tr("Thông báo")}
+      extra={<PanelLink onClick={unread > 0 ? () => void onRead() : undefined}>{tr("Đọc hết")}</PanelLink>}
       bodyClassName="px-5 pb-5 pt-1"
     >
-      {items.length === 0 && <p className="py-4 text-center text-[13px] text-muted">Chưa có thông báo.</p>}
+      {items.length === 0 && <p className="py-4 text-center text-[13px] text-muted">{tr("Chưa có thông báo.")}</p>}
       <ul className="m-0 list-none space-y-4 p-0">
         {items.slice(0, limit).map((n) => (
           <li key={n.id}>
@@ -41,7 +42,7 @@ export const NotificationsPanel = ({
                   "mt-[6px] h-2 w-2 shrink-0 rounded-ui",
                   n.read ? "border border-gray-300 bg-transparent" : TONE_DOT[n.tone],
                 )}
-                aria-label={n.read ? "Đã đọc" : "Chưa đọc"}
+                aria-label={n.read ? tr("Đã đọc") : tr("Chưa đọc")}
               />
               <span className="min-w-0">
                 <span

@@ -15,6 +15,7 @@ import "./diagram.css";
 import { request } from "../../api/client";
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, STEP_STATUS } from "../../utils/format";
+import { tr, trf } from "../../i18n";
 
 const PROCESS_STATE = `
   query ProcessState($id: uuid!) {
@@ -71,7 +72,11 @@ const stepLabel = (steps: Step[]) => {
 };
 
 const state = (s: State, id: string) =>
-  s.active_activity_ids.includes(id) ? "Đang chạy" : s.completed_activity_ids.includes(id) ? "Đã qua" : "Chưa tới";
+  s.active_activity_ids.includes(id)
+    ? tr("Đang chạy")
+    : s.completed_activity_ids.includes(id)
+      ? tr("Đã qua")
+      : tr("Chưa tới");
 
 export const ProcessDiagram = () => {
   const { id } = useParams();
@@ -116,14 +121,15 @@ export const ProcessDiagram = () => {
           else setPicked({ id: element.id, type: element.type, name: element.businessObject?.name });
         });
       })
-      .catch((e: Error) => alive && setError(`Không hiển thị được sơ đồ: ${e.message}`));
+      .catch((e: Error) => alive && setError(trf("Không hiển thị được sơ đồ: {0}", [e.message])));
     return () => {
       alive = false;
       viewer.destroy();
     };
   }, [data]);
 
-  if (error) return <Alert type="error" showIcon message={error} action={<Button onClick={load}>Thử lại</Button>} />;
+  if (error)
+    return <Alert type="error" showIcon message={error} action={<Button onClick={load}>{tr("Thử lại")}</Button>} />;
   if (!data) return <Spin />;
   const { state: s, pr } = data;
   const steps = pr?.approval_steps.filter((x) => x.round === s.round) ?? [];
@@ -135,17 +141,23 @@ export const ProcessDiagram = () => {
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
-            aria-label="Về đề nghị"
+            aria-label={tr("Về đề nghị")}
             onClick={() => go({ to: { resource: "proc_purchase_request", action: "show", id: id! } })}
           />
-          <span>Sơ đồ quy trình {pr?.doc_no}</span>
+          <span>
+            {tr("Sơ đồ quy trình ")} {pr?.doc_no}
+          </span>
           <StatusTag status={s.status} />
-          {s.round > 0 && <Tag>Lần gửi {s.round}</Tag>}
+          {s.round > 0 && (
+            <Tag>
+              {tr("Lần gửi ")} {s.round}
+            </Tag>
+          )}
         </Space>
       }
       extra={
         <Button icon={<ReloadOutlined />} onClick={load}>
-          Tải lại
+          {tr("Tải lại")}
         </Button>
       }
     >
@@ -154,24 +166,26 @@ export const ProcessDiagram = () => {
           style={{ marginBottom: 12 }}
           type="info"
           showIcon
-          message="Bộ máy quy trình chưa đồng bộ xong; trạng thái trên sơ đồ suy ra từ dữ liệu chứng từ."
+          message={tr("Bộ máy quy trình chưa đồng bộ xong; trạng thái trên sơ đồ suy ra từ dữ liệu chứng từ.")}
         />
       )}
-      {s.round === 0 && <Alert style={{ marginBottom: 12 }} type="info" showIcon message="Đề nghị chưa gửi duyệt." />}
+      {s.round === 0 && (
+        <Alert style={{ marginBottom: 12 }} type="info" showIcon message={tr("Đề nghị chưa gửi duyệt.")} />
+      )}
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={17}>
           <div
             ref={container}
             className="bamboo-bpmn"
             role="img"
-            aria-label={`Sơ đồ quy trình duyệt ${pr?.doc_no ?? ""}`}
+            aria-label={trf("Sơ đồ quy trình duyệt {0}", [pr?.doc_no ?? ""])}
           />
           <Space style={{ marginTop: 8 }} wrap>
-            <span className="bamboo-legend bamboo-legend-active">Đang chạy</span>
-            <span className="bamboo-legend bamboo-legend-done">Đã qua</span>
-            <span className="bamboo-legend">Chưa tới</span>
+            <span className="bamboo-legend bamboo-legend-active">{tr("Đang chạy")}</span>
+            <span className="bamboo-legend bamboo-legend-done">{tr("Đã qua")}</span>
+            <span className="bamboo-legend">{tr("Chưa tới")}</span>
             <Typography.Text type="secondary">
-              Nhấn vào một bước để xem chi tiết; kéo để di chuyển, cuộn để phóng to.
+              {tr("Nhấn vào một bước để xem chi tiết; kéo để di chuyển, cuộn để phóng to.")}
             </Typography.Text>
           </Space>
         </Col>
@@ -179,13 +193,13 @@ export const ProcessDiagram = () => {
           {picked && (
             <Card size="small" title={picked.name || picked.id} style={{ marginBottom: 16 }}>
               <Descriptions size="small" column={1}>
-                <Descriptions.Item label="Trạng thái">{state(s, picked.id)}</Descriptions.Item>
+                <Descriptions.Item label={tr("Trạng thái")}>{state(s, picked.id)}</Descriptions.Item>
               </Descriptions>
             </Card>
           )}
-          <Card size="small" title="Các bước duyệt">
+          <Card size="small" title={tr("Các bước duyệt")}>
             {steps.length === 0 ? (
-              <Typography.Text type="secondary">Chưa có bước duyệt.</Typography.Text>
+              <Typography.Text type="secondary">{tr("Chưa có bước duyệt.")}</Typography.Text>
             ) : (
               <Space direction="vertical" style={{ width: "100%" }}>
                 {steps.map((x) => (

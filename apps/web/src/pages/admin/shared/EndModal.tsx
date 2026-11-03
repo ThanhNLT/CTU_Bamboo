@@ -7,6 +7,7 @@ import type { Dayjs } from "dayjs";
 import { useState } from "react";
 
 import { MODAL_Z } from "./zIndex";
+import { tr } from "../../../i18n";
 
 export const EndModal = ({
   open,
@@ -32,7 +33,7 @@ export const EndModal = ({
       title={title}
       okText={okText}
       okButtonProps={{ danger: true, disabled: mode === "date" && !date }}
-      cancelText="Hủy"
+      cancelText={tr("Hủy")}
       confirmLoading={busy}
       onCancel={onCancel}
       onOk={async () => {
@@ -48,10 +49,10 @@ export const EndModal = ({
     >
       <p className="text-[13px] text-body">{description}</p>
       <Radio.Group className="mt-2 flex flex-col gap-2" value={mode} onChange={(e) => setMode(e.target.value)}>
-        <Radio value="now">Ngay bây giờ</Radio>
+        <Radio value="now">{tr("Ngay bây giờ")}</Radio>
         <Radio value="date">
           <span className="inline-flex flex-wrap items-center gap-2">
-            Hết ngày
+            {tr("Hết ngày")}
             <DatePicker
               size="small"
               format="DD/MM/YYYY"
@@ -65,7 +66,7 @@ export const EndModal = ({
         </Radio>
       </Radio.Group>
       <p className="mt-3 text-[12px] text-muted">
-        Không xóa dữ liệu: lịch sử vẫn giữ cho chuỗi duyệt và nhật ký kiểm toán.
+        {tr("Không xóa dữ liệu: lịch sử vẫn giữ cho chuỗi duyệt và nhật ký kiểm toán.")}
       </p>
     </Modal>
   );

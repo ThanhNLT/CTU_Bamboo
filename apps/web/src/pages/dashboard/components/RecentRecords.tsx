@@ -8,6 +8,7 @@ import { useNavigate } from "react-router";
 
 import type { RecentRecord } from "../types";
 import { bambooTableTheme, Dot, Panel, PanelLink } from "../../../components/ui";
+import { tr } from "../../../i18n";
 
 const StatusCell = ({ r }: { r: RecentRecord }) => (
   <span className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] text-body">
@@ -17,38 +18,42 @@ const StatusCell = ({ r }: { r: RecentRecord }) => (
 );
 
 const KindTag = ({ kind }: { kind: string }) => (
-  <span className="inline-flex whitespace-nowrap rounded-ui border border-line bg-surface px-2.5 py-0.5 text-[11.5px] font-medium text-body">
+  <span className="inline-flex whitespace-nowrap rounded-full bg-[var(--glass-well)] px-2.5 py-0.5 text-[11.5px] font-medium text-body">
     {kind}
   </span>
 );
 
 const columns: TableColumnsType<RecentRecord> = [
   {
-    title: "Mã hồ sơ",
+    title: tr("Mã hồ sơ"),
     dataIndex: "code",
     width: 170,
     render: (v: string) => <span className="font-mono text-[11.5px] tracking-tight text-muted">{v}</span>,
   },
   {
-    title: "Tiêu đề",
+    title: tr("Tiêu đề"),
     dataIndex: "title",
     ellipsis: true,
     render: (v: string) => <span className="font-medium text-ink">{v}</span>,
   },
-  { title: "Trạng thái", key: "status", width: 150, render: (_: unknown, r: RecentRecord) => <StatusCell r={r} /> },
+  { title: tr("Trạng thái"), key: "status", width: 150, render: (_: unknown, r: RecentRecord) => <StatusCell r={r} /> },
   {
-    title: "Cập nhật",
+    title: tr("Cập nhật"),
     dataIndex: "updatedAt",
     width: 140,
     render: (v: string) => <span className="text-body">{v}</span>,
   },
-  { title: "Loại", dataIndex: "kind", width: 150, render: (v: string) => <KindTag kind={v} /> },
+  { title: tr("Loại"), dataIndex: "kind", width: 150, render: (v: string) => <KindTag kind={v} /> },
 ];
 
 export const RecentRecords = ({ records }: { records: RecentRecord[] }) => {
   const navigate = useNavigate();
   return (
-    <Panel title="Hồ sơ gần đây" extra={<PanelLink to="/p/records">Xem tất cả</PanelLink>} bodyClassName="px-3 pb-3">
+    <Panel
+      title={tr("Hồ sơ gần đây")}
+      extra={<PanelLink to="/p/records">{tr("Xem tất cả")}</PanelLink>}
+      bodyClassName="px-3 pb-3"
+    >
       <ConfigProvider theme={bambooTableTheme}>
         <Table<RecentRecord>
           size="small"
@@ -58,7 +63,7 @@ export const RecentRecords = ({ records }: { records: RecentRecord[] }) => {
           pagination={false}
           scroll={{ x: 680 }}
           onRow={(r) => ({ onClick: () => navigate(r.to), style: { cursor: "pointer" } })}
-          locale={{ emptyText: "Bạn chưa lập chứng từ nào." }}
+          locale={{ emptyText: tr("Bạn chưa lập chứng từ nào.") }}
         />
       </ConfigProvider>
     </Panel>

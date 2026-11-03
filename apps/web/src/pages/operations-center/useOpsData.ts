@@ -9,6 +9,7 @@ import { useMemo } from "react";
 
 import { SLA_HOURS } from "../inbox/useInboxTasks";
 import type { Company, CompanyKey, DailyPoint, Kpi, MonthlyPoint, OverdueRow, PendingRow, Period } from "./types";
+import { tr, trf } from "../../i18n";
 
 const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
 const OTHER_COLOR = "#8a948e";
@@ -152,8 +153,8 @@ const unitOf = (d: {
 const span = (ms: number) => {
   const d = Math.floor(ms / (24 * HOUR));
   const h = Math.floor((ms % (24 * HOUR)) / HOUR);
-  if (d) return `${d} ngày${h ? ` ${h} giờ` : ""}`;
-  return h ? `${h} giờ` : `${Math.max(1, Math.floor(ms / 60_000))} phút`;
+  if (d) return trf("{0} ngày{1}", [d, h ? trf(" {0} giờ", [h]) : ""]);
+  return h ? trf("{0} giờ", [h]) : trf("{0} phút", [Math.max(1, Math.floor(ms / 60_000))]);
 };
 
 const pct = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
@@ -250,7 +251,7 @@ export const useOpsData = (period: Period) => {
       color: PALETTE[i],
     }));
     if (ranked.length > named.length) {
-      companies.push({ key: OTHER_COMPANY, name: "Đơn vị khác", short: "Khác", color: OTHER_COLOR });
+      companies.push({ key: OTHER_COMPANY, name: tr("Đơn vị khác"), short: tr("Khác"), color: OTHER_COLOR });
     }
     const keyOf = (unitId?: string): CompanyKey => {
       const t = top(unitId);
@@ -312,8 +313,14 @@ export const useOpsData = (period: Period) => {
                 ? `/h/library/proposals/${kb.id}`
                 : "/p/tasks",
           company: keyOf(unitOf(t.step)),
-          type: pr ? `Mua sắm: ${pr.title}` : ob ? `Tiếp nhận ${ob.full_name}` : kb ? `Tài liệu: ${kb.title}` : "—",
-          step: `Cấp ${t.step.step_order}`,
+          type: pr
+            ? trf("Mua sắm: {0}", [pr.title])
+            : ob
+              ? trf("Tiếp nhận {0}", [ob.full_name])
+              : kb
+                ? trf("Tài liệu: {0}", [kb.title])
+                : "—",
+          step: trf("Cấp {0}", [t.step.step_order]),
           overdueMinutes: Math.round(late / 60_000),
           overdueLabel: span(late),
         };
@@ -328,63 +335,67 @@ export const useOpsData = (period: Period) => {
       return !d.isBefore(prevSince) && d.isBefore(since);
     }).length;
     const change = prevPeriod ? Math.round(((inPeriod - prevPeriod) / prevPeriod) * 100) : null;
+    // i18n-ignore: giá trị dữ liệu kiểu literal, dịch lúc hiển thị
     const hot = { tier: "Nóng" as const, at };
     const kpis: Kpi[] = [
       {
         key: "pending",
-        label: "Hồ sơ chờ duyệt",
+        label: tr("Hồ sơ chờ duyệt"),
         value: String(openRows.length),
         delta: overdueAll.length
-          ? { dir: "dot", tone: "bad", text: `${overdueAll.length} quá hạn SLA` }
-          : { dir: "dot", tone: "good", text: "Không có việc quá hạn" },
+          ? { dir: "dot", tone: "bad", text: trf("{0} quá hạn SLA", [overdueAll.length]) }
+          : { dir: "dot", tone: "good", text: tr("Không có việc quá hạn") },
         freshness: hot,
-        definition: "Số bước duyệt đang mở (wf.task OPEN) bạn được xem, tại thời điểm cập nhật.",
+        definition: tr("Số bước duyệt đang mở (wf.task OPEN) bạn được xem, tại thời điểm cập nhật."),
       },
       {
         key: "ontime",
-        label: "Duyệt đúng hạn · 30 ngày",
+        label: tr("Duyệt đúng hạn · 30 ngày"),
         value: onTimeNow ? `${pct.format(onTimeNow.value)}%` : "—",
         delta:
           onTimeDiff == null || onTimeDiff === 0
-            ? { dir: "none", tone: "neutral", text: "Cùng số liệu với KPI Trang chủ" }
+            ? { dir: "none", tone: "neutral", text: tr("Cùng số liệu với KPI Trang chủ") }
             : {
                 dir: onTimeDiff > 0 ? "up" : "down",
                 tone: onTimeDiff > 0 ? "good" : "bad",
-                text: `${pct.format(Math.abs(onTimeDiff))} điểm so với ngày trước`,
+                text: trf("{0} điểm so với ngày trước", [pct.format(Math.abs(onTimeDiff))]),
               },
         freshness: hot,
-        definition: `Tỷ lệ bước duyệt hoàn tất trong vòng ${SLA_HOURS} giờ kể từ lúc giao, trên toàn đơn vị trong 30 ngày gần nhất. Cùng nguồn với KPI “Duyệt đúng hạn” ghim ở Trang chủ.`,
+        definition: trf(
+          "Tỷ lệ bước duyệt hoàn tất trong vòng {0} giờ kể từ lúc giao, trên toàn đơn vị trong 30 ngày gần nhất. Cùng nguồn với KPI “Duyệt đúng hạn” ghim ở Trang chủ.",
+          [SLA_HOURS],
+        ),
       },
       {
         key: "completed",
-        label: "Duyệt xong trong kỳ",
+        label: tr("Duyệt xong trong kỳ"),
         value: String(inPeriod),
         delta:
           change == null
-            ? { dir: "none", tone: "neutral", text: "Kỳ trước không có" }
+            ? { dir: "none", tone: "neutral", text: tr("Kỳ trước không có") }
             : {
                 dir: change >= 0 ? "up" : "down",
                 tone: change >= 0 ? "good" : "bad",
-                text: `${Math.abs(change)}% so với kỳ trước`,
+                text: trf("{0}% so với kỳ trước", [Math.abs(change)]),
               },
         freshness: hot,
-        definition: "Số hồ sơ hoàn tất toàn bộ chuỗi duyệt (sự kiện COMPLETED) trong kỳ đang chọn.",
+        definition: tr("Số hồ sơ hoàn tất toàn bộ chuỗi duyệt (sự kiện COMPLETED) trong kỳ đang chọn."),
       },
       {
         key: "ic",
-        label: "Đơn nội bộ chờ xác nhận",
+        label: tr("Đơn nội bộ chờ xác nhận"),
         value: String(icPending.result.total ?? 0),
-        delta: { dir: "none", tone: "neutral", text: "Bên bán chưa xác nhận" },
+        delta: { dir: "none", tone: "neutral", text: tr("Bên bán chưa xác nhận") },
         freshness: hot,
-        definition: "Đơn hàng nội bộ (ic.ic_order) ở trạng thái chờ bên bán xác nhận.",
+        definition: tr("Đơn hàng nội bộ (ic.ic_order) ở trạng thái chờ bên bán xác nhận."),
       },
       {
         key: "blocked",
-        label: "Tệp bị chặn · 7 ngày",
+        label: tr("Tệp bị chặn · 7 ngày"),
         value: String(blockedFiles.result.total ?? 0),
-        delta: { dir: "none", tone: "neutral", text: "Kiểm dịch ClamAV" },
+        delta: { dir: "none", tone: "neutral", text: tr("Kiểm dịch ClamAV") },
         freshness: hot,
-        definition: "Tệp tải lên bị loại (sai định dạng) hoặc nhiễm mã độc trong 7 ngày gần nhất.",
+        definition: tr("Tệp tải lên bị loại (sai định dạng) hoặc nhiễm mã độc trong 7 ngày gần nhất."),
       },
     ];
 
