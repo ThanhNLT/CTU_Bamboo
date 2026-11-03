@@ -10,11 +10,12 @@ import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget, DefinitionButton } from "./ChartWidget";
 import { fmtBucket, fmtHours, fmtNum, kpi } from "../boardFormat";
 import { BoardState, KpiRow, NumTable } from "./BoardParts";
+import { tr, trf } from "../../../i18n";
 
 const SERIES: Record<string, string> = {
-  submitted: "Gửi duyệt",
-  completed: "Duyệt xong",
-  other: "Trả về / từ chối / hủy",
+  submitted: tr("Gửi duyệt"),
+  completed: tr("Duyệt xong"),
+  other: tr("Trả về / từ chối / hủy"),
 };
 const OTHER_COLOR = "#eb6834";
 
@@ -32,59 +33,61 @@ export const ProcessBoard = ({ days, sla }: { days: number; sla: number }) => {
               kpi(
                 {
                   key: "submitted",
-                  label: "Hồ sơ gửi duyệt",
+                  label: tr("Hồ sơ gửi duyệt"),
                   value: fmtNum(t.submitted),
-                  definition: `Số lần gửi duyệt (kể cả gửi lại sau khi bị trả về) trong ${days} ngày.`,
+                  definition: trf("Số lần gửi duyệt (kể cả gửi lại sau khi bị trả về) trong {0} ngày.", [days]),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "completed",
-                  label: "Duyệt xong",
+                  label: tr("Duyệt xong"),
                   value: fmtNum(t.completed),
-                  delta: { dir: "none", tone: "neutral", text: `${fmtNum(t.returned)} lần trả về` },
-                  definition: "Chứng từ đi hết chuỗi duyệt trong kỳ.",
+                  delta: { dir: "none", tone: "neutral", text: trf("{0} lần trả về", [fmtNum(t.returned)]) },
+                  definition: tr("Chứng từ đi hết chuỗi duyệt trong kỳ."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "rate",
-                  label: "Tỉ lệ duyệt",
+                  label: tr("Tỉ lệ duyệt"),
                   value: t.approval_rate == null ? "—" : `${fmtNum(t.approval_rate)}%`,
-                  definition: "Duyệt xong / (duyệt xong + từ chối + hủy) trong kỳ.",
+                  definition: tr("Duyệt xong / (duyệt xong + từ chối + hủy) trong kỳ."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "cycle",
-                  label: "Thời gian duyệt trung bình",
+                  label: tr("Thời gian duyệt trung bình"),
                   value: fmtHours(t.avg_hours),
                   delta: { dir: "none", tone: "neutral", text: `90% xong trong ${fmtHours(t.p90_hours)}` },
-                  definition: "Từ lần gửi duyệt cuối tới khi duyệt xong, với chứng từ duyệt xong trong kỳ.",
+                  definition: tr("Từ lần gửi duyệt cuối tới khi duyệt xong, với chứng từ duyệt xong trong kỳ."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "open",
-                  label: "Việc đang chờ",
+                  label: tr("Việc đang chờ"),
                   value: fmtNum(t.open),
-                  definition: "Bước duyệt đang mở (tính tại thời điểm xem).",
+                  definition: tr("Bước duyệt đang mở (tính tại thời điểm xem)."),
                 },
                 at,
               ),
               kpi(
                 {
                   key: "overdue",
-                  label: `Quá hạn ${sla} giờ`,
+                  label: trf("Quá hạn {0} giờ", [sla]),
                   value: fmtNum(t.overdue),
                   delta: t.overdue
-                    ? { dir: "dot", tone: "bad", text: "cần đôn đốc" }
-                    : { dir: "dot", tone: "good", text: "không có" },
-                  definition: `Bước duyệt đang mở lâu hơn ${sla} giờ (hạn tạm, backend chưa có hạn theo bước).`,
+                    ? { dir: "dot", tone: "bad", text: tr("cần đôn đốc") }
+                    : { dir: "dot", tone: "good", text: tr("không có") },
+                  definition: trf("Bước duyệt đang mở lâu hơn {0} giờ (hạn tạm, backend chưa có hạn theo bước).", [
+                    sla,
+                  ]),
                 },
                 at,
               ),
@@ -93,16 +96,22 @@ export const ProcessBoard = ({ days, sla }: { days: number; sla: number }) => {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <ChartWidget
-              title="Gửi duyệt và duyệt xong theo thời gian"
-              meta={days <= 31 ? "Theo ngày" : "Theo tuần"}
+              title={tr("Gửi duyệt và duyệt xong theo thời gian")}
+              meta={days <= 31 ? tr("Theo ngày") : tr("Theo tuần")}
               footer={
-                <DefinitionButton text="Nguồn: wf.approval_history (sự kiện SUBMITTED, COMPLETED, REJECTED, RETURNED, CANCELLED) của chứng từ bạn được xem." />
+                <DefinitionButton
+                  text={tr(
+                    "Nguồn: wf.approval_history (sự kiện SUBMITTED, COMPLETED, REJECTED, RETURNED, CANCELLED) của chứng từ bạn được xem.",
+                  )}
+                />
               }
             >
               <div
                 className="h-[240px]"
                 role="img"
-                aria-label={trend.map((p) => `${p.label}: gửi ${p.submitted}, xong ${p.completed}`).join("; ")}
+                aria-label={trend
+                  .map((p) => trf("{0}: gửi {1}, xong {2}", [p.label, p.submitted, p.completed]))
+                  .join("; ")}
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={trend} margin={{ top: 4, right: 8, bottom: 0, left: -18 }} barGap={2}>
@@ -128,56 +137,59 @@ export const ProcessBoard = ({ days, sla }: { days: number; sla: number }) => {
               </div>
             </ChartWidget>
 
-            <ChartWidget title="Theo loại chứng từ" meta={`${days} ngày`}>
+            <ChartWidget title={tr("Theo loại chứng từ")} meta={trf("{0} ngày", [days])}>
               <NumTable
                 rows={data.by_type}
                 rowKey={(r) => r.entity_type}
-                empty="Chưa có chứng từ."
+                empty={tr("Chưa có chứng từ.")}
                 columns={[
-                  { title: "Loại", render: (r) => r.label },
-                  { title: "Gửi", render: (r) => fmtNum(r.submitted) },
+                  { title: tr("Loại"), render: (r) => r.label },
+                  { title: tr("Gửi"), render: (r) => fmtNum(r.submitted) },
                   { title: "Xong", render: (r) => fmtNum(r.completed) },
-                  { title: "Trả về", render: (r) => fmtNum(r.returned) },
-                  { title: "Từ chối / hủy", render: (r) => fmtNum(r.rejected + r.cancelled) },
-                  { title: "Đang chờ", render: (r) => fmtNum(r.open) },
+                  { title: tr("Trả về"), render: (r) => fmtNum(r.returned) },
+                  { title: tr("Từ chối / hủy"), render: (r) => fmtNum(r.rejected + r.cancelled) },
+                  { title: tr("Đang chờ"), render: (r) => fmtNum(r.open) },
                   {
-                    title: "Quá hạn",
+                    title: tr("Quá hạn"),
                     render: (r) => (
                       <span className={r.overdue ? "font-semibold text-red-600" : ""}>{fmtNum(r.overdue)}</span>
                     ),
                   },
-                  { title: "TB duyệt", render: (r) => fmtHours(r.avg_hours) },
+                  { title: tr("TB duyệt"), render: (r) => fmtHours(r.avg_hours) },
                 ]}
               />
             </ChartWidget>
           </div>
 
           <ChartWidget
-            title="Điểm nghẽn theo vị trí duyệt"
-            meta="Xếp theo việc quá hạn, rồi thời gian xử lý"
+            title={tr("Điểm nghẽn theo vị trí duyệt")}
+            meta={tr("Xếp theo việc quá hạn, rồi thời gian xử lý")}
             footer={
               <DefinitionButton
-                text={`Mỗi dòng là một vị trí nhận việc duyệt: số việc đã xử lý trong kỳ và thời gian trung bình, số việc đang chờ, quá hạn ${sla} giờ, việc chờ lâu nhất.`}
+                text={trf(
+                  "Mỗi dòng là một vị trí nhận việc duyệt: số việc đã xử lý trong kỳ và thời gian trung bình, số việc đang chờ, quá hạn {0} giờ, việc chờ lâu nhất.",
+                  [sla],
+                )}
               />
             }
           >
             <NumTable
               rows={data.bottlenecks}
               rowKey={(r, i) => `${r.position}-${r.unit}-${i}`}
-              empty="Không có việc duyệt nào trong kỳ."
+              empty={tr("Không có việc duyệt nào trong kỳ.")}
               columns={[
-                { title: "Vị trí", render: (r) => r.position },
-                { title: "Đơn vị", render: (r) => r.unit, align: "left" },
-                { title: "Đã xử lý", render: (r) => fmtNum(r.closed) },
-                { title: "TB xử lý", render: (r) => fmtHours(r.avg_hours) },
-                { title: "Đang chờ", render: (r) => fmtNum(r.open) },
+                { title: tr("Vị trí"), render: (r) => r.position },
+                { title: tr("Đơn vị"), render: (r) => r.unit, align: "left" },
+                { title: tr("Đã xử lý"), render: (r) => fmtNum(r.closed) },
+                { title: tr("TB xử lý"), render: (r) => fmtHours(r.avg_hours) },
+                { title: tr("Đang chờ"), render: (r) => fmtNum(r.open) },
                 {
-                  title: "Quá hạn",
+                  title: tr("Quá hạn"),
                   render: (r) => (
                     <span className={r.overdue ? "font-semibold text-red-600" : ""}>{fmtNum(r.overdue)}</span>
                   ),
                 },
-                { title: "Chờ lâu nhất", render: (r) => fmtHours(r.oldest_open_hours) },
+                { title: tr("Chờ lâu nhất"), render: (r) => fmtHours(r.oldest_open_hours) },
               ]}
             />
           </ChartWidget>

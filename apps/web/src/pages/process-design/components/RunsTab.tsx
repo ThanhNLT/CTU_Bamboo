@@ -5,25 +5,26 @@
 import { Tag } from "antd";
 
 import type { ProcessVersion, SandboxRun } from "../types";
+import { tr, trf } from "../../../i18n";
 
 const STATUS = {
-  COMPLETED: { color: "green", label: "Đạt – đi tới kết thúc" },
-  STOPPED: { color: "orange", label: "Dừng" },
-  FAILED: { color: "red", label: "Lỗi" },
+  COMPLETED: { color: "green", label: tr("Đạt – đi tới kết thúc") },
+  STOPPED: { color: "orange", label: tr("Dừng") },
+  FAILED: { color: "red", label: tr("Lỗi") },
 } as const;
 const AUDIENCE_LABEL = {
-  UNIT: "đơn vị và các đơn vị con",
-  COMPANY: "toàn công ty",
-  GROUP: "toàn tập đoàn (công ty mẹ và công ty con)",
+  UNIT: tr("đơn vị và các đơn vị con"),
+  COMPANY: tr("toàn công ty"),
+  GROUP: tr("toàn tập đoàn (công ty mẹ và công ty con)"),
 } as const;
 const STEP_TYPE: Record<string, string> = {
-  startEvent: "Bắt đầu",
-  endEvent: "Kết thúc",
-  userTask: "Tác vụ",
-  serviceTask: "Dịch vụ",
-  exclusiveGateway: "Rẽ nhánh",
+  startEvent: tr("Bắt đầu"),
+  endEvent: tr("Kết thúc"),
+  userTask: tr("Tác vụ"),
+  serviceTask: tr("Dịch vụ"),
+  exclusiveGateway: tr("Rẽ nhánh"),
   parallelGateway: "Song song",
-  inclusiveGateway: "Rẽ nhánh",
+  inclusiveGateway: tr("Rẽ nhánh"),
 };
 
 export const RunsTab = ({
@@ -40,9 +41,9 @@ export const RunsTab = ({
   onRestore: (version: number) => void;
 }) => (
   <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Lần chạy thử">
-      <h2 className="m-0 text-[14px] font-semibold text-ink">Lần chạy thử</h2>
-      {runs.length === 0 && <p className="m-0 mt-2 text-[12.5px] text-muted">Chưa chạy thử lần nào.</p>}
+    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label={tr("Lần chạy thử")}>
+      <h2 className="m-0 text-[14px] font-semibold text-ink">{tr("Lần chạy thử")}</h2>
+      {runs.length === 0 && <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Chưa chạy thử lần nào.")}</p>}
       <ol className="m-0 mt-2 list-none space-y-3 p-0">
         {runs.map((r) => (
           <li key={r.id} className="rounded-xl border border-line/80 p-3">
@@ -50,15 +51,15 @@ export const RunsTab = ({
               <Tag color={STATUS[r.status].color}>{STATUS[r.status].label}</Tag>
               <span className="text-muted">
                 {r.startedAt} · {r.startedBy}
-                {r.version ? ` · phiên bản v${r.version}` : " · bản nháp"}
-                {r.variables?.decision ? ` · quyết định ${String(r.variables.decision)}` : ""}
+                {r.version ? trf(" · phiên bản v{0}", [r.version]) : tr(" · bản nháp")}
+                {r.variables?.decision ? trf(" · quyết định {0}", [String(r.variables.decision)]) : ""}
               </span>
               <button
                 type="button"
                 className="ml-auto text-[12px] font-semibold text-bamboo-700"
                 onClick={() => onShowRun(r)}
               >
-                Tô lên sơ đồ
+                {tr("Tô lên sơ đồ")}
               </button>
             </div>
             {r.variables && (
@@ -85,9 +86,14 @@ export const RunsTab = ({
         ))}
       </ol>
     </section>
-    <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label="Phiên bản phát hành">
-      <h2 className="m-0 text-[14px] font-semibold text-ink">Phiên bản phát hành</h2>
-      {versions.length === 0 && <p className="m-0 mt-2 text-[12.5px] text-muted">Chưa phát hành phiên bản nào.</p>}
+    <section
+      className="rounded-2xl border border-line bg-surface p-4 shadow-card"
+      aria-label={tr("Phiên bản phát hành")}
+    >
+      <h2 className="m-0 text-[14px] font-semibold text-ink">{tr("Phiên bản phát hành")}</h2>
+      {versions.length === 0 && (
+        <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Chưa phát hành phiên bản nào.")}</p>
+      )}
       <ul className="m-0 mt-2 list-none divide-y divide-line p-0">
         {versions.map((v) => (
           <li key={v.version} className="py-2 text-[12.5px]">
@@ -101,11 +107,15 @@ export const RunsTab = ({
                 className="ml-2 text-[12px] font-semibold text-bamboo-700"
                 onClick={() => onRestore(v.version)}
               >
-                Khôi phục về bản nháp
+                {tr("Khôi phục về bản nháp")}
               </button>
             )}
             {v.note && <span className="block text-body">{v.note}</span>}
-            {v.audience && <span className="block text-muted">Đối tượng: {AUDIENCE_LABEL[v.audience]}</span>}
+            {v.audience && (
+              <span className="block text-muted">
+                {tr("Đối tượng: ")} {AUDIENCE_LABEL[v.audience]}
+              </span>
+            )}
             <span className="block font-mono text-[11px] text-muted">SHA-256 {v.sha256.slice(0, 16)}…</span>
           </li>
         ))}

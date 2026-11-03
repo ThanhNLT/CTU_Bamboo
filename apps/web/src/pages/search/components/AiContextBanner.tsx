@@ -5,6 +5,7 @@
 import { Sparkles } from "lucide-react";
 
 import type { Concept, SearchMode } from "../types";
+import { tr } from "../../../i18n";
 
 export const AiContextBanner = ({
   query,
@@ -24,14 +25,14 @@ export const AiContextBanner = ({
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-bamboo-600" aria-hidden />
         {understood ? (
           <span>
-            Đã hiểu là:{" "}
+            {tr("Đã hiểu là:")}{" "}
             {concepts.map((c, i) => (
               <span key={c.key}>
                 {i > 0 && " + "}
                 <b className="font-semibold text-ink">{c.label}</b>
               </span>
             ))}
-            {" · gồm cả "}
+            {tr(" · gồm cả ")}
             {concepts
               .flatMap((c) => c.synonyms)
               .map((s) => `“${s}”`)
@@ -39,12 +40,13 @@ export const AiContextBanner = ({
           </span>
         ) : mode === "keyword" ? (
           <span>
-            Tìm chính xác theo từ khóa <b className="font-semibold text-ink">“{query}”</b> · chuyển sang “Kết hợp” để
-            tìm cả cách nói khác
+            {tr("Tìm chính xác theo từ khóa ")} <b className="font-semibold text-ink">“{query}”</b>{" "}
+            {tr(" · chuyển sang “Kết hợp” để tìm cả cách nói khác")}
           </span>
         ) : (
           <span>
-            Chưa nhận ra ý định cụ thể, đang tìm theo từ khóa <b className="font-semibold text-ink">“{query}”</b>
+            {tr("Chưa nhận ra ý định cụ thể, đang tìm theo từ khóa ")}{" "}
+            <b className="font-semibold text-ink">“{query}”</b>
           </span>
         )}
       </p>
@@ -53,7 +55,7 @@ export const AiContextBanner = ({
         onClick={onAsk}
         className="inline-flex h-8 shrink-0 items-center self-start rounded-ui bg-bamboo-600 px-3.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-bamboo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500 sm:self-auto"
       >
-        Hỏi trợ lý về kết quả này
+        {tr("Hỏi trợ lý về kết quả này")}
       </button>
     </div>
   );

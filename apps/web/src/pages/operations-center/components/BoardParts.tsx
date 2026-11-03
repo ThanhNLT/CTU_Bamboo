@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../../utils/cn";
 import type { Kpi } from "../types";
 import { KpiCard } from "./KpiCard";
+import { tr } from "../../../i18n";
 
 export const KpiRow = ({ kpis }: { kpis: Kpi[] }) => (
   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
@@ -29,7 +30,7 @@ export const BoardState = ({
   children: ReactNode;
 }) => (
   <>
-    {error && <Alert type="error" showIcon message="Không tải được số liệu" description={error} />}
+    {error && <Alert type="error" showIcon message={tr("Không tải được số liệu")} description={error} />}
     {!ready && loading && (
       <div className="rounded-2xl border border-line bg-surface p-6 shadow-card">
         <Skeleton active paragraph={{ rows: 6 }} />

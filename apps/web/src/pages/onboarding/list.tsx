@@ -11,6 +11,7 @@ import { formatDate, formatDay } from "../../utils/format";
 import { PR_STATUS_LABEL } from "../../utils/status";
 import { OB_LIST } from "./queries";
 import { ACCOUNT_STATUS } from "./types";
+import { tr } from "../../i18n";
 
 type Row = BaseRecord & {
   doc_no: string;
@@ -36,15 +37,15 @@ export const OnboardingList = () => {
   const status = (filters.find((f) => "field" in f && f.field === "status")?.value as string) ?? "ALL";
 
   return (
-    <List title="Tiếp nhận nhân sự" headerButtons={<CreateButton>Lập hồ sơ tiếp nhận</CreateButton>}>
+    <List title={tr("Tiếp nhận nhân sự")} headerButtons={<CreateButton>{tr("Lập hồ sơ tiếp nhận")}</CreateButton>}>
       <Space style={{ marginBottom: 16 }} wrap>
         <Segmented
           value={status}
-          options={STATUS_FILTERS.map((s) => ({ value: s, label: s === "ALL" ? "Tất cả" : PR_STATUS_LABEL[s] }))}
+          options={STATUS_FILTERS.map((s) => ({ value: s, label: s === "ALL" ? tr("Tất cả") : PR_STATUS_LABEL[s] }))}
           onChange={(v) => setFilters(v === "ALL" ? [] : [{ field: "status", operator: "eq", value: v }], "replace")}
         />
         <Input.Search
-          placeholder="Tìm theo số hoặc họ tên"
+          placeholder={tr("Tìm theo số hoặc họ tên")}
           allowClear
           style={{ width: 280 }}
           onSearch={(q) =>
@@ -68,7 +69,7 @@ export const OnboardingList = () => {
       <Table {...tableProps} rowKey="id" scroll={{ x: 720 }}>
         <Table.Column
           dataIndex="doc_no"
-          title="Số"
+          title={tr("Số")}
           sorter
           render={(v: string) => (
             <Typography.Text code style={{ whiteSpace: "nowrap" }}>
@@ -76,9 +77,9 @@ export const OnboardingList = () => {
             </Typography.Text>
           )}
         />
-        <Table.Column dataIndex="full_name" title="Ứng viên" sorter />
+        <Table.Column dataIndex="full_name" title={tr("Ứng viên")} sorter />
         <Table.Column<Row>
-          title="Vị trí bổ nhiệm"
+          title={tr("Vị trí bổ nhiệm")}
           render={(_, r) =>
             r.target_position ? (
               <>
@@ -91,10 +92,10 @@ export const OnboardingList = () => {
             )
           }
         />
-        <Table.Column dataIndex="start_date" title="Ngày vào làm" sorter render={formatDay} responsive={["md"]} />
+        <Table.Column dataIndex="start_date" title={tr("Ngày vào làm")} sorter render={formatDay} responsive={["md"]} />
         <Table.Column<Row>
           dataIndex="status"
-          title="Trạng thái"
+          title={tr("Trạng thái")}
           render={(s: string, r) => (
             <Space direction="vertical" size={2}>
               <StatusTag status={s} />
@@ -104,8 +105,8 @@ export const OnboardingList = () => {
             </Space>
           )}
         />
-        <Table.Column dataIndex={["requester", "full_name"]} title="Người lập" responsive={["lg"]} />
-        <Table.Column dataIndex="created_at" title="Ngày lập" sorter render={formatDate} responsive={["lg"]} />
+        <Table.Column dataIndex={["requester", "full_name"]} title={tr("Người lập")} responsive={["lg"]} />
+        <Table.Column dataIndex="created_at" title={tr("Ngày lập")} sorter render={formatDate} responsive={["lg"]} />
         <Table.Column<Row> title="" render={(_, r) => <ShowButton hideText size="small" recordItemId={r.id} />} />
       </Table>
     </List>

@@ -21,10 +21,11 @@ import { useSeries } from "../api";
 import { MINUTE, RANGES, aggregationOf, breachSpans, bucketize, xTicksOf, yAxisOf } from "../signal";
 import type { Metric, Threshold, TimeRange, TwinEntity } from "../types";
 import { formatDay, formatDayTime, formatDuration, formatNumber, formatTime } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 const RED = "#dc2626";
 const RED_TEXT = "#b91c1c";
-const AGG_WORD = { max: "đỉnh", min: "đáy", mean: "trung bình" } as const;
+const AGG_WORD = { max: tr("đỉnh"), min: tr("đáy"), mean: tr("trung bình") } as const;
 
 type TipProps = { active?: boolean; label?: number | string; payload?: Array<{ value?: number | string | null }> };
 
@@ -52,7 +53,7 @@ const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { m
           {formatNumber(v, metric.decimals)} {metric.unitLong ?? metric.unit}
         </span>
       </div>
-      {outside(v, metric.threshold) && <div className="mt-0.5 font-medium text-red-700">Ngoài ngưỡng</div>}
+      {outside(v, metric.threshold) && <div className="mt-0.5 font-medium text-red-700">{tr("Ngoài ngưỡng")}</div>}
     </div>
   );
 };
@@ -60,7 +61,7 @@ const SensorTooltip = ({ active, label, payload, metric, range }: TipProps & { m
 const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: TimeRange) => void }) => (
   <div
     role="group"
-    aria-label="Khoảng thời gian"
+    aria-label={tr("Khoảng thời gian")}
     className="inline-flex shrink-0 gap-0.5 rounded-ui bg-black/[0.045] p-1"
   >
     {(Object.keys(RANGES) as TimeRange[]).map((key) => {
@@ -89,10 +90,10 @@ const limitText = (metric: Metric, side: "max" | "min") => {
   const both = th.min != null && th.max != null;
   const name =
     side === "max"
-      ? (metric.limitLabel ?? (both ? "Tối đa" : "Ngưỡng"))
+      ? (metric.limitLabel ?? (both ? tr("Tối đa") : tr("Ngưỡng")))
       : both
-        ? "Tối thiểu"
-        : (metric.limitLabel ?? "Tối thiểu");
+        ? tr("Tối thiểu")
+        : (metric.limitLabel ?? tr("Tối thiểu"));
   return `${name} · ${formatNumber((side === "max" ? th.max : th.min) ?? 0)}`;
 };
 
@@ -134,15 +135,21 @@ export const SensorChart = ({
   const lastArea = chart.areas[chart.areas.length - 1];
   const totalMinutes = chart.areas.reduce((a, s) => a + s.minutes, 0);
   const summary =
-    `${metric.label}, ${r.label}: ${chart.data.length} điểm đo, hiện tại ${formatNumber(metric.value, metric.decimals)} ${metric.unitLong ?? metric.unit}. ` +
+    trf("{0}, {1}: {2} điểm đo, hiện tại {3} {4}. ", [
+      metric.label,
+      r.label,
+      chart.data.length,
+      formatNumber(metric.value, metric.decimals),
+      metric.unitLong ?? metric.unit,
+    ]) +
     (chart.areas.length
-      ? `${chart.areas.length} lần ra ngoài ngưỡng, tổng ${formatDuration(totalMinutes)}.`
-      : "Luôn trong ngưỡng.");
+      ? trf("{0} lần ra ngoài ngưỡng, tổng {1}.", [chart.areas.length, formatDuration(totalMinutes)])
+      : tr("Luôn trong ngưỡng."));
 
   return (
     <section
       className="rounded-2xl border border-line bg-surface p-5 shadow-card"
-      aria-label={`Biểu đồ ${metric.label}`}
+      aria-label={trf("Biểu đồ {0}", [metric.label])}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h3 className="text-[14px] font-semibold text-ink">
@@ -187,7 +194,10 @@ export const SensorChart = ({
                 label={
                   a === lastArea
                     ? {
-                        value: `${a.side === "above" ? "Vượt" : "Dưới"} ngưỡng ${formatDuration(a.minutes)}`,
+                        value: trf("{0} ngưỡng {1}", [
+                          a.side === "above" ? tr("Vượt") : tr("Dưới"),
+                          formatDuration(a.minutes),
+                        ]),
                         position: "insideTop",
                         fill: RED_TEXT,
                         fontSize: 11,
@@ -234,10 +244,11 @@ export const SensorChart = ({
       </figure>
 
       <p className="mt-3 text-[11.5px] text-muted">
-        Nguồn: iot.measurement · thuộc tính <span className="font-mono">{metric.key}</span> của mô hình {entity.type}
-        {series.loading ? " · đang tải…" : chart.data.length === 0 ? " · chưa có số đo trong khoảng này" : ""}
-        {r.bucket > 1 && ` · giá trị ${AGG_WORD[agg]} mỗi ${formatDuration(r.bucket)}`}
-        {entity.offlineMinutes ? ` · mất tín hiệu ${entity.offlineMinutes} phút gần nhất` : ""}
+        {tr("Nguồn: iot.measurement · thuộc tính ")} <span className="font-mono">{metric.key}</span>{" "}
+        {tr(" của mô hình ")} {entity.type}
+        {series.loading ? tr(" · đang tải…") : chart.data.length === 0 ? tr(" · chưa có số đo trong khoảng này") : ""}
+        {r.bucket > 1 && trf(" · giá trị {0} mỗi {1}", [AGG_WORD[agg], formatDuration(r.bucket)])}
+        {entity.offlineMinutes ? trf(" · mất tín hiệu {0} phút gần nhất", [entity.offlineMinutes]) : ""}
       </p>
     </section>
   );

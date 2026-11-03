@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 import type { ArchiveView } from "../types";
 import { READING_ROOM_RULES } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 const escXml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c] ?? c);
@@ -33,7 +34,7 @@ const TextBody = ({ url }: { url: string }) => {
       alive = false;
     };
   }, [url]);
-  if (failed) return <p className="text-[13px] text-red-700">Không tải được nội dung tệp. Đóng và mở lại.</p>;
+  if (failed) return <p className="text-[13px] text-red-700">{tr("Không tải được nội dung tệp. Đóng và mở lại.")}</p>;
   if (text === undefined) return <Spin />;
   return (
     <pre className="m-0 whitespace-pre-wrap break-words font-mono text-[12.5px] leading-relaxed text-ink">{text}</pre>
@@ -44,7 +45,7 @@ const Body = ({ view }: { view: ArchiveView }) => {
   if (view.contentType === "application/pdf") {
     return (
       <iframe
-        title={`Xem chỉ đọc: ${view.fileName}`}
+        title={trf("Xem chỉ đọc: {0}", [view.fileName])}
         src={`${view.url}#toolbar=0&navpanes=0`}
         className="h-[70vh] w-full rounded-md border-0 bg-surface"
       />
@@ -71,9 +72,9 @@ const Body = ({ view }: { view: ArchiveView }) => {
     <div className="flex min-h-[240px] flex-col items-center justify-center gap-2 rounded-md bg-surface text-center">
       <FileWarning className="h-6 w-6 text-amber-600" aria-hidden />
       <p className="m-0 text-[13px] text-body">
-        Tệp <b>{view.fileName}</b> (Word, Excel) không xem trực tiếp được trong phòng đọc.
+        {tr("Tệp ")} <b>{view.fileName}</b> {tr(" (Word, Excel) không xem trực tiếp được trong phòng đọc.")}
       </p>
-      <p className="m-0 text-[12px] text-muted">Mở chứng từ gốc nếu bạn cần tải tệp về.</p>
+      <p className="m-0 text-[12px] text-muted">{tr("Mở chứng từ gốc nếu bạn cần tải tệp về.")}</p>
     </div>
   );
 };
@@ -90,7 +91,7 @@ export const ReadOnlyViewerModal = ({ view, onClose }: { view?: ArchiveView; onC
         <Lock className="h-4 w-4 text-muted" aria-hidden />
         <span className="truncate">{view?.title}</span>
         <span className="inline-flex h-5 shrink-0 items-center rounded-ui border border-line px-2 text-[11px] font-medium text-body">
-          Chỉ đọc
+          {tr("Chỉ đọc")}
         </span>
       </span>
     }
@@ -106,7 +107,7 @@ export const ReadOnlyViewerModal = ({ view, onClose }: { view?: ArchiveView; onC
           <Body view={view} />
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ backgroundImage: watermarkUrl(`${view.viewer} · ${view.openedAt} · CHỈ ĐỌC`) }}
+            style={{ backgroundImage: watermarkUrl(trf("{0} · {1} · CHỈ ĐỌC", [view.viewer, view.openedAt])) }}
             aria-hidden
           />
         </div>

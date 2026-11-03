@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { request } from "../../api/client";
 import type { Dataset, DatasetPreview } from "./types";
+import { tr, trf } from "../../i18n";
 
 const DATASETS = `
   query LakehouseDatasets {
@@ -22,25 +23,28 @@ const PREVIEW = `
 type RawDataset = { name: string; label: string; domain: string; columns: Array<{ name: string; type: string }> };
 
 const COLUMN_NOTE: Record<string, string> = {
-  id: "Khóa chính",
-  tenant_id: "Công ty (tenant) · tự lọc theo tenant đang chọn",
-  _changed_at: "Thời điểm thay đổi gần nhất (theo CDC)",
-  _lsn: "Vị trí WAL của thay đổi gần nhất",
-  created_at: "Thời điểm tạo",
-  updated_at: "Thời điểm sửa gần nhất",
-  status: "Trạng thái",
-  doc_no: "Số chứng từ",
-  title: "Tiêu đề",
-  total_amount: "Tổng tiền (VND)",
-  org_unit_id: "Đơn vị",
-  valid_period: "Thời gian hiệu lực",
+  id: tr("Khóa chính"),
+  tenant_id: tr("Công ty (tenant) · tự lọc theo tenant đang chọn"),
+  _changed_at: tr("Thời điểm thay đổi gần nhất (theo CDC)"),
+  _lsn: tr("Vị trí WAL của thay đổi gần nhất"),
+  created_at: tr("Thời điểm tạo"),
+  updated_at: tr("Thời điểm sửa gần nhất"),
+  status: tr("Trạng thái"),
+  doc_no: tr("Số chứng từ"),
+  title: tr("Tiêu đề"),
+  total_amount: tr("Tổng tiền (VND)"),
+  org_unit_id: tr("Đơn vị"),
+  valid_period: tr("Thời gian hiệu lực"),
 };
 
 const PII_COLUMN = /(^|_)(email|phone|date_of_birth)$|_enc$/;
 
 const usage = (name: string) => ({
   graphql: `query {\n  lakehouse_preview(dataset: "${name}") {\n    total_rows\n    rows\n    masked\n  }\n}`,
-  sql: `-- Trino, người dùng của tenant: row filter tự thêm tenant_id = <tenant của bạn>\nSELECT *\nFROM lakehouse.silver.${name}\nORDER BY _changed_at DESC\nLIMIT 100;`,
+  sql: trf(
+    "-- Trino, người dùng của tenant: row filter tự thêm tenant_id = <tenant của bạn>\nSELECT *\nFROM lakehouse.silver.{0}\nORDER BY _changed_at DESC\nLIMIT 100;",
+    [name],
+  ),
 });
 
 const toDataset = (d: RawDataset): Dataset => {
@@ -50,12 +54,15 @@ const toDataset = (d: RawDataset): Dataset => {
     id: d.name,
     table: `lakehouse.silver.${d.name}`,
     title: d.label,
-    description: `Trạng thái hiện tại của bảng ${source}: mỗi bản ghi một dòng, dựng từ lịch sử thay đổi (CDC) ở tầng bronze.`,
+    description: trf(
+      "Trạng thái hiện tại của bảng {0}: mỗi bản ghi một dòng, dựng từ lịch sử thay đổi (CDC) ở tầng bronze.",
+      [source],
+    ),
     domain: d.domain,
-    owner: "Nền tảng dữ liệu",
-    refresh: "Gần thời gian thực (CDC)",
+    owner: tr("Nền tảng dữ liệu"),
+    refresh: tr("Gần thời gian thực (CDC)"),
     access: "Trino · view silver",
-    updatedLabel: "Gần thời gian thực",
+    updatedLabel: tr("Gần thời gian thực"),
     certified: false,
     pii: "masked",
     tier: "hot",
@@ -67,7 +74,7 @@ const toDataset = (d: RawDataset): Dataset => {
     })),
     checks: [],
     upstream: [`PostgreSQL · bms.${source}`, `Kafka · bms.${source}`, `Iceberg · lakehouse.bronze.${d.name}`],
-    downstream: ["Dịch vụ dữ liệu (trang này)"],
+    downstream: [tr("Dịch vụ dữ liệu (trang này)")],
     ...usage(d.name),
   };
 };

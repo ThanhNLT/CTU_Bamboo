@@ -6,6 +6,7 @@ import { Folder, Users } from "lucide-react";
 
 import type { DriveFolder } from "../types";
 import { formatBytes } from "../utils";
+import { tr } from "../../../i18n";
 
 export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (f: DriveFolder) => void }) => (
   <button
@@ -21,12 +22,12 @@ export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (
         {folder.name}
       </span>
       <span className="mt-0.5 flex items-center gap-1 text-[11.5px] text-muted">
-        {folder.fileCount} tệp · {formatBytes(folder.bytes)}
+        {folder.fileCount} {tr(" tệp · ")} {formatBytes(folder.bytes)}
         {folder.sharedWith ? (
           <>
             {" · "}
             <Users className="h-3 w-3" strokeWidth={2} aria-hidden />
-            {folder.sharedWith} người
+            {folder.sharedWith} {tr(" người")}
           </>
         ) : null}
       </span>

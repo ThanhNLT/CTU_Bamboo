@@ -5,6 +5,7 @@
 import type { AccessControlProvider } from "@refinedev/core";
 
 import { getTenant, request } from "../api/client";
+import { trf } from "../i18n";
 
 let cache: { tenant: string; promise: Promise<Set<string>> } | null = null;
 
@@ -53,7 +54,7 @@ export const accessControlProvider: AccessControlProvider = {
     const anyOf = Array.isArray(needed) ? needed : [needed];
     return anyOf.some((p) => perms.has(p))
       ? { can: true }
-      : { can: false, reason: `Cần quyền ${anyOf.join(" hoặc ")}` };
+      : { can: false, reason: trf("Cần quyền {0}", [anyOf.join(" hoặc ")]) };
   },
   options: { buttons: { enableAccessControl: true, hideIfUnauthorized: true } },
 };

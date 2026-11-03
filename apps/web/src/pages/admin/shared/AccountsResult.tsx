@@ -8,6 +8,7 @@ import { Download } from "lucide-react";
 import { MODAL_Z } from "./zIndex";
 import { smallSecondaryButtonClass } from "../../../components/ui";
 import { downloadCsv, type AccountResult } from "./api";
+import { tr } from "../../../i18n";
 
 export const AccountsResult = ({
   results,
@@ -22,10 +23,10 @@ export const AccountsResult = ({
   return (
     <Modal
       open={Boolean(results)}
-      title="Tài khoản đăng nhập"
+      title={tr("Tài khoản đăng nhập")}
       onCancel={onClose}
       onOk={onClose}
-      okText="Đã lưu, đóng"
+      okText={tr("Đã lưu, đóng")}
       cancelButtonProps={{ style: { display: "none" } }}
       width={640}
       maskClosable={false}
@@ -35,8 +36,8 @@ export const AccountsResult = ({
         type="warning"
         showIcon
         className="mb-3"
-        message="Mật khẩu tạm chỉ hiện một lần"
-        description="Tải danh sách về và bàn giao riêng cho từng người. Họ phải đổi mật khẩu ở lần đăng nhập đầu."
+        message={tr("Mật khẩu tạm chỉ hiện một lần")}
+        description={tr("Tải danh sách về và bàn giao riêng cho từng người. Họ phải đổi mật khẩu ở lần đăng nhập đầu.")}
       />
       <Table
         size="small"
@@ -44,21 +45,21 @@ export const AccountsResult = ({
         pagination={false}
         dataSource={results ?? []}
         columns={[
-          { title: "Họ tên", render: (_, r) => names[r.person_id] ?? r.person_id },
+          { title: tr("Họ tên"), render: (_, r) => names[r.person_id] ?? r.person_id },
           {
-            title: "Tên đăng nhập",
+            title: tr("Tên đăng nhập"),
             dataIndex: "username",
             render: (v: string) => <span className="font-mono text-[12px]">{v}</span>,
           },
           {
-            title: "Mật khẩu tạm / lỗi",
+            title: tr("Mật khẩu tạm / lỗi"),
             render: (_, r) =>
               r.error ? (
                 <span className="text-red-700">{r.error}</span>
               ) : r.temporary_password ? (
                 <span className="font-mono text-[12px]">{r.temporary_password}</span>
               ) : (
-                <span className="text-muted">Đã liên kết tài khoản sẵn có</span>
+                <span className="text-muted">{tr("Đã liên kết tài khoản sẵn có")}</span>
               ),
           },
         ]}
@@ -69,12 +70,12 @@ export const AccountsResult = ({
           className={`${smallSecondaryButtonClass} mt-3`}
           onClick={() =>
             downloadCsv("tai-khoan-moi.csv", [
-              ["Họ tên", "Tên đăng nhập", "Mật khẩu tạm"],
+              [tr("Họ tên"), tr("Tên đăng nhập"), tr("Mật khẩu tạm")],
               ...ok.map((r) => [names[r.person_id] ?? r.person_id, r.username, r.temporary_password ?? ""]),
             ])
           }
         >
-          <Download className="h-3.5 w-3.5" aria-hidden /> Tải danh sách (CSV)
+          <Download className="h-3.5 w-3.5" aria-hidden /> {tr(" Tải danh sách (CSV)")}
         </button>
       )}
     </Modal>

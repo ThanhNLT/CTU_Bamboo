@@ -406,3 +406,165 @@ def test_tao_cong_ty_thanh_vien(env):
         action(client, "create_subsidiary", outsider, ids["owner"], t).json()["extensions"]["code"]
         == "account-conflict"
     )
+
+
+# ----- Đăng ký đơn giản (ADR #62) -----
+
+OWNER = {
+    "full_name": "Phạm Minh Anh",
+    "birth_year": 1988,
+    "title": "Giám đốc",
+    "phone": "0912 345 678",
+    "email": "anh@minhanh.vn",
+    "username": "anh.pham",
+}
+
+
+def register(client, **extra):
+    body = {
+        "owner": OWNER,
+        "company": {
+            "legal_name": "Công ty TNHH Thương mại Minh Anh",
+            "tax_code": "0312345678",
+            "industry": "Thương mại",
+        },
+        "size_band": "1-10",
+        "flow": "quick",
+        "members": [],
+        "modules": [],
+    } | extra
+    return client.post("/setup/applications", json=body)
+
+
+def finish_unsigned(client, r):
+    assert r.status_code == 200, r.text
+    return client.post(f"/setup/applications/{r.json()['application_id']}/finish", json={"token": r.json()["token"]})
+
+
+def test_ma_cong_ty_tu_sinh_tu_ten():
+    assert setup.suggest_code("Công ty TNHH Thương mại Minh Anh") == "THUONGMAIMINHANH"
+    assert setup.suggest_code("Công ty Cổ phần Đầu tư Xây dựng và Phát triển Hạ tầng Đông Đô") == "DTXDVPTHTDD"
+    assert setup.suggest_code("Hộ kinh doanh Bánh mì 37") == "BANHMI37"
+    assert setup.suggest_code("TNHH") == "TNHH"
+
+
+def test_dang_ky_nhanh_khong_can_ma(env):
+    client, db, users = env["client"], env["db"], env["users"]
+    status = client.get("/setup/status").json()
+    assert status["open"] is True and status["window_open"] is False and status["modules"]
+    # chưa có mã thiết lập hiệu lực (máy chủ chưa khởi động bootstrap) thì cửa sổ đăng ký đóng
+    assert register(client).json()["code"] == "setup-window-closed"
+    issue_code(db)
+    assert client.get("/setup/status").json()["window_open"] is True
+
+    members = [
+        {"full_name": "Lê Thu Hà", "username": "ha.le", "role": "ACCOUNTANT", "title": "Kế toán trưởng"},
+        {"full_name": "Đỗ Văn Nam", "username": "nam.do", "role": "STAFF"},
+        {"full_name": "Vũ Hải", "username": "hai.vu", "role": "ADMIN", "email": "hai@minhanh.vn"},
+    ]
+    r = register(client, members=members, modules=["procurement"])
+    assert r.json()["tenant_code"] == "THUONGMAIMINHANH"
+    r = finish_unsigned(client, r)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["legal_status"] == "UNVERIFIED" and body["modules"] == ["approval", "procurement"]
+    assert [a["username"] for a in body["accounts"]] == ["anh.pham", "ha.le", "nam.do", "hai.vu"]
+    # chủ sở hữu và quản trị viên phải cài OTP, thành viên thường chỉ đổi mật khẩu
+    assert users.created["sub-anh.pham"]["required"] == ("UPDATE_PASSWORD", "CONFIGURE_TOTP")
+    assert users.created["sub-hai.vu"]["required"] == ("UPDATE_PASSWORD", "CONFIGURE_TOTP")
+    assert users.created["sub-nam.do"]["required"] == ("UPDATE_PASSWORD",)
+
+    with psycopg.connect(db) as conn:
+        tenant = conn.execute("SELECT industry, size_band, legal_rep_name, tax_code FROM core.tenant").fetchone()
+        assert tenant == ("Thương mại", "1-10", "Phạm Minh Anh", "0312345678")
+        owner = conn.execute(
+            """SELECT p.birth_year, p.phone, p.email FROM core.tenant_owner o JOIN core.person p ON p.id = o.person_id"""
+        ).fetchone()
+        assert owner == (1988, "0912 345 678", "anh@minhanh.vn")
+        roles = dict(
+            conn.execute(
+                """SELECT p.idp_subject, string_agg(r.code, ',' ORDER BY r.code)
+                   FROM core.person p JOIN core.assignment a ON a.person_id = p.id
+                   JOIN core.role_grant g ON g.position_id = a.position_id JOIN core.role r ON r.id = g.role_id
+                   GROUP BY p.idp_subject"""
+            ).fetchall()
+        )
+        assert roles == {"sub-anh.pham": "QUAN_TRI_TO_CHUC", "sub-ha.le": "KIEM_SOAT", "sub-hai.vu": "QUAN_TRI_TO_CHUC"}
+        # quản trị viên ngồi ghế Quản trị hệ thống có sẵn, không tạo ghế trống thừa
+        assert conn.execute("SELECT count(*) FROM core.position WHERE name = 'Quản trị hệ thống'").fetchone()[0] == 1
+        enabled = [r[0] for r in conn.execute("SELECT module FROM core.tenant_module ORDER BY module")]
+        assert enabled == ["approval", "procurement"]
+    assert client.get("/setup/status").json() == client.get("/setup/status").json() | {"open": False, "modules": []}
+
+
+def test_dang_ky_chi_tiet_co_phong_ban(env):
+    client, db = env["client"], env["db"]
+    issue_code(db)
+    units = [
+        {"key": "kd", "name": "Phòng Kinh doanh", "type": "PHONG"},
+        {"key": "sx", "name": "Nhà máy Bình Dương", "type": "NHA_MAY"},
+    ]
+    members = [
+        {"full_name": "Trưởng KD", "username": "truong.kd", "role": "MANAGER", "unit": "kd"},
+        {"full_name": "Phó KD", "username": "pho.kd", "role": "MANAGER", "unit": "kd"},
+        {"full_name": "NV KD", "username": "nv.kd", "role": "STAFF", "unit": "kd"},
+        {"full_name": "Quản đốc", "username": "quan.doc", "role": "MANAGER", "unit": "sx", "title": "Quản đốc"},
+    ]
+    r = register(
+        client,
+        size_band="51-200",
+        flow="detailed",
+        units=units,
+        members=members,
+        company={"legal_name": "Công ty CP Sản xuất ABC", "tax_code": "0101234567", "code": "ABC"},
+    )
+    r = finish_unsigned(client, r)
+    assert r.status_code == 200, r.text
+    with psycopg.connect(db) as conn:
+        rows = conn.execute(
+            """SELECT u.name, ut.code, p.name, p.is_head, pe.idp_subject
+               FROM core.position p JOIN core.org_unit u ON u.id = p.org_unit_id
+               JOIN core.catalog_item ut ON ut.id = u.unit_type_id
+               JOIN core.assignment a ON a.position_id = p.id JOIN core.person pe ON pe.id = a.person_id
+               WHERE u.parent_id IS NOT NULL ORDER BY pe.employee_code"""
+        ).fetchall()
+        assert rows == [
+            ("Phòng Kinh doanh", "PHONG", "Trưởng bộ phận", True, "sub-truong.kd"),
+            ("Phòng Kinh doanh", "PHONG", "Trưởng bộ phận", False, "sub-pho.kd"),
+            ("Phòng Kinh doanh", "PHONG", "Nhân viên", False, "sub-nv.kd"),
+            ("Nhà máy Bình Dương", "NHA_MAY", "Quản đốc", True, "sub-quan.doc"),
+        ]
+        # mỗi phòng ban mới nhận vai trò Nhân viên giao cho đơn vị; trưởng bộ phận được duyệt trong cây đơn vị
+        assert (
+            conn.execute(
+                """SELECT count(*) FROM core.role_grant g JOIN core.role r ON r.id = g.role_id
+               WHERE r.code = 'NHAN_VIEN' AND g.scope = 'UNIT'"""
+            ).fetchone()[0]
+            == 3
+        )
+        assert (
+            conn.execute(
+                """SELECT count(*) FROM core.role_grant g JOIN core.role r ON r.id = g.role_id
+               WHERE r.code = 'QUAN_LY' AND g.scope = 'SUBTREE'"""
+            ).fetchone()[0]
+            == 3
+        )
+
+
+def test_dang_ky_du_lieu_sai(env):
+    client, db = env["client"], env["db"]
+    issue_code(db)
+    dup = [{"full_name": "A", "username": "anh.pham", "role": "STAFF"}]
+    assert "bị trùng" in register(client, members=dup).json()["message"]
+    assert (
+        "phòng ban"
+        in register(
+            client, flow="detailed", members=[{"full_name": "Bé", "username": "be.x", "unit": "khong-co"}]
+        ).json()["message"]
+    )
+    assert "Không có công cụ" in register(client, modules=["khong-co"]).json()["message"]
+    assert "Năm sinh" in register(client, owner=OWNER | {"birth_year": 2030}).json()["message"]
+    assert "Quy mô" in register(client, size_band="1000").json()["message"]
+    # hộ kinh doanh dùng mã số thuế cá nhân 12 chữ số
+    r = register(client, company={"legal_name": "Hộ kinh doanh Bánh mì 37", "tax_code": "001088012345"})
+    assert finish_unsigned(client, r).status_code == 200

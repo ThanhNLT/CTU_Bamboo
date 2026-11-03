@@ -41,6 +41,7 @@ import { Attachments } from "../../components/document/Attachments";
 import { Comments } from "../../components/document/Comments";
 import { CANCEL_PR, MY_TASK_FOR, PR_DETAIL, PR_PDF, SUBMIT_PR } from "./queries";
 import type { PurchaseRequest } from "./types";
+import { tr, trf } from "../../i18n";
 
 export const PurchaseRequestShow = () => {
   const { id } = useParsed();
@@ -73,7 +74,7 @@ export const PurchaseRequestShow = () => {
   if (error) return <Alert type="error" showIcon message={error} />;
   if (pr === undefined) return <Spin />;
   if (pr === null)
-    return <Alert type="warning" showIcon message="Không tìm thấy đề nghị hoặc bạn không có quyền xem." />;
+    return <Alert type="warning" showIcon message={tr("Không tìm thấy đề nghị hoặc bạn không có quyền xem.")} />;
 
   const mine = pr.requester_id === tenant.person_id;
   const editable = mine && ["DRAFT", "RETURNED"].includes(pr.status);
@@ -86,7 +87,7 @@ export const PurchaseRequestShow = () => {
   const submit = async () => {
     try {
       await request(SUBMIT_PR, { id: pr.id });
-      message.success("Đã gửi duyệt");
+      message.success(tr("Đã gửi duyệt"));
       await load();
     } catch (e) {
       message.error((e as Error).message);
@@ -100,7 +101,7 @@ export const PurchaseRequestShow = () => {
         get_purchase_request_pdf: { url: string; file_name: string; check_code: string };
       }>(PR_PDF, { id: pr.id });
       window.location.assign(pdf.url);
-      message.success(`Đã tải phiếu ${pdf.file_name} (mã kiểm tra ${pdf.check_code})`);
+      message.success(trf("Đã tải phiếu {0} (mã kiểm tra {1})", [pdf.file_name, pdf.check_code]));
     } catch (e) {
       message.error((e as Error).message);
     } finally {
@@ -111,22 +112,22 @@ export const PurchaseRequestShow = () => {
   const cancel = () => {
     let reason = "";
     modal.confirm({
-      title: `Hủy đề nghị ${pr.doc_no}?`,
+      title: trf("Hủy đề nghị {0}?", [pr.doc_no]),
       content: (
         <Input.TextArea
           rows={3}
-          placeholder="Lý do hủy (bắt buộc)"
+          placeholder={tr("Lý do hủy (bắt buộc)")}
           onChange={(e) => {
             reason = e.target.value;
           }}
         />
       ),
-      okText: "Hủy đề nghị",
+      okText: tr("Hủy đề nghị"),
       okButtonProps: { danger: true },
-      cancelText: "Không",
+      cancelText: tr("Không"),
       onOk: async () => {
         if (!reason.trim()) {
-          message.error("Phải ghi lý do hủy");
+          message.error(tr("Phải ghi lý do hủy"));
           throw new Error("missing reason");
         }
         await request(CANCEL_PR, { id: pr.id, reason: reason.trim() })
@@ -148,7 +149,7 @@ export const PurchaseRequestShow = () => {
         <Space wrap>
           {task && (
             <Button type="primary" icon={<AuditOutlined />} onClick={() => setActing(true)}>
-              Xử lý duyệt
+              {tr("Xử lý duyệt")}
             </Button>
           )}
           {editable && (
@@ -156,52 +157,58 @@ export const PurchaseRequestShow = () => {
               icon={<EditOutlined />}
               onClick={() => go({ to: { resource: "proc_purchase_request", action: "edit", id: pr.id } })}
             >
-              Sửa
+              {tr("Sửa")}
             </Button>
           )}
           {editable && (
             <Button type="primary" icon={<SendOutlined />} onClick={submit}>
-              Gửi duyệt
+              {tr("Gửi duyệt")}
             </Button>
           )}
           {cancellable && (
             <Button danger icon={<StopOutlined />} onClick={cancel}>
-              Hủy
+              {tr("Hủy")}
             </Button>
           )}
           <Button icon={<ApartmentOutlined />} onClick={() => go({ to: `/p/process/${pr.id}` })}>
-            Sơ đồ quy trình
+            {tr("Sơ đồ quy trình")}
           </Button>
           <Button icon={<PrinterOutlined />} loading={printing} onClick={print}>
-            In phiếu
+            {tr("In phiếu")}
           </Button>
         </Space>
       )}
     >
       {returnedNote && (
-        <Alert style={{ marginBottom: 16 }} type="warning" showIcon message="Bị trả về" description={returnedNote} />
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="warning"
+          showIcon
+          message={tr("Bị trả về")}
+          description={returnedNote}
+        />
       )}
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={15}>
           <Descriptions bordered size="small" column={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }} title={pr.title}>
-            <Descriptions.Item label="Người lập">{pr.requester?.full_name}</Descriptions.Item>
-            <Descriptions.Item label="Tư cách lập">
+            <Descriptions.Item label={tr("Người lập")}>{pr.requester?.full_name}</Descriptions.Item>
+            <Descriptions.Item label={tr("Tư cách lập")}>
               {pr.requester_position?.name} – {pr.org_unit?.name}
             </Descriptions.Item>
-            <Descriptions.Item label="Tổng tiền">
+            <Descriptions.Item label={tr("Tổng tiền")}>
               <Typography.Text strong>{formatMoney(pr.total_amount)}</Typography.Text>
             </Descriptions.Item>
-            <Descriptions.Item label="Nhà cung cấp">
+            <Descriptions.Item label={tr("Nhà cung cấp")}>
               {pr.partner
                 ? `${pr.partner.code} – ${pr.partner.name}`
                 : pr.proposed_partner_name
                   ? `${pr.proposed_partner_name}${pr.proposed_partner_tax_code ? ` · MST ${pr.proposed_partner_tax_code}` : ""}`
                   : "—"}
-              {pr.proposed_partner_name && <Tag style={{ marginLeft: 8 }}>Chưa có trong danh mục</Tag>}
-              {pr.partner?.internal_unit_id && <Tag style={{ marginLeft: 8 }}>Nội bộ</Tag>}
+              {pr.proposed_partner_name && <Tag style={{ marginLeft: 8 }}>{tr("Chưa có trong danh mục")}</Tag>}
+              {pr.partner?.internal_unit_id && <Tag style={{ marginLeft: 8 }}>{tr("Nội bộ")}</Tag>}
             </Descriptions.Item>
             {pr.ic_order && (
-              <Descriptions.Item label="Đơn hàng nội bộ">
+              <Descriptions.Item label={tr("Đơn hàng nội bộ")}>
                 <Space>
                   <Typography.Link
                     onClick={() => go({ to: { resource: "ic_ic_order", action: "show", id: pr.ic_order!.id } })}
@@ -212,12 +219,12 @@ export const PurchaseRequestShow = () => {
                 </Space>
               </Descriptions.Item>
             )}
-            <Descriptions.Item label="Ngày cần hàng">{formatDay(pr.needed_by)}</Descriptions.Item>
-            <Descriptions.Item label="Nhóm hàng">{pr.category_code ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Ngày lập">{formatDate(pr.created_at)}</Descriptions.Item>
-            <Descriptions.Item label="Cập nhật">{formatDate(pr.updated_at)}</Descriptions.Item>
+            <Descriptions.Item label={tr("Ngày cần hàng")}>{formatDay(pr.needed_by)}</Descriptions.Item>
+            <Descriptions.Item label={tr("Nhóm hàng")}>{pr.category_code ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label={tr("Ngày lập")}>{formatDate(pr.created_at)}</Descriptions.Item>
+            <Descriptions.Item label={tr("Cập nhật")}>{formatDate(pr.updated_at)}</Descriptions.Item>
             {pr.description && (
-              <Descriptions.Item label="Mô tả" span={2}>
+              <Descriptions.Item label={tr("Mô tả")} span={2}>
                 {pr.description}
               </Descriptions.Item>
             )}
@@ -232,7 +239,7 @@ export const PurchaseRequestShow = () => {
             summary={() => (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5} align="right">
-                  <b>Tổng cộng</b>
+                  <b>{tr("Tổng cộng")}</b>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={1} align="right">
                   <b>{formatMoney(pr.total_amount)}</b>
@@ -242,7 +249,7 @@ export const PurchaseRequestShow = () => {
             columns={[
               { title: "#", dataIndex: "line_no", width: 40 },
               {
-                title: "Mô tả",
+                title: tr("Mô tả"),
                 render: (_, i) => (
                   <>
                     {i.item && <Tag>{i.item.code}</Tag>}
@@ -250,16 +257,16 @@ export const PurchaseRequestShow = () => {
                   </>
                 ),
               },
-              { title: "ĐVT", dataIndex: "uom", width: 80 },
+              { title: tr("ĐVT"), dataIndex: "uom", width: 80 },
               {
-                title: "Số lượng",
+                title: tr("Số lượng"),
                 dataIndex: "quantity",
                 align: "right",
                 width: 100,
                 render: (v) => Number(v).toLocaleString("vi-VN"),
               },
-              { title: "Đơn giá", dataIndex: "unit_price", align: "right", render: formatMoney },
-              { title: "Thành tiền", dataIndex: "amount", align: "right", render: formatMoney },
+              { title: tr("Đơn giá"), dataIndex: "unit_price", align: "right", render: formatMoney },
+              { title: tr("Thành tiền"), dataIndex: "amount", align: "right", render: formatMoney },
             ]}
           />
           <Card style={{ marginTop: 16 }} size="small">
@@ -267,7 +274,7 @@ export const PurchaseRequestShow = () => {
               items={[
                 {
                   key: "files",
-                  label: `Tệp đính kèm (${pr.attachments.length})`,
+                  label: trf("Tệp đính kèm ({0})", [pr.attachments.length]),
                   children: (
                     <Attachments
                       doc={pr}
@@ -280,7 +287,7 @@ export const PurchaseRequestShow = () => {
                 },
                 {
                   key: "comments",
-                  label: `Trao đổi (${pr.comments.filter((c) => !c.deleted_at).length})`,
+                  label: trf("Trao đổi ({0})", [pr.comments.filter((c) => !c.deleted_at).length]),
                   children: (
                     <Comments doc={pr} entityType="proc.purchase_request" me={tenant.person_id} onChange={load} />
                   ),
@@ -294,14 +301,14 @@ export const PurchaseRequestShow = () => {
             round={pr.approval_round}
             steps={pr.approval_steps}
             history={pr.approval_history}
-            emptyHint="Chưa gửi duyệt. Chuỗi duyệt được chốt theo hạn mức lúc gửi."
+            emptyHint={tr("Chưa gửi duyệt. Chuỗi duyệt được chốt theo hạn mức lúc gửi.")}
           />
         </Col>
       </Row>
       <ActModal
         taskId={acting ? (task?.task_id ?? null) : null}
         viaDelegation={task?.via_delegation}
-        title={`Xử lý ${pr.doc_no}`}
+        title={trf("Xử lý {0}", [pr.doc_no])}
         onClose={() => setActing(false)}
         onDone={() => {
           setActing(false);

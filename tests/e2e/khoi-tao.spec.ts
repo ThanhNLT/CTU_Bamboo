@@ -4,53 +4,64 @@
 
 import { expect, test } from "@playwright/test";
 
-// Chỉ chạy được trên máy chủ chưa có công ty nào (SEED_DEMO=false); E2E_SETUP_CODE là mã in ở log bootstrap
+// Chỉ chạy được trên máy chủ chưa có công ty nào (SEED_DEMO=false), trong 24 giờ sau khi bootstrap khởi động (ADR #62)
 const SETUP_URL = process.env.E2E_SETUP_URL ?? "http://localhost:8000/setup";
-const CODE = process.env.E2E_SETUP_CODE ?? "";
 const STAMP = Date.now().toString().slice(-6);
 
-test("khởi tạo công ty lần đầu: mã thiết lập, đơn đăng ký, tạo công ty chưa xác thực", async ({ page, request }) => {
+test("đăng ký sử dụng: chủ sở hữu, doanh nghiệp, thiết lập nhanh có thành viên, không ký số", async ({
+  page,
+  request,
+}) => {
   const status = await request
     .get(`${SETUP_URL}/status`)
     .then((r) => r.json())
     .catch(() => ({ open: false }));
-  test.skip(!status.open || !CODE, "Máy chủ đã có công ty hoặc chưa cho mã thiết lập (E2E_SETUP_CODE)");
+  test.skip(!status.open || !status.window_open, "Máy chủ đã có công ty hoặc đã hết 24 giờ mở đăng ký");
 
   await page.goto("/login");
-  await expect(page.getByText("Hệ thống chưa có công ty nào.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Đăng nhập bằng tài khoản đã có" })).toBeVisible();
-  await page.getByRole("button", { name: "Tạo công ty mới" }).click();
+  await expect(page.getByText(/Hệ thống chưa có công ty nào/)).toBeVisible();
+  await page.getByRole("button", { name: "Tạo tài khoản" }).click();
   await expect(page).toHaveURL(/\/khoi-tao$/);
 
-  await page.getByLabel("Mã thiết lập").fill("SAI0-SAI0-SAI0");
-  await page.getByLabel("Tên doanh nghiệp").fill("Công ty Cổ phần Thử nghiệm E2E");
-  await page.getByLabel("Mã số thuế").fill(`0109${STAMP}`);
-  await page.getByLabel("Mã công ty trên hệ thống").fill(`e2e${STAMP}`);
-  await page.getByLabel("Địa chỉ trụ sở chính").fill("Số 1 Tràng Tiền, Hà Nội");
-  await page.getByLabel("Người đại diện theo pháp luật").fill("Nguyễn Văn Thử");
+  // Bạn là ai
+  await page.getByLabel("Họ và tên").fill("Nguyễn Văn Thử");
+  await page.getByLabel("Năm sinh").fill("1985");
   await page.getByLabel("Tên đăng nhập").fill(`chu.${STAMP}`);
-  await page.getByRole("button", { name: "Lập đơn đăng ký" }).click();
-  await expect(page.getByText("Mã thiết lập không đúng")).toBeVisible();
+  await page.getByRole("button", { name: /Tiếp tục/ }).click();
 
-  await page.getByLabel("Mã thiết lập").fill(CODE);
-  await page.getByRole("button", { name: "Lập đơn đăng ký" }).click();
-  await expect(page.getByText(/Mã đơn/)).toBeVisible();
-  const pdf = await request.get(
-    (await page.getByRole("link", { name: "Tải đơn đăng ký (PDF)" }).getAttribute("href")) ?? "",
-  );
-  expect(pdf.ok()).toBeTruthy();
-  expect((await pdf.body()).subarray(0, 5).toString()).toBe("%PDF-");
+  // Doanh nghiệp
+  await page.getByLabel("Tên doanh nghiệp").fill("Công ty TNHH Thử nghiệm E2E");
+  await page.getByLabel("Mã số thuế").fill(`0109${STAMP}`);
+  await page.getByLabel("Lĩnh vực kinh doanh").fill("Thương mại");
+  await page.getByLabel("Lĩnh vực kinh doanh").press("Enter");
+  await page.getByRole("button", { name: /Tiếp tục/ }).click();
 
-  await page.getByRole("button", { name: "Chưa có chữ ký số: tạo công ty chưa xác thực" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Tạo công ty", exact: true }).click();
-  await expect(page.getByText("Đã tạo công ty")).toBeVisible();
+  // Quy mô: 1–10 người gợi ý luồng nhanh (không có bước Phòng ban)
+  await page.getByRole("radio", { name: /1–10 người/ }).click();
+  await expect(page.getByRole("navigation", { name: "Các bước đăng ký" }).getByText("Phòng ban")).toHaveCount(0);
+  await page.getByRole("button", { name: /Tiếp tục/ }).click();
+
+  // Thành viên: thêm nhanh theo danh sách tên, tên đăng nhập tự gợi ý
+  await page.getByPlaceholder(/Mỗi dòng một họ tên/).fill(`Lê Thu Hà ${STAMP}`);
+  await page.getByRole("button", { name: /Thêm vào danh sách/ }).click();
+  await expect(page.getByLabel("Tên đăng nhập")).toHaveValue(/^ha\.le|^\d+\.le/);
+  await page.getByRole("button", { name: /Tiếp tục/ }).click();
+
+  // Công cụ: lĩnh vực đã gợi ý sẵn Mua sắm (kéo theo Phê duyệt)
+  await expect(page.getByRole("button", { name: /^Mua sắm/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /^Phê duyệt/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /Tiếp tục/ }).click();
+
+  // Xác nhận: không ký số
+  await expect(page.getByText(`chu.${STAMP}`)).toBeVisible();
+  await page.getByRole("button", { name: /Tạo tài khoản doanh nghiệp/ }).click();
+  await expect(page.getByText("Đã tạo Công ty TNHH Thử nghiệm E2E")).toBeVisible();
   await expect(page.getByText(/Công ty chưa xác thực pháp lý/)).toBeVisible();
-  await expect(page.getByRole("cell", { name: `chu.${STAMP}` })).toBeVisible();
-  await expect(page.getByRole("cell", { name: "Chủ sở hữu" })).toBeVisible();
+  await expect(page.getByText(`chu.${STAMP}`)).toBeVisible();
 
-  // trang khởi tạo đóng sau khi đã có công ty
+  // trang đăng ký đóng sau khi đã có công ty
   await page.goto("/khoi-tao");
-  await expect(page.getByText("Hệ thống đã có công ty")).toBeVisible();
+  await expect(page.getByText("Hệ thống đã có doanh nghiệp")).toBeVisible();
 });
 
 test("trang Thông tin công ty: công ty có từ trước chưa có chủ sở hữu", async ({ page }) => {

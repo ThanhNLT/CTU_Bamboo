@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
 import type { PinnedKpi, Tone } from "./types";
+import { tr, trf } from "../../i18n";
 
 const KPIS = `query Kpis {
   kpi_definition(order_by: {label: asc}) {
@@ -34,7 +35,12 @@ type DefRow = {
 export type KpiOption = { key: string; label: string; definition: string; grain: DefRow["grain"] };
 
 export const MAX_PINS = 6;
-const PERIOD: Record<DefRow["grain"], string> = { hour: "giờ", day: "ngày", week: "tuần", month: "tháng" };
+const PERIOD: Record<DefRow["grain"], string> = {
+  hour: tr("giờ"),
+  day: tr("ngày"),
+  week: tr("tuần"),
+  month: tr("tháng"),
+};
 
 const num = (v: number, unit: string) =>
   new Intl.NumberFormat("vi-VN", { maximumFractionDigits: unit === "%" || unit === "tỷ đồng" ? 1 : 0 }).format(v);
@@ -55,13 +61,17 @@ export const toPinned = (d: DefRow): PinnedKpi | null => {
   const better = d.good_direction === "neutral" || diff === 0 ? null : diff > 0 === (d.good_direction === "up");
   const tone: Tone = breach ? "danger" : better === false ? "warning" : better ? "success" : "neutral";
   const delta = prev
-    ? `${diff >= 0 ? "+" : "−"}${d.unit === "%" ? `${num(Math.abs(diff), "%")} điểm` : withUnit(Math.abs(diff), d.unit)} so với ${PERIOD[d.grain]} trước`
-    : `Kỳ đầu tiên`;
+    ? trf("{0}{1} so với {2} trước", [
+        diff >= 0 ? "+" : "−",
+        d.unit === "%" ? trf("{0} điểm", [num(Math.abs(diff), "%")]) : withUnit(Math.abs(diff), d.unit),
+        PERIOD[d.grain],
+      ])
+    : tr("Kỳ đầu tiên");
   return {
     key: d.key,
     label: d.label,
     value: withUnit(last.value, d.unit),
-    note: d.threshold != null ? `${delta} · ngưỡng ${withUnit(d.threshold, d.unit)}` : delta,
+    note: d.threshold != null ? trf("{0} · ngưỡng {1}", [delta, withUnit(d.threshold, d.unit)]) : delta,
     noteTone: tone,
     noteMarker: breach ? "dot" : diff < 0 ? "down" : diff > 0 ? "up" : "dot",
     series: series.map((p) => p.value),

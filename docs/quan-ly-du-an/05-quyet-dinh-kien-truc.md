@@ -629,6 +629,24 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Đã loại:** Giữ pip + `constraints.txt` (hai nguồn sự thật, không kiểm được lock khớp manifest); Poetry/PDM (không có workspace nhiều package gọn như uv); cài bằng `uv sync` trong image (kéo uv và metadata workspace vào image, kích thước khác trước); ép OCR vào chung lock (khác phiên bản Python của image nền); để shim `app.openbao` → `bamboo_common.openbao` (hai đường import cho cùng một thứ)
 - **Giới hạn hiện tại:** OCR có lock riêng nên nâng phiên bản gói dùng chung (vd. `requests`) phải làm ở hai nơi; `package-conflicts` là tính năng preview của uv (ghim `required-version`, CI dùng uv 0.13.6); image vẫn cài bằng pip (uv chỉ giải lock)
 
+(adr-62)=
+## ADR #62: Đăng ký sử dụng đơn giản cho doanh nghiệp nhỏ: không nhập mã thiết lập, hỏi quy mô rồi chia luồng nhanh/chi tiết, ký số là bước tùy chọn (sửa ADR #57)
+
+- **Ngày:** 03/11/2026
+- **Quyết định:** Trang `/khoi-tao` (nút **Tạo tài khoản** ở trang đăng nhập) là trình hướng dẫn nhiều bước thay cho biểu mẫu một trang của ADR #57:
+  1. **Bạn là ai:** họ tên, năm sinh, chức vụ, điện thoại, email, tên đăng nhập. Người đăng ký là **chủ sở hữu** và được coi là người đại diện theo pháp luật (đổi được ở Thông tin công ty).
+  2. **Doanh nghiệp:** tên, mã số thuế (10 chữ số, 13 với chi nhánh, hoặc 12 chữ số cho hộ kinh doanh dùng mã số thuế cá nhân), địa chỉ, lĩnh vực kinh doanh. Mã công ty trên hệ thống tự sinh từ tên (sửa được).
+  3. **Quy mô:** người dùng tự chọn 1–10, 11–50, 51–200 hoặc trên 200 người. Đến 50 người, hệ thống gợi ý **luồng nhanh**; trên 50 người, gợi ý **luồng chi tiết**. Ngưỡng 50 lấy theo doanh nghiệp nhỏ ngành thương mại, dịch vụ (NĐ 80/2021). Người dùng luôn đổi được luồng.
+  4. **Luồng nhanh:** thêm thành viên (họ tên, tên đăng nhập, chức vụ, vai trò dựng sẵn), rồi chọn **công cụ** (mô-đun ADR #56).
+     **Luồng chi tiết:** phòng ban (gợi ý theo lĩnh vực, sửa được), thành viên kèm phòng ban và vai trò, rồi công cụ.
+  5. **Xác nhận:** xem lại toàn bộ; **ký số đơn đăng ký là bước tùy chọn** (tải đơn PDF, ký, tải lên). Bỏ qua thì công ty ở trạng thái `UNVERIFIED`, ký bổ sung ở Thông tin công ty như cũ.
+  Vai trò dựng sẵn ánh xạ vào bốn vai trò `core.create_tenant` tạo: **Nhân viên** (vai trò Nhân viên giao cho đơn vị), **Trưởng bộ phận** (vị trí trưởng đơn vị + Quản lý phạm vi cây đơn vị), **Kế toán/kiểm soát** (Kiểm soát tài chính toàn công ty), **Quản trị viên** (ghế Quản trị hệ thống + Quản trị tổ chức). Thành viên chỉ phải đổi mật khẩu ở lần đăng nhập đầu; chủ sở hữu và quản trị viên vẫn bắt buộc cài OTP. Công cụ được chọn được cài trên máy (`core.module_install`) và bật cho công ty, kéo theo mô-đun phụ thuộc.
+  **Mã thiết lập không còn phải nhập:** trang đăng ký mở trong khi còn một mã thiết lập hiệu lực, tức **24 giờ sau mỗi lần `bootstrap` khởi động** trên hệ thống trống (hoặc sau `make setup-code`). Hết hạn thì trang báo người quản trị máy chủ chạy `make setup-code` để mở lại 24 giờ. Không ai cần đọc mã từ log; vẫn chỉ một công ty đầu tiên được tạo theo cách này.
+  Đơn PDF chỉ dựng khi người dùng chọn ký số, nên luồng không ký số không cần Gotenberg. Bảng `core.tenant` thêm `industry`, `size_band`; `core.person` thêm `birth_year`, `phone`, `email` (migration 050).
+- **Lý do:** Doanh nghiệp nhỏ, công ty TNHH một thành viên, hộ kinh doanh thường không có người quản trị máy chủ đọc log và chưa có chữ ký số. Ba bước bắt buộc của ADR #57 (mã từ log, ký số, khai một lần hết mọi thứ) làm họ bỏ cuộc. Hỏi quy mô trước để người dùng nhỏ không phải trả lời câu hỏi về cơ cấu họ không có, còn công ty lớn khai đủ phòng ban và quyền ngay từ đầu.
+- **Đã loại:** Mở đăng ký cho nhiều công ty trên một máy chủ (đổi mô hình tự cài cho từng công ty, cần chống đăng ký rác); bỏ hẳn ký số (mất đường xác thực pháp lý ngay khi đăng ký); ngưỡng cứng 10 người (công ty 11–50 người phần lớn vẫn không có phòng ban); cho đăng ký từ mạng nội bộ không giới hạn thời gian (sau reverse proxy mọi yêu cầu đều đến từ địa chỉ nội bộ).
+- **Giới hạn hiện tại:** Trong 24 giờ sau khi cài, ai mở được trang trước sẽ thành chủ sở hữu: máy chủ chưa đăng ký nên chỉ mở ra Internet sau khi đã tạo công ty. Thành viên luồng chi tiết chỉ gắn một phòng ban cấp một (chưa khai phòng ban lồng nhau); cơ cấu sâu hơn dựng tiếp ở **Cơ cấu tổ chức**. Gợi ý phòng ban theo lĩnh vực nằm ở giao diện, chưa có danh mục mẫu ngành trong CSDL.
+
 (adr-mau)=
 ## Mẫu cho quyết định mới
 
