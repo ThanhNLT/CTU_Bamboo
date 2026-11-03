@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
+.PHONY: check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
+# pnpm ghim ở package.json (packageManager); cài: npm install -g --allow-scripts=pnpm pnpm@12.16.1
+PNPM ?= pnpm
+UV_LINT := uv run --frozen --only-group lint
 
 AI_SERVICES := ollama-core ollama-init ocr-core ocr-init ai-worker
 
@@ -69,3 +72,23 @@ bao-token:
 
 setup-code:
 	docker compose run --rm actions python -m app.setup_code
+
+# Kiểm tra tĩnh toàn repo, giống job `lint` của CI (.github/workflows/ci.yml).
+check: check-py check-web check-docs
+
+check-py:
+	uv lock --check
+	uv lock --check --project services/ocr
+	$(UV_LINT) reuse lint
+	$(UV_LINT) ruff check services packages --select E,F,W,B --ignore E501
+	$(UV_LINT) ruff check . --select I
+	$(UV_LINT) ruff format --check .
+	docker compose --profile test --profile scan config -q
+
+check-web:
+	$(PNPM) install --frozen-lockfile
+	$(PNPM) turbo run lint format:check build
+	node tools/ci/check_licenses.mjs apps/web
+
+check-docs:
+	$(MAKE) -C docs check

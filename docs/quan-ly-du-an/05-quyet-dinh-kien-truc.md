@@ -61,6 +61,11 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [53](#adr-53) | 23/10/2026 | Dịch vụ Tầng 1 dùng thưa (Trino, Tika, Gotenberg) tự ngủ khi nhàn rỗi qua dịch vụ `sleeper` |
 | [54](#adr-54) | 23/10/2026 | Hai mức RAM: 8 GB chỉ chức năng cơ bản (không AI), 16 GB đầy đủ |
 | [55](#adr-55) | 23/10/2026 | Giao diện đăng nhập riêng bằng theme Keycloak kế thừa `keycloak.v2`, chỉ thay CSS |
+| [56](#adr-56) | 30/10/2026 | Tách chức năng thành mô-đun bật/tắt hai tầng: cài trên máy và bật cho công ty |
+| [57](#adr-57) | 30/10/2026 | Khởi tạo công ty lần đầu bằng mã thiết lập và đơn ký số; chủ sở hữu trao quyền quản trị |
+| [59](#adr-59) | 30/10/2026 | Quy trình và văn bản quy định chuyển qua lại theo một mẫu văn bản chung |
+| [60](#adr-60) | 02/11/2026 | Bố cục monorepo `apps/services/packages/infra/tools/tests`; pnpm + Turborepo; `compose.yaml` include |
+| [61](#adr-61) | 02/11/2026 | uv workspace, một `uv.lock` cho Python (thay ADR #10); gói dùng chung `bamboo-common` |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -143,6 +148,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Python: pip + `constraints.txt` chung ghim phiên bản, mỗi dịch vụ một `requirements.txt` chỉ ghi tên gói, một `docker/python.Dockerfile` dùng chung (build arg `APP_DIR`); OCR ghim riêng. Image bên thứ ba ghim trong `platform/versions.env`; compose chia profile
 - **Lý do:** Một nơi quản lý phiên bản nhưng mỗi image chỉ chứa thư viện cần dùng: tránh xung đột (paddle vs numpy mới), image nhỏ, ít lỗ hổng khi quét Trivy
 - **Đã loại:** Một `requirements.txt` cho toàn dự án; uv/Poetry; image Bitnami
+- **Thay bởi [ADR #61](#adr-61) (02/11/2026):** pip + `constraints.txt` + `requirements*.txt` thay bằng uv workspace và một `uv.lock`; giữ nguyên nguyên tắc mỗi image chỉ cài phụ thuộc của nó. Đường dẫn trong mục này là bố cục cũ (xem bảng ánh xạ ở [ADR #60](#adr-60))
 
 (adr-11)=
 ## ADR #11: Hasura bản Community Edition (`-ce`)
@@ -168,6 +174,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Yêu cầu đề thi chạy bằng một lệnh; giám khảo clone về chạy được ngay, không cần tạo `.env` hay chạy migration thủ công
 - **Đã loại:** Bắt buộc `make`; script cài đặt riêng; bắt buộc `--profile core`; chạy migration qua `docker-entrypoint-initdb.d` (chỉ chạy một lần khi volume trống)
 - **Ghi chú (04/10/2026):** Hiện thực là một tệp `docker-compose.yml` ở gốc (chưa tách `compose.yaml` + `platform/*` + `versions.env`), đã gồm cả giao diện (`web`, cổng 5173). Mọi dịch vụ chạy lâu có healthcheck và `restart: unless-stopped`; job khởi tạo chạy theo thứ tự `migrate` → `seed`, `openbao-init` → `seaweedfs` → `bootstrap`. Thể lệ OLP 2026 không ghi trực tiếp yêu cầu "một lệnh"; tiêu chí gần nhất là "Building From Source" (cài đặt, cấu hình được trước khi dịch, không sửa tay tệp). CI (`.github/workflows/ci.yml`) chạy đúng `docker compose up -d` trên máy sạch rồi chạy mọi bộ kiểm thử. Người không có mã nguồn chạy bằng image dựng sẵn: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y` (`.github/workflows/images.yml` build image đa kiến trúc, sinh `compose.release.yml` từ `docker-compose.yml` bằng `scripts/release/compose_release.py`, phát hành dạng OCI artifact và chạy thử lệnh này trên máy sạch); vì vậy mọi tệp cấu hình runtime đóng gói vào image, không bind mount.
+- **Bổ sung (02/11/2026, [ADR #60](#adr-60)):** Đã tách như thiết kế ban đầu: `compose.yaml` ở gốc (`name: bamboo`) chỉ `include:` các tệp `infra/compose/{core,data,ai,scan,test}.yml`; GPU là `infra/compose/gpu.yml`. `tools/release/compose_release.py` sinh `compose.release.yml` từ kết quả `docker compose config` đã gộp. Phiên bản image bên thứ ba vẫn ghim ngay trong các tệp compose (chưa có `versions.env`)
 
 (adr-14)=
 ## ADR #14: Schema theo miền, khóa kép chặn tham chiếu chéo tenant
@@ -558,6 +565,59 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** Hai chiều dùng chung một **mẫu văn bản quy trình** (`app/process_text.py`): tiêu đề, mã, mục đích, phạm vi, rồi mỗi bước một khối `Bước N. Tên` với `Người thực hiện`, `Thời hạn`, `Mô tả`, `Tiếp theo` và các dòng rẽ nhánh `Nếu <điều kiện>: chuyển Bước N | quay lại Bước N | kết thúc (Tên)`. (1) **Văn bản → sơ đồ** (Action `process_from_document`): đọc tài liệu đang hiệu lực trong thư viện tri thức (tệp `.txt`/`.md`, DOCX, PDF qua Tika, chữ OCR, rồi tóm tắt và mục lục), dựng BPMN 2.0 và lưu thành bản nháp của người gọi; bước có từ khóa duyệt hoặc thẻ `[Phê duyệt]` thành tác vụ người dùng kèm cổng quyết định `decision` như các quy trình mẫu, người thực hiện thành làn (`laneSet`) và `candidateGroups`, `Thời hạn` thành `dueDate` ISO-8601. Đoạn không hiểu được thì ghi vào danh sách cảnh báo trả về, không đoán. (2) **Sơ đồ → văn bản** (Action `process_regulation_draft`): chỉ lập từ **phiên bản đã phát hành** (bất biến, đúng bản đang chạy thật), ghi văn bản mẫu `.txt` (đọc lại được bằng chiều (1)) và PDF có hình sơ đồ (Gotenberg, không quốc hiệu theo thể thức công ty tư nhân), tạo đề xuất tài liệu loại SOP trong thư viện và có thể gửi duyệt ngay. Duyệt xong, `collab.kb_publish` đưa văn bản thành **quy định đang hiệu lực** và ngừng hiệu lực quy định của phiên bản trước (bản mới `supersedes` bản cũ). Liên kết nằm ở bảng `wf.process_regulation` (kind `SOURCE` hoặc `REGULATION`), không thêm cột vào `wf.process_version` vì phiên bản là bất biến. (3) **Bố cục tự động** (`app/bpmn_layout.py`): xếp cột theo thứ tự luồng, làn theo người thực hiện, mọi tọa độ trên lưới 10 px; đường nối vuông góc tìm bằng A* trên lưới thưa, phạt gấp khúc và cắt ngang, cấm đi chồng lên đường khác, xuyên phần tử hoặc nhãn; mỗi cạnh phần tử chia nhiều cổng nối; nhãn nhánh né mọi đường nối. Kiểm thử ngẫu nhiên khẳng định không có hai đoạn thẳng hàng chồng nhau.
 - **Lý do:** Máy yêu cầu chạy được với 8 GB RAM không có mô hình học máy, và quy định công ty cần kết quả lặp lại được, kiểm tra được; đọc theo mẫu cho kết quả ổn định và người viết tay được. Dùng chung một mẫu giúp văn bản sinh ra từ sơ đồ dựng lại được đúng sơ đồ đó. Gắn quy định vào phiên bản đã phát hành bảo đảm quy định mô tả đúng quy trình đang áp dụng thật.
 - **Đã loại:** Dùng mô hình ngôn ngữ để suy ra bước từ văn bản tự do (kết quả không lặp lại, cần GPU, khó kiểm chứng); dùng thư viện bố cục có sẵn ở trình duyệt (đường nối vẫn chồng nhau khi có nhiều nhánh quay lại, và không kiểm thử được ở máy chủ); lập quy định từ bản nháp (quy định lệch với quy trình đang chạy); cột `regulation_id` trên `wf.process_version` (phiên bản bất biến); tự động sửa quy trình đang chạy khi văn bản quy định đổi (đổi quy trình phải qua thiết kế và phát hành phiên bản mới).
+
+(adr-60)=
+## ADR #60: Bố cục monorepo `apps/services/packages/infra/tools/tests`; pnpm + Turborepo cho JS; `compose.yaml` include
+
+- **Ngày:** 02/11/2026
+- **Quyết định:** Repo xếp theo vai trò, gốc chỉ giữ tệp "cửa vào" (`compose.yaml`, `Makefile`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `pnpm-lock.yaml`, `pyproject.toml`, `uv.lock`, `ruff.toml`, `.env.example`, giấy phép, README):
+
+  | Thư mục | Nội dung |
+  |---|---|
+  | `apps/web` | Giao diện Refine, package pnpm `@bamboo/web` |
+  | `services/{actions,seed,ocr,sleeper}` | Dịch vụ Python (mã, test, `pyproject.toml`) |
+  | `packages/py-common` | Gói Python dùng chung `bamboo-common` ([ADR #61](#adr-61)) |
+  | `infra/compose` | Định nghĩa dịch vụ chia nhóm: `core.yml`, `data.yml`, `ai.yml`, `scan.yml`, `test.yml`, `base.yml` (gốc cho `extends`), `gpu.yml` |
+  | `infra/docker` | Mọi Dockerfile: `python`, `migrate`, `ocr`, `sleeper`, `web` (`migrate`, `web` có `<tên>.Dockerfile.dockerignore` riêng; còn lại dùng `.dockerignore` ở gốc) |
+  | `infra/platform` | Cấu hình dịch vụ bên thứ ba (APISIX, Flowable, Hasura, Kafka, Keycloak, OpenBao, Trino, trust, Vector) |
+  | `infra/k8s` | Chỗ dành sẵn cho Kustomize/Helm/ArgoCD (chỉ README) |
+  | `db` | Migration, vai trò CSDL, test SQL (giữ nguyên) |
+  | `tools` | Script phát triển và vận hành: `ci/`, `db/`, `ops/`, `gitops/`, `release/`, smoke AI/OCR, `demo_*`, `ram_profile.sh` |
+  | `tests/e2e` | Playwright, package pnpm `@bamboo/e2e` |
+  | `docs` | Tài liệu Sphinx (member uv `bamboo-docs`) |
+
+  JS dùng **pnpm workspace** (`apps/*`, `tests/e2e`, một `pnpm-lock.yaml` nhập từ `package-lock.json` cũ, giữ nguyên phiên bản) và **Turborepo** (task `lint`, `format:check`, `build` có cache; `test:e2e` không cache); pnpm ghim ở `packageManager` của `package.json` gốc. Giấy phép phụ thuộc production kiểm bằng `tools/ci/check_licenses.mjs` (đọc `pnpm licenses list --prod --json`, cùng danh sách cho phép và ngoại lệ `bpmn-js` như trước). Python vẫn qua `uv`/`make`, không đưa vào Turborepo. Một lệnh kiểm tĩnh toàn repo: `make check` (giống job `lint` của CI). Compose: `compose.yaml` ở gốc include các tệp `infra/compose/*.yml` (bổ sung [ADR #13](#adr-13)); `docker compose up -d` ở gốc chạy như cũ, cùng dịch vụ, profile, cổng, volume (tên project cố định `bamboo`). Anchor YAML không đi xuyên `include` nên phần môi trường dùng chung của image Python nằm ở `infra/compose/base.yml` và dịch vụ dùng `extends`. Image đọc cấu hình nền tảng ở **`/repo/infra/platform`** (đúng như cây nguồn), vì mã Python tính đường dẫn theo cây thư mục và các lệnh `make` mount `./:/repo` khi chạy trong container; mặc định `SIGNATURE_TRUST_DIR` thành `/repo/infra/platform/trust`. Script migrate trong image ở `/repo/tools/db`.
+
+  Bảng ánh xạ bố cục cũ → mới (các ADR trước ghi đường dẫn cũ):
+
+  | Cũ | Mới |
+  |---|---|
+  | `apps/web/web` | `apps/web` |
+  | `apps/web/web/e2e`, `playwright.config.ts` | `tests/e2e` |
+  | `docker-compose.yml` | `compose.yaml` + `infra/compose/*.yml` |
+  | `docker-compose.gpu.yml` | `infra/compose/gpu.yml` |
+  | `docker/`, `services/{ocr,sleeper}/Dockerfile`, `apps/web/web/Dockerfile` | `infra/docker/` |
+  | `platform/` (trong image: `/repo/platform`) | `infra/platform/` (trong image: `/repo/infra/platform`) |
+  | `scripts/` | `tools/` |
+  | `package-lock.json` (npm) | `pnpm-lock.yaml` ở gốc |
+  | `constraints.txt`, `requirements*.txt`, `docs/requirements.txt` | `uv.lock` + `pyproject.toml` từng package ([ADR #61](#adr-61)) |
+  | `services/actions/app/{openbao,flowable,ollama,scanner,pii}.py` | `packages/py-common/src/bamboo_common/` |
+
+- **Lý do:** Người mới và giám khảo nhìn gốc repo là biết đâu là ứng dụng, dịch vụ, hạ tầng, công cụ; bố cục phẳng cũ trộn cấu hình bên thứ ba, Dockerfile và script với mã. Workspace + cache cho phép chạy lint/build theo phạm vi thay đổi và một lệnh cho toàn repo. Tách compose theo nhóm (lõi, dữ liệu, AI, quét, kiểm thử) dễ đọc hơn một tệp 900 dòng và cùng nhóm với chỗ dành cho k3s/GitOps. Giữ tên dịch vụ, cổng, volume, biến môi trường, tên image (`ghcr.io/thanhnlt/bamboo-*`) để máy đang chạy chỉ cần `git pull && make up`
+- **Đã loại:** Đưa Python vào Turborepo bằng package giả (thêm một lớp không cần); giữ đường dẫn `/repo/platform` trong image bằng `COPY infra/platform /repo/platform` (lệch với cây nguồn khi mount mã vào container lúc chạy `make`); tách `packages/web-ui` (chưa có ứng dụng thứ hai dùng chung); viết manifest Kubernetes ngay (ngoài phạm vi, chỉ dành chỗ `infra/k8s`)
+- **Giới hạn hiện tại:** Các nhánh đang mở cần `git rebase` (Git tự nhận đa số tệp đổi chỗ; tệp sửa ở chỗ cũ phải chuyển tay theo bảng trên). `infra/k8s` chưa có manifest. Turborepo chỉ có package JS nên `make check` vẫn chạy toàn bộ phần Python mỗi lần
+
+(adr-61)=
+## ADR #61: uv workspace, một `uv.lock` cho mọi gói Python (thay ADR #10); gói dùng chung `bamboo-common`
+
+- **Ngày:** 02/11/2026
+- **Quyết định:** `pyproject.toml` ở gốc là **uv workspace ảo** (không phải package), member `services/actions` (`bamboo-actions`), `services/seed` (`bamboo-seed`), `services/sleeper` (`bamboo-sleeper`), `docs` (`bamboo-docs`) và `packages/*` (`bamboo-common`); một `uv.lock` ở gốc ghim phiên bản (khóa lần đầu ra đúng các phiên bản của `constraints.txt` cũ). Mỗi member khai phụ thuộc trực tiếp trong `pyproject.toml`; `actions` có nhóm `lakehouse` (image `bamboo-lakehouse`) và `dev` (pytest…). `infra/docker/python.Dockerfile` (build arg `APP_DIR`, `PACKAGE`, `DEP_GROUPS`) dùng `uv export --frozen --package <tên>` rồi `pip install` có kiểm hash, nên **mỗi image chỉ cài phụ thuộc của package nó chạy** như ADR #10; uv không nằm lại trong image; gói workspace mà package phụ thuộc (vd. `bamboo-common`) cài thường vào site-packages bằng `uv pip install --offline --no-deps` ở lớp riêng; phiên bản nhóm `dev` ghi ở `/opt/bamboo/dev-pins.txt` cho các lệnh `make test-*` cài pytest lúc chạy. CI chạy `uv lock --check` (gốc và `services/ocr`); ruff và reuse ghim trong nhóm `lint` của gốc (`uv run --only-group lint …`). **Gói `bamboo-common`** (`packages/py-common`, import `bamboo_common`) chứa client hạ tầng không import mã nghiệp vụ: `openbao` (`Bao`, `BaoError`), `flowable` (`FlowableClient`), `ollama`, `scanner` (ClamAV, kiểm magic byte), `pii` (mã hóa transit, che); `actions` import trực tiếp `bamboo_common.*`, không để shim ở chỗ cũ. Ngoại lệ có chủ đích:
+  1. **OCR ngoài workspace:** `services/ocr` có `pyproject.toml` (`package = false`) và `uv.lock` riêng, vì image nền PyTorch dùng Python 3.11 còn workspace dùng 3.13, và PaddleOCR/VietOCR kéo theo ràng buộc (numpy, pillow…) không giải chung được với gói khác; `vietocr` vẫn cài `--no-deps` như trước.
+  2. **`docs` là member `bamboo-docs`** dù không phải dịch vụ, để phiên bản Sphinx cũng nằm trong `uv.lock`; `myst-parser` 4 cần `markdown-it-py` < 4 còn `actions` (qua `rich`) cần 4, nên gốc khai `conflicts` giữa `bamboo-docs` và `bamboo-actions` (tính năng preview `package-conflicts` của uv, bật bằng `preview-features`). `make -C docs …` dùng môi trường riêng `docs/.venv`.
+  3. **Ở lại `actions`:** `config.py` (`Settings` của `actions`), `storage.py`, `trino.py` (đọc `config`), `common.py` (`Context`, `ActionError`, dùng `Storage`), `obs.py` (dùng `common`); tách được khi tách `actions` thành nhiều dịch vụ. `tests/test_quet_tep.py` (thuần đơn vị cho `scanner`) cũng ở lại `services/actions/tests` vì `test_tep_dinh_kem.py` dùng lại hàm dựng tệp mẫu của nó và CI chỉ chạy pytest qua `make test-actions`; chưa có `packages/py-common/tests`.
+- **Lý do:** Một công cụ giải và ghim phiên bản cho mọi gói (nhanh, có hash, kiểm được bằng `uv lock --check`) thay cho hai bước pip + constraints dễ lệch; khai phụ thuộc theo chuẩn `pyproject.toml`; tách client hạ tầng thành gói riêng để ranh giới "không phụ thuộc nghiệp vụ" được kiểm bằng cấu trúc thay vì quy ước
+- **Đã loại:** Giữ pip + `constraints.txt` (hai nguồn sự thật, không kiểm được lock khớp manifest); Poetry/PDM (không có workspace nhiều package gọn như uv); cài bằng `uv sync` trong image (kéo uv và metadata workspace vào image, kích thước khác trước); ép OCR vào chung lock (khác phiên bản Python của image nền); để shim `app.openbao` → `bamboo_common.openbao` (hai đường import cho cùng một thứ)
+- **Giới hạn hiện tại:** OCR có lock riêng nên nâng phiên bản gói dùng chung (vd. `requests`) phải làm ở hai nơi; `package-conflicts` là tính năng preview của uv (ghim `required-version`, CI dùng uv 0.13.6); image vẫn cài bằng pip (uv chỉ giải lock)
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
