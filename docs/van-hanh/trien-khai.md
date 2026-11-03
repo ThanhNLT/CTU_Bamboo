@@ -21,7 +21,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 3 | Tắt dữ liệu demo | `SEED_DEMO=false`; xóa hoặc vô hiệu hóa tài khoản demo trong Keycloak sau lần import đầu (realm có sẵn tài khoản demo). Tạo công ty và quản trị viên đầu tiên: [Khởi tạo cho một công ty mới](cong-ty-moi.md) |
 | 4 | Tên miền HTTPS | Một tên miền trỏ vào cổng API; đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó (mục 3) |
 | 5 | Keycloak chế độ production | `KEYCLOAK_MODE=start` (bắt buộc đi sau reverse proxy TLS) |
-| 6 | Redirect URI của ứng dụng | Job `bootstrap` tự bổ sung `WEB_ORIGIN` vào client `bms-web` mỗi lần khởi động (cả khi đổi tên miền sau lần import đầu). Giá trị cũ không bị xóa: gỡ `http://localhost:5173` (chỉ dùng cho `npm run dev`) và tên miền cũ trong Keycloak → realm `bms` → Clients → `bms-web` |
+| 6 | Redirect URI của ứng dụng | Job `bootstrap` tự bổ sung `WEB_ORIGIN` vào client `bms-web` mỗi lần khởi động (cả khi đổi tên miền sau lần import đầu). Giá trị cũ không bị xóa: gỡ `http://localhost:5173` (chỉ dùng cho `pnpm dev`) và tên miền cũ trong Keycloak → realm `bms` → Clients → `bms-web` |
 | 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp) |
 | 8 | Quét virus bằng ClamAV (bộ quét nội bộ luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus) | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
@@ -69,11 +69,11 @@ Theo dõi: `docker compose -p bamboo ps` (dịch vụ chạy lâu phải `health
 Script có sẵn làm đủ ba mục trên vào thư mục `backups/<thời điểm>/` (`postgres.sql`, `openbao-data.tgz`, `openbao-keys.tgz`, `seaweedfs-data.tgz`). OpenBao và SeaweedFS chỉ bị tạm dừng (`pause`) trong vài giây lúc chép, không cần khởi động lại; không cần mã nguồn của hệ thống, chỉ cần tải script:
 
 ```bash
-scripts/ops/backup.sh                       # Linux, macOS
+tools/ops/backup.sh                         # Linux, macOS
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\ops\backup.ps1   # Windows
+powershell -ExecutionPolicy Bypass -File tools\ops\backup.ps1     # Windows
 ```
 
 Làm thủ công:
@@ -94,9 +94,9 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 
 ### Sao lưu theo lịch, diễn tập khôi phục và GitOps
 
-- Dịch vụ `backup` chạy `scripts/ops/backup-db.sh` theo chu kỳ `BACKUP_INTERVAL_HOURS` (mặc định 24 giờ, giữ `BACKUP_KEEP` bản) vào volume `backups`, ghi kết quả vào `audit.backup_run` (xem ở `/admin/ops`, tab Sao lưu).
-- `scripts/ops/restore-drill.sh` khôi phục bản sao lưu mới nhất vào CSDL tạm rồi đối chiếu số dòng và chuỗi băm kiểm toán; nên chạy định kỳ để biết bản sao lưu còn dùng được.
-- `scripts/gitops/reconcile.sh` so cấu hình trong kho mã với trạng thái đang chạy và chỉ chạy `docker compose up -d` khi có thay đổi. Đặt vào cron hoặc systemd timer. Đây là đối chiếu bằng script, không phải Argo CD hay k3s.
+- Dịch vụ `backup` chạy `tools/ops/backup-db.sh` theo chu kỳ `BACKUP_INTERVAL_HOURS` (mặc định 24 giờ, giữ `BACKUP_KEEP` bản) vào volume `backups`, ghi kết quả vào `audit.backup_run` (xem ở `/admin/ops`, tab Sao lưu).
+- `tools/ops/restore-drill.sh` khôi phục bản sao lưu mới nhất vào CSDL tạm rồi đối chiếu số dòng và chuỗi băm kiểm toán; nên chạy định kỳ để biết bản sao lưu còn dùng được.
+- `tools/gitops/reconcile.sh` so cấu hình trong kho mã với trạng thái đang chạy và chỉ chạy `docker compose up -d` khi có thay đổi. Đặt vào cron hoặc systemd timer. Đây là đối chiếu bằng script, không phải Argo CD hay k3s.
 - Thư mục thử mail: `mailpit` (cổng 8025 trên máy chủ) nhận thư khi chưa cấu hình `SMTP_HOST` thật.
 - Gom log container: `COMPOSE_PROFILES=ai,logs` bật `vector`; log vào `obs.log_event`, xem ở `/admin/ops`, tab Nhật ký.
 
@@ -145,7 +145,7 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 | `tika-core` | `TIKA_JAVA_OPTS` | `-Xmx512m` |
 | `debezium` | `DEBEZIUM_JAVA_OPTS` | `-Xms64m -Xmx384m` |
 | `kafka` | `KAFKA_HEAP` | `-Xms128m -Xmx512m` |
-| `trino-core` | `platform/trino/jvm.config` | `-Xmx1G` |
+| `trino-core` | `infra/platform/trino/jvm.config` | `-Xmx1G` |
 | `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m` |
 
 **Mức RAM 8 / 16** ([ADR #54](#adr-54)): máy 8 GB chạy chức năng cơ bản, không AI; máy 16 GB chạy đầy đủ. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 không chạy Ollama, `ocr`, `ai-worker` và hạ heap JVM; chuyển từ 16 xuống 8 thì `make up` dừng luôn các container AI. Chạy `docker compose up -d` trực tiếp thì mức 16 khi `.env` có `COMPOSE_PROFILES=ai`; mức 8 đặt `COMPOSE_PROFILES=` và `OLLAMA_URL=` (để trống).
@@ -176,8 +176,8 @@ docker compose logs -f ollama-init         # lần đầu tải ~3,7 GB (qwen3:4
 docker compose logs -f ocr-init            # lần đầu tải ~250 MB mô hình OCR (PaddleOCR, VietOCR)
 curl 127.0.0.1:11434/api/tags              # thấy hai mô hình là xong
 curl 127.0.0.1:8866/health                 # dịch vụ OCR: GPU hay CPU, mô hình đang nạp chưa
-scripts/ai_smoke.sh                        # 22 câu mẫu chấm bằng luật, in tốc độ (--cold: gỡ mô hình trước câu đầu)
-scripts/ocr_smoke.sh                       # OCR ảnh mẫu tiếng Việt, đo tỉ lệ lỗi ký tự
+tools/ai_smoke.sh                          # 22 câu mẫu chấm bằng luật, in tốc độ (--cold: gỡ mô hình trước câu đầu)
+tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo tỉ lệ lỗi ký tự
 ```
 
 | Hạng mục | Giá trị |
@@ -190,7 +190,7 @@ scripts/ocr_smoke.sh                       # OCR ảnh mẫu tiếng Việt, đo
 
 **OCR tệp quét.** Ảnh PNG/JPEG luôn OCR; PDF chỉ OCR trang không có chữ, tối đa 50 trang mỗi tệp. Chỉ tệp của đề nghị mua sắm và tài liệu thư viện (các tệp được đánh chỉ mục tìm kiếm). Văn bản OCR vào chỉ mục toàn văn và, với tài liệu thư viện, vào chỉ mục đoạn của Trợ lý RAG. Tệp có từ trước khi nâng cấp được OCR bù. Trạng thái từng tệp ở bảng `core.attachment_ocr`.
 
-**Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi; `scripts/ai_smoke.sh` in điểm theo nhóm câu hỏi (trong phạm vi, ngoài phạm vi, tiêm lệnh). Hạ tạm `AI_MIN_SCORE` xuống 0,5 khi chạy để thấy điểm của câu bị chặn.
+**Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi; `tools/ai_smoke.sh` in điểm theo nhóm câu hỏi (trong phạm vi, ngoài phạm vi, tiêm lệnh). Hạ tạm `AI_MIN_SCORE` xuống 0,5 khi chạy để thấy điểm của câu bị chặn.
 
 **Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
 
@@ -215,7 +215,7 @@ docker run --rm --gpus all ubuntu nvidia-smi   # thấy GPU là được
 Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chép tệp bổ sung một lần thành `docker-compose.override.yml` (Compose tự nạp, tệp này không đưa lên git), từ đó chỉ cần lệnh thường:
 
 ```bash
-cp docker-compose.gpu.yml docker-compose.override.yml
+cp infra/compose/gpu.yml docker-compose.override.yml
 docker compose up -d
 docker compose exec ollama ollama ps        # cột PROCESSOR ghi "100% GPU" khi đang trả lời
 curl 127.0.0.1:8866/health                  # "device" là tên GPU
@@ -227,8 +227,8 @@ Máy không có GPU thì đừng chép: Docker không tạo được container x
 
 1. Cài NVIDIA Container Toolkit như trên; GPU Blackwell cần driver đủ mới, image `ocr` dùng CUDA 12.8 và Ollama 0.35.1 đều hỗ trợ, nhưng chưa chạy thử trên máy này nên kiểm bằng `docker run --rm --gpus all ubuntu nvidia-smi`.
 2. Chạy `BAMBOO_RAM=16 make up-gpu`, không để tự dò. WSL2 mặc định chỉ cấp một nửa RAM máy: máy 16 GB sẽ bị tự chọn mức 8 và tắt AI mà không báo trên giao diện. Dùng WSL2 thì đặt `memory=12GB` (hoặc hơn) trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`. `BAMBOO_RAM=16` đặt trong `.env` cũng có hiệu lực với `make up`.
-3. Chạy `scripts/ai_smoke.sh --cold` rồi `scripts/ai_smoke.sh`; ghi số đo vào mục Bổ sung của [ADR #52](#adr-52). Có nhóm câu nào trượt hoặc điểm của nhóm ngoài phạm vi chạm 0,7 thì hiệu chỉnh `AI_MIN_SCORE` như trên. Câu nào bị `error` do hết token thì tắt `think` cho tác tử demo ở trang Tác tử AI.
+3. Chạy `tools/ai_smoke.sh --cold` rồi `tools/ai_smoke.sh`; ghi số đo vào mục Bổ sung của [ADR #52](#adr-52). Có nhóm câu nào trượt hoặc điểm của nhóm ngoài phạm vi chạm 0,7 thì hiệu chỉnh `AI_MIN_SCORE` như trên. Câu nào bị `error` do hết token thì tắt `think` cho tác tử demo ở trang Tác tử AI.
 4. Đính kèm sẵn một báo giá quét vào một đề nghị mua sắm, chờ nhãn "Đã OCR" (không OCR trực tiếp trên sân khấu: OCR và mô hình sinh không nạp cùng lúc nên lượt hỏi ngay sau đó phải nạp lạnh).
-5. Ngay trước buổi demo chạy `scripts/demo_prepare.sh`: kiểm AI đang bật, giữ qwen3 và bge-m3 trong bộ nhớ 2 giờ, kiểm đã có tệp "Đã OCR".
+5. Ngay trước buổi demo chạy `tools/demo_prepare.sh`: kiểm AI đang bật, giữ qwen3 và bge-m3 trong bộ nhớ 2 giờ, kiểm đã có tệp "Đã OCR".
 
 **Quyền:** người quản trị tác tử cần quyền `core.ai.manage` (seed demo gán cho CDO Tập đoàn X và KHTH BVX). Tác tử không có quyền riêng; trợ lý chỉ đọc tài liệu thư viện đang hiệu lực mà người hỏi được xem.

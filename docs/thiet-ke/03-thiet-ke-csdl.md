@@ -1,7 +1,7 @@
 # Thiết kế cơ sở dữ liệu
 
 Một database PostgreSQL 17 + PostGIS 3.5 tên `bms`. Migration ở `db/migrations/bms/`, chạy theo thứ tự tên tệp, tự chạy
-khi `docker compose up -d` (job `migrate`, script `scripts/db/migrate.sh`). Bệnh viện X là một tenant riêng trong cùng
+khi `docker compose up -d` (job `migrate`, script `tools/db/migrate.sh`). Bệnh viện X là một tenant riêng trong cùng
 database, cách ly logic như mọi tenant khác (xem [ADR #15](#adr-15)).
 
 - Kiểm thử: `make test-db` chạy mọi tệp `db/tests/bms_*.sql` (tự rollback), một tệp: `make test-db T=bms_031`; hàm dùng
@@ -284,7 +284,7 @@ không có thay đổi. Kafka, Debezium, Lakehouse: [Dịch vụ nền tảng m�
 - **Hasura xác thực bằng webhook** `GET /auth/hasura` của `actions`: kiểm token bằng JWKS của Keycloak, đọc tenant ở header
   `x-bamboo-tenant`, tra `core.account_tenants(sub)`. Chưa chọn tenant: role `account` (chỉ `my_tenants`); đã chọn: role
   `user` với `x-hasura-user-id` = `person.id` trong tenant; `platform_admin` khi có realm role tương ứng.
-- **Metadata Hasura** sinh bằng `services/actions/app/hasura_metadata.py` vào `platform/hasura/metadata.json` (`make
+- **Metadata Hasura** sinh bằng `services/actions/app/hasura_metadata.py` vào `infra/platform/hasura/metadata.json` (`make
   hasura-metadata`), job `bootstrap` nạp khi khởi động
   ([ADR #24](#adr-24)). Hiện track 62 bảng/view (61 có quyền select lọc theo tenant
   và computed field `can_read`) và 99 Action. Ghi trực tiếp qua Hasura chỉ cho các thao tác đơn giản trên bản ghi của chính

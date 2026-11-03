@@ -27,17 +27,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: actions, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/actions" }
-          - { name: lakehouse, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/actions\nREQUIREMENTS=requirements-lakehouse.txt" }
-          - { name: seed, context: ., file: docker/python.Dockerfile, args: "APP_DIR=services/seed" }
-          - { name: migrate, context: ., file: docker/migrate.Dockerfile, args: "" }
-          - { name: keycloak, context: platform/keycloak, file: platform/keycloak/Dockerfile, args: "" }
-          - { name: openbao, context: platform/openbao, file: platform/openbao/Dockerfile, args: "" }
-          - { name: gateway, context: platform/apisix, file: platform/apisix/Dockerfile, args: "" }
-          - { name: trino, context: platform/trino, file: platform/trino/Dockerfile, args: "" }
-          - { name: sleeper, context: ., file: services/sleeper/Dockerfile, args: "" }
-          - { name: kafka, context: platform/kafka, file: platform/kafka/Dockerfile, args: "" }
-          - { name: web, context: apps/web/web, file: apps/web/web/Dockerfile, args: "" }
+          - { name: actions, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions" }
+          - { name: lakehouse, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions\nDEP_GROUPS=lakehouse" }
+          - { name: seed, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/seed" }
+          - { name: migrate, context: ., file: infra/docker/migrate.Dockerfile, args: "" }
+          - { name: keycloak, context: infra/platform/keycloak, file: infra/platform/keycloak/Dockerfile, args: "" }
+          - { name: openbao, context: infra/platform/openbao, file: infra/platform/openbao/Dockerfile, args: "" }
+          - { name: gateway, context: infra/platform/apisix, file: infra/platform/apisix/Dockerfile, args: "" }
+          - { name: trino, context: infra/platform/trino, file: infra/platform/trino/Dockerfile, args: "" }
+          - { name: sleeper, context: ., file: infra/docker/sleeper.Dockerfile, args: "" }
+          - { name: kafka, context: infra/platform/kafka, file: infra/platform/kafka/Dockerfile, args: "" }
+          - { name: web, context: ., file: infra/docker/web.Dockerfile, args: "" }
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
@@ -89,7 +89,7 @@ jobs:
       - name: Sinh compose.release.yml
         run: |
           pip install --quiet pyyaml
-          python scripts/release/compose_release.py "${{ steps.tag.outputs.tag }}" compose.release.yml
+          python tools/release/compose_release.py "${{ steps.tag.outputs.tag }}" compose.release.yml
           docker compose -f compose.release.yml config -q
       - uses: docker/login-action@v4
         with:
@@ -125,20 +125,20 @@ jobs:
         run: time docker compose -f "oci://${PREFIX}:${TAG}" up -d -y
       - uses: actions/checkout@v7
       - name: Chờ sẵn sàng
-        run: scripts/ci/wait-ready.sh 1200
+        run: tools/ci/wait-ready.sh 1200
+      - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: apps/web/web/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - name: Kiểm thử đầu–cuối qua giao diện (Playwright)
-        working-directory: apps/web/web
         run: |
-          npm ci --no-audit --no-fund
-          npx playwright install --with-deps chromium
-          npm run test:e2e
+          pnpm install --frozen-lockfile --filter @bamboo/e2e
+          pnpm --filter @bamboo/e2e exec playwright install --with-deps chromium
+          pnpm --filter @bamboo/e2e test:e2e
       - name: Kiểm thử cổng API
-        run: scripts/ci/gateway-smoke.sh
+        run: tools/ci/gateway-smoke.sh
       - name: Tài nguyên sử dụng
         if: always()
         run: docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'

@@ -49,17 +49,17 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |
 | Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` và `compose.release.yml`; [CHANGELOG](https://github.com/ThanhNLT/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
-| Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | README: chạy bằng một lệnh (`make up`) và build từng thành phần không dùng Docker; cấu hình bằng biến môi trường (`.env.example`); Docker Engine, Compose, make, npm, pip |
+| Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | README: chạy bằng một lệnh (`make up`) và build từng thành phần không dùng Docker; cấu hình bằng biến môi trường (`.env.example`); Docker Engine, Compose, make, pnpm, pip |
 | Chạy được ngoài thư mục mã nguồn | `compose.release.yml` chạy bằng image phát hành, không cần thư mục mã |
-| Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`constraints.txt`, `package-lock.json`); dịch vụ dùng image chính thức của upstream, không vá mã |
+| Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`uv.lock`, `pnpm-lock.yaml`); dịch vụ dùng image chính thức của upstream, không vá mã |
 | Bug tracker, changelog, readme | GitHub Issues (có mẫu báo lỗi, đề xuất), `CHANGELOG.md`, `README.md`, tài liệu Sphinx (`make -C docs html`), `SECURITY.md` |
 
 ## 3. Kiến trúc 3 tầng
 
 | Tầng trong khung DX-OS | Trong Bamboo |
 |---|---|
-| Tầng 1: Nền tảng Dịch vụ Lõi số (headless) | Các dịch vụ trong `docker-compose.yml`, chỉ phục vụ qua cổng API APISIX `:8000`; không có giao diện người dùng cuối. Giao diện quản trị đi kèm một số dịch vụ chỉ nghe `127.0.0.1` |
-| Tầng 2: Không gian Năng lực số (H-P-D-I) | Ứng dụng Refine `apps/web/web`, gọi Tầng 1 qua `/graphql` ([API của nền tảng](../thiet-ke/08-api-giao-dien.md)) |
+| Tầng 1: Nền tảng Dịch vụ Lõi số (headless) | Các dịch vụ trong `compose.yaml` (include `infra/compose/*.yml`), chỉ phục vụ qua cổng API APISIX `:8000`; không có giao diện người dùng cuối. Giao diện quản trị đi kèm một số dịch vụ chỉ nghe `127.0.0.1` |
+| Tầng 2: Không gian Năng lực số (H-P-D-I) | Ứng dụng Refine `apps/web`, gọi Tầng 1 qua `/graphql` ([API của nền tảng](../thiet-ke/08-api-giao-dien.md)) |
 | Tầng 3: Nền tảng Kinh doanh số | Chưa làm; kịch bản Tập đoàn X dùng để nêu định hướng ([Kịch bản nghiệp vụ](02-kich-ban-nghiep-vu.md)) |
 
 ```text
@@ -100,7 +100,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); chưa có OpenTelemetry, Prometheus, Grafana | Một phần |
 | | Kiểm toán bất biến | Chuỗi hash theo tenant, neo có chữ ký công bố ra ngoài CSDL ([ADR #33](#adr-33), [ADR #46](#adr-46)) | Có |
 | | Trục sự kiện | Debezium Server + Kafka KRaft ([ADR #38](#adr-38)) | Có |
-| | GitOps | Script đối chiếu `scripts/gitops/reconcile.sh`; không dùng Argo CD, Kubernetes | Một phần |
+| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh`; không dùng Argo CD, Kubernetes | Một phần |
 | | Sao lưu, khôi phục | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash | Có |
 | Truyền thông | Định tuyến đa kênh | Email, SMS, webhook theo lựa chọn từng người | Có |
 | | Thời gian thực | Subscription GraphQL qua websocket | Có |

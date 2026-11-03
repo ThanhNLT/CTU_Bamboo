@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "bamboo-sleeper"
+version = "0.0.0"
+description = "Proxy TCP đánh thức dịch vụ dùng thưa (ADR #53); chỉ dùng thư viện chuẩn"
+requires-python = "==3.13.*"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false

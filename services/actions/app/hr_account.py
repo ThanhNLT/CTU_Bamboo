@@ -10,7 +10,7 @@ import time
 import httpx
 import psycopg
 
-from .pii import PiiCipher
+from bamboo_common.pii import PiiCipher
 
 log = logging.getLogger("hr_account")
 

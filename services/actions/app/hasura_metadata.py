@@ -2681,7 +2681,7 @@ def build(conn: psycopg.Connection) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--out", default=str(pathlib.Path(__file__).resolve().parents[3] / "platform/hasura/metadata.json")
+        "--out", default=str(pathlib.Path(__file__).resolve().parents[3] / "infra/platform/hasura/metadata.json")
     )
     args = parser.parse_args()
     with psycopg.connect(config.load().database_url) as conn:

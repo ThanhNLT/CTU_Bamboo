@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "bamboo-common"
+version = "0.0.0"
+description = "Client hạ tầng dùng chung (OpenBao, Flowable, Ollama, quét tệp, mã hóa PII); không phụ thuộc mã nghiệp vụ"
+requires-python = "==3.13.*"
+dependencies = ["httpx"]
+
+[build-system]
+# uv_build: uv dựng trực tiếp (không tải backend) khi cài vào image, xem infra/docker/python.Dockerfile.
+requires = ["uv_build>=0.13.6,<0.14"]
+build-backend = "uv_build"

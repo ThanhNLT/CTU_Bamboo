@@ -1,9 +1,12 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 # SPDX-License-Identifier: Apache-2.0
 
-PY          ?= python3
+# Gói Python lấy từ uv.lock ở gốc (package bamboo-docs của uv workspace), cài vào docs/.venv riêng
+# để không đụng môi trường của actions ở gốc (hai package khai xung đột phụ thuộc).
 VENV        ?= .venv
-SPHINXBUILD ?= $(VENV)/bin/sphinx-build
+export UV_PROJECT_ENVIRONMENT := $(abspath $(VENV))
+UVRUN       ?= uv run --frozen --package bamboo-docs --no-default-groups
+SPHINXBUILD ?= $(UVRUN) sphinx-build
 SPHINXOPTS  ?=
 BUILDDIR    ?= _build
 PORT        ?= 8000
@@ -17,13 +20,8 @@ help:
 	@echo "make linkcheck  kiểm tra liên kết ngoài"
 	@echo "make clean      xóa $(BUILDDIR)"
 
-$(VENV)/.installed: requirements.txt
-	$(PY) -m venv $(VENV)
-	$(VENV)/bin/pip install -q --upgrade pip
-	$(VENV)/bin/pip install -q -r requirements.txt
-	touch $@
-
-venv: $(VENV)/.installed
+venv:
+	uv sync --frozen --package bamboo-docs --no-default-groups --quiet
 
 html: venv
 	$(SPHINXBUILD) -b html . $(BUILDDIR)/html $(SPHINXOPTS)
@@ -32,7 +30,7 @@ check: venv
 	$(SPHINXBUILD) -b html -W --keep-going . $(BUILDDIR)/html $(SPHINXOPTS)
 
 live: venv
-	$(VENV)/bin/sphinx-autobuild . $(BUILDDIR)/html --host 0.0.0.0 --port $(PORT) --ignore "$(VENV)/*" $(SPHINXOPTS)
+	$(UVRUN) sphinx-autobuild . $(BUILDDIR)/html --host 0.0.0.0 --port $(PORT) --ignore "$(VENV)/*" $(SPHINXOPTS)
 
 linkcheck: venv
 	$(SPHINXBUILD) -b linkcheck . $(BUILDDIR)/linkcheck $(SPHINXOPTS)

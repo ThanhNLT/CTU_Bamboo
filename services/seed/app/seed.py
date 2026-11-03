@@ -34,8 +34,8 @@ from .demo_library import EXTRA_DOCS
 
 log = logging.getLogger("seed")
 START = "2025-01-01T00:00:00+07:00"
-BPMN_SAMPLE = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/purchase_request.bpmn20.xml"
-BPMN_DIR = pathlib.Path(__file__).resolve().parents[3] / "platform/flowable/processes"
+BPMN_SAMPLE = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/flowable/purchase_request.bpmn20.xml"
+BPMN_DIR = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/flowable/processes"
 
 
 def _form(key: str, name: str) -> dict:

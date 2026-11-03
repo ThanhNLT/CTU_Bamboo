@@ -22,10 +22,11 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
+from bamboo_common.ollama import Ollama, OllamaUnavailable
+
 from . import ai_agent, ai_chunks, config, ocr, pii_guard, search
 from .common import bind_session
 from .gpu import Gpu, sleeper_awake
-from .ollama import Ollama, OllamaUnavailable
 from .storage import Storage
 
 log = logging.getLogger("ai_worker")
