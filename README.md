@@ -103,6 +103,7 @@ infra/k8s/           Chỗ dành sẵn cho k3s/GitOps (chưa có manifest)
 db/                  Migration, vai trò CSDL, kiểm thử SQL
 tools/               Script CI, CSDL, vận hành, sao lưu, GitOps, phát hành, smoke AI/OCR
 tests/e2e/           Kiểm thử đầu–cuối Playwright (package pnpm @bamboo/e2e)
+examples/            Ví dụ cho bên thứ ba: mô-đun ngoài mẫu mo-dun-mau (ADR #58)
 docs/                Tài liệu kỹ thuật (Sphinx)
 ```
 

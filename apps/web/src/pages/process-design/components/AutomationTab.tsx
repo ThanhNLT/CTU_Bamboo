@@ -115,7 +115,7 @@ export const AutomationTab = ({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {active && (
+          {active && canManage && (
             <button type="button" className={primaryButtonClass} onClick={() => setStarting("")} disabled={busy}>
               Khởi chạy ngay
             </button>
