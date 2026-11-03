@@ -11,6 +11,7 @@ import { citationLabel, citationLink, elapsed, refusalText } from "../assistant"
 import type { Question } from "../types";
 import { RichText } from "./RichText";
 import { ThinkingMessage } from "./ThinkingMessage";
+import { tr, trf } from "../../../i18n";
 
 export const AiAvatar = () => (
   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-ui bg-bamboo-50 text-bamboo-600" aria-hidden>
@@ -77,7 +78,13 @@ export const ThinkingAccordion = ({
           ) : (
             <Brain className="h-3.5 w-3.5 text-bamboo-600" aria-hidden />
           )}
-          <span>{isLive ? "Đang suy luận…" : elapsedSec ? `Đã suy nghĩ trong ${elapsedSec}` : "Dòng suy nghĩ"}</span>
+          <span>
+            {isLive
+              ? tr("Đang suy luận…")
+              : elapsedSec
+                ? trf("Đã suy nghĩ trong {0}", [elapsedSec])
+                : tr("Dòng suy nghĩ")}
+          </span>
         </span>
         {isOpen ? (
           <ChevronDown className="h-3.5 w-3.5 text-muted" aria-hidden />
@@ -96,9 +103,13 @@ export const ThinkingAccordion = ({
 
 export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => void; onRetry: () => void }) => {
   if (q.status === "queued")
-    return <ThinkingMessage label={q.position ? `Đang chờ, vị trí thứ ${q.position + 1}…` : "Đang chờ trợ lý…"} />;
+    return (
+      <ThinkingMessage
+        label={q.position ? trf("Đang chờ, vị trí thứ {0}…", [q.position + 1]) : tr("Đang chờ trợ lý…")}
+      />
+    );
   if (q.status === "running" && !q.answer && !q.thinking)
-    return <ThinkingMessage label="Đang tìm trong Thư viện tri thức…" />;
+    return <ThinkingMessage label={tr("Đang tìm trong Thư viện tri thức…")} />;
 
   const isLiveThinking = q.status === "running" && !q.answer;
 
@@ -113,14 +124,14 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
           </Notice>
         ) : q.status === "error" ? (
           <Notice tone="error" icon={<AlertTriangle className="h-4 w-4" />}>
-            <p>{q.error ?? "Trợ lý AI tạm thời không trả lời được."}</p>
+            <p>{q.error ?? tr("Trợ lý AI tạm thời không trả lời được.")}</p>
             <button
               type="button"
               onClick={onRetry}
               className="mt-1.5 inline-flex items-center gap-1 text-[12.5px] font-semibold text-red-800 underline-offset-2 hover:underline"
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-              Hỏi lại
+              {tr("Hỏi lại")}
             </button>
           </Notice>
         ) : q.answer ? (
@@ -128,7 +139,7 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
         ) : null}
         {q.status === "done" && q.citations.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
-            <span className="mr-1 text-muted">Nguồn:</span>
+            <span className="mr-1 text-muted">{tr("Nguồn:")}</span>
             {q.citations.map((c) => (
               <Link
                 key={c.n}
@@ -142,11 +153,11 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
         )}
         {q.status === "done" && (
           <div className="flex items-center gap-1">
-            <button type="button" onClick={onCopy} aria-label="Sao chép câu trả lời" className={iconBtn}>
+            <button type="button" onClick={onCopy} aria-label={tr("Sao chép câu trả lời")} className={iconBtn}>
               <Copy className="h-3.5 w-3.5" aria-hidden />
             </button>
             <span className="ml-1.5 text-[11.5px] text-muted">
-              Do AI tạo · hãy kiểm tra trước khi dùng
+              {tr("Do AI tạo · hãy kiểm tra trước khi dùng")}
               {elapsed(q) ? ` · ${elapsed(q)}` : ""}
             </span>
           </div>

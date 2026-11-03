@@ -4,6 +4,7 @@
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { tr, trs } from "../i18n";
 
 dayjs.extend(relativeTime);
 
@@ -14,7 +15,7 @@ export const formatDate = (value?: string | null) => (value ? dayjs(value).forma
 export const formatAgo = (iso: string, now = dayjs()) => {
   const t = dayjs(iso);
   if (now.diff(t, "hour") < 24) return t.from(now);
-  if (now.startOf("day").diff(t.startOf("day"), "day") === 1) return "Hôm qua";
+  if (now.startOf("day").diff(t.startOf("day"), "day") === 1) return tr("Hôm qua");
   return t.format("DD/MM/YYYY");
 };
 export const parsePgTimestamp = (value: string) =>
@@ -27,31 +28,31 @@ export const parsePgTimestamp = (value: string) =>
 export const formatDay = (value?: string | null) => (value ? dayjs(value).format("DD/MM/YYYY") : "—");
 
 export const STEP_STATUS: Record<string, string> = {
-  WAITING: "Chờ tới lượt",
-  ACTIVE: "Đang chờ duyệt",
-  APPROVED: "Đã duyệt",
-  REJECTED: "Từ chối",
-  RETURNED: "Trả về",
-  CANCELLED: "Đã hủy",
+  WAITING: trs("Chờ tới lượt"),
+  ACTIVE: trs("Đang chờ duyệt"),
+  APPROVED: trs("Đã duyệt"),
+  REJECTED: trs("Từ chối"),
+  RETURNED: trs("Trả về"),
+  CANCELLED: trs("Đã hủy"),
 };
 
 export const HISTORY_EVENT: Record<string, string> = {
-  SUBMITTED: "Gửi duyệt",
-  ASSIGNED: "Giao việc duyệt",
-  ESCALATED: "Đẩy lên cấp trên",
-  MERGED: "Gộp bước",
-  TRANSFERRED: "Chuyển việc",
-  APPROVED: "Duyệt",
-  REJECTED: "Từ chối",
-  RETURNED: "Trả về",
-  CANCELLED: "Hủy",
-  OWNER_TRANSFERRED: "Chuyển người lập",
-  COMPLETED: "Hoàn tất duyệt",
+  SUBMITTED: trs("Gửi duyệt"),
+  ASSIGNED: trs("Giao việc duyệt"),
+  ESCALATED: trs("Đẩy lên cấp trên"),
+  MERGED: trs("Gộp bước"),
+  TRANSFERRED: trs("Chuyển việc"),
+  APPROVED: trs("Duyệt"),
+  REJECTED: trs("Từ chối"),
+  RETURNED: trs("Trả về"),
+  CANCELLED: trs("Hủy"),
+  OWNER_TRANSFERRED: trs("Chuyển người lập"),
+  COMPLETED: trs("Hoàn tất duyệt"),
 };
 
 export const ESCALATION_REASON: Record<string, string> = {
-  VACANT: "vị trí trống",
-  CONTRACT: "người giữ là hợp đồng",
-  REQUESTER: "trùng người lập",
-  CONFLICT: "đứng ở phía bên kia giao dịch nội bộ",
+  VACANT: tr("vị trí trống"),
+  CONTRACT: tr("người giữ là hợp đồng"),
+  REQUESTER: tr("trùng người lập"),
+  CONFLICT: tr("đứng ở phía bên kia giao dịch nội bộ"),
 };

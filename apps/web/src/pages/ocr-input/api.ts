@@ -4,6 +4,7 @@
 
 import { request } from "../../api/client";
 import type { OcrDocument, RecentImport } from "./types";
+import { trf } from "../../i18n";
 
 export type PartnerOption = { id: string; code: string; name: string };
 export type Options = {
@@ -43,7 +44,7 @@ export const uploadScan = async (
     { id: requestId, name: file.name, type: file.type || "application/octet-stream", size: file.size },
   );
   const put = await fetch(t.upload_url, { method: "PUT", body: file, headers: { "Content-Type": t.content_type } });
-  if (!put.ok) throw new Error(`Tải lên kho lưu trữ thất bại (${put.status})`);
+  if (!put.ok) throw new Error(trf("Tải lên kho lưu trữ thất bại ({0})", [put.status]));
   const { confirm_upload: r } = await request<{ confirm_upload: { status: string; scan_result: string | null } }>(
     `mutation OcrConfirm($a: uuid!) { confirm_upload(attachment_id: $a) { status scan_result } }`,
     { a: t.attachment_id },

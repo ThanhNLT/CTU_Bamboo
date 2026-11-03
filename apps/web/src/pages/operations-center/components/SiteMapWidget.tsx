@@ -9,11 +9,12 @@ import { cn } from "../../../utils/cn";
 import type { OpsSite } from "../api";
 import { ARCHIPELAGOS, project, VN_HEIGHT, VN_PATH, VN_WIDTH } from "../vietnam";
 import { ChartWidget, ChipButton } from "./ChartWidget";
+import { tr, trf } from "../../../i18n";
 
 const STATUS: Record<OpsSite["status"], { label: string; bg: string; text: string }> = {
-  ok: { label: "Bình thường", bg: "bg-bamboo-600", text: "text-bamboo-700" },
-  warning: { label: "Cần chú ý", bg: "bg-amber-500", text: "text-amber-700" },
-  critical: { label: "Quá hạn", bg: "bg-red-500", text: "text-red-700" },
+  ok: { label: tr("Bình thường"), bg: "bg-bamboo-600", text: "text-bamboo-700" },
+  warning: { label: tr("Cần chú ý"), bg: "bg-amber-500", text: "text-amber-700" },
+  critical: { label: tr("Quá hạn"), bg: "bg-red-500", text: "text-red-700" },
 };
 const HEIGHT = 280;
 const PAD = 26;
@@ -62,7 +63,7 @@ const Marker = ({
         type="button"
         onClick={onSelect}
         aria-pressed={selected}
-        aria-label={`${site.name} (${site.province ?? "chưa ghi tỉnh"}): ${st.label}${site.alerts.length ? ` — ${site.alerts.join("; ")}` : ""}`}
+        aria-label={`${site.name} (${site.province ?? tr("chưa ghi tỉnh")}): ${st.label}${site.alerts.length ? ` — ${site.alerts.join("; ")}` : ""}`}
         className={cn(
           "relative grid h-7 w-7 place-items-center rounded-ui transition-colors",
           "focus-visible:outline-2 focus-visible:outline-bamboo-500",
@@ -102,16 +103,16 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
 
   return (
     <ChartWidget
-      title="Cơ sở và cảnh báo"
+      title={tr("Cơ sở và cảnh báo")}
       meta={
         <ChipButton pressed={whole} onClick={() => setWhole((w) => !w)}>
-          Toàn quốc
+          {tr("Toàn quốc")}
         </ChipButton>
       }
       footer={
         <ul
           className="m-0 flex w-full list-none flex-wrap items-center gap-x-4 gap-y-1.5 p-0 text-[11.5px] text-body"
-          aria-label="Chú giải"
+          aria-label={tr("Chú giải")}
         >
           {(Object.keys(STATUS) as OpsSite["status"][]).map((k) => (
             <li key={k} className="inline-flex items-center gap-1.5">
@@ -121,11 +122,11 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
           ))}
           <li className="inline-flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-ui bg-gray-500" aria-hidden />
-            Tenant con (số tổng hợp)
+            {tr("Tenant con (số tổng hợp)")}
           </li>
           <li className="ml-auto">
             <Link to="/admin/org" className="font-semibold text-bamboo-700 underline-offset-2 hover:underline">
-              Thêm tọa độ cơ sở
+              {tr("Thêm tọa độ cơ sở")}
             </Link>
           </li>
         </ul>
@@ -172,14 +173,14 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
           ))}
           {!loading && sites.length === 0 && (
             <p className="absolute inset-0 grid place-items-center px-6 text-center text-[12.5px] text-muted">
-              Chưa có đơn vị nào có tọa độ. Quản trị nhập tỉnh và tọa độ cơ sở ở Cơ cấu tổ chức.
+              {tr("Chưa có đơn vị nào có tọa độ. Quản trị nhập tỉnh và tọa độ cơ sở ở Cơ cấu tổ chức.")}
             </p>
           )}
         </div>
         {sites.length > 0 && (
           <ul
             className="m-0 flex max-h-[280px] list-none flex-col gap-1 overflow-y-auto p-0 sm:w-[220px]"
-            aria-label="Danh sách cơ sở"
+            aria-label={tr("Danh sách cơ sở")}
           >
             {sites.map((s) => {
               const st = STATUS[s.status];
@@ -203,7 +204,9 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
                       <span className="truncate">{s.name}</span>
                     </span>
                     <span className="block text-muted">
-                      {[s.province, `${s.open_tasks} chờ`, `${s.overdue_tasks} quá hạn`].filter(Boolean).join(" · ")}
+                      {[s.province, trf("{0} chờ", [s.open_tasks]), trf("{0} quá hạn", [s.overdue_tasks])]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                     {open &&
                       (s.alerts.length ? (
@@ -213,7 +216,7 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
                           </span>
                         ))
                       ) : (
-                        <span className="block text-bamboo-700">Không có cảnh báo</span>
+                        <span className="block text-bamboo-700">{tr("Không có cảnh báo")}</span>
                       ))}
                   </button>
                 </li>

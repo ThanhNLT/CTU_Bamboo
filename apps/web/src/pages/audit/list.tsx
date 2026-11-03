@@ -12,6 +12,7 @@ import gql from "graphql-tag";
 import { request } from "../../api/client";
 import { PiiNotice } from "../../components/pii/PiiNotice";
 import { formatDate } from "../../utils/format";
+import { tr, trf } from "../../i18n";
 
 const AUDIT = gql`
   query Audit($limit: Int, $offset: Int, $order_by: [audit_log_order_by!], $where: audit_log_bool_exp) {
@@ -70,7 +71,7 @@ const DetailView = ({ id }: { id: number }) => {
   }, [id]);
   if (error) return <Alert type="error" showIcon message={error} />;
   if (detail === undefined) return <Spin size="small" />;
-  if (detail === null) return <Typography.Text type="secondary">Không còn dữ liệu</Typography.Text>;
+  if (detail === null) return <Typography.Text type="secondary">{tr("Không còn dữ liệu")}</Typography.Text>;
   return (
     <>
       <PiiNotice labels={detail.masked} />
@@ -125,10 +126,10 @@ export const AuditLogList = () => {
 
   return (
     <List
-      title="Nhật ký kiểm toán"
+      title={tr("Nhật ký kiểm toán")}
       headerButtons={
         <Button type="primary" icon={<SafetyCertificateOutlined />} loading={busy} onClick={runVerify}>
-          Đối soát chuỗi hash
+          {tr("Đối soát chuỗi hash")}
         </Button>
       }
     >
@@ -138,12 +139,15 @@ export const AuditLogList = () => {
           showIcon
           type={verify.ok ? "success" : "error"}
           message={
-            verify.ok ? `Chuỗi nguyên vẹn: ${verify.checked} bản ghi` : `Phát hiện ${verify.problems.length} bất thường`
+            verify.ok
+              ? trf("Chuỗi nguyên vẹn: {0} bản ghi", [verify.checked])
+              : trf("Phát hiện {0} bất thường", [verify.problems.length])
           }
           description={
             verify.ok ? (
               <>
-                Đầu chuỗi #{verify.head_seq}:{" "}
+                {tr("Đầu chuỗi #")}
+                {verify.head_seq}:{" "}
                 <Typography.Text code copyable>
                   {verify.head_hash}
                 </Typography.Text>
@@ -161,7 +165,7 @@ export const AuditLogList = () => {
       <Space style={{ marginBottom: 16 }}>
         <Select
           allowClear
-          placeholder="Lọc theo bảng"
+          placeholder={tr("Lọc theo bảng")}
           style={{ width: 280 }}
           options={TABLES.map((t) => ({ value: t, label: t }))}
           onChange={(t?: string) => setFilters(t ? [{ field: "table_name", operator: "eq", value: t }] : [], "replace")}
@@ -174,13 +178,20 @@ export const AuditLogList = () => {
         expandable={{ expandedRowRender: (r) => <DetailView id={Number(r.id)} /> }}
       >
         <Table.Column dataIndex="seq" title="#" sorter />
-        <Table.Column dataIndex="created_at" title="Thời điểm" render={formatDate} />
-        <Table.Column dataIndex="table_name" title="Bảng" />
-        <Table.Column dataIndex="op" title="Thao tác" render={(op: string) => <Tag color={OP_COLOR[op]}>{op}</Tag>} />
-        <Table.Column<Row> title="Người thực hiện" render={(_, r) => r.actor?.full_name ?? <i>{r.actor_role}</i>} />
+        <Table.Column dataIndex="created_at" title={tr("Thời điểm")} render={formatDate} />
+        <Table.Column dataIndex="table_name" title={tr("Bảng")} />
+        <Table.Column
+          dataIndex="op"
+          title={tr("Thao tác")}
+          render={(op: string) => <Tag color={OP_COLOR[op]}>{op}</Tag>}
+        />
+        <Table.Column<Row>
+          title={tr("Người thực hiện")}
+          render={(_, r) => r.actor?.full_name ?? <i>{r.actor_role}</i>}
+        />
         <Table.Column
           dataIndex="changed_cols"
-          title="Cột thay đổi"
+          title={tr("Cột thay đổi")}
           responsive={["lg"]}
           render={(c: string[] | null) => c?.join(", ") ?? "—"}
         />

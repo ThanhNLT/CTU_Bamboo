@@ -76,6 +76,47 @@
         utilities.appendChild(button);
     };
 
-    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
-    else mount();
+    // Nửa lời chào bên phải ô đăng nhập (ADR #62), cùng bố cục với trang /login của ứng dụng web.
+    // Keycloak đi qua cổng API cùng origin với web nên hỏi được /setup/status: còn mở đăng ký thì hiện nút "Tạo tài khoản".
+    var greet = function () {
+        var main = document.querySelector(".pf-v5-c-login__main");
+        if (!main || !document.getElementById("kc-form-login")) return;
+        var vi = (root.lang || "vi").indexOf("en") !== 0;
+        var aside = document.createElement("aside");
+        aside.className = "bb-greeting";
+        var title = document.createElement("h2");
+        title.textContent = vi ? "Xin chào!" : "Hello, friend!";
+        var text = document.createElement("p");
+        text.textContent = vi
+            ? "Đăng nhập bằng tài khoản công ty đã cấp cho bạn. Chưa có tài khoản thì nhờ quản trị viên công ty tạo."
+            : "Sign in with the company account you were given. No account yet? Ask your company administrator.";
+        aside.appendChild(title);
+        aside.appendChild(text);
+        main.appendChild(aside);
+        root.classList.add("bb-split");
+        if (!window.fetch) return;
+        fetch("/setup/status", { credentials: "omit" })
+            .then(function (r) {
+                return r.ok ? r.json() : null;
+            })
+            .then(function (s) {
+                if (!s || !s.open) return;
+                text.textContent = vi
+                    ? "Tạo tài khoản cho doanh nghiệp của bạn, thêm thành viên và bắt đầu làm việc chỉ trong vài phút."
+                    : "Create an account for your business, add your team and get started in minutes.";
+                var link = document.createElement("a");
+                link.className = "bb-pill";
+                link.href = "/khoi-tao";
+                link.textContent = vi ? "Tạo tài khoản →" : "Create account →";
+                aside.appendChild(link);
+            })
+            .catch(function () {});
+    };
+
+    var ready = function () {
+        mount();
+        greet();
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ready);
+    else ready();
 })();

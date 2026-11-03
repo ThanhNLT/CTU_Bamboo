@@ -62,6 +62,14 @@ export const EN: Record<string, string> = {
   "Đang chuyển tới trang đăng nhập…": "Redirecting to the sign-in page…",
   "Không chuyển được tới trang đăng nhập.": "Could not redirect to the sign-in page.",
   "Thử đăng nhập lại": "Try signing in again",
+  "Đăng nhập": "Sign in",
+  "Hệ thống chưa có công ty nào. Bạn đã có tài khoản do quản trị viên cấp thì đăng nhập tại đây.":
+    "No company has been set up yet. If an administrator has already given you an account, sign in here.",
+  "Chưa có tài khoản?": "Don't have an account?",
+  "Tạo tài khoản": "Create account",
+  "Xin chào!": "Hello, friend!",
+  "Tạo tài khoản cho doanh nghiệp của bạn, thêm thành viên và bắt đầu làm việc chỉ trong vài phút.":
+    "Create an account for your business, add your team and get started in minutes.",
   "Đăng xuất ": "Sign out ",
   "Tạo mới": "Create",
   Lưu: "Save",

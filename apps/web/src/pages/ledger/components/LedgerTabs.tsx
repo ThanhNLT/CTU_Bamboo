@@ -4,14 +4,19 @@
 
 import { cn } from "../../../utils/cn";
 import type { LedgerTab } from "../types";
+import { tr } from "../../../i18n";
 
 const TABS: Array<{ key: LedgerTab; label: string }> = [
-  { key: "verify", label: "Đối soát" },
-  { key: "reading", label: "Phòng đọc ảo" },
+  { key: "verify", label: tr("Đối soát") },
+  { key: "reading", label: tr("Phòng đọc ảo") },
 ];
 
 export const LedgerTabs = ({ value, onChange }: { value: LedgerTab; onChange: (t: LedgerTab) => void }) => (
-  <div role="tablist" aria-label="Sổ cái" className="inline-flex gap-0.5 self-start rounded-ui bg-black/[0.045] p-1">
+  <div
+    role="tablist"
+    aria-label={tr("Sổ cái")}
+    className="inline-flex gap-0.5 self-start rounded-ui bg-black/[0.045] p-1"
+  >
     {TABS.map((t) => {
       const active = t.key === value;
       return (

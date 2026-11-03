@@ -3,25 +3,27 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Segmented } from "antd";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
 import { cn } from "../../../utils/cn";
 import type { DueLevel, TaskItem } from "../types";
 import { Panel, PanelLink } from "../../../components/ui";
+import { tr } from "../../../i18n";
 
 type View = "list" | "kanban" | "calendar";
 
 const VIEW_OPTIONS: Array<{ label: string; value: View }> = [
-  { label: "Danh sách", value: "list" },
+  { label: tr("Danh sách"), value: "list" },
   { label: "Kanban", value: "kanban" },
-  { label: "Lịch", value: "calendar" },
+  { label: tr("Lịch"), value: "calendar" },
 ];
 
 const DUE_STYLE: Record<DueLevel, { pill: string; dot: string; column: string }> = {
-  overdue: { pill: "bg-red-50 text-red-700", dot: "bg-red-500", column: "Quá hạn" },
-  urgent: { pill: "bg-amber-50 text-amber-700", dot: "bg-amber-500", column: "Sắp đến hạn" },
-  ok: { pill: "bg-bamboo-50 text-bamboo-700", dot: "bg-bamboo-500", column: "Trong hạn" },
+  overdue: { pill: "bg-red-50 text-red-700", dot: "bg-red-500", column: tr("Quá hạn") },
+  urgent: { pill: "bg-amber-50 text-amber-700", dot: "bg-amber-500", column: tr("Sắp đến hạn") },
+  ok: { pill: "bg-bamboo-50 text-bamboo-700", dot: "bg-bamboo-500", column: tr("Trong hạn") },
 };
 
 const DueTag = ({ task }: { task: TaskItem }) => {
@@ -29,11 +31,11 @@ const DueTag = ({ task }: { task: TaskItem }) => {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-ui px-2.5 py-1 text-[11.5px] font-medium",
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium",
         s.pill,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-ui", s.dot)} aria-hidden />
+      <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} aria-hidden />
       {task.dueLabel}
     </span>
   );
@@ -47,7 +49,7 @@ const TaskRow = ({ task }: { task: TaskItem }) => (
   <li>
     <Link
       to={task.to}
-      className="-mx-2 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-0.5 rounded-lg px-2 py-2.5 transition-colors hover:bg-canvas sm:grid-cols-[150px_minmax(0,1fr)_auto]"
+      className="-mx-2 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-0.5 rounded-xl px-2 py-2.5 transition-colors hover:bg-[var(--glass-well)] sm:grid-cols-[150px_minmax(0,1fr)_auto]"
     >
       <Code>{task.code}</Code>
       <span className="col-span-2 row-start-2 min-w-0 truncate text-[13.5px] font-medium text-ink sm:col-span-1 sm:row-start-auto">
@@ -73,7 +75,7 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
     {(Object.keys(DUE_STYLE) as DueLevel[]).map((level) => {
       const items = tasks.filter((t) => t.dueLevel === level);
       return (
-        <div key={level} className="rounded-xl bg-canvas p-2.5">
+        <div key={level} className="rounded-xl bg-[var(--glass-well)] p-2.5">
           <div className="mb-2 flex items-center gap-2 px-1 text-[12px] font-semibold text-body">
             <span className={cn("h-1.5 w-1.5 rounded-ui", DUE_STYLE[level].dot)} aria-hidden />
             {DUE_STYLE[level].column}
@@ -84,7 +86,7 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
               <Link
                 key={t.code}
                 to={t.to}
-                className="block rounded-lg border border-line bg-surface p-2.5 shadow-card hover:border-bamboo-200"
+                className="block rounded-xl border bg-surface p-2.5 shadow-card hover:border-bamboo-200"
               >
                 <Code>{t.code}</Code>
                 <div className="mt-1 text-[13px] font-medium leading-snug text-ink">{t.title}</div>
@@ -93,7 +95,9 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
                 </div>
               </Link>
             ))}
-            {items.length === 0 && <div className="px-1 py-3 text-center text-[12px] text-muted">Không có việc</div>}
+            {items.length === 0 && (
+              <div className="px-1 py-3 text-center text-[12px] text-muted">{tr("Không có việc")}</div>
+            )}
           </div>
         </div>
       );
@@ -119,16 +123,27 @@ export const MyTasks = ({ tasks, total, listLimit = 4 }: { tasks: TaskItem[]; to
   const [view, setView] = useState<View>("list");
   return (
     <Panel
-      title="Việc của tôi"
+      title={tr("Việc của tôi")}
       extra={<Segmented size="small" options={VIEW_OPTIONS} value={view} onChange={(v) => setView(v as View)} />}
       bodyClassName="px-5 pb-5 pt-1"
     >
-      {tasks.length === 0 && <p className="py-6 text-center text-[13px] text-muted">Không có việc nào chờ bạn.</p>}
+      {tasks.length === 0 && (
+        <div className="flex flex-col items-center gap-2 py-6 text-center">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-bamboo-100 text-bamboo-700" aria-hidden>
+            <Check className="h-5 w-5" strokeWidth={2.25} />
+          </span>
+          <p className="text-[14px] font-medium text-ink">{tr("Không có việc nào chờ bạn")}</p>
+          <p className="text-[12.5px] text-muted">{tr("Việc mới cần bạn duyệt hoặc xử lý sẽ hiện ở đây.")}</p>
+        </div>
+      )}
       {view === "list" && <ListView tasks={tasks.slice(0, listLimit)} />}
       {view === "kanban" && <KanbanView tasks={tasks} />}
       {view === "calendar" && <CalendarView tasks={tasks} />}
       <div className="mt-3">
-        <PanelLink to="/p/tasks">Mở Hộp việc ({total})</PanelLink>
+        <PanelLink to="/p/tasks">
+          {tr("Mở Hộp việc (")}
+          {total})
+        </PanelLink>
       </div>
     </Panel>
   );

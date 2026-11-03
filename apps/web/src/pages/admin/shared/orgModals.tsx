@@ -10,6 +10,7 @@ import { FormModal } from "./FormModal";
 import { ASSIGNMENT_LABEL, type OrgData, type Position, type Unit } from "./orgData";
 import { toDate } from "./period";
 import { useUnitTree } from "./useUnitTree";
+import { tr, trf } from "../../../i18n";
 
 type UnitValues = {
   code: string;
@@ -42,7 +43,7 @@ export const UnitModal = ({
   return (
     <FormModal<UnitValues>
       open={open}
-      title={unit ? `Sửa đơn vị ${unit.name}` : "Thêm đơn vị"}
+      title={unit ? trf("Sửa đơn vị {0}", [unit.name]) : tr("Thêm đơn vị")}
       initial={
         unit
           ? {
@@ -76,25 +77,25 @@ export const UnitModal = ({
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
             <Form.Item
               name="code"
-              label="Mã đơn vị"
-              rules={[{ required: true, whitespace: true, message: "Nhập mã" }]}
-              tooltip="Duy nhất trong tenant; dùng khi nhập từ Excel"
+              label={tr("Mã đơn vị")}
+              rules={[{ required: true, whitespace: true, message: tr("Nhập mã") }]}
+              tooltip={tr("Duy nhất trong tenant; dùng khi nhập từ Excel")}
             >
               <Input placeholder="PHONG_KT" className="font-mono" />
             </Form.Item>
             <Form.Item
               name="name"
-              label="Tên đơn vị"
-              rules={[{ required: true, whitespace: true, message: "Nhập tên" }]}
+              label={tr("Tên đơn vị")}
+              rules={[{ required: true, whitespace: true, message: tr("Nhập tên") }]}
             >
-              <Input placeholder="Phòng Kỹ thuật" />
+              <Input placeholder={tr("Phòng Kỹ thuật")} />
             </Form.Item>
           </div>
           <Form.Item
             name="unit_type_id"
-            label="Loại đơn vị"
-            rules={[{ required: true, message: "Chọn loại đơn vị" }]}
-            extra="Thêm loại mới ở Danh mục & dữ liệu chủ."
+            label={tr("Loại đơn vị")}
+            rules={[{ required: true, message: tr("Chọn loại đơn vị") }]}
+            extra={tr("Thêm loại mới ở Danh mục & dữ liệu chủ.")}
           >
             <Select
               showSearch
@@ -105,37 +106,41 @@ export const UnitModal = ({
           {(!unit || unit.parent_id) && (
             <Form.Item
               name="parent_id"
-              label="Đơn vị cha"
-              rules={[{ required: true, message: "Chọn đơn vị cha" }]}
-              extra={unit ? "Đổi đơn vị cha là chuyển cả nhánh; cần quyền ở cả nơi đi và nơi đến." : undefined}
+              label={tr("Đơn vị cha")}
+              rules={[{ required: true, message: tr("Chọn đơn vị cha") }]}
+              extra={unit ? tr("Đổi đơn vị cha là chuyển cả nhánh; cần quyền ở cả nơi đi và nơi đến.") : undefined}
             >
               <TreeSelect treeData={tree} showSearch treeNodeFilterProp="title" treeDefaultExpandAll={false} />
             </Form.Item>
           )}
           <Form.Item
             name="is_legal_entity"
-            label="Là công ty (pháp nhân)"
+            label={tr("Là công ty (pháp nhân)")}
             valuePropName="checked"
-            extra="Bật cho công ty con: dùng để xác định công ty khi bổ nhiệm hợp đồng, đơn hàng nội bộ."
+            extra={tr("Bật cho công ty con: dùng để xác định công ty khi bổ nhiệm hợp đồng, đơn hàng nội bộ.")}
           >
             <Switch />
           </Form.Item>
           <Form.Item
             name="is_hr"
-            label="Là phòng nhân sự của công ty"
+            label={tr("Là phòng nhân sự của công ty")}
             valuePropName="checked"
-            extra="Trưởng phòng nhân sự của công ty duyệt đề nghị điều chuyển nhân sự thuộc công ty."
+            extra={tr("Trưởng phòng nhân sự của công ty duyệt đề nghị điều chuyển nhân sự thuộc công ty.")}
           >
             <Switch />
           </Form.Item>
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
-            <Form.Item name="province" label="Tỉnh / thành của cơ sở">
-              <Input placeholder="Bắc Ninh" />
+            <Form.Item name="province" label={tr("Tỉnh / thành của cơ sở")}>
+              <Input placeholder={tr("Bắc Ninh")} />
             </Form.Item>
-            <Form.Item name="lat" label="Vĩ độ">
+            <Form.Item name="lat" label={tr("Vĩ độ")}>
               <InputNumber min={-90} max={90} step={0.0001} className="w-full" placeholder="21.1861" />
             </Form.Item>
-            <Form.Item name="lng" label="Kinh độ" extra="Có tọa độ thì đơn vị hiện trên bản đồ Trung tâm điều hành.">
+            <Form.Item
+              name="lng"
+              label={tr("Kinh độ")}
+              extra={tr("Có tọa độ thì đơn vị hiện trên bản đồ Trung tâm điều hành.")}
+            >
               <InputNumber min={-180} max={180} step={0.0001} className="w-full" placeholder="106.0763" />
             </Form.Item>
           </div>
@@ -175,7 +180,7 @@ export const PositionModal = ({
   return (
     <FormModal<PositionValues>
       open={open}
-      title={position ? `Sửa vị trí ${position.name}` : "Thêm vị trí"}
+      title={position ? trf("Sửa vị trí {0}", [position.name]) : tr("Thêm vị trí")}
       initial={
         position
           ? {
@@ -202,16 +207,20 @@ export const PositionModal = ({
         <>
           <Form.Item
             name="name"
-            label="Tên vị trí (ghế)"
-            rules={[{ required: true, whitespace: true, message: "Nhập tên vị trí" }]}
-            extra="Quyền gắn với vị trí, không gắn với người (ADR #5): ai ngồi ghế thì có quyền của ghế."
+            label={tr("Tên vị trí (ghế)")}
+            rules={[{ required: true, whitespace: true, message: tr("Nhập tên vị trí") }]}
+            extra={tr("Quyền gắn với vị trí, không gắn với người (ADR #5): ai ngồi ghế thì có quyền của ghế.")}
           >
-            <Input placeholder="Trưởng phòng / Chuyên viên mua hàng 1" />
+            <Input placeholder={tr("Trưởng phòng / Chuyên viên mua hàng 1")} />
           </Form.Item>
-          <Form.Item name="org_unit_id" label="Thuộc đơn vị" rules={[{ required: true, message: "Chọn đơn vị" }]}>
+          <Form.Item
+            name="org_unit_id"
+            label={tr("Thuộc đơn vị")}
+            rules={[{ required: true, message: tr("Chọn đơn vị") }]}
+          >
             <TreeSelect treeData={tree} showSearch treeNodeFilterProp="title" />
           </Form.Item>
-          <Form.Item name="job_title_id" label="Chức danh">
+          <Form.Item name="job_title_id" label={tr("Chức danh")}>
             <Select
               allowClear
               showSearch
@@ -221,16 +230,16 @@ export const PositionModal = ({
           </Form.Item>
           <Form.Item
             name="is_head"
-            label="Là trưởng đơn vị"
+            label={tr("Là trưởng đơn vị")}
             valuePropName="checked"
-            extra="Mỗi đơn vị một trưởng; trưởng đơn vị nằm trong chuỗi duyệt."
+            extra={tr("Mỗi đơn vị một trưởng; trưởng đơn vị nằm trong chuỗi duyệt.")}
           >
             <Switch />
           </Form.Item>
           <Form.Item
             name="reports_to_id"
-            label="Báo cáo cho"
-            extra="Bỏ trống: báo cáo cho trưởng đơn vị (hoặc trưởng đơn vị cha nếu là trưởng)."
+            label={tr("Báo cáo cho")}
+            extra={tr("Bỏ trống: báo cáo cho trưởng đơn vị (hoặc trưởng đơn vị cha nếu là trưởng).")}
           >
             <Select allowClear showSearch optionFilterProp="label" options={reportOptions} />
           </Form.Item>
@@ -271,8 +280,8 @@ export const AssignModal = ({
   return (
     <FormModal<AssignValues>
       open={open}
-      title="Bổ nhiệm vào vị trí"
-      okText="Bổ nhiệm"
+      title={tr("Bổ nhiệm vào vị trí")}
+      okText={tr("Bổ nhiệm")}
       initial={{ position_id: positionId, person_id: personId, assignment_type: "PRIMARY" }}
       onCancel={onClose}
       onSubmit={async (v) => {
@@ -290,9 +299,9 @@ export const AssignModal = ({
         <>
           <Form.Item
             name="person_id"
-            label="Người"
-            rules={[{ required: true, message: "Chọn người" }]}
-            extra={personId ? undefined : "Chưa có trong danh sách? Thêm ở trang Người dùng."}
+            label={tr("Người")}
+            rules={[{ required: true, message: tr("Chọn người") }]}
+            extra={personId ? undefined : tr("Chưa có trong danh sách? Thêm ở trang Người dùng.")}
           >
             <Select
               showSearch
@@ -304,10 +313,14 @@ export const AssignModal = ({
               }))}
             />
           </Form.Item>
-          <Form.Item name="position_id" label="Vị trí còn trống" rules={[{ required: true, message: "Chọn vị trí" }]}>
+          <Form.Item
+            name="position_id"
+            label={tr("Vị trí còn trống")}
+            rules={[{ required: true, message: tr("Chọn vị trí") }]}
+          >
             <Select showSearch optionFilterProp="label" disabled={Boolean(positionId)} options={vacant} />
           </Form.Item>
-          <Form.Item name="assignment_type" label="Loại bổ nhiệm" rules={[{ required: true }]}>
+          <Form.Item name="assignment_type" label={tr("Loại bổ nhiệm")} rules={[{ required: true }]}>
             <Radio.Group
               optionType="button"
               buttonStyle="solid"
@@ -315,18 +328,18 @@ export const AssignModal = ({
             />
           </Form.Item>
           <div className="grid grid-cols-2 gap-x-4">
-            <Form.Item name="valid_from" label="Từ ngày" extra="Bỏ trống: từ bây giờ">
+            <Form.Item name="valid_from" label={tr("Từ ngày")} extra={tr("Bỏ trống: từ bây giờ")}>
               <DatePicker format="DD/MM/YYYY" className="w-full" />
             </Form.Item>
             <Form.Item noStyle dependencies={["assignment_type"]}>
               {() => (
                 <Form.Item
                   name="valid_to"
-                  label="Đến ngày"
+                  label={tr("Đến ngày")}
                   rules={[
                     {
                       required: form.getFieldValue("assignment_type") === "CONTRACT",
-                      message: "Hợp đồng phải có ngày kết thúc",
+                      message: tr("Hợp đồng phải có ngày kết thúc"),
                     },
                   ]}
                 >
@@ -341,12 +354,12 @@ export const AssignModal = ({
                 <div className="grid grid-cols-2 gap-x-4">
                   <Form.Item
                     name="contract_no"
-                    label="Số hợp đồng"
-                    rules={[{ required: true, whitespace: true, message: "Nhập số hợp đồng" }]}
+                    label={tr("Số hợp đồng")}
+                    rules={[{ required: true, whitespace: true, message: tr("Nhập số hợp đồng") }]}
                   >
                     <Input />
                   </Form.Item>
-                  <Form.Item name="contract_partner" label="Bên thuê / đối tác">
+                  <Form.Item name="contract_partner" label={tr("Bên thuê / đối tác")}>
                     <Input />
                   </Form.Item>
                 </div>
@@ -354,8 +367,9 @@ export const AssignModal = ({
             }
           </Form.Item>
           <p className="m-0 text-[12px] text-muted">
-            Mỗi người chỉ giữ chính một ghế tại một thời điểm; hợp đồng không giữ ghế trưởng và phải ở công ty khác công
-            ty giữ chính (ADR #29).
+            {tr(
+              "Mỗi người chỉ giữ chính một ghế tại một thời điểm; hợp đồng không giữ ghế trưởng và phải ở công ty khác công ty giữ chính (ADR #29).",
+            )}
           </p>
         </>
       )}

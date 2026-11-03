@@ -6,6 +6,7 @@ import { GraphQLClient, graphqlWS } from "@refinedev/hasura";
 import type { HttpError } from "@refinedev/core";
 
 import { config } from "../config";
+import { tr, trf } from "../i18n";
 
 export const API_URL = config.hasuraUrl;
 const WS_URL = API_URL.replace(/^http/, "ws");
@@ -38,7 +39,7 @@ const agent = (() => {
         ? "Chrome"
         : /Safari\//.test(ua)
           ? "Safari"
-          : "Trình duyệt khác";
+          : tr("Trình duyệt khác");
   const os = /Windows/.test(ua)
     ? "Windows"
     : /Android/.test(ua)
@@ -50,7 +51,7 @@ const agent = (() => {
           : /Linux/.test(ua)
             ? "Linux"
             : "";
-  return os ? `${browser} trên ${os}` : browser;
+  return os ? trf("{0} trên {1}", [browser, os]) : browser;
 })();
 
 export const getTenant = (): string | null => {
@@ -100,7 +101,7 @@ export const toHttpError = (error: unknown): HttpError => {
   const code = first?.extensions?.code;
   const statusCode = code === "not-found" ? 404 : code === "forbidden" ? 403 : code === "unauthorized" ? 401 : 400;
   return {
-    message: first?.message ?? (error instanceof Error ? error.message : "Lỗi không xác định"),
+    message: first?.message ?? (error instanceof Error ? error.message : tr("Lỗi không xác định")),
     statusCode,
     errors: code ? { code } : undefined,
   } as HttpError;

@@ -9,9 +9,10 @@ import { cn } from "../../../utils/cn";
 import { DOC_KIND_LABEL } from "../../../api/documents";
 import type { RecordFilters, RecordType, StatusTab, TimeRange } from "../types";
 import { STATUS_TABS, TIME_OPTIONS } from "../utils";
+import { tr } from "../../../i18n";
 
 const TYPE_OPTIONS: Array<{ label: string; value: RecordType | "all" }> = [
-  { label: "Tất cả loại hồ sơ", value: "all" },
+  { label: tr("Tất cả loại hồ sơ"), value: "all" },
   ...(Object.entries(DOC_KIND_LABEL) as Array<[RecordType, string]>).map(([value, label]) => ({ value, label })),
 ];
 
@@ -26,7 +27,7 @@ const StatusTabs = ({
 }) => (
   <div
     role="tablist"
-    aria-label="Trạng thái hồ sơ"
+    aria-label={tr("Trạng thái hồ sơ")}
     className="inline-flex max-w-full flex-wrap gap-0.5 rounded-ui bg-black/[0.045] p-1"
   >
     {STATUS_TABS.map(({ key, label }) => {
@@ -68,31 +69,31 @@ export const RecordsFilterBar = ({
         className="w-full sm:w-[280px]"
         value={filters.query}
         onChange={(query) => onChange({ query })}
-        placeholder="Mã, tiêu đề, người nộp"
-        label="Tìm hồ sơ theo mã, tiêu đề, người nộp"
+        placeholder={tr("Mã, tiêu đề, người nộp")}
+        label={tr("Tìm hồ sơ theo mã, tiêu đề, người nộp")}
       />
       <label className="flex items-center gap-2 text-[12.5px] text-muted">
-        Loại
+        {tr("Loại")}
         <Select<RecordType | "all">
           value={filters.type}
           onChange={(type) => onChange({ type })}
           options={TYPE_OPTIONS}
           style={{ width: 200 }}
-          aria-label="Loại hồ sơ"
+          aria-label={tr("Loại hồ sơ")}
         />
       </label>
       <label className="flex items-center gap-2 text-[12.5px] text-muted">
-        Thời gian
+        {tr("Thời gian")}
         <Select<TimeRange>
           value={filters.range}
           onChange={(range) => onChange({ range })}
           options={TIME_OPTIONS}
           style={{ width: 140 }}
-          aria-label="Khoảng thời gian"
+          aria-label={tr("Khoảng thời gian")}
         />
       </label>
       <Checkbox checked={filters.mineOnly} onChange={(e) => onChange({ mineOnly: e.target.checked })}>
-        <span className="text-[12.5px] text-body">Chỉ của tôi</span>
+        <span className="text-[12.5px] text-body">{tr("Chỉ của tôi")}</span>
       </Checkbox>
     </div>
   </div>

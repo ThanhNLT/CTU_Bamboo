@@ -7,12 +7,13 @@ import { useState } from "react";
 
 import { cn } from "../../../utils/cn";
 import type { UploadItem } from "../types";
+import { tr, trf } from "../../../i18n";
 
 const STATUS_TEXT: Record<UploadItem["status"], (i: UploadItem) => string> = {
   uploading: (i) => `${i.progress}%`,
-  scanning: () => "Đang quét mã độc…",
-  clean: () => "Đã quét sạch · đã lưu",
-  blocked: () => "Bị chặn",
+  scanning: () => tr("Đang quét mã độc…"),
+  clean: () => tr("Đã quét sạch · đã lưu"),
+  blocked: () => tr("Bị chặn"),
 };
 
 const ProgressBar = ({ item }: { item: UploadItem }) => {
@@ -46,12 +47,12 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
   if (items.length === 0) return null;
 
   const pending = items.filter((i) => i.status === "uploading" || i.status === "scanning").length;
-  const title = pending > 0 ? `Đang tải lên ${pending} tệp` : `Đã xử lý ${items.length} tệp`;
+  const title = pending > 0 ? trf("Đang tải lên {0} tệp", [pending]) : trf("Đã xử lý {0} tệp", [items.length]);
 
   return (
     <section
       aria-live="polite"
-      aria-label="Tiến trình tải lên"
+      aria-label={tr("Tiến trình tải lên")}
       className="fixed bottom-4 left-4 right-4 z-30 rounded-2xl border border-line bg-surface shadow-float sm:bottom-6 sm:left-auto sm:right-6 sm:w-[300px]"
     >
       <header className="flex items-center justify-between gap-2 px-4 py-3">
@@ -60,7 +61,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Mở rộng" : "Thu gọn"}
+            aria-label={collapsed ? tr("Mở rộng") : tr("Thu gọn")}
             aria-expanded={!collapsed}
             className="grid h-7 w-7 place-items-center rounded-ui bg-canvas text-body hover:bg-gray-200/70"
           >
@@ -70,7 +71,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
             <button
               type="button"
               onClick={onClose}
-              aria-label="Đóng"
+              aria-label={tr("Đóng")}
               className="grid h-7 w-7 place-items-center rounded-ui bg-canvas text-body hover:bg-gray-200/70"
             >
               <X className="h-4 w-4" />

@@ -15,6 +15,7 @@ import type {
   TimeRange,
   WorkflowStep,
 } from "./types";
+import { tr, trf } from "../../i18n";
 
 export const STATUS_VIEW: Record<RecordStatus, { tone: Tone; locked?: boolean }> = {
   draft: { tone: "neutral" },
@@ -25,19 +26,19 @@ export const STATUS_VIEW: Record<RecordStatus, { tone: Tone; locked?: boolean }>
 };
 
 export const STATUS_TABS: Array<{ key: StatusTab; label: string }> = [
-  { key: "all", label: "Tất cả" },
-  { key: "draft", label: "Nháp" },
-  { key: "reviewing", label: "Đang duyệt" },
-  { key: "returned", label: "Trả lại" },
-  { key: "approved", label: "Đã duyệt" },
-  { key: "closed", label: "Đã đóng" },
+  { key: "all", label: tr("Tất cả") },
+  { key: "draft", label: tr("Nháp") },
+  { key: "reviewing", label: tr("Đang duyệt") },
+  { key: "returned", label: tr("Trả lại") },
+  { key: "approved", label: tr("Đã duyệt") },
+  { key: "closed", label: tr("Đã đóng") },
 ];
 
 export const TIME_OPTIONS: Array<{ label: string; value: TimeRange }> = [
-  { label: "7 ngày", value: "7d" },
-  { label: "30 ngày", value: "30d" },
-  { label: "90 ngày", value: "90d" },
-  { label: "Mọi thời gian", value: "all" },
+  { label: tr("7 ngày"), value: "7d" },
+  { label: tr("30 ngày"), value: "30d" },
+  { label: tr("90 ngày"), value: "90d" },
+  { label: tr("Mọi thời gian"), value: "all" },
 ];
 
 const RANGE_DAYS: Record<TimeRange, number> = { "7d": 7, "30d": 30, "90d": 90, all: Infinity };
@@ -63,7 +64,7 @@ export const toRecord = (d: DocSummary): EofficeRecord => {
     title: d.title,
     type: d.kind,
     status,
-    statusLabel: status === "pending" && active ? `Chờ duyệt cấp ${active.order}` : d.statusLabel,
+    statusLabel: status === "pending" && active ? trf("Chờ duyệt cấp {0}", [active.order]) : d.statusLabel,
     submitter: d.requester,
     submitterId: d.requesterId,
     unit: d.unit,
@@ -108,17 +109,17 @@ const STEP_STATE: Record<string, StepState> = {
   CANCELLED: "pending",
 };
 const STEP_SUFFIX: Record<string, string> = {
-  ACTIVE: " · đang xử lý",
-  RETURNED: " · trả lại bổ sung",
-  REJECTED: " · từ chối",
-  CANCELLED: " · đã hủy",
+  ACTIVE: tr(" · đang xử lý"),
+  RETURNED: tr(" · trả lại bổ sung"),
+  REJECTED: tr(" · từ chối"),
+  CANCELLED: tr(" · đã hủy"),
 };
 
 export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
   const submitted = r.status !== "draft";
   const submit: WorkflowStep = {
     key: "submit",
-    label: submitted ? "Nộp" : "Nộp · đang soạn",
+    label: submitted ? tr("Nộp") : tr("Nộp · đang soạn"),
     state: submitted ? "done" : "current",
     meta: submitted ? `${formatDate(r.createdAt)} · ${r.submitter}` : r.submitter,
   };
@@ -127,7 +128,7 @@ export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
       ? [
           {
             key: "confirm",
-            label: r.status === "pending" ? "Bên bán xác nhận · đang chờ" : "Bên bán xác nhận",
+            label: r.status === "pending" ? tr("Bên bán xác nhận · đang chờ") : tr("Bên bán xác nhận"),
             state:
               r.status === "approved"
                 ? "done"
@@ -140,7 +141,7 @@ export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
         ]
       : r.steps.map((s) => ({
           key: `l${s.order}`,
-          label: `Duyệt cấp ${s.order}${STEP_SUFFIX[s.status] ?? ""}`,
+          label: trf("Duyệt cấp {0}{1}", [s.order, STEP_SUFFIX[s.status] ?? ""]),
           state: STEP_STATE[s.status] ?? "pending",
           meta: [s.actedBy ?? s.position, s.actedAt && formatDate(s.actedAt)].filter(Boolean).join(" · "),
         }));
@@ -149,7 +150,7 @@ export const buildWorkflow = (r: EofficeRecord): WorkflowStep[] => {
     ...middle,
     {
       key: "result",
-      label: r.status === "closed" ? "Kết quả · đã đóng" : "Kết quả",
+      label: r.status === "closed" ? tr("Kết quả · đã đóng") : tr("Kết quả"),
       state: r.status === "approved" ? "done" : "pending",
     },
   ];

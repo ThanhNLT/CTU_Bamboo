@@ -16,6 +16,7 @@ import { SensorChart } from "./components/SensorChart";
 import { TwinPageHeader } from "./components/TwinPageHeader";
 import type { CategoryFilter, Incident, Metric, TimeRange } from "./types";
 import { countByCategory, filterEntities, pickFromParams, sortEntities } from "./utils";
+import { tr, trf } from "../../i18n";
 
 const defaultMetric = (metrics: Metric[]) =>
   metrics.find((m) => m.status === "critical") ?? metrics.find((m) => m.status === "warning") ?? metrics[0];
@@ -64,25 +65,25 @@ export const DigitalTwinPage = () => {
   const acknowledge = (i: Incident) => {
     let note = "";
     modal.confirm({
-      title: `Ghi nhận sự cố ${i.code}`,
+      title: trf("Ghi nhận sự cố {0}", [i.code]),
       content: (
         <Input.TextArea
           rows={3}
-          aria-label="Hướng xử lý"
-          placeholder="Hướng xử lý (bắt buộc), ví dụ: đã kiểm tra bộ lọc HEPA, theo dõi thêm 30 phút"
+          aria-label={tr("Hướng xử lý")}
+          placeholder={tr("Hướng xử lý (bắt buộc), ví dụ: đã kiểm tra bộ lọc HEPA, theo dõi thêm 30 phút")}
           onChange={(e) => (note = e.target.value)}
         />
       ),
-      okText: "Ghi nhận",
-      cancelText: "Hủy",
+      okText: tr("Ghi nhận"),
+      cancelText: tr("Hủy"),
       onOk: async () => {
         if (!note.trim()) {
-          message.error("Ghi hướng xử lý trước khi ghi nhận");
+          message.error(tr("Ghi hướng xử lý trước khi ghi nhận"));
           throw new Error("missing note");
         }
         try {
           await acknowledgeIncident(i.id, note.trim());
-          message.success(`Đã ghi nhận ${i.code}`);
+          message.success(trf("Đã ghi nhận {0}", [i.code]));
           await twin.reload();
         } catch (e) {
           message.error((e as Error).message);
@@ -98,7 +99,7 @@ export const DigitalTwinPage = () => {
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <TwinPageHeader updatedAt={updatedAt} />
       {twin.error && (
-        <Alert type="error" showIcon message="Không tải được dữ liệu Bản sao số" description={twin.error} />
+        <Alert type="error" showIcon message={tr("Không tải được dữ liệu Bản sao số")} description={twin.error} />
       )}
 
       <CategoryTabs value={category} counts={counts} onChange={setCategory} />
@@ -116,7 +117,7 @@ export const DigitalTwinPage = () => {
 
         {selected && chartMetric ? (
           <section
-            aria-label={`Chi tiết ${selected.name}`}
+            aria-label={trf("Chi tiết {0}", [selected.name])}
             className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pr-1"
           >
             <EntityHeader
@@ -128,7 +129,7 @@ export const DigitalTwinPage = () => {
 
             <div
               role="group"
-              aria-label="Chỉ số cảm biến — bấm một chỉ số để xem biểu đồ"
+              aria-label={tr("Chỉ số cảm biến — bấm một chỉ số để xem biểu đồ")}
               className="grid grid-cols-2 gap-3 sm:grid-cols-3"
             >
               {selected.metrics.map((m) => (
@@ -146,7 +147,7 @@ export const DigitalTwinPage = () => {
           </section>
         ) : (
           <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-line bg-surface text-[13px] text-muted shadow-card">
-            Chọn một thực thể để xem dữ liệu cảm biến.
+            {tr("Chọn một thực thể để xem dữ liệu cảm biến.")}
           </div>
         )}
       </div>

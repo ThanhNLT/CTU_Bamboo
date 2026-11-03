@@ -47,15 +47,16 @@ import type {
   SelectedElement,
 } from "./types";
 import { downloadText, keyFromName, userTasksOf, type UserTaskRef } from "./utils";
+import { tr, trf } from "../../i18n";
 
 const BpmnEditor = lazy(() => import("./components/BpmnEditor"));
 
 type Tab = "process" | "forms" | "runs" | "requests" | "auto" | "rules";
 
 const AUDIENCE_OPTIONS: { value: Audience; label: string; hint: string }[] = [
-  { value: "UNIT", label: "Phòng ban", hint: "Đơn vị sở hữu quy trình và các đơn vị con" },
-  { value: "COMPANY", label: "Cả công ty", hint: "Mọi người trong công ty chứa đơn vị này" },
-  { value: "GROUP", label: "Toàn tập đoàn", hint: "Công ty mẹ và tất cả công ty con" },
+  { value: "UNIT", label: tr("Phòng ban"), hint: tr("Đơn vị sở hữu quy trình và các đơn vị con") },
+  { value: "COMPANY", label: tr("Cả công ty"), hint: tr("Mọi người trong công ty chứa đơn vị này") },
+  { value: "GROUP", label: tr("Toàn tập đoàn"), hint: tr("Công ty mẹ và tất cả công ty con") },
 ];
 
 export const ProcessDesignPage = () => {
@@ -121,10 +122,10 @@ export const ProcessDesignPage = () => {
     const go = () => setParams({ id });
     if (!dirty) return go();
     modal.confirm({
-      title: "Bỏ thay đổi chưa lưu?",
-      content: "Bản nháp đang sửa chưa được lưu.",
-      okText: "Bỏ thay đổi",
-      cancelText: "Ở lại",
+      title: tr("Bỏ thay đổi chưa lưu?"),
+      content: tr("Bản nháp đang sửa chưa được lưu."),
+      okText: tr("Bỏ thay đổi"),
+      cancelText: tr("Ở lại"),
       onOk: go,
     });
   };
@@ -146,7 +147,7 @@ export const ProcessDesignPage = () => {
       setIssues(r.issues);
       setDirty(false);
       const errors = r.issues.filter((i) => i.level === "error").length;
-      message.success(errors ? `Đã lưu bản nháp (còn ${errors} lỗi).` : "Đã lưu bản nháp.");
+      message.success(errors ? trf("Đã lưu bản nháp (còn {0} lỗi).", [errors]) : tr("Đã lưu bản nháp."));
       void loadList();
     } catch (e) {
       message.error((e as Error).message);
@@ -161,9 +162,9 @@ export const ProcessDesignPage = () => {
       const r = await validateProcess(await currentXml(), forms);
       setIssues(r);
       const errors = r.filter((i) => i.level === "error").length;
-      if (errors) message.error(`Kiểm tra: ${errors} lỗi · ${r.length - errors} cảnh báo.`);
-      else if (r.length) message.warning(`Kiểm tra: 0 lỗi · ${r.length} cảnh báo.`);
-      else message.success("Kiểm tra: không có vấn đề.");
+      if (errors) message.error(trf("Kiểm tra: {0} lỗi · {1} cảnh báo.", [errors, r.length - errors]));
+      else if (r.length) message.warning(trf("Kiểm tra: 0 lỗi · {0} cảnh báo.", [r.length]));
+      else message.success(tr("Kiểm tra: không có vấn đề."));
     } catch (e) {
       message.error((e as Error).message);
     } finally {
@@ -198,8 +199,8 @@ export const ProcessDesignPage = () => {
       setTab("process");
       editor.current?.highlight(run.steps.map((s) => s.activity_id));
       if (run.status === "COMPLETED")
-        message.success(`Chạy thử đạt: đi qua ${run.steps.length} bước tới “${run.steps.at(-1)?.name}”.`);
-      else message.error(`Chạy thử ${run.status === "FAILED" ? "lỗi" : "dừng"}: ${run.error ?? ""}`);
+        message.success(trf("Chạy thử đạt: đi qua {0} bước tới “{1}”.", [run.steps.length, run.steps.at(-1)?.name]));
+      else message.error(trf("Chạy thử {0}: {1}", [run.status === "FAILED" ? tr("lỗi") : tr("dừng"), run.error ?? ""]));
       await loadDetail(detail.id);
       editor.current?.highlight(run.steps.map((s) => s.activity_id));
       void loadList();
@@ -218,10 +219,12 @@ export const ProcessDesignPage = () => {
   const restore = (version: number) => {
     if (!detail) return;
     modal.confirm({
-      title: `Khôi phục v${version} về bản nháp?`,
-      content: "Nội dung bản nháp hiện tại sẽ bị thay bằng phiên bản này (chưa lưu cho tới khi bạn bấm Lưu bản nháp).",
-      okText: "Khôi phục",
-      cancelText: "Hủy",
+      title: trf("Khôi phục v{0} về bản nháp?", [version]),
+      content: tr(
+        "Nội dung bản nháp hiện tại sẽ bị thay bằng phiên bản này (chưa lưu cho tới khi bạn bấm Lưu bản nháp).",
+      ),
+      okText: tr("Khôi phục"),
+      cancelText: tr("Hủy"),
       onOk: async () => {
         try {
           const v = await getProcessVersion(detail.id, version);
@@ -230,7 +233,7 @@ export const ProcessDesignPage = () => {
           setForms(v.forms);
           setDirty(true);
           setTab("process");
-          message.success(`Đã nạp v${version} vào bản nháp. Bấm “Lưu bản nháp” để giữ lại.`);
+          message.success(trf("Đã nạp v{0} vào bản nháp. Bấm “Lưu bản nháp” để giữ lại.", [version]));
         } catch (e) {
           message.error((e as Error).message);
         }
@@ -241,15 +244,15 @@ export const ProcessDesignPage = () => {
   const remove = () => {
     if (!detail) return;
     modal.confirm({
-      title: `Xóa quy trình “${detail.name}”?`,
-      content: "Chỉ xóa được quy trình chưa từng phát hành. Lịch sử chạy thử cũng bị xóa.",
-      okText: "Xóa",
+      title: trf("Xóa quy trình “{0}”?", [detail.name]),
+      content: tr("Chỉ xóa được quy trình chưa từng phát hành. Lịch sử chạy thử cũng bị xóa."),
+      okText: tr("Xóa"),
       okButtonProps: { danger: true },
-      cancelText: "Hủy",
+      cancelText: tr("Hủy"),
       onOk: async () => {
         try {
           await deleteProcess(detail.id);
-          message.success("Đã xóa quy trình.");
+          message.success(tr("Đã xóa quy trình."));
           setDetail(undefined);
           setParams({});
           await loadList();
@@ -262,7 +265,7 @@ export const ProcessDesignPage = () => {
 
   const applyMeta = () => {
     if (!detail || !meta) return;
-    if (meta.name.trim().length < 2) return message.error("Nhập tên quy trình");
+    if (meta.name.trim().length < 2) return message.error(tr("Nhập tên quy trình"));
     setDetail({ ...detail, name: meta.name.trim(), description: meta.description.trim() || null });
     setDirty(true);
     setMeta(undefined);
@@ -281,7 +284,7 @@ export const ProcessDesignPage = () => {
       if (dirty) await save();
       const r = await publishProcess(detail.id, publishing.audience, publishing.note);
       setPublishing(undefined);
-      message.success(`Đã phát hành v${r.version} và thông báo cho ${r.notified} người.`);
+      message.success(trf("Đã phát hành v{0} và thông báo cho {1} người.", [r.version, r.notified]));
       await loadDetail(detail.id);
       void loadList();
     } catch (e) {
@@ -308,7 +311,7 @@ export const ProcessDesignPage = () => {
     try {
       await requestChange(detail.id, text);
       setChanging(undefined);
-      message.success("Đã gửi yêu cầu sửa chữa tới người thiết kế quy trình.");
+      message.success(tr("Đã gửi yêu cầu sửa chữa tới người thiết kế quy trình."));
       await loadDetail(detail.id);
       setTab("requests");
     } catch (e) {
@@ -319,7 +322,7 @@ export const ProcessDesignPage = () => {
   const resolve = async (id: string, outcome: "RESOLVED" | "DECLINED", note: string) => {
     try {
       await resolveChange(id, outcome, note);
-      message.success(outcome === "RESOLVED" ? "Đã đánh dấu đã xử lý." : "Đã từ chối yêu cầu.");
+      message.success(outcome === "RESOLVED" ? tr("Đã đánh dấu đã xử lý.") : tr("Đã từ chối yêu cầu."));
       if (detail) await loadDetail(detail.id);
     } catch (e) {
       message.error((e as Error).message);
@@ -329,7 +332,7 @@ export const ProcessDesignPage = () => {
 
   const create = async () => {
     const name = newName.trim();
-    if (name.length < 2) return message.error("Nhập tên quy trình");
+    if (name.length < 2) return message.error(tr("Nhập tên quy trình"));
     const key = keyFromName(name);
     try {
       const r = await saveProcess({
@@ -343,7 +346,7 @@ export const ProcessDesignPage = () => {
       setNewName("");
       await loadList();
       setParams({ id: r.id });
-      message.success(`Đã tạo quy trình “${name}”.`);
+      message.success(trf("Đã tạo quy trình “{0}”.", [name]));
     } catch (e) {
       message.error((e as Error).message);
     }
@@ -351,13 +354,13 @@ export const ProcessDesignPage = () => {
 
   const generateRegulation = async (submit: boolean) => {
     if (!detail) return;
-    if (dirty) return void message.warning("Lưu bản nháp trước khi lập văn bản quy định.");
+    if (dirty) return void message.warning(tr("Lưu bản nháp trước khi lập văn bản quy định."));
     try {
       const r = await draftRegulation(detail.id, submit);
       message.success(
         r.submitted
-          ? `Đã lập ${r.docNo} từ v${r.version} và gửi duyệt.`
-          : `Đã lập ${r.docNo} từ v${r.version}: vào Thư viện tri thức để gửi duyệt.`,
+          ? trf("Đã lập {0} từ v{1} và gửi duyệt.", [r.docNo, r.version])
+          : trf("Đã lập {0} từ v{1}: vào Thư viện tri thức để gửi duyệt.", [r.docNo, r.version]),
       );
       if (r.message) message.warning(r.message);
       await loadDetail(detail.id);
@@ -383,7 +386,9 @@ export const ProcessDesignPage = () => {
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <ProcessHeader
         subtitle={
-          detail ? `${detail.name} · mã ${detail.key}${dirty ? " · có thay đổi chưa lưu" : ""}` : "Chưa chọn quy trình"
+          detail
+            ? trf("{0} · mã {1}{2}", [detail.name, detail.key, dirty ? tr(" · có thay đổi chưa lưu") : ""])
+            : tr("Chưa chọn quy trình")
         }
         access={access}
         dirty={dirty}
@@ -406,22 +411,28 @@ export const ProcessDesignPage = () => {
           value={tab}
           onChange={(v) => setTab(v as Tab)}
           options={[
-            { value: "process", label: access === "design" ? "Quy trình" : `Sơ đồ v${detail.viewingVersion ?? ""}` },
-            ...(canDesign ? [{ value: "forms", label: `Biểu mẫu (${forms.length})` }] : []),
+            {
+              value: "process",
+              label: access === "design" ? tr("Quy trình") : trf("Sơ đồ v{0}", [detail.viewingVersion ?? ""]),
+            },
+            ...(canDesign ? [{ value: "forms", label: trf("Biểu mẫu ({0})", [forms.length]) }] : []),
             {
               value: "runs",
               label: canDesign
-                ? `Phiên bản & chạy thử (${detail.runs.length})`
-                : `Phiên bản & demo (${detail.runs.length})`,
+                ? trf("Phiên bản & chạy thử ({0})", [detail.runs.length])
+                : trf("Phiên bản & demo ({0})", [detail.runs.length]),
             },
-            { value: "auto", label: `Chạy tự động${detail.automation?.status === "ACTIVE" ? " (đang bật)" : ""}` },
+            {
+              value: "auto",
+              label: trf("Chạy tự động{0}", [detail.automation?.status === "ACTIVE" ? tr(" (đang bật)") : ""]),
+            },
             {
               value: "rules",
-              label: `Quy định (${detail.regulations.filter((r) => r.kind === "REGULATION").length})`,
+              label: trf("Quy định ({0})", [detail.regulations.filter((r) => r.kind === "REGULATION").length]),
             },
             {
               value: "requests",
-              label: `Yêu cầu sửa chữa (${detail.changeRequests.filter((c) => c.status === "OPEN").length})`,
+              label: trf("Yêu cầu sửa chữa ({0})", [detail.changeRequests.filter((c) => c.status === "OPEN").length]),
             },
           ]}
         />
@@ -496,11 +507,11 @@ export const ProcessDesignPage = () => {
             hasPublished={detail.versions.length > 0 || detail.viewingVersion !== null}
             canManage={canDesign}
             onEnable={() =>
-              toggleAutomation(() => enableAutomation(detail.id), "Đã bật chạy tự động cho phiên bản mới nhất.")
+              toggleAutomation(() => enableAutomation(detail.id), tr("Đã bật chạy tự động cho phiên bản mới nhất."))
             }
-            onDisable={() => toggleAutomation(() => disableAutomation(detail.id), "Đã tắt chạy tự động.")}
+            onDisable={() => toggleAutomation(() => disableAutomation(detail.id), tr("Đã tắt chạy tự động."))}
             onEvents={(events) =>
-              toggleAutomation(() => setAutomationEvents(detail.id, events), "Đã lưu sự kiện khởi chạy.")
+              toggleAutomation(() => setAutomationEvents(detail.id, events), tr("Đã lưu sự kiện khởi chạy."))
             }
             onWebhook={async () => {
               const path = await createAutomationWebhook(detail.id);
@@ -508,7 +519,7 @@ export const ProcessDesignPage = () => {
               return path;
             }}
             onStart={(variables) =>
-              toggleAutomation(() => startAutomation(detail.id, variables), "Đã khởi chạy, hệ thống đang xử lý.")
+              toggleAutomation(() => startAutomation(detail.id, variables), tr("Đã khởi chạy, hệ thống đang xử lý."))
             }
           />
         )}
@@ -536,53 +547,53 @@ export const ProcessDesignPage = () => {
 
       <Modal
         open={Boolean(meta)}
-        title="Thông tin quy trình"
-        okText="Áp dụng"
-        cancelText="Hủy"
+        title={tr("Thông tin quy trình")}
+        okText={tr("Áp dụng")}
+        cancelText={tr("Hủy")}
         onOk={applyMeta}
         onCancel={() => setMeta(undefined)}
         destroyOnHidden
       >
         <div className="flex flex-col gap-3">
           <Input
-            aria-label="Tên quy trình"
+            aria-label={tr("Tên quy trình")}
             value={meta?.name ?? ""}
             onChange={(e) => meta && setMeta({ ...meta, name: e.target.value })}
           />
           <Input.TextArea
-            aria-label="Mô tả quy trình"
+            aria-label={tr("Mô tả quy trình")}
             autoSize={{ minRows: 3 }}
-            placeholder="Mô tả ngắn (không bắt buộc)"
+            placeholder={tr("Mô tả ngắn (không bắt buộc)")}
             value={meta?.description ?? ""}
             onChange={(e) => meta && setMeta({ ...meta, description: e.target.value })}
           />
           <p className="m-0 text-[12px] text-muted">
-            Mã quy trình <span className="font-mono">{detail?.key}</span> không đổi được sau khi tạo.
+            {tr("Mã quy trình ")} <span className="font-mono">{detail?.key}</span> {tr(" không đổi được sau khi tạo.")}
           </p>
         </div>
       </Modal>
 
       <Modal
         open={creating}
-        title="Tạo quy trình"
-        okText="Tạo"
-        cancelText="Hủy"
+        title={tr("Tạo quy trình")}
+        okText={tr("Tạo")}
+        cancelText={tr("Hủy")}
         onOk={() => void create()}
         onCancel={() => setCreating(false)}
         destroyOnHidden
       >
         <div className="flex flex-col gap-3">
           <Input
-            aria-label="Tên quy trình mới"
-            placeholder="Ví dụ: Duyệt hợp đồng"
+            aria-label={tr("Tên quy trình mới")}
+            placeholder={tr("Ví dụ: Duyệt hợp đồng")}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onPressEnter={() => void create()}
           />
           <label className="block text-[12px] font-medium text-body">
-            Đơn vị sở hữu
+            {tr("Đơn vị sở hữu")}
             <Select
-              aria-label="Đơn vị sở hữu quy trình"
+              aria-label={tr("Đơn vị sở hữu quy trình")}
               className="mt-1 w-full"
               showSearch
               optionFilterProp="label"
@@ -595,11 +606,11 @@ export const ProcessDesignPage = () => {
             />
           </label>
           <p className="m-0 text-[12px] text-muted">
-            Chỉ chọn được đơn vị mà bạn có quyền thiết kế quy trình (ví dụ phòng do bạn làm trưởng).
+            {tr("Chỉ chọn được đơn vị mà bạn có quyền thiết kế quy trình (ví dụ phòng do bạn làm trưởng).")}
           </p>
         </div>
         <p className="mt-2 text-[12px] text-muted">
-          Mã quy trình: <span className="font-mono">{newName.trim() ? keyFromName(newName) : "—"}</span>
+          {tr("Mã quy trình: ")} <span className="font-mono">{newName.trim() ? keyFromName(newName) : "—"}</span>
         </p>
       </Modal>
 
@@ -611,15 +622,17 @@ export const ProcessDesignPage = () => {
           setFromDoc(false);
           setTab("process");
           void loadList().then(() => setParams({ id: r.id }));
-          message.success(`Đã dựng bản nháp “${r.name}” (${r.steps} bước). Kiểm tra, chỉnh sửa rồi phát hành.`);
+          message.success(
+            trf("Đã dựng bản nháp “{0}” ({1} bước). Kiểm tra, chỉnh sửa rồi phát hành.", [r.name, r.steps]),
+          );
         }}
       />
 
       <Modal
         open={Boolean(publishing)}
-        title="Phát hành phiên bản mới"
-        okText="Phát hành và thông báo"
-        cancelText="Hủy"
+        title={tr("Phát hành phiên bản mới")}
+        okText={tr("Phát hành và thông báo")}
+        cancelText={tr("Hủy")}
         okButtonProps={{ loading: busy === "publish" }}
         onOk={() => void publish()}
         onCancel={() => setPublishing(undefined)}
@@ -627,8 +640,9 @@ export const ProcessDesignPage = () => {
       >
         <div className="flex flex-col gap-3">
           <p className="m-0 text-[13px] text-body">
-            Phiên bản được chụp bất biến. Mọi người trong đối tượng bạn chọn sẽ nhận thông báo và xem được sơ đồ; quản
-            lý, giám đốc còn yêu cầu sửa chữa hoặc chạy demo được.
+            {tr(
+              "Phiên bản được chụp bất biến. Mọi người trong đối tượng bạn chọn sẽ nhận thông báo và xem được sơ đồ; quản lý, giám đốc còn yêu cầu sửa chữa hoặc chạy demo được.",
+            )}
           </p>
           <Radio.Group
             value={publishing?.audience}
@@ -643,8 +657,8 @@ export const ProcessDesignPage = () => {
             ))}
           </Radio.Group>
           <Input.TextArea
-            aria-label="Ghi chú phiên bản"
-            placeholder="Ghi chú phiên bản, hiện trong thông báo (không bắt buộc)"
+            aria-label={tr("Ghi chú phiên bản")}
+            placeholder={tr("Ghi chú phiên bản, hiện trong thông báo (không bắt buộc)")}
             autoSize={{ minRows: 2 }}
             value={publishing?.note ?? ""}
             onChange={(e) => publishing && setPublishing({ ...publishing, note: e.target.value })}
@@ -654,25 +668,25 @@ export const ProcessDesignPage = () => {
 
       <Modal
         open={changing !== undefined}
-        title="Yêu cầu sửa chữa quy trình"
-        okText="Gửi yêu cầu"
-        cancelText="Hủy"
+        title={tr("Yêu cầu sửa chữa quy trình")}
+        okText={tr("Gửi yêu cầu")}
+        cancelText={tr("Hủy")}
         okButtonProps={{ disabled: (changing ?? "").trim().length < 3 }}
         onOk={() => void sendChange((changing ?? "").trim())}
         onCancel={() => setChanging(undefined)}
         destroyOnHidden
       >
         <Input.TextArea
-          aria-label="Nội dung yêu cầu sửa chữa"
+          aria-label={tr("Nội dung yêu cầu sửa chữa")}
           autoSize={{ minRows: 4 }}
           maxLength={2000}
           showCount
-          placeholder="Nêu bước cần thêm, bớt hoặc sửa và lý do"
+          placeholder={tr("Nêu bước cần thêm, bớt hoặc sửa và lý do")}
           value={changing ?? ""}
           onChange={(e) => setChanging(e.target.value)}
         />
         <p className="mt-2 text-[12px] text-muted">
-          Người thiết kế quy trình sẽ nhận thông báo và báo lại cho bạn khi đã xử lý.
+          {tr("Người thiết kế quy trình sẽ nhận thông báo và báo lại cho bạn khi đã xử lý.")}
         </p>
       </Modal>
     </div>

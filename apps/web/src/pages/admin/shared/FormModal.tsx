@@ -6,11 +6,12 @@ import { App, Form, Modal, type FormInstance } from "antd";
 import { useEffect, useId, useState, type ReactNode } from "react";
 
 import { MODAL_Z } from "./zIndex";
+import { tr } from "../../../i18n";
 
 export const FormModal = <T extends object>({
   open,
   title,
-  okText = "Lưu",
+  okText = tr("Lưu"),
   initial,
   onCancel,
   onSubmit,
@@ -44,7 +45,7 @@ export const FormModal = <T extends object>({
       open={open}
       title={title}
       okText={okText}
-      cancelText="Hủy"
+      cancelText={tr("Hủy")}
       width={width}
       confirmLoading={busy}
       onCancel={onCancel}

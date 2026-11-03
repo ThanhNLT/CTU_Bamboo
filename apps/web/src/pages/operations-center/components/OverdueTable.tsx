@@ -8,12 +8,13 @@ import { Link } from "react-router";
 import { cn } from "../../../utils/cn";
 import type { Company, CompanyKey, OverdueRow } from "../types";
 import { ChipButton, DefinitionButton } from "./ChartWidget";
+import { tr } from "../../../i18n";
 
 const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
 const exportCsv = (rows: OverdueRow[], COMPANY: Record<CompanyKey, Company>) => {
   const lines = [
-    ["Mã hồ sơ", "Công ty", "Loại hồ sơ", "Bước", "Quá hạn (phút)", "Quá hạn"],
+    [tr("Mã hồ sơ"), tr("Công ty"), tr("Loại hồ sơ"), tr("Bước"), tr("Quá hạn (phút)"), tr("Quá hạn")],
     ...rows.map((r) => [
       r.code,
       COMPANY[r.company]?.name ?? "",
@@ -49,12 +50,12 @@ export const OverdueTable = ({
   <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-labelledby="overdue-title">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <h2 id="overdue-title" className="text-[15px] font-semibold text-ink">
-        Hồ sơ quá hạn SLA – top 5
+        {tr("Hồ sơ quá hạn SLA – top 5")}
       </h2>
       <div className="flex flex-wrap gap-2">
         <ChipButton onClick={() => exportCsv(rows, COMPANY)}>
           <Download className="h-3.5 w-3.5" aria-hidden />
-          Xuất CSV
+          {tr("Xuất CSV")}
         </ChipButton>
         <DefinitionButton text={definition} />
       </div>
@@ -65,19 +66,19 @@ export const OverdueTable = ({
         <thead>
           <tr>
             <th scope="col" className={TH}>
-              Mã hồ sơ
+              {tr("Mã hồ sơ")}
             </th>
             <th scope="col" className={TH}>
-              Công ty
+              {tr("Công ty")}
             </th>
             <th scope="col" className={TH}>
-              Loại hồ sơ
+              {tr("Loại hồ sơ")}
             </th>
             <th scope="col" className={cn(TH, "w-[80px]")}>
-              Bước
+              {tr("Bước")}
             </th>
             <th scope="col" className={cn(TH, "w-[130px] text-right")}>
-              Quá hạn
+              {tr("Quá hạn")}
             </th>
           </tr>
         </thead>
@@ -85,7 +86,7 @@ export const OverdueTable = ({
           {rows.length === 0 && (
             <tr>
               <td colSpan={5} className="px-3 py-8 text-center text-[13px] text-muted">
-                Không có hồ sơ quá hạn.
+                {tr("Không có hồ sơ quá hạn.")}
               </td>
             </tr>
           )}

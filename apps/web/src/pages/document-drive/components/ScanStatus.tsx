@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ScanResult } from "../types";
+import { tr } from "../../../i18n";
 
 const BLOCKED: Partial<Record<ScanResult, string>> = {
-  infected: "Bị chặn · mã độc",
-  rejected: "Bị loại · sai định dạng",
+  infected: tr("Bị chặn · mã độc"),
+  rejected: tr("Bị loại · sai định dạng"),
 };
 
 export const ScanStatus = ({ result }: { result: ScanResult }) =>
@@ -16,7 +17,7 @@ export const ScanStatus = ({ result }: { result: ScanResult }) =>
         className={result === "clean" ? "h-1.5 w-1.5 rounded-ui bg-bamboo-500" : "h-1.5 w-1.5 rounded-ui bg-amber-500"}
         aria-hidden
       />
-      {result === "clean" ? "Đã quét · sạch" : "Đang kiểm tra"}
+      {result === "clean" ? tr("Đã quét · sạch") : tr("Đang kiểm tra")}
     </span>
   ) : (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-ui bg-red-50 px-2 py-0.5 text-[11.5px] font-medium text-red-700">

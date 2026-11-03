@@ -9,22 +9,23 @@ import { SearchInput } from "../../../components/ui";
 import type { AccessLog, ArchiveDoc } from "../types";
 import { filterArchive, formatInt } from "../utils";
 import { ArchiveDocRow } from "./ArchiveDocRow";
+import { tr } from "../../../i18n";
 
 const RULES = [
   {
     icon: Droplets,
-    title: "Dấu chìm tên người xem",
-    text: "Mỗi trang phủ tên bạn và thời điểm mở, nên ảnh chụp màn hình vẫn truy được nguồn.",
+    title: tr("Dấu chìm tên người xem"),
+    text: tr("Mỗi trang phủ tên bạn và thời điểm mở, nên ảnh chụp màn hình vẫn truy được nguồn."),
   },
   {
     icon: EyeOff,
-    title: "Xem trong trang, link ngắn hạn",
-    text: "Tệp mở ngay trong trình xem; link do máy chủ cấp hết hạn sau 60 giây, mỗi lần mở cấp link mới.",
+    title: tr("Xem trong trang, link ngắn hạn"),
+    text: tr("Tệp mở ngay trong trình xem; link do máy chủ cấp hết hạn sau 60 giây, mỗi lần mở cấp link mới."),
   },
   {
     icon: ScrollText,
-    title: "Ghi nhật ký truy cập",
-    text: "Mọi lần mở đều được ghi lại (chỉ ghi thêm, không sửa, không xóa).",
+    title: tr("Ghi nhật ký truy cập"),
+    text: tr("Mọi lần mở đều được ghi lại (chỉ ghi thêm, không sửa, không xóa)."),
   },
 ];
 
@@ -49,18 +50,23 @@ export const ReadingRoomPanel = ({
       aria-labelledby="ledger-tab-reading"
       className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,9fr)]"
     >
-      <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Hồ sơ lưu trữ">
+      <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label={tr("Hồ sơ lưu trữ")}>
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h2 className="text-[15px] font-semibold text-ink">Hồ sơ lưu trữ</h2>
+            <h2 className="text-[15px] font-semibold text-ink">{tr("Hồ sơ lưu trữ")}</h2>
             <p className="mt-0.5 text-[12.5px] text-muted">
-              {formatInt(totalArchived)} tệp của chứng từ đã kết thúc · đang hiển thị {visible.length}
+              {formatInt(totalArchived)} {tr(" tệp của chứng từ đã kết thúc · đang hiển thị ")} {visible.length}
             </p>
           </div>
         </div>
-        <SearchInput className="mt-3" value={query} onChange={setQuery} placeholder="Tìm theo tên, mã lưu trữ, năm" />
+        <SearchInput
+          className="mt-3"
+          value={query}
+          onChange={setQuery}
+          placeholder={tr("Tìm theo tên, mã lưu trữ, năm")}
+        />
         {visible.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-muted">Không có hồ sơ lưu trữ phù hợp.</p>
+          <p className="py-10 text-center text-[13px] text-muted">{tr("Không có hồ sơ lưu trữ phù hợp.")}</p>
         ) : (
           <div className="mt-1 divide-y divide-line">
             {visible.map((d) => (
@@ -71,9 +77,12 @@ export const ReadingRoomPanel = ({
       </section>
 
       <div className="flex min-w-0 flex-col gap-4">
-        <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Nhật ký truy cập">
-          <h2 className="text-[15px] font-semibold text-ink">Nhật ký truy cập</h2>
-          {logs.length === 0 && <p className="py-4 text-[12.5px] text-muted">Chưa có ai mở hồ sơ lưu trữ.</p>}
+        <section
+          className="rounded-2xl border border-line bg-surface p-5 shadow-card"
+          aria-label={tr("Nhật ký truy cập")}
+        >
+          <h2 className="text-[15px] font-semibold text-ink">{tr("Nhật ký truy cập")}</h2>
+          {logs.length === 0 && <p className="py-4 text-[12.5px] text-muted">{tr("Chưa có ai mở hồ sơ lưu trữ.")}</p>}
           <ul className="m-0 mt-2 list-none divide-y divide-line p-0">
             {logs.map((l) => (
               <li key={l.id} className="flex items-start justify-between gap-3 py-2.5">
@@ -89,8 +98,11 @@ export const ReadingRoomPanel = ({
           </ul>
         </section>
 
-        <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Quy tắc phòng đọc">
-          <h2 className="text-[15px] font-semibold text-ink">Quy tắc phòng đọc</h2>
+        <section
+          className="rounded-2xl border border-line bg-surface p-5 shadow-card"
+          aria-label={tr("Quy tắc phòng đọc")}
+        >
+          <h2 className="text-[15px] font-semibold text-ink">{tr("Quy tắc phòng đọc")}</h2>
           <ul className="m-0 mt-3 list-none space-y-3 p-0">
             {RULES.map((r) => (
               <li key={r.title} className="flex items-start gap-3">

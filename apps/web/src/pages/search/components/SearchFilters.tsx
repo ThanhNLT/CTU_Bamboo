@@ -7,13 +7,14 @@ import { Lock } from "lucide-react";
 
 import { COMPANY_LABEL, TYPE_LABEL } from "../labels";
 import type { Company, ResultType, TimeRange } from "../types";
+import { tr } from "../../../i18n";
 
 const TYPES = Object.keys(TYPE_LABEL) as ResultType[];
 const TIME_OPTIONS: Array<{ value: TimeRange; label: string }> = [
-  { value: "7d", label: "7 ngày qua" },
-  { value: "30d", label: "30 ngày qua" },
-  { value: "90d", label: "90 ngày qua" },
-  { value: "all", label: "Mọi thời điểm" },
+  { value: "7d", label: tr("7 ngày qua") },
+  { value: "30d", label: tr("30 ngày qua") },
+  { value: "90d", label: tr("90 ngày qua") },
+  { value: "all", label: tr("Mọi thời điểm") },
 ];
 
 const GroupTitle = ({ children }: { children: string }) => (
@@ -68,10 +69,10 @@ export const SearchFilters = ({
   hiddenCount: number;
   className?: string;
 }) => (
-  <aside aria-label="Bộ lọc" className={className}>
+  <aside aria-label={tr("Bộ lọc")} className={className}>
     <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
       <section>
-        <GroupTitle>Loại</GroupTitle>
+        <GroupTitle>{tr("Loại")}</GroupTitle>
         {TYPES.map((t) => (
           <Option
             key={t}
@@ -85,7 +86,7 @@ export const SearchFilters = ({
 
       {permitted.length > 1 && (
         <section className="mt-3 border-t border-line pt-3">
-          <GroupTitle>Công ty</GroupTitle>
+          <GroupTitle>{tr("Công ty")}</GroupTitle>
           {permitted.map((c) => (
             <Option
               key={c}
@@ -99,20 +100,20 @@ export const SearchFilters = ({
       )}
 
       <section className="mt-3 border-t border-line pt-3">
-        <GroupTitle>Thời gian</GroupTitle>
+        <GroupTitle>{tr("Thời gian")}</GroupTitle>
         <Select<TimeRange>
           value={range}
           onChange={onRangeChange}
           options={TIME_OPTIONS}
           className="w-full"
-          aria-label="Khoảng thời gian"
+          aria-label={tr("Khoảng thời gian")}
         />
       </section>
 
       {hiddenCount > 0 && (
         <p className="mt-4 flex items-start gap-2 rounded-xl bg-canvas px-3 py-2.5 text-[12px] text-body">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
-          {hiddenCount} kết quả bị ẩn vì nằm ngoài phạm vi quyền của bạn
+          {hiddenCount} {tr(" kết quả bị ẩn vì nằm ngoài phạm vi quyền của bạn")}
         </p>
       )}
     </div>

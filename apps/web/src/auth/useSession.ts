@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { createContext, useContext } from "react";
+import { tr } from "../i18n";
 
 export type AccountTenant = {
   tenant_id: string;
@@ -22,6 +23,6 @@ export const SessionContext = createContext<Session | null>(null);
 
 export const useSession = (): Session => {
   const session = useContext(SessionContext);
-  if (!session) throw new Error("useSession phải nằm trong <TenantGate>");
+  if (!session) throw new Error(tr("useSession phải nằm trong <TenantGate>"));
   return session;
 };

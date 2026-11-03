@@ -12,6 +12,7 @@ import { primaryButtonClass, secondaryButtonClass } from "../../../components/ui
 import { fileToBase64 } from "../../setup/api";
 import { AdminHeader } from "../shared/AdminHeader";
 import { OwnerTools } from "./OwnerTools";
+import { tr } from "../../../i18n";
 
 type LegalStatus = {
   tax_code: string | null;
@@ -46,8 +47,8 @@ const download = (a: LegalApplication) => {
 };
 
 const STATUS = {
-  VERIFIED: <Tag color="green">Đã xác thực bằng chữ ký số</Tag>,
-  UNVERIFIED: <Tag color="orange">Chưa xác thực pháp lý</Tag>,
+  VERIFIED: <Tag color="green">{tr("Đã xác thực bằng chữ ký số")}</Tag>,
+  UNVERIFIED: <Tag color="orange">{tr("Chưa xác thực pháp lý")}</Tag>,
 };
 
 /** Thông tin pháp lý của công ty; chủ sở hữu ký số đơn xác thực bổ sung (ADR #57). */
@@ -94,7 +95,7 @@ export const CompanyPage = () => {
       );
       setData(r.legal_verify);
       setApplication(undefined);
-      message.success("Đã xác thực thông tin pháp lý của công ty bằng chữ ký số.");
+      message.success(tr("Đã xác thực thông tin pháp lý của công ty bằng chữ ký số."));
     } catch (e) {
       message.error((e as Error).message);
     } finally {
@@ -110,20 +111,27 @@ export const CompanyPage = () => {
     );
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-5">
-      <AdminHeader title="Thông tin công ty" subtitle={<>Thông tin pháp lý và chủ sở hữu của {tenant.tenant_name}</>} />
-      <Panel title="Thông tin pháp lý" extra={data.legal_status && STATUS[data.legal_status]}>
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
+      <AdminHeader
+        title={tr("Thông tin công ty")}
+        subtitle={
+          <>
+            {tr("Thông tin pháp lý và chủ sở hữu của ")} {tenant.tenant_name}
+          </>
+        }
+      />
+      <Panel title={tr("Thông tin pháp lý")} extra={data.legal_status && STATUS[data.legal_status]}>
         <Descriptions column={1} size="small" bordered>
-          <Descriptions.Item label="Tên doanh nghiệp">{data.legal_name ?? tenant.tenant_name}</Descriptions.Item>
-          <Descriptions.Item label="Mã số thuế">{data.tax_code ?? "Chưa khai"}</Descriptions.Item>
-          <Descriptions.Item label="Người đại diện theo pháp luật">
-            {data.legal_rep_name ?? "Chưa khai"}
+          <Descriptions.Item label={tr("Tên doanh nghiệp")}>{data.legal_name ?? tenant.tenant_name}</Descriptions.Item>
+          <Descriptions.Item label={tr("Mã số thuế")}>{data.tax_code ?? tr("Chưa khai")}</Descriptions.Item>
+          <Descriptions.Item label={tr("Người đại diện theo pháp luật")}>
+            {data.legal_rep_name ?? tr("Chưa khai")}
           </Descriptions.Item>
           {data.verification && (
             <>
-              <Descriptions.Item label="Người ký">{data.verification.signer_subject}</Descriptions.Item>
-              <Descriptions.Item label="Tổ chức chứng thực">{data.verification.issuer}</Descriptions.Item>
-              <Descriptions.Item label="Xác thực lúc">
+              <Descriptions.Item label={tr("Người ký")}>{data.verification.signer_subject}</Descriptions.Item>
+              <Descriptions.Item label={tr("Tổ chức chứng thực")}>{data.verification.issuer}</Descriptions.Item>
+              <Descriptions.Item label={tr("Xác thực lúc")}>
                 {new Date(data.verification.verified_at).toLocaleString("vi-VN")}
               </Descriptions.Item>
             </>
@@ -131,33 +139,38 @@ export const CompanyPage = () => {
         </Descriptions>
       </Panel>
 
-      <Panel title="Chủ sở hữu và quyền quản trị">
+      <Panel title={tr("Chủ sở hữu và quyền quản trị")}>
         <p className="m-0 text-[13px] text-body">
           {data.has_owner
-            ? "Chủ sở hữu (người đại diện theo pháp luật) là người duy nhất trao hoặc thu hồi quyền quản trị: cấp vai trò có quyền quản trị, bổ nhiệm người vào vị trí quản trị. Tài khoản chủ sở hữu và quản trị viên bắt buộc đăng nhập hai lớp."
-            : "Công ty tạo trước khi có quy trình khởi tạo nên chưa có chủ sở hữu; quyền quản trị trao theo cách cũ."}
-          {data.is_owner && " Bạn là chủ sở hữu của công ty."}
+            ? tr(
+                "Chủ sở hữu (người đại diện theo pháp luật) là người duy nhất trao hoặc thu hồi quyền quản trị: cấp vai trò có quyền quản trị, bổ nhiệm người vào vị trí quản trị. Tài khoản chủ sở hữu và quản trị viên bắt buộc đăng nhập hai lớp.",
+              )
+            : tr(
+                "Công ty tạo trước khi có quy trình khởi tạo nên chưa có chủ sở hữu; quyền quản trị trao theo cách cũ.",
+              )}
+          {data.is_owner && tr(" Bạn là chủ sở hữu của công ty.")}
         </p>
       </Panel>
 
       {data.is_owner && <OwnerTools onTransferred={() => void load()} />}
 
       {data.is_owner && data.legal_status === "UNVERIFIED" && (
-        <Panel title="Xác thực bằng chữ ký số">
+        <Panel title={tr("Xác thực bằng chữ ký số")}>
           {!data.signature_ready && (
             <p className="mt-0 text-[13px] text-amber-700">
-              Máy chủ chưa cài chứng thư gốc (thư mục infra/platform/trust): nhờ người quản trị máy chủ cài trước khi
-              ký.
+              {tr(
+                "Máy chủ chưa cài chứng thư gốc (thư mục infra/platform/trust): nhờ người quản trị máy chủ cài trước khi ký.",
+              )}
             </p>
           )}
           <ol className="mt-0 list-decimal space-y-1.5 pl-5 text-[13px] text-body">
-            <li>Lập đơn xác thực: hệ thống tải về tệp PDF có mã đơn, hiệu lực 30 phút.</li>
-            <li>Ký số tệp bằng chữ ký số (USB token) của doanh nghiệp, không sửa tệp.</li>
-            <li>Tải tệp đã ký lên.</li>
+            <li>{tr("Lập đơn xác thực: hệ thống tải về tệp PDF có mã đơn, hiệu lực 30 phút.")}</li>
+            <li>{tr("Ký số tệp bằng chữ ký số (USB token) của doanh nghiệp, không sửa tệp.")}</li>
+            <li>{tr("Tải tệp đã ký lên.")}</li>
           </ol>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button type="button" className={secondaryButtonClass} disabled={busy} onClick={start}>
-              {application ? "Lập lại đơn xác thực" : "Lập đơn xác thực"}
+              {application ? tr("Lập lại đơn xác thực") : tr("Lập đơn xác thực")}
             </button>
             {application && (
               <Upload
@@ -169,7 +182,7 @@ export const CompanyPage = () => {
                 }}
               >
                 <button type="button" className={primaryButtonClass} disabled={busy}>
-                  Tải lên đơn đã ký (mã {application.nonce})
+                  {tr("Tải lên đơn đã ký (mã ")} {application.nonce})
                 </button>
               </Upload>
             )}

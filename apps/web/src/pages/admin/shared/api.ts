@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { request } from "../../../api/client";
+import { tr } from "../../../i18n";
 
 export type AdminEntity =
   | "org_unit"
@@ -72,7 +73,7 @@ const toBase64 = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result).split(",", 2)[1] ?? "");
-    reader.onerror = () => reject(new Error("Không đọc được tệp"));
+    reader.onerror = () => reject(new Error(tr("Không đọc được tệp")));
     reader.readAsDataURL(file);
   });
 
