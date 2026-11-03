@@ -88,9 +88,7 @@ def compile_query(args: dict) -> tuple[str, list[str], dict]:
     if grain:
         if grain not in GRAINS:
             raise ActionError("Chu kỳ thời gian chỉ gồm day, week, month")
-        select.append(
-            f"CAST(date_trunc('{grain}', at_timezone({spec['time']}, 'Asia/Ho_Chi_Minh')) AS date) AS period"
-        )
+        select.append(f"CAST(date_trunc('{grain}', at_timezone({spec['time']}, 'Asia/Ho_Chi_Minh')) AS date) AS period")
         group.append("1")
         columns.append("period")
     for dim in dims:

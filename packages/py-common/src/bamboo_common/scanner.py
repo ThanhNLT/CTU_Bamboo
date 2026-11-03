@@ -277,7 +277,7 @@ _REL = re.compile(rb"<Relationship\b[^>]*>", re.I)
 
 
 def _attr(tag: bytes, name: bytes) -> bytes:
-    m = re.search(rb'\b' + name + rb'\s*=\s*"([^"]*)"', tag, re.I)
+    m = re.search(rb"\b" + name + rb'\s*=\s*"([^"]*)"', tag, re.I)
     return m.group(1) if m else b""
 
 

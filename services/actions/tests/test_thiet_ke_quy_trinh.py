@@ -249,8 +249,10 @@ def test_chan_bieu_thuc_nguy_hiem_va_bo_lang_nghe():
     for ok in ("${decision == 'APPROVE'}", "${stepIndex + 1 < stepCount}", "${amount > 5 && !empty owner}", "PT48H"):
         assert process_design.unsafe_expression(ok) is None, ok
     stripped = process_design.sandbox_xml(
-        bpmn('<startEvent id="s"><extensionElements><flowable:executionListener event="start" expression="${x}"/>'
-             '</extensionElements></startEvent><endEvent id="e"/><sequenceFlow id="a" sourceRef="s" targetRef="e"/>'),
+        bpmn(
+            '<startEvent id="s"><extensionElements><flowable:executionListener event="start" expression="${x}"/>'
+            '</extensionElements></startEvent><endEvent id="e"/><sequenceFlow id="a" sourceRef="s" targetRef="e"/>'
+        ),
         "sandbox_p_2",
     )
     assert "executionListener" not in stripped, "bản sandbox gỡ mọi listener"

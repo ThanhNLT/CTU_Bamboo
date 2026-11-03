@@ -326,7 +326,11 @@ def create_app(
     origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
     if origins:  # trang khởi tạo gọi /setup từ origin của web khi chạy dev (qua cổng API thì cùng origin)
         app.add_middleware(
-            PathCORS, prefix="/setup/", allow_origins=origins, allow_methods=["GET", "POST"], allow_headers=["Content-Type"]
+            PathCORS,
+            prefix="/setup/",
+            allow_origins=origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Content-Type"],
         )
 
     @app.get("/healthz")
@@ -393,7 +397,13 @@ def create_app(
         response.headers["X-Request-Id"] = request_id[:100]
         if request.url.path != "/healthz":
             ms = round((time.perf_counter() - started) * 1000)
-            level = logging.ERROR if response.status_code >= 500 else logging.WARNING if response.status_code >= 400 else logging.INFO
+            level = (
+                logging.ERROR
+                if response.status_code >= 500
+                else logging.WARNING
+                if response.status_code >= 400
+                else logging.INFO
+            )
             log.log(
                 level,
                 "%s %s -> %s (%d ms)",
@@ -412,7 +422,11 @@ def create_app(
         try:
             body = await request.body()
             text = body.decode("utf-8", "replace").strip()
-            events = json.loads(text) if text.startswith("[") else [json.loads(line) for line in text.splitlines() if line.strip()]
+            events = (
+                json.loads(text)
+                if text.startswith("[")
+                else [json.loads(line) for line in text.splitlines() if line.strip()]
+            )
         except ValueError:
             return JSONResponse({"message": "Cần mảng JSON hoặc NDJSON"}, 400)
 
@@ -437,7 +451,9 @@ def create_app(
         if not isinstance(body, dict):
             return JSONResponse({"message": "Thân yêu cầu phải là đối tượng JSON"}, 400)
         try:
-            return await run_in_threadpool(process_automation.start_from_webhook, app.state.pool, ctx.flowable, token, body)
+            return await run_in_threadpool(
+                process_automation.start_from_webhook, app.state.pool, ctx.flowable, token, body
+            )
         except ActionError as exc:
             return JSONResponse({"message": str(exc)}, exc.status)
 
@@ -461,13 +477,17 @@ def create_app(
                 "action %s bị từ chối: %s",
                 name,
                 exc.message,
-                extra={"fields": {"action": name, "code": exc.code, "ms": round((time.perf_counter() - started) * 1000)}},
+                extra={
+                    "fields": {"action": name, "code": exc.code, "ms": round((time.perf_counter() - started) * 1000)}
+                },
             )
             return JSONResponse({"message": exc.message, "extensions": {"code": exc.code}}, exc.status)
         except Exception:
             log.exception("action %s lỗi không lường trước", name, extra={"fields": {"action": name}})
             raise
-        log.info("action %s", name, extra={"fields": {"action": name, "ms": round((time.perf_counter() - started) * 1000)}})
+        log.info(
+            "action %s", name, extra={"fields": {"action": name, "ms": round((time.perf_counter() - started) * 1000)}}
+        )
         return result
 
     return app

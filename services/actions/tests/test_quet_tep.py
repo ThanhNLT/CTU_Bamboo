@@ -17,7 +17,15 @@ JPEG = "image/jpeg"
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 TXT = "text/plain"
-MZ = b"MZ" + b"\x90" * 58 + b"\x80\x00\x00\x00" + b"\x00" * 64 + b"PE\x00\x00" + b"\x00" * 100 + b"This program cannot be run in DOS mode."
+MZ = (
+    b"MZ"
+    + b"\x90" * 58
+    + b"\x80\x00\x00\x00"
+    + b"\x00" * 64
+    + b"PE\x00\x00"
+    + b"\x00" * 100
+    + b"This program cannot be run in DOS mode."
+)
 
 
 def png(trailing: bytes = b"", bad_crc: bool = False, chunk: bytes = b"IDAT") -> bytes:
@@ -27,13 +35,21 @@ def png(trailing: bytes = b"", bad_crc: bool = False, chunk: bytes = b"IDAT") ->
 
     ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
     return (
-        scanner.PNG_SIGNATURE + part(b"IHDR", ihdr) + part(chunk, zlib.compress(b"\x00\xff\x00\x00")) + part(b"IEND", b"")
+        scanner.PNG_SIGNATURE
+        + part(b"IHDR", ihdr)
+        + part(chunk, zlib.compress(b"\x00\xff\x00\x00"))
+        + part(b"IEND", b"")
         + trailing
     )
 
 
 def jpeg(trailing: bytes = b"") -> bytes:
-    return b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00" + b"\x12\x34" * 40 + b"\xff\xd9" + trailing
+    return (
+        b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+        + b"\x12\x34" * 40
+        + b"\xff\xd9"
+        + trailing
+    )
 
 
 def pdf(extra: str = "", stream: bytes | None = None, encrypt: bool = False) -> bytes:
@@ -41,7 +57,7 @@ def pdf(extra: str = "", stream: bytes | None = None, encrypt: bool = False) -> 
     if stream is not None:
         packed = zlib.compress(stream)
         body += f"2 0 obj\n<< /Length {len(packed)} /Filter /FlateDecode >>\nstream\n"
-        return (body.encode() + packed + b"\nendstream\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n")
+        return body.encode() + packed + b"\nendstream\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n"
     trailer = "/Encrypt 9 0 R " if encrypt else ""
     return (body + f"trailer\n<< /Root 1 0 R {trailer}>>\n%%EOF\n").encode()
 
@@ -70,7 +86,15 @@ def test_tep_sach_duoc_xac_nhan_sau_khi_quet():
         (DOCX, ooxml("docx")),
         (XLSX, ooxml("xlsx", document=b"<workbook/>")),
         (TXT, "Báo giá linh kiện: 1.200.000 đồng".encode()),
-        (DOCX, ooxml("docx", {"word/_rels/document.xml.rels": b'<Relationships><Relationship Id="1" Type="http://x/hyperlink" Target="https://vfossa.vn" TargetMode="External"/></Relationships>'})),
+        (
+            DOCX,
+            ooxml(
+                "docx",
+                {
+                    "word/_rels/document.xml.rels": b'<Relationships><Relationship Id="1" Type="http://x/hyperlink" Target="https://vfossa.vn" TargetMode="External"/></Relationships>'
+                },
+            ),
+        ),
     ):
         report = scanner.scan_file(content_type, data)
         assert report.verdict == "CLEAN", (content_type, report.as_dict())
@@ -79,8 +103,12 @@ def test_tep_sach_duoc_xac_nhan_sau_khi_quet():
 
 
 def test_chu_ky_thu_nghiem_eicar():
-    for content_type, data in ((TXT, scanner.EICAR), (PDF, pdf(stream=scanner.EICAR)), (PNG, png(trailing=scanner.EICAR)),
-                               (DOCX, ooxml("docx", {"word/media/a.txt": scanner.EICAR}))):
+    for content_type, data in (
+        (TXT, scanner.EICAR),
+        (PDF, pdf(stream=scanner.EICAR)),
+        (PNG, png(trailing=scanner.EICAR)),
+        (DOCX, ooxml("docx", {"word/media/a.txt": scanner.EICAR})),
+    ):
         assert scanner.scan_file(content_type, data).verdict == "INFECTED", content_type
 
 
@@ -94,12 +122,18 @@ def test_tep_thuc_thi_nguy_trang():
 
 def test_pdf_ma_chu_dong_va_che_ten():
     assert "pdf-javascript" in verdict(PDF, pdf("/Names << /JavaScript 5 0 R >>"))[1]
-    assert "pdf-javascript" in verdict(PDF, pdf("/AA << /O << /S /Java#53cript /JS (app.alert(1)) >> >>"))[1], "tên che bằng #xx"
+    assert "pdf-javascript" in verdict(PDF, pdf("/AA << /O << /S /Java#53cript /JS (app.alert(1)) >> >>"))[1], (
+        "tên che bằng #xx"
+    )
     assert "pdf-launch" in verdict(PDF, pdf("/OpenAction << /S /Launch /F (cmd.exe) >>"))[1]
     assert "pdf-embeddedfile" in verdict(PDF, pdf("/Names << /EmbeddedFiles 3 0 R /Type /EmbeddedFile >>"))[1]
     assert "pdf-encrypt" in verdict(PDF, pdf(encrypt=True))[1], "PDF mã hóa không quét được nên không sạch"
     hidden = zlib.compress(b"<< /S /JavaScript /JS (app.alert(1)) >>")
-    obj_stream = b"%PDF-1.7\n3 0 obj\n<< /Type /ObjStm /N 1 /First 4 /Filter /FlateDecode >>\nstream\n" + hidden + b"\nendstream\nendobj\n%%EOF\n"
+    obj_stream = (
+        b"%PDF-1.7\n3 0 obj\n<< /Type /ObjStm /N 1 /First 4 /Filter /FlateDecode >>\nstream\n"
+        + hidden
+        + b"\nendstream\nendobj\n%%EOF\n"
+    )
     assert "pdf-javascript" in verdict(PDF, obj_stream)[1], "JavaScript giấu trong luồng đối tượng nén"
     assert verdict(PDF, pdf("/OpenAction [1 0 R /Fit]"))[0] == "CLEAN", "OpenAction chuyển trang thì chỉ cảnh báo"
 
@@ -121,15 +155,34 @@ def test_office_macro_nhung_lien_ket_ngoai():
     assert "rel-external" in verdict(DOCX, ooxml("docx", {"word/_rels/settings.xml.rels": rels}))[1]
     unc = b'<Relationships><Relationship Id="1" Type="http://x/image" Target="file:///\\\\\\\\server\\\\share\\\\a.png" TargetMode="External"/></Relationships>'
     assert "rel-local" in verdict(DOCX, ooxml("docx", {"word/_rels/document.xml.rels": unc}))[1]
-    assert "xxe" in verdict(DOCX, ooxml("docx", document=b'<!DOCTYPE d [<!ENTITY x SYSTEM "file:///etc/passwd">]><w:document>&x;</w:document>'))[1]
-    assert verdict(DOCX, ooxml("docx", document=b'<w:document><w:instrText>DDEAUTO c:\\\\windows\\\\system32\\\\cmd.exe "/k calc"</w:instrText></w:document>'))[0] == "INFECTED"
+    assert (
+        "xxe"
+        in verdict(
+            DOCX,
+            ooxml(
+                "docx", document=b'<!DOCTYPE d [<!ENTITY x SYSTEM "file:///etc/passwd">]><w:document>&x;</w:document>'
+            ),
+        )[1]
+    )
+    assert (
+        verdict(
+            DOCX,
+            ooxml(
+                "docx",
+                document=b'<w:document><w:instrText>DDEAUTO c:\\\\windows\\\\system32\\\\cmd.exe "/k calc"</w:instrText></w:document>',
+            ),
+        )[0]
+        == "INFECTED"
+    )
     sheet = b"<worksheet><f>cmd|' /C calc'!A0</f></worksheet>"
     assert verdict(XLSX, ooxml("xlsx", {"xl/worksheets/sheet1.xml": sheet}, document=b"<workbook/>"))[0] == "INFECTED"
 
 
 def test_chu_trong_noi_dung_khong_bi_bao_nham_la_dde():
     prose = b"<w:document><w:t>Chay lenh cmd.exe /c hoac powershell - o dong lenh; DDE la gi?</w:t></w:document>"
-    assert verdict(DOCX, ooxml("docx", document=prose))[0] == "CLEAN", "chữ trong nội dung văn bản không phải trường lệnh"
+    assert verdict(DOCX, ooxml("docx", document=prose))[0] == "CLEAN", (
+        "chữ trong nội dung văn bản không phải trường lệnh"
+    )
 
 
 def test_zip_nguy_hiem():
