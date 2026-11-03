@@ -78,7 +78,14 @@ def parse_rows(kind: str, content_type: str, body: bytes) -> list[tuple[int, dic
             except ValueError:
                 rows.append((line, "Dòng không phải JSON hợp lệ"))
                 continue
-            rows.append((line, normalize(kind, record, mapping) if isinstance(record, dict) else "Mỗi dòng phải là một đối tượng JSON"))
+            rows.append(
+                (
+                    line,
+                    normalize(kind, record, mapping)
+                    if isinstance(record, dict)
+                    else "Mỗi dòng phải là một đối tượng JSON",
+                )
+            )
     if len(rows) > MAX_ROWS:
         raise ActionError(f"Tối đa {MAX_ROWS} dòng mỗi lần nạp", "too-large")
     return rows
@@ -101,13 +108,23 @@ def _job_summary(row: dict) -> dict:
 
 
 def run_job(
-    pool, session: dict, kind: str, rows: list[tuple[int, dict | str]], mode: str, dry_run: bool, key: str, digest: str, size: int
+    pool,
+    session: dict,
+    kind: str,
+    rows: list[tuple[int, dict | str]],
+    mode: str,
+    dry_run: bool,
+    key: str,
+    digest: str,
+    size: int,
 ) -> dict:
     tenant, person = session["x-hasura-tenant-id"], session["x-hasura-user-id"]
     if kind not in COLUMNS or kind not in SAVE:
         raise ActionError(f"Không nạp được loại dữ liệu {kind}", "not-found", 404)
     if mode == "ATOMIC" and len(rows) > ATOMIC_MAX_ROWS:
-        raise ActionError(f"Chế độ nguyên tử tối đa {ATOMIC_MAX_ROWS} dòng; dùng chế độ từng lô cho tệp lớn", "too-large")
+        raise ActionError(
+            f"Chế độ nguyên tử tối đa {ATOMIC_MAX_ROWS} dòng; dùng chế độ từng lô cho tệp lớn", "too-large"
+        )
     with pool.connection() as conn:
         cur = conn.cursor(row_factory=dict_row)
         inserted = cur.execute(
@@ -119,7 +136,8 @@ def run_job(
         conn.commit()
         if inserted is None:
             old = cur.execute(
-                "SELECT * FROM core.ingest_job WHERE tenant_id = %s AND kind = %s AND idempotency_key = %s", (tenant, kind, key)
+                "SELECT * FROM core.ingest_job WHERE tenant_id = %s AND kind = %s AND idempotency_key = %s",
+                (tenant, kind, key),
             ).fetchone()
             if old["status"] == "RUNNING":
                 raise ActionError("Lần nạp với khóa này đang chạy", "conflict", 409)
@@ -185,7 +203,8 @@ def run_job(
                     conn.commit()
                 with pool.connection() as progress:
                     progress.execute(
-                        "UPDATE core.ingest_job SET accepted = %s, rejected = %s WHERE id = %s", (accepted, rejected, job_id)
+                        "UPDATE core.ingest_job SET accepted = %s, rejected = %s WHERE id = %s",
+                        (accepted, rejected, job_id),
                     )
     except ActionError as exc:
         failure = exc.message
@@ -205,11 +224,15 @@ def run_job(
             status = "PARTIAL" if rejected else "DONE"
     errors.sort(key=lambda e: e["row"])
     with pool.connection() as conn:
-        row = conn.cursor(row_factory=dict_row).execute(
-            """UPDATE core.ingest_job SET status = %s, accepted = %s, rejected = %s, errors = %s::jsonb, failure = %s,
+        row = (
+            conn.cursor(row_factory=dict_row)
+            .execute(
+                """UPDATE core.ingest_job SET status = %s, accepted = %s, rejected = %s, errors = %s::jsonb, failure = %s,
                       finished_at = now() WHERE id = %s RETURNING *""",
-            (status, accepted, rejected, json.dumps(errors[:MAX_ERRORS], ensure_ascii=False), failure, job_id),
-        ).fetchone()
+                (status, accepted, rejected, json.dumps(errors[:MAX_ERRORS], ensure_ascii=False), failure, job_id),
+            )
+            .fetchone()
+        )
         conn.commit()
     if failure and status == "FAILED" and not accepted and not rejected and "quyền" in failure:
         raise ActionError(failure, "forbidden", 403)
@@ -223,7 +246,9 @@ def _session(request: Request, tenant: str | None) -> dict:
     try:
         claims = request.app.state.verifier.verify(header[7:].strip())
         with request.app.state.pool.connection() as conn:
-            raw = auth.session_for(conn, claims, tenant, request.headers.get("x-hasura-role"), request.app.state.memberships)
+            raw = auth.session_for(
+                conn, claims, tenant, request.headers.get("x-hasura-role"), request.app.state.memberships
+            )
     except auth.AuthError as exc:
         raise ActionError(str(exc), "unauthorized", 401) from exc
     session = {k.lower(): v for k, v in raw.items()}
@@ -257,8 +282,16 @@ async def ingest(
         content_type = request.headers.get("content-type", "application/x-ndjson").lower()
         rows = parse_rows(kind, content_type, body) if kind in COLUMNS else []
         summary = await run_in_threadpool(
-            run_job, request.app.state.pool, session, kind, rows, mode.replace("-", "_").upper(), dry_run,
-            idempotency_key, hashlib.sha256(body).hexdigest(), size,
+            run_job,
+            request.app.state.pool,
+            session,
+            kind,
+            rows,
+            mode.replace("-", "_").upper(),
+            dry_run,
+            idempotency_key,
+            hashlib.sha256(body).hexdigest(),
+            size,
         )
     except ActionError as exc:
         return JSONResponse({"message": exc.message, "code": exc.code}, exc.status)
@@ -277,10 +310,14 @@ async def job_status(job_id: str, request: Request, x_bamboo_tenant: str | None 
 
     def fetch():
         with request.app.state.pool.connection() as conn:
-            return conn.cursor(row_factory=dict_row).execute(
-                "SELECT * FROM core.ingest_job WHERE id = %s AND tenant_id = %s AND started_by = %s",
-                (job_id, session["x-hasura-tenant-id"], session["x-hasura-user-id"]),
-            ).fetchone()
+            return (
+                conn.cursor(row_factory=dict_row)
+                .execute(
+                    "SELECT * FROM core.ingest_job WHERE id = %s AND tenant_id = %s AND started_by = %s",
+                    (job_id, session["x-hasura-tenant-id"], session["x-hasura-user-id"]),
+                )
+                .fetchone()
+            )
 
     row = await run_in_threadpool(fetch)
     if row is None:

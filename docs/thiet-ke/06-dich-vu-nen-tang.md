@@ -664,7 +664,7 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 - **Hai tầng:** cài trên máy (`core.module_install`, chỉ `platform_admin`; container chạy) và bật cho công ty (`core.tenant_module`, quyền `core.module.manage`). Quản trị nền tảng bấm **Bật** với mô-đun chưa cài thì cài luôn.
 - **Chặn khi chưa bật:** Action trả `module-disabled` (403); bảng thuộc riêng mô-đun (`hasura_metadata.MODULE_TABLES`) không đọc, không ghi được qua GraphQL; menu ẩn, trang hiện thông báo "chưa bật".
 - **Không tắt được** khi mô-đun đang bật khác dựa vào nó (`module-in-use`) hoặc còn việc dở (`module-busy`: đề nghị chờ duyệt/bị trả về, việc duyệt đang mở, đơn hàng nội bộ chờ xác nhận, quy trình tự động đang bật). **Không gỡ được** khi còn công ty bật.
-- **Container:** `sleeper` hỏi `actions` `GET /modules/services` mỗi `SLEEPER_MODULES_EVERY` giây (mặc định 15), start container của mô-đun đã cài, stop container của mô-đun chưa cài; chỉ đụng tới dịch vụ trong `SLEEPER_MANAGED`. Dịch vụ ngủ (`trino-core`, `tika-core`, `ollama-core`, `ocr-core`) của mô-đun chưa cài không được đánh thức. Trạng thái container hiện trên trang Quản lý chức năng (với `platform_admin`).
+- **Container:** `sleeper` hỏi `actions` `GET /modules/services` mỗi `SLEEPER_MODULES_EVERY` giây (mặc định 15), start container của mô-đun đã cài, stop container của mô-đun chưa cài; chỉ đụng tới dịch vụ trong `SLEEPER_MANAGED`. Container do compose vừa chạy chỉ bị dừng sau khi `bootstrap` chạy xong (`SLEEPER_HOLD_UNTIL`), vì `bootstrap` chờ Flowable, Meilisearch healthy kể cả khi chưa cài mô-đun nào. Dịch vụ ngủ (`trino-core`, `tika-core`, `ollama-core`, `ocr-core`) của mô-đun chưa cài không được đánh thức. Trạng thái container hiện trên trang Quản lý chức năng (với `platform_admin`).
 - **Thêm mô-đun dựng sẵn mới:** khai `Module(...)` trong `modules.py` (mã, tên, phụ thuộc, container, Action, việc dở), thêm bảng riêng vào `MODULE_TABLES`, thêm container vào `SLEEPER_MANAGED`, mã vào migration nâng cấp và `DEMO_MODULES` của seed, gắn `module` cho mục menu (`nav.ts`) và `RequireModule` cho route (`App.tsx`). `test_mo_dun.py` báo lỗi nếu thiếu bước nào ở phía máy chủ.
 
 ## 23. Khởi tạo công ty và chủ sở hữu (`setup.py`, `legal_sign.py`, migration 043, ADR #57)
@@ -685,3 +685,52 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 | `SIGNATURE_ONLINE` | `true` | Kiểm thu hồi chứng thư qua OCSP/CRL (chặt) |
 | `SETUP_ALLOW_UNVERIFIED` | `true` | Cho tạo công ty chưa xác thực, ký bổ sung sau |
 
+
+## 24. Mô-đun ngoài (`ext.py`, migration 045, ADR #58)
+
+Mô-đun do bên thứ ba viết, chạy thành dịch vụ HTTP riêng, nối vào Bamboo qua cổng API. Ví dụ đầy đủ: `examples/mo-dun-mau`
+(mô-đun "Nhắc việc", chỉ dùng thư viện chuẩn Python).
+
+**Manifest** (dán vào **Quản trị → Quản lý chức năng → Thêm mô-đun ngoài**, hoặc gọi Action `ext_register(manifest)`):
+
+```json
+{
+  "code": "x_nhac_viec",
+  "name": "Nhắc việc",
+  "description": "Gửi lời nhắc tới đồng nghiệp",
+  "vendor": "Công ty A",
+  "version": "1.0.0",
+  "base_url": "http://nhac-viec:8080",
+  "entry_path": "/",
+  "health_path": "/healthz",
+  "depends": [],
+  "scopes": ["people.read", "notify.send"],
+  "menu": [{ "label": "Nhắc việc", "path": "/" }]
+}
+```
+
+- `code`: `x_` + 2–30 ký tự chữ thường không dấu, số, gạch dưới. `base_url`: địa chỉ `actions` gọi được (tên container trong mạng Docker). `depends`: mô-đun dựng sẵn cần có (cài/bật kèm). `scopes`: `org.read` (đơn vị, vị trí), `people.read` (họ tên, mã nhân viên, vị trí), `notify.send` (gửi thông báo).
+- Đăng ký trả **khóa mô-đun** `bmk_…` **một lần**; đặt vào dịch vụ mô-đun (biến `MODULE_KEY` hoặc tệp `MODULE_KEY_FILE` ở ví dụ). Mất khóa thì **Đổi khóa** (`ext_rotate_key`), khóa cũ hết hiệu lực ngay. Đăng ký lại cùng `code` là cập nhật phiên bản, giữ khóa; xin thêm phạm vi thì mô-đun bị tắt ở mọi công ty cho tới khi quản trị công ty bật (đồng ý) lại.
+- Công ty bật/tắt như mô-đun dựng sẵn; menu của mô-đun hiện ở thanh bên, mở trang `/x/<mã>/<path>`. **Gỡ khỏi máy** xóa đăng ký.
+
+**Giao diện:** web nhúng `<iframe sandbox>` trỏ tới `/ext/<mã>/s/<phiên>/<path>` (phiên 8 giờ do `ext_launch` cấp). `actions` chuyển yêu cầu tới `base_url` + `<path>` kèm:
+
+| Đầu trang | Nội dung |
+|---|---|
+| `X-Bamboo-Tenant`, `X-Bamboo-Person` | id công ty, id người đang dùng |
+| `X-Bamboo-Person-Name` | họ tên (mã hóa URL) |
+| `X-Bamboo-Timestamp` | giây Unix |
+| `X-Bamboo-Signature` | hex HMAC-SHA256(khóa mô-đun, `timestamp\nMETHOD\npath?query\ntenant\nperson`) |
+| `X-Bamboo-Base` | tiền tố `/ext/<mã>/s/<phiên>` của trang |
+
+Mô-đun **phải** kiểm chữ ký và độ lệch thời gian (ví dụ dùng 300 giây) rồi mới tin định danh; trang dùng đường dẫn tương đối. Chỉ các đầu trang `accept`, `accept-language`, `content-type`, `range`, `if-none-match`, `if-modified-since` đi từ trình duyệt sang mô-đun; cookie, `Authorization` bị bỏ. Phản hồi bị thêm `Content-Security-Policy: sandbox …` nên trang chạy ở origin `null`: không đọc được token, `localStorage` của Bamboo, không đặt được cookie. Thân yêu cầu tối đa 10 MB, 600 yêu cầu/phút/IP.
+
+**API cho mô-đun** `/ext-api/v1` (300 yêu cầu/phút/IP, thân tối đa 1 MB), đầu trang `Authorization: Bearer <khóa mô-đun>` và `X-Bamboo-Tenant: <id công ty>` (lấy từ yêu cầu đã ký); công ty phải đang bật mô-đun:
+
+| Gọi | Phạm vi | Trả |
+|---|---|---|
+| `GET /ext-api/v1/org-units` | `org.read` | `[{id, code, name, parent_id, type}]` đơn vị còn hiệu lực |
+| `GET /ext-api/v1/people?q=` | `people.read` | `[{id, full_name, employee_code, position, org_unit_id}]`, tối đa 500 |
+| `POST /ext-api/v1/notifications` `{person_id, title, body?}` | `notify.send` | `{ok: true}`; thông báo loại `EXTERNAL`, tiêu đề có tiền tố `[tên mô-đun]` |
+
+Lỗi trả `{message, code}`: `unauthorized` (401, sai khóa), `module-disabled` (403), `forbidden` (403, thiếu phạm vi), `not-found` (404).

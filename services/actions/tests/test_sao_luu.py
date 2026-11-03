@@ -14,7 +14,7 @@ from psycopg.rows import dict_row
 
 from conftest import ROOT
 
-SCRIPTS = ROOT / "scripts" / "ops"
+SCRIPTS = ROOT / "tools" / "ops"
 pytestmark = pytest.mark.skipif(not shutil.which("pg_dump"), reason="không có công cụ khách PostgreSQL (pg_dump)")
 
 
@@ -67,7 +67,9 @@ def test_tep_sao_luu_hong_thi_dien_tap_that_bai(env, cur):
     dump.write_bytes(bytes(data))
     drill = run("restore-drill.sh", str(backup), env=env)
     assert drill.returncode != 0 and "mã băm tệp sao lưu không khớp" in drill.stdout
-    row = cur.execute("SELECT status, detail FROM audit.backup_run WHERE kind = 'DRILL' ORDER BY id DESC LIMIT 1").fetchone()
+    row = cur.execute(
+        "SELECT status, detail FROM audit.backup_run WHERE kind = 'DRILL' ORDER BY id DESC LIMIT 1"
+    ).fetchone()
     assert row["status"] == "FAILED" and "mã băm" in row["detail"]["problems"][0]
 
 
@@ -84,4 +86,9 @@ def test_loi_sao_luu_duoc_ghi_lai_va_khong_de_lai_ban_do(env, cur, tmp_path):
     result = run("backup-db.sh", env=env)
     assert result.returncode != 0 and "không có CSDL nào" in result.stderr
     assert list(tmp_path.iterdir()) == []
-    assert cur.execute("SELECT status FROM audit.backup_run WHERE kind = 'BACKUP' ORDER BY id DESC LIMIT 1").fetchone()["status"] == "FAILED"
+    assert (
+        cur.execute("SELECT status FROM audit.backup_run WHERE kind = 'BACKUP' ORDER BY id DESC LIMIT 1").fetchone()[
+            "status"
+        ]
+        == "FAILED"
+    )

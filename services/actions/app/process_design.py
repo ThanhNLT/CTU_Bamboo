@@ -174,7 +174,9 @@ def lint(xml: str, forms: list[dict] | None = None) -> list[dict]:
         kind = _local(el.tag)
         if kind in ("executionListener", "taskListener", "eventListener"):
             owner = el.get("id") or "tiến trình"
-            issues.append(_issue("error", f"Bộ lắng nghe (listener) không được dùng trong quy trình thiết kế ({owner})"))
+            issues.append(
+                _issue("error", f"Bộ lắng nghe (listener) không được dùng trong quy trình thiết kế ({owner})")
+            )
         if kind == "conditionExpression":
             reason = unsafe_expression(el.text)
             if reason:
@@ -571,9 +573,12 @@ def process_model_save(conn: psycopg.Connection, session: dict, args: dict, _ctx
     else:
         person, tenant = _who(conn, session)
         unit = args.get("owner_unit_id")
-        if unit and not conn.execute(
-            "SELECT 1 FROM core.org_unit WHERE id = %s AND tenant_id = %s AND valid_period @> now()", (unit, tenant)
-        ).fetchone():
+        if (
+            unit
+            and not conn.execute(
+                "SELECT 1 FROM core.org_unit WHERE id = %s AND tenant_id = %s AND valid_period @> now()", (unit, tenant)
+            ).fetchone()
+        ):
             raise ActionError("Không tìm thấy đơn vị sở hữu quy trình", "not-found", 404)
         if not _can_design(conn, person, tenant, unit):
             raise ActionError(f"Cần quyền {PERMISSION} tại đơn vị này để tạo quy trình", "forbidden", 403)
@@ -581,8 +586,17 @@ def process_model_save(conn: psycopg.Connection, session: dict, args: dict, _ctx
             """INSERT INTO wf.process_model (tenant_id, process_key, name, description, bpmn_xml, forms, created_by,
                                              updated_by, owner_unit_id)
                VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s) RETURNING id""",
-            (tenant, key, name, args.get("description"), xml, json.dumps(forms, ensure_ascii=False), person, person,
-             unit),
+            (
+                tenant,
+                key,
+                name,
+                args.get("description"),
+                xml,
+                json.dumps(forms, ensure_ascii=False),
+                person,
+                person,
+                unit,
+            ),
         ).fetchone()[0]
     return {"id": str(model_id), "issues": lint(xml, forms)}
 
@@ -611,8 +625,17 @@ def process_model_publish(conn: psycopg.Connection, session: dict, args: dict, _
         """INSERT INTO wf.process_version (tenant_id, model_id, version, bpmn_xml, forms, sha256, note, published_by,
                                            audience)
            VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s)""",
-        (tenant, m["id"], version, m["bpmn_xml"], json.dumps(m["forms"], ensure_ascii=False), sha, note, person,
-         audience),
+        (
+            tenant,
+            m["id"],
+            version,
+            m["bpmn_xml"],
+            json.dumps(m["forms"], ensure_ascii=False),
+            sha,
+            note,
+            person,
+            audience,
+        ),
     )
     notified = conn.execute(
         "SELECT wf.notify_process_published(%s, %s, %s, %s)", (m["id"], version, person, note)
@@ -664,8 +687,14 @@ def process_change_request_create(conn: psycopg.Connection, session: dict, args:
     ).fetchall():
         conn.execute(
             "SELECT collab.notify(%s, %s, 'PROCESS_CHANGE_REQUESTED', 'wf.process_model', %s, %s, %s, %s)",
-            (tenant, designer[0], m["id"], f"{who} yêu cầu sửa quy trình “{m['name']}” (v{latest['version']})",
-             message, person),
+            (
+                tenant,
+                designer[0],
+                m["id"],
+                f"{who} yêu cầu sửa quy trình “{m['name']}” (v{latest['version']})",
+                message,
+                person,
+            ),
         )
     return {"id": str(request_id)}
 
@@ -694,8 +723,14 @@ def process_change_request_resolve(conn: psycopg.Connection, session: dict, args
     name = conn.execute("SELECT name FROM wf.process_model WHERE id = %s", (model_id,)).fetchone()[0]
     conn.execute(
         "SELECT collab.notify(%s, %s, 'PROCESS_CHANGE_RESOLVED', 'wf.process_model', %s, %s, %s, %s)",
-        (tenant, requester, model_id,
-         f"Yêu cầu sửa quy trình “{name}” đã được {'xử lý' if outcome == 'RESOLVED' else 'từ chối'}", note, person),
+        (
+            tenant,
+            requester,
+            model_id,
+            f"Yêu cầu sửa quy trình “{name}” đã được {'xử lý' if outcome == 'RESOLVED' else 'từ chối'}",
+            note,
+            person,
+        ),
     )
     return {"id": str(args["id"])}
 
