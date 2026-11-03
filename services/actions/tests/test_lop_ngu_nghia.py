@@ -10,8 +10,15 @@ from app.common import ActionError
 
 def test_sinh_sql_theo_danh_muc():
     sql, columns, info = semantic.compile_query(
-        {"metric": "request_amount", "dimensions": ["status"], "time_grain": "month", "from": "2026-01-01",
-         "to": "2026-03-31", "filters": [{"dimension": "status", "values": ["APPROVED", "PENDING"]}], "limit": 50}
+        {
+            "metric": "request_amount",
+            "dimensions": ["status"],
+            "time_grain": "month",
+            "from": "2026-01-01",
+            "to": "2026-03-31",
+            "filters": [{"dimension": "status", "values": ["APPROVED", "PENDING"]}],
+            "limit": 50,
+        }
     )
     assert columns == ["period", "status", "value"] and info["source"] == "proc_purchase_request"
     assert sql == (
@@ -34,7 +41,7 @@ def test_tong_khong_chieu_va_gioi_han():
         {"metric": "x; DROP TABLE a"},
         {"metric": "request_count", "dimensions": ["kpi"]},
         {"metric": "request_count", "dimensions": ["status", "status"]},
-        {"metric": "request_count", "dimensions": ["status\" FROM x --"]},
+        {"metric": "request_count", "dimensions": ['status" FROM x --']},
         {"metric": "request_count", "time_grain": "year"},
         {"metric": "request_count", "from": "2026-01-01' OR '1'='1"},
         {"metric": "request_count", "filters": [{"dimension": "status", "values": ["a' OR 1=1 --"]}]},

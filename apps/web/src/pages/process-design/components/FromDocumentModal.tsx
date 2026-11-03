@@ -118,7 +118,9 @@ export const FromDocumentModal = ({
               type={errors ? "warning" : "success"}
               showIcon
               message={`Đã dựng bản nháp “${done.name}” từ ${done.source}: ${done.steps} bước`}
-              description={errors ? `Còn ${errors} lỗi cần sửa trước khi phát hành.` : "Sơ đồ đã qua kiểm tra, chưa có lỗi."}
+              description={
+                errors ? `Còn ${errors} lỗi cần sửa trước khi phát hành.` : "Sơ đồ đã qua kiểm tra, chưa có lỗi."
+              }
             />
             {done.warnings.length > 0 && (
               <Alert

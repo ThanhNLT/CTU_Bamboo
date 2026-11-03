@@ -31,14 +31,18 @@ PREFIX = "_anchors"
 
 
 def statement_text(tenant: str, seq: int, head_hex: str, at: str) -> str:
-    return json.dumps({"v": 1, "tenant": tenant, "seq": seq, "head": head_hex, "at": at}, separators=(",", ":"), sort_keys=True)
+    return json.dumps(
+        {"v": 1, "tenant": tenant, "seq": seq, "head": head_hex, "at": at}, separators=(",", ":"), sort_keys=True
+    )
 
 
 def object_key(tenant: str, seq: int) -> str:
     return f"{PREFIX}/{tenant}/{seq:012d}.json"
 
 
-def _publish(settings: config.Settings, s3: storage.Storage | None, tenant: str, seq: int, document: dict) -> list[dict]:
+def _publish(
+    settings: config.Settings, s3: storage.Storage | None, tenant: str, seq: int, document: dict
+) -> list[dict]:
     out: list[dict] = []
     body = json.dumps(document, ensure_ascii=False, sort_keys=True).encode()
     if s3 is not None:
@@ -49,7 +53,9 @@ def _publish(settings: config.Settings, s3: storage.Storage | None, tenant: str,
             out.append({"kind": "s3", "ok": False, "error": f"{type(exc).__name__}"})
     if settings.anchor_url:
         try:
-            resp = httpx.post(settings.anchor_url, content=body, headers={"Content-Type": "application/json"}, timeout=15)
+            resp = httpx.post(
+                settings.anchor_url, content=body, headers={"Content-Type": "application/json"}, timeout=15
+            )
             out.append({"kind": "http", "ok": resp.status_code < 300, "status": resp.status_code})
         except httpx.HTTPError as exc:
             out.append({"kind": "http", "ok": False, "error": type(exc).__name__})
@@ -87,7 +93,9 @@ def anchor_tenant(
     return {"seq": head["seq"], "head": head["hex"], "published": published}
 
 
-def retry_publication(conn: psycopg.Connection, settings: config.Settings, s3: storage.Storage | None, limit: int = 20) -> int:
+def retry_publication(
+    conn: psycopg.Connection, settings: config.Settings, s3: storage.Storage | None, limit: int = 20
+) -> int:
     """Công bố lại các bản neo mà lần công bố trước thất bại (kho đối tượng hoặc điểm ngoài tạm lỗi)."""
     done = 0
     for row in conn.execute(
@@ -97,15 +105,25 @@ def retry_publication(conn: psycopg.Connection, settings: config.Settings, s3: s
            ORDER BY anchored_at DESC LIMIT %s""",
         (limit,),
     ).fetchall():
-        published = _publish(settings, s3, str(row["tenant_id"]), row["seq"], {"statement": row["statement"], "signature": row["signature"]})
+        published = _publish(
+            settings,
+            s3,
+            str(row["tenant_id"]),
+            row["seq"],
+            {"statement": row["statement"], "signature": row["signature"]},
+        )
         if published != row["published"]:
-            conn.execute("UPDATE audit.anchor SET published = %s::jsonb WHERE id = %s", (json.dumps(published), row["id"]))
+            conn.execute(
+                "UPDATE audit.anchor SET published = %s::jsonb WHERE id = %s", (json.dumps(published), row["id"])
+            )
             conn.commit()
             done += 1
     return done
 
 
-def anchor_all(conn: psycopg.Connection, signer: receipts.Signer, settings: config.Settings, s3: storage.Storage | None) -> int:
+def anchor_all(
+    conn: psycopg.Connection, signer: receipts.Signer, settings: config.Settings, s3: storage.Storage | None
+) -> int:
     count = 0
     for row in conn.execute("SELECT tenant_id FROM audit.chain_head").fetchall():
         try:
@@ -177,19 +195,25 @@ def start_background(settings: config.Settings) -> threading.Thread:
 def _reader(conn: psycopg.Connection, session: dict) -> str:
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)
-    if not conn.execute("SELECT 1 FROM audit.v_reader WHERE tenant_id = %s AND person_id = %s", (tenant, person)).fetchone():
+    if not conn.execute(
+        "SELECT 1 FROM audit.v_reader WHERE tenant_id = %s AND person_id = %s", (tenant, person)
+    ).fetchone():
         raise ActionError("Cần quyền audit.read để xem bản neo chuỗi kiểm toán", "forbidden", 403)
     return tenant
 
 
 def audit_anchors(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
     tenant = _reader(conn, session)
-    rows = conn.cursor(row_factory=dict_row).execute(
-        """SELECT id, seq, encode(head_hash, 'hex') AS head_hash, signature ->> 'alg' AS alg, published,
+    rows = (
+        conn.cursor(row_factory=dict_row)
+        .execute(
+            """SELECT id, seq, encode(head_hash, 'hex') AS head_hash, signature ->> 'alg' AS alg, published,
                   to_char(anchored_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS anchored_at
            FROM audit.anchor WHERE tenant_id = %s ORDER BY seq DESC LIMIT 20""",
-        (tenant,),
-    ).fetchall()
+            (tenant,),
+        )
+        .fetchall()
+    )
     head = conn.execute("SELECT seq FROM audit.chain_head WHERE tenant_id = %s", (tenant,)).fetchone()
     return {"head_seq": head[0] if head else 0, "anchors": [{**r, "id": str(r["id"])} for r in rows]}
 
@@ -217,7 +241,9 @@ def audit_anchor_now(conn: psycopg.Connection, session: dict, _args: dict, ctx: 
     if ctx.anchor_signer is None:
         raise ActionError("Chưa cấu hình khóa ký", "unavailable", 503)
     with _dict_rows(conn) as c:
-        result = anchor_tenant(c, ctx.anchor_signer, types.SimpleNamespace(anchor_url=ctx.anchor_url), ctx.storage, tenant, commit=False)
+        result = anchor_tenant(
+            c, ctx.anchor_signer, types.SimpleNamespace(anchor_url=ctx.anchor_url), ctx.storage, tenant, commit=False
+        )
     return {"anchored": result is not None, "seq": result["seq"] if result else None}
 
 
