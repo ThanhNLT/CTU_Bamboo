@@ -40,13 +40,16 @@ export const RegulationTab = ({
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card" aria-label="Quy định">
+    <section
+      className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card"
+      aria-label="Quy định"
+    >
       <div>
         <h2 className="m-0 text-[14px] font-semibold text-ink">Văn bản quy định của quy trình</h2>
         <p className="m-0 mt-1 text-[12.5px] text-body">
-          Từ phiên bản đã phát hành, hệ thống lập văn bản quy định (các bước, người thực hiện, thời hạn, chuyển tiếp, kèm
-          hình sơ đồ) và đề xuất vào thư viện tri thức. Văn bản đi theo chuỗi duyệt tài liệu; duyệt xong là quy định đang
-          hiệu lực của công ty, thay thế quy định của phiên bản trước.
+          Từ phiên bản đã phát hành, hệ thống lập văn bản quy định (các bước, người thực hiện, thời hạn, chuyển tiếp,
+          kèm hình sơ đồ) và đề xuất vào thư viện tri thức. Văn bản đi theo chuỗi duyệt tài liệu; duyệt xong là quy định
+          đang hiệu lực của công ty, thay thế quy định của phiên bản trước.
         </p>
       </div>
 
@@ -86,7 +89,9 @@ export const RegulationTab = ({
         <ul className="m-0 list-none space-y-2 p-0">
           {mine.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center gap-2 text-[12.5px]">
-              <Tag color={PROPOSAL_STATUS[r.status]?.color ?? "default"}>{PROPOSAL_STATUS[r.status]?.label ?? r.status}</Tag>
+              <Tag color={PROPOSAL_STATUS[r.status]?.color ?? "default"}>
+                {PROPOSAL_STATUS[r.status]?.label ?? r.status}
+              </Tag>
               <Link
                 to={r.status === "APPROVED" ? `/h/library?doc=${r.id}` : `/h/library/proposals/${r.id}`}
                 className="font-mono"

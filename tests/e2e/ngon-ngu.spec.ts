@@ -19,7 +19,7 @@ test("đổi sang tiếng Anh cho menu và giữ lựa chọn sau khi tải lạ
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   const english = page.getByRole("navigation", { name: "Main navigation" });
   await expect(english.getByRole("link", { name: "Process design" })).toBeVisible();
-  await expect(english.getByText("Digital people")).toBeVisible();
+  await expect(english.getByText("Document drive")).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
