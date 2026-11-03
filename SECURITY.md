@@ -16,7 +16,7 @@ Dự án đang ở giai đoạn trước 1.0: chỉ bản phát hành mới nh�
 
 ## Phạm vi
 
-Trong phạm vi: mã trong kho (dịch vụ Python, giao diện, migration CSDL, cấu hình cổng API, Keycloak, Hasura, OpenBao, SeaweedFS trong `docker-compose.yml` và `platform/`), image phát hành trên `ghcr.io/thanhnlt/bamboo-*`.
+Trong phạm vi: mã trong kho (dịch vụ Python, giao diện, migration CSDL, cấu hình cổng API, Keycloak, Hasura, OpenBao, SeaweedFS trong `compose.yaml`, `infra/compose/` và `infra/platform/`), image phát hành trên `ghcr.io/thanhnlt/bamboo-*`.
 
 Ngoài phạm vi: lỗ hổng của phần mềm bên thứ ba chưa sửa ở upstream (báo cho dự án đó), cấu hình dev mặc định khi chưa đặt `BAMBOO_ENV=production`, tài khoản và dữ liệu demo.
 
@@ -33,4 +33,4 @@ Ngoài phạm vi: lỗ hổng của phần mềm bên thứ ba chưa sửa ở u
 | Tệp đính kèm | Bucket cách ly, link có chữ ký, kiểm tra kích thước và chữ ký đầu tệp, quét ClamAV | ADR #26 |
 | Toàn vẹn dữ liệu | Nhật ký kiểm toán nối chuỗi hash theo tenant, chỉ ghi thêm | ADR #18, #33 |
 | Cấu hình | `BAMBOO_ENV=production` từ chối khởi động khi còn mật khẩu mặc định; container ứng dụng chạy không cần root | [Triển khai](docs/van-hanh/trien-khai.md) |
-| Chuỗi cung ứng | Phiên bản phụ thuộc ghim (`constraints.txt`, `package-lock.json`), kiểm tra giấy phép trong CI | NOTICE |
+| Chuỗi cung ứng | Phiên bản phụ thuộc ghim (`uv.lock`, `pnpm-lock.yaml`), kiểm tra giấy phép trong CI | NOTICE |

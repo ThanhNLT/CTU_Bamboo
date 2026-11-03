@@ -4,6 +4,7 @@
 
 .git
 apps
+tests
 docs
 db
 **/__pycache__

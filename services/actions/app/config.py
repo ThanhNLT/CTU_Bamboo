@@ -7,7 +7,7 @@ import pathlib
 from dataclasses import dataclass, replace
 from urllib.parse import quote, urlparse, urlunparse
 
-from .openbao import Bao, BaoError
+from bamboo_common.openbao import Bao, BaoError
 
 SECRET_FIELDS = {
     "bms/actions": {"secret": "actions_secret"},
@@ -97,7 +97,7 @@ class Settings:
     ocr_url: str = ""
     sleeper_url: str = ""
     ai_cpu_models: tuple[str, ...] = ("bge-m3",)
-    signature_trust_dir: str = "/repo/platform/trust"
+    signature_trust_dir: str = "/repo/infra/platform/trust"
     signature_online: bool = True
     setup_allow_unverified: bool = True
 
@@ -263,7 +263,7 @@ def _from_env() -> Settings:
         sleeper_url=env("SLEEPER_URL", ""),
         ai_cpu_models=tuple(m.strip() for m in env("AI_CPU_MODELS", "bge-m3").split(",") if m.strip()),
         signature_trust_dir=env(
-            "SIGNATURE_TRUST_DIR", str(pathlib.Path(__file__).resolve().parents[3] / "platform/trust")
+            "SIGNATURE_TRUST_DIR", str(pathlib.Path(__file__).resolve().parents[3] / "infra/platform/trust")
         ),
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
