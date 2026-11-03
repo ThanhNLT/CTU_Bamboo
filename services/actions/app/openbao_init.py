@@ -15,8 +15,9 @@ import time
 
 import httpx
 
+from bamboo_common.openbao import Bao, BaoError
+
 from . import config, search, storage
-from .openbao import Bao, BaoError
 
 log = logging.getLogger("openbao_init")
 

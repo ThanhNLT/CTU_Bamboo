@@ -1,6 +1,6 @@
 # API của nền tảng (Hasura GraphQL)
 
-Tầng 1 không có giao diện người dùng cuối; mọi ứng dụng Tầng 2 (kể cả giao diện Refine trong `apps/web/web`) gọi nền tảng
+Tầng 1 không có giao diện người dùng cuối; mọi ứng dụng Tầng 2 (kể cả giao diện Refine trong `apps/web`) gọi nền tảng
 qua một endpoint GraphQL duy nhất: `/graphql` trên cổng API APISIX ([ADR #34](#adr-34)). Ngoài GraphQL chỉ có hai đường HTTP
 cho máy gọi máy: nạp dữ liệu theo lô `/ingest/*` và webhook khởi chạy quy trình tự động `/hooks/*`
 ([Dịch vụ nền tảng mục 18–19](06-dich-vu-nen-tang.md)), cùng API công khai `/setup/*` của trang khởi tạo công ty lần đầu
@@ -20,12 +20,12 @@ Schema đầy đủ: introspection qua `/graphql` (sinh type bằng graphql-code
 - Token **không** mang claim Hasura ([ADR #32](#adr-32)): giao diện dựng luật CASL từ query `core_v_permission_grant` (chỉ trả quyền của chính người gọi).
 - Một tài khoản có thể vào nhiều tenant ([ADR #30](#adr-30)); `my_tenants` trả `person_id` của người dùng trong từng tenant. Mọi cột người (`requester_id`, `assignee_id`, `recipient_id`...) so với `person_id` này.
 - Subscription: websocket (giao thức `graphql-ws`) cùng địa chỉ `/graphql`, header gửi trong `connectionParams`; cổng API chuyển tới `/v1/graphql` của Hasura; hạn kết nối theo hạn token.
-- Ứng dụng Refine (`apps/web/web`) mặc định gọi Keycloak (`/realms`) và Hasura (`/graphql`) cùng origin với trang; `npm run dev` dùng `.env.development` trỏ vào cổng `http://localhost:8000`. Ghi đè bằng `/config.js` lúc chạy hoặc biến `VITE_*` lúc build khi backend ở địa chỉ khác.
+- Ứng dụng Refine (`apps/web`) mặc định gọi Keycloak (`/realms`) và Hasura (`/graphql`) cùng origin với trang; `pnpm dev` dùng `.env.development` trỏ vào cổng `http://localhost:8000`. Ghi đè bằng `/config.js` lúc chạy hoặc biến `VITE_*` lúc build khi backend ở địa chỉ khác.
 - Cổng API trả **401** khi request `/graphql` không có token hợp lệ (trước khi tới Hasura), **429** khi vượt giới hạn tần suất, **403** khi WAF chặn; mọi phản hồi có `X-Request-Id` để đối chiếu log. Tenant đã chọn lưu ở `localStorage["bamboo.tenant"]` và gửi kèm mọi request (cả websocket).
 
 ## 2. Ánh xạ màn hình chính
 
-Ví dụ cách giao diện trong `apps/web/web/src/pages` dùng API cho luồng mua sắm, tiếp nhận nhân sự và đơn hàng nội bộ. Danh mục đầy đủ các Action ở mục 3.
+Ví dụ cách giao diện trong `apps/web/src/pages` dùng API cho luồng mua sắm, tiếp nhận nhân sự và đơn hàng nội bộ. Danh mục đầy đủ các Action ở mục 3.
 
 | Màn hình | API |
 |---|---|
@@ -53,7 +53,7 @@ Ví dụ cách giao diện trong `apps/web/web/src/pages` dùng API cho luồng 
 
 ## 3. Danh mục Hasura Action
 
-Nghiệp vụ nhiều bước đi qua 109 Hasura Action (dịch vụ `actions`, khai báo trong `platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
+Nghiệp vụ nhiều bước đi qua 109 Hasura Action (dịch vụ `actions`, khai báo trong `infra/platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
 
 | Nhóm | Query | Mutation |
 |---|---|---|

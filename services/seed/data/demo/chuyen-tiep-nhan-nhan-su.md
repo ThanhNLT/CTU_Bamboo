@@ -14,7 +14,7 @@ Dữ liệu do `services/seed` nạp khi chạy `docker compose up -d` (`make up
 
 | Cần có | Nguồn |
 |---|---|
-| 7 tài khoản mới ở bảng 2 (trưởng phòng nhân sự, trưởng đơn vị, nhân viên) | `TRANSFER_DEMO_USERS` trong `app/demo.py`, đã thêm vào `platform/keycloak/realm/bms-realm.json` |
+| 7 tài khoản mới ở bảng 2 (trưởng phòng nhân sự, trưởng đơn vị, nhân viên) | `TRANSFER_DEMO_USERS` trong `app/demo.py`, đã thêm vào `infra/platform/keycloak/realm/bms-realm.json` |
 | Ghế trống để tiếp nhận hoặc nhận người chuyển đến | `OPEN_SEATS`: `DT_RD_PM.S4` (Kỹ sư phần mềm), `DT_MH.S4` (Chuyên viên), `BVX_KHTH.S3` (Chuyên viên kế hoạch, thêm mới), và hai ghế khác |
 | Phòng nhân sự có cờ `is_hr` và quyền `hr.*` | `HR_UNITS`, `HR_SCOPE`, vai trò `NHAN_SU` (đã có) |
 | Quy tắc duyệt `ONBOARDING` | `hr_demo` (đã có) |
@@ -121,4 +121,4 @@ demo nào, nên không vướng.
   `docker compose down -v && docker compose up -d`.
 - Ngày chuyển phải cách ngày gửi ít nhất 14 ngày; quên điều này là lỗi thường gặp nhất khi gửi duyệt.
 - Có thể chiếu song song `/p/process`: các quy trình **Tiếp nhận nhân sự**, **Điều chuyển nhân sự nội bộ** và
-  **Điều chuyển liên tập đoàn** (xem `platform/flowable/processes/`) mô tả đúng các bước trên.
+  **Điều chuyển liên tập đoàn** (xem `infra/platform/flowable/processes/`) mô tả đúng các bước trên.

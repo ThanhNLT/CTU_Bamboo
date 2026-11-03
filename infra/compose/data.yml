@@ -1,0 +1,287 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Dữ liệu: tìm kiếm toàn văn, trích văn bản, dựng PDF, CDC → Kafka → Lakehouse/Trino, dịch vụ ngủ (sleeper, ADR #53).
+# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
+# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
+# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  meilisearch:
+    logging: *logging
+    image: getmeili/meilisearch:v1.54.3
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    command: ["/bin/meilisearch", "--config-file-path", "/etc/meilisearch/config.toml"]
+    environment:
+      MEILI_MAX_INDEXING_MEMORY: ${MEILI_MAX_INDEXING_MEMORY:-512 MiB}
+    volumes:
+      - meilisearch-data:/meili_data
+      - meilisearch-config:/etc/meilisearch:ro
+    ports:
+      - "127.0.0.1:7700:7700"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7700/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  # Ba dịch vụ -core dùng thưa nên ngủ khi nhàn rỗi; tên mạng cũ (tika, gotenberg, trino) và cổng công bố thuộc `sleeper` (ADR #53)
+  tika-core:
+    logging: *logging
+    image: apache/tika:4.1.0-1
+    environment:
+      JAVA_TOOL_OPTIONS: ${TIKA_JAVA_OPTS:--Xmx512m}
+      MALLOC_ARENA_MAX: "2"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9998 && printf 'GET /version HTTP/1.0\r\n\r\n' >&3 && grep -q Tika <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  gotenberg-core:
+    logging: *logging
+    image: gotenberg/gotenberg:8.37.0-chromium
+    command: ["gotenberg", "--chromium-auto-start", "--chromium-disable-javascript", "--chromium-deny-private-ips",
+              "--chromium-deny-public-ips", "--api-disable-download-from", "--webhook-disable", "--api-timeout=60s"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  search-sync:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      sleeper:
+        condition: service_healthy
+    volumes:
+      - search-secrets:/run/bms:ro
+    command: ["python", "-m", "app.search_sync"]
+    restart: unless-stopped
+
+  kafka:
+    logging: *logging
+    build:
+      context: ../platform/kafka
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-kafka:${BAMBOO_TAG:-dev}
+    environment:
+      CLUSTER_ID: b5T4hzPsQrOmfv9Kr38lIg
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: SASL_PLAINTEXT://:9092,HOST://:19092,CONTROLLER://localhost:9093,LOCAL://localhost:9094
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092,HOST://localhost:19092,LOCAL://localhost:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: LOCAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,LOCAL:PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT,HOST:SASL_PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_SASL_ENABLED_MECHANISMS: SCRAM-SHA-512
+      KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "false"
+      KAFKA_SUPER_USERS: User:ANONYMOUS
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_HEAP_OPTS: ${KAFKA_HEAP:--Xms128m -Xmx512m}
+      KAFKA_JVM_PERFORMANCE_OPTS: -server -XX:+UseSerialGC -XX:ReservedCodeCacheSize=96m -Djava.awt.headless=true
+      MALLOC_ARENA_MAX: "2"
+      DEBEZIUM_KAFKA_PASSWORD: ${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}
+      LAKEHOUSE_KAFKA_PASSWORD: ${LAKEHOUSE_KAFKA_PASSWORD:-lakehouse-kafka-dev}
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    ports:
+      - "127.0.0.1:19092:19092"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/bamboo-kafka-ready && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9094 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+      start_period: 15s
+
+  debezium:
+    logging: *logging
+    image: quay.io/debezium/server:3.7.0.Final
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    environment:
+      DEBEZIUM_SINK_TYPE: kafka
+      DEBEZIUM_SINK_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      DEBEZIUM_SINK_KAFKA_PRODUCER_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      DEBEZIUM_SINK_KAFKA_PRODUCER_SASL_MECHANISM: SCRAM-SHA-512
+      DEBEZIUM_SINK_KAFKA_PRODUCER_SASL_JAAS_CONFIG: >-
+        org.apache.kafka.common.security.scram.ScramLoginModule required
+        username="debezium" password="${DEBEZIUM_KAFKA_PASSWORD:-debezium-kafka-dev}";
+      DEBEZIUM_SINK_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      DEBEZIUM_SINK_KAFKA_PRODUCER_VALUE_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      DEBEZIUM_SOURCE_CONNECTOR_CLASS: io.debezium.connector.postgresql.PostgresConnector
+      DEBEZIUM_SOURCE_OFFSET_STORAGE_FILE_FILENAME: /debezium/data/offsets.dat
+      DEBEZIUM_SOURCE_OFFSET_FLUSH_INTERVAL_MS: 5000
+      DEBEZIUM_SOURCE_DATABASE_HOSTNAME: db
+      DEBEZIUM_SOURCE_DATABASE_PORT: 5432
+      DEBEZIUM_SOURCE_DATABASE_USER: bamboo_cdc
+      DEBEZIUM_SOURCE_DATABASE_PASSWORD: ${CDC_DB_PASSWORD:-cdc-db-dev}
+      DEBEZIUM_SOURCE_DATABASE_DBNAME: bms
+      DEBEZIUM_SOURCE_TOPIC_PREFIX: bms
+      DEBEZIUM_SOURCE_PLUGIN_NAME: pgoutput
+      DEBEZIUM_SOURCE_PUBLICATION_NAME: bms_cdc
+      DEBEZIUM_SOURCE_PUBLICATION_AUTOCREATE_MODE: disabled
+      DEBEZIUM_SOURCE_SLOT_NAME: bms_debezium
+      DEBEZIUM_SOURCE_SCHEMA_INCLUDE_LIST: core,mdm,wf,proc,ic,mfg,collab,cdc
+      DEBEZIUM_SOURCE_COLUMN_EXCLUDE_LIST: core.attachment_ocr.page_texts
+      DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
+      DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
+      DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string
+      # mô-đun Dữ liệu số tắt lâu làm mất slot (max_slot_wal_keep_size): bật lại thì chụp lại toàn bộ (ADR #56)
+      DEBEZIUM_SOURCE_SNAPSHOT_MODE: when_needed
+      DEBEZIUM_FORMAT_KEY: json
+      DEBEZIUM_FORMAT_VALUE: json
+      DEBEZIUM_FORMAT_KEY_SCHEMAS_ENABLE: "false"
+      DEBEZIUM_FORMAT_VALUE_SCHEMAS_ENABLE: "false"
+      JAVA_OPTS: ${DEBEZIUM_JAVA_OPTS:--Xms64m -Xmx384m}
+      MALLOC_ARENA_MAX: "2"
+    volumes:
+      - debezium-data:/debezium/data
+    ports:
+      - "127.0.0.1:8083:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health HTTP/1.0\r\n\r\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  lakehouse-sink:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    build:
+      args:
+        DEP_GROUPS: lakehouse
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-lakehouse:${BAMBOO_TAG:-dev}
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+    volumes:
+      - lakehouse-secrets:/run/bms:ro
+    command: ["python", "-m", "app.lakehouse_sink"]
+    restart: unless-stopped
+
+  trino-core:
+    logging: *logging
+    build:
+      context: ../platform/trino
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      openbao-init:
+        condition: service_completed_successfully
+      seaweedfs:
+        condition: service_started
+    volumes:
+      - trino-catalog:/etc/trino/bms-catalog:ro
+      - trino-secrets:/etc/trino/secrets:ro
+    environment:
+      MALLOC_ARENA_MAX: "2"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/lib/trino/bin/health-check"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  trino-init:
+    logging: *logging
+    build:
+      context: ../platform/trino
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    depends_on:
+      sleeper:
+        condition: service_healthy
+    volumes:
+      - trino-secrets:/etc/trino/secrets:ro
+    entrypoint: ["bash", "-c", "TRINO_PASSWORD=$$(cat /etc/trino/secrets/admin.password) exec trino --server https://trino:8443 --truststore-path /etc/trino/secrets/ca.pem --user bms-admin --password --file /etc/trino/bms/silver.sql"]
+    restart: "no"
+
+  sleeper:
+    logging: *logging
+    build:
+      context: ../..
+      dockerfile: infra/docker/sleeper.Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-sleeper:${BAMBOO_TAG:-dev}
+    depends_on:
+      trino-core:
+        condition: service_started
+      tika-core:
+        condition: service_started
+      gotenberg-core:
+        condition: service_started
+    environment:
+      SLEEPER_PROJECT: bamboo
+      SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
+      SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000,11434=ollama-core:11434,8000=ocr-core:8000
+      # Mô-đun chức năng (ADR #56): dừng container của mô-đun chưa cài, chạy container của mô-đun đã cài.
+      # Danh sách phải khớp services/actions/app/modules.py (MANAGED_SERVICES; kiểm bởi test_mo_dun.py)
+      SLEEPER_MODULES_URL: http://actions:8000/modules/services
+      SLEEPER_HOLD_UNTIL: bootstrap
+      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
+    networks:
+      default:
+        aliases: [trino, tika, gotenberg, ollama, ocr]
+    # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn, và nó chỉ start/stop container thuộc SLEEPER_TARGETS
+    user: "0"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:8085:8443"
+      - "127.0.0.1:9998:9998"
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:11434:11434"
+      - "127.0.0.1:8866:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+
+volumes:
+  meilisearch-data:
+  kafka-data:
+  debezium-data:

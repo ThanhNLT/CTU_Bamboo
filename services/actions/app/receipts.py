@@ -14,7 +14,7 @@ import json
 import logging
 import os
 
-from .openbao import Bao, BaoError
+from bamboo_common.openbao import Bao, BaoError
 
 log = logging.getLogger("receipts")
 

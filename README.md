@@ -87,6 +87,28 @@ phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗ
 | [0.2.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
 | [0.1.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
 
+### Cấu trúc mã nguồn
+
+Monorepo xếp theo vai trò ([ADR #60](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)); gốc repo chỉ giữ tệp "cửa vào"
+(`compose.yaml`, `Makefile`, `package.json`, `pyproject.toml`, các tệp khóa phiên bản).
+
+```text
+apps/web/            Giao diện Refine (package pnpm @bamboo/web)
+services/            Dịch vụ Python: actions, seed, ocr, sleeper
+packages/py-common/  Gói Python dùng chung bamboo-common (client OpenBao, Flowable, Ollama, quét tệp, mã hóa PII)
+infra/compose/       Định nghĩa dịch vụ theo nhóm (core, data, ai, scan, test, gpu), compose.yaml ở gốc include
+infra/docker/        Dockerfile của mọi image Bamboo
+infra/platform/      Cấu hình dịch vụ bên thứ ba: APISIX, Flowable, Hasura, Kafka, Keycloak, OpenBao, Trino, Vector
+infra/k8s/           Chỗ dành sẵn cho k3s/GitOps (chưa có manifest)
+db/                  Migration, vai trò CSDL, kiểm thử SQL
+tools/               Script CI, CSDL, vận hành, sao lưu, GitOps, phát hành, smoke AI/OCR
+tests/e2e/           Kiểm thử đầu–cuối Playwright (package pnpm @bamboo/e2e)
+docs/                Tài liệu kỹ thuật (Sphinx)
+```
+
+JS là pnpm workspace + Turborepo (`pnpm-lock.yaml`), Python là uv workspace (`uv.lock`, riêng OCR có `services/ocr/uv.lock`).
+Kiểm tra tĩnh toàn repo giống CI: `make check` (cần `uv`, `pnpm`, Docker).
+
 ## Kiến trúc hệ thống
 
 ```text
@@ -130,7 +152,7 @@ Mức: **Có** = đã hiện thực, có kiểm thử; **Một phần** = có nh
 | Che dữ liệu cá nhân | Microsoft Presidio | MIT | Nhận diện CCCD, điện thoại, tài khoản, email theo mẫu Việt Nam; bản che trong nhật ký và ô trao đổi | Có |
 | Thông báo đa kênh | Hàng đợi `msg.queue` trong PostgreSQL; Mailpit (hộp thư thử) | –; MIT | Email, SMS, webhook có thử lại, hàng chết, biên nhận có chữ ký chống chối bỏ | Có |
 | Nhật ký tập trung | Vector 0.46 (tùy chọn), bảng `obs.log_event` | MPL-2.0 | Gom log dịch vụ và container kèm mã truy vết `X-Request-Id`, đã che dữ liệu cá nhân | Một phần (chưa có OpenTelemetry, Prometheus, Grafana) |
-| Sao lưu, GitOps | Script `scripts/ops`, `scripts/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu cấu hình với kho mã | Một phần (không dùng Argo CD, Kubernetes) |
+| Sao lưu, GitOps | Script `tools/ops`, `tools/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu cấu hình với kho mã | Một phần (không dùng Argo CD, Kubernetes) |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI, psycopg | MIT, LGPL-3.0 (psycopg, dùng như thư viện) | Hasura Actions, xác thực, đồng bộ, worker nền, job khởi tạo | Có |
 | Giao diện | Refine 5, React 19, Ant Design 5 | MIT | Ứng dụng web Tầng 2, đa ngôn ngữ phần khung (Việt, Anh) | Có |
 
@@ -261,7 +283,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
 
 - **GPU NVIDIA:** cài `nvidia-container-toolkit` rồi chạy `make up-gpu`.
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
-  hơn. Trước buổi demo chạy `scripts/demo_prepare.sh` để làm nóng.
+  hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.
 - **Bật thêm:** ClamAV `docker compose --profile scan up -d` (đặt `CLAMAV_HOST=clamav`), gom log container
   `COMPOSE_PROFILES=ai,logs`.
 - **Dừng:** `docker compose down` (giữ dữ liệu), `docker compose down -v` (xóa sạch, kể cả khóa OpenBao).
@@ -290,8 +312,8 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 | PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`make psql`) |
 
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
-thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; giao diện `npm run lint`,
-`npm run build`, `npm run test:e2e` trong `apps/web/web`; AI và OCR `scripts/ai_smoke.sh`, `scripts/ocr_smoke.sh`.
+thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; kiểm tra tĩnh toàn repo `make check`; giao diện `pnpm check` ở gốc repo
+(Turborepo: lint, format:check, build), `pnpm --filter @bamboo/e2e test:e2e`; AI và OCR `tools/ai_smoke.sh`, `tools/ocr_smoke.sh`.
 
 ## Chạy native (không dùng Docker)
 
@@ -306,6 +328,7 @@ mặc định của máy dev, giống bản Docker; tên dịch vụ đổi thà
 | PostgreSQL | 17, extension `ltree`, `btree_gist` | PostGIS 3.5 tùy chọn; `wal_level=logical` nếu chạy CDC |
 | Python | 3.13 | Dịch vụ `actions`, `seed` |
 | Node.js | 22 (tối thiểu 20) | Giao diện |
+| pnpm | 12.16.1 (ghim ở `packageManager` trong `package.json`) | Workspace JS: `npm install -g --allow-scripts=pnpm pnpm@12.16.1` (npm mới chặn install script; thiếu cờ này lệnh `pnpm` không chạy được từ Turborepo) |
 | Java | 21 | Keycloak, Flowable |
 | Keycloak | 26.8 | Bản phân phối `.zip`/`.tar.gz` |
 | Flowable REST | 8.0 | `flowable-rest.war` (Spring Boot) |
@@ -324,21 +347,21 @@ từng dịch vụ:
 export PGHOST=localhost PGUSER=bms PGPASSWORD=bms-dev
 EXTRA_DATABASES="flowable keycloak hasura_meta lakehouse" \
 SERVICE_DATABASES="keycloak:bamboo_keycloak flowable:bamboo_flowable hasura_meta:bamboo_hasura lakehouse:bamboo_lakehouse" \
-scripts/db/up.sh
+tools/db/up.sh
 ```
 
 ### 3. Môi trường Python
 
 ```bash
-python -m venv .venv && . .venv/bin/activate
-pip install -r services/actions/requirements.txt -r services/seed/requirements.txt -c constraints.txt
+# Cần uv (https://docs.astral.sh/uv/); phiên bản ghim trong uv.lock ở gốc
+uv sync --frozen --package bamboo-actions --package bamboo-seed && . .venv/bin/activate
 ```
 
 ### 4. OpenBao và SeaweedFS
 
 ```bash
 mkdir -p .local/{openbao,run,seaweedfs,meili}
-# Chép platform/openbao/config.hcl thành .local/openbao/config.hcl, đổi storage "raft" path thành .local/openbao/data,
+# Chép infra/platform/openbao/config.hcl thành .local/openbao/config.hcl, đổi storage "raft" path thành .local/openbao/data,
 # api_addr thành http://127.0.0.1:8200, cluster_addr thành http://127.0.0.1:8201
 bao server -config=.local/openbao/config.hcl &
 
@@ -361,8 +384,8 @@ Keycloak.
 
 ```bash
 # Keycloak: chép realm và theme vào bản phân phối rồi chạy
-cp platform/keycloak/realm/bms-realm.json <keycloak>/data/import/
-cp -r platform/keycloak/themes/dxos-login <keycloak>/themes/
+cp infra/platform/keycloak/realm/bms-realm.json <keycloak>/data/import/
+cp -r infra/platform/keycloak/themes/dxos-login <keycloak>/themes/
 KC_DB=postgres KC_DB_URL=jdbc:postgresql://127.0.0.1:5432/keycloak KC_DB_USERNAME=bamboo_keycloak \
 KC_DB_PASSWORD=keycloak-db-dev KC_HOSTNAME=http://localhost:8080 KC_HTTP_ENABLED=true \
 KC_BOOTSTRAP_ADMIN_USERNAME=kcadmin KC_BOOTSTRAP_ADMIN_PASSWORD=kcadmin-dev DEMO_PASSWORD=demo-password \
@@ -414,10 +437,10 @@ Trino). Biến môi trường đầy đủ: `services/actions/app/config.py`.
 ### 7. Giao diện
 
 ```bash
-cd apps/web/web
-npm ci
-VITE_KEYCLOAK_URL=http://localhost:8080 VITE_HASURA_URL=http://localhost:8081/v1/graphql npm run dev   # http://localhost:5173
-npm run build        # bản tĩnh trong dist/, phục vụ bằng web server bất kỳ
+pnpm install --frozen-lockfile   # ở gốc repo (workspace pnpm: apps/web, tests/e2e); pnpm ghim ở package.json
+cd apps/web
+VITE_KEYCLOAK_URL=http://localhost:8080 VITE_HASURA_URL=http://localhost:8081/v1/graphql pnpm dev   # http://localhost:5173
+pnpm build           # bản tĩnh trong dist/, phục vụ bằng web server bất kỳ
 ```
 
 Mở <http://localhost:5173> và đăng nhập bằng tài khoản demo.
@@ -440,7 +463,7 @@ và realm Keycloak.
 - **Hạn mức duyệt mẫu:** công ty thành viên dưới 50 triệu quản lý trực tiếp duyệt; 50–500 triệu thêm giám đốc công ty; từ 500
   triệu thêm Tổng giám đốc. Đơn vị trực thuộc tập đoàn từ 50 triệu lên thẳng Tổng giám đốc. Bệnh viện X: thiết bị y tế luôn hai
   bước.
-- **Dọn dữ liệu thử:** `scripts/demo_cleanup.sh` (xem trước), `scripts/demo_cleanup.sh --apply` (xóa đề nghị do người dùng lập
+- **Dọn dữ liệu thử:** `tools/demo_cleanup.sh` (xem trước), `tools/demo_cleanup.sh --apply` (xóa đề nghị do người dùng lập
   khi thử).
 
 ### Tài khoản demo

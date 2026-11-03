@@ -21,33 +21,33 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.13.6"
+      - name: Khóa phụ thuộc Python (uv.lock khớp pyproject)
+        run: |
+          uv lock --check
+          uv lock --check --project services/ocr
       - name: Giấy phép từng tệp (REUSE 3.3)
-        run: uvx --from 'reuse[charset-normalizer]==5.1.1' reuse lint
+        run: uv run --frozen --only-group lint reuse lint
       - name: Python (ruff)
         run: |
-          uvx ruff check services --select E,F,W,B --ignore E501
-          uvx ruff check . --select I
-          uvx ruff format --check .
+          uv run --frozen --only-group lint ruff check services packages --select E,F,W,B --ignore E501
+          uv run --frozen --only-group lint ruff check . --select I
+          uv run --frozen --only-group lint ruff format --check .
       - name: Docker Compose hợp lệ
         run: docker compose --profile test --profile scan config -q
+      - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: apps/web/web/package-lock.json
-      - name: Giao diện (lint, type-check, build)
-        working-directory: apps/web/web
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Giao diện và kiểm thử đầu–cuối (lint, định dạng, type-check, build)
         run: |
-          npm ci --no-audit --no-fund
-          npm run lint
-          npm run format:check
-          npm run build
+          pnpm install --frozen-lockfile
+          pnpm turbo run lint format:check build
       - name: Giấy phép phụ thuộc production của giao diện
-        working-directory: apps/web/web
-        run: |
-          npx --yes license-checker@25 --production --excludePrivatePackages \
-            --excludePackages "bpmn-js@$(node -p "require('./node_modules/bpmn-js/package.json').version")" \
-            --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;BlueOak-1.0.0;CC0-1.0;MIT OR CC0-1.0'
+        run: node tools/ci/check_licenses.mjs apps/web
       - name: Tài liệu (cảnh báo là lỗi)
         run: make -C docs check
 
@@ -64,7 +64,7 @@ jobs:
       - name: Một lệnh dựng toàn bộ hệ thống
         run: time docker compose up -d
       - name: Chờ sẵn sàng
-        run: scripts/ci/wait-ready.sh 1200
+        run: tools/ci/wait-ready.sh 1200
       - name: Đăng nhập thật mọi tài khoản demo (Keycloak + Hasura webhook)
         run: make test-auth
       - name: Kiểm thử CSDL
@@ -73,24 +73,24 @@ jobs:
         run: make test-seed
       - name: Kiểm thử tích hợp (Hasura, Flowable, SeaweedFS, OpenBao)
         run: make test-actions
+      - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: apps/web/web/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - name: Kiểm thử đầu–cuối qua giao diện (Playwright)
-        working-directory: apps/web/web
         run: |
-          npm ci --no-audit --no-fund
-          npx playwright install --with-deps chromium
-          npm run test:e2e
+          pnpm install --frozen-lockfile --filter @bamboo/e2e
+          pnpm --filter @bamboo/e2e exec playwright install --with-deps chromium
+          pnpm --filter @bamboo/e2e test:e2e
       - name: Kiểm thử cổng API (token tại biên, WAF, chặn dịch vụ nội bộ, giới hạn tần suất)
-        run: scripts/ci/gateway-smoke.sh
+        run: tools/ci/gateway-smoke.sh
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
-          path: apps/web/web/playwright-report
+          path: tests/e2e/playwright-report
       - name: Tài nguyên sử dụng
         if: always()
         run: |

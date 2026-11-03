@@ -8,13 +8,15 @@ from typing import TYPE_CHECKING
 
 import psycopg
 
-from .flowable import FlowableClient
+from bamboo_common.flowable import FlowableClient
+
 from .storage import Storage
 
 if TYPE_CHECKING:
+    from bamboo_common.ollama import Ollama
+    from bamboo_common.pii import PiiCipher
+
     from .hr_account import KeycloakUsers
-    from .ollama import Ollama
-    from .pii import PiiCipher
     from .receipts import Signer
     from .search import Meili
     from .trino import Trino

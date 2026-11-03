@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Cấu hình gốc dùng chung qua `extends` (anchor YAML không đi xuyên các tệp `include`).
+# Tệp này KHÔNG được include: actions-base, hasura-base không phải dịch vụ chạy thật.
+
+services:
+  actions-base:
+    build:
+      context: ../..
+      dockerfile: infra/docker/python.Dockerfile
+      args:
+        APP_DIR: services/actions
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-actions:${BAMBOO_TAG:-dev}
+    environment:
+      BAMBOO_ENV: ${BAMBOO_ENV:-development}
+      DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms
+      ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
+      FLOWABLE_URL: http://flowable:8080/flowable-rest/service
+      FLOWABLE_USER: ${FLOWABLE_ADMIN:-rest-admin}
+      FLOWABLE_PASSWORD: ${FLOWABLE_ADMIN_PASSWORD:-test}
+      HASURA_URL: http://hasura:8080
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
+      KEYCLOAK_ISSUER: ${KEYCLOAK_URL:-http://localhost:8000}/realms/bms
+      S3_ENDPOINT: http://seaweedfs:8333
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8000}
+      BAO_ADDR: http://openbao:8200
+      BAO_APPROLE_FILE: /run/bms/approle.json
+      CLAMAV_HOST: ${CLAMAV_HOST:-}
+      SCAN_REQUIRE_CLAMAV: ${SCAN_REQUIRE_CLAMAV:-false}
+      SMTP_HOST: ${SMTP_HOST-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-Bamboo DX-OS <no-reply@bamboo.local>}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SMS_GATEWAY_URL: ${SMS_GATEWAY_URL:-}
+      SMS_GATEWAY_TOKEN: ${SMS_GATEWAY_TOKEN:-}
+      WEBHOOK_ALLOW_PRIVATE: ${WEBHOOK_ALLOW_PRIVATE:-false}
+      SIGNATURE_ONLINE: ${SIGNATURE_ONLINE:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
+      SETUP_ALLOW_UNVERIFIED: ${SETUP_ALLOW_UNVERIFIED:-true}
+      TRINO_URL: https://trino:8443
+      TRINO_CA_FILE: /run/bms/trino-ca.pem
+      OLLAMA_URL: ${OLLAMA_URL-http://ollama:11434}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
+      AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
+      AI_CPU_MODELS: ${AI_CPU_MODELS:-bge-m3}
+
+  hasura-base:
+    image: hasura/graphql-engine:v2.51.0-ce
+    environment:
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
+      HASURA_GRAPHQL_CORS_DOMAIN: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log
+      ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
+      HASURA_GRAPHQL_AUTH_HOOK_MODE: GET
