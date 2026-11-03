@@ -150,8 +150,14 @@ def create_transfer_request(conn: psycopg.Connection, session: dict, args: dict,
     bind_session(conn, session)
     request_id = conn.execute(
         "SELECT hr.create_transfer_request(%s, %s, %s, %s, %s, %s)",
-        (person, args["person_id"], args["source_position_id"], args["target_unit_id"],
-         args["effective_date"], args["reason"]),
+        (
+            person,
+            args["person_id"],
+            args["source_position_id"],
+            args["target_unit_id"],
+            args["effective_date"],
+            args["reason"],
+        ),
     ).fetchone()[0]
     return _transfer_result(conn, str(request_id))
 
@@ -188,8 +194,15 @@ def create_transfer_out(conn: psycopg.Connection, session: dict, args: dict, _ct
     bind_session(conn, session)
     request_id = conn.execute(
         "SELECT hr.create_transfer_out(%s, %s, %s, %s, %s, %s, %s)",
-        (person, args["person_id"], args["source_position_id"], args["target_tenant_id"],
-         args["target_unit_id"], args["effective_date"], args["reason"]),
+        (
+            person,
+            args["person_id"],
+            args["source_position_id"],
+            args["target_tenant_id"],
+            args["target_unit_id"],
+            args["effective_date"],
+            args["reason"],
+        ),
     ).fetchone()[0]
     return _leg_result(conn, "hr.transfer_out", str(request_id))
 
@@ -231,9 +244,9 @@ def transfer_target_units(conn: psycopg.Connection, session: dict, args: dict, _
     tenant = session.get("x-hasura-tenant-id")
     session_identity(session, tenant)
     bind_session(conn, session)
-    if not conn.execute(
-        "SELECT core.tenant_root(%s) = core.tenant_root(%s)", (args["tenant_id"], tenant)
-    ).fetchone()[0]:
+    if not conn.execute("SELECT core.tenant_root(%s) = core.tenant_root(%s)", (args["tenant_id"], tenant)).fetchone()[
+        0
+    ]:
         raise ActionError("Tenant không cùng tập đoàn", "forbidden", 403)
     rows = conn.execute(
         """SELECT u.id, u.name, u.path::text FROM core.org_unit u
@@ -299,12 +312,25 @@ def personnel_decisions(conn: psycopg.Connection, session: dict, _args: dict, _c
            ORDER BY d.created_at DESC LIMIT 500""",
         (tenant, person, person, person),
     ).fetchall()
-    keys = ("id", "doc_no", "decision_type", "assignment_type", "effective_date", "reason", "created_at",
-            "person_name", "employee_code", "issuer_name", "source_position", "source_unit", "target_position",
-            "target_unit")
+    keys = (
+        "id",
+        "doc_no",
+        "decision_type",
+        "assignment_type",
+        "effective_date",
+        "reason",
+        "created_at",
+        "person_name",
+        "employee_code",
+        "issuer_name",
+        "source_position",
+        "source_unit",
+        "target_position",
+        "target_unit",
+    )
     items = []
     for row in rows:
-        item = dict(zip(keys, row))
+        item = dict(zip(keys, row, strict=True))
         for key in ("id", "effective_date", "created_at"):
             item[key] = str(item[key])
         items.append(item)
@@ -346,9 +372,7 @@ def personnel_decision_context(conn: psycopg.Connection, session: dict, _args: d
         (tenant, person),
     ).fetchall()
     return {
-        "people": [
-            {"id": str(i), "full_name": n, "employee_code": c, "assignments": a} for i, n, c, a in people
-        ],
+        "people": [{"id": str(i), "full_name": n, "employee_code": c, "assignments": a} for i, n, c, a in people],
         "positions": [
             {"id": str(i), "name": n, "unit": u, "is_head": h, "holder": holder} for i, n, u, h, holder in positions
         ],

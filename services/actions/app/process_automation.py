@@ -243,8 +243,18 @@ def process_automation_enable(conn: psycopg.Connection, session: dict, args: dic
                                                   flowable_definition_id, definition_key, actions, activated_by,
                                                   events, webhook_sha256)
                VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s) RETURNING id""",
-            (tenant, m["id"], latest["version"], deployment["id"], definition, definition_key,
-             json.dumps(actions, ensure_ascii=False), person, events, webhook),
+            (
+                tenant,
+                m["id"],
+                latest["version"],
+                deployment["id"],
+                definition,
+                definition_key,
+                json.dumps(actions, ensure_ascii=False),
+                person,
+                events,
+                webhook,
+            ),
         ).fetchone()[0]
     except Exception:
         ctx.flowable.delete_deployment(deployment["id"])
@@ -272,7 +282,9 @@ def process_automation_disable(conn: psycopg.Connection, session: dict, args: di
 
 def _start(conn, flowable: FlowableClient, automation: tuple, trigger: str, started_by, variables: dict, tenant) -> str:
     """Khởi chạy một lần chạy mới và ghi lại. automation = (id, deployment, definition, version)."""
-    instance = flowable.start_definition(automation[2], {**variables, **({"initiator": str(started_by)} if started_by else {})})
+    instance = flowable.start_definition(
+        automation[2], {**variables, **({"initiator": str(started_by)} if started_by else {})}
+    )
     row = (
         conn.cursor(row_factory=dict_row)
         .execute(
@@ -345,8 +357,11 @@ def _scalar_variables(payload: dict, limit: int = 20) -> dict:
     for key, value in (payload or {}).items():
         if len(out) >= limit:
             break
-        if isinstance(key, str) and VARIABLE.match(key) and key not in ("initiator", "event") and (
-            isinstance(value, bool | int | float) or (isinstance(value, str) and len(value) <= 500)
+        if (
+            isinstance(key, str)
+            and VARIABLE.match(key)
+            and key not in ("initiator", "event")
+            and (isinstance(value, bool | int | float) or (isinstance(value, str) and len(value) <= 500))
         ):
             out[key] = value
     return out
@@ -420,7 +435,9 @@ def _coerce(text: str):
 
 def exec_notify(conn, settings, run: str, job: dict, params: dict, variables: dict) -> dict:
     message = render(params["message"], variables)[:500]
-    count = conn.execute("SELECT wf.automation_notify(%s, %s, %s) AS n", (run, job["elementId"], message)).fetchone()["n"]
+    count = conn.execute("SELECT wf.automation_notify(%s, %s, %s) AS n", (run, job["elementId"], message)).fetchone()[
+        "n"
+    ]
     conn.execute("UPDATE wf.automation_run SET notified = notified + %s WHERE id = %s", (count, run))
     return {f"notified_{job['elementId']}": count}
 
@@ -437,10 +454,16 @@ def exec_http(conn, settings, run: str, job: dict, params: dict, variables: dict
         try:
             payload = json.loads(body)
         except ValueError as exc:
-            raise delivery.DeliveryError("Nội dung gửi sau khi thay biến không phải JSON hợp lệ", permanent=True) from exc
+            raise delivery.DeliveryError(
+                "Nội dung gửi sau khi thay biến không phải JSON hợp lệ", permanent=True
+            ) from exc
     resp = delivery.pinned_request(params["method"], url, payload, settings.webhook_allow_private)
     element = job["elementId"]
-    return {f"{element}_status": resp.status_code, f"{element}_ok": 200 <= resp.status_code < 300, f"{element}_body": resp.text[:2000]}
+    return {
+        f"{element}_status": resp.status_code,
+        f"{element}_ok": 200 <= resp.status_code < 300,
+        f"{element}_body": resp.text[:2000],
+    }
 
 
 EXECUTORS = {"notify": exec_notify, "http": exec_http, "setvar": exec_setvar}
@@ -457,8 +480,12 @@ def _run_for_job(conn: psycopg.Connection, job: dict, automation: dict) -> str:
         conn.execute(
             """INSERT INTO wf.automation_run (tenant_id, automation_id, flowable_instance_id, trigger, variables)
                VALUES (%s, %s, %s, 'TIMER', %s::jsonb) RETURNING id""",
-            (automation["tenant_id"], automation["id"], job["processInstanceId"],
-             json.dumps(variables, ensure_ascii=False)),
+            (
+                automation["tenant_id"],
+                automation["id"],
+                job["processInstanceId"],
+                json.dumps(variables, ensure_ascii=False),
+            ),
         ).fetchone()["id"]
     )
 
@@ -519,12 +546,33 @@ def dispatch_events(conn: psycopg.Connection, flowable: FlowableClient) -> int:
             ).fetchall()
             variables = {**_scalar_variables(message["payload"]), "event": name}
             for target in targets:
-                _start(conn, flowable, (target["id"], target["flowable_deployment_id"], target["flowable_definition_id"],
-                                        target["version"]), "EVENT", None, variables, message["tenant_id"])
+                _start(
+                    conn,
+                    flowable,
+                    (
+                        target["id"],
+                        target["flowable_deployment_id"],
+                        target["flowable_definition_id"],
+                        target["version"],
+                    ),
+                    "EVENT",
+                    None,
+                    variables,
+                    message["tenant_id"],
+                )
             conn.execute(
                 "SELECT msg.complete(%s, %s::jsonb)",
-                (message["id"], json.dumps({"channel": "event", "provider_id": f"started:{len(targets)}",
-                                            "delivered_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "alg": "none"})),
+                (
+                    message["id"],
+                    json.dumps(
+                        {
+                            "channel": "event",
+                            "provider_id": f"started:{len(targets)}",
+                            "delivered_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                            "alg": "none",
+                        }
+                    ),
+                ),
             )
             conn.commit()
             handled += 1

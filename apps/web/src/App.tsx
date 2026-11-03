@@ -70,6 +70,7 @@ import {
   PurchaseRequestShow,
 } from "./pages/purchase-requests";
 import { SearchPage } from "./pages/search";
+import { ExternalModulePage } from "./pages/external";
 import { RecoveryPage, SetupPage } from "./pages/setup";
 import { ModulesProvider } from "./modules/context";
 import { RequireModule } from "./modules/RequireModule";
@@ -403,6 +404,7 @@ function App() {
                     <Route path="/admin/catalog" element={<CatalogPage />} />
                     <Route path="/admin/modules" element={<ModulesPage />} />
                     <Route path="/admin/company" element={<CompanyPage />} />
+                    <Route path="/x/:code/*" element={<ExternalModulePage />} />
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                   <Route

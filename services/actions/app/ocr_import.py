@@ -53,8 +53,14 @@ def match_items(rows: list[dict], items: list[dict]) -> list[dict | None]:
     for it in items:
         hit = by_code.get((it.get("item_code") or "").casefold()) or by_name.get(ocr_fields.fold(it["description"]))
         out.append(
-            {"id": str(hit["id"]), "code": hit["code"], "name": hit["name"], "uom": hit["uom"],
-             "category_code": hit["category_code"], "ref_price": str(hit["ref_price"]) if hit["ref_price"] is not None else None}
+            {
+                "id": str(hit["id"]),
+                "code": hit["code"],
+                "name": hit["name"],
+                "uom": hit["uom"],
+                "category_code": hit["category_code"],
+                "ref_price": str(hit["ref_price"]) if hit["ref_price"] is not None else None,
+            }
             if hit
             else None
         )
@@ -81,12 +87,27 @@ def ocr_document(conn: psycopg.Connection, session: dict, args: dict, ctx: Conte
         (att["id"],),
     ).fetchone()
     if ocr is None:
-        return {**base, "phase": "UNSUPPORTED", "text": None, "parsed": None,
-                "message": "Loại tệp này không đọc được chữ; dùng ảnh PNG, JPEG hoặc PDF"}
-    progress = {"pages_total": ocr["pages_total"], "pages_done": ocr["pages_done"], "note": ocr["note"], "error": ocr["error"]}
+        return {
+            **base,
+            "phase": "UNSUPPORTED",
+            "text": None,
+            "parsed": None,
+            "message": "Loại tệp này không đọc được chữ; dùng ảnh PNG, JPEG hoặc PDF",
+        }
+    progress = {
+        "pages_total": ocr["pages_total"],
+        "pages_done": ocr["pages_done"],
+        "note": ocr["note"],
+        "error": ocr["error"],
+    }
     if ocr["status"] not in TERMINAL:
-        return {**base, "phase": {"PENDING": "QUEUED", "RUNNING": "OCR", "ERROR": "ERROR"}[ocr["status"]], "ocr": progress,
-                "text": None, "parsed": None}
+        return {
+            **base,
+            "phase": {"PENDING": "QUEUED", "RUNNING": "OCR", "ERROR": "ERROR"}[ocr["status"]],
+            "ocr": progress,
+            "text": None,
+            "parsed": None,
+        }
     if ocr["status"] == "DONE":
         text = "\n".join(ocr["page_texts"])
     else:  # PDF đã có chữ: lấy lớp chữ sẵn có
@@ -102,9 +123,12 @@ def ocr_document(conn: psycopg.Connection, session: dict, args: dict, ctx: Conte
     text = text[:MAX_TEXT]
     parsed = ocr_fields.parse_document(text)
     tenant = att["tenant_id"]
-    partners = cur.execute("SELECT id, code, name, tax_code FROM mdm.partner WHERE tenant_id = %s AND is_active", (tenant,)).fetchall()
+    partners = cur.execute(
+        "SELECT id, code, name, tax_code FROM mdm.partner WHERE tenant_id = %s AND is_active", (tenant,)
+    ).fetchall()
     catalog = cur.execute(
-        "SELECT id, code, name, uom, category_code, ref_price FROM mdm.item WHERE tenant_id = %s AND is_active", (tenant,)
+        "SELECT id, code, name, uom, category_code, ref_price FROM mdm.item WHERE tenant_id = %s AND is_active",
+        (tenant,),
     ).fetchall()
     supplier = parsed["supplier_name"]["value"] if parsed["supplier_name"] else None
     tax = parsed["supplier_tax_code"]["value"] if parsed["supplier_tax_code"] else None
