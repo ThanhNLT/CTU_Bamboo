@@ -55,9 +55,7 @@ def bind(trace_id: str | None = None, tenant: str | None = None, person: str | N
 class DbHandler(logging.Handler):
     """Đệm bản ghi log trong bộ nhớ và ghi theo lô vào CSDL ở một luồng nền."""
 
-    def __init__(
-        self, service: str, database_url: str, level: int = logging.INFO, maxsize: int = 5000, interval: float = 2.0
-    ):
+    def __init__(self, service: str, database_url: str, level: int = logging.INFO, maxsize: int = 5000, interval: float = 2.0):
         super().__init__(level)
         self.service, self.database_url, self.interval = service, database_url, interval
         self.queue: queue.Queue[tuple] = queue.Queue(maxsize)
@@ -202,9 +200,7 @@ def ingest(conn: psycopg.Connection, events: list[dict]) -> int:
 def _reader(conn: psycopg.Connection, session: dict) -> str:
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)
-    if not conn.execute(
-        "SELECT 1 FROM audit.v_reader WHERE tenant_id = %s AND person_id = %s", (tenant, person)
-    ).fetchone():
+    if not conn.execute("SELECT 1 FROM audit.v_reader WHERE tenant_id = %s AND person_id = %s", (tenant, person)).fetchone():
         raise ActionError("Cần quyền audit.read để xem nhật ký hệ thống", "forbidden", 403)
     return tenant
 
@@ -233,21 +229,12 @@ def obs_logs(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context)
     rows = conn.execute(
         f"""SELECT id, to_char(ts AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM HH24:MI:SS.MS'), service, level, logger,
                    message, trace_id, fields
-            FROM obs.log_event WHERE {" AND ".join(clauses)}
-            ORDER BY {"ts ASC" if args.get("trace_id") else "ts DESC"}, id DESC LIMIT %(limit)s""",
+            FROM obs.log_event WHERE {' AND '.join(clauses)}
+            ORDER BY {'ts ASC' if args.get('trace_id') else 'ts DESC'}, id DESC LIMIT %(limit)s""",
         params,
     ).fetchall()
     events = [
-        {
-            "id": r[0],
-            "ts": r[1],
-            "service": r[2],
-            "level": r[3],
-            "logger": r[4],
-            "message": r[5],
-            "trace_id": r[6],
-            "fields": r[7],
-        }
+        {"id": r[0], "ts": r[1], "service": r[2], "level": r[3], "logger": r[4], "message": r[5], "trace_id": r[6], "fields": r[7]}
         for r in rows
     ]
     counts = conn.execute(

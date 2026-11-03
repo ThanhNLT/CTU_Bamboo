@@ -24,7 +24,6 @@ entry() {
     entry keycloakClient "${BAMBOO_KEYCLOAK_CLIENT:-}"
     entry hasuraUrl "${BAMBOO_HASURA_URL:-}"
     entry setupUrl "${BAMBOO_SETUP_URL:-}"
-    entry extUrl "${BAMBOO_EXT_URL:-}"
     echo "};"
 } > "$out"
 echo "40-bamboo-config: đã ghi $out"

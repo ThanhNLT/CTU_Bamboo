@@ -205,7 +205,7 @@ def parse(text: str, title: str = "") -> ProcessSpec:
     ended = False
     in_steps = not use_bullets
     pending_note: list[str] = []
-    for i, (ln, f) in enumerate(zip(lines, folded, strict=True)):
+    for i, (ln, f) in enumerate(zip(lines, folded)):
         line, fl = ln.strip(), f.strip()
         if not line:
             continue

@@ -19,29 +19,19 @@ DOC_TYPES = {
     "DELIVERY": ("phiếu giao nhận", "phiếu xuất kho", "biên bản giao nhận", "phiếu giao hàng"),
     "REQUEST": ("phiếu đề nghị mua sắm", "đề nghị mua sắm"),
 }
-DOC_LABELS = {
-    "QUOTE": "Báo giá",
-    "INVOICE": "Hóa đơn",
-    "DELIVERY": "Phiếu giao nhận",
-    "REQUEST": "Phiếu đề nghị mua sắm",
-    "UNKNOWN": "Chưa nhận ra loại chứng từ",
-}
+DOC_LABELS = {"QUOTE": "Báo giá", "INVOICE": "Hóa đơn", "DELIVERY": "Phiếu giao nhận", "REQUEST": "Phiếu đề nghị mua sắm", "UNKNOWN": "Chưa nhận ra loại chứng từ"}
 
 _NUM = r"\d{1,3}(?:\s*[.,]\s*\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?"
 _DATE = re.compile(r"(?<!\d)(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(20\d{2})(?!\d)")
 _DATE_WORDS = re.compile(r"ngày\s+(\d{1,2})\s+tháng\s+(\d{1,2})\s+năm\s+(20\d{2})", re.I)
 _DOC_NO = re.compile(r"(?:^|\s)Số\s*(?:chứng từ|hóa đơn)?\s*[:.]\s*([A-Z0-9][A-Z0-9\-/.]{3,24})", re.I)
 _TAX = re.compile(r"(?:MST|M\.S\.T|mã số thuế)\s*[:.]?\s*(\d(?:\s?\d){9}(?:\s?-\s?\d{3})?)(?!\d)", re.I)
-_ITEM_ROW = re.compile(
-    rf"^\s*(\d{{1,3}})\s+(?P<desc>.+?)\s+(?P<uom>[^\W\d_][\w./]{{0,9}})\s+(?P<qty>{_NUM})\s+(?P<price>{_NUM})\s+(?P<amount>{_NUM})\s*$"
-)
+_ITEM_ROW = re.compile(rf"^\s*(\d{{1,3}})\s+(?P<desc>.+?)\s+(?P<uom>[^\W\d_][\w./]{{0,9}})\s+(?P<qty>{_NUM})\s+(?P<price>{_NUM})\s+(?P<amount>{_NUM})\s*$")
 _CODE = re.compile(r"\b([A-Z]{2,5}(?:-[A-Z0-9]{1,12}){1,3})\b")
 _TOTAL_NET = re.compile(rf"(?:cộng tiền hàng|cộng tiền|thành tiền trước thuế)\D{{0,12}}({_NUM})\s*$", re.I)
 _VAT = re.compile(rf"thuế\s*(?:GTGT|VAT)?\s*(\d{{1,2}})\s*%\D{{0,6}}({_NUM})\s*$", re.I)
 _TOTAL = re.compile(rf"(?:tổng cộng|tổng thanh toán|tổng tiền)\D{{0,25}}({_NUM})\s*$", re.I)
-_LEGAL = re.compile(
-    r"^(công ty|cty|doanh nghiệp|dn|hợp tác xã|tập đoàn|tổng công ty|chi nhánh|nhà máy|bệnh viện|trung tâm)\b", re.I
-)
+_LEGAL = re.compile(r"^(công ty|cty|doanh nghiệp|dn|hợp tác xã|tập đoàn|tổng công ty|chi nhánh|nhà máy|bệnh viện|trung tâm)\b", re.I)
 
 
 def vn_number(text: str) -> Decimal | None:
@@ -130,12 +120,7 @@ def _items(lines: list[str]) -> list[dict]:
         desc = m.group("desc").strip()
         note = None
         nxt = lines[i + 1] if i + 1 < len(lines) else ""
-        if (
-            nxt
-            and not _ITEM_ROW.match(nxt)
-            and not re.match(r"^(cộng|thuế|tổng|bằng chữ)", nxt, re.I)
-            and len(nxt) < 90
-        ):
+        if nxt and not _ITEM_ROW.match(nxt) and not re.match(r"^(cộng|thuế|tổng|bằng chữ)", nxt, re.I) and len(nxt) < 90:
             note = nxt.strip()
         code_m = _CODE.search(note or "") or _CODE.search(desc)
         consistent = abs(qty * price - amount) <= max(Decimal("1"), amount * Decimal("0.001"))

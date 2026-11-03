@@ -317,7 +317,5 @@ def test_tai_khoan_demo_chuyen_tiep_nhan(conn):
         seat = user.seats[0]
         rows = conn.execute("SELECT tenant_code, person_id FROM core.account_tenants(%s)", (str(user.id),)).fetchall()
         assert [r[0] for r in rows] == [seat.tenant], user.username
-        holder = one(
-            conn, "SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position)
-        )
+        holder = one(conn, "SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position))
         assert rows[0][1] == holder, user.username

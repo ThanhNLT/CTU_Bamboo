@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import json
 import pathlib
 import time
+import json
 import uuid
 
 import psycopg
@@ -49,12 +49,8 @@ def world(conn, org):
         )
     found = ids(conn, org("tp"), org("gd"), org("nv"), org("PHONG"), org("CTY"), "TDX")
     return {
-        "tp": found[org("tp")],
-        "gd": found[org("gd")],
-        "nv": found[org("nv")],
-        "unit": found[org("PHONG")],
-        "company": found[org("CTY")],
-        "tenant": found["TDX"],
+        "tp": found[org("tp")], "gd": found[org("gd")], "nv": found[org("nv")],
+        "unit": found[org("PHONG")], "company": found[org("CTY")], "tenant": found["TDX"],
     }
 
 
@@ -65,12 +61,8 @@ def session(person: str, tenant: str) -> dict:
 def test_trinh_tu_thiet_ke_phat_hanh_giam_sat(app_conn, world):
     t = world["tenant"]
     tp, gd, nv = (session(world[k], t) for k in ("tp", "gd", "nv"))
-    save = {
-        "process_key": f"gs_{uuid.uuid4().hex[:8]}",
-        "name": "Quy trình phòng",
-        "bpmn_xml": SAMPLE,
-        "owner_unit_id": world["unit"],
-    }
+    save = {"process_key": f"gs_{uuid.uuid4().hex[:8]}", "name": "Quy trình phòng", "bpmn_xml": SAMPLE,
+            "owner_unit_id": world["unit"]}
     for outsider in (nv, gd):
         with pytest.raises(ActionError) as err:
             process_design.process_model_save(app_conn, outsider, save, None)
@@ -118,28 +110,22 @@ def test_trinh_tu_thiet_ke_phat_hanh_giam_sat(app_conn, world):
     request_id = process_design.process_change_request_create(
         app_conn, gd, {"id": model, "message": "Thêm bước pháp chế trước khi duyệt"}, None
     )["id"]
-    assert (
-        app_conn.execute(
-            "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_CHANGE_REQUESTED'",
-            (world["tp"],),
-        ).fetchone()[0]
-        == 1
-    )
-    assert [
-        r["id"] for r in process_design.process_model_get(app_conn, gd, {"id": model}, None)["change_requests"]
-    ] == [request_id]
+    assert app_conn.execute(
+        "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_CHANGE_REQUESTED'",
+        (world["tp"],),
+    ).fetchone()[0] == 1
+    assert [r["id"] for r in process_design.process_model_get(app_conn, gd, {"id": model}, None)["change_requests"]] == [
+        request_id
+    ]
     assert len(process_design.process_model_get(app_conn, tp, {"id": model}, None)["change_requests"]) == 1
     with pytest.raises(ActionError) as err:
         process_design.process_change_request_resolve(app_conn, gd, {"id": request_id}, None)
     assert err.value.status == 403, "người giám sát không tự xử lý yêu cầu của mình"
     process_design.process_change_request_resolve(app_conn, tp, {"id": request_id, "note": "Đã thêm bước"}, None)
-    assert (
-        app_conn.execute(
-            "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_CHANGE_RESOLVED'",
-            (world["gd"],),
-        ).fetchone()[0]
-        == 1
-    )
+    assert app_conn.execute(
+        "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_CHANGE_RESOLVED'",
+        (world["gd"],),
+    ).fetchone()[0] == 1
     with pytest.raises(ActionError):
         process_design.process_change_request_resolve(app_conn, tp, {"id": request_id}, None)
 
@@ -152,7 +138,7 @@ NS = (
 )
 
 
-def auto_bpmn(start: str = '<startEvent id="s"/>', audience: str = "UNIT") -> str:
+def auto_bpmn(start: str = "<startEvent id=\"s\"/>", audience: str = "UNIT") -> str:
     return f"""<definitions {NS}><process id="p" name="Nhắc việc" isExecutable="true">
   {start}
   <serviceTask id="n1" name="Nhắc cả phòng" bamboo:action="notify" bamboo:audience="{audience}"
@@ -169,9 +155,7 @@ def auto_bpmn(start: str = '<startEvent id="s"/>', audience: str = "UNIT") -> st
 def test_chuyen_doi_sang_dinh_nghia_tu_dong():
     xml, actions, problems = process_automation.automation_xml(auto_bpmn(), "auto_x_p")
     assert problems == [] and actions["n1"] == {
-        "action": "notify",
-        "audience": "UNIT",
-        "message": "Nhớ cập nhật tiến độ tuần này",
+        "action": "notify", "audience": "UNIT", "message": "Nhớ cập nhật tiến độ tuần này"
     }
     assert 'flowable:type="external-worker"' in xml and 'flowable:topic="bamboo.notify"' in xml
 
@@ -181,31 +165,18 @@ def test_chuyen_doi_sang_dinh_nghia_tu_dong():
     assert any("chưa chọn hành động" in p for p in process_automation.automation_xml(no_action, "auto_x_p")[2])
     evil = auto_bpmn().replace("${amount &gt; 5}", "${execution.setVariable('a', 1)}")
     assert any("Điều kiện" in p for p in process_automation.automation_xml(evil, "auto_x_p")[2])
-    fast = auto_bpmn(
-        '<startEvent id="s"><timerEventDefinition><timeCycle>R/PT10S</timeCycle></timerEventDefinition></startEvent>'
-    )
+    fast = auto_bpmn('<startEvent id="s"><timerEventDefinition><timeCycle>R/PT10S</timeCycle></timerEventDefinition></startEvent>')
     assert any("tối thiểu" in p for p in process_automation.automation_xml(fast, "auto_x_p")[2])
-    hourly = auto_bpmn(
-        '<startEvent id="s"><timerEventDefinition><timeCycle>R/PT1H</timeCycle></timerEventDefinition></startEvent>'
-    )
+    hourly = auto_bpmn('<startEvent id="s"><timerEventDefinition><timeCycle>R/PT1H</timeCycle></timerEventDefinition></startEvent>')
     assert process_automation.automation_xml(hourly, "auto_x_p")[2] == []
-    assert (
-        process_automation.cycle_seconds("R3/P1DT2H") == 93600 and process_automation.cycle_seconds("every day") is None
-    )
+    assert process_automation.cycle_seconds("R3/P1DT2H") == 93600 and process_automation.cycle_seconds("every day") is None
 
 
 def _publish(app_conn, tp, world, xml):
     model = process_design.process_model_save(
-        app_conn,
-        tp,
-        {
-            "process_key": f"tu_dong_{uuid.uuid4().hex[:8]}",
-            "name": "Nhắc việc",
-            "bpmn_xml": xml,
-            "owner_unit_id": world["unit"],
-        },
-        None,
-    )["id"]
+        app_conn, tp,
+        {"process_key": f"tu_dong_{uuid.uuid4().hex[:8]}", "name": "Nhắc việc", "bpmn_xml": xml,
+         "owner_unit_id": world["unit"]}, None)["id"]
     process_design.process_model_publish(app_conn, tp, {"id": model, "audience": "UNIT"}, None)
     return model
 
@@ -242,31 +213,20 @@ def test_bat_chay_tu_dong_khoi_chay_va_he_thong_tu_xu_ly(app_conn, database, wor
     assert err.value.status == 403, "nhân viên chỉ xem, không khởi chạy được"
     assert "người thiết kế" in err.value.message
     with pytest.raises(ActionError):
-        process_automation.process_automation_start(
-            app_conn, tp, {"id": model, "variables": {"execution": {"a": 1}}}, ctx
-        )
+        process_automation.process_automation_start(app_conn, tp, {"id": model, "variables": {"execution": {"a": 1}}}, ctx)
 
-    run = process_automation.process_automation_start(app_conn, tp, {"id": model, "variables": {"amount": 9}}, ctx)[
-        "id"
-    ]
+    run = process_automation.process_automation_start(app_conn, tp, {"id": model, "variables": {"amount": 9}}, ctx)["id"]
     done = _tick_until(
-        database,
-        flowable,
-        lambda: (
-            app_conn.execute("SELECT status FROM wf.automation_run WHERE id = %s", (run,)).fetchone()[0] == "COMPLETED"
-        ),
+        database, flowable,
+        lambda: app_conn.execute("SELECT status FROM wf.automation_run WHERE id = %s", (run,)).fetchone()[0] == "COMPLETED",
     )
     assert done, "hệ thống phải tự xử lý tác vụ thông báo và đưa lần chạy tới kết thúc"
     row = app_conn.execute("SELECT notified, steps FROM wf.automation_run WHERE id = %s", (run,)).fetchone()
     assert row[0] == 2, "báo cho cả phòng (trưởng phòng và chuyên viên)"
     assert "big" in [s["activity_id"] for s in row[1]], "cổng chọn nhánh amount > 5"
-    assert (
-        app_conn.execute(
-            "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_AUTOMATION'",
-            (world["nv"],),
-        ).fetchone()[0]
-        == 1
-    )
+    assert app_conn.execute(
+        "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_AUTOMATION'", (world["nv"],)
+    ).fetchone()[0] == 1
 
     overview = process_design.process_model_get(app_conn, tp, {"id": model}, None)["automation"]
     assert overview["status"] == "ACTIVE" and overview["runs"][0]["status"] == "COMPLETED"
@@ -284,33 +244,21 @@ def test_hen_gio_tu_khoi_chay(app_conn, database, world, flowable, monkeypatch):
     t = world["tenant"]
     tp = session(world["tp"], t)
     ctx = Context(flowable=flowable)
-    start = (
-        '<startEvent id="s"><timerEventDefinition><timeCycle>R2/PT2S</timeCycle></timerEventDefinition></startEvent>'
-    )
+    start = '<startEvent id="s"><timerEventDefinition><timeCycle>R2/PT2S</timeCycle></timerEventDefinition></startEvent>'
     model = _publish(app_conn, tp, world, auto_bpmn(start, "INITIATOR"))
     process_automation.process_automation_enable(app_conn, tp, {"id": model}, ctx)
     try:
         seen = _tick_until(
-            database,
-            flowable,
-            lambda: (
-                app_conn.execute(
-                    """SELECT count(*) FROM wf.automation_run r JOIN wf.process_automation a ON a.id = r.automation_id
-                   WHERE a.model_id = %s AND r.trigger = 'TIMER'""",
-                    (model,),
-                ).fetchone()[0]
-                >= 1
-            ),
+            database, flowable,
+            lambda: app_conn.execute(
+                """SELECT count(*) FROM wf.automation_run r JOIN wf.process_automation a ON a.id = r.automation_id
+                   WHERE a.model_id = %s AND r.trigger = 'TIMER'""", (model,)).fetchone()[0] >= 1,
             seconds=30,
         )
         assert seen, "Flowable tự bắt đầu theo hẹn giờ và hệ thống tự nhận tác vụ"
-        assert (
-            app_conn.execute(
-                "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_AUTOMATION'",
-                (world["tp"],),
-            ).fetchone()[0]
-            >= 1
-        ), "lần chạy hẹn giờ báo cho người bật chạy tự động"
+        assert app_conn.execute(
+            "SELECT count(*) FROM collab.notification WHERE recipient_id = %s AND kind = 'PROCESS_AUTOMATION'", (world["tp"],)
+        ).fetchone()[0] >= 1, "lần chạy hẹn giờ báo cho người bật chạy tự động"
     finally:
         process_automation.process_automation_disable(app_conn, tp, {"id": model}, ctx)
 
@@ -328,9 +276,7 @@ def test_render_va_chuyen_kieu():
     assert process_automation.render("/x/{code}", {"code": "a b/c"}, quote=True) == "/x/a%20b%2Fc"
     assert process_automation.render("{missing}", {}) == "{missing}"
     assert process_automation._coerce("12") == 12 and process_automation._coerce("true") is True
-    assert process_automation._scalar_variables(
-        {"a": 1, "b": {"x": 1}, "bad key": 1, "initiator": "x", "event": "y"}
-    ) == {"a": 1}
+    assert process_automation._scalar_variables({"a": 1, "b": {"x": 1}, "bad key": 1, "initiator": "x", "event": "y"}) == {"a": 1}
 
 
 def test_http_va_setvar_chay_that(app_conn, database, world, flowable, monkeypatch):
@@ -347,30 +293,21 @@ def test_http_va_setvar_chay_that(app_conn, database, world, flowable, monkeypat
     t = world["tenant"]
     tp = session(world["tp"], t)
     ctx = Context(flowable=flowable)
-    xml = (
-        flow_bpmn(
-            '<serviceTask id="v" bamboo:action="setvar" bamboo:name="gia" bamboo:value="{amount}"/>'
-            '<serviceTask id="h" bamboo:action="http" bamboo:url="https://api.example.org/don/{code}" '
-            'bamboo:method="POST" bamboo:body=\'{{"gia": {gia}}}\'/>',
-            '<sequenceFlow id="a" sourceRef="s" targetRef="v"/><sequenceFlow id="b" sourceRef="v" targetRef="h"/>'
-            '<sequenceFlow id="c" sourceRef="h" targetRef="e"/>',
-        )
-        .replace("{{", "{")
-        .replace("}}", "}")
-    )
+    xml = flow_bpmn(
+        '<serviceTask id="v" bamboo:action="setvar" bamboo:name="gia" bamboo:value="{amount}"/>'
+        '<serviceTask id="h" bamboo:action="http" bamboo:url="https://api.example.org/don/{code}" '
+        'bamboo:method="POST" bamboo:body=\'{{"gia": {gia}}}\'/>',
+        '<sequenceFlow id="a" sourceRef="s" targetRef="v"/><sequenceFlow id="b" sourceRef="v" targetRef="h"/>'
+        '<sequenceFlow id="c" sourceRef="h" targetRef="e"/>',
+    ).replace("{{", "{").replace("}}", "}")
     model = _publish(app_conn, tp, world, xml)
     process_automation.process_automation_enable(app_conn, tp, {"id": model}, ctx)
     try:
         run = process_automation.process_automation_start(
-            app_conn, tp, {"id": model, "variables": {"amount": 40, "code": "DH 1"}}, ctx
-        )["id"]
+            app_conn, tp, {"id": model, "variables": {"amount": 40, "code": "DH 1"}}, ctx)["id"]
         assert _tick_until(
-            database,
-            flowable,
-            lambda: (
-                app_conn.execute("SELECT status FROM wf.automation_run WHERE id = %s", (run,)).fetchone()[0]
-                == "COMPLETED"
-            ),
+            database, flowable,
+            lambda: app_conn.execute("SELECT status FROM wf.automation_run WHERE id = %s", (run,)).fetchone()[0] == "COMPLETED",
         )
         assert calls == [("POST", "https://api.example.org/don/DH%201", {"gia": 40})]
     finally:
@@ -390,11 +327,8 @@ def test_http_loi_vinh_vien_danh_dau_that_bai(app_conn, database, world, flowabl
     try:
         run = process_automation.process_automation_start(app_conn, tp, {"id": model}, ctx)["id"]
         assert _tick_until(
-            database,
-            flowable,
-            lambda: (
-                app_conn.execute("SELECT status FROM wf.automation_run WHERE id = %s", (run,)).fetchone()[0] == "FAILED"
-            ),
+            database, flowable,
+            lambda: app_conn.execute("SELECT status FROM wf.automation_run WHERE id = %s", (run,)).fetchone()[0] == "FAILED",
         ), "địa chỉ nội bộ bị chặn (SSRF) nên lần chạy phải thất bại, không được gọi"
     finally:
         process_automation.process_automation_disable(app_conn, tp, {"id": model}, ctx)
@@ -420,12 +354,9 @@ def test_webhook_va_su_kien_khoi_chay(app_conn, database, world, flowable):
         assert err.value.status == 403
         hook = process_automation.process_automation_webhook(app_conn, tp, {"id": model}, ctx)
         assert hook["path"] == f"/hooks/{hook['token']}"
-        assert (
-            app_conn.execute(
-                "SELECT webhook_sha256 FROM wf.process_automation WHERE id = %s", (hook["id"],)
-            ).fetchone()[0]
-            != hook["token"]
-        ), "CSDL chỉ giữ mã băm"
+        assert app_conn.execute(
+            "SELECT webhook_sha256 FROM wf.process_automation WHERE id = %s", (hook["id"],)
+        ).fetchone()[0] != hook["token"], "CSDL chỉ giữ mã băm"
 
         class Pool:
             def connection(self):
@@ -434,9 +365,7 @@ def test_webhook_va_su_kien_khoi_chay(app_conn, database, world, flowable):
         with pytest.raises(ActionError) as err:
             process_automation.start_from_webhook(Pool(), flowable, "sai-ma", {})
         assert err.value.status == 404
-        started = process_automation.start_from_webhook(
-            Pool(), flowable, hook["token"], {"code": "X1", "bad": {"a": 1}}
-        )
+        started = process_automation.start_from_webhook(Pool(), flowable, hook["token"], {"code": "X1", "bad": {"a": 1}})
         assert app_conn.execute(
             "SELECT trigger, variables FROM wf.automation_run WHERE id = %s", (started["id"],)
         ).fetchone() == ("WEBHOOK", {"code": "X1"})
@@ -451,27 +380,18 @@ def test_webhook_va_su_kien_khoi_chay(app_conn, database, world, flowable):
         )
         app_conn.execute("SELECT wf.emit_event(%s, 'ic_order.settled', %s, '{}')", (t, uuid.uuid4().hex))
         assert _tick_until(
-            database,
-            flowable,
-            lambda: (
-                app_conn.execute(
-                    """SELECT count(*) FROM wf.automation_run r JOIN wf.process_automation a ON a.id = r.automation_id
-                   WHERE a.model_id = %s AND r.trigger = 'EVENT' AND r.status = 'COMPLETED'""",
-                    (model,),
-                ).fetchone()[0]
-                == 1
-            ),
+            database, flowable,
+            lambda: app_conn.execute(
+                """SELECT count(*) FROM wf.automation_run r JOIN wf.process_automation a ON a.id = r.automation_id
+                   WHERE a.model_id = %s AND r.trigger = 'EVENT' AND r.status = 'COMPLETED'""", (model,)).fetchone()[0] == 1,
         )
         row = app_conn.execute(
             "SELECT variables FROM wf.automation_run WHERE trigger = 'EVENT' AND automation_id = %s", (hook["id"],)
         ).fetchone()
         assert row[0] == {"doc_no": "DH-9", "event": "ic_order.confirmed"}
-        assert (
-            app_conn.execute(
-                "SELECT count(*) FROM wf.automation_run WHERE automation_id = %s AND trigger = 'EVENT'", (hook["id"],)
-            ).fetchone()[0]
-            == 1
-        ), "sự kiện ngoài phạm vi không khởi chạy"
+        assert app_conn.execute(
+            "SELECT count(*) FROM wf.automation_run WHERE automation_id = %s AND trigger = 'EVENT'", (hook["id"],)
+        ).fetchone()[0] == 1, "sự kiện ngoài phạm vi không khởi chạy"
 
         overview = process_design.process_model_get(app_conn, tp, {"id": model}, None)["automation"]
         assert overview["webhook"] is True and overview["events"] == ["ic_order.confirmed"]

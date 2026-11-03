@@ -12,7 +12,7 @@ import pytest
 
 from conftest import ROOT
 
-SCRIPT = ROOT / "tools" / "gitops" / "reconcile.sh"
+SCRIPT = ROOT / "scripts" / "gitops" / "reconcile.sh"
 
 FAKE_DOCKER = """#!/usr/bin/env bash
 # docker giả: `compose -p P config --hash '*'`, `compose -p P ps --format ...`, `compose -p P up -d ...`
@@ -26,20 +26,7 @@ esac
 
 
 def git(cwd, *args):
-    return subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        check=True,
-        capture_output=True,
-        text=True,
-        env={
-            **os.environ,
-            "GIT_AUTHOR_NAME": "t",
-            "GIT_AUTHOR_EMAIL": "t@t",
-            "GIT_COMMITTER_NAME": "t",
-            "GIT_COMMITTER_EMAIL": "t@t",
-        },
-    ).stdout.strip()
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True, env={**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}).stdout.strip()
 
 
 @pytest.fixture
@@ -73,24 +60,14 @@ def world(tmp_path):
 
 def reconcile(w, *args):
     result = subprocess.run(["bash", str(SCRIPT), *args], env=w["env"], capture_output=True, text=True, timeout=60)
-    state = (
-        json.loads(pathlib.Path(w["env"]["STATE_FILE"]).read_text())
-        if pathlib.Path(w["env"]["STATE_FILE"]).exists()
-        else {}
-    )
-    ups = (
-        [line for line in pathlib.Path(w["env"]["FAKE_LOG"]).read_text().splitlines() if " up " in line]
-        if pathlib.Path(w["env"]["FAKE_LOG"]).exists()
-        else []
-    )
+    state = json.loads(pathlib.Path(w["env"]["STATE_FILE"]).read_text()) if pathlib.Path(w["env"]["STATE_FILE"]).exists() else {}
+    ups = [line for line in pathlib.Path(w["env"]["FAKE_LOG"]).read_text().splitlines() if " up " in line] if pathlib.Path(w["env"]["FAKE_LOG"]).exists() else []
     return result, state, ups
 
 
 def test_lan_dau_ap_dung_roi_khop_thi_khong_lam_gi(world):
     result, state, ups = reconcile(world)
-    assert (
-        result.returncode == 0 and state["status"] == "applied" and len(ups) == 1 and "up -d --remove-orphans" in ups[0]
-    )
+    assert result.returncode == 0 and state["status"] == "applied" and len(ups) == 1 and "up -d --remove-orphans" in ups[0]
     result, state, ups = reconcile(world)
     assert result.returncode == 0 and state["status"] == "in-sync" and len(ups) == 1, "khớp thì không chạy lại"
 
@@ -112,12 +89,7 @@ def test_dich_vu_lech_duoc_dua_ve_dung_cau_hinh(world):
     reconcile(world)
     (world["tmp"] / "ps").write_text("web exited \ndb running unhealthy\n")
     result, state, ups = reconcile(world)
-    assert (
-        state["status"] == "applied"
-        and "web(exited)" in state["note"]
-        and "db(running/unhealthy)" in state["note"]
-        and len(ups) == 2
-    )
+    assert state["status"] == "applied" and "web(exited)" in state["note"] and "db(running/unhealthy)" in state["note"] and len(ups) == 2
 
 
 def test_lich_su_bi_viet_lai_thi_dung_lai(world):
@@ -130,12 +102,7 @@ def test_lich_su_bi_viet_lai_thi_dung_lai(world):
     git(pusher, "commit", "--amend", "-m", "viết lại lịch sử")
     git(pusher, "push", "--force", "origin", "HEAD:main")
     result, state, ups = reconcile(world)
-    assert (
-        result.returncode == 1
-        and state["status"] == "error"
-        and "không phải kế thừa" in state["note"]
-        and len(ups) == 1
-    )
+    assert result.returncode == 1 and state["status"] == "error" and "không phải kế thừa" in state["note"] and len(ups) == 1
 
 
 def test_loi_up_va_dry_run(world):

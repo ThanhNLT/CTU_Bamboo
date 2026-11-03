@@ -449,9 +449,7 @@ class Manager:
         status = _service_status(self.ctx)
         if status is None:
             return
-        missing = [
-            s for c in codes for s in self.catalog[c].services if s in status and status[s].get("running") is None
-        ]
+        missing = [s for c in codes for s in self.catalog[c].services if s in status and status[s].get("running") is None]
         if missing:
             raise ActionError(
                 f"Máy chủ chưa có container {', '.join(sorted(set(missing)))}: chạy lại `make up` "

@@ -175,9 +175,7 @@ def decode_text(data: bytes) -> str:
         return data.decode("cp1258", "replace")
 
 
-def extract_text(
-    tika_url: str, data: bytes, content_type: str, timeout: float = 120.0, limit: int = MAX_FULL_TEXT
-) -> str:
+def extract_text(tika_url: str, data: bytes, content_type: str, timeout: float = 120.0, limit: int = MAX_FULL_TEXT) -> str:
     if content_type in PLAIN_TYPES:
         return " ".join(decode_text(data).split())[:limit]
     return " ".join(extract_lines(tika_url, data, content_type, timeout).split())[:limit]

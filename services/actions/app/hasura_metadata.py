@@ -2335,10 +2335,7 @@ def build(conn: psycopg.Connection) -> dict:
                     "name": "AnchorNow",
                     "fields": [{"name": "anchored", "type": "Boolean!"}, {"name": "seq", "type": "Int"}],
                 },
-                {
-                    "name": "ObsLogs",
-                    "fields": [{"name": "events", "type": "json!"}, {"name": "last_hour", "type": "json!"}],
-                },
+                {"name": "ObsLogs", "fields": [{"name": "events", "type": "json!"}, {"name": "last_hour", "type": "json!"}]},
                 {
                     "name": "BackupRun",
                     "fields": [
@@ -2352,10 +2349,7 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "finished_at", "type": "String!"},
                     ],
                 },
-                {
-                    "name": "QueueRef",
-                    "fields": [{"name": "id", "type": "uuid!"}, {"name": "status", "type": "String!"}],
-                },
+                {"name": "QueueRef", "fields": [{"name": "id", "type": "uuid!"}, {"name": "status", "type": "String!"}]},
                 {
                     "name": "Delivery",
                     "fields": [

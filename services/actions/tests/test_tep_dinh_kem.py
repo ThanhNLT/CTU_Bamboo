@@ -236,7 +236,9 @@ def test_bo_quet_noi_bo_luon_chay_truoc_khi_xac_nhan_sach(hasura, conn, s3):
         att = upload(hasura, i, pr_id, content, name=name, ctype=ctype)
         result = hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]
         assert result["status"] == expected, (name, result)
-        row = conn.execute("SELECT scan_engines, scan_report FROM core.attachment WHERE id = %s", (att,)).fetchone()
+        row = conn.execute(
+            "SELECT scan_engines, scan_report FROM core.attachment WHERE id = %s", (att,)
+        ).fetchone()
         assert row["scan_report"]["checked"], "báo cáo ghi các kiểm tra đã chạy"
         assert s3.read_quarantine(f"{i['TDX']}/proc.purchase_request/{pr_id}/{att}") is None
         download = hasura(DOWNLOAD, {"a": att}, person=i["c"], tenant=i["TDX"])
@@ -265,13 +267,8 @@ def test_bat_buoc_clamav_khong_co_thi_khong_xac_nhan_sach(conn, database, s3):
 
         ticket = call(
             "get_upload_url",
-            {
-                "entity_type": "proc.purchase_request",
-                "entity_id": pr_id,
-                "file_name": "a.pdf",
-                "content_type": "application/pdf",
-                "size_bytes": len(PDF),
-            },
+            {"entity_type": "proc.purchase_request", "entity_id": pr_id, "file_name": "a.pdf",
+             "content_type": "application/pdf", "size_bytes": len(PDF)},
         ).json()
         httpx.put(ticket["upload_url"], content=PDF, headers={"Content-Type": "application/pdf"})
         response = call("confirm_upload", {"attachment_id": ticket["attachment_id"]})
@@ -314,9 +311,7 @@ def test_quet_lai_tep_cu_chua_tung_quet(conn, database, s3, hasura):
     assert rows["doc"]["status"] == "INFECTED" and "Eicar" in rows["doc"]["scan_result"], rows["doc"]
     assert rows["doi"]["status"] == "REJECTED" and "mã băm" in rows["doi"]["scan_result"], rows["doi"]
     assert not s3.document_exists(f"{i['TDX']}/proc.purchase_request/{pr_id}/doc"), "tệp nhiễm bị gỡ khỏi kho"
-    assert (
-        "url" in hasura(DOWNLOAD, {"a": str(made["sach"])}, person=i["c"], tenant=i["TDX"])["data"]["get_download_url"]
-    )
+    assert "url" in hasura(DOWNLOAD, {"a": str(made["sach"])}, person=i["c"], tenant=i["TDX"])["data"]["get_download_url"]
 
 
 def test_khoa_ung_dung_dac_quyen_toi_thieu(s3):

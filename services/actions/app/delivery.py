@@ -84,9 +84,7 @@ def send_email(settings: config.Settings, payload: dict) -> str:
     except smtplib.SMTPRecipientsRefused as exc:
         raise DeliveryError(f"Địa chỉ nhận bị từ chối: {mask(payload['address'])}", permanent=True) from exc
     except smtplib.SMTPResponseException as exc:
-        raise DeliveryError(
-            f"SMTP {exc.smtp_code}", permanent=500 <= exc.smtp_code < 600 and exc.smtp_code != 552
-        ) from exc
+        raise DeliveryError(f"SMTP {exc.smtp_code}", permanent=500 <= exc.smtp_code < 600 and exc.smtp_code != 552) from exc
     except (smtplib.SMTPException, OSError) as exc:
         raise DeliveryError(f"Không gửi được qua SMTP: {type(exc).__name__}") from exc
     return message_id
@@ -132,33 +130,19 @@ def resolve_public(url: str, allow_private: bool = False) -> tuple[str, str, str
     for info in infos:
         ip = ipaddress.ip_address(info[4][0])
         if not allow_private and (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_multicast
-            or ip.is_reserved
-            or ip.is_unspecified
+            ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved or ip.is_unspecified
         ):
             raise DeliveryError("Webhook trỏ tới địa chỉ nội bộ nên bị chặn", permanent=True)
     return parts.hostname, infos[0][4][0], url
 
 
-def pinned_request(
-    method: str, url: str, payload: dict | None, allow_private: bool = False, timeout: float = 10
-) -> httpx.Response:
+def pinned_request(method: str, url: str, payload: dict | None, allow_private: bool = False, timeout: float = 10) -> httpx.Response:
     """Gọi https tới địa chỉ công khai: kết nối thẳng tới IP đã kiểm tra, không theo chuyển hướng."""
     host, ip, url = resolve_public(url, allow_private)
     parts = urllib.parse.urlsplit(url)
     literal = f"[{ip}]" if ":" in ip else ip
-    target = urllib.parse.urlunsplit(
-        (parts.scheme, f"{literal}:{parts.port}" if parts.port else literal, parts.path, parts.query, "")
-    )
-    options = {
-        "headers": {"Host": host},
-        "timeout": timeout,
-        "follow_redirects": False,
-        "extensions": {"sni_hostname": host},
-    }
+    target = urllib.parse.urlunsplit((parts.scheme, f"{literal}:{parts.port}" if parts.port else literal, parts.path, parts.query, ""))
+    options = {"headers": {"Host": host}, "timeout": timeout, "follow_redirects": False, "extensions": {"sni_hostname": host}}
     try:
         if method == "POST":
             return httpx.post(target, json=payload, **options)
@@ -197,9 +181,7 @@ def deliver_one(conn: psycopg.Connection, settings: config.Settings, signer: rec
             raise DeliveryError(f"Chưa hỗ trợ kênh {channel}", permanent=True)
         provider_id = sender(settings, message["payload"])
     except DeliveryError as exc:
-        status = conn.execute("SELECT msg.fail(%s, %s, %s) AS s", (message["id"], str(exc), exc.permanent)).fetchone()[
-            "s"
-        ]
+        status = conn.execute("SELECT msg.fail(%s, %s, %s) AS s", (message["id"], str(exc), exc.permanent)).fetchone()["s"]
         conn.commit()
         log.warning("giao %s %s: %s (%s)", channel, message["id"], exc, status)
         return status
@@ -218,9 +200,7 @@ def deliver_one(conn: psycopg.Connection, settings: config.Settings, signer: rec
 
 
 def run_once(conn: psycopg.Connection, settings: config.Settings, signer: receipts.Signer, limit: int = 20) -> int:
-    messages = conn.execute(
-        "SELECT * FROM msg.lease('notify.', %s, %s)", (f"delivery-{threading.get_ident()}", limit)
-    ).fetchall()
+    messages = conn.execute("SELECT * FROM msg.lease('notify.', %s, %s)", (f"delivery-{threading.get_ident()}", limit)).fetchall()
     conn.commit()
     for message in messages:
         deliver_one(conn, settings, signer, message)

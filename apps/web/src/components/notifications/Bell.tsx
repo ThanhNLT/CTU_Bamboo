@@ -81,7 +81,6 @@ export const NotificationBell = () => {
     else if (n.entity_type === "hr.personnel_decision") go({ to: "/h/decisions" });
     else if (n.entity_type === "wf.process_model" && n.entity_id) go({ to: `/p/process?id=${n.entity_id}` });
     else if (n.entity_type === "core.tenant") go({ to: "/admin/company" });
-    else if (n.entity_type?.startsWith("x_")) go({ to: `/x/${n.entity_type}` });
   };
 
   const content = (

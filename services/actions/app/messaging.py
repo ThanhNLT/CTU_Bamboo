@@ -107,11 +107,8 @@ def save_notification_pref(conn: psycopg.Connection, session: dict, args: dict, 
             (tenant, person, channel, bool(args.get("enabled", True)), address, kinds),
         )
     except psycopg.errors.CheckViolation as exc:
-        hints = {
-            "EMAIL": "Email không đúng định dạng",
-            "SMS": "Số điện thoại gồm 8–15 chữ số, có thể bắt đầu bằng +",
-            "WEBHOOK": "Webhook phải là địa chỉ https",
-        }
+        hints = {"EMAIL": "Email không đúng định dạng", "SMS": "Số điện thoại gồm 8–15 chữ số, có thể bắt đầu bằng +",
+                 "WEBHOOK": "Webhook phải là địa chỉ https"}
         raise ActionError(hints[channel]) from exc
     return {"channel": channel}
 
@@ -143,15 +140,8 @@ def send_test_notification(conn: psycopg.Connection, session: dict, args: dict, 
             tenant,
             f"notify.{channel.lower()}",
             json.dumps(
-                {
-                    "recipient_id": person,
-                    "address": row[0],
-                    "kind": "TEST",
-                    "title": "Thông báo thử từ Bamboo DX-OS",
-                    "body": "Nếu nhận được tin này, kênh đã cấu hình đúng.",
-                    "entity_type": None,
-                    "entity_id": None,
-                },
+                {"recipient_id": person, "address": row[0], "kind": "TEST", "title": "Thông báo thử từ Bamboo DX-OS",
+                 "body": "Nếu nhận được tin này, kênh đã cấu hình đúng.", "entity_type": None, "entity_id": None},
                 ensure_ascii=False,
             ),
             f"test:{person}:{channel}:{uuid.uuid4()}",
@@ -163,27 +153,16 @@ def send_test_notification(conn: psycopg.Connection, session: dict, args: dict, 
 
 def my_deliveries(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> list[dict]:
     person, tenant = _who(conn, session)
-    rows = (
-        conn.cursor(row_factory=dict_row)
-        .execute(
-            """SELECT id, topic, status, attempts, last_error, payload ->> 'title' AS title, payload ->> 'address' AS address,
+    rows = conn.cursor(row_factory=dict_row).execute(
+        """SELECT id, topic, status, attempts, last_error, payload ->> 'title' AS title, payload ->> 'address' AS address,
                   to_char(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS created_at,
                   to_char(delivered_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS delivered_at
            FROM msg.queue WHERE tenant_id = %s AND payload ->> 'recipient_id' = %s
            ORDER BY created_at DESC LIMIT 20""",
-            (tenant, person),
-        )
-        .fetchall()
-    )
-    return [
-        {
-            **r,
-            "id": str(r["id"]),
-            "channel": r["topic"].removeprefix("notify.").upper(),
-            "address": delivery.mask(r["address"] or ""),
-        }
-        for r in rows
-    ]
+        (tenant, person),
+    ).fetchall()
+    return [{**r, "id": str(r["id"]), "channel": r["topic"].removeprefix("notify.").upper(),
+             "address": delivery.mask(r["address"] or "")} for r in rows]
 
 
 def queue_overview(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:

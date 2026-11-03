@@ -73,6 +73,7 @@ def ids(conn: psycopg.Connection, *keys: str) -> dict[str, str]:
     return {k: str(conn.execute("SELECT test.id(%s) AS id", (k,)).fetchone()["id"]) for k in keys}
 
 
+
 def drop_role(cur, code: str) -> None:
     for table in ("core.role_grant", "core.role_permission"):
         cur.execute(f"DELETE FROM {table} WHERE role_id IN (SELECT id FROM core.role WHERE code = %s)", (code,))

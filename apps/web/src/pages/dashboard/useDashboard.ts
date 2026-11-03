@@ -199,11 +199,9 @@ export const useDashboard = () => {
     to:
       n.entity_type === "core.tenant"
         ? "/admin/company"
-        : n.entity_type?.startsWith("x_")
-          ? `/x/${n.entity_type}`
-          : n.entity_type && n.entity_id && DETAIL[n.entity_type]
-            ? DETAIL[n.entity_type] + n.entity_id
-            : undefined,
+        : n.entity_type && n.entity_id && DETAIL[n.entity_type]
+          ? DETAIL[n.entity_type] + n.entity_id
+          : undefined,
   }));
   const unread = unreadQ.result.total ?? 0;
 

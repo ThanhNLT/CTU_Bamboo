@@ -5,14 +5,14 @@
 import { useList } from "@refinedev/core";
 import { Tooltip } from "antd";
 import gql from "graphql-tag";
-import { Globe, Puzzle } from "lucide-react";
+import { Globe } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { useLocale } from "../../i18n";
 import { useModules } from "../../modules/useModules";
 import { cn } from "../../utils/cn";
 import { BambooLogo } from "./BambooLogo";
-import { findActive, NAV_GROUPS, type NavGroup, type NavItem } from "./nav";
+import { findActive, NAV_GROUPS, type NavItem } from "./nav";
 import { NavGate } from "./NavGate";
 
 type SiderProps = { collapsed?: boolean; onNavigate?: () => void };
@@ -110,29 +110,10 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   const activeKey = findActive(pathname)?.key;
   const inboxCount = useInboxCount();
   const badgeOf = (item: NavItem) => (item.key === "inbox" ? inboxCount : item.badge);
-  const { enabled, overview } = useModules();
-  // mô-đun ngoài đã bật: nhóm menu "Mở rộng", mỗi mục menu manifest khai là một trang trong khung nhúng (ADR #58)
-  const external: NavGroup = {
-    code: "E",
-    label: "Mở rộng",
-    items: (overview?.modules ?? [])
-      .filter((m) => m.external && m.enabled)
-      .flatMap((m) =>
-        m.menu.map((item) => ({
-          key: `${m.code}:${item.path}`,
-          label: item.label,
-          to: `/x/${m.code}${item.path === "/" ? "" : item.path}`,
-          icon: Puzzle,
-          module: m.code,
-        })),
-      ),
-  };
-  const externalActive = external.items
-    .filter((i) => pathname === i.to || pathname.startsWith(`${i.to}/`))
-    .sort((a, b) => b.to.length - a.to.length)[0]?.key;
-  const groups = [...NAV_GROUPS, external]
-    .map((g) => ({ ...g, items: g.items.filter((i) => enabled(i.module)) }))
-    .filter((g) => g.items.length > 0);
+  const { enabled } = useModules();
+  const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => enabled(i.module)) })).filter(
+    (g) => g.items.length > 0,
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -163,7 +144,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
                     <li>
                       <SiderItem
                         item={{ ...item, badge: badgeOf(item) }}
-                        active={item.key === (externalActive ?? activeKey)}
+                        active={item.key === activeKey}
                         collapsed={collapsed}
                         onNavigate={onNavigate}
                       />

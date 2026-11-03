@@ -109,14 +109,8 @@ def _finish(
     conn.execute(
         """UPDATE core.attachment SET status = %s, scan_result = %s, sha256 = %s, scan_engines = %s,
                   scan_report = %s::jsonb, scanned_at = now() WHERE id = %s""",
-        (
-            status,
-            scan_result,
-            sha256,
-            engines or [],
-            json.dumps(report, ensure_ascii=False) if report else None,
-            attachment_id,
-        ),
+        (status, scan_result, sha256, engines or [], json.dumps(report, ensure_ascii=False) if report else None,
+         attachment_id),
     )
     return {"attachment_id": attachment_id, "status": status, "scan_result": scan_result}
 
@@ -131,9 +125,7 @@ def scan_content(
     """
     if require_clamav and not clamav_host:
         raise ActionError(
-            "Chưa cấu hình ClamAV nhưng hệ thống yêu cầu quét bằng ClamAV (SCAN_REQUIRE_CLAMAV)",
-            "scanner-unavailable",
-            503,
+            "Chưa cấu hình ClamAV nhưng hệ thống yêu cầu quét bằng ClamAV (SCAN_REQUIRE_CLAMAV)", "scanner-unavailable", 503
         )
     report = scanner.scan_file(content_type, data)
     if clamav_host:
@@ -249,7 +241,9 @@ def rescan_forever(settings, interval: float = 30.0) -> None:
     log.info("quét lại tệp cũ đang chạy")
     while True:
         try:
-            rescan_unscanned(conn, s3, settings.clamav_host, settings.clamav_port, settings.scan_require_clamav)
+            rescan_unscanned(
+                conn, s3, settings.clamav_host, settings.clamav_port, settings.scan_require_clamav
+            )
         except Exception as exc:  # noqa: BLE001
             conn.rollback()
             log.warning("vòng quét lại lỗi: %s", exc)

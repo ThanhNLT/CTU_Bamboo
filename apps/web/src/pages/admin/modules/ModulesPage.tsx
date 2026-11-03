@@ -7,16 +7,10 @@ import { useState } from "react";
 
 import { useSession } from "../../../auth/useSession";
 import { Panel } from "../../../components/ui/Panel";
-import {
-  secondaryButtonClass,
-  smallPrimaryButtonClass,
-  smallSecondaryButtonClass,
-} from "../../../components/ui/buttons";
-import { changeModule, SCOPE_LABEL, type ModuleChange, type ModuleInfo } from "../../../modules/api";
+import { smallPrimaryButtonClass, smallSecondaryButtonClass } from "../../../components/ui/buttons";
+import { changeModule, type ModuleChange, type ModuleInfo } from "../../../modules/api";
 import { useModules } from "../../../modules/useModules";
 import { AdminHeader, NoAccess } from "../shared/AdminHeader";
-import { rotateKey } from "./externalKey";
-import { RegisterExternal } from "./RegisterExternal";
 
 const CORE = [
   "Cơ cấu tổ chức: đơn vị, vị trí, bổ nhiệm",
@@ -47,9 +41,8 @@ const ServiceDot = ({ running }: { running: boolean | null }) => (
 export const ModulesPage = () => {
   const { message, modal } = App.useApp();
   const { tenant } = useSession();
-  const { overview, update, reload } = useModules();
+  const { overview, update } = useModules();
   const [busy, setBusy] = useState<string>();
-  const [registering, setRegistering] = useState(false);
 
   if (!overview)
     return (
@@ -91,20 +84,6 @@ export const ModulesPage = () => {
       content: (
         <div className="space-y-2 text-[13px]">
           <p>{m.description}.</p>
-          {m.external && (
-            <div>
-              <p className="m-0">
-                Mô-đun ngoài{m.vendor ? ` của ${m.vendor}` : ""}. Giao diện chạy trong khung tách biệt, không đọc được
-                phiên đăng nhập của Bamboo. Mô-đun được phép:
-              </p>
-              <ul className="my-1 pl-5">
-                {m.scopes.length === 0 && <li>Không truy cập dữ liệu của Bamboo</li>}
-                {m.scopes.map((sc) => (
-                  <li key={sc}>{SCOPE_LABEL[sc] ?? sc}</li>
-                ))}
-              </ul>
-            </div>
-          )}
           {extra.length > 0 && <p>Hệ thống bật kèm các chức năng cần thiết: {names(extra)}.</p>}
           {needInstall.length > 0 && (
             <p>
@@ -160,16 +139,7 @@ export const ModulesPage = () => {
             {overview.can_install ? ", chưa cài thì dịch vụ của nó không chạy, không tốn tài nguyên máy chủ" : ""}
           </>
         }
-        actions={
-          overview.can_install && (
-            <button type="button" className={secondaryButtonClass} onClick={() => setRegistering(true)}>
-              Thêm mô-đun ngoài
-            </button>
-          )
-        }
       />
-
-      <RegisterExternal open={registering} onClose={() => setRegistering(false)} onDone={reload} />
 
       <Panel title="Phần lõi — luôn bật">
         <ul className="m-0 grid list-none gap-x-6 gap-y-1.5 p-0 text-[13px] text-body sm:grid-cols-2 lg:grid-cols-3">
@@ -190,17 +160,7 @@ export const ModulesPage = () => {
             className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card"
           >
             <header className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-[15px] font-semibold text-ink">{m.name}</h2>
-                {m.external && (
-                  <p className="m-0 text-[12px] text-muted">
-                    <Tag color="purple" className="mr-1.5">
-                      Mô-đun ngoài
-                    </Tag>
-                    {[m.vendor, m.version && `phiên bản ${m.version}`].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-              </div>
+              <h2 className="text-[15px] font-semibold text-ink">{m.name}</h2>
               {status(m)}
             </header>
             <p className="m-0 flex-1 text-[13px] text-body">{m.description}</p>
@@ -219,13 +179,6 @@ export const ModulesPage = () => {
                   </div>
                 )}
               </dl>
-            )}
-            {m.external && m.scopes.length > 0 && (
-              <ul className="m-0 list-disc space-y-0.5 pl-5 text-[12.5px] text-muted">
-                {m.scopes.map((sc) => (
-                  <li key={sc}>{SCOPE_LABEL[sc] ?? sc}</li>
-                ))}
-              </ul>
             )}
             {overview.can_install && m.services.length > 0 && (
               <ul className="m-0 flex list-none flex-wrap gap-x-3 gap-y-1 p-0 text-[12px] text-muted">
@@ -263,16 +216,6 @@ export const ModulesPage = () => {
                       {busy === m.code ? "Đang bật..." : "Bật"}
                     </button>
                   )}
-              {overview.can_install && m.external && (
-                <button
-                  type="button"
-                  className={smallSecondaryButtonClass}
-                  disabled={!!busy}
-                  onClick={() => void rotateKey(modal, m.code, reload)}
-                >
-                  Đổi khóa
-                </button>
-              )}
               {overview.can_install && m.installed && !m.enabled && (
                 <button
                   type="button"
