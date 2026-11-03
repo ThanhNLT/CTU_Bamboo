@@ -16,6 +16,7 @@ import {
   type ImportKind,
   type ImportResult,
 } from "./api";
+import { tr, trf } from "../../../i18n";
 
 const ACCEPT = ".xlsx,.csv";
 
@@ -70,10 +71,10 @@ export const ImportModal = ({
       const r = await importFile(kind, file, false);
       if (!r.applied) {
         setPreview(r);
-        message.error("Dữ liệu đã thay đổi từ lúc xem trước: còn dòng lỗi, chưa ghi.");
+        message.error(tr("Dữ liệu đã thay đổi từ lúc xem trước: còn dòng lỗi, chưa ghi."));
         return;
       }
-      message.success(`Đã nhập ${r.total} dòng ${label}.`);
+      message.success(trf("Đã nhập {0} dòng {1}.", [r.total, label]));
       onDone();
       if (!r.created.length) {
         close();
@@ -90,9 +91,9 @@ export const ImportModal = ({
       } catch (e) {
         const reason = (e as Error).message;
         message.warning(
-          `Đã nhập ${r.total} dòng nhưng chưa tạo được tài khoản đăng nhập` +
-            (reason && reason !== "internal error" ? ` (${reason})` : " (máy chủ đăng nhập chưa sẵn sàng)") +
-            ". Mở từng người ở danh sách và tạo tài khoản ở ngăn bên phải.",
+          trf("Đã nhập {0} dòng nhưng chưa tạo được tài khoản đăng nhập", [r.total]) +
+            (reason && reason !== "internal error" ? ` (${reason})` : tr(" (máy chủ đăng nhập chưa sẵn sàng)")) +
+            tr(". Mở từng người ở danh sách và tạo tài khoản ở ngăn bên phải."),
           8,
         );
         close();
@@ -110,12 +111,12 @@ export const ImportModal = ({
     <>
       <Modal
         open={open && !finished}
-        title={`Nhập ${label} từ Excel`}
+        title={trf("Nhập {0} từ Excel", [label])}
         width={720}
         onCancel={close}
-        okText={preview && !preview.errors.length ? `Ghi ${preview.total} dòng` : "Ghi"}
+        okText={preview && !preview.errors.length ? trf("Ghi {0} dòng", [preview.total]) : "Ghi"}
         okButtonProps={{ disabled: !preview || preview.errors.length > 0 || preview.total === 0 }}
-        cancelText="Đóng"
+        cancelText={tr("Đóng")}
         confirmLoading={busy && Boolean(preview)}
         onOk={() => void apply()}
         destroyOnHidden
@@ -124,21 +125,22 @@ export const ImportModal = ({
           size="small"
           className="my-4"
           current={step}
-          items={[{ title: "Tải tệp mẫu" }, { title: "Chọn tệp" }, { title: "Xem trước và ghi" }]}
+          items={[{ title: tr("Tải tệp mẫu") }, { title: tr("Chọn tệp") }, { title: tr("Xem trước và ghi") }]}
         />
 
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
           <FileSpreadsheet className="h-5 w-5 shrink-0 text-bamboo-700" strokeWidth={1.75} aria-hidden />
           <p className="m-0 min-w-0 flex-1 text-[12.5px] text-body">
-            Dùng tệp mẫu (cột có dấu * là bắt buộc; dòng 2 là ví dụ, xóa trước khi nhập). Nhận .xlsx hoặc .csv UTF-8,
-            tối đa 2 MB / 5000 dòng. Mã đã có thì cập nhật, chưa có thì thêm mới.
+            {tr(
+              "Dùng tệp mẫu (cột có dấu * là bắt buộc; dòng 2 là ví dụ, xóa trước khi nhập). Nhận .xlsx hoặc .csv UTF-8, tối đa 2 MB / 5000 dòng. Mã đã có thì cập nhật, chưa có thì thêm mới.",
+            )}
           </p>
           <button
             type="button"
             className={smallSecondaryButtonClass}
             onClick={() => void downloadTemplate(kind).catch((e: Error) => message.error(e.message))}
           >
-            <Download className="h-3.5 w-3.5" aria-hidden /> Tải tệp mẫu
+            <Download className="h-3.5 w-3.5" aria-hidden /> {tr(" Tải tệp mẫu")}
           </button>
         </div>
 
@@ -149,26 +151,30 @@ export const ImportModal = ({
           disabled={busy}
           customRequest={({ file: f }) => void check(f as File)}
         >
-          <p className="m-0 text-[13px] font-medium text-ink">{file ? file.name : "Kéo thả hoặc bấm để chọn tệp"}</p>
+          <p className="m-0 text-[13px] font-medium text-ink">
+            {file ? file.name : tr("Kéo thả hoặc bấm để chọn tệp")}
+          </p>
           <p className="m-0 mt-1 text-[12px] text-muted">
-            {busy && !preview ? "Đang kiểm tra trên máy chủ…" : "Máy chủ chạy thử toàn bộ rồi hoàn tác — chưa ghi gì."}
+            {busy && !preview
+              ? tr("Đang kiểm tra trên máy chủ…")
+              : tr("Máy chủ chạy thử toàn bộ rồi hoàn tác — chưa ghi gì.")}
           </p>
         </Upload.Dragger>
 
         {preview && (
           <div className="mt-4">
             {preview.errors.length === 0 ? (
-              <Alert type="success" showIcon message={`${preview.total} dòng hợp lệ — sẵn sàng ghi.`} />
+              <Alert type="success" showIcon message={trf("{0} dòng hợp lệ — sẵn sàng ghi.", [preview.total])} />
             ) : (
               <>
                 <Alert
                   type="error"
                   showIcon
-                  message={`${preview.errors.length} / ${preview.total} dòng có lỗi — sửa tệp rồi chọn lại.`}
-                  description="Chỉ ghi khi mọi dòng hợp lệ, để không nhập dở dang."
+                  message={trf("{0} / {1} dòng có lỗi — sửa tệp rồi chọn lại.", [preview.errors.length, preview.total])}
+                  description={tr("Chỉ ghi khi mọi dòng hợp lệ, để không nhập dở dang.")}
                   action={
                     <button type="button" className={smallSecondaryButtonClass} onClick={reset}>
-                      <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Chọn tệp khác
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {tr(" Chọn tệp khác")}
                     </button>
                   }
                 />
@@ -180,12 +186,12 @@ export const ImportModal = ({
                   pagination={preview.errors.length > 8 ? { pageSize: 8, size: "small" } : false}
                   columns={[
                     {
-                      title: "Dòng",
+                      title: tr("Dòng"),
                       dataIndex: "row",
                       width: 70,
                       render: (v: number) => <span className="tabular-nums">{v}</span>,
                     },
-                    { title: "Lỗi", dataIndex: "message" },
+                    { title: tr("Lỗi"), dataIndex: "message" },
                   ]}
                 />
               </>

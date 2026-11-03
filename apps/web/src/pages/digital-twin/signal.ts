@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { BreachSpan, SeriesPoint, Threshold, TimeRange } from "./types";
+import { tr } from "../../i18n";
 
 export const MINUTE = 60_000;
 
@@ -10,9 +11,9 @@ export const RANGES: Record<
   TimeRange,
   { minutes: number; bucket: number; tickEvery: number; label: string; short: string }
 > = {
-  "1h": { minutes: 60, bucket: 1, tickEvery: 10, label: "1 giờ qua", short: "1 giờ" },
-  "24h": { minutes: 24 * 60, bucket: 15, tickEvery: 4 * 60, label: "24 giờ qua", short: "24 giờ" },
-  "7d": { minutes: 7 * 24 * 60, bucket: 120, tickEvery: 24 * 60, label: "7 ngày qua", short: "7 ngày" },
+  "1h": { minutes: 60, bucket: 1, tickEvery: 10, label: tr("1 giờ qua"), short: tr("1 giờ") },
+  "24h": { minutes: 24 * 60, bucket: 15, tickEvery: 4 * 60, label: tr("24 giờ qua"), short: tr("24 giờ") },
+  "7d": { minutes: 7 * 24 * 60, bucket: 120, tickEvery: 24 * 60, label: tr("7 ngày qua"), short: tr("7 ngày") },
 };
 
 const round = (v: number, decimals: number) => {

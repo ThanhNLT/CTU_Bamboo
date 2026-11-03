@@ -961,6 +961,8 @@ SELECT
     json_extract_scalar(after, '$["address"]') AS "address",
     json_extract_scalar(after, '$["legal_rep_name"]') AS "legal_rep_name",
     json_extract_scalar(after, '$["legal_status"]') AS "legal_status",
+    json_extract_scalar(after, '$["industry"]') AS "industry",
+    json_extract_scalar(after, '$["size_band"]') AS "size_band",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (

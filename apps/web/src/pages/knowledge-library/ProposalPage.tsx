@@ -18,6 +18,7 @@ import { cancelProposal, submitProposal } from "./api";
 import { ProposeModal } from "./components/ProposeModal";
 import { CATEGORY_LABEL, PROPOSAL_STATUS, SCOPE_LABEL } from "./labels";
 import type { DocCategory, DocScope } from "./types";
+import { tr, trf } from "../../i18n";
 
 const ENTITY = "collab.kb_document";
 
@@ -93,7 +94,7 @@ export const ProposalPage = () => {
   if (error) return <Alert type="error" showIcon message={error} />;
   if (doc === undefined) return <Spin />;
   if (doc === null)
-    return <Alert type="warning" showIcon message="Không tìm thấy đề xuất hoặc bạn không có quyền xem." />;
+    return <Alert type="warning" showIcon message={tr("Không tìm thấy đề xuất hoặc bạn không có quyền xem.")} />;
 
   const mine = doc.requester_id === tenant.person_id;
   const editable = mine && ["DRAFT", "RETURNED"].includes(doc.status);
@@ -103,7 +104,7 @@ export const ProposalPage = () => {
   const submit = async () => {
     try {
       await submitProposal(doc.id);
-      message.success("Đã gửi duyệt");
+      message.success(tr("Đã gửi duyệt"));
       await load();
     } catch (e) {
       message.error((e as Error).message);
@@ -112,16 +113,16 @@ export const ProposalPage = () => {
   const cancel = () => {
     let reason = "";
     modal.confirm({
-      title: `Hủy đề xuất ${doc.doc_no}?`,
+      title: trf("Hủy đề xuất {0}?", [doc.doc_no]),
       content: (
-        <Input.TextArea rows={3} placeholder="Lý do hủy (bắt buộc)" onChange={(e) => (reason = e.target.value)} />
+        <Input.TextArea rows={3} placeholder={tr("Lý do hủy (bắt buộc)")} onChange={(e) => (reason = e.target.value)} />
       ),
-      okText: "Hủy đề xuất",
+      okText: tr("Hủy đề xuất"),
       okButtonProps: { danger: true },
-      cancelText: "Không",
+      cancelText: tr("Không"),
       onOk: async () => {
         if (!reason.trim()) {
-          message.error("Phải ghi lý do hủy");
+          message.error(tr("Phải ghi lý do hủy"));
           throw new Error("missing reason");
         }
         await cancelProposal(doc.id, reason.trim())
@@ -136,7 +137,7 @@ export const ProposalPage = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link to="/h/library" className="text-[12.5px] text-muted hover:underline">
-            ← Thư viện tri thức
+            {tr("← Thư viện tri thức")}
           </Link>
           <h1 className="m-0 mt-1 flex items-center gap-2 text-[22px] font-semibold text-ink">
             {doc.doc_no} <Tag color={status.color}>{status.label}</Tag>
@@ -145,25 +146,25 @@ export const ProposalPage = () => {
         <Space wrap>
           {task && (
             <Button type="primary" icon={<AuditOutlined />} onClick={() => setActing(true)}>
-              Xử lý duyệt
+              {tr("Xử lý duyệt")}
             </Button>
           )}
           {editable && (
             <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>
-              Sửa
+              {tr("Sửa")}
             </Button>
           )}
           {editable && (
             <Button type="primary" icon={<SendOutlined />} onClick={() => void submit()}>
-              Gửi duyệt
+              {tr("Gửi duyệt")}
             </Button>
           )}
           {cancellable && (
             <Button danger icon={<StopOutlined />} onClick={cancel}>
-              Hủy đề xuất
+              {tr("Hủy đề xuất")}
             </Button>
           )}
-          {doc.status === "APPROVED" && <Link to={`/h/library?doc=${doc.id}`}>Mở trong thư viện</Link>}
+          {doc.status === "APPROVED" && <Link to={`/h/library?doc=${doc.id}`}>{tr("Mở trong thư viện")}</Link>}
         </Space>
       </div>
 
@@ -172,14 +173,14 @@ export const ProposalPage = () => {
           <Card>
             <h2 className="m-0 text-[18px] font-semibold text-ink">{doc.title}</h2>
             <Descriptions size="small" column={{ xs: 1, sm: 2 }} className="mt-3">
-              <Descriptions.Item label="Loại">{CATEGORY_LABEL[doc.category]}</Descriptions.Item>
-              <Descriptions.Item label="Phạm vi">{SCOPE_LABEL[doc.scope]}</Descriptions.Item>
-              <Descriptions.Item label="Người đề xuất">{doc.requester?.full_name}</Descriptions.Item>
-              <Descriptions.Item label="Đơn vị ban hành">{doc.org_unit?.name}</Descriptions.Item>
-              <Descriptions.Item label="Hiệu lực">{doc.effective_date ?? "—"}</Descriptions.Item>
-              <Descriptions.Item label="Phiên bản">
+              <Descriptions.Item label={tr("Loại")}>{CATEGORY_LABEL[doc.category]}</Descriptions.Item>
+              <Descriptions.Item label={tr("Phạm vi")}>{SCOPE_LABEL[doc.scope]}</Descriptions.Item>
+              <Descriptions.Item label={tr("Người đề xuất")}>{doc.requester?.full_name}</Descriptions.Item>
+              <Descriptions.Item label={tr("Đơn vị ban hành")}>{doc.org_unit?.name}</Descriptions.Item>
+              <Descriptions.Item label={tr("Hiệu lực")}>{doc.effective_date ?? "—"}</Descriptions.Item>
+              <Descriptions.Item label={tr("Phiên bản")}>
                 v{doc.version}
-                {doc.supersedes_id ? " (thay thế bản trước)" : ""}
+                {doc.supersedes_id ? tr(" (thay thế bản trước)") : ""}
               </Descriptions.Item>
             </Descriptions>
             {doc.summary && <p className="mt-3 whitespace-pre-line text-[13px] text-body">{doc.summary}</p>}
@@ -195,7 +196,9 @@ export const ProposalPage = () => {
               items={[
                 {
                   key: "files",
-                  label: `Tệp tài liệu (${doc.attachments.filter((a) => !["REJECTED", "INFECTED"].includes(a.status)).length})`,
+                  label: trf("Tệp tài liệu ({0})", [
+                    doc.attachments.filter((a) => !["REJECTED", "INFECTED"].includes(a.status)).length,
+                  ]),
                   children: (
                     <Attachments
                       doc={{ id: doc.id, status: editable ? "DRAFT" : "APPROVED", attachments: doc.attachments }}
@@ -203,13 +206,13 @@ export const ProposalPage = () => {
                       me={tenant.person_id}
                       canUpload={editable}
                       onChange={() => void load()}
-                      hint="tệp toàn văn của tài liệu (PDF, DOCX)"
+                      hint={tr("tệp toàn văn của tài liệu (PDF, DOCX)")}
                     />
                   ),
                 },
                 {
                   key: "comments",
-                  label: `Trao đổi (${doc.comments.filter((c) => !c.deleted_at).length})`,
+                  label: trf("Trao đổi ({0})", [doc.comments.filter((c) => !c.deleted_at).length]),
                   children: (
                     <Comments doc={doc} entityType={ENTITY} me={tenant.person_id} onChange={() => void load()} />
                   ),
@@ -223,7 +226,7 @@ export const ProposalPage = () => {
             round={doc.approval_round}
             steps={doc.approval_steps}
             history={doc.approval_history}
-            emptyHint="Chưa gửi duyệt. Trưởng đơn vị ban hành duyệt đề xuất."
+            emptyHint={tr("Chưa gửi duyệt. Trưởng đơn vị ban hành duyệt đề xuất.")}
           />
         </Col>
       </Row>
@@ -244,14 +247,14 @@ export const ProposalPage = () => {
         onClose={() => setEditing(false)}
         onSaved={() => {
           setEditing(false);
-          message.success("Đã lưu đề xuất");
+          message.success(tr("Đã lưu đề xuất"));
           void load();
         }}
       />
       <ActModal
         taskId={acting ? (task?.task_id ?? null) : null}
         viaDelegation={task?.via_delegation}
-        title={`Xử lý ${doc.doc_no}`}
+        title={trf("Xử lý {0}", [doc.doc_no])}
         onClose={() => setActing(false)}
         onDone={() => {
           setActing(false);

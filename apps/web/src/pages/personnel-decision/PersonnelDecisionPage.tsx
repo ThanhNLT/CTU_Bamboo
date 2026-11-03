@@ -19,17 +19,18 @@ import {
   type PersonOption,
   type PositionOption,
 } from "./api";
+import { tr, trf } from "../../i18n";
 
 const TYPE_LABEL: Record<DecisionType, string> = {
-  APPOINT: "Bổ nhiệm",
-  TRANSFER: "Điều chuyển",
-  DISMISS: "Miễn nhiệm",
+  APPOINT: tr("Bổ nhiệm"),
+  TRANSFER: tr("Điều chuyển"),
+  DISMISS: tr("Miễn nhiệm"),
 };
 const TYPE_COLOR: Record<DecisionType, string> = { APPOINT: "green", TRANSFER: "blue", DISMISS: "volcano" };
 const KIND_LABEL: Record<AssignmentKind, string> = {
-  PRIMARY: "Giữ chính",
-  CONCURRENT: "Kiêm nhiệm",
-  ACTING: "Quyền trưởng",
+  PRIMARY: tr("Giữ chính"),
+  CONCURRENT: tr("Kiêm nhiệm"),
+  ACTING: tr("Quyền trưởng"),
 };
 
 type FormValues = {
@@ -76,7 +77,7 @@ const IssueModal = ({
         .filter((p) => (type === "APPOINT" && kind === "ACTING" ? p.is_head : true))
         .map((p) => ({
           value: p.id,
-          label: `${p.name} – ${p.unit}${p.holder ? ` · đang có: ${p.holder}` : " · trống"}`,
+          label: `${p.name} – ${p.unit}${p.holder ? trf(" · đang có: {0}", [p.holder]) : tr(" · trống")}`,
         })),
     [positions, type, kind],
   );
@@ -94,7 +95,7 @@ const IssueModal = ({
         effectiveDate: v.effectiveDate.format("YYYY-MM-DD"),
         reason: v.reason,
       });
-      message.success(`Đã ban hành quyết định ${r.doc_no}.`);
+      message.success(trf("Đã ban hành quyết định {0}.", [r.doc_no]));
       form.resetFields();
       onDone();
     } catch (e) {
@@ -107,9 +108,9 @@ const IssueModal = ({
   return (
     <Modal
       open={open}
-      title="Ban hành quyết định nhân sự"
-      okText="Ban hành"
-      cancelText="Hủy"
+      title={tr("Ban hành quyết định nhân sự")}
+      okText={tr("Ban hành")}
+      cancelText={tr("Hủy")}
       onOk={() => void submit()}
       okButtonProps={{ loading: busy }}
       onCancel={onClose}
@@ -125,33 +126,33 @@ const IssueModal = ({
             form.setFieldsValue({ sourcePositionId: undefined, targetPositionId: undefined });
         }}
       >
-        <Form.Item name="decisionType" label="Loại quyết định">
+        <Form.Item name="decisionType" label={tr("Loại quyết định")}>
           <Radio.Group
             optionType="button"
             options={(Object.keys(TYPE_LABEL) as DecisionType[]).map((k) => ({ value: k, label: TYPE_LABEL[k] }))}
           />
         </Form.Item>
-        <Form.Item name="personId" label="Nhân sự" rules={[{ required: true, message: "Chọn nhân sự" }]}>
+        <Form.Item name="personId" label={tr("Nhân sự")} rules={[{ required: true, message: tr("Chọn nhân sự") }]}>
           <Select
-            aria-label="Nhân sự"
+            aria-label={tr("Nhân sự")}
             showSearch
             optionFilterProp="label"
-            placeholder="Gõ tên hoặc mã nhân viên"
+            placeholder={tr("Gõ tên hoặc mã nhân viên")}
             options={people.map((p) => ({
               value: p.id,
               label: `${p.full_name}${p.employee_code ? ` (${p.employee_code})` : ""}${
-                p.assignments[0] ? ` – ${p.assignments[0].position}` : " – chưa có vị trí"
+                p.assignments[0] ? ` – ${p.assignments[0].position}` : tr(" – chưa có vị trí")
               }`,
             }))}
           />
         </Form.Item>
         {type === "APPOINT" && (
-          <Form.Item name="assignmentType" label="Hình thức bổ nhiệm">
+          <Form.Item name="assignmentType" label={tr("Hình thức bổ nhiệm")}>
             <Radio.Group
               options={[
-                { value: "CONCURRENT", label: "Kiêm nhiệm" },
-                { value: "ACTING", label: "Quyền trưởng (vị trí trưởng đang trống)" },
-                { value: "PRIMARY", label: "Giữ chính (người chưa có vị trí)" },
+                { value: "CONCURRENT", label: tr("Kiêm nhiệm") },
+                { value: "ACTING", label: tr("Quyền trưởng (vị trí trưởng đang trống)") },
+                { value: "PRIMARY", label: tr("Giữ chính (người chưa có vị trí)") },
               ]}
             />
           </Form.Item>
@@ -159,33 +160,37 @@ const IssueModal = ({
         {type !== "APPOINT" && (
           <Form.Item
             name="sourcePositionId"
-            label={type === "TRANSFER" ? "Vị trí hiện tại (giữ chính)" : "Bổ nhiệm bị miễn (kiêm nhiệm / quyền trưởng)"}
-            rules={[{ required: true, message: "Chọn vị trí" }]}
-            extra={personId && sourceOptions.length === 0 ? "Người này không có bổ nhiệm phù hợp." : undefined}
+            label={
+              type === "TRANSFER"
+                ? tr("Vị trí hiện tại (giữ chính)")
+                : tr("Bổ nhiệm bị miễn (kiêm nhiệm / quyền trưởng)")
+            }
+            rules={[{ required: true, message: tr("Chọn vị trí") }]}
+            extra={personId && sourceOptions.length === 0 ? tr("Người này không có bổ nhiệm phù hợp.") : undefined}
           >
-            <Select aria-label="Vị trí hiện tại" options={sourceOptions} placeholder="Chọn nhân sự trước" />
+            <Select aria-label={tr("Vị trí hiện tại")} options={sourceOptions} placeholder={tr("Chọn nhân sự trước")} />
           </Form.Item>
         )}
         {type !== "DISMISS" && (
           <Form.Item
             name="targetPositionId"
-            label={type === "TRANSFER" ? "Vị trí mới" : "Vị trí bổ nhiệm"}
-            rules={[{ required: true, message: "Chọn vị trí" }]}
-            extra="Vị trí phải còn trống vào ngày hiệu lực."
+            label={type === "TRANSFER" ? tr("Vị trí mới") : tr("Vị trí bổ nhiệm")}
+            rules={[{ required: true, message: tr("Chọn vị trí") }]}
+            extra={tr("Vị trí phải còn trống vào ngày hiệu lực.")}
           >
             <Select
-              aria-label="Vị trí mới"
+              aria-label={tr("Vị trí mới")}
               showSearch
               optionFilterProp="label"
               options={targetOptions}
-              placeholder="Gõ tên vị trí hoặc đơn vị"
+              placeholder={tr("Gõ tên vị trí hoặc đơn vị")}
             />
           </Form.Item>
         )}
         <Form.Item
           name="effectiveDate"
-          label="Ngày hiệu lực"
-          rules={[{ required: true, message: "Chọn ngày" }]}
+          label={tr("Ngày hiệu lực")}
+          rules={[{ required: true, message: tr("Chọn ngày") }]}
           initialValue={dayjs()}
         >
           <DatePicker
@@ -196,14 +201,15 @@ const IssueModal = ({
         </Form.Item>
         <Form.Item
           name="reason"
-          label="Căn cứ / lý do"
-          rules={[{ required: true, whitespace: true, message: "Ghi căn cứ quyết định" }]}
+          label={tr("Căn cứ / lý do")}
+          rules={[{ required: true, whitespace: true, message: tr("Ghi căn cứ quyết định") }]}
         >
           <Input.TextArea rows={3} maxLength={2000} showCount />
         </Form.Item>
         <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-          Quyết định có hiệu lực ngay theo ngày chọn, không qua chuỗi duyệt, gửi thông báo cho nhân sự và không sửa hoặc
-          xóa được sau khi ban hành.
+          {tr(
+            "Quyết định có hiệu lực ngay theo ngày chọn, không qua chuỗi duyệt, gửi thông báo cho nhân sự và không sửa hoặc xóa được sau khi ban hành.",
+          )}
         </Typography.Paragraph>
       </Form>
     </Modal>
@@ -242,14 +248,16 @@ export const PersonnelDecisionPage = () => {
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">Quyết định nhân sự</h1>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">
+            {tr("Quyết định nhân sự")}
+          </h1>
           <p className="mt-1 text-[13px] text-muted">
-            Bổ nhiệm, điều chuyển, miễn nhiệm do Tổng giám đốc hoặc Phó tổng giám đốc ban hành.
+            {tr("Bổ nhiệm, điều chuyển, miễn nhiệm do Tổng giám đốc hoặc Phó tổng giám đốc ban hành.")}
           </p>
         </div>
         {data.canIssue && (
           <button type="button" className={primaryButtonClass} onClick={() => void openIssue()}>
-            Ban hành quyết định
+            {tr("Ban hành quyết định")}
           </button>
         )}
       </div>
@@ -258,11 +266,11 @@ export const PersonnelDecisionPage = () => {
         rowKey="id"
         dataSource={data.decisions}
         pagination={{ pageSize: 20, hideOnSinglePage: true }}
-        locale={{ emptyText: "Chưa có quyết định nào." }}
+        locale={{ emptyText: tr("Chưa có quyết định nào.") }}
         columns={[
-          { title: "Số quyết định", dataIndex: "doc_no", width: 150 },
+          { title: tr("Số quyết định"), dataIndex: "doc_no", width: 150 },
           {
-            title: "Loại",
+            title: tr("Loại"),
             dataIndex: "decision_type",
             width: 130,
             render: (t: DecisionType, r) => (
@@ -273,20 +281,20 @@ export const PersonnelDecisionPage = () => {
             ),
           },
           {
-            title: "Nhân sự",
+            title: tr("Nhân sự"),
             dataIndex: "person_name",
             render: (n: string, r) => `${n}${r.employee_code ? ` (${r.employee_code})` : ""}`,
           },
           {
-            title: "Từ",
+            title: tr("Từ"),
             render: (_: unknown, r) => (r.source_position ? `${r.source_position} – ${r.source_unit}` : "—"),
           },
           {
-            title: "Đến",
+            title: tr("Đến"),
             render: (_: unknown, r) => (r.target_position ? `${r.target_position} – ${r.target_unit}` : "—"),
           },
-          { title: "Hiệu lực", dataIndex: "effective_date", width: 110, render: (d: string) => formatDay(d) },
-          { title: "Người ban hành", dataIndex: "issuer_name" },
+          { title: tr("Hiệu lực"), dataIndex: "effective_date", width: 110, render: (d: string) => formatDay(d) },
+          { title: tr("Người ban hành"), dataIndex: "issuer_name" },
           {
             title: "",
             width: 100,
@@ -294,7 +302,7 @@ export const PersonnelDecisionPage = () => {
               <button
                 type="button"
                 className={secondaryButtonClass}
-                aria-label={`In quyết định ${r.doc_no}`}
+                aria-label={trf("In quyết định {0}", [r.doc_no])}
                 onClick={() =>
                   void decisionPdf(r.id)
                     .then((pdf) => window.location.assign(pdf.url))
@@ -306,7 +314,13 @@ export const PersonnelDecisionPage = () => {
             ),
           },
         ]}
-        expandable={{ expandedRowRender: (r) => <Typography.Text>Căn cứ: {r.reason}</Typography.Text> }}
+        expandable={{
+          expandedRowRender: (r) => (
+            <Typography.Text>
+              {tr("Căn cứ: ")} {r.reason}
+            </Typography.Text>
+          ),
+        }}
       />
 
       {ctx && (

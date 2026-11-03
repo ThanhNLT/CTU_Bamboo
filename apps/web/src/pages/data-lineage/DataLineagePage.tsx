@@ -16,14 +16,15 @@ import { RecentRunsTable } from "./components/RecentRunsTable";
 import { ReportIncidentModal } from "./components/ReportIncidentModal";
 import { computeStatuses, failedChecks, failureSummaries, matchesQuery, reach, scopeOf } from "./graph";
 import type { Direction, LineageNode } from "./types";
+import { tr, trf } from "../../i18n";
 
 const PREFERRED = "gold-approval-daily";
 const SEVERITY = { wrong: "high", missing: "high", late: "medium", other: "low" } as const;
 const KIND_LABEL: Record<string, string> = {
-  wrong: "Dữ liệu sai",
-  missing: "Thiếu / rỗng dữ liệu",
-  late: "Cập nhật trễ",
-  other: "Khác",
+  wrong: tr("Dữ liệu sai"),
+  missing: tr("Thiếu / rỗng dữ liệu"),
+  late: tr("Cập nhật trễ"),
+  other: tr("Khác"),
 };
 
 const isNode = (n: LineageNode | undefined): n is LineageNode => n != null;
@@ -33,10 +34,11 @@ const nodeFromParam = (nodes: LineageNode[], asset: string | null) =>
 
 export const DataLineagePage = () => {
   const lineage = useLineage();
-  if (lineage.error) return <Alert type="error" showIcon message="Không tải được phả hệ" description={lineage.error} />;
+  if (lineage.error)
+    return <Alert type="error" showIcon message={tr("Không tải được phả hệ")} description={lineage.error} />;
   if (!lineage.data) return <Spin className="m-10" />;
   if (lineage.data.nodes.length === 0)
-    return <Alert type="info" showIcon message="Chưa có dữ liệu phả hệ (chạy python -m app.demo_load)." />;
+    return <Alert type="info" showIcon message={tr("Chưa có dữ liệu phả hệ (chạy python -m app.demo_load).")} />;
   return <LineageView data={lineage.data} />;
 };
 
@@ -104,14 +106,14 @@ const LineageView = ({ data }: { data: LineageData }) => {
         node.id,
         fails.length ? "high" : "medium",
         fails.length
-          ? `Báo ${node.owner}: ${fails.map((c) => `${c.rule} — ${c.detail}`).join("; ")}`
-          : `Báo ${node.owner} kiểm tra ${node.fqn}.`,
+          ? trf("Báo {0}: {1}", [node.owner, fails.map((c) => `${c.rule} — ${c.detail}`).join("; ")])
+          : trf("Báo {0} kiểm tra {1}.", [node.owner, node.fqn]),
       );
       setNotified((prev) => new Set(prev).add(node.id));
       message.success(
         fails.length
-          ? `Đã báo ${node.owner} về ${fails.length} kiểm tra lỗi trên ${node.fqn} (${code}).`
-          : `Đã gửi thông báo tới ${node.owner} về ${node.fqn} (${code}).`,
+          ? trf("Đã báo {0} về {1} kiểm tra lỗi trên {2} ({3}).", [node.owner, fails.length, node.fqn, code])
+          : trf("Đã gửi thông báo tới {0} về {1} ({2}).", [node.owner, node.fqn, code]),
       );
     } catch (e) {
       message.error((e as Error).message);
@@ -186,7 +188,11 @@ const LineageView = ({ data }: { data: LineageData }) => {
             );
             setReporting(false);
             message.success(
-              `Đã tạo sự cố dữ liệu ${code} cho ${target?.fqn ?? v.nodeId} · đã báo ${target?.owner ?? "chủ sở hữu"}.`,
+              trf("Đã tạo sự cố dữ liệu {0} cho {1} · đã báo {2}.", [
+                code,
+                target?.fqn ?? v.nodeId,
+                target?.owner ?? tr("chủ sở hữu"),
+              ]),
             );
           } catch (e) {
             message.error((e as Error).message);

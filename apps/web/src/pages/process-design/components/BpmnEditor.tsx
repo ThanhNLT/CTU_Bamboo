@@ -14,6 +14,7 @@ import "../editor.css";
 import { vietnameseModule } from "../bpmn-translate";
 import { bambooModdle, flowableModdle } from "../flowable-moddle";
 import type { SelectedElement } from "../types";
+import { tr, trf } from "../../../i18n";
 
 export type BpmnEditorHandle = {
   getXml: () => Promise<string>;
@@ -185,7 +186,7 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
         highlighted.current.forEach((id) => canvas.addMarker(id, "sandbox-visited"));
         handlers.current.onSelect(undefined);
       })
-      .catch((e: Error) => handlers.current.onError(`Không đọc được sơ đồ BPMN: ${e.message}`));
+      .catch((e: Error) => handlers.current.onError(trf("Không đọc được sơ đồ BPMN: {0}", [e.message])));
     return () => {
       alive = false;
     };
@@ -278,17 +279,17 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
       <div
         ref={container}
         className={readOnly ? "bpmn-editor bpmn-editor--readonly" : "bpmn-editor"}
-        aria-label="Sơ đồ BPMN"
+        aria-label={tr("Sơ đồ BPMN")}
         role="application"
       />
-      <div className="bpmn-zoom" role="group" aria-label="Phóng to thu nhỏ">
-        <button type="button" aria-label="Phóng to" title="Phóng to" onClick={() => zoomBy(1.25)}>
+      <div className="bpmn-zoom" role="group" aria-label={tr("Phóng to thu nhỏ")}>
+        <button type="button" aria-label={tr("Phóng to")} title={tr("Phóng to")} onClick={() => zoomBy(1.25)}>
           <ZoomIn size={16} aria-hidden />
         </button>
-        <button type="button" aria-label="Thu nhỏ" title="Thu nhỏ" onClick={() => zoomBy(0.8)}>
+        <button type="button" aria-label={tr("Thu nhỏ")} title={tr("Thu nhỏ")} onClick={() => zoomBy(0.8)}>
           <ZoomOut size={16} aria-hidden />
         </button>
-        <button type="button" aria-label="Vừa khung nhìn" title="Vừa khung nhìn" onClick={refit}>
+        <button type="button" aria-label={tr("Vừa khung nhìn")} title={tr("Vừa khung nhìn")} onClick={refit}>
           <Maximize2 size={16} aria-hidden />
         </button>
       </div>

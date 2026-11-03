@@ -7,6 +7,7 @@ import { Pause, Pencil, Play, Trash2 } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import type { Agent, AgentStats } from "../types";
 import { GUARDS, STATUS, guardOn, num, seconds, statsOf } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 const iconBtn =
   "grid h-8 w-8 place-items-center rounded-ui text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
@@ -29,9 +30,9 @@ export const AiAgentsTable = ({
 }) => {
   const models = [...new Set(agents.map((a) => a.model))];
   return (
-    <section aria-label="Tác tử đã đăng ký" className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+    <section aria-label={tr("Tác tử đã đăng ký")} className="rounded-2xl border border-line bg-surface p-5 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-ink">Tác tử đã đăng ký</h2>
+        <h2 className="text-[15px] font-semibold text-ink">{tr("Tác tử đã đăng ký")}</h2>
         {models.length > 0 && <span className="text-[11.5px] text-muted">Ollama · {models.join(", ")}</span>}
       </div>
       <div className="relative mt-3 overflow-x-auto">
@@ -39,28 +40,28 @@ export const AiAgentsTable = ({
           <thead>
             <tr className="text-left text-[11.5px] text-muted">
               <th scope="col" className="border-b border-line py-2 pr-3 font-medium">
-                Tác tử
+                {tr("Tác tử")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Mô hình
+                {tr("Mô hình")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Rào chắn
+                {tr("Rào chắn")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 text-right font-medium">
-                Lượt hỏi
+                {tr("Lượt hỏi")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 text-right font-medium">
                 TB / p90
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 text-right font-medium">
-                Lỗi
+                {tr("Lỗi")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Trạng thái
+                {tr("Trạng thái")}
               </th>
               <th scope="col" className="border-b border-line py-2 pl-3 text-right font-medium">
-                <span className="sr-only">Thao tác</span>
+                <span className="sr-only">{tr("Thao tác")}</span>
               </th>
             </tr>
           </thead>
@@ -68,7 +69,7 @@ export const AiAgentsTable = ({
             {agents.length === 0 && (
               <tr>
                 <td colSpan={8} className="py-8 text-center text-muted">
-                  {loading ? "Đang tải…" : "Chưa có tác tử nào."}
+                  {loading ? tr("Đang tải…") : tr("Chưa có tác tử nào.")}
                 </td>
               </tr>
             )}
@@ -96,7 +97,11 @@ export const AiAgentsTable = ({
                   </td>
                   <td className="border-b border-line/70 px-3 py-2.5 text-right tabular-nums text-ink">
                     {num(s.questions)}
-                    {s.pending > 0 && <span className="block text-[11px] text-muted">{s.pending} đang chờ</span>}
+                    {s.pending > 0 && (
+                      <span className="block text-[11px] text-muted">
+                        {s.pending} {tr(" đang chờ")}
+                      </span>
+                    )}
                   </td>
                   <td className="border-b border-line/70 px-3 py-2.5 text-right tabular-nums text-body">
                     {seconds(s.avg_seconds)}
@@ -123,14 +128,19 @@ export const AiAgentsTable = ({
                   </td>
                   <td className="border-b border-line/70 py-2.5 pl-3">
                     <span className="flex justify-end gap-0.5">
-                      <button type="button" onClick={() => onEdit(a)} className={iconBtn} aria-label={`Sửa ${a.name}`}>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(a)}
+                        className={iconBtn}
+                        aria-label={trf("Sửa {0}", [a.name])}
+                      >
                         <Pencil className="h-3.5 w-3.5" aria-hidden />
                       </button>
                       <button
                         type="button"
                         onClick={() => onToggle(a)}
                         className={iconBtn}
-                        aria-label={a.status === "active" ? `Ngừng ${a.name}` : `Bật lại ${a.name}`}
+                        aria-label={a.status === "active" ? trf("Ngừng {0}", [a.name]) : trf("Bật lại {0}", [a.name])}
                       >
                         {a.status === "active" ? (
                           <Pause className="h-3.5 w-3.5" aria-hidden />
@@ -142,7 +152,7 @@ export const AiAgentsTable = ({
                         type="button"
                         onClick={() => onRemove(a)}
                         className={iconBtn}
-                        aria-label={`Xóa ${a.name}`}
+                        aria-label={trf("Xóa {0}", [a.name])}
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden />
                       </button>

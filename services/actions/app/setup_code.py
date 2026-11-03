@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Mã thiết lập một lần cho trang khởi tạo công ty (ADR #57): `python -m app.setup_code`.
+"""Mở cửa sổ đăng ký 24 giờ trên hệ thống trống (ADR #57, #62): `python -m app.setup_code` (`make setup-code`).
 
-`bootstrap` tự gọi mỗi lần khởi động khi hệ thống chưa có công ty; mã cũ chưa dùng bị hủy. Chỉ người đọc được log hoặc chạy
-được lệnh trên máy chủ mới có mã, nên người lạ mở trang trước không chiếm được hệ thống.
+`bootstrap` tự gọi mỗi lần khởi động khi hệ thống chưa có công ty; mã cũ chưa dùng bị hủy. Trong khi còn mã hiệu lực, trang
+đăng ký mở mà không phải nhập mã (ADR #62); mã vẫn in ra log cho lệnh cũ gửi kèm `setup_code`.
 """
 
 import logging
@@ -25,11 +25,12 @@ def announce(database_url: str) -> str | None:
     hours = int(setup.CODE_TTL.total_seconds() // 3600)
     banner = "=" * 64
     log.warning(
-        '\n%s\nHệ thống chưa có công ty. Mở trang đăng nhập, chọn "Tạo công ty mới" và nhập\nMÃ THIẾT LẬP: %s'
-        "\n(dùng một lần, hết hạn sau %d giờ; lấy mã mới: python -m app.setup_code)\n%s",
+        '\n%s\nHệ thống chưa có công ty. Mở trang đăng nhập, chọn "Tạo tài khoản" để đăng ký doanh nghiệp.'
+        "\nTrang đăng ký mở trong %d giờ; hết hạn thì chạy make setup-code (python -m app.setup_code)."
+        "\nMÃ THIẾT LẬP (chỉ cần cho lệnh cũ): %s\n%s",
         banner,
-        code,
         hours,
+        code,
         banner,
     )
     return code

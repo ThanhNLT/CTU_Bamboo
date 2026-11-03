@@ -5,6 +5,7 @@
 import { SearchInput } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { DomainFilter } from "../types";
+import { tr } from "../../../i18n";
 
 export const DataFilterBar = ({
   query,
@@ -26,10 +27,10 @@ export const DataFilterBar = ({
       className="w-full md:w-[340px]"
       value={query}
       onChange={onQueryChange}
-      placeholder="Tìm tập dữ liệu, cột"
-      label="Tìm tập dữ liệu theo tên, bảng hoặc cột"
+      placeholder={tr("Tìm tập dữ liệu, cột")}
+      label={tr("Tìm tập dữ liệu theo tên, bảng hoặc cột")}
     />
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Lĩnh vực">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={tr("Lĩnh vực")}>
       {[{ key: "all", count: total }, ...domains].map((d) => {
         const active = d.key === domain;
         return (
@@ -46,7 +47,7 @@ export const DataFilterBar = ({
                 : "bg-black/[0.04] text-body hover:bg-black/[0.07] hover:text-ink",
             )}
           >
-            {d.key === "all" ? "Tất cả" : d.key} · <span className="tabular-nums">{d.count}</span>
+            {d.key === "all" ? tr("Tất cả") : d.key} · <span className="tabular-nums">{d.count}</span>
           </button>
         );
       })}

@@ -9,6 +9,7 @@ import { Dot } from "../../../components/ui";
 import { cn } from "../../../utils/cn";
 import type { InboxTask } from "../types";
 import { capitalize, SLA_PILL, SLA_TONE } from "./slaStyle";
+import { tr } from "../../../i18n";
 
 const Kbd = ({ children }: { children: string }) => (
   <kbd className="rounded border border-line bg-canvas px-1 font-sans text-[10.5px] text-muted">{children}</kbd>
@@ -36,13 +37,13 @@ export const TaskDetailHeader = ({
   <header className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-5 py-4 shadow-card md:flex-row md:items-center">
     <div className="min-w-0 flex-1">
       <div className="font-mono text-[11.5px] tracking-tight text-muted">
-        {task.code} · Duyệt cấp {task.level}
+        {task.code} {tr(" · Duyệt cấp ")} {task.level}
         {to && (
           <Link
             to={to}
             className="ml-2 inline-flex items-center gap-1 font-sans text-bamboo-700 hover:underline underline-offset-2"
           >
-            Mở chứng từ <ExternalLink className="h-3 w-3" aria-hidden />
+            {tr("Mở chứng từ ")} <ExternalLink className="h-3 w-3" aria-hidden />
           </Link>
         )}
       </div>
@@ -61,13 +62,25 @@ export const TaskDetailHeader = ({
     </div>
 
     <div className="flex shrink-0 self-start overflow-hidden rounded-ui border border-line bg-surface md:self-auto">
-      <button type="button" onClick={onPrev} disabled={!hasPrev} className={navBtn} aria-label="Việc trước (phím K)">
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={!hasPrev}
+        className={navBtn}
+        aria-label={tr("Việc trước (phím K)")}
+      >
         <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-        Trước <Kbd>K</Kbd>
+        {tr("Trước ")} <Kbd>K</Kbd>
       </button>
       <span className="w-px self-stretch bg-line" aria-hidden />
-      <button type="button" onClick={onNext} disabled={!hasNext} className={navBtn} aria-label="Việc kế tiếp (phím J)">
-        Kế tiếp <Kbd>J</Kbd>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!hasNext}
+        className={navBtn}
+        aria-label={tr("Việc kế tiếp (phím J)")}
+      >
+        {tr("Kế tiếp ")} <Kbd>J</Kbd>
         <ChevronRight className="h-3.5 w-3.5" aria-hidden />
       </button>
     </div>

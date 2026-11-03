@@ -5,6 +5,7 @@
 import { cn } from "../../../utils/cn";
 import type { CategoryFilter } from "../types";
 import { CATEGORY_TABS } from "../utils";
+import { tr } from "../../../i18n";
 
 export const CategoryTabs = ({
   value,
@@ -17,7 +18,7 @@ export const CategoryTabs = ({
 }) => (
   <div
     role="tablist"
-    aria-label="Loại thực thể"
+    aria-label={tr("Loại thực thể")}
     className="inline-flex max-w-full flex-wrap gap-0.5 self-start rounded-ui bg-black/[0.045] p-1"
   >
     {CATEGORY_TABS.map(({ key, label }) => {

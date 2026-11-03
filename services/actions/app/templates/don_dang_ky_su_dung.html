@@ -34,7 +34,7 @@ bằng chữ ký số của doanh nghiệp (ADR #57). Mã đơn chống dùng l�
 <table>
   <tr><td>Tên doanh nghiệp</td><td>{{ a.company.legal_name }}</td></tr>
   <tr><td>Mã số thuế / mã số doanh nghiệp</td><td>{{ a.company.tax_code }}</td></tr>
-  <tr><td>Địa chỉ trụ sở chính</td><td>{{ a.company.address }}</td></tr>
+  <tr><td>Địa chỉ trụ sở chính</td><td>{{ a.company.address or "" }}</td></tr>
   <tr><td>Người đại diện theo pháp luật</td><td>{{ a.company.legal_rep_name }} — {{ a.company.legal_rep_title }}</td></tr>
   {% if a.purpose == 'SETUP' %}<tr><td>Mã công ty trên hệ thống</td><td>{{ a.company.code }}</td></tr>{% endif %}
 </table>

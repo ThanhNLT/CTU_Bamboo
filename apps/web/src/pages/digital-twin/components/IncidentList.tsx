@@ -7,6 +7,7 @@ import { Tag } from "antd";
 import { formatDate } from "../../../utils/format";
 import type { Incident, Metric } from "../types";
 import { formatDuration, formatNumber } from "../utils";
+import { tr } from "../../../i18n";
 
 export const IncidentList = ({
   incidents,
@@ -19,10 +20,10 @@ export const IncidentList = ({
 }) => {
   const label = (key: string) => metrics.find((m) => m.key === key)?.label ?? key;
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Sự cố gần đây">
-      <h3 className="text-[14px] font-semibold text-ink">Sự cố gần đây</h3>
+    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label={tr("Sự cố gần đây")}>
+      <h3 className="text-[14px] font-semibold text-ink">{tr("Sự cố gần đây")}</h3>
       {incidents.length === 0 ? (
-        <p className="mt-3 text-[13px] text-muted">Không có lần vượt ngưỡng nào trong 24 giờ qua.</p>
+        <p className="mt-3 text-[13px] text-muted">{tr("Không có lần vượt ngưỡng nào trong 24 giờ qua.")}</p>
       ) : (
         <ul className="m-0 mt-2 flex list-none flex-col divide-y divide-line/70 p-0">
           {incidents.map((i) => (
@@ -32,17 +33,17 @@ export const IncidentList = ({
                   <span className="font-mono text-[12px]">{i.code}</span>
                   <span className="font-medium">{label(i.attribute)}</span>
                   <Tag color={i.severity === "critical" ? "red" : "gold"}>
-                    {i.severity === "critical" ? "Nghiêm trọng" : "Cảnh báo"}
+                    {i.severity === "critical" ? tr("Nghiêm trọng") : tr("Cảnh báo")}
                   </Tag>
-                  {i.open && <Tag color="volcano">Đang diễn ra</Tag>}
+                  {i.open && <Tag color="volcano">{tr("Đang diễn ra")}</Tag>}
                 </div>
                 <div className="text-muted">
-                  {formatDate(i.startedAt)} · {i.side === "above" ? "vượt" : "dưới"} ngưỡng {formatNumber(i.threshold)}{" "}
-                  {formatDuration(i.minutes)} · đỉnh {formatNumber(i.peak)}
+                  {formatDate(i.startedAt)} · {i.side === "above" ? tr("vượt") : tr("dưới")} {tr(" ngưỡng ")}{" "}
+                  {formatNumber(i.threshold)} {formatDuration(i.minutes)} {tr(" · đỉnh ")} {formatNumber(i.peak)}
                 </div>
                 {i.acknowledgedAt && (
                   <div className="text-bamboo-800">
-                    Đã ghi nhận: {i.acknowledgedBy} · {formatDate(i.acknowledgedAt)} — {i.ackNote}
+                    {tr("Đã ghi nhận: ")} {i.acknowledgedBy} · {formatDate(i.acknowledgedAt)} — {i.ackNote}
                   </div>
                 )}
               </div>
@@ -52,7 +53,7 @@ export const IncidentList = ({
                   onClick={() => onAcknowledge(i)}
                   className="shrink-0 text-[12.5px] font-semibold text-bamboo-700 hover:underline"
                 >
-                  Ghi nhận
+                  {tr("Ghi nhận")}
                 </button>
               )}
             </li>

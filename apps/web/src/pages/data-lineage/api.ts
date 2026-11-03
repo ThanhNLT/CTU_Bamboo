@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { request } from "../../api/client";
 import { LAYERS } from "./graph";
 import type { LineageEdge, LineageNode, RunResult, RunRow } from "./types";
+import { tr, trf } from "../../i18n";
 
 const LINEAGE = `query Lineage {
   meta_lineage_node { id layer tech name fqn title owner used_by app_link
@@ -42,7 +43,8 @@ export type LineageData = { nodes: LineageNode[]; edges: LineageEdge[]; runs: Ru
 
 const HHMM = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Ho_Chi_Minh" });
 const hhmm = (iso: string) => HHMM.format(new Date(iso));
-const duration = (s: number) => (s >= 60 ? `${Math.floor(s / 60)} phút ${s % 60} giây` : `${s} giây`);
+const duration = (s: number) =>
+  s >= 60 ? trf("{0} phút {1} giây", [Math.floor(s / 60), s % 60]) : trf("{0} giây", [s]);
 const TECH_MONO = new Set(["PostgreSQL", "Kafka", "Iceberg", "Trino"]);
 
 const layout = (rows: NodeRow[], edges: EdgeRow[]) => {
@@ -103,7 +105,7 @@ const toData = (nodes: NodeRow[], edges: EdgeRow[], runs: RunRowDb[]): LineageDa
       task: r.task,
       engine: r.engine,
       start: hhmm(r.started_at),
-      duration: r.result === "running" ? "đang chạy" : duration(r.duration_s),
+      duration: r.result === "running" ? tr("đang chạy") : duration(r.duration_s),
       result: r.result,
       nodeId: r.node_id,
     })),

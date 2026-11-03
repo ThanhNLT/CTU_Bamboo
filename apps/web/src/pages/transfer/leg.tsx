@@ -17,6 +17,7 @@ import { formatDay } from "../../utils/format";
 import { isVacantFrom } from "./vacancy";
 import { TRG_DETAIL, TRI_CHOOSE, TRI_DETAIL, TR_MY_TASK_FOR, TR_TARGET_POSITIONS } from "./queries";
 import type { LegTransfer } from "./types";
+import { tr as trl, trf } from "../../i18n";
 
 const COLUMNS = { xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 };
 
@@ -76,15 +77,15 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
   if (error) return <Alert type="error" showIcon message={error} />;
   if (tr === undefined) return <Spin />;
   if (tr === null)
-    return <Alert type="warning" showIcon message="Không tìm thấy chứng từ hoặc bạn không có quyền xem." />;
+    return <Alert type="warning" showIcon message={trl("Không tìm thấy chứng từ hoặc bạn không có quyền xem.")} />;
 
-  const title = kind === "in" ? "Tiếp nhận điều chuyển" : "Quyết định điều chuyển liên tập đoàn";
+  const title = kind === "in" ? trl("Tiếp nhận điều chuyển") : trl("Quyết định điều chuyển liên tập đoàn");
 
   const choose = async () => {
     if (!chosen) return;
     try {
       await request(TRI_CHOOSE, { id: tr.id, position: chosen });
-      message.success("Đã chọn vị trí tiếp nhận");
+      message.success(trl("Đã chọn vị trí tiếp nhận"));
       setChosen(undefined);
       await load();
     } catch (e) {
@@ -103,7 +104,7 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
       headerButtons={() =>
         task && (
           <Button type="primary" disabled={choosing} icon={<AuditOutlined />} onClick={() => setActing(true)}>
-            Xử lý duyệt
+            {trl("Xử lý duyệt")}
           </Button>
         )
       }
@@ -113,13 +114,15 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
           style={{ marginBottom: 16 }}
           type="info"
           showIcon
-          message="Chọn vị trí tiếp nhận"
-          description="Là trưởng đơn vị tiếp nhận, bạn chọn vị trí trống trong đơn vị cho người này trước khi duyệt."
+          message={trl("Chọn vị trí tiếp nhận")}
+          description={trl(
+            "Là trưởng đơn vị tiếp nhận, bạn chọn vị trí trống trong đơn vị cho người này trước khi duyệt.",
+          )}
           action={
             <Space.Compact>
               <Select
                 style={{ width: 240 }}
-                placeholder="Chọn vị trí trống"
+                placeholder={trl("Chọn vị trí trống")}
                 value={chosen}
                 onChange={setChosen}
                 options={positionOptions}
@@ -127,7 +130,7 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
                 optionFilterProp="label"
               />
               <Button type="primary" disabled={!chosen} onClick={choose}>
-                Lưu vị trí
+                {trl("Lưu vị trí")}
               </Button>
             </Space.Compact>
           }
@@ -136,12 +139,12 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={15}>
           <Descriptions bordered size="small" column={COLUMNS} title={`${title}: ${tr.person_name}`}>
-            <Descriptions.Item label="Ngày chuyển">{formatDay(tr.effective_date)}</Descriptions.Item>
+            <Descriptions.Item label={trl("Ngày chuyển")}>{formatDay(tr.effective_date)}</Descriptions.Item>
             {kind === "in" && (
               <>
-                <Descriptions.Item label="Đơn vị tiếp nhận">{tr.target_unit?.name}</Descriptions.Item>
-                <Descriptions.Item label="Vị trí tiếp nhận">
-                  {tr.target_position?.name ?? <span style={{ color: "#999" }}>Chưa chọn</span>}
+                <Descriptions.Item label={trl("Đơn vị tiếp nhận")}>{tr.target_unit?.name}</Descriptions.Item>
+                <Descriptions.Item label={trl("Vị trí tiếp nhận")}>
+                  {tr.target_position?.name ?? <span style={{ color: "#999" }}>{trl("Chưa chọn")}</span>}
                 </Descriptions.Item>
               </>
             )}
@@ -150,8 +153,10 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
             style={{ marginTop: 16 }}
             type="info"
             showIcon
-            message="Đề nghị gốc nằm ở tenant nguồn"
-            description="Nội dung lý do và căn cứ được xem ở tenant lập đề nghị; ở đây chỉ hiển thị các bước duyệt thuộc tenant này."
+            message={trl("Đề nghị gốc nằm ở tenant nguồn")}
+            description={trl(
+              "Nội dung lý do và căn cứ được xem ở tenant lập đề nghị; ở đây chỉ hiển thị các bước duyệt thuộc tenant này.",
+            )}
           />
         </Col>
         <Col xs={24} xl={9}>
@@ -161,8 +166,8 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
             history={tr.approval_history}
             emptyHint={
               kind === "in"
-                ? "Bước 1: trưởng đơn vị tiếp nhận; bước 2: trưởng phòng nhân sự của công ty."
-                : "Trưởng phòng nhân sự tập đoàn quyết định."
+                ? trl("Bước 1: trưởng đơn vị tiếp nhận; bước 2: trưởng phòng nhân sự của công ty.")
+                : trl("Trưởng phòng nhân sự tập đoàn quyết định.")
             }
           />
         </Col>
@@ -170,7 +175,7 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
       <ActModal
         taskId={acting ? (task?.task_id ?? null) : null}
         viaDelegation={task?.via_delegation}
-        title={`Xử lý ${tr.doc_no}`}
+        title={trf("Xử lý {0}", [tr.doc_no])}
         onClose={() => setActing(false)}
         onDone={() => {
           setActing(false);

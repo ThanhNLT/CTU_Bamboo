@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { request } from "../../api/client";
 import type { SearchResult } from "./types";
+import { tr, trf } from "../../i18n";
 
 const QUERY = `query EntitySearch($p: String!) {
   iot_entity(where: {_or: [{code: {_ilike: $p}}, {name: {_ilike: $p}}]}, limit: 10, order_by: {code: asc}) {
@@ -60,7 +61,7 @@ const toResults = (r: Rows): SearchResult[] => [
     type: "twin" as const,
     title: e.name,
     code: e.code,
-    breadcrumb: `Bản sao số › ${e.type_model.kind}${e.site ? ` · ${e.site.name}` : ""}`,
+    breadcrumb: trf("Bản sao số › {0}{1}", [e.type_model.kind, e.site ? ` · ${e.site.name}` : ""]),
     to: `/d/twin?entity=${encodeURIComponent(e.code)}`,
     keyword: true,
     score: 0.8,
@@ -70,9 +71,9 @@ const toResults = (r: Rows): SearchResult[] => [
   ...r.hr_onboarding_request.map((o) => ({
     key: `ob:${o.id}`,
     type: "record" as const,
-    title: `Tiếp nhận ${o.full_name}`,
+    title: trf("Tiếp nhận {0}", [o.full_name]),
     code: o.doc_no,
-    breadcrumb: `Hồ sơ › Tiếp nhận nhân sự${o.target_position ? ` · ${o.target_position.org_unit.name}` : ""}`,
+    breadcrumb: trf("Hồ sơ › Tiếp nhận nhân sự{0}", [o.target_position ? ` · ${o.target_position.org_unit.name}` : ""]),
     to: `/h/onboarding/show/${o.id}`,
     keyword: true,
     score: 0.78,
@@ -82,9 +83,9 @@ const toResults = (r: Rows): SearchResult[] => [
   ...r.ic_ic_order.map((o) => ({
     key: `ic:${o.id}`,
     type: "record" as const,
-    title: `Đơn nội bộ ${o.buyer_unit?.name ?? "?"} → ${o.seller_unit?.name ?? "?"}`,
+    title: trf("Đơn nội bộ {0} → {1}", [o.buyer_unit?.name ?? "?", o.seller_unit?.name ?? "?"]),
     code: o.doc_no,
-    breadcrumb: "Hồ sơ › Đơn hàng nội bộ",
+    breadcrumb: tr("Hồ sơ › Đơn hàng nội bộ"),
     to: `/p/ic-orders/show/${o.id}`,
     keyword: true,
     score: 0.76,
@@ -96,7 +97,7 @@ const toResults = (r: Rows): SearchResult[] => [
     type: "data" as const,
     title: n.title,
     code: n.fqn,
-    breadcrumb: `Dữ liệu › ${n.tech} · ${n.owner}`,
+    breadcrumb: trf("Dữ liệu › {0} · {1}", [n.tech, n.owner]),
     to: `/d/lineage?asset=${encodeURIComponent(n.fqn)}`,
     keyword: true,
     score: 0.7,

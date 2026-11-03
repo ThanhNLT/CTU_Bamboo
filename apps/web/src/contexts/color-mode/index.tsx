@@ -64,6 +64,21 @@ const MODE_COMPONENTS = {
   },
 };
 
+// Bamboo Glass: nút và thanh phân đoạn dạng viên thuốc, hộp thoại và thẻ bo rộng (dùng chung cho mọi trang)
+const SHARED_COMPONENTS = {
+  Button: { borderRadius: 999, borderRadiusLG: 999, borderRadiusSM: 999, fontWeight: 500 },
+  Segmented: { borderRadius: 999, borderRadiusSM: 999, borderRadiusXS: 999, borderRadiusLG: 999 },
+  Card: { borderRadiusLG: 20 },
+  Modal: { borderRadiusLG: 22 },
+  Tag: { borderRadiusSM: 999 },
+};
+
+const mergeComponents = (byMode: Record<string, object>) => {
+  const out: Record<string, object> = { ...SHARED_COMPONENTS };
+  for (const [k, v] of Object.entries(byMode)) out[k] = { ...(out[k] ?? {}), ...v };
+  return out;
+};
+
 type Mode = keyof typeof MODE_TOKENS;
 
 // Lần đầu theo cài đặt hệ điều hành; sau đó theo lựa chọn người dùng đã lưu
@@ -100,7 +115,7 @@ export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({ children
         theme={{
           algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm,
           token: { ...SHARED_TOKENS, ...MODE_TOKENS[mode] },
-          components: MODE_COMPONENTS[mode],
+          components: mergeComponents(MODE_COMPONENTS[mode]),
         }}
       >
         {children}

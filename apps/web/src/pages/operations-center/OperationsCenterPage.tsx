@@ -22,6 +22,7 @@ import { useOpsTab } from "./api";
 import type { CompanyKey, DashTab, Period } from "./types";
 import { PERIOD_DAYS, useOpsData } from "./useOpsData";
 import { SLA_HOURS } from "../inbox/useInboxTasks";
+import { tr, trf } from "../../i18n";
 
 export const OperationsCenterPage = () => {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -30,7 +31,7 @@ export const OperationsCenterPage = () => {
   const [province, setProvince] = useState("all");
   const [highlight, setHighlight] = useState<CompanyKey | undefined>();
   const ops = useOpsData(period);
-  const meta = `Nóng · ${ops.updatedAt}`;
+  const meta = trf("Nóng · {0}", [ops.updatedAt]);
   const [presenting, setPresenting] = useState(false);
 
   useEffect(() => {
@@ -94,7 +95,7 @@ export const OperationsCenterPage = () => {
       {tab === "overview" && (
         <>
           {ops.error && (
-            <Alert type="error" showIcon message="Không tải được một phần số liệu" description={ops.error} />
+            <Alert type="error" showIcon message={tr("Không tải được một phần số liệu")} description={ops.error} />
           )}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
             {ops.kpis.map((k) => (
@@ -128,7 +129,10 @@ export const OperationsCenterPage = () => {
             company={ops.company}
             highlight={highlight}
             onHighlight={setHighlight}
-            definition={`5 hồ sơ có bước duyệt đang mở lâu hơn hạn ${SLA_HOURS} giờ nhất. Nguồn: wf.task đang mở, trong phạm vi bạn được xem.`}
+            definition={trf(
+              "5 hồ sơ có bước duyệt đang mở lâu hơn hạn {0} giờ nhất. Nguồn: wf.task đang mở, trong phạm vi bạn được xem.",
+              [SLA_HOURS],
+            )}
           />
         </>
       )}
