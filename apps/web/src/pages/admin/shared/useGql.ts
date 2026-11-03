@@ -4,8 +4,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { request } from "../../../api/client";
+import { request, wsClient } from "../../../api/client";
 
+/**
+ * Truy vấn bảng qua Hasura và giữ dữ liệu luôn mới: mở subscription cùng nội dung truy vấn nên thay đổi của người
+ * khác (bổ nhiệm, vai trò, đơn vị...) hiện ngay không cần tải lại trang. Quyền xem vẫn do Hasura lọc theo phiên.
+ * Nếu kết nối WebSocket lỗi thì giữ dữ liệu đã tải bằng HTTP; `reload` luôn tải lại ngay sau khi ghi.
+ */
 export const useGql = <T>(query: string, variables?: Record<string, unknown>) => {
   const [data, setData] = useState<T>();
   const [error, setError] = useState<string>();
@@ -15,7 +20,6 @@ export const useGql = <T>(query: string, variables?: Record<string, unknown>) =>
 
   const reload = useCallback(async () => {
     const my = ++seq.current;
-    setLoading(true);
     try {
       const r = await request<T>(query, JSON.parse(vars) as Record<string, unknown>);
       if (my === seq.current) {
@@ -30,8 +34,27 @@ export const useGql = <T>(query: string, variables?: Record<string, unknown>) =>
   }, [query, vars]);
 
   useEffect(() => {
+    setLoading(true);
     void reload();
-  }, [reload]);
+    const live = query.replace(/^\s*query\b/, "subscription");
+    if (live === query) return undefined;
+    return wsClient.subscribe<T>(
+      { query: live, variables: JSON.parse(vars) as Record<string, unknown> },
+      {
+        next: ({ data: next }) => {
+          if (!next) return;
+          seq.current += 1;
+          setData(next);
+          setError(undefined);
+          setLoading(false);
+        },
+        error: () => {
+          // mất kết nối realtime: giữ dữ liệu hiện có, lần ghi kế tiếp vẫn tải lại bằng HTTP
+        },
+        complete: () => {},
+      },
+    );
+  }, [query, vars, reload]);
 
   return { data, error, loading, reload };
 };

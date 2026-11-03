@@ -42,7 +42,11 @@ def test_bao_gia_day_du():
         ("Dịch vụ vận chuyển nội địa", "chuyến", "1", "5000000", "5000000"),
     ]
     assert d["items"][0]["item_code"] == "LK-PMIC" and d["items"][1]["item_code"] == "LK-CAP-100N"
-    assert d["net_amount"]["value"] == "665000000" and d["vat"] == {"rate": 10, "amount": "66500000", "confidence": 0.85}
+    assert d["net_amount"]["value"] == "665000000" and d["vat"] == {
+        "rate": 10,
+        "amount": "66500000",
+        "confidence": 0.85,
+    }
     assert d["total_amount"]["value"] == "731500000"
     assert d["warnings"] == []
 
@@ -57,7 +61,9 @@ def test_so_tien_lech_bi_bao():
 
 def test_ocr_nhieu_van_doc_duoc():
     noisy = (
-        QUOTE.replace("600.000.000", "600 .000.000").replace("50.000 12.000", "50.000   12.000").replace("21/10/2026", "21 / 10 / 2026")
+        QUOTE.replace("600.000.000", "600 .000.000")
+        .replace("50.000 12.000", "50.000   12.000")
+        .replace("21/10/2026", "21 / 10 / 2026")
         .replace("MST 0101234567", "MST: 0101 234567")
     )
     d = parse_document(noisy)
@@ -90,12 +96,19 @@ def test_khong_nhan_ra_thi_noi_that():
     assert parse_document("")["items"] == []
 
 
-@pytest.mark.parametrize(("text", "value"), [("12.000", 12000), ("1.234,5", 1234.5), ("2,5", 2.5), ("0,125", 0.125), ("1,234,567", 1234567), ("abc", None)])
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [("12.000", 12000), ("1.234,5", 1234.5), ("2,5", 2.5), ("0,125", 0.125), ("1,234,567", 1234567), ("abc", None)],
+)
 def test_so_viet_nam(text, value):
     got = vn_number(text)
     assert (float(got) if got is not None else None) == value
 
 
 def test_fold_bo_dau():
-    assert fold("Công ty TNHH Thiết bị Kỹ thuật A") == "cong ty tnhh thiet bi ky thuat a" == fold("CÔNG TY TNHH THIẾT BỊ KỸ THUẬT A")
+    assert (
+        fold("Công ty TNHH Thiết bị Kỹ thuật A")
+        == "cong ty tnhh thiet bi ky thuat a"
+        == fold("CÔNG TY TNHH THIẾT BỊ KỸ THUẬT A")
+    )
     assert fold("Đỗ Thị Hương") == "do thi huong"

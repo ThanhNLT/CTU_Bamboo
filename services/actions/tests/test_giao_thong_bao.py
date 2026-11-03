@@ -107,7 +107,9 @@ def app_conn(database):
 
 
 def settings_for(database, **extra) -> config.Settings:
-    return config.Settings(**{**SETTINGS.__dict__, "database_url": database, "web_origin": "http://localhost:8000", **extra})
+    return config.Settings(
+        **{**SETTINGS.__dict__, "database_url": database, "web_origin": "http://localhost:8000", **extra}
+    )
 
 
 def signer() -> receipts.Signer:
@@ -147,7 +149,9 @@ def test_email_duoc_giao_va_co_bien_nhan_ky_so(conn, database, worker, smtp):
     assert receipt["channel"] == "email" and receipt["provider_id"].startswith("<")
     assert receipts.verify_receipt(signer(), str(message_id), row["payload_sha256"], receipt), "chữ ký hợp lệ"
     assert not receipts.verify_receipt(signer(), str(message_id), "0" * 64, receipt), "đổi nội dung thì chữ ký sai"
-    assert not receipts.verify_receipt(signer(), str(message_id), row["payload_sha256"], {**receipt, "delivered_at": "2020-01-01T00:00:00+00:00"})
+    assert not receipts.verify_receipt(
+        signer(), str(message_id), row["payload_sha256"], {**receipt, "delivered_at": "2020-01-01T00:00:00+00:00"}
+    )
 
 
 def test_dia_chi_bi_tu_choi_vao_hang_chet_va_loi_tam_thi_thu_lai(conn, database, worker, smtp):
@@ -160,7 +164,9 @@ def test_dia_chi_bi_tu_choi_vao_hang_chet_va_loi_tam_thi_thu_lai(conn, database,
 
     down = enqueue_for(conn, i, "EMAIL", "ok@bamboo.vn", "SMTP đang tắt")
     delivery.run_once(worker, settings_for(database, smtp_host="127.0.0.1", smtp_port=1), signer())
-    row = conn.execute("SELECT status, attempts, next_attempt_at > now() AS later FROM msg.queue WHERE id = %s", (down,)).fetchone()
+    row = conn.execute(
+        "SELECT status, attempts, next_attempt_at > now() AS later FROM msg.queue WHERE id = %s", (down,)
+    ).fetchone()
     assert row["status"] == "PENDING" and row["attempts"] == 1 and row["later"], "lỗi tạm thì chờ thử lại"
     conn.execute("UPDATE msg.queue SET next_attempt_at = now() WHERE id = %s", (down,))
     delivery.run_once(worker, settings, signer())
@@ -182,7 +188,10 @@ def test_sms_qua_cong_http(conn, database, worker):
     finally:
         gateway.close()
     assert gateway.requests[0]["auth"] == "Bearer bi-mat"
-    assert gateway.requests[0]["body"]["to"] == "+84901234567" and "Duyệt đề nghị gấp" in gateway.requests[0]["body"]["text"]
+    assert (
+        gateway.requests[0]["body"]["to"] == "+84901234567"
+        and "Duyệt đề nghị gấp" in gateway.requests[0]["body"]["text"]
+    )
     row = conn.execute("SELECT status, receipt FROM msg.queue WHERE id = %s", (message_id,)).fetchone()
     assert row["status"] == "DELIVERED" and row["receipt"]["provider_id"] == "sms-123"
 
@@ -196,7 +205,12 @@ def test_sms_qua_cong_http(conn, database, worker):
 
 
 def test_webhook_chan_dia_chi_noi_bo_va_ket_noi_thang_toi_ip(monkeypatch):
-    for url in ("https://127.0.0.1/x", "https://localhost/hook", "https://10.1.2.3/h", "https://169.254.169.254/latest/meta-data"):
+    for url in (
+        "https://127.0.0.1/x",
+        "https://localhost/hook",
+        "https://10.1.2.3/h",
+        "https://169.254.169.254/latest/meta-data",
+    ):
         with pytest.raises(delivery.DeliveryError) as err:
             delivery.resolve_public(url)
         assert err.value.permanent, url
@@ -238,10 +252,16 @@ def test_hanh_dong_tuy_chon_va_hang_doi(conn, database, app_conn, smtp):
     with pytest.raises(ActionError, match="https"):
         messaging.save_notification_pref(app_conn, session, {"channel": "WEBHOOK", "address": "http://x.vn"}, ctx)
     with pytest.raises(ActionError, match="nội bộ"):
-        messaging.save_notification_pref(app_conn, session, {"channel": "WEBHOOK", "address": "https://127.0.0.1/h"}, ctx)
+        messaging.save_notification_pref(
+            app_conn, session, {"channel": "WEBHOOK", "address": "https://127.0.0.1/h"}, ctx
+        )
     with pytest.raises(ActionError, match="Loại thông báo"):
-        messaging.save_notification_pref(app_conn, session, {"channel": "EMAIL", "address": "c@x.vn", "kinds": ["LA"]}, ctx)
-    messaging.save_notification_pref(app_conn, session, {"channel": "EMAIL", "address": "c@bamboo.vn", "kinds": ["COMMENT"]}, ctx)
+        messaging.save_notification_pref(
+            app_conn, session, {"channel": "EMAIL", "address": "c@x.vn", "kinds": ["LA"]}, ctx
+        )
+    messaging.save_notification_pref(
+        app_conn, session, {"channel": "EMAIL", "address": "c@bamboo.vn", "kinds": ["COMMENT"]}, ctx
+    )
     assert messaging.notification_prefs(app_conn, session, {}, ctx)["channels"][0]["kinds"] == ["COMMENT"]
 
     with pytest.raises(ActionError, match="chưa được cấu hình"):
@@ -257,20 +277,34 @@ def test_hanh_dong_tuy_chon_va_hang_doi(conn, database, app_conn, smtp):
         messaging.queue_overview(app_conn, session, {}, ctx)
     assert err.value.status == 403, "nhân viên không xem được hàng đợi chung"
     conn.execute("INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), 'QT_TIN', 'Quản trị tin')")
-    conn.execute("INSERT INTO core.role_permission (tenant_id, role_id, permission_code) SELECT tenant_id, id, 'core.org.manage' FROM core.role WHERE code = 'QT_TIN'")
-    conn.execute("INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope) SELECT test.id('TDX'), r.id, test.id('P_NV_MH_DT'), 'TENANT' FROM core.role r WHERE r.code = 'QT_TIN'")
+    conn.execute(
+        "INSERT INTO core.role_permission (tenant_id, role_id, permission_code) SELECT tenant_id, id, 'core.org.manage' FROM core.role WHERE code = 'QT_TIN'"
+    )
+    conn.execute(
+        "INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope) SELECT test.id('TDX'), r.id, test.id('P_NV_MH_DT'), 'TENANT' FROM core.role r WHERE r.code = 'QT_TIN'"
+    )
     overview = messaging.queue_overview(app_conn, session, {}, ctx)
     assert any(c["status"] == "DELIVERED" for c in overview["counts"])
     verified = messaging.queue_verify(app_conn, session, {"id": test["id"]}, ctx)
     assert verified["valid"] is True and verified["alg"] in ("ed25519", "hmac-sha256"), verified
     with pytest.raises(psycopg.errors.DataException, match="đã giao"):
-        conn.execute("UPDATE msg.queue SET receipt = jsonb_set(receipt, '{provider_id}', '\"<gia-mao>\"') WHERE id = %s", (test["id"],))
+        conn.execute(
+            "UPDATE msg.queue SET receipt = jsonb_set(receipt, '{provider_id}', '\"<gia-mao>\"') WHERE id = %s",
+            (test["id"],),
+        )
     conn.execute("ALTER TABLE msg.queue DISABLE TRIGGER queue_before_write")
     try:  # kẻ có quyền cao sửa thẳng biên nhận thì xác minh chữ ký phải thất bại
-        conn.execute("UPDATE msg.queue SET receipt = jsonb_set(receipt, '{provider_id}', '\"<gia-mao>\"') WHERE id = %s", (test["id"],))
+        conn.execute(
+            "UPDATE msg.queue SET receipt = jsonb_set(receipt, '{provider_id}', '\"<gia-mao>\"') WHERE id = %s",
+            (test["id"],),
+        )
         assert messaging.queue_verify(app_conn, session, {"id": test["id"]}, ctx)["valid"] is False, "biên nhận bị sửa"
-        conn.execute("UPDATE msg.queue SET payload = jsonb_set(payload, '{title}', '\"khac\"') WHERE id = %s", (test["id"],))
-        assert "mã băm" in messaging.queue_verify(app_conn, session, {"id": test["id"]}, ctx)["reason"], "nội dung bị sửa"
+        conn.execute(
+            "UPDATE msg.queue SET payload = jsonb_set(payload, '{title}', '\"khac\"') WHERE id = %s", (test["id"],)
+        )
+        assert "mã băm" in messaging.queue_verify(app_conn, session, {"id": test["id"]}, ctx)["reason"], (
+            "nội dung bị sửa"
+        )
     finally:
         conn.execute("ALTER TABLE msg.queue ENABLE TRIGGER queue_before_write")
     with pytest.raises(ActionError, match="hàng chết"):

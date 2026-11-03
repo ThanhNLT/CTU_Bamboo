@@ -41,7 +41,11 @@ class Signer:
                 return {"alg": "ed25519", "key": f"transit/{self.key}", "sig": self.bao.sign(data, self.key)}
             except BaoError as exc:
                 log.warning("OpenBao không ký được, dùng HMAC: %s", exc)
-        return {"alg": "hmac-sha256", "key": "actions-secret", "sig": hmac.new(self.secret, data, hashlib.sha256).hexdigest()}
+        return {
+            "alg": "hmac-sha256",
+            "key": "actions-secret",
+            "sig": hmac.new(self.secret, data, hashlib.sha256).hexdigest(),
+        }
 
     def verify(self, message: str, proof: dict) -> bool:
         data = message.encode()
@@ -60,14 +64,20 @@ def receipt_message(message_id: str, payload_sha256: str, channel: str, delivere
     )
 
 
-def make_receipt(signer: Signer, message_id: str, payload_sha256: str, channel: str, delivered_at: str, provider_id: str) -> dict:
+def make_receipt(
+    signer: Signer, message_id: str, payload_sha256: str, channel: str, delivered_at: str, provider_id: str
+) -> dict:
     proof = signer.sign(receipt_message(message_id, payload_sha256, channel, delivered_at, provider_id))
     return {"channel": channel, "provider_id": provider_id, "delivered_at": delivered_at, **proof}
 
 
 def verify_receipt(signer: Signer, message_id: str, payload_sha256: str, receipt: dict) -> bool:
     message = receipt_message(
-        message_id, payload_sha256, receipt.get("channel", ""), receipt.get("delivered_at", ""), receipt.get("provider_id", "")
+        message_id,
+        payload_sha256,
+        receipt.get("channel", ""),
+        receipt.get("delivered_at", ""),
+        receipt.get("provider_id", ""),
     )
     try:
         return signer.verify(message, receipt)

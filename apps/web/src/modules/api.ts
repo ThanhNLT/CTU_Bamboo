@@ -16,6 +16,11 @@ export type ModuleInfo = {
   services: ModuleService[];
   installed: boolean;
   enabled: boolean;
+  external: boolean;
+  vendor: string | null;
+  version: string | null;
+  scopes: string[];
+  menu: { label: string; path: string }[];
 };
 
 export type ModuleOverview = {
@@ -26,7 +31,8 @@ export type ModuleOverview = {
 };
 
 const FIELDS = `can_manage can_install changed
-  modules { code name description depends dependents installed enabled services { name running } }`;
+  modules { code name description depends dependents installed enabled services { name running }
+    external vendor version scopes menu { label path } }`;
 
 /** Tài khoản có vai trò platform_admin thì gọi với role đó để cài/gỡ mô-đun trên máy (ADR #56). */
 export const isPlatformAdmin = (): boolean =>
@@ -49,3 +55,37 @@ export const changeModule = (action: ModuleChange, code: string) =>
     { code },
     { role: role() },
   ).then((r) => r[action]);
+
+export const SCOPE_LABEL: Record<string, string> = {
+  "org.read": "Đọc cơ cấu tổ chức (đơn vị, vị trí)",
+  "people.read": "Đọc danh sách nhân sự (họ tên, mã nhân viên, vị trí)",
+  "notify.send": "Gửi thông báo cho người trong công ty",
+};
+
+export type ExtRegistered = {
+  code: string;
+  api_key: string | null;
+  reachable: boolean;
+  message: string;
+  updated: boolean;
+};
+
+export const registerExternal = (manifest: unknown) =>
+  request<{ ext_register: ExtRegistered }>(
+    `mutation Register($m: jsonb!) { ext_register(manifest: $m) { code api_key reachable message updated } }`,
+    { m: manifest },
+    { role: role() },
+  ).then((r) => r.ext_register);
+
+export const rotateExternalKey = (code: string) =>
+  request<{ ext_rotate_key: ExtRegistered }>(
+    `mutation Rotate($c: String!) { ext_rotate_key(code: $c) { code api_key reachable message updated } }`,
+    { c: code },
+    { role: role() },
+  ).then((r) => r.ext_rotate_key);
+
+export const launchExternal = (code: string, path?: string) =>
+  request<{ ext_launch: { path: string; name: string } }>(
+    `mutation Launch($c: String!, $p: String) { ext_launch(code: $c, path: $p) { path name } }`,
+    { c: code, p: path ?? null },
+  ).then((r) => r.ext_launch);
