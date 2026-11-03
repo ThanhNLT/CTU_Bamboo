@@ -6,9 +6,10 @@ import re
 
 import psycopg
 
+from bamboo_common.openbao import BaoError
+from bamboo_common.pii import mask_address, mask_tail
+
 from .common import ActionError, Context, bind_session, require_read, session_identity
-from .openbao import BaoError
-from .pii import mask_address, mask_tail
 
 ENTITY = "hr.onboarding_request"
 TRANSFER_ENTITY = "hr.transfer_request"

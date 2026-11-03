@@ -17,8 +17,9 @@ from collections.abc import Callable
 
 import httpx
 
+from bamboo_common.ollama import Ollama, OllamaUnavailable
+
 from .ocr import OcrClient, OcrOutOfMemory, OcrUnavailable
-from .ollama import Ollama, OllamaUnavailable
 
 log = logging.getLogger("gpu")
 

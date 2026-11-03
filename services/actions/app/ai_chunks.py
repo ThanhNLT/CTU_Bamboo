@@ -16,8 +16,9 @@ from dataclasses import dataclass
 
 import psycopg
 
+from bamboo_common.ollama import Ollama
+
 from . import config, ocr, search, storage
-from .ollama import Ollama
 
 log = logging.getLogger("ai_chunks")
 

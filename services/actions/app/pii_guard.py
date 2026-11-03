@@ -6,8 +6,9 @@ import re
 import threading
 from dataclasses import dataclass
 
+from bamboo_common.pii import mask_address, mask_tail
+
 from .common import ActionError
-from .pii import mask_address, mask_tail
 
 LANG = "vi"
 LABELS = {

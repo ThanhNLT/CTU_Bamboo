@@ -82,7 +82,7 @@ def build() -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    default = pathlib.Path(__file__).resolve().parents[3] / "platform/keycloak/realm/bms-realm.json"
+    default = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/keycloak/realm/bms-realm.json"
     parser.add_argument("--out", default=str(default))
     out = pathlib.Path(parser.parse_args().out)
     out.parent.mkdir(parents=True, exist_ok=True)

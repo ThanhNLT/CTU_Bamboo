@@ -2,18 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
+.PHONY: check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
+# pnpm ghim ở package.json (packageManager); cài: npm install -g --allow-scripts=pnpm pnpm@12.16.1
+PNPM ?= pnpm
+UV_LINT := uv run --frozen --only-group lint
 
 AI_SERVICES := ollama-core ollama-init ocr-core ocr-init ai-worker
 
 up:
-	eval "$$(scripts/ram_profile.sh)"; docker compose up -d --build --remove-orphans $$BAMBOO_SERVICES \
+	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans $$BAMBOO_SERVICES \
 		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 up-gpu:
-	eval "$$(scripts/ram_profile.sh)"; docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
+	eval "$$(tools/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
 		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
 
 down:
@@ -23,7 +26,7 @@ migrate:
 	docker compose run --rm --build migrate
 
 test-db:
-	docker compose run --rm --build --entrypoint /repo/scripts/db/test.sh migrate $(T)
+	docker compose run --rm --build --entrypoint /repo/tools/db/test.sh migrate $(T)
 
 test-actions:
 	docker compose --profile test up -d --build hasura-test flowable bootstrap
@@ -31,15 +34,15 @@ test-actions:
 
 test-seed:
 	docker compose run --rm --build -u 0 -v ./:/repo -e TEST_DATABASE_URL=postgresql://bms:$${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms_seed_test \
-		seed sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q"
+		seed sh -c "pip install -q pytest -c /opt/bamboo/dev-pins.txt && python -m pytest -q"
 
 test-auth:
 	docker compose run --rm -u 0 -v ./:/repo -e DEMO_STACK=1 -e DEMO_PASSWORD=$(DEMO_PASSWORD) \
 		-e KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/bms/protocol/openid-connect/token \
-		actions sh -c "pip install -q pytest -c /repo/constraints.txt && python -m pytest -q tests/test_demo_login.py"
+		actions sh -c "pip install -q pytest -c /opt/bamboo/dev-pins.txt && python -m pytest -q tests/test_demo_login.py"
 
 test-gateway:
-	scripts/ci/gateway-smoke.sh
+	tools/ci/gateway-smoke.sh
 
 test-all: test-db test-seed test-actions test-auth
 
@@ -61,7 +64,7 @@ psql:
 	docker compose exec db psql -U bms -d bms
 
 release-compose:
-	python3 scripts/release/compose_release.py $(or $(VERSION),dev)
+	python3 tools/release/compose_release.py $(or $(VERSION),dev)
 
 bao-token:
 	@docker compose run --rm --no-deps -v bamboo_openbao-keys:/openbao/keys:ro --entrypoint python openbao-init \
@@ -69,3 +72,23 @@ bao-token:
 
 setup-code:
 	docker compose run --rm actions python -m app.setup_code
+
+# Kiểm tra tĩnh toàn repo, giống job `lint` của CI (.github/workflows/ci.yml).
+check: check-py check-web check-docs
+
+check-py:
+	uv lock --check
+	uv lock --check --project services/ocr
+	$(UV_LINT) reuse lint
+	$(UV_LINT) ruff check services packages --select E,F,W,B --ignore E501
+	$(UV_LINT) ruff check . --select I
+	$(UV_LINT) ruff format --check .
+	docker compose --profile test --profile scan config -q
+
+check-web:
+	$(PNPM) install --frozen-lockfile
+	$(PNPM) turbo run lint format:check build
+	node tools/ci/check_licenses.mjs apps/web
+
+check-docs:
+	$(MAKE) -C docs check
