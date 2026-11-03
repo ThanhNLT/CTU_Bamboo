@@ -8,8 +8,9 @@ import type { Company, CompanyKey, PendingRow } from "../types";
 import { BAMBOO_DARK, BAMBOO_LIGHT, DIM, INK } from "./chartTheme";
 import { ChartTooltip, type TipProps } from "./ChartTooltip";
 import { ChartWidget } from "./ChartWidget";
+import { tr, trf } from "../../../i18n";
 
-const LEVEL_NAME: Record<string, string> = { l1: "Cấp 1", l2: "Cấp 2+" };
+const LEVEL_NAME: Record<string, string> = { l1: tr("Cấp 1"), l2: tr("Cấp 2+") };
 
 const TotalLabel = (props: {
   x?: number | string;
@@ -57,25 +58,29 @@ export const PendingByCompanyChart = ({
 
   return (
     <ChartWidget
-      title="Hồ sơ đang chờ theo công ty"
+      title={tr("Hồ sơ đang chờ theo công ty")}
       meta={meta}
-      footer={<p className="text-[11.5px] text-muted">Nhấn một thanh để tô sáng cả trang · Esc để bỏ</p>}
+      footer={<p className="text-[11.5px] text-muted">{tr("Nhấn một thanh để tô sáng cả trang · Esc để bỏ")}</p>}
     >
-      <ul className="m-0 mb-2 flex list-none gap-4 p-0 text-[11.5px] text-body" aria-label="Chú giải">
+      <ul className="m-0 mb-2 flex list-none gap-4 p-0 text-[11.5px] text-body" aria-label={tr("Chú giải")}>
         <li className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: BAMBOO_DARK }} aria-hidden />
-          Cấp 1
+          {tr("Cấp 1")}
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: BAMBOO_LIGHT }} aria-hidden />
-          Cấp 2 trở lên
+          {tr("Cấp 2 trở lên")}
         </li>
       </ul>
-      {DATA.length === 0 && <p className="py-16 text-center text-[13px] text-muted">Không có hồ sơ nào đang chờ.</p>}
+      {DATA.length === 0 && (
+        <p className="py-16 text-center text-[13px] text-muted">{tr("Không có hồ sơ nào đang chờ.")}</p>
+      )}
       <div
         className={DATA.length ? "h-[220px]" : "hidden"}
         role="img"
-        aria-label={DATA.map((d) => `${d.name}: ${d.total} hồ sơ chờ (cấp 1 ${d.l1}, cấp 2 ${d.l2})`).join("; ")}
+        aria-label={DATA.map((d) =>
+          trf("{0}: {1} hồ sơ chờ (cấp 1 {2}, cấp 2 {3})", [d.name, d.total, d.l1, d.l2]),
+        ).join("; ")}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart

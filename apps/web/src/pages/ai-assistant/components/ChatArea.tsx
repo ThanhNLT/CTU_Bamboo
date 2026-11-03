@@ -7,11 +7,12 @@ import { useEffect, useRef, type ReactNode } from "react";
 
 import { cn } from "../../../utils/cn";
 import type { Assistant } from "../types";
+import { tr } from "../../../i18n";
 
 const SUGGESTIONS = [
-  "Đề nghị mua sắm từ 50 triệu đồng do ai duyệt?",
-  "Cần bao nhiêu báo giá khi mua hàng?",
-  "Nhà cung cấp mới được thêm vào danh mục thế nào?",
+  tr("Đề nghị mua sắm từ 50 triệu đồng do ai duyệt?"),
+  tr("Cần bao nhiêu báo giá khi mua hàng?"),
+  tr("Nhà cung cấp mới được thêm vào danh mục thế nào?"),
 ];
 
 export const ChatArea = ({
@@ -51,13 +52,13 @@ export const ChatArea = ({
 
   return (
     <section
-      aria-label="Hỏi trợ lý"
+      aria-label={tr("Hỏi trợ lý")}
       className={cn("flex min-h-0 flex-col rounded-2xl border border-line bg-surface shadow-card", className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-5">
         {assistants.length > 1 ? (
           <label className="flex items-center gap-2 text-[12.5px] text-body">
-            <span>Trợ lý</span>
+            <span>{tr("Trợ lý")}</span>
             <select
               value={assistantId}
               onChange={(e) => onAssistant(e.target.value)}
@@ -73,7 +74,7 @@ export const ChatArea = ({
         ) : (
           <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink">
             <BookOpen className="h-4 w-4 text-bamboo-600" aria-hidden />
-            {current?.name ?? "Tri thức"}
+            {current?.name ?? tr("Tri thức")}
           </span>
         )}
         {current && (
@@ -89,16 +90,16 @@ export const ChatArea = ({
             <button
               type="button"
               onClick={onClearDoc}
-              aria-label="Bỏ giới hạn tài liệu"
+              aria-label={tr("Bỏ giới hạn tài liệu")}
               className="grid h-5 w-5 place-items-center rounded-ui text-bamboo-700 hover:bg-bamboo-50"
             >
               <X className="h-3.5 w-3.5" aria-hidden />
             </button>
-            Đang hỏi trong: {docLabel}
+            {tr("Đang hỏi trong: ")} {docLabel}
           </span>
         )}
         <span className="text-[11.5px] text-muted">
-          Chỉ trả lời từ tài liệu đang hiệu lực trong Thư viện tri thức mà bạn được xem
+          {tr("Chỉ trả lời từ tài liệu đang hiệu lực trong Thư viện tri thức mà bạn được xem")}
         </span>
       </div>
 
@@ -108,10 +109,11 @@ export const ChatArea = ({
             <span className="grid h-11 w-11 place-items-center rounded-ui bg-bamboo-50 text-bamboo-600" aria-hidden>
               <Sparkles className="h-5 w-5" />
             </span>
-            <p className="text-[15px] font-semibold text-ink">Bạn cần hỏi gì?</p>
+            <p className="text-[15px] font-semibold text-ink">{tr("Bạn cần hỏi gì?")}</p>
             <p className="max-w-sm text-[12.5px] text-muted">
-              Hỏi về quy chế, quy trình và hướng dẫn. Câu trả lời luôn kèm nguồn, và trợ lý chỉ đọc tài liệu bạn có
-              quyền xem. Mô hình chạy cục bộ nên có thể mất vài chục giây.
+              {tr(
+                "Hỏi về quy chế, quy trình và hướng dẫn. Câu trả lời luôn kèm nguồn, và trợ lý chỉ đọc tài liệu bạn có quyền xem. Mô hình chạy cục bộ nên có thể mất vài chục giây.",
+              )}
             </p>
           </div>
         ) : (

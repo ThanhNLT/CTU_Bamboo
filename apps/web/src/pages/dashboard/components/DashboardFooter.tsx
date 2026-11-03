@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { tr } from "../../../i18n";
+
 const SOURCE_URL: string | undefined = import.meta.env.VITE_SOURCE_URL;
 
 export const DashboardFooter = () => (
@@ -14,11 +16,11 @@ export const DashboardFooter = () => (
         rel="noreferrer"
         className="text-muted underline underline-offset-2 hover:text-ink"
       >
-        Mã nguồn
+        {tr("Mã nguồn")}
       </a>
     ) : (
-      <span className="underline underline-offset-2">Mã nguồn</span>
+      <span className="underline underline-offset-2">{tr("Mã nguồn")}</span>
     )}
-    <span>Dữ liệu demo</span>
+    <span>{tr("Dữ liệu demo")}</span>
   </footer>
 );

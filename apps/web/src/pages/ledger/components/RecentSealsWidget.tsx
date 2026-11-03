@@ -5,21 +5,22 @@
 import { useState } from "react";
 
 import type { Seal } from "../types";
+import { tr } from "../../../i18n";
 
 const DEFAULT_ROWS = 5;
 
 const ResultTag = ({ result }: { result: Seal["lastResult"] }) =>
   result == null ? (
-    <span className="text-[12.5px] text-muted">Chưa đối soát</span>
+    <span className="text-[12.5px] text-muted">{tr("Chưa đối soát")}</span>
   ) : result === "match" ? (
     <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink">
       <span className="h-1.5 w-1.5 rounded-ui bg-bamboo-500" aria-hidden />
-      Khớp
+      {tr("Khớp")}
     </span>
   ) : (
     <span className="inline-flex h-6 items-center gap-1.5 rounded-ui bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
       <span className="h-1.5 w-1.5 rounded-ui bg-red-500" aria-hidden />
-      Không khớp
+      {tr("Không khớp")}
     </span>
   );
 
@@ -28,9 +29,12 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: Seal[]; onPick: (row
   const visible = showAll ? rows : rows.slice(0, DEFAULT_ROWS);
 
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Niêm phong gần đây">
+    <section
+      className="rounded-2xl border border-line bg-surface p-5 shadow-card"
+      aria-label={tr("Niêm phong gần đây")}
+    >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-ink">Niêm phong gần đây</h2>
+        <h2 className="text-[15px] font-semibold text-ink">{tr("Niêm phong gần đây")}</h2>
         {rows.length > DEFAULT_ROWS && (
           <button
             type="button"
@@ -38,14 +42,14 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: Seal[]; onPick: (row
             aria-expanded={showAll}
             className="rounded-md text-[12.5px] font-semibold text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
           >
-            {showAll ? "Thu gọn" : "Xem tất cả"}
+            {showAll ? tr("Thu gọn") : tr("Xem tất cả")}
           </button>
         )}
       </div>
 
       {rows.length === 0 && (
         <p className="py-6 text-center text-[13px] text-muted">
-          Chưa có tệp nào được niêm phong trong các chứng từ bạn được xem.
+          {tr("Chưa có tệp nào được niêm phong trong các chứng từ bạn được xem.")}
         </p>
       )}
       <div className="mt-3 overflow-x-auto">
@@ -53,16 +57,16 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: Seal[]; onPick: (row
           <thead>
             <tr className="text-left text-[11.5px] text-muted">
               <th scope="col" className="border-b border-line py-2 pr-3 font-medium">
-                Hồ sơ
+                {tr("Hồ sơ")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Phiên bản
+                {tr("Phiên bản")}
               </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
-                Niêm phong lúc
+                {tr("Niêm phong lúc")}
               </th>
               <th scope="col" className="border-b border-line py-2 pl-3 font-medium">
-                Kết quả
+                {tr("Kết quả")}
               </th>
             </tr>
           </thead>
@@ -73,7 +77,7 @@ export const RecentSealsWidget = ({ rows, onPick }: { rows: Seal[]; onPick: (row
                   <button
                     type="button"
                     onClick={() => onPick(r)}
-                    title="Đối soát lại hồ sơ này"
+                    title={tr("Đối soát lại hồ sơ này")}
                     className="rounded font-mono text-[12px] text-ink hover:text-bamboo-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
                   >
                     {r.code}

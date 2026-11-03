@@ -8,6 +8,7 @@ import { BankOutlined, MedicineBoxOutlined } from "@ant-design/icons";
 
 import { getTenant, request, setTenant } from "../api/client";
 import { SessionContext, type AccountTenant } from "./useSession";
+import { tr } from "../i18n";
 
 const MY_TENANTS = `query MyTenants { my_tenants { tenant_id tenant_code tenant_name person_id full_name } }`;
 
@@ -41,13 +42,13 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
         type="error"
         showIcon
         style={{ margin: 48 }}
-        message="Không lấy được danh sách tenant"
+        message={tr("Không lấy được danh sách tenant")}
         description={error}
       />
     );
   }
   if (!tenants) {
-    return <Spin fullscreen tip="Đang tải phiên làm việc..." />;
+    return <Spin fullscreen tip={tr("Đang tải phiên làm việc...")} />;
   }
   if (tenants.length === 0) {
     return (
@@ -55,8 +56,8 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
         type="warning"
         showIcon
         style={{ margin: 48 }}
-        message="Tài khoản chưa thuộc tenant nào"
-        description="Liên hệ quản trị để được bổ nhiệm vào một đơn vị."
+        message={tr("Tài khoản chưa thuộc tenant nào")}
+        description={tr("Liên hệ quản trị để được bổ nhiệm vào một đơn vị.")}
       />
     );
   }
@@ -64,9 +65,9 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
   if (!tenant) {
     return (
       <Flex justify="center" align="center" style={{ minHeight: "100vh" }}>
-        <Card title="Chọn đơn vị làm việc" style={{ width: 420 }}>
+        <Card title={tr("Chọn đơn vị làm việc")} style={{ width: 420 }}>
           <Typography.Paragraph type="secondary">
-            Tài khoản của bạn làm việc ở nhiều tenant. Mỗi phiên chỉ thấy dữ liệu của một tenant.
+            {tr("Tài khoản của bạn làm việc ở nhiều tenant. Mỗi phiên chỉ thấy dữ liệu của một tenant.")}
           </Typography.Paragraph>
           <List
             dataSource={tenants}

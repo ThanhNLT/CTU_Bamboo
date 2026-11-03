@@ -17,6 +17,7 @@ import { RecordsHeader } from "./components/RecordsHeader";
 import { RecordsTable } from "./components/RecordsTable";
 import type { RecordFilters } from "./types";
 import { countByTab, filterExceptTab, matchesTab, toRecord } from "./utils";
+import { tr } from "../../i18n";
 
 const PAGE_SIZE = 20;
 const FETCH_LIMIT = 500;
@@ -64,7 +65,7 @@ export const RecordsPage = () => {
         onCreate={() => go({ to: { resource: "proc_purchase_request", action: "create" } })}
       />
 
-      {docs.error && <Alert type="error" showIcon message="Không tải được hồ sơ" description={docs.error} />}
+      {docs.error && <Alert type="error" showIcon message={tr("Không tải được hồ sơ")} description={docs.error} />}
 
       <RecordsFilterBar filters={filters} counts={counts} onChange={updateFilters} />
 

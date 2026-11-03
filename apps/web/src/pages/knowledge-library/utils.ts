@@ -5,9 +5,15 @@
 import { fold } from "../../utils/text";
 import { CATEGORY_SHORT } from "./labels";
 import type { CategoryFilter, LibraryDoc, ScopeFilter } from "./types";
+import { trf } from "../../i18n";
 
 export const docMeta = (d: LibraryDoc) =>
-  [CATEGORY_SHORT[d.category], d.issuer, `v${d.version}`, d.effectiveDate ? `hiệu lực ${d.effectiveDate}` : null]
+  [
+    CATEGORY_SHORT[d.category],
+    d.issuer,
+    `v${d.version}`,
+    d.effectiveDate ? trf("hiệu lực {0}", [d.effectiveDate]) : null,
+  ]
     .filter(Boolean)
     .join(" · ");
 

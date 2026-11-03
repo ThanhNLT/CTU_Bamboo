@@ -3,7 +3,7 @@
 Trang này dành cho người muốn dùng Bamboo để quản lý **công ty hoặc tập đoàn của chính mình**, bắt đầu từ một hệ thống trống (không có dữ liệu demo Tập đoàn X). Làm theo thứ tự:
 
 1. Cài hệ thống và tắt dữ liệu demo.
-2. Tạo công ty trên trang khởi tạo: nhập mã thiết lập, người đại diện ký số đơn đăng ký (hoặc dùng một lệnh trên máy chủ).
+2. Tạo tài khoản doanh nghiệp trên trang đăng ký: khai thông tin, thành viên, công cụ; ký số là tùy chọn (hoặc dùng một lệnh trên máy chủ).
 3. Quản trị viên đăng nhập, tự dựng cơ cấu tổ chức, người dùng, phân quyền, danh mục.
 
 ## 1. Cài hệ thống trống
@@ -38,16 +38,23 @@ Realm đăng nhập luôn có sẵn các tài khoản demo (`cdo`, `admin`, `nv.
 
 ## 2. Tạo công ty và chủ sở hữu
 
-### Cách 1: trang khởi tạo (khuyến nghị)
+### Cách 1: trang đăng ký (khuyến nghị)
 
-Hệ thống chưa có công ty nào thì trang đăng nhập hiện nút **Tạo công ty mới** (ADR #57).
+Hệ thống chưa có công ty nào thì trang đăng nhập hiện nút **Tạo tài khoản** (ADR #57, đơn giản hóa ở ADR #62). Không phải nhập mã thiết lập: trang đăng ký mở trong **24 giờ** sau khi hệ thống khởi động lần đầu. Hết 24 giờ mà chưa đăng ký thì người quản trị máy chủ chạy `make setup-code` để mở lại thêm 24 giờ. Vì ai mở được trang trước sẽ thành chủ sở hữu, chỉ cho máy chủ ra Internet **sau khi** đã đăng ký xong.
 
-1. Lấy **mã thiết lập**: `docker compose logs bootstrap | grep -A1 "MÃ THIẾT LẬP"`. Mã dùng một lần, hết hạn sau 24 giờ; lấy mã mới bằng `make setup-code`. Chỉ người có quyền trên máy chủ đọc được mã, nên người lạ mở trang trước không chiếm được hệ thống.
-2. Trên trang **Tạo công ty mới**, nhập mã thiết lập, thông tin theo giấy chứng nhận đăng ký doanh nghiệp (tên, **mã số thuế**, địa chỉ, người đại diện theo pháp luật), mã công ty trên hệ thống (viết hoa không dấu, không đổi được), tài khoản của **chủ sở hữu** (người đại diện) và tùy chọn một **quản trị viên** (nhân viên CNTT). Bấm **Lập đơn đăng ký**.
-3. Tải **đơn đăng ký PDF** (hiệu lực 30 phút). Người đại diện ký số tệp bằng **chữ ký số của doanh nghiệp** (USB token mang mã số thuế, dùng phần mềm ký của nhà cung cấp hoặc Adobe Acrobat Reader), không sửa tệp, rồi tải tệp đã ký lên.
-4. Hệ thống kiểm chữ ký (chuỗi chứng thư tới Root CA quốc gia, chưa bị thu hồi, đúng mã số thuế), tạo công ty ở trạng thái **đã xác thực** và hiện **mật khẩu tạm** của từng tài khoản (chỉ một lần). Lần đăng nhập đầu phải đổi mật khẩu và cài mã xác thực hai lớp (Google Authenticator, Microsoft Authenticator…).
+Trình hướng dẫn gồm các bước:
 
-Trước khi dùng cách này, người quản trị máy chủ đặt chứng thư Root CA quốc gia vào `infra/platform/trust` rồi dựng lại image `actions` (xem `infra/platform/trust/README.md`). Máy chủ không có Internet thì đặt `SIGNATURE_ONLINE=false` (không kiểm thu hồi chứng thư). Chưa có chữ ký số hoặc chưa cài chứng thư gốc thì bấm **Chưa có chữ ký số: tạo công ty chưa xác thực**; chủ sở hữu ký bổ sung sau ở **Quản trị → Thông tin công ty**. Đặt `SETUP_ALLOW_UNVERIFIED=false` để bắt buộc ký số ngay.
+1. **Bạn là ai:** họ tên, năm sinh, chức vụ, điện thoại, email, tên đăng nhập. Người đăng ký là **chủ sở hữu** và người đại diện theo pháp luật.
+2. **Doanh nghiệp:** tên, mã số thuế (hộ kinh doanh dùng mã số thuế cá nhân 12 chữ số), địa chỉ, lĩnh vực kinh doanh. Mã công ty trên hệ thống tự sinh từ tên.
+3. **Quy mô:** chọn số người. Đến 50 người, hệ thống gợi ý **thiết lập nhanh**; trên 50 người, gợi ý **thiết lập chi tiết**. Luôn đổi được.
+4. **Thiết lập nhanh:** thêm thành viên (gõ từng người hoặc dán danh sách họ tên, tên đăng nhập tự gợi ý) và chọn quyền dựng sẵn: Nhân viên, Trưởng bộ phận, Kế toán/kiểm soát, Quản trị viên.
+   **Thiết lập chi tiết:** thêm bước **Phòng ban** (gợi ý theo lĩnh vực, sửa được), rồi gắn từng thành viên vào phòng ban. Trưởng bộ phận đầu tiên của mỗi phòng ban là trưởng đơn vị và duyệt đề nghị của phòng ban đó.
+5. **Công cụ:** bật các chức năng cần dùng (mua sắm, nhân sự, ổ đĩa…); hệ thống gợi ý theo lĩnh vực và tự bật chức năng phụ thuộc.
+6. **Xác nhận:** xem lại rồi bấm **Tạo tài khoản doanh nghiệp**. Muốn xác thực pháp lý ngay thì bật **Xác thực bằng chữ ký số**, tải đơn đăng ký PDF, người đại diện ký số bằng USB token của doanh nghiệp (không sửa tệp) rồi tải lên. Bỏ qua thì công ty ở trạng thái **chưa xác thực**, ký bổ sung sau ở **Quản trị → Thông tin công ty**.
+
+Trang cuối hiện **mật khẩu tạm** của từng tài khoản đúng một lần (có nút sao chép, in). Lần đăng nhập đầu, mỗi người đặt mật khẩu mới; chủ sở hữu và quản trị viên cài thêm mã xác thực hai lớp (Google Authenticator, Microsoft Authenticator…).
+
+Ký số cần chứng thư Root CA quốc gia trong `infra/platform/trust` (xem `infra/platform/trust/README.md`, dựng lại image `actions`); chưa cài thì công tắc ký số tạm ẩn. Máy chủ không có Internet thì đặt `SIGNATURE_ONLINE=false`. Đặt `SETUP_ALLOW_UNVERIFIED=false` để bắt buộc ký số ngay khi đăng ký.
 
 **Chủ sở hữu** là người duy nhất trao hoặc thu hồi quyền quản trị: cấp vai trò có quyền quản trị (cơ cấu tổ chức, phân quyền, quản lý chức năng), bổ nhiệm người vào vị trí có quyền quản trị, ủy quyền quản trị. Quản trị viên làm các việc khác như thường nhưng không tự nâng quyền cho ai. Chủ sở hữu giữ ghế Giám đốc và được cài/gỡ mô-đun trên máy chủ.
 

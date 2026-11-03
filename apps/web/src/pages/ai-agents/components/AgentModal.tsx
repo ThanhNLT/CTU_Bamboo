@@ -7,6 +7,7 @@ import { useEffect } from "react";
 
 import type { Agent, AgentInput, AiModel } from "../types";
 import { GUARDS, GUARD_INFO, TOOLS, guardOn } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 type FormValues = Omit<AgentInput, "status">;
 
@@ -43,10 +44,10 @@ export const AgentModal = ({
 
   return (
     <Modal
-      title={agent ? `Sửa “${agent.name}”` : "Đăng ký tác tử"}
+      title={agent ? trf("Sửa “{0}”", [agent.name]) : tr("Đăng ký tác tử")}
       open={open}
-      okText={agent ? "Lưu" : "Đăng ký"}
-      cancelText="Hủy"
+      okText={agent ? tr("Lưu") : tr("Đăng ký")}
+      cancelText={tr("Hủy")}
       confirmLoading={saving}
       onCancel={onCancel}
       onOk={() =>
@@ -60,31 +61,31 @@ export const AgentModal = ({
       <Form form={form} layout="vertical" requiredMark="optional" className="mt-3">
         <Form.Item
           name="name"
-          label="Tên tác tử"
-          rules={[{ required: true, whitespace: true, message: "Nhập tên tác tử" }]}
+          label={tr("Tên tác tử")}
+          rules={[{ required: true, whitespace: true, message: tr("Nhập tên tác tử") }]}
         >
-          <Input maxLength={60} placeholder="Ví dụ: Trợ lý quy chế" />
+          <Input maxLength={60} placeholder={tr("Ví dụ: Trợ lý quy chế")} />
         </Form.Item>
         <Form.Item
           name="model"
-          label="Mô hình (Ollama)"
-          rules={[{ required: true, message: "Chọn mô hình" }]}
-          extra={models.length ? undefined : "Ollama chưa chạy nên chưa lấy được danh mục mô hình."}
+          label={tr("Mô hình (Ollama)")}
+          rules={[{ required: true, message: tr("Chọn mô hình") }]}
+          extra={models.length ? undefined : tr("Ollama chưa chạy nên chưa lấy được danh mục mô hình.")}
         >
-          <Select options={options} placeholder="Chọn mô hình" />
+          <Select options={options} placeholder={tr("Chọn mô hình")} />
         </Form.Item>
         <Form.Item
           name="tool_list"
-          label="Công cụ được phép gọi"
-          rules={[{ required: true, type: "array", min: 1, message: "Chọn ít nhất một công cụ" }]}
-          extra="Trợ lý chỉ hiện ở trang Trợ lý đa năng khi có cả search_docs và cite."
+          label={tr("Công cụ được phép gọi")}
+          rules={[{ required: true, type: "array", min: 1, message: tr("Chọn ít nhất một công cụ") }]}
+          extra={tr("Trợ lý chỉ hiện ở trang Trợ lý đa năng khi có cả search_docs và cite.")}
         >
           <Checkbox.Group
             options={TOOLS.map((t) => ({ value: t.key, label: t.label }))}
             className="flex flex-col gap-1.5"
           />
         </Form.Item>
-        <div className="mb-1 text-[13px] text-ink">Rào chắn</div>
+        <div className="mb-1 text-[13px] text-ink">{tr("Rào chắn")}</div>
         <div className="flex flex-col gap-2.5">
           {GUARDS.map((g) => (
             <div key={g} className="flex items-start justify-between gap-3">
@@ -100,8 +101,9 @@ export const AgentModal = ({
         </div>
       </Form>
       <p className="mt-4 text-[12px] text-muted">
-        Tác tử không có quyền riêng: luôn đọc tài liệu bằng quyền của người hỏi. Mọi thay đổi được ghi nhật ký kiểm
-        toán.
+        {tr(
+          "Tác tử không có quyền riêng: luôn đọc tài liệu bằng quyền của người hỏi. Mọi thay đổi được ghi nhật ký kiểm toán.",
+        )}
       </p>
     </Modal>
   );

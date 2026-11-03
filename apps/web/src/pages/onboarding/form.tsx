@@ -27,6 +27,7 @@ import { parsePgTimestamp } from "../../utils/format";
 import { OB_INSERT, OB_OPTIONS, OB_SAVE_PRIVATE, OB_SUBMIT, OB_UPDATE } from "./queries";
 import { CONTRACT_TYPE, GENDER, type Onboarding } from "./types";
 import { suggestUsername } from "./username";
+import { tr, trf } from "../../i18n";
 
 export type ObFormValues = {
   full_name: string;
@@ -149,7 +150,7 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
       )
       .map((p) => ({
         value: p.id,
-        label: `${p.name} – ${units.get(p.org_unit_id)?.name ?? ""}${p.is_head ? " (trưởng đơn vị)" : ""}`,
+        label: `${p.name} – ${units.get(p.org_unit_id)?.name ?? ""}${p.is_head ? tr(" (trưởng đơn vị)") : ""}`,
       }))
       .sort((a, b) => a.label.localeCompare(b.label, "vi"));
   }, [options, startDate, record?.target_position_id]);
@@ -192,7 +193,7 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
         try {
           await request(OB_SAVE_PRIVATE, { id, ...secret });
         } catch (e) {
-          message.error(`Đã lưu hồ sơ nhưng chưa lưu được dữ liệu nhạy cảm: ${(e as Error).message}`);
+          message.error(trf("Đã lưu hồ sơ nhưng chưa lưu được dữ liệu nhạy cảm: {0}", [(e as Error).message]));
           onSaved(id!);
           return;
         }
@@ -200,12 +201,12 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
       if (submit) {
         try {
           await request(OB_SUBMIT, { id });
-          message.success("Đã gửi duyệt");
+          message.success(tr("Đã gửi duyệt"));
         } catch (e) {
-          message.error(`Đã lưu nháp nhưng chưa gửi duyệt được: ${(e as Error).message}`);
+          message.error(trf("Đã lưu nháp nhưng chưa gửi duyệt được: {0}", [(e as Error).message]));
         }
       } else {
-        message.success("Đã lưu nháp");
+        message.success(tr("Đã lưu nháp"));
       }
       onSaved(id!);
     } catch (e) {
@@ -216,7 +217,7 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
   };
 
   const hasSaved = (masked: string | null | undefined) =>
-    masked ? `Đã lưu ${masked} – để trống nếu không đổi` : undefined;
+    masked ? trf("Đã lưu {0} – để trống nếu không đổi", [masked]) : undefined;
 
   return (
     <Form
@@ -230,24 +231,24 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
           form.setFieldValue("username", suggestUsername(changed.full_name ?? ""));
       }}
     >
-      <Card size="small" title="Thông tin ứng viên">
+      <Card size="small" title={tr("Thông tin ứng viên")}>
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item
               name="full_name"
-              label="Họ và tên"
-              rules={[{ required: true, whitespace: true, min: 2, message: "Nhập họ và tên" }]}
+              label={tr("Họ và tên")}
+              rules={[{ required: true, whitespace: true, min: 2, message: tr("Nhập họ và tên") }]}
             >
               <Input maxLength={200} />
             </Form.Item>
           </Col>
           <Col xs={12} md={6}>
-            <Form.Item name="gender" label="Giới tính">
+            <Form.Item name="gender" label={tr("Giới tính")}>
               <Select allowClear options={Object.entries(GENDER).map(([value, label]) => ({ value, label }))} />
             </Form.Item>
           </Col>
           <Col xs={12} md={6}>
-            <Form.Item name="date_of_birth" label="Ngày sinh">
+            <Form.Item name="date_of_birth" label={tr("Ngày sinh")}>
               <DatePicker
                 format="DD/MM/YYYY"
                 style={{ width: "100%" }}
@@ -258,8 +259,8 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
           <Col xs={24} md={12}>
             <Form.Item
               name="phone"
-              label="Điện thoại"
-              rules={[{ pattern: /^\+?[0-9 .-]{8,20}$/, message: "Số điện thoại không hợp lệ" }]}
+              label={tr("Điện thoại")}
+              rules={[{ pattern: /^\+?[0-9 .-]{8,20}$/, message: tr("Số điện thoại không hợp lệ") }]}
             >
               <Input />
             </Form.Item>
@@ -267,19 +268,19 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
           <Col xs={24} md={12}>
             <Form.Item
               name="work_email"
-              label="Email công việc"
-              rules={[{ type: "email", message: "Email không hợp lệ" }]}
+              label={tr("Email công việc")}
+              rules={[{ type: "email", message: tr("Email không hợp lệ") }]}
             >
               <Input />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="education" label="Trình độ">
-              <Input placeholder="Ví dụ: Đại học" />
+            <Form.Item name="education" label={tr("Trình độ")}>
+              <Input placeholder={tr("Ví dụ: Đại học")} />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="major" label="Chuyên ngành">
+            <Form.Item name="major" label={tr("Chuyên ngành")}>
               <Input />
             </Form.Item>
           </Col>
@@ -292,44 +293,45 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
         title={
           <Space>
             <LockOutlined />
-            Dữ liệu cá nhân nhạy cảm
+            {tr("Dữ liệu cá nhân nhạy cảm")}
           </Space>
         }
       >
         <Typography.Paragraph type="secondary">
-          Mã hóa trước khi lưu; người duyệt chỉ thấy bản che. Chỉ phòng nhân sự xem được bản đầy đủ và mỗi lần xem đều
-          ghi nhật ký.
+          {tr(
+            "Mã hóa trước khi lưu; người duyệt chỉ thấy bản che. Chỉ phòng nhân sự xem được bản đầy đủ và mỗi lần xem đều ghi nhật ký.",
+          )}
         </Typography.Paragraph>
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item
               name="national_id"
-              label="Số CCCD"
+              label={tr("Số CCCD")}
               extra={hasSaved(record?.national_id_masked)}
               rules={[
-                { required: !record?.national_id_masked, message: "Nhập số CCCD" },
-                { pattern: /^\s*(\d\s*){9}((\d\s*){3})?$/, message: "CCCD gồm 12 chữ số (CMND cũ: 9)" },
+                { required: !record?.national_id_masked, message: tr("Nhập số CCCD") },
+                { pattern: /^\s*(\d\s*){9}((\d\s*){3})?$/, message: tr("CCCD gồm 12 chữ số (CMND cũ: 9)") },
               ]}
             >
               <Input autoComplete="off" inputMode="numeric" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="address" label="Địa chỉ thường trú" extra={hasSaved(record?.address_masked)}>
+            <Form.Item name="address" label={tr("Địa chỉ thường trú")} extra={hasSaved(record?.address_masked)}>
               <Input autoComplete="off" maxLength={300} />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="bank_name" label="Ngân hàng">
+            <Form.Item name="bank_name" label={tr("Ngân hàng")}>
               <Input />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
             <Form.Item
               name="bank_account"
-              label="Số tài khoản"
+              label={tr("Số tài khoản")}
               extra={hasSaved(record?.bank_account_masked)}
-              rules={[{ pattern: /^\s*(\d\s*){6,20}$/, message: "Số tài khoản gồm 6–20 chữ số" }]}
+              rules={[{ pattern: /^\s*(\d\s*){6,20}$/, message: tr("Số tài khoản gồm 6–20 chữ số") }]}
             >
               <Input autoComplete="off" inputMode="numeric" />
             </Form.Item>
@@ -337,13 +339,13 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
         </Row>
       </Card>
 
-      <Card size="small" style={{ marginTop: 16 }} title="Đề xuất bổ nhiệm">
+      <Card size="small" style={{ marginTop: 16 }} title={tr("Đề xuất bổ nhiệm")}>
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item
               name="requester_position_id"
-              label="Tư cách lập"
-              rules={[{ required: true, message: "Chọn tư cách lập" }]}
+              label={tr("Tư cách lập")}
+              rules={[{ required: true, message: tr("Chọn tư cách lập") }]}
             >
               <Select
                 disabled={Boolean(record)}
@@ -358,8 +360,8 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
           <Col xs={12} md={6}>
             <Form.Item
               name="start_date"
-              label="Ngày vào làm"
-              rules={[{ required: true, message: "Chọn ngày vào làm" }]}
+              label={tr("Ngày vào làm")}
+              rules={[{ required: true, message: tr("Chọn ngày vào làm") }]}
             >
               <DatePicker
                 format="DD/MM/YYYY"
@@ -369,28 +371,28 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
             </Form.Item>
           </Col>
           <Col xs={12} md={6}>
-            <Form.Item name="contract_type" label="Loại hợp đồng" rules={[{ required: true }]}>
+            <Form.Item name="contract_type" label={tr("Loại hợp đồng")} rules={[{ required: true }]}>
               <Select options={Object.entries(CONTRACT_TYPE).map(([value, label]) => ({ value, label }))} />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
             <Form.Item
               name="target_position_id"
-              label="Vị trí bổ nhiệm (còn trống từ ngày vào làm)"
-              rules={[{ required: true, message: "Chọn vị trí" }]}
-              extra="Chuỗi duyệt tính từ vị trí này: quản lý trực tiếp của vị trí, rồi giám đốc công ty."
+              label={tr("Vị trí bổ nhiệm (còn trống từ ngày vào làm)")}
+              rules={[{ required: true, message: tr("Chọn vị trí") }]}
+              extra={tr("Chuỗi duyệt tính từ vị trí này: quản lý trực tiếp của vị trí, rồi giám đốc công ty.")}
             >
               <Select
                 showSearch
                 optionFilterProp="label"
                 loading={!options}
                 options={positions}
-                notFoundContent="Không có vị trí trống trong phạm vi bạn được lập hồ sơ"
+                notFoundContent={tr("Không có vị trí trống trong phạm vi bạn được lập hồ sơ")}
               />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="salary" label="Lương đề xuất (VNĐ/tháng)">
+            <Form.Item name="salary" label={tr("Lương đề xuất (VNĐ/tháng)")}>
               <InputNumber
                 min={0}
                 step={500000}
@@ -403,20 +405,20 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
           <Col xs={24} md={12}>
             <Form.Item
               name="username"
-              label="Tên đăng nhập (tạo tài khoản khi duyệt xong)"
+              label={tr("Tên đăng nhập (tạo tài khoản khi duyệt xong)")}
               rules={[
                 {
                   pattern: /^[a-z0-9][a-z0-9._-]{2,49}$/,
-                  message: "Chữ thường không dấu, số, dấu chấm, gạch; 3–50 ký tự",
+                  message: tr("Chữ thường không dấu, số, dấu chấm, gạch; 3–50 ký tự"),
                 },
               ]}
-              extra="Để trống nếu chưa cần tài khoản đăng nhập."
+              extra={tr("Để trống nếu chưa cần tài khoản đăng nhập.")}
             >
               <Input autoComplete="off" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="note" label="Ghi chú">
+            <Form.Item name="note" label={tr("Ghi chú")}>
               <Input.TextArea rows={1} autoSize />
             </Form.Item>
           </Col>
@@ -428,15 +430,15 @@ export const OnboardingForm = ({ record, onSaved }: Props) => {
           style={{ marginTop: 16 }}
           type="warning"
           showIcon
-          message="Hồ sơ bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại."
+          message={tr("Hồ sơ bị trả về: sửa theo ý kiến người duyệt rồi gửi duyệt lại.")}
         />
       )}
       <Space style={{ marginTop: 16 }}>
         <Button onClick={() => save(false)} loading={busy}>
-          Lưu nháp
+          {tr("Lưu nháp")}
         </Button>
         <Button type="primary" onClick={() => save(true)} loading={busy}>
-          Lưu và gửi duyệt
+          {tr("Lưu và gửi duyệt")}
         </Button>
       </Space>
     </Form>

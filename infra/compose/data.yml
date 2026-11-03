@@ -152,7 +152,7 @@ services:
       DEBEZIUM_SOURCE_PUBLICATION_AUTOCREATE_MODE: disabled
       DEBEZIUM_SOURCE_SLOT_NAME: bms_debezium
       DEBEZIUM_SOURCE_SCHEMA_INCLUDE_LIST: core,mdm,wf,proc,ic,mfg,collab,cdc
-      DEBEZIUM_SOURCE_COLUMN_EXCLUDE_LIST: core.attachment_ocr.page_texts
+      DEBEZIUM_SOURCE_COLUMN_EXCLUDE_LIST: core.attachment_ocr.page_texts,core.person.birth_year,core.person.phone,core.person.email
       DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
       DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
       DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string

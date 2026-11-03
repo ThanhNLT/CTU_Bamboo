@@ -5,6 +5,7 @@
 import { cn } from "../../../utils/cn";
 import { LAYERS, NODE_W, STATUS_LABEL, colLeft, edgePath, graphHeight, graphMetrics } from "../graph";
 import type { Direction, LineageEdge, LineageNode, NodeStatus } from "../types";
+import { tr, trf } from "../../../i18n";
 
 const NODE_CLASS: Record<NodeStatus, string> = {
   healthy: "border border-line bg-surface",
@@ -31,13 +32,17 @@ const EDGE_OK = "#5f8a69";
 const EDGE_BAD = "#ef4444";
 
 const DIRECTIONS: Array<{ key: Direction; label: string }> = [
-  { key: "upstream", label: "Phía trước" },
-  { key: "both", label: "Cả hai" },
-  { key: "downstream", label: "Phía sau" },
+  { key: "upstream", label: tr("Phía trước") },
+  { key: "both", label: tr("Cả hai") },
+  { key: "downstream", label: tr("Phía sau") },
 ];
 
 const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: Direction) => void }) => (
-  <div role="group" aria-label="Hướng phả hệ" className="inline-flex shrink-0 gap-0.5 rounded-ui bg-black/[0.045] p-1">
+  <div
+    role="group"
+    aria-label={tr("Hướng phả hệ")}
+    className="inline-flex shrink-0 gap-0.5 rounded-ui bg-black/[0.045] p-1"
+  >
     {DIRECTIONS.map(({ key, label }) => {
       const active = key === value;
       return (
@@ -158,10 +163,12 @@ export const LineageGraphMock = ({
   return (
     <section
       className="rounded-2xl border border-line bg-surface p-5 shadow-card"
-      aria-label={`Phả hệ của ${focus.fqn}`}
+      aria-label={trf("Phả hệ của {0}", [focus.fqn])}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="min-w-0 truncate text-[15px] font-semibold text-ink">Phả hệ của {focus.fqn}</h2>
+        <h2 className="min-w-0 truncate text-[15px] font-semibold text-ink">
+          {tr("Phả hệ của ")} {focus.fqn}
+        </h2>
         <DirectionToggle value={direction} onChange={onDirectionChange} />
       </div>
 
@@ -227,11 +234,13 @@ export const LineageGraphMock = ({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-x-5 gap-y-2 text-[11.5px] text-muted">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <LegendDot className="bg-bamboo-500" label="Khỏe" />
-          <LegendDot className="bg-red-500" label="Kiểm tra lỗi" />
-          <LegendDot className="bg-yellow-500" label="Bị ảnh hưởng" />
+          <LegendDot className="bg-bamboo-500" label={tr("Khỏe")} />
+          <LegendDot className="bg-red-500" label={tr("Kiểm tra lỗi")} />
+          <LegendDot className="bg-yellow-500" label={tr("Bị ảnh hưởng")} />
         </div>
-        <span>Cập nhật {updatedAt}</span>
+        <span>
+          {tr("Cập nhật ")} {updatedAt}
+        </span>
       </div>
     </section>
   );

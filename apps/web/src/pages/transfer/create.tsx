@@ -12,6 +12,7 @@ import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { rangeEnd } from "./vacancy";
 import { TR_CREATE, TR_OPTIONS, TR_SUBMIT, TR_TENANT_UNITS, TR_TENANTS, TRO_CREATE, TRO_SUBMIT } from "./queries";
+import { tr, trf } from "../../i18n";
 
 type Assignment = {
   id: string;
@@ -100,9 +101,9 @@ export const TransferCreate = () => {
         const id = r.create_transfer_out.request_id;
         if (submit) {
           await request(TRO_SUBMIT, { id });
-          message.success("Đã gửi duyệt đề nghị điều chuyển liên tập đoàn");
+          message.success(tr("Đã gửi duyệt đề nghị điều chuyển liên tập đoàn"));
         } else {
-          message.success("Đã lưu nháp đề nghị điều chuyển liên tập đoàn");
+          message.success(tr("Đã lưu nháp đề nghị điều chuyển liên tập đoàn"));
         }
         go({ to: { resource: "hr_transfer_out", action: "show", id } });
         return;
@@ -111,9 +112,9 @@ export const TransferCreate = () => {
       const id = r.create_transfer_request.request_id;
       if (submit) {
         await request(TR_SUBMIT, { id });
-        message.success("Đã gửi duyệt đề nghị điều chuyển");
+        message.success(tr("Đã gửi duyệt đề nghị điều chuyển"));
       } else {
-        message.success("Đã lưu nháp đề nghị điều chuyển");
+        message.success(tr("Đã lưu nháp đề nghị điều chuyển"));
       }
       go({ to: { resource: "hr_transfer_request", action: "show", id } });
     } catch (e) {
@@ -124,9 +125,9 @@ export const TransferCreate = () => {
   };
 
   return (
-    <Create title="Lập đề nghị điều chuyển nhân sự" footerButtons={() => null}>
+    <Create title={tr("Lập đề nghị điều chuyển nhân sự")} footerButtons={() => null}>
       <Form form={form} layout="vertical" style={{ maxWidth: 720 }} initialValues={{ tenant_id: own }}>
-        <Form.Item name="assignment_id" label="Nhân viên và vị trí hiện tại" rules={[{ required: true }]}>
+        <Form.Item name="assignment_id" label={tr("Nhân viên và vị trí hiện tại")} rules={[{ required: true }]}>
           <Select
             showSearch
             loading={!options}
@@ -139,18 +140,20 @@ export const TransferCreate = () => {
         </Form.Item>
         <Form.Item
           name="tenant_id"
-          label="Tenant nơi đến"
-          extra="Chọn tenant khác trong cùng tập đoàn để điều chuyển liên tập đoàn; tenant này không đổi thì là điều chuyển nội bộ."
+          label={tr("Tenant nơi đến")}
+          extra={tr(
+            "Chọn tenant khác trong cùng tập đoàn để điều chuyển liên tập đoàn; tenant này không đổi thì là điều chuyển nội bộ.",
+          )}
           rules={[{ required: true }]}
         >
           <Select
             options={[
-              { value: own, label: "Trong tenant hiện tại (nội bộ)" },
+              { value: own, label: tr("Trong tenant hiện tại (nội bộ)") },
               ...tenants.map((t) => ({ value: t.id, label: t.name })),
             ]}
           />
         </Form.Item>
-        <Form.Item name="target_unit_id" label="Đơn vị tiếp nhận" rules={[{ required: true }]}>
+        <Form.Item name="target_unit_id" label={tr("Đơn vị tiếp nhận")} rules={[{ required: true }]}>
           <Select
             showSearch
             optionFilterProp="label"
@@ -160,8 +163,8 @@ export const TransferCreate = () => {
         </Form.Item>
         <Form.Item
           name="effective_date"
-          label="Ngày chuyển"
-          extra={`Phải cách hôm nay ít nhất ${LEAD_DAYS} ngày để chuẩn bị hồ sơ và bàn giao công việc.`}
+          label={tr("Ngày chuyển")}
+          extra={trf("Phải cách hôm nay ít nhất {0} ngày để chuẩn bị hồ sơ và bàn giao công việc.", [LEAD_DAYS])}
           rules={[{ required: true }]}
         >
           <DatePicker
@@ -172,22 +175,24 @@ export const TransferCreate = () => {
         </Form.Item>
         <Form.Item
           name="reason"
-          label="Lý do / nguyện vọng"
-          rules={[{ required: true, whitespace: true, message: "Phải ghi lý do" }]}
+          label={tr("Lý do / nguyện vọng")}
+          rules={[{ required: true, whitespace: true, message: tr("Phải ghi lý do") }]}
         >
           <Input.TextArea rows={3} maxLength={2000} showCount />
         </Form.Item>
         <Typography.Paragraph type="secondary">
           {crossTenant
-            ? "Đề nghị đi qua tenant nguồn, tenant nơi đến, rồi trưởng phòng nhân sự tập đoàn quyết định."
-            : "Trưởng đơn vị tiếp nhận sẽ chọn vị trí trong đơn vị và duyệt; sau đó trưởng phòng nhân sự của công ty duyệt."}
+            ? tr("Đề nghị đi qua tenant nguồn, tenant nơi đến, rồi trưởng phòng nhân sự tập đoàn quyết định.")
+            : tr(
+                "Trưởng đơn vị tiếp nhận sẽ chọn vị trí trong đơn vị và duyệt; sau đó trưởng phòng nhân sự của công ty duyệt.",
+              )}
         </Typography.Paragraph>
         <Space>
           <Button onClick={() => void save(false)} disabled={busy}>
-            Lưu nháp
+            {tr("Lưu nháp")}
           </Button>
           <Button type="primary" onClick={() => void save(true)} loading={busy}>
-            Gửi duyệt
+            {tr("Gửi duyệt")}
           </Button>
         </Space>
       </Form>

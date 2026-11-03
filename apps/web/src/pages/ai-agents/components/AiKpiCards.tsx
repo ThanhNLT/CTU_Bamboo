@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 
 import { STATS_DAYS, num, seconds, type totals } from "../utils";
+import { tr, trf } from "../../../i18n";
 
 const Card = ({ label, value, note }: { label: string; value: string; note: ReactNode }) => (
   <div className="min-w-0 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card">
@@ -21,25 +22,25 @@ const Card = ({ label, value, note }: { label: string; value: string; note: Reac
 export const AiKpiCards = ({ kpi }: { kpi: ReturnType<typeof totals> }) => (
   <dl className="m-0 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
     <Card
-      label="Tác tử hoạt động"
+      label={tr("Tác tử hoạt động")}
       value={num(kpi.active)}
-      note={kpi.inactive ? `${kpi.inactive} đang ngừng` : "Không có tác tử ngừng"}
+      note={kpi.inactive ? trf("{0} đang ngừng", [kpi.inactive]) : tr("Không có tác tử ngừng")}
     />
     <Card
-      label={`Lượt hỏi · ${STATS_DAYS} ngày`}
+      label={trf("Lượt hỏi · {0} ngày", [STATS_DAYS])}
       value={num(kpi.questions)}
-      note={`${num(kpi.answered)} đã trả lời · ${num(kpi.coldStarts)} nạp lạnh`}
+      note={trf("{0} đã trả lời · {1} nạp lạnh", [num(kpi.answered), num(kpi.coldStarts)])}
     />
     <Card
-      label="Thời gian trả lời TB"
+      label={tr("Thời gian trả lời TB")}
       value={seconds(kpi.avg)}
-      note={`p90 cao nhất ${seconds(kpi.p90)} · chữ đầu ${seconds(kpi.firstToken)}`}
+      note={trf("p90 cao nhất {0} · chữ đầu {1}", [seconds(kpi.p90), seconds(kpi.firstToken)])}
     />
     <Card
-      label="Rào chắn đã chặn"
+      label={tr("Rào chắn đã chặn")}
       value={num(kpi.refused)}
-      note={`${num(kpi.prompt)} tiêm lệnh · ${num(kpi.refused - kpi.prompt)} ngoài phạm vi`}
+      note={trf("{0} tiêm lệnh · {1} ngoài phạm vi", [num(kpi.prompt), num(kpi.refused - kpi.prompt)])}
     />
-    <Card label="Lỗi" value={num(kpi.errors)} note="Mô hình hoặc tìm kiếm không phản hồi" />
+    <Card label={tr("Lỗi")} value={num(kpi.errors)} note={tr("Mô hình hoặc tìm kiếm không phản hồi")} />
   </dl>
 );

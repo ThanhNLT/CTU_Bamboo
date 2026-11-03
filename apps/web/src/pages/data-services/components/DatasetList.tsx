@@ -7,6 +7,7 @@ import { DatabaseZap } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import type { Dataset } from "../types";
 import { DatasetTags } from "./DatasetTags";
+import { tr } from "../../../i18n";
 
 export const DatasetCard = ({
   dataset,
@@ -77,8 +78,8 @@ export const DatasetList = ({
         )}
       >
         <DatabaseZap className="h-6 w-6 text-muted" strokeWidth={1.5} aria-hidden />
-        <p className="text-[13px] font-medium text-ink">Không có tập dữ liệu phù hợp</p>
-        <p className="text-[12px] text-muted">Thử tìm theo tên cột, ví dụ “tenant_id”.</p>
+        <p className="text-[13px] font-medium text-ink">{tr("Không có tập dữ liệu phù hợp")}</p>
+        <p className="text-[12px] text-muted">{tr("Thử tìm theo tên cột, ví dụ “tenant_id”.")}</p>
       </div>
     );
   }
@@ -86,7 +87,7 @@ export const DatasetList = ({
   return (
     <ul
       className={cn("m-0 min-h-0 list-none space-y-3 overflow-y-auto p-0.5 pr-1", className)}
-      aria-label="Tập dữ liệu"
+      aria-label={tr("Tập dữ liệu")}
     >
       {datasets.map((d, i) => (
         <li key={d.id}>

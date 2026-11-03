@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { tr } from "../../i18n";
+
 const W0 = 102;
 const N1 = 23.6;
 const K = Math.cos((16 * Math.PI) / 180);
@@ -16,6 +18,6 @@ export const VN_PATH =
 export const project = (lat: number, lng: number) => ({ x: (lng - W0) * K * SCALE, y: (N1 - lat) * SCALE });
 
 export const ARCHIPELAGOS = [
-  { name: "Quần đảo Hoàng Sa", lat: 16.5, lng: 112.0 },
-  { name: "Quần đảo Trường Sa", lat: 9.9, lng: 114.0 },
+  { name: tr("Quần đảo Hoàng Sa"), lat: 16.5, lng: 112.0 },
+  { name: tr("Quần đảo Trường Sa"), lat: 9.9, lng: 114.0 },
 ];

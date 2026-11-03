@@ -13,6 +13,7 @@ import { useSession } from "../../auth/useSession";
 import { formatAgo as ago } from "../../utils/format";
 import { useInboxTasks } from "../inbox/useInboxTasks";
 import type { DashboardUser, NotificationItem, RecentRecord, SummaryStat, TaskItem, Tone } from "./types";
+import { tr, trf } from "../../i18n";
 
 const NOTIFICATIONS = gql`
   query HomeNotifications(
@@ -115,8 +116,8 @@ const recordTone = (d: DocSummary): { tone: Tone; locked?: boolean } => {
 
 const dueDay = (iso: string, now = dayjs()) => {
   const diff = dayjs(iso).startOf("day").diff(now.startOf("day"), "day");
-  if (diff <= 0) return diff < 0 ? "Đã quá hạn" : "Hôm nay";
-  if (diff === 1) return "Ngày mai";
+  if (diff <= 0) return diff < 0 ? tr("Đã quá hạn") : tr("Hôm nay");
+  if (diff === 1) return tr("Ngày mai");
   return dayjs(iso)
     .format("dddd, DD/MM")
     .replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
@@ -208,39 +209,39 @@ export const useDashboard = () => {
   const unread = unreadQ.result.total ?? 0;
 
   const overdue = tasks.filter((t) => t.dueLevel === "overdue");
-  const today = tasks.filter((t) => t.dueDay === "Hôm nay").length;
+  const today = tasks.filter((t) => t.dueDay === tr("Hôm nay")).length;
   const processing = docs.documents.filter((d) => d.status === "PENDING");
   const newestUnread = notifications.find((n) => !n.read);
   const summary: SummaryStat[] = [
     {
       key: "waiting",
-      label: "Việc chờ tôi",
+      label: tr("Việc chờ tôi"),
       value: tasks.length,
-      hint: today ? `${today} việc đến hạn hôm nay` : "Không có việc đến hạn hôm nay",
+      hint: today ? trf("{0} việc đến hạn hôm nay", [today]) : tr("Không có việc đến hạn hôm nay"),
       to: "/p/tasks",
     },
     {
       key: "processing",
-      label: "Hồ sơ của tôi đang xử lý",
+      label: tr("Hồ sơ của tôi đang xử lý"),
       value: processing.length,
-      hint: processing[0] ? `Mới nhất: ${processing[0].code}` : "Không có hồ sơ chờ duyệt",
+      hint: processing[0] ? trf("Mới nhất: {0}", [processing[0].code]) : tr("Không có hồ sơ chờ duyệt"),
       to: "/p/records",
     },
     overdue.length
       ? {
           key: "sla",
-          label: "Quá hạn SLA",
+          label: tr("Quá hạn SLA"),
           value: overdue.length,
-          hint: `Gấp nhất · ${overdue[0].code}`,
+          hint: trf("Gấp nhất · {0}", [overdue[0].code]),
           tone: "danger",
           to: overdue[0].to,
         }
-      : { key: "sla", label: "Quá hạn SLA", value: 0, hint: "Không có việc quá hạn" },
+      : { key: "sla", label: tr("Quá hạn SLA"), value: 0, hint: tr("Không có việc quá hạn") },
     {
       key: "unread",
-      label: "Thông báo chưa đọc",
+      label: tr("Thông báo chưa đọc"),
       value: unread,
-      hint: newestUnread ? `Mới nhất ${newestUnread.time}` : "Đã đọc hết",
+      hint: newestUnread ? trf("Mới nhất {0}", [newestUnread.time]) : tr("Đã đọc hết"),
     },
   ];
 

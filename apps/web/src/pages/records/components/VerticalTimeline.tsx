@@ -6,12 +6,13 @@ import { Check, CornerUpLeft } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
 import type { StepState, WorkflowStep } from "../types";
+import { tr } from "../../../i18n";
 
 const STATE_TEXT: Record<StepState, string> = {
-  done: "đã xong",
-  current: "đang xử lý",
-  returned: "trả lại",
-  pending: "chưa tới",
+  done: tr("đã xong"),
+  current: tr("đang xử lý"),
+  returned: tr("trả lại"),
+  pending: tr("chưa tới"),
 };
 
 const Marker = ({ state }: { state: StepState }) => {

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ApprovalHistory, ApprovalStep } from "../../components/document/types";
+import { tr } from "../../i18n";
 
 export type Transfer = {
   id: string;
@@ -30,9 +31,9 @@ export type Transfer = {
 };
 
 export const REQUESTER_KIND: Record<string, string> = {
-  SELF: "Nhân viên tự đề nghị",
-  MANAGER: "Trưởng đơn vị đề nghị",
-  EXECUTIVE: "Phòng nhân sự / lãnh đạo đề nghị",
+  SELF: tr("Nhân viên tự đề nghị"),
+  MANAGER: tr("Trưởng đơn vị đề nghị"),
+  EXECUTIVE: tr("Phòng nhân sự / lãnh đạo đề nghị"),
 };
 
 export type CrossTransfer = {
@@ -60,10 +61,10 @@ export type CrossTransfer = {
 };
 
 export const STAGE_LABEL: Record<string, string> = {
-  SOURCE: "Tenant nguồn duyệt",
-  TARGET: "Tenant đích tiếp nhận",
-  GROUP: "Tập đoàn quyết định",
-  DONE: "Đã kết thúc",
+  SOURCE: tr("Tenant nguồn duyệt"),
+  TARGET: tr("Tenant đích tiếp nhận"),
+  GROUP: tr("Tập đoàn quyết định"),
+  DONE: tr("Đã kết thúc"),
 };
 
 export type LegTransfer = {

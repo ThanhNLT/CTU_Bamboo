@@ -7,6 +7,7 @@ import { App, Form, Input, Modal, Radio } from "antd";
 
 import { request } from "../../api/client";
 import { ACT_ON_TASK } from "../../pages/purchase-requests/queries";
+import { tr, trf } from "../../i18n";
 
 export type Decision = "APPROVE" | "REJECT" | "RETURN";
 
@@ -33,7 +34,7 @@ export const ActModal = ({ taskId, title, viaDelegation, onClose, onDone }: Prop
         decision: values.decision,
         note: values.note?.trim() || null,
       });
-      message.success(`Đã ghi nhận. Trạng thái đề nghị: ${r.act_on_task.status}`);
+      message.success(trf("Đã ghi nhận. Trạng thái đề nghị: {0}", [r.act_on_task.status]));
       form.resetFields();
       onDone();
     } catch (e) {
@@ -46,9 +47,9 @@ export const ActModal = ({ taskId, title, viaDelegation, onClose, onDone }: Prop
   return (
     <Modal
       open={!!taskId}
-      title={title ?? "Xử lý việc duyệt"}
-      okText="Xác nhận"
-      cancelText="Đóng"
+      title={title ?? tr("Xử lý việc duyệt")}
+      okText={tr("Xác nhận")}
+      cancelText={tr("Đóng")}
       confirmLoading={busy}
       onOk={submit}
       onCancel={onClose}
@@ -56,26 +57,26 @@ export const ActModal = ({ taskId, title, viaDelegation, onClose, onDone }: Prop
     >
       {viaDelegation && (
         <p>
-          Bạn đang <b>duyệt thay</b> theo ủy quyền; lịch sử sẽ ghi rõ.
+          {tr("Bạn đang ")} <b>{tr("duyệt thay")}</b> {tr(" theo ủy quyền; lịch sử sẽ ghi rõ.")}
         </p>
       )}
       <Form form={form} layout="vertical" initialValues={{ decision: "APPROVE" }}>
-        <Form.Item name="decision" label="Quyết định">
+        <Form.Item name="decision" label={tr("Quyết định")}>
           <Radio.Group
             optionType="button"
             buttonStyle="solid"
             options={[
-              { value: "APPROVE", label: "Duyệt" },
-              { value: "RETURN", label: "Trả về bổ sung" },
-              { value: "REJECT", label: "Từ chối" },
+              { value: "APPROVE", label: tr("Duyệt") },
+              { value: "RETURN", label: tr("Trả về bổ sung") },
+              { value: "REJECT", label: tr("Từ chối") },
             ]}
           />
         </Form.Item>
         <Form.Item
           name="note"
-          label="Ý kiến"
+          label={tr("Ý kiến")}
           rules={[
-            { required: decision !== "APPROVE", whitespace: true, message: "Từ chối hoặc trả về phải ghi lý do" },
+            { required: decision !== "APPROVE", whitespace: true, message: tr("Từ chối hoặc trả về phải ghi lý do") },
           ]}
         >
           <Input.TextArea rows={3} maxLength={1000} showCount />

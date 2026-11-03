@@ -33,8 +33,9 @@
   --radius-sm: 10px;
   --radius-md: 10px;
   --radius-lg: 10px;
-  --radius-xl: 10px;
-  --radius-2xl: 10px;
+  /* Thẻ, khung lớn bo rộng hơn theo vật liệu kính (Bamboo Glass): rounded-xl cho khối con, rounded-2xl cho thẻ */
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
   --radius-3xl: 10px;
   --radius-4xl: 10px;
 
@@ -51,7 +52,9 @@
     "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --shadow-card: 0 1px 2px rgb(16 24 20 / 0.04), 0 1px 1px rgb(16 24 20 / 0.02);
+  /* Thẻ kính: viền sáng phía trên, bóng mềm lan rộng phía dưới */
+  --shadow-card:
+    inset 0 1px 0 rgb(255 255 255 / 0.75), 0 1px 2px rgb(16 24 20 / 0.04), 0 14px 34px -18px rgb(19 58 30 / 0.22);
   --shadow-float: 0 12px 32px -8px rgb(16 24 20 / 0.18), 0 2px 6px rgb(16 24 20 / 0.06);
   /* Vật liệu kính (Liquid Glass): viền sáng phía trên, bóng mềm phía dưới */
   --shadow-glass:
@@ -105,6 +108,14 @@
     --scrollbar-thumb-hover: rgb(27 35 30 / 0.4);
     --glass-bg: rgb(255 255 255 / 0.72);
     --glass-edge: rgb(255 255 255 / 0.6);
+    /* Bamboo Glass: thẻ nội dung, thanh nổi (đầu trang, thanh bên, menu, hộp thoại), ô lõm bên trong thẻ */
+    --glass-card: rgb(255 255 255 / 0.62);
+    --glass-card-edge: rgb(255 255 255 / 0.8);
+    --glass-strong: rgb(255 255 255 / 0.8);
+    --glass-well: rgb(27 35 30 / 0.035);
+    --glass-blur: blur(24px) saturate(170%);
+    /* Nền đặc cho cột ghim của bảng (phải che nội dung cuộn ngang phía dưới) */
+    --surface-solid: #ffffff;
   }
 
   /*
@@ -118,6 +129,11 @@
     --scrollbar-thumb-hover: rgb(232 239 233 / 0.42);
     --glass-bg: rgb(24 32 27 / 0.72);
     --glass-edge: rgb(255 255 255 / 0.08);
+    --glass-card: rgb(28 38 31 / 0.58);
+    --glass-card-edge: rgb(255 255 255 / 0.08);
+    --glass-strong: rgb(22 30 25 / 0.84);
+    --glass-well: rgb(255 255 255 / 0.04);
+    --surface-solid: #18201b;
 
     --color-canvas: #0f1511;
     --color-surface: #18201b;
@@ -167,7 +183,8 @@
     --color-sky-100: #15303f;
     --color-sky-700: #7dd3fc;
 
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-card:
+      inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 34px -18px rgb(0 0 0 / 0.7);
     --shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.6);
   }
 
@@ -215,6 +232,265 @@
     backdrop-filter: blur(30px) saturate(180%);
     box-shadow: var(--shadow-glass);
   }
+
+  /*
+   * Nền ứng dụng (Bamboo Glass): xanh Tre nhạt có quầng sáng, đứng yên khi cuộn để các tấm kính có thứ để làm mờ.
+   */
+  .app-canvas {
+    background-color: var(--color-canvas);
+    background-image:
+      radial-gradient(70rem 40rem at 0% 0%, rgb(148 200 159 / 0.42), transparent 60%),
+      radial-gradient(60rem 36rem at 100% 0%, rgb(195 226 201 / 0.55), transparent 60%),
+      radial-gradient(70rem 44rem at 100% 100%, rgb(95 174 110 / 0.22), transparent 60%),
+      linear-gradient(160deg, #f1f8f2 0%, #eaf3eb 45%, #e3efe5 100%);
+    background-attachment: fixed;
+  }
+  :root[data-theme="dark"] .app-canvas {
+    background-image:
+      radial-gradient(70rem 40rem at 0% 0%, rgb(47 122 62 / 0.32), transparent 60%),
+      radial-gradient(60rem 36rem at 100% 0%, rgb(31 94 46 / 0.3), transparent 60%),
+      radial-gradient(70rem 44rem at 100% 100%, rgb(47 122 62 / 0.22), transparent 60%),
+      linear-gradient(160deg, #0f1a13 0%, #0c150f 50%, #09100c 100%);
+  }
+
+  /* Thanh nổi: đầu trang, thanh bên, menu, hộp thoại */
+  .glass-bar {
+    background-color: var(--glass-strong);
+    border: 1px solid var(--glass-card-edge);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Thẻ nhấn: nền xanh Tre, chữ trắng (một thẻ quan trọng nhất trên trang, như mẫu dashboard) */
+  .glass-accent {
+    color: #fff;
+    background: linear-gradient(155deg, #3e8a4f 0%, #2f7a3e 50%, #1f5e2e 100%);
+    border: 1px solid rgb(255 255 255 / 0.18);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.28),
+      0 18px 40px -18px rgb(31 94 46 / 0.65);
+  }
+
+  /*
+   * Trang đăng nhập/đăng ký (ADR #62): một tấm kính chia hai nửa trên nền xanh Tre có quầng sáng, nửa phải là lời chào
+   * cắt chéo. Cùng ngôn ngữ với trang đăng nhập Keycloak (infra/platform/keycloak/themes/dxos-login).
+   */
+  .auth-backdrop {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(60rem 40rem at 12% 8%, rgb(148 200 159 / 0.55), transparent 60%),
+      radial-gradient(48rem 34rem at 92% 96%, rgb(95 174 110 / 0.32), transparent 60%),
+      linear-gradient(160deg, #f1f8f2 0%, #e8f3e8 50%, #d9ecdc 100%);
+  }
+  :root[data-theme="dark"] .auth-backdrop {
+    background:
+      radial-gradient(60rem 40rem at 12% 8%, rgb(79 158 95 / 0.32), transparent 60%),
+      radial-gradient(48rem 34rem at 92% 96%, rgb(47 122 62 / 0.4), transparent 60%),
+      linear-gradient(160deg, #1f5e2e 0%, #133a1e 45%, #0b1a10 100%);
+  }
+  /* Các mảng sáng mờ trôi chậm phía sau tấm kính để kính có thứ mà làm mờ */
+  .auth-orb {
+    position: absolute;
+    z-index: -1;
+    border-radius: 999px;
+    filter: blur(60px);
+    opacity: 0.55;
+    animation: auth-drift 24s ease-in-out infinite alternate;
+  }
+  @keyframes auth-drift {
+    to {
+      transform: translate3d(4%, -6%, 0) scale(1.08);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .auth-orb {
+      animation: none;
+    }
+  }
+
+  .auth-card {
+    --auth-pane: rgb(255 255 255 / 0.5);
+    --auth-accent-pane: rgb(47 122 62 / 0.1);
+    --auth-edge: rgb(255 255 255 / 0.7);
+    --auth-divider: rgb(255 255 255 / 0.85);
+    position: relative;
+    display: grid;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--auth-edge);
+    border-radius: 28px;
+    background: var(--auth-pane);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.75),
+      0 30px 80px -24px rgb(19 58 30 / 0.35),
+      0 2px 8px rgb(19 58 30 / 0.06);
+  }
+  :root[data-theme="dark"] .auth-card {
+    --auth-pane: rgb(20 28 23 / 0.55);
+    --auth-accent-pane: rgb(95 174 110 / 0.1);
+    --auth-edge: rgb(255 255 255 / 0.1);
+    --auth-divider: rgb(255 255 255 / 0.14);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 30px 80px -24px rgb(0 0 0 / 0.7),
+      0 2px 8px rgb(0 0 0 / 0.3);
+  }
+  @media (min-width: 768px) {
+    .auth-card--split {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+  /* Nửa lời chào: nền nhấn nhẹ, mép trái cắt chéo như mẫu (chỉ trên màn hình rộng) */
+  .auth-greeting {
+    position: relative;
+    background: var(--auth-accent-pane);
+    border-top: 1px solid var(--auth-divider);
+  }
+  @media (min-width: 768px) {
+    .auth-greeting {
+      border-top: 0;
+      margin-left: -3rem;
+      padding-left: 3rem;
+      clip-path: polygon(3rem 0, 100% 0, 100% 100%, 0 100%);
+    }
+    .auth-greeting::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3rem;
+      background: linear-gradient(
+        to bottom right,
+        transparent calc(50% - 0.5px),
+        var(--auth-divider) 50%,
+        transparent calc(50% + 0.5px)
+      );
+    }
+  }
+
+  /* Nút viên thuốc kiểu iOS: chính (xanh Tre) và viền kính */
+  .auth-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 44px;
+    padding: 0 1.5rem;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    transition:
+      transform 0.15s ease,
+      background-color 0.2s ease,
+      box-shadow 0.2s ease,
+      opacity 0.2s ease;
+  }
+  .auth-pill:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .auth-pill:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .auth-pill:focus-visible {
+    outline: 3px solid rgb(47 122 62 / 0.45);
+    outline-offset: 2px;
+  }
+  .auth-pill--primary {
+    color: #fff;
+    background: #2f7a3e;
+    box-shadow: var(--shadow-glass-active);
+  }
+  .auth-pill--primary:hover:not(:disabled) {
+    background: #2a6e38;
+  }
+  .auth-pill--ghost {
+    color: var(--color-ink);
+    background: rgb(255 255 255 / 0.35);
+    border: 1px solid rgb(27 35 30 / 0.18);
+  }
+  .auth-pill--ghost:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.6);
+  }
+  :root[data-theme="dark"] .auth-pill--ghost {
+    background: rgb(255 255 255 / 0.06);
+    border-color: rgb(255 255 255 / 0.2);
+  }
+  :root[data-theme="dark"] .auth-pill--ghost:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  /* Ô chọn dạng thẻ (quy mô, công cụ, vai trò) */
+  .auth-tile {
+    display: flex;
+    width: 100%;
+    text-align: left;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    border-radius: 16px;
+    border: 1px solid rgb(27 35 30 / 0.1);
+    background: rgb(255 255 255 / 0.45);
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.15s ease;
+  }
+  .auth-tile:hover {
+    background: rgb(255 255 255 / 0.7);
+  }
+  .auth-tile:active {
+    transform: scale(0.99);
+  }
+  .auth-tile:focus-visible {
+    outline: 3px solid rgb(47 122 62 / 0.45);
+    outline-offset: 2px;
+  }
+  .auth-tile[aria-checked="true"],
+  .auth-tile[aria-pressed="true"] {
+    border-color: #2f7a3e;
+    background: rgb(255 255 255 / 0.85);
+    box-shadow: 0 0 0 3px rgb(47 122 62 / 0.15);
+  }
+  :root[data-theme="dark"] .auth-tile {
+    border-color: rgb(255 255 255 / 0.1);
+    background: rgb(255 255 255 / 0.04);
+  }
+  :root[data-theme="dark"] .auth-tile:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+  :root[data-theme="dark"] .auth-tile[aria-checked="true"],
+  :root[data-theme="dark"] .auth-tile[aria-pressed="true"] {
+    border-color: #5fae6e;
+    background: rgb(95 174 110 / 0.12);
+    box-shadow: 0 0 0 3px rgb(95 174 110 / 0.18);
+  }
+
+  /* Ô nhập trên kính: nền trong mờ thay vì trắng đặc */
+  .auth-form .ant-input-outlined,
+  .auth-form .ant-input-affix-wrapper.ant-input-outlined,
+  .auth-form .ant-input-number-outlined,
+  .auth-form .ant-select-outlined:not(.ant-select-customize-input) .ant-select-selector {
+    background: rgb(255 255 255 / 0.6);
+  }
+  :root[data-theme="dark"] .auth-form .ant-input-outlined,
+  :root[data-theme="dark"] .auth-form .ant-input-affix-wrapper.ant-input-outlined,
+  :root[data-theme="dark"] .auth-form .ant-input-number-outlined,
+  :root[data-theme="dark"] .auth-form .ant-select-outlined:not(.ant-select-customize-input) .ant-select-selector {
+    background: rgb(255 255 255 / 0.05);
+  }
+  .auth-form .ant-form-item-label > label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-body);
+  }
 }
 
 /*
@@ -230,4 +506,132 @@
 }
 :root[data-theme="dark"] .ant-tag.ant-tag-warning {
   color: #fcd34d;
+}
+
+/*
+ * Bamboo Glass cho mọi thẻ của ứng dụng: các trang dựng thẻ bằng "bg-surface shadow-card" (hoặc Panel) nên chỉ cần một quy
+ * tắc ở đây là cả ứng dụng thành kính. Đổi biến --color-surface ngay trên thẻ (không đè background-color) để hover:bg-*
+ * của từng trang vẫn thắng; khối con dùng bg-surface trong thẻ cũng trong theo, thành lớp kính chồng lớp.
+ */
+@layer utilities {
+  :where(.shadow-card).bg-surface {
+    --color-surface: var(--glass-card);
+    border-color: var(--glass-card-edge);
+  }
+  /* Chỉ khối chứa mới làm mờ nền: ô nhập không cần (đã nằm trong thẻ kính), và backdrop-filter tạo lớp xếp chồng
+     riêng khiến ô nhập đè lên biểu tượng đặt tuyệt đối phía trước nó */
+  :where(.shadow-card).bg-surface:not(input, textarea, select, button) {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+
+/* Ant Design dùng cùng vật liệu kính (ngoài @layer vì CSS của Ant Design không thuộc layer nào) */
+.ant-card {
+  background: var(--glass-card);
+  border-color: var(--glass-card-edge);
+  border-radius: 20px;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-card);
+}
+.ant-card .ant-card-head {
+  border-bottom-color: var(--color-line);
+}
+/* Bảng đứng riêng trên nền (trang dựng bằng List của Refine): chính bảng là một thẻ kính */
+.ant-table-wrapper .ant-table {
+  background: var(--glass-card);
+  border: 1px solid var(--glass-card-edge);
+  border-radius: 20px;
+  overflow: hidden;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-card);
+}
+/* Ô bảng trong suốt để thấy lớp kính; hàng đang di chuột (bộ chọn :hover của Ant Design cụ thể hơn) vẫn tô màu */
+.ant-table-wrapper .ant-table .ant-table-thead > tr > th,
+.ant-table-wrapper .ant-table .ant-table-thead > tr > td,
+.ant-table-wrapper .ant-table .ant-table-tbody > tr > td:not(.ant-table-cell-fix-left):not(.ant-table-cell-fix-right),
+.ant-table-wrapper .ant-table .ant-table-placeholder > td,
+.ant-table-wrapper .ant-table .ant-table-container,
+.ant-table-wrapper .ant-table .ant-table-summary > tr > td {
+  background: transparent;
+}
+.ant-table-wrapper .ant-table .ant-table-cell-fix-left,
+.ant-table-wrapper .ant-table .ant-table-cell-fix-right {
+  background: var(--surface-solid);
+}
+.ant-table-wrapper .ant-table .ant-table-thead > tr > th {
+  color: var(--color-muted);
+  font-weight: 500;
+}
+/* Bảng nằm trong thẻ, hộp thoại, ngăn kéo: không thêm lớp kính thứ hai */
+.ant-card .ant-table-wrapper .ant-table,
+.bg-surface .ant-table-wrapper .ant-table,
+.glass-bar .ant-table-wrapper .ant-table,
+.ant-modal .ant-table-wrapper .ant-table,
+.ant-drawer .ant-table-wrapper .ant-table,
+.ant-popover .ant-table-wrapper .ant-table {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Tiêu đề trang dựng bằng List/Show của Refine: cùng cỡ chữ và lề với các trang tự dựng */
+.ant-page-header.ant-page-header-ghost {
+  padding-inline: 0;
+  padding-top: 4px;
+}
+.ant-page-header .ant-page-header-heading-title,
+.ant-page-header .ant-page-header-heading-title .ant-typography {
+  color: var(--color-ink);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0;
+}
+
+/* Bảng thông tin (Descriptions): ô nhãn là ô lõm nhẹ, viền mảnh, bo góc như khối con */
+.ant-descriptions.ant-descriptions-bordered .ant-descriptions-view {
+  border-color: var(--color-line);
+  border-radius: 14px;
+}
+.ant-descriptions.ant-descriptions-bordered .ant-descriptions-item-label {
+  background: var(--glass-well);
+  color: var(--color-muted);
+}
+.ant-descriptions.ant-descriptions-bordered .ant-descriptions-row,
+.ant-descriptions.ant-descriptions-bordered .ant-descriptions-item-label,
+.ant-descriptions.ant-descriptions-bordered .ant-descriptions-item-content {
+  border-color: var(--color-line);
+}
+
+.ant-modal .ant-modal-content,
+.ant-modal .ant-modal-header {
+  background: var(--glass-strong);
+}
+.ant-modal .ant-modal-content {
+  border: 1px solid var(--glass-card-edge);
+  border-radius: 22px;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.ant-drawer .ant-drawer-content {
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.ant-dropdown .ant-dropdown-menu,
+.ant-popover .ant-popover-inner,
+.ant-select-dropdown,
+.ant-picker-dropdown .ant-picker-panel-container {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-card-edge);
+  border-radius: 16px;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }

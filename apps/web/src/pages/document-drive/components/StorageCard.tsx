@@ -11,6 +11,7 @@ import { usePermissions } from "../../admin/shared/usePermissions";
 import type { StorageSegment } from "../types";
 import type { DriveUsage } from "../useDriveUsage";
 import { formatBytes } from "../utils";
+import { tr } from "../../../i18n";
 
 const GB = 1024 ** 3;
 
@@ -34,7 +35,7 @@ export const StorageCard = ({
   const save = async () => {
     try {
       await adminSave("storage_quota", { quota_gb: gb });
-      message.success("Đã đổi hạn mức dung lượng.");
+      message.success(tr("Đã đổi hạn mức dung lượng."));
       setEditing(false);
       onChanged();
     } catch (e) {
@@ -46,7 +47,7 @@ export const StorageCard = ({
     <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-labelledby="storage-title">
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="storage-title" className="text-[14px] font-semibold text-ink">
-          Dung lượng
+          {tr("Dung lượng")}
         </h2>
         {usage && (
           <span className="text-[12px] tabular-nums text-muted">
@@ -60,7 +61,7 @@ export const StorageCard = ({
           <div
             className="mt-3 h-2 overflow-hidden rounded-ui bg-gray-200/70"
             role="progressbar"
-            aria-label="Dung lượng đã dùng"
+            aria-label={tr("Dung lượng đã dùng")}
             aria-valuenow={Math.round(percent)}
             aria-valuemin={0}
             aria-valuemax={100}
@@ -71,9 +72,9 @@ export const StorageCard = ({
             />
           </div>
           <p className="m-0 mt-2 text-[12.5px] text-body">
-            Còn khả dụng <b className="tabular-nums">{formatBytes(usage.availableBytes)}</b> (
+            {tr("Còn khả dụng ")} <b className="tabular-nums">{formatBytes(usage.availableBytes)}</b> (
             {(100 - percent).toFixed(0)}
-            %) cho cả đơn vị
+            {tr("%) cho cả đơn vị")}
           </p>
         </>
       )}
@@ -87,7 +88,10 @@ export const StorageCard = ({
           </li>
         ))}
       </ul>
-      <p className="m-0 mt-2 text-[11.5px] text-muted">Theo loại: tệp bạn xem được ({formatBytes(visible)}).</p>
+      <p className="m-0 mt-2 text-[11.5px] text-muted">
+        {tr("Theo loại: tệp bạn xem được (")}
+        {formatBytes(visible)}).
+      </p>
 
       {usage && perms?.has("core.org.manage") && (
         <button
@@ -98,23 +102,23 @@ export const StorageCard = ({
             setEditing(true);
           }}
         >
-          Đổi hạn mức
+          {tr("Đổi hạn mức")}
         </button>
       )}
       <Modal
         open={editing}
-        title="Hạn mức dung lượng của đơn vị"
-        okText="Lưu"
-        cancelText="Hủy"
+        title={tr("Hạn mức dung lượng của đơn vị")}
+        okText={tr("Lưu")}
+        cancelText={tr("Hủy")}
         onOk={() => void save()}
         onCancel={() => setEditing(false)}
         destroyOnHidden
       >
         <p className="text-[13px] text-body">
-          Tổng dung lượng tệp đính kèm của cả tenant. Vượt hạn mức thì không tải thêm tệp được.
+          {tr("Tổng dung lượng tệp đính kèm của cả tenant. Vượt hạn mức thì không tải thêm tệp được.")}
         </p>
         <InputNumber
-          aria-label="Hạn mức (GB)"
+          aria-label={tr("Hạn mức (GB)")}
           min={0.1}
           max={100000}
           step={1}
