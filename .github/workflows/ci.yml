@@ -31,7 +31,7 @@ jobs:
         run: uv run --frozen --only-group lint reuse lint
       - name: Python (ruff)
         run: |
-          uv run --frozen --only-group lint ruff check services --select E,F,W,B --ignore E501
+          uv run --frozen --only-group lint ruff check services packages --select E,F,W,B --ignore E501
           uv run --frozen --only-group lint ruff check . --select I
           uv run --frozen --only-group lint ruff format --check .
       - name: Docker Compose hợp lệ

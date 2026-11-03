@@ -87,6 +87,28 @@ phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗ
 | [0.2.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
 | [0.1.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
 
+### Cấu trúc mã nguồn
+
+Monorepo xếp theo vai trò ([ADR #60](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)); gốc repo chỉ giữ tệp "cửa vào"
+(`compose.yaml`, `Makefile`, `package.json`, `pyproject.toml`, các tệp khóa phiên bản).
+
+```text
+apps/web/            Giao diện Refine (package pnpm @bamboo/web)
+services/            Dịch vụ Python: actions, seed, ocr, sleeper
+packages/py-common/  Gói Python dùng chung bamboo-common (client OpenBao, Flowable, Ollama, quét tệp, mã hóa PII)
+infra/compose/       Định nghĩa dịch vụ theo nhóm (core, data, ai, scan, test, gpu), compose.yaml ở gốc include
+infra/docker/        Dockerfile của mọi image Bamboo
+infra/platform/      Cấu hình dịch vụ bên thứ ba: APISIX, Flowable, Hasura, Kafka, Keycloak, OpenBao, Trino, Vector
+infra/k8s/           Chỗ dành sẵn cho k3s/GitOps (chưa có manifest)
+db/                  Migration, vai trò CSDL, kiểm thử SQL
+tools/               Script CI, CSDL, vận hành, sao lưu, GitOps, phát hành, smoke AI/OCR
+tests/e2e/           Kiểm thử đầu–cuối Playwright (package pnpm @bamboo/e2e)
+docs/                Tài liệu kỹ thuật (Sphinx)
+```
+
+JS là pnpm workspace + Turborepo (`pnpm-lock.yaml`), Python là uv workspace (`uv.lock`, riêng OCR có `services/ocr/uv.lock`).
+Kiểm tra tĩnh toàn repo giống CI: `make check` (cần `uv`, `pnpm`, Docker).
+
 ## Kiến trúc hệ thống
 
 ```text
@@ -290,7 +312,7 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 | PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`make psql`) |
 
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
-thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; giao diện `pnpm check` ở gốc repo
+thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; kiểm tra tĩnh toàn repo `make check`; giao diện `pnpm check` ở gốc repo
 (Turborepo: lint, format:check, build), `pnpm --filter @bamboo/e2e test:e2e`; AI và OCR `tools/ai_smoke.sh`, `tools/ocr_smoke.sh`.
 
 ## Chạy native (không dùng Docker)
@@ -306,7 +328,7 @@ mặc định của máy dev, giống bản Docker; tên dịch vụ đổi thà
 | PostgreSQL | 17, extension `ltree`, `btree_gist` | PostGIS 3.5 tùy chọn; `wal_level=logical` nếu chạy CDC |
 | Python | 3.13 | Dịch vụ `actions`, `seed` |
 | Node.js | 22 (tối thiểu 20) | Giao diện |
-| pnpm | 12.16.1 (ghim ở `packageManager` trong `package.json`) | Workspace JS: `npm install -g pnpm@12.16.1` |
+| pnpm | 12.16.1 (ghim ở `packageManager` trong `package.json`) | Workspace JS: `npm install -g --allow-scripts=pnpm pnpm@12.16.1` (npm mới chặn install script; thiếu cờ này lệnh `pnpm` không chạy được từ Turborepo) |
 | Java | 21 | Keycloak, Flowable |
 | Keycloak | 26.8 | Bản phân phối `.zip`/`.tar.gz` |
 | Flowable REST | 8.0 | `flowable-rest.war` (Spring Boot) |
