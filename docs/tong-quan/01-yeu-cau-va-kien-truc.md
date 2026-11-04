@@ -90,7 +90,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Dữ liệu có cấu trúc | OLTP, API tự sinh, phân quyền theo dòng | PostgreSQL 17 + Hasura v2 CE (62 bảng/view, 99 Action) | Có |
 | | Phiên bản, lịch sử dữ liệu | Nhật ký kiểm toán chuỗi hash; CDC vào Iceberg bronze | Có |
 | | Đóng băng số liệu theo kỳ | `kpi.snapshot`, `kpi.freeze` | Có |
-| | Lớp ngữ nghĩa báo cáo | Danh mục chỉ số và chiều sinh SQL trên Trino; chưa có giao diện | Một phần |
+| | Lớp ngữ nghĩa báo cáo | Danh mục chỉ số và chiều sinh SQL trên Trino; giao diện Phân tích BI (`/i/bi`) vẽ và lưu biểu đồ | Có |
 | Dữ liệu phi cấu trúc | Lưu trữ đối tượng, hồ sơ phê duyệt | SeaweedFS S3, tệp gắn với chứng từ, giữ tệp làm chứng cứ ([ADR #26](#adr-26)) | Có |
 | | Chỉ mục toàn văn | Tika + Meilisearch, lọc lại theo quyền ([ADR #36](#adr-36)) | Có |
 | | Trộn mẫu sinh biểu mẫu | Jinja2 + Gotenberg: phiếu đề nghị, quyết định nhân sự, báo cáo KPI ([ADR #37](#adr-37)) | Có |
@@ -122,7 +122,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | [H] Con người số | Hộp việc (`/p/tasks`, `/p/inbox`), Ổ đĩa tài liệu (`/h/drive`), Thư viện tri thức (`/h/library`), Tiếp nhận nhân sự (`/h/onboarding`), Điều chuyển (`/h/transfer`), Quyết định nhân sự (`/h/decisions`), kênh nhận thông báo (`/settings/notifications`) |
 | [P] Quy trình số | **Đề nghị mua sắm** (`/p/documents`, ứng dụng chính), Đơn hàng nội bộ (`/p/ic-orders`), Hồ sơ (`/p/records`), Thiết kế quy trình (`/p/process`), Quản trị tổ chức, người dùng, phân quyền, danh mục (`/admin/*`) |
 | [D] Dữ liệu số | Trung tâm điều hành kèm bản đồ (`/d/ops`), Dịch vụ dữ liệu trên Lakehouse (`/d/services`), Bản sao số (`/d/twin`), Phả hệ dữ liệu (`/d/lineage`), Sổ cái (`/d/ledger`), Kiểm toán (`/admin/audit-logs`) |
-| [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa (`/i/search`), Trợ lý RAG có trích dẫn (`/i/assistant`), Nhập liệu OCR (`/i/ocr`), Tác tử AI (`/i/agents`); mô hình chạy cục bộ ([ADR #51](#adr-51)) |
+| [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa (`/i/search`), Trợ lý RAG trích nguồn theo tên văn bản (`/i/assistant`), Phân tích BI (`/i/bi`), Nhập liệu OCR (`/i/ocr`), Tác tử AI (`/i/agents`); mô hình chạy cục bộ ([ADR #51](#adr-51), [ADR #63](#adr-63)) |
 
 ## 7. Tầng 3: định hướng
 
