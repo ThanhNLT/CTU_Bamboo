@@ -231,10 +231,11 @@ flowchart LR
 | | Hồ sơ chứng từ | `/p/records` |
 | | Thiết kế quy trình BPMN: vẽ, kiểm lỗi, chạy thử, phát hành, yêu cầu sửa, chạy tự động | `/p/process` |
 | | Quản trị: cơ cấu tổ chức, người dùng, vai trò và phân quyền, danh mục và dữ liệu chủ (có nhập Excel) | `/admin/org`, `/admin/people`, `/admin/roles`, `/admin/catalog` |
-| [D] Dữ liệu số | Trung tâm điều hành kèm bản đồ cơ sở (quy trình, sản xuất, bệnh viện, chất lượng) | `/d/ops` |
+| [D] Dữ liệu số | Trung tâm điều hành thời gian thực kèm bản đồ cơ sở (quy trình, sản xuất, bệnh viện, chất lượng) | `/d/ops` |
 | | Dịch vụ dữ liệu trên Lakehouse | `/d/services` |
 | | Bản sao số phòng sạch: chuỗi đo, ngưỡng, sự cố, ghi nhận sự cố | `/d/twin` |
-| | Phả hệ và chất lượng dữ liệu, báo sự cố dữ liệu | `/d/lineage` |
+| | Phả hệ dữ liệu thu tự động, đối chiếu chất lượng PostgreSQL ↔ Lakehouse, báo sự cố dữ liệu | `/d/lineage` |
+| | Cổng dịch vụ API: REST `/api/v1` có OpenAPI, khóa API theo công ty (phạm vi, hạn dùng, dải IP, thu hồi) | `/d/api` |
 | | Sổ cái: đối soát tệp với chuỗi hash, phòng đọc chỉ đọc | `/d/ledger` |
 | | Nhật ký kiểm toán (bản che), đối soát chuỗi hash | `/admin/audit-logs` |
 | [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa | `/i/search` |

@@ -2826,4 +2826,82 @@ export const EN_PAGES: Record<string, string> = {
   "Đang nằm trong bộ nhớ": "Currently in memory",
   "dùng lại câu trả lời đã có cho cùng câu hỏi và tài liệu":
     "reused an earlier answer to the same question on the same documents",
+  // Không gian D: thời gian thực, phả hệ tự động, cổng dịch vụ API
+  "300 lượt mỗi phút cho mỗi khóa (vượt thì trả 429), thân yêu cầu tối đa 1 MB, khóa hết hạn sau tối đa một năm.":
+    "300 calls per minute per key (429 when exceeded), request body up to 1 MB, keys expire after at most one year.",
+  "Chưa có dữ liệu phả hệ mẫu (chạy python -m app.demo_load).":
+    "No sample lineage data yet (run python -m app.demo_load).",
+  "Chưa có khóa API nào.": "No API keys yet.",
+  "Chưa dùng": "Never used",
+  "Chưa thu thập phả hệ của hệ thống. Bấm Thu thập và kiểm tra để dựng từ cấu hình đang chạy.":
+    "System lineage has not been collected yet. Press Collect and check to build it from the running configuration.",
+  "Chỉ cho phép gọi từ (tùy chọn)": "Only allow calls from (optional)",
+  "Chỉ chọn phạm vi hệ thống bên ngoài thật sự cần.": "Only choose the scopes the external system really needs.",
+  "Chọn ít nhất một phạm vi": "Choose at least one scope",
+  "Cần khóa API? Quản trị viên công ty tạo khóa ở trang này, chọn phạm vi và hạn dùng.":
+    "Need an API key? A company administrator creates keys on this page, choosing scopes and expiry.",
+  "Cổng dịch vụ API": "API gateway",
+  "Dùng gần nhất": "Last used",
+  "Dữ liệu cảm biến theo chuẩn NGSI-LD · hội tụ IT/OT · cập nhật ngay khi có số đo mới":
+    "Sensor data in NGSI-LD · IT/OT convergence · updates as soon as a new reading arrives",
+  "Dữ liệu đến từ đâu, đi qua những bước nào và ảnh hưởng tới đâu · dữ liệu mẫu":
+    "Where data comes from, which steps it passes through and what it affects · sample data",
+  "Giới hạn": "Limits",
+  "Hạn dùng": "Expiry",
+  "Hết hạn": "Expired",
+  "Hết hạn {0}": "Expires {0}",
+  "Hệ thống thật": "Live system",
+  "Hệ thống đang dùng khóa này sẽ bị từ chối ngay lập tức. Không thể khôi phục; thao tác được ghi nhật ký.":
+    "Systems using this key will be rejected immediately. This cannot be undone; the action is logged.",
+  Khóa: "Key",
+  "Khóa API": "API keys",
+  "Khóa API mới": "New API key",
+  "Khóa gọi thay mặt người tạo, chỉ trong phạm vi đã chọn; quản trị viên công ty tạo và thu hồi khóa.":
+    "A key acts on behalf of its creator, only within its chosen scopes; company administrators create and revoke keys.",
+  "Không tải được cổng dịch vụ API": "Could not load the API gateway",
+  "Kết nối hệ thống bên ngoài với số liệu của công ty qua REST, có khóa riêng, phạm vi và nhật ký dùng":
+    "Connect external systems to company data over REST, with dedicated keys, scopes and usage logs",
+  "Lượt gọi 30 ngày": "Calls (30 days)",
+  "Mất kết nối thời gian thực, số liệu vẫn tự tải lại mỗi phút":
+    "Real-time connection lost; data still reloads every minute",
+  "Mỗi khóa gọi thay mặt người tạo: người đó mất quyền hoặc nghỉ việc thì khóa cũng không đọc được dữ liệu nữa.":
+    "Each key acts on behalf of its creator: if that person loses permissions or leaves, the key can no longer read data.",
+  "Người tạo": "Created by",
+  "Sao chép và cất khóa ở nơi an toàn ngay bây giờ: khóa chỉ hiện một lần, máy chủ chỉ lưu mã băm.":
+    "Copy the key and store it safely now: it is shown only once and the server keeps only its hash.",
+  "Sao chép ví dụ {0}": "Copy example {0}",
+  "Số liệu tự cập nhật ngay khi có thay đổi từ bất kỳ tài khoản, thiết bị nào":
+    "Data updates as soon as any account or device makes a change",
+  "Tham số": "Parameter",
+  "Thu hồi khóa “{0}”?": "Revoke key “{0}”?",
+  "Thu thập và kiểm tra": "Collect and check",
+  "Thu tự động từ hệ thống đang chạy: PostgreSQL → CDC → Lakehouse → lớp ngữ nghĩa → nơi dùng":
+    "Collected automatically from the running system: PostgreSQL → CDC → Lakehouse → semantic layer → consumers",
+  "Trường JSON": "JSON field",
+  "Trực tiếp": "Live",
+  "Tài liệu API": "API docs",
+  "Tên khóa": "Key name",
+  "Tôi đã lưu khóa": "I have saved the key",
+  "Tạo khóa": "Create key",
+  "Tạo khóa API": "Create API key",
+  "Ví dụ: Kho dữ liệu BI phòng tài chính": "e.g. Finance BI warehouse",
+  "Xác thực bằng khóa API": "Authenticate with an API key",
+  "cùng trang": "same page",
+  "· dùng để sinh client hoặc nhập vào Postman, Insomnia.":
+    "· use it to generate clients or import into Postman, Insomnia.",
+  "Đang kết nối lại": "Reconnecting",
+  "Đang thu thập…": "Collecting…",
+  "Đã dựng phả hệ ({0} nút); chưa đối chiếu Lakehouse: {1}": "Lineage built ({0} nodes); Lakehouse not reconciled: {1}",
+  "Đã kiểm tra {0} mục, {1} mục không đạt.": "Checked {0} items, {1} failed.",
+  "Đã sao chép khóa.": "Key copied.",
+  "Đã sao chép.": "Copied.",
+  "Đã thu hồi": "Revoked",
+  "Đã thu hồi {0}.": "Revoked {0}.",
+  "Đã thu thập {0} nút, {1} kiểm tra đều đạt.": "Collected {0} nodes; all {1} checks passed.",
+  "Đặc tả OpenAPI 3.1": "OpenAPI 3.1 specification",
+  "Đặt tên để nhận ra hệ thống dùng khóa": "Name it after the system that uses the key",
+  "Địa chỉ IP hoặc dải CIDR, ví dụ 203.0.113.10 hoặc 10.0.0.0/8; bỏ trống thì gọi được từ mọi nơi.":
+    "IP address or CIDR range, e.g. 203.0.113.10 or 10.0.0.0/8; leave empty to allow calls from anywhere.",
+  "Địa chỉ gốc": "Base URL",
+  "đổi lúc {0}": "changed at {0}",
 };
