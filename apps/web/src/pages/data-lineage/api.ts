@@ -5,16 +5,30 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
+import { useLiveTopics } from "../../live/useLive";
 import { LAYERS } from "./graph";
 import type { LineageEdge, LineageNode, RunResult, RunRow } from "./types";
 import { tr, trf } from "../../i18n";
 
-const LINEAGE = `query Lineage {
-  meta_lineage_node { id layer tech name fqn title owner used_by app_link
+// Phả hệ "auto" thu từ hệ thống đang chạy, "demo" nạp từ tệp mẫu (ADR #50, #64)
+export type LineageOrigin = "auto" | "demo";
+
+const LINEAGE = `query Lineage($o: String!) {
+  meta_lineage_node(where: {origin: {_eq: $o}}) { id layer tech name fqn title owner used_by app_link
     quality_checks(order_by: {checked_at: desc}) { rule name passed detail checked_at } }
-  meta_lineage_edge { from_node to_node columns }
-  meta_pipeline_run(order_by: {started_at: desc}, limit: 12) { id task engine node_id started_at duration_s result }
+  meta_lineage_edge(where: {origin: {_eq: $o}}) { from_node to_node columns }
+  meta_pipeline_run(where: {node: {origin: {_eq: $o}}}, order_by: {started_at: desc}, limit: 12) {
+    id task engine node_id started_at duration_s result }
+  auto: meta_lineage_node_aggregate(where: {origin: {_eq: "auto"}}) { aggregate { count } }
+  demo: meta_lineage_node_aggregate(where: {origin: {_eq: "demo"}}) { aggregate { count } }
 }`;
+
+export const refreshLineage = async () => {
+  const { lineage_refresh } = await request<{
+    lineage_refresh: { nodes: number; edges: number; checks: number; failed: number; note: string | null };
+  }>(`mutation { lineage_refresh { nodes edges checks failed note } }`);
+  return lineage_refresh;
+};
 
 type NodeRow = {
   id: string;
@@ -39,7 +53,13 @@ type RunRowDb = {
   result: RunResult;
 };
 
-export type LineageData = { nodes: LineageNode[]; edges: LineageEdge[]; runs: RunRow[]; updatedAt: string };
+export type LineageData = {
+  nodes: LineageNode[];
+  edges: LineageEdge[];
+  runs: RunRow[];
+  updatedAt: string;
+  counts: Record<LineageOrigin, number>;
+};
 
 const HHMM = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Ho_Chi_Minh" });
 const hhmm = (iso: string) => HHMM.format(new Date(iso));
@@ -63,7 +83,12 @@ const layout = (rows: NodeRow[], edges: EdgeRow[]) => {
   return row;
 };
 
-const toData = (nodes: NodeRow[], edges: EdgeRow[], runs: RunRowDb[]): LineageData => {
+const toData = (
+  nodes: NodeRow[],
+  edges: EdgeRow[],
+  runs: RunRowDb[],
+  counts: Record<LineageOrigin, number>,
+): LineageData => {
   const row = layout(nodes, edges);
   const colsOf = (id: string) => [
     ...new Set([
@@ -110,10 +135,13 @@ const toData = (nodes: NodeRow[], edges: EdgeRow[], runs: RunRowDb[]): LineageDa
       nodeId: r.node_id,
     })),
     updatedAt: latest ? hhmm(latest) : "—",
+    counts,
   };
 };
 
-export const useLineage = () => {
+type Count = { aggregate: { count: number } };
+
+export const useLineage = (origin: LineageOrigin) => {
   const [state, setState] = useState<{ data?: LineageData; error?: string; loading: boolean }>({ loading: true });
   const load = useCallback(async () => {
     try {
@@ -121,16 +149,26 @@ export const useLineage = () => {
         meta_lineage_node: NodeRow[];
         meta_lineage_edge: EdgeRow[];
         meta_pipeline_run: RunRowDb[];
-      }>(LINEAGE);
-      setState({ data: toData(r.meta_lineage_node, r.meta_lineage_edge, r.meta_pipeline_run), loading: false });
+        auto: Count;
+        demo: Count;
+      }>(LINEAGE, { o: origin });
+      setState({
+        data: toData(r.meta_lineage_node, r.meta_lineage_edge, r.meta_pipeline_run, {
+          auto: r.auto.aggregate.count,
+          demo: r.demo.aggregate.count,
+        }),
+        loading: false,
+      });
     } catch (e) {
       setState((s) => ({ ...s, loading: false, error: (e as Error).message }));
     }
-  }, []);
+  }, [origin]);
   useEffect(() => {
     void load();
   }, [load]);
-  return { ...state, reload: load };
+  // Kiểm tra, lần chạy, sự cố dữ liệu mới của người khác hiện ngay (ADR #64)
+  const live = useLiveTopics(["lineage"], load);
+  return { ...state, reload: load, live };
 };
 
 export const reportIssue = async (nodeId: string, severity: "low" | "medium" | "high", description: string) => {

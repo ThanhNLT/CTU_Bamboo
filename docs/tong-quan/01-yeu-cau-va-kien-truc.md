@@ -112,7 +112,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 |---|---|---|
 | Phân tách theo vòng đời dữ liệu | OLTP trên PostgreSQL; CDC → Kafka → Iceberg bronze → view silver trên Trino ([ADR #39](#adr-39), [ADR #40](#adr-40)) | Có |
 | Hội tụ IT/OT | Trang Bản sao số phòng sạch, chuỗi đo, ngưỡng, sự cố, ghi nhận sự cố; dữ liệu cảm biến nạp từ tệp demo, chưa có MQTT hay NGSI-LD ([ADR #50](#adr-50)) | Một phần |
-| Quản trị dữ liệu thế hệ mới | Trang Phả hệ và chất lượng dữ liệu, báo sự cố dữ liệu; siêu dữ liệu nạp từ tệp demo, chưa thu từ pipeline | Một phần |
+| Quản trị dữ liệu thế hệ mới | Trang Phả hệ và chất lượng dữ liệu, báo sự cố dữ liệu; phả hệ dựng từ cấu hình CDC/Lakehouse/lớp ngữ nghĩa đang chạy, đối chiếu số dòng PostgreSQL ↔ silver theo công ty và độ trễ slot CDC; chưa theo cột chi tiết | Có |
 | Zero-Trust + GitOps | WAF và kiểm token tại biên, bucket kiểm dịch, mỗi dịch vụ một tài khoản CSDL và AppRole riêng ([ADR #35](#adr-35)), healthcheck và tự khởi động lại, script đối chiếu cấu hình; chưa có mTLS | Một phần |
 
 ## 6. Tầng 2: không gian H-P-D-I
@@ -121,7 +121,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 |---|---|
 | [H] Con người số | Hộp việc (`/p/tasks`, `/p/inbox`), Ổ đĩa tài liệu (`/h/drive`), Thư viện tri thức (`/h/library`), Tiếp nhận nhân sự (`/h/onboarding`), Điều chuyển (`/h/transfer`), Quyết định nhân sự (`/h/decisions`), kênh nhận thông báo (`/settings/notifications`) |
 | [P] Quy trình số | **Đề nghị mua sắm** (`/p/documents`, ứng dụng chính), Đơn hàng nội bộ (`/p/ic-orders`), Hồ sơ (`/p/records`), Thiết kế quy trình (`/p/process`), Quản trị tổ chức, người dùng, phân quyền, danh mục (`/admin/*`) |
-| [D] Dữ liệu số | Trung tâm điều hành kèm bản đồ (`/d/ops`), Dịch vụ dữ liệu trên Lakehouse (`/d/services`), Bản sao số (`/d/twin`), Phả hệ dữ liệu (`/d/lineage`), Sổ cái (`/d/ledger`), Kiểm toán (`/admin/audit-logs`) |
+| [D] Dữ liệu số | Trung tâm điều hành thời gian thực kèm bản đồ (`/d/ops`), Dịch vụ dữ liệu trên Lakehouse (`/d/services`), Bản sao số (`/d/twin`), Phả hệ dữ liệu thu tự động (`/d/lineage`), Cổng dịch vụ API (`/d/api`), Sổ cái (`/d/ledger`), Kiểm toán (`/admin/audit-logs`); dữ liệu tự cập nhật giữa các tài khoản, thiết bị ([ADR #64](#adr-64)) |
 | [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa (`/i/search`), Trợ lý RAG trích nguồn theo tên văn bản (`/i/assistant`), Phân tích BI (`/i/bi`), Nhập liệu OCR (`/i/ocr`), Tác tử AI (`/i/agents`); mô hình chạy cục bộ ([ADR #51](#adr-51), [ADR #63](#adr-63)) |
 
 ## 7. Tầng 3: định hướng

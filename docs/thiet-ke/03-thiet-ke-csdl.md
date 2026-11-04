@@ -252,9 +252,19 @@ trực thuộc tập đoàn từ 50 triệu lên thẳng Tổng giám đốc; B�
 - `kpi.snapshot` (031): giá trị KPI của kỳ đã kết thúc chụp một lần bằng `kpi.freeze`, không sửa không xóa
   (`kpi.snapshot_guard`), kiểm bằng `kpi.verify_snapshots`; đi vào Lakehouse qua CDC (041).
 - `iot.*`: mô hình thiết bị, cơ sở, thực thể, chuỗi đo, sự cố vượt ngưỡng; `iot.acknowledge` ghi nhận sự cố.
-- `meta.*`: nút / cạnh phả hệ, kiểm tra chất lượng, lần chạy pipeline, sự cố dữ liệu người dùng báo.
-- Dữ liệu `iot` và `meta` hiện nạp từ tệp demo, chưa thu từ cảm biến hay pipeline thật
-  ([ADR #50](#adr-50)).
+- `meta.*`: nút / cạnh phả hệ, kiểm tra chất lượng, lần chạy pipeline, sự cố dữ liệu người dùng báo. Migration 052: nút, cạnh
+  có `origin` (`demo` từ tệp mẫu, [ADR #50](#adr-50); `auto` dựng từ hệ thống đang chạy); kiểm tra và lần chạy có `tenant_id`
+  (NULL = mức nền tảng) ([ADR #64](#adr-64)).
+- Dữ liệu `iot` hiện nạp từ tệp demo, chưa thu từ cảm biến thật ([ADR #50](#adr-50)).
+
+### 5.9a. Thời gian thực và cổng dịch vụ API (052, [ADR #64](#adr-64))
+
+Hai schema `live`, `api` không nằm trong publication CDC.
+
+- `live.event` (UNLOGGED): tín hiệu thay đổi (công ty, chủ đề); trigger cấp câu lệnh `live.emit` gắn bằng `live.track(bảng, chủ đề)`.
+- `live.presence`: nhịp hiện diện theo (công ty, người, thiết bị), đường dẫn trang; `live.v_online` là người có nhịp trong 75 giây.
+- `api.api_key`: khóa API của công ty (tên, tiền tố hiển thị, SHA-256, phạm vi, dải IP, hạn dùng ≤ 366 ngày, người tạo, thu
+  hồi, lần dùng cuối); có nhật ký kiểm toán. `api.usage`: lượt gọi và lỗi theo khóa, ngày.
 
 ### 5.10. Trí tuệ số
 

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
+import { useLiveTopics } from "../../live/useLive";
 import type { EntityCategory, EntityStatus, Incident, Metric, MetricStatus, SeriesPoint, TwinEntity } from "./types";
 import { ENTITY_STATUS, formatDuration, formatNumber, thresholdText, worstStatus } from "./utils";
 import { tr, trf } from "../../i18n";
@@ -183,7 +184,9 @@ export const useTwinEntities = () => {
     const id = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(id);
   }, [load]);
-  return { ...state, reload: load };
+  // Số đo hoặc sự cố mới (do thiết bị hay người khác ghi nhận) cập nhật ngay, không chờ chu kỳ (ADR #64)
+  const live = useLiveTopics(["iot"], load);
+  return { ...state, reload: load, live };
 };
 
 export const useSeries = (entityUuid: string | undefined, attribute: string | undefined, minutes: number) => {
