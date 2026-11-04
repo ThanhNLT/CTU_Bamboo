@@ -26,6 +26,7 @@ import { ColorModeContext } from "../../contexts/color-mode/context";
 import { LOCALES, setLocale, trf, useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
 import { NotificationBell } from "../notifications/Bell";
+import { OnlinePeople } from "./OnlinePeople";
 import { EXTRA_PAGES, findActive, NAV_GROUPS } from "./nav";
 import { BambooLogo } from "./BambooLogo";
 import { NavGate } from "./NavGate";
@@ -277,6 +278,7 @@ export const AppHeader = ({ collapsed, onCollapsedChange, onOpenMobileNav }: Hea
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <OnlinePeople />
           <CompanySwitcher />
           <button
             type="button"

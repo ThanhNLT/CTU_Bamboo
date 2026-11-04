@@ -11,7 +11,7 @@ import psycopg
 
 from . import config
 
-SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr", "iot", "meta", "kpi")
+SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr", "iot", "meta", "kpi", "live", "api")
 HIDDEN = {
     ("wf", "flow_sync"),
     ("wf", "v_flow_state"),
@@ -107,6 +107,7 @@ HIDDEN_COLUMNS = {
     ("core", "person"): {"birth_year"},
     ("core", "attachment_ocr"): {"page_texts", "pages", "attempts", "next_attempt_at"},
     ("core", "ai_question"): {"context_key", "attempts"},
+    ("api", "api_key"): {"key_sha256"},
     ("hr", "onboarding_request"): {
         "national_id_enc",
         "bank_account_enc",
@@ -130,9 +131,15 @@ SELECT_FILTER = {
     ("iot", "model"): {},
     ("meta", "lineage_node"): {},
     ("meta", "lineage_edge"): {},
-    ("meta", "quality_check"): {},
-    ("meta", "pipeline_run"): {},
     ("kpi", "pin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    # Thời gian thực (ADR #64): tín hiệu thay đổi và người đang trực tuyến của công ty; nhịp hiện diện của chính mình
+    ("live", "presence"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    # Phả hệ: kiểm tra và lần chạy mức nền tảng (tenant NULL) hoặc của công ty trong phiên
+    ("meta", "quality_check"): {"_or": [{"tenant_id": {"_is_null": True}}, TENANT]},
+    ("meta", "pipeline_run"): {"_or": [{"tenant_id": {"_is_null": True}}, TENANT]},
+    # Cổng dịch vụ API: chỉ quản trị viên công ty xem khóa và lượt gọi
+    ("api", "api_key"): {"_and": [TENANT, IS_ADMIN]},
+    ("api", "usage"): {"key": {"_and": [TENANT, IS_ADMIN]}},
     # Biểu đồ BI: của mình hoặc được chia sẻ trong công ty
     ("kpi", "chart"): {"_and": [TENANT, {"_or": [{"person_id": {"_eq": ME}}, {"shared": {"_eq": True}}]}]},
     ("core", "v_ai_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
@@ -525,6 +532,25 @@ def build(conn: psycopg.Connection) -> dict:
     ]
     pin["delete_permissions"] = [{"role": r, "permission": {"filter": own_pin}} for r in (ROLE, ADMIN_ROLE)]
 
+    own_presence = {"_and": [TENANT, {"person_id": {"_eq": ME}}]}
+    presence = entries[("live", "presence")]
+    presence["insert_permissions"] = [
+        {
+            "role": r,
+            "permission": {
+                "check": {},
+                "set": {"tenant_id": "X-Hasura-Tenant-Id", "person_id": ME},
+                "columns": ["device", "path"],
+            },
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    presence["update_permissions"] = [
+        {"role": r, "permission": {"filter": own_presence, "check": own_presence, "columns": ["path"]}}
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    presence["delete_permissions"] = [{"role": r, "permission": {"filter": own_presence}} for r in (ROLE, ADMIN_ROLE)]
+
     chart = entries[("kpi", "chart")]
     chart["insert_permissions"] = [
         {
@@ -753,6 +779,52 @@ def build(conn: psycopg.Connection) -> dict:
                 [ROLE, ADMIN_ROLE],
                 "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)",
                 timeout=60,
+            ),
+            _action(
+                "lineage_refresh",
+                "mutation",
+                [],
+                "LineageRefresh!",
+                [ROLE, ADMIN_ROLE],
+                "Dựng lại phả hệ dữ liệu từ hệ thống đang chạy và đối chiếu PostgreSQL ↔ Lakehouse cho công ty (ADR #64)",
+                timeout=120,
+            ),
+            _action(
+                "lineage_graph",
+                "query",
+                [],
+                "LineageGraph!",
+                [ROLE, ADMIN_ROLE],
+                "Phả hệ dữ liệu thu tự động kèm kiểm tra chất lượng, lần chạy của công ty (ADR #64)",
+            ),
+            _action(
+                "api_catalog",
+                "query",
+                [],
+                "ApiCatalog!",
+                [ROLE, ADMIN_ROLE],
+                "Phạm vi và endpoint của cổng dịch vụ API /api/v1 (ADR #64)",
+            ),
+            _action(
+                "api_key_create",
+                "mutation",
+                [
+                    ("name", "String!"),
+                    ("scopes", "[String!]!"),
+                    ("expires_days", "Int!"),
+                    ("allowed_ips", "[String!]"),
+                ],
+                "ApiKeyCreated!",
+                [ROLE, ADMIN_ROLE],
+                "Quản trị viên công ty tạo khóa API; khóa chỉ trả về một lần (ADR #64)",
+            ),
+            _action(
+                "api_key_revoke",
+                "mutation",
+                [("id", "uuid!")],
+                "ApiKeyRevoked!",
+                [ROLE, ADMIN_ROLE],
+                "Quản trị viên công ty thu hồi khóa API, có hiệu lực ngay (ADR #64)",
             ),
             _action(
                 "semantic_catalog",
@@ -2126,6 +2198,45 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "domain", "type": "String!"},
                         {"name": "columns", "type": "[LakehouseColumn!]!"},
                     ],
+                },
+                {
+                    "name": "LineageRefresh",
+                    "fields": [
+                        {"name": "nodes", "type": "Int!"},
+                        {"name": "edges", "type": "Int!"},
+                        {"name": "checks", "type": "Int!"},
+                        {"name": "failed", "type": "Int!"},
+                        {"name": "note", "type": "String"},
+                    ],
+                },
+                {
+                    "name": "LineageGraph",
+                    "fields": [
+                        {"name": "nodes", "type": "[jsonb!]!"},
+                        {"name": "edges", "type": "[jsonb!]!"},
+                        {"name": "checks", "type": "[jsonb!]!"},
+                        {"name": "runs", "type": "[jsonb!]!"},
+                    ],
+                },
+                {
+                    "name": "ApiCatalog",
+                    "fields": [
+                        {"name": "scopes", "type": "[jsonb!]!"},
+                        {"name": "endpoints", "type": "[jsonb!]!"},
+                    ],
+                },
+                {
+                    "name": "ApiKeyCreated",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "key", "type": "String!"},
+                        {"name": "prefix", "type": "String!"},
+                        {"name": "expires_at", "type": "String!"},
+                    ],
+                },
+                {
+                    "name": "ApiKeyRevoked",
+                    "fields": [{"name": "id", "type": "uuid!"}, {"name": "revoked", "type": "Boolean!"}],
                 },
                 {
                     "name": "SemanticCatalog",
