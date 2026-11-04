@@ -202,6 +202,24 @@ routes:
       client-control:
         max_body_size: 1048576
 
+  # Cổng dịch vụ API (ADR #64): actions tự kiểm khóa bak_…; giới hạn tần suất theo từng khóa (header Authorization)
+  - id: public-api
+    uris: [/api/v1/*]
+    priority: 15
+    methods: [GET, POST]
+    upstream_id: actions
+    plugin_config_id: waf
+    plugins:
+      limit-count:
+        count: 300
+        time_window: 60
+        key_type: var
+        key: http_authorization
+        rejected_code: 429
+        rejected_msg: "Khóa API vượt giới hạn 300 lượt mỗi phút, thử lại sau"
+      client-control:
+        max_body_size: 1048576
+
   - id: company-setup
     uris: [/setup/*]
     priority: 15
