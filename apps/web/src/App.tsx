@@ -44,6 +44,7 @@ import { DataLineagePage } from "./pages/data-lineage";
 import { LedgerPage } from "./pages/ledger";
 import { AiAssistantPage } from "./pages/ai-assistant";
 import { AiAgentsPage } from "./pages/ai-agents";
+import { BiAnalyticsPage } from "./pages/bi-analytics";
 import { OcrInputPage } from "./pages/ocr-input";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { NotificationSettingsPage, QueuePage } from "./pages/messaging";
@@ -120,6 +121,7 @@ function App() {
                   { name: "assistant", list: "/i/assistant", meta: { label: tr("Trợ lý đa năng") } },
                   { name: "ocr", list: "/i/ocr", meta: { label: tr("Nhập liệu OCR") } },
                   { name: "agents", list: "/i/agents", meta: { label: tr("Tác tử AI") } },
+                  { name: "bi", list: "/i/bi", meta: { label: tr("Phân tích BI") } },
                   {
                     name: "proc_purchase_request",
                     list: "/p/documents",
@@ -304,6 +306,14 @@ function App() {
                       element={
                         <RequireModule module="ai">
                           <OcrInputPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/i/bi"
+                      element={
+                        <RequireModule module="data">
+                          <BiAnalyticsPage />
                         </RequireModule>
                       }
                     />

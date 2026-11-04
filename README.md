@@ -61,7 +61,7 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 | **[H] Human – Con người số** | Môi trường làm việc số: định danh tập trung, giao tiếp, cộng tác, lưu trữ, tri thức | Đăng nhập một lần cho mọi công ty, hộp việc, thông báo đa kênh, ổ đĩa tài liệu, thư viện tri thức, tiếp nhận, điều chuyển, quyết định nhân sự |
 | **[P] Process – Quy trình số** | Chuẩn hóa luồng nghiệp vụ, rào chắn kỹ thuật chống sai sót, số hóa hồ sơ, tự động hóa liên phòng ban | Đề nghị mua sắm với chuỗi duyệt tự tính theo cây tổ chức và hạn mức, đơn hàng nội bộ, thiết kế quy trình BPMN, quy trình tự động; ràng buộc nghiệp vụ nằm trong CSDL |
 | **[D] Data – Dữ liệu số** | Một nguồn sự thật duy nhất, dữ liệu sạch và toàn vẹn, điều hành bằng số liệu thời gian thực | Trung tâm điều hành kèm bản đồ, Lakehouse (CDC → Iceberg → Trino), bản sao số, phả hệ dữ liệu, KPI đóng băng theo kỳ, sổ cái đối soát chuỗi hash |
-| **[I] Intelligence – Trí tuệ số** | AI và tác tử AI phân tích, hỗ trợ quyết định, con người vẫn duyệt ngoại lệ | Tìm kiếm toàn văn và ngữ nghĩa, Trợ lý RAG có trích dẫn, OCR tiếng Việt điền sẵn chứng từ để người dùng kiểm, quản trị tác tử AI; mô hình chạy cục bộ, dữ liệu không rời hệ thống |
+| **[I] Intelligence – Trí tuệ số** | AI và tác tử AI phân tích, hỗ trợ quyết định, con người vẫn duyệt ngoại lệ | Tìm kiếm toàn văn và ngữ nghĩa, Trợ lý RAG trích nguồn theo tên văn bản, Phân tích BI, OCR tiếng Việt điền sẵn chứng từ để người dùng kiểm, quản trị tác tử AI; mô hình chạy cục bộ, dữ liệu không rời hệ thống |
 
 ## Thông tin về phần mềm
 
@@ -238,9 +238,10 @@ flowchart LR
 | | Sổ cái: đối soát tệp với chuỗi hash, phòng đọc chỉ đọc | `/d/ledger` |
 | | Nhật ký kiểm toán (bản che), đối soát chuỗi hash | `/admin/audit-logs` |
 | [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa | `/i/search` |
-| | Trợ lý RAG có trích dẫn | `/i/assistant` |
+| | Trợ lý RAG trích nguồn theo tên văn bản, dùng lại câu trả lời đã có | `/i/assistant` |
+| | Phân tích BI: chọn chỉ số, vẽ và lưu biểu đồ, xuất CSV | `/i/bi` |
 | | Nhập liệu OCR: bản quét → đề nghị nháp | `/i/ocr` |
-| | Quản trị tác tử AI: mô hình, guardrail, số liệu | `/i/agents` |
+| | Quản trị tác tử AI: mô hình, guardrail, tốc độ, tài nguyên | `/i/agents` |
 | Vận hành | Hàng đợi tin nhắn (đưa lại tin chết, xác minh biên nhận) | `/admin/queue` |
 | | Vận hành hệ thống: nhật ký tập trung, neo kiểm toán, sao lưu | `/admin/ops` |
 

@@ -246,6 +246,9 @@ trực thuộc tập đoàn từ 50 triệu lên thẳng Tổng giám đốc; B�
 ### 5.9. Dữ liệu số: KPI, bản sao số, phả hệ
 
 - `kpi.definition`, `kpi.value` (tính lại từ dữ liệu nguồn, `kpi.refresh`), `kpi.pin` (tối đa 6 ghim mỗi người).
+- `kpi.chart` (051): biểu đồ Phân tích BI đã lưu: tên, kiểu (`bar`, `stacked`, `line`, `area`, `pie`, `table`), `spec` là
+  định nghĩa truy vấn theo tên nghiệp vụ của lớp ngữ nghĩa (không lưu SQL, không lưu số liệu), `shared` cho người cùng công ty
+  xem; tối đa 50 mỗi người; trường tính toán `is_mine` ([ADR #63](#adr-63)).
 - `kpi.snapshot` (031): giá trị KPI của kỳ đã kết thúc chụp một lần bằng `kpi.freeze`, không sửa không xóa
   (`kpi.snapshot_guard`), kiểm bằng `kpi.verify_snapshots`; đi vào Lakehouse qua CDC (041).
 - `iot.*`: mô hình thiết bị, cơ sở, thực thể, chuỗi đo, sự cố vượt ngưỡng; `iot.acknowledge` ghi nhận sự cố.
@@ -259,7 +262,8 @@ trực thuộc tập đoàn từ 50 triệu lên thẳng Tổng giám đốc; B�
   công cụ `search_docs`/`cite`); ghi qua Action, cần `core.ai.manage`.
 - `core.ai_question`: một lượt hỏi (`queued` → `running` → `done` / `refused` / `error`), câu trả lời ghi dần, trích dẫn,
   token, `first_token_at`, `cold_start`; người dùng chỉ đọc lượt hỏi của chính mình
-  ([ADR #51](#adr-51), [ADR #52](#adr-52)).
+  ([ADR #51](#adr-51), [ADR #52](#adr-52)). Migration 051: `context_key` (khóa dùng lại câu trả lời), `reused_from`,
+  `attempts` (số lần trả về hàng đợi vì Ollama tạm lỗi); `context_key`, `attempts` không lộ qua GraphQL ([ADR #63](#adr-63)).
 
 ### 5.11. Vận hành: nhật ký tập trung, nạp lô
 
