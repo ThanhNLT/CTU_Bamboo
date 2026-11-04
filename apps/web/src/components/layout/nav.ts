@@ -35,6 +35,7 @@ import {
   UserPlus,
   Users,
   type LucideIcon,
+  Waypoints,
 } from "lucide-react";
 import { tr } from "../../i18n";
 
@@ -121,6 +122,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "data-services", label: tr("Dịch vụ dữ liệu"), to: "/d/services", icon: Database, module: "data" },
       { key: "bi", label: tr("Phân tích BI"), to: "/i/bi", icon: ChartNoAxesCombined, module: "data" },
       { key: "lineage", label: tr("Phả hệ dữ liệu"), to: "/d/lineage", icon: GitFork, module: "data" },
+      { key: "api-portal", label: tr("Cổng dịch vụ API"), to: "/d/api", icon: Waypoints },
       { key: "ledger", label: tr("Sổ cái"), to: "/d/ledger", icon: Lock, module: "ledger" },
     ],
   },

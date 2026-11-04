@@ -5,9 +5,10 @@
 import { useList } from "@refinedev/core";
 import dayjs from "dayjs";
 import gql from "graphql-tag";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { SLA_HOURS } from "../inbox/useInboxTasks";
+import { useOpsLiveTick } from "./live";
 import type { Company, CompanyKey, DailyPoint, Kpi, MonthlyPoint, OverdueRow, PendingRow, Period } from "./types";
 import { tr, trf } from "../../i18n";
 
@@ -218,6 +219,17 @@ export const useOpsData = (period: Period) => {
     pagination: { pageSize: 1 },
     meta: { gqlQuery: COUNT_FILES },
   });
+
+  // Danh sách không theo subscription riêng thì tải lại theo tín hiệu thay đổi chung của trang (ADR #64)
+  const tick = useOpsLiveTick();
+  useEffect(() => {
+    if (!tick) return;
+    void units.query.refetch();
+    void done.query.refetch();
+    void completed.query.refetch();
+    void blockedFiles.query.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick]);
 
   const unitRows = units.result.data;
   const openRows = open.result.data;

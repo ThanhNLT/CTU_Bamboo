@@ -693,7 +693,43 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 | `SETUP_ALLOW_UNVERIFIED` | `true` | Cho tạo công ty chưa xác thực, ký bổ sung sau |
 
 
-## 24. Mô-đun ngoài (`ext.py`, migration 045, ADR #58)
+## 24. Thời gian thực, phả hệ tự động, cổng dịch vụ API (migration 052, ADR #64)
+
+**Tín hiệu thay đổi.** Trigger cấp câu lệnh trên các bảng nghiệp vụ ghi `live.event (tenant_id, topic)`. Trình duyệt:
+
+```graphql
+subscription Live($t: [String!]) {
+  live_event(where: {topic: {_in: $t}}, order_by: {id: desc}, limit: 1) { id at }
+}
+```
+
+Mã `id` đổi thì gộp 1,5 giây rồi tải lại (`apps/web/src/live/useLive.ts`). Hiện diện: `insert_live_presence_one` với
+`on_conflict` mỗi 30 giây, đọc `live_v_online` bằng subscription (`apps/web/src/live/presence.ts`).
+
+**Phả hệ tự động** (`lineage_sync.py`): `lineage_refresh` dựng lại nút/cạnh `auto` (khóa tư vấn chống chạy chồng), kiểm
+replication slot (`pg_replication_slots`), đối chiếu số dòng PostgreSQL ↔ silver cho công ty trong phiên bằng một câu
+`UNION ALL` trên Trino, ghi `meta.quality_check` (thay kết quả cũ cùng quy tắc) và `meta.pipeline_run` (giữ 200 lần gần nhất
+mỗi công ty). Không có Lakehouse hoặc thiếu quyền `data.lakehouse.read` thì vẫn dựng đồ thị, trả `note` giải thích.
+`lineage_graph` trả đồ thị `auto` cho API.
+
+**Cổng dịch vụ API** (`api_gateway.py`):
+
+| Endpoint | Phạm vi | Action |
+|---|---|---|
+| `GET /api/v1/metrics`, `POST /api/v1/metrics/query` | `metrics.read` | `semantic_catalog`, `semantic_query` |
+| `GET /api/v1/datasets`, `GET /api/v1/datasets/{dataset}` | `datasets.read` | `lakehouse_datasets`, `lakehouse_preview` |
+| `GET /api/v1/kpi/{kpi_key}` | `kpi.read` | `kpi_snapshots` |
+| `GET /api/v1/ops/{tab}` | `ops.read` | `ops_dashboard` |
+| `GET /api/v1/lineage` | `lineage.read` | `lineage_graph` |
+| `GET /api/v1/search` | `search.read` | `search_documents` |
+| `GET /api/v1/org-units` | `org.read` | truy vấn trực tiếp `core.org_unit` |
+
+Kiểm khóa: `Authorization: Bearer bak_…` → SHA-256 → còn hạn, chưa thu hồi → IP (phần tử cuối của `X-Forwarded-For` do
+APISIX thêm) thuộc dải cho phép → khóa có phạm vi của endpoint. Sai khóa/hết hạn/thu hồi: 401; thiếu phạm vi, IP không được
+phép, người tạo thiếu quyền: 403; vượt 300 lượt/phút: 429 (APISIX). Mỗi lượt (kể cả lỗi của Action) cộng vào `api.usage`.
+Quản trị: `api_key_create(name, scopes, expires_days, allowed_ips)` trả khóa một lần, `api_key_revoke(id)`, `api_catalog`.
+
+## 25. Mô-đun ngoài (`ext.py`, migration 045, ADR #58)
 
 Mô-đun do bên thứ ba viết, chạy thành dịch vụ HTTP riêng, nối vào Bamboo qua cổng API. Ví dụ đầy đủ: `examples/mo-dun-mau`
 (mô-đun "Nhắc việc", chỉ dùng thư viện chuẩn Python).

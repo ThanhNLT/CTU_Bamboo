@@ -27,6 +27,7 @@ from . import (
     admin,
     ai_agent,
     anchoring,
+    api_gateway,
     attachments,
     audit,
     auth,
@@ -41,6 +42,7 @@ from . import (
     kb,
     lakehouse_query,
     ledger,
+    lineage_sync,
     messaging,
     modules,
     obs,
@@ -206,6 +208,8 @@ HANDLERS = {
     **setup.HANDLERS,
     **ownership.HANDLERS,
     **ext.HANDLERS,
+    **api_gateway.HANDLERS,
+    **lineage_sync.HANDLERS,
 }
 
 
@@ -323,6 +327,7 @@ def create_app(
     app.include_router(ingest.router)
     app.include_router(setup.router(lambda: app.state.pool, settings, ctx))
     app.include_router(ext.router(lambda: app.state.pool, settings))
+    app.include_router(api_gateway.router(lambda: app.state.pool, run_action, lambda: ctx))
     origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
     if origins:  # trang khởi tạo gọi /setup từ origin của web khi chạy dev (qua cổng API thì cùng origin)
         app.add_middleware(

@@ -97,7 +97,7 @@ export const DigitalTwinPage = () => {
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
-      <TwinPageHeader updatedAt={updatedAt} />
+      <TwinPageHeader updatedAt={updatedAt} live={twin.live.connected} />
       {twin.error && (
         <Alert type="error" showIcon message={tr("Không tải được dữ liệu Bản sao số")} description={twin.error} />
       )}
