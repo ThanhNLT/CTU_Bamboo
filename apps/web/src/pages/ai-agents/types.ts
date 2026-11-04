@@ -30,9 +30,16 @@ export type AgentStats = {
   pending: number;
   prompt_tokens: number;
   completion_tokens: number;
+  reused: number;
+  retried: number;
+  tokens_per_second: number | null;
+  avg_context_tokens: number | null;
 };
 
 export type AiModel = { name: string; size_bytes: number | null; family: string | null };
+
+/** Mô hình đang nạp trong Ollama: tổng dung lượng bộ nhớ và phần nằm trên VRAM (byte). */
+export type LoadedModel = { name: string; size: number; size_vram: number };
 
 export type AgentInput = {
   name: string;

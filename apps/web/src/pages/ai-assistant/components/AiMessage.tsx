@@ -138,17 +138,21 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
           <RichText text={q.answer} citations={q.citations} />
         ) : null}
         {q.status === "done" && q.citations.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
-            <span className="mr-1 text-muted">{tr("Nguồn:")}</span>
-            {q.citations.map((c) => (
-              <Link
-                key={c.n}
-                to={citationLink(c)}
-                className="inline-flex h-6 max-w-full items-center truncate rounded-md bg-black/[0.045] px-2 text-[11.5px] font-medium text-ink transition-colors hover:bg-bamboo-50 hover:text-bamboo-800"
-              >
-                [{c.n}] {citationLabel(c)}
-              </Link>
-            ))}
+          <div className="flex flex-col gap-1 text-[12px]">
+            <span className="text-muted">{tr("Nguồn:")}</span>
+            <ol className="m-0 flex list-none flex-col gap-1 p-0">
+              {q.citations.map((c) => (
+                <li key={c.n} className="min-w-0">
+                  <Link
+                    to={citationLink(c)}
+                    className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-black/[0.045] px-2 py-0.5 text-[12px] text-ink transition-colors hover:bg-bamboo-50 hover:text-bamboo-800"
+                  >
+                    <span className="shrink-0 font-semibold tabular-nums text-bamboo-700">{c.n}</span>
+                    <span className="truncate">{citationLabel(c)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
         {q.status === "done" && (
@@ -158,6 +162,7 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
             </button>
             <span className="ml-1.5 text-[11.5px] text-muted">
               {tr("Do AI tạo · hãy kiểm tra trước khi dùng")}
+              {q.reused_from ? ` · ${tr("dùng lại câu trả lời đã có cho cùng câu hỏi và tài liệu")}` : ""}
               {elapsed(q) ? ` · ${elapsed(q)}` : ""}
             </span>
           </div>
