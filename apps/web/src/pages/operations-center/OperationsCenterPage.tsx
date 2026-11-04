@@ -19,6 +19,9 @@ import { ProductionBoard } from "./components/ProductionBoard";
 import { QualityBoard } from "./components/QualityBoard";
 import { SiteMapWidget } from "./components/SiteMapWidget";
 import { useOpsTab } from "./api";
+import { OPS_TOPICS, OpsLiveContext } from "./live";
+import { LiveBadge } from "../../live/LiveBadge";
+import { useLiveTopics } from "../../live/useLive";
 import type { CompanyKey, DashTab, Period } from "./types";
 import { PERIOD_DAYS, useOpsData } from "./useOpsData";
 import { SLA_HOURS } from "../inbox/useInboxTasks";
@@ -30,8 +33,8 @@ export const OperationsCenterPage = () => {
   const [period, setPeriod] = useState<Period>("month");
   const [province, setProvince] = useState("all");
   const [highlight, setHighlight] = useState<CompanyKey | undefined>();
-  const ops = useOpsData(period);
-  const meta = trf("Nóng · {0}", [ops.updatedAt]);
+  const [tick, setTick] = useState(0);
+  const live = useLiveTopics(OPS_TOPICS, () => setTick((t) => t + 1));
   const [presenting, setPresenting] = useState(false);
 
   useEffect(() => {
@@ -53,6 +56,58 @@ export const OperationsCenterPage = () => {
     else void rootRef.current?.requestFullscreen?.();
   };
 
+  return (
+    <OpsLiveContext.Provider value={tick}>
+      <OpsCenter
+        rootRef={rootRef}
+        tab={tab}
+        setTab={setTab}
+        period={period}
+        setPeriod={setPeriod}
+        province={province}
+        setProvince={setProvince}
+        highlight={highlight}
+        setHighlight={setHighlight}
+        presenting={presenting}
+        togglePresent={togglePresent}
+        live={live}
+      />
+    </OpsLiveContext.Provider>
+  );
+};
+
+type CenterProps = {
+  rootRef: React.RefObject<HTMLDivElement | null>;
+  tab: DashTab;
+  setTab: (t: DashTab) => void;
+  period: Period;
+  setPeriod: (p: Period) => void;
+  province: string;
+  setProvince: (p: string) => void;
+  highlight?: CompanyKey;
+  setHighlight: (c: CompanyKey | undefined) => void;
+  presenting: boolean;
+  togglePresent: () => void;
+  live: { connected: boolean; changedAt?: Date };
+};
+
+/** Nội dung trang nằm trong OpsLiveContext để mọi bảng số liệu nhận tín hiệu thay đổi. */
+const OpsCenter = ({
+  rootRef,
+  tab,
+  setTab,
+  period,
+  setPeriod,
+  province,
+  setProvince,
+  highlight,
+  setHighlight,
+  presenting,
+  togglePresent,
+  live,
+}: CenterProps) => {
+  const ops = useOpsData(period);
+  const meta = trf("Nóng · {0}", [ops.updatedAt]);
   const days = PERIOD_DAYS[period];
   const sitesQ = useOpsTab(tab === "overview" ? "sites" : null, days);
   const allSites = useMemo(() => sitesQ.data?.sites ?? [], [sitesQ.data]);
@@ -70,7 +125,7 @@ export const OperationsCenterPage = () => {
       ref={rootRef}
       className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 [&:fullscreen]:max-w-none [&:fullscreen]:overflow-auto [&:fullscreen]:bg-canvas [&:fullscreen]:p-8"
     >
-      <OpsHeader presenting={presenting} onTogglePresent={togglePresent} />
+      <OpsHeader presenting={presenting} onTogglePresent={togglePresent} live={<LiveBadge {...live} />} />
 
       <DashboardFilterBar
         tab={tab}

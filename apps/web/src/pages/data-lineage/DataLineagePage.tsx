@@ -6,7 +6,7 @@ import { Alert, App, Spin } from "antd";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import { reportIssue, useLineage, type LineageData } from "./api";
+import { refreshLineage, reportIssue, useLineage, type LineageData, type LineageOrigin } from "./api";
 import { DataLineageHeader } from "./components/DataLineageHeader";
 import { DataLineageToolbar } from "./components/DataLineageToolbar";
 import { LineageGraphMock } from "./components/LineageGraphMock";
@@ -16,9 +16,11 @@ import { RecentRunsTable } from "./components/RecentRunsTable";
 import { ReportIncidentModal } from "./components/ReportIncidentModal";
 import { computeStatuses, failedChecks, failureSummaries, matchesQuery, reach, scopeOf } from "./graph";
 import type { Direction, LineageNode } from "./types";
+import { LiveBadge } from "../../live/LiveBadge";
 import { tr, trf } from "../../i18n";
 
-const PREFERRED = "gold-approval-daily";
+// Nút chọn sẵn khi mở trang: bảng tổng hợp duyệt (dữ liệu mẫu) hoặc chỉ số đề nghị mua sắm (phả hệ thật)
+const PREFERRED = ["gold-approval-daily", "semantic:proc_purchase_request"];
 const SEVERITY = { wrong: "high", missing: "high", late: "medium", other: "low" } as const;
 const KIND_LABEL: Record<string, string> = {
   wrong: tr("Dữ liệu sai"),
@@ -33,16 +35,60 @@ const nodeFromParam = (nodes: LineageNode[], asset: string | null) =>
   asset ? nodes.find((n) => n.id === asset || n.fqn.toLowerCase() === asset.toLowerCase())?.id : undefined;
 
 export const DataLineagePage = () => {
-  const lineage = useLineage();
+  const { message } = App.useApp();
+  const [origin, setOrigin] = useState<LineageOrigin>("auto");
+  const [refreshing, setRefreshing] = useState(false);
+  const lineage = useLineage(origin);
+
+  const refresh = async () => {
+    setRefreshing(true);
+    try {
+      const r = await refreshLineage();
+      if (r.note) message.warning(trf("Đã dựng phả hệ ({0} nút); chưa đối chiếu Lakehouse: {1}", [r.nodes, r.note]));
+      else if (r.failed) message.warning(trf("Đã kiểm tra {0} mục, {1} mục không đạt.", [r.checks, r.failed]));
+      else message.success(trf("Đã thu thập {0} nút, {1} kiểm tra đều đạt.", [r.nodes, r.checks]));
+      await lineage.reload();
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const header = (onReport?: () => void) => (
+    <DataLineageHeader
+      onReport={onReport}
+      origin={origin}
+      onOriginChange={setOrigin}
+      onRefresh={() => void refresh()}
+      refreshing={refreshing}
+      live={<LiveBadge {...lineage.live} />}
+      hasDemo={(lineage.data?.counts.demo ?? 0) > 0}
+    />
+  );
+
   if (lineage.error)
     return <Alert type="error" showIcon message={tr("Không tải được phả hệ")} description={lineage.error} />;
   if (!lineage.data) return <Spin className="m-10" />;
   if (lineage.data.nodes.length === 0)
-    return <Alert type="info" showIcon message={tr("Chưa có dữ liệu phả hệ (chạy python -m app.demo_load).")} />;
-  return <LineageView data={lineage.data} />;
+    return (
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+        {header()}
+        <Alert
+          type="info"
+          showIcon
+          message={
+            origin === "auto"
+              ? tr("Chưa thu thập phả hệ của hệ thống. Bấm Thu thập và kiểm tra để dựng từ cấu hình đang chạy.")
+              : tr("Chưa có dữ liệu phả hệ mẫu (chạy python -m app.demo_load).")
+          }
+        />
+      </div>
+    );
+  return <LineageView key={origin} data={lineage.data} header={header} />;
 };
 
-const LineageView = ({ data }: { data: LineageData }) => {
+const LineageView = ({ data, header }: { data: LineageData; header: (onReport?: () => void) => React.ReactNode }) => {
   const { message } = App.useApp();
   const [params] = useSearchParams();
   const asset = params.get("asset");
@@ -50,7 +96,7 @@ const LineageView = ({ data }: { data: LineageData }) => {
   const statuses = useMemo(() => computeStatuses(nodes, edges), [nodes, edges]);
   const failures = useMemo(() => failureSummaries(nodes, edges), [nodes, edges]);
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
-  const defaultNodeId = byId.has(PREFERRED) ? PREFERRED : nodes[0].id;
+  const defaultNodeId = PREFERRED.find((id) => byId.has(id)) ?? nodes[0].id;
   const defaultNode = byId.get(defaultNodeId) as LineageNode;
 
   const [selectedId, setSelectedId] = useState(() => nodeFromParam(nodes, asset) ?? defaultNodeId);
@@ -122,7 +168,7 @@ const LineageView = ({ data }: { data: LineageData }) => {
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
-      <DataLineageHeader onReport={() => setReporting(true)} />
+      {header(() => setReporting(true))}
 
       <QualityAlertBanner failures={failures} onView={viewChecks} />
 
