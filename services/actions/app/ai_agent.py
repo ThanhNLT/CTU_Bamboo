@@ -250,9 +250,15 @@ def ai_models(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context
     if ctx.ai is None:
         return {"ai_enabled": False, "models": []}
     try:
-        return {"ai_enabled": True, "models": ctx.ai.models(timeout=WAKE_SECONDS)}
+        models = ctx.ai.models(timeout=WAKE_SECONDS)
     except OllamaUnavailable:
-        return {"ai_enabled": False, "models": []}
+        return {"ai_enabled": False, "models": [], "loaded": []}
+    try:
+        # Mức dùng bộ nhớ hiện tại: mô hình đang nạp, tổng dung lượng và phần nằm trên VRAM
+        loaded = ctx.ai.running()
+    except OllamaUnavailable:
+        loaded = []
+    return {"ai_enabled": True, "models": models, "loaded": loaded}
 
 
 def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> list[dict]:
@@ -273,7 +279,14 @@ def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
                   count(q.id) FILTER (WHERE q.guard = 'prompt'),
                   count(q.id) FILTER (WHERE q.status = 'error'),
                   count(q.id) FILTER (WHERE q.status IN ('queued', 'running')),
-                  coalesce(sum(q.prompt_tokens), 0), coalesce(sum(q.completion_tokens), 0)
+                  coalesce(sum(q.prompt_tokens), 0), coalesce(sum(q.completion_tokens), 0),
+                  count(q.id) FILTER (WHERE q.reused_from IS NOT NULL),
+                  count(q.id) FILTER (WHERE q.attempts > 0),
+                  sum(q.completion_tokens) FILTER (WHERE q.status = 'done' AND q.finished_at > q.first_token_at)
+                      / nullif(sum(extract(epoch FROM q.finished_at - q.first_token_at))
+                               FILTER (WHERE q.status = 'done' AND q.finished_at > q.first_token_at
+                                         AND q.completion_tokens IS NOT NULL), 0),
+                  avg(q.prompt_tokens) FILTER (WHERE q.status = 'done' AND q.reused_from IS NULL)
            FROM core.ai_agent a
            LEFT JOIN core.ai_question q ON q.agent_id = a.id AND q.created_at > now() - make_interval(days => %s)
            WHERE a.tenant_id = %s
@@ -295,6 +308,10 @@ def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
             "pending": r[10],
             "prompt_tokens": r[11],
             "completion_tokens": r[12],
+            "reused": r[13],
+            "retried": r[14],
+            "tokens_per_second": round(float(r[15]), 1) if r[15] is not None else None,
+            "avg_context_tokens": round(float(r[16])) if r[16] is not None else None,
         }
         for r in rows
     ]

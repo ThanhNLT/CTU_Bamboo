@@ -55,10 +55,25 @@ const EMPTY: Omit<AgentStats, "agent_id"> = {
   pending: 0,
   prompt_tokens: 0,
   completion_tokens: 0,
+  reused: 0,
+  retried: 0,
+  tokens_per_second: null,
+  avg_context_tokens: null,
 };
 
 export const statsOf = (stats: AgentStats[], id: string): AgentStats =>
   stats.find((s) => s.agent_id === id) ?? { agent_id: id, ...EMPTY };
+
+/** Trung bình có trọng số của một chỉ số theo từng tác tử (bỏ tác tử chưa có số liệu). */
+const weightedBy = (
+  rows: AgentStats[],
+  key: "tokens_per_second" | "avg_context_tokens",
+  weight: "completion_tokens" | "answered",
+) => {
+  const has = rows.filter((r) => r[key] != null && r[weight] > 0);
+  const total = has.reduce((s, r) => s + r[weight], 0);
+  return total ? has.reduce((s, r) => s + (r[key] ?? 0) * r[weight], 0) / total : null;
+};
 
 export const totals = (agents: Agent[], stats: AgentStats[]) => {
   const rows = agents.map((a) => statsOf(stats, a.id));
@@ -80,5 +95,11 @@ export const totals = (agents: Agent[], stats: AgentStats[]) => {
     refused: sum("scope_refused") + sum("prompt_refused"),
     prompt: sum("prompt_refused"),
     errors: sum("errors"),
+    reused: sum("reused"),
+    retried: sum("retried"),
+    tokensPerSecond: weightedBy(rows, "tokens_per_second", "completion_tokens"),
+    contextTokens: weightedBy(rows, "avg_context_tokens", "answered"),
   };
 };
+
+export const gigabytes = (bytes: number) => trf("{0} GB", [num(bytes / 1e9, 1)]);

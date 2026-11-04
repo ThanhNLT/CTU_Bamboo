@@ -84,6 +84,7 @@ CAN_READ = {
 }
 
 EXTRA_COMPUTED = {
+    ("kpi", "chart"): [("is_mine", ("kpi", "chart_is_mine"), "Biểu đồ BI do người gọi tạo (sửa, xóa được)")],
     ("hr", "onboarding_request"): [
         (
             "can_read_private",
@@ -105,6 +106,7 @@ HIDDEN_COLUMNS = {
     # Năm sinh khai lúc đăng ký (ADR #62): chỉ quản trị xem, đồng nghiệp chỉ thấy điện thoại, email
     ("core", "person"): {"birth_year"},
     ("core", "attachment_ocr"): {"page_texts", "pages", "attempts", "next_attempt_at"},
+    ("core", "ai_question"): {"context_key", "attempts"},
     ("hr", "onboarding_request"): {
         "national_id_enc",
         "bank_account_enc",
@@ -131,6 +133,8 @@ SELECT_FILTER = {
     ("meta", "quality_check"): {},
     ("meta", "pipeline_run"): {},
     ("kpi", "pin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    # Biểu đồ BI: của mình hoặc được chia sẻ trong công ty
+    ("kpi", "chart"): {"_and": [TENANT, {"_or": [{"person_id": {"_eq": ME}}, {"shared": {"_eq": True}}]}]},
     ("core", "v_ai_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "ai_agent"): {"_and": [TENANT, IS_AI_ADMIN]},
     ("core", "ai_question"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
@@ -156,7 +160,7 @@ MODULE_TABLES = {
     **{("wf", t): "process" for t in ("process_model", "process_version", "sandbox_run")},
     ("collab", "kb_document"): "knowledge",
     **{("iot", t): "data" for t in ("entity", "incident", "measurement", "model", "site")},
-    **{("kpi", t): "data" for t in ("definition", "pin", "value")},
+    **{("kpi", t): "data" for t in ("chart", "definition", "pin", "value")},
     **{("meta", t): "data" for t in ("data_issue", "lineage_edge", "lineage_node", "pipeline_run", "quality_check")},
     **{("core", t): "ai" for t in ("ai_agent", "ai_question", "attachment_ocr")},
 }
@@ -435,6 +439,8 @@ def build(conn: psycopg.Connection) -> dict:
             if "deleted_at" in columns[key] and key != ("collab", "comment"):
                 perm["filter"]["_and"].append({"deleted_at": {"_is_null": True}})
             perm["computed_fields"] = [f["name"] for f in entry["computed_fields"]]
+        elif key in EXTRA_COMPUTED:
+            perm["computed_fields"] = [name for name, _, _ in EXTRA_COMPUTED[key]]
         entry["select_permissions"] = [{"role": ROLE, "permission": perm}, {"role": ADMIN_ROLE, "permission": perm}]
 
     pr = entries[("proc", "purchase_request")]
@@ -518,6 +524,27 @@ def build(conn: psycopg.Connection) -> dict:
         for r in (ROLE, ADMIN_ROLE)
     ]
     pin["delete_permissions"] = [{"role": r, "permission": {"filter": own_pin}} for r in (ROLE, ADMIN_ROLE)]
+
+    chart = entries[("kpi", "chart")]
+    chart["insert_permissions"] = [
+        {
+            "role": r,
+            "permission": {
+                "check": {},
+                "set": {"tenant_id": "X-Hasura-Tenant-Id", "person_id": ME},
+                "columns": ["name", "chart_type", "spec", "shared"],
+            },
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    chart["update_permissions"] = [
+        {
+            "role": r,
+            "permission": {"filter": own_pin, "check": own_pin, "columns": ["name", "chart_type", "spec", "shared"]},
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    chart["delete_permissions"] = [{"role": r, "permission": {"filter": own_pin}} for r in (ROLE, ADMIN_ROLE)]
     entries[("meta", "data_issue")]["insert_permissions"] = [
         {
             "role": r,
@@ -739,7 +766,8 @@ def build(conn: psycopg.Connection) -> dict:
                 "semantic_query",
                 "query",
                 [
-                    ("metric", "String!"),
+                    ("metric", "String"),
+                    ("metrics", "[String!]"),
                     ("dimensions", "[String!]"),
                     ("time_grain", "String"),
                     ("from", "String"),
@@ -2113,6 +2141,7 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "measure", "type": "String!"},
                         {"name": "label", "type": "String!"},
                         {"name": "unit", "type": "String!"},
+                        {"name": "measures", "type": "[jsonb!]!"},
                         {"name": "columns", "type": "[String!]!"},
                         {"name": "rows", "type": "[jsonb!]!"},
                         {"name": "sql", "type": "String!"},
@@ -2631,6 +2660,7 @@ def build(conn: psycopg.Connection) -> dict:
                     "fields": [
                         {"name": "ai_enabled", "type": "Boolean!"},
                         {"name": "models", "type": "[AiModel!]!"},
+                        {"name": "loaded", "type": "[jsonb!]!"},
                     ],
                 },
                 {
@@ -2649,6 +2679,10 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "pending", "type": "Int!"},
                         {"name": "prompt_tokens", "type": "Int!"},
                         {"name": "completion_tokens", "type": "Int!"},
+                        {"name": "reused", "type": "Int!"},
+                        {"name": "retried", "type": "Int!"},
+                        {"name": "tokens_per_second", "type": "Float"},
+                        {"name": "avg_context_tokens", "type": "Float"},
                     ],
                 },
                 {
