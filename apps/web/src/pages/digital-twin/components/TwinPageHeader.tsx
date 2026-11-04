@@ -20,12 +20,14 @@ const LiveBadge = ({ updatedAt }: { updatedAt: number }) => (
   </span>
 );
 
-export const TwinPageHeader = ({ updatedAt }: { updatedAt: number }) => (
+export const TwinPageHeader = ({ updatedAt, live }: { updatedAt: number; live?: boolean }) => (
   <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">{tr("Bản sao số")}</h1>
       <p className="mt-1 text-[13px] text-muted">
-        {tr("Dữ liệu cảm biến theo chuẩn NGSI-LD · hội tụ IT/OT · tự làm mới mỗi phút")}
+        {live
+          ? tr("Dữ liệu cảm biến theo chuẩn NGSI-LD · hội tụ IT/OT · cập nhật ngay khi có số đo mới")
+          : tr("Dữ liệu cảm biến theo chuẩn NGSI-LD · hội tụ IT/OT · tự làm mới mỗi phút")}
       </p>
     </div>
     <LiveBadge updatedAt={updatedAt} />

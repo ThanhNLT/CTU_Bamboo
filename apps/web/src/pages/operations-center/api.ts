@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
+import { useOpsLiveTick } from "./live";
 
 export type OpsTab = "process" | "production" | "hospital" | "quality" | "sites";
 
@@ -136,6 +137,7 @@ type DataOf = {
 const REFRESH_MS = 60_000;
 
 export const useOpsTab = <T extends OpsTab>(tab: T | null, days: number) => {
+  const tick = useOpsLiveTick();
   const [state, setState] = useState<{ data?: DataOf[T]; error?: string; loading: boolean; at?: Date }>({
     loading: true,
   });
@@ -160,6 +162,11 @@ export const useOpsTab = <T extends OpsTab>(tab: T | null, days: number) => {
     const timer = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(timer);
   }, [tab, load]);
+
+  // Có thay đổi ở bất kỳ tài khoản nào: tải lại ngay, giữ số liệu cũ trên màn hình trong lúc tải
+  useEffect(() => {
+    if (tick) void load();
+  }, [tick, load]);
 
   return { ...state, reload: load };
 };
