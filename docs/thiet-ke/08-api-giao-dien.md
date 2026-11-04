@@ -50,6 +50,8 @@ Ví dụ cách giao diện trong `apps/web/src/pages` dùng API cho luồng mua 
 | `/p/ic-orders` danh sách, chi tiết (đơn hàng nội bộ, [ADR #42](#adr-42)) | `ic_ic_order` (+ `seller_unit`, `buyer_unit`, `created_by_person`, `ic_order_items` { `lot` }, `purchase_requests`, `purchase_orders`, `comments`), computed field `can_confirm`; lọc "Chờ tôi xác nhận": `where: {can_confirm: {_eq: true}}`. Lô chọn được: `mfg_lot(where: {item_id: {_in: …}, status: {_eq: "RELEASED"}, org_unit: {path: {_descendant: <path công ty bán>}}})` |
 | Nút **Xác nhận và xuất lô**, **Từ chối**, **Hủy đơn** | Mutation `confirm_ic_order(order_id, lots: [{line_id, lot_id}])` → `status`, `purchase_order_id`; `reject_ic_order(order_id, reason)`, `cancel_ic_order(order_id, reason)` |
 | Đơn hàng nội bộ trên chi tiết đề nghị | `proc_purchase_request.ic_order` { `doc_no` `status` }; nhà cung cấp nội bộ: `partner.internal_unit_id` |
+| `/i/bi` Phân tích BI ([ADR #63](#adr-63)) | `semantic_catalog` → `sources` { `name` `label` `dimensions` `measures` }, `grains`; `semantic_query(metrics: [String!], dimensions, time_grain, from, to, filters, limit)` → `columns`, `rows`, `measures`, `sql`. Biểu đồ đã lưu: `kpi_chart` (của mình hoặc `shared`, computed field `is_mine`), `insert_kpi_chart_one` (`name`, `chart_type`, `spec`, `shared`), `update_kpi_chart_by_pk`, `delete_kpi_chart_by_pk` (chỉ của mình) |
+| `/i/assistant` Trợ lý RAG | `ai_ask(agent_id, question, kb_document_id)` rồi subscription `core_ai_question_by_pk`: `answer` (số `[n]` là số văn bản), `citations` mỗi văn bản một mục { `n` `title` `doc_no` `kb_document_id` `file_name` `sections` }, `reused_from` khi câu trả lời được dùng lại |
 
 ## 3. Danh mục Hasura Action
 

@@ -19,6 +19,7 @@ from .common import ActionError, Context
 VALUE = re.compile(r"^[\w.:@\- ]{1,64}$", re.UNICODE)
 GRAINS = {"day": "ngày", "week": "tuần", "month": "tháng"}
 MAX_LIMIT = 1000
+MAX_METRICS = 4
 
 # Mỗi nguồn: bảng silver, cột thời gian, các chiều (tên → cột) và các chỉ số (tên → biểu thức tổng hợp)
 SOURCES = {
@@ -70,12 +71,26 @@ def _literal(value) -> str:
     return "'" + text.replace("'", "''") + "'"
 
 
+def _metrics(args: dict) -> list[str]:
+    """Một chỉ số (`metric`, cột kết quả `value`) hoặc nhiều chỉ số cùng nguồn (`metrics`, cột mang tên chỉ số)."""
+    names = list(args.get("metrics") or ([args["metric"]] if args.get("metric") else []))
+    if not names:
+        raise ActionError("Chọn ít nhất một chỉ số")
+    if len(names) > MAX_METRICS or len(set(names)) != len(names):
+        raise ActionError(f"Tối đa {MAX_METRICS} chỉ số, không lặp")
+    for name in names:
+        if name not in MEASURES:
+            raise ActionError(f"Chỉ số không có trong danh mục: {name}", "not-found", 404)
+    if len({MEASURES[n][0] for n in names}) > 1:
+        raise ActionError("Các chỉ số trong một biểu đồ phải cùng nguồn dữ liệu")
+    return names
+
+
 def compile_query(args: dict) -> tuple[str, list[str], dict]:
     """Trả về (SQL, tên cột kết quả, mô tả nguồn). Mọi tên đều phải nằm trong danh mục."""
-    metric = args.get("metric")
-    if metric not in MEASURES:
-        raise ActionError(f"Chỉ số không có trong danh mục: {metric}", "not-found", 404)
-    source, (label, expression, unit) = MEASURES[metric]
+    metrics = _metrics(args)
+    single = not args.get("metrics")
+    source, (label, _, unit) = MEASURES[metrics[0]]
     spec = SOURCES[source]
     dims = list(args.get("dimensions") or [])
     if len(set(dims)) != len(dims) or len(dims) > 3:
@@ -95,8 +110,9 @@ def compile_query(args: dict) -> tuple[str, list[str], dict]:
         select.append(f'"{spec["dimensions"][dim][1]}" AS "{dim}"')
         group.append(str(len(select)))
         columns.append(dim)
-    select.append(f"{expression} AS value")
-    columns.append("value")
+    for name in metrics:
+        select.append(f"{MEASURES[name][1][1]} AS value" if single else f'{MEASURES[name][1][1]} AS "{name}"')
+        columns.append("value" if single else name)
 
     where = []
     if args.get("from"):
@@ -119,7 +135,8 @@ def compile_query(args: dict) -> tuple[str, list[str], dict]:
     if group:
         sql += " GROUP BY " + ", ".join(group) + " ORDER BY " + ", ".join(group)
     sql += f" LIMIT {limit}"
-    return sql, columns, {"source": source, "measure": metric, "label": label, "unit": unit}
+    measures = [{"name": n, "label": MEASURES[n][1][0], "unit": MEASURES[n][1][2]} for n in metrics]
+    return sql, columns, {"source": source, "measure": metrics[0], "label": label, "unit": unit, "measures": measures}
 
 
 def semantic_catalog(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> dict:

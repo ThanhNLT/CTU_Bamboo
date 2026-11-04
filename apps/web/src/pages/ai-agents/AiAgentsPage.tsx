@@ -11,7 +11,8 @@ import { AgentModal } from "./components/AgentModal";
 import { AiAgentsHeader } from "./components/AiAgentsHeader";
 import { AiAgentsTable } from "./components/AiAgentsTable";
 import { AiKpiCards } from "./components/AiKpiCards";
-import type { Agent, AgentStats, AiModel } from "./types";
+import { AiResourcePanel } from "./components/AiResourcePanel";
+import type { Agent, AgentStats, AiModel, LoadedModel } from "./types";
 import { STATS_DAYS, totals } from "./utils";
 import { tr, trf } from "../../i18n";
 
@@ -22,6 +23,7 @@ export const AiAgentsPage = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [stats, setStats] = useState<AgentStats[]>([]);
   const [models, setModels] = useState<AiModel[]>([]);
+  const [loaded, setLoaded] = useState<LoadedModel[]>([]);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,7 @@ export const AiAgentsPage = () => {
     try {
       const [m, a, s] = await Promise.all([fetchModels(), fetchAgents(), fetchStats(STATS_DAYS)]);
       setModels(m.models);
+      setLoaded(m.loaded ?? []);
       setAiEnabled(m.ai_enabled);
       setAgents(a);
       setStats(s);
@@ -121,6 +124,8 @@ export const AiAgentsPage = () => {
       )}
 
       <AiKpiCards kpi={kpi} />
+
+      {!loading && <AiResourcePanel kpi={kpi} loaded={loaded} aiEnabled={aiEnabled} />}
 
       <AiAgentsTable
         agents={agents}
