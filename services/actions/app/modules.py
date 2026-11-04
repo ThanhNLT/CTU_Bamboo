@@ -90,6 +90,9 @@ CORE_ACTIONS = frozenset(
         "transfer_ownership",
         "create_subsidiary",
         "ext_register",
+        "api_catalog",
+        "api_key_create",
+        "api_key_revoke",
         "ext_rotate_key",
         "ext_launch",
     }
@@ -242,6 +245,8 @@ CATALOG: tuple[Module, ...] = (
                 "lakehouse_preview",
                 "semantic_catalog",
                 "semantic_query",
+                "lineage_refresh",
+                "lineage_graph",
                 "ops_dashboard",
                 "iot_acknowledge",
                 "kpi_snapshots",

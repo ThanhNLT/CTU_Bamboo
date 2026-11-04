@@ -45,6 +45,7 @@ import { LedgerPage } from "./pages/ledger";
 import { AiAssistantPage } from "./pages/ai-assistant";
 import { AiAgentsPage } from "./pages/ai-agents";
 import { BiAnalyticsPage } from "./pages/bi-analytics";
+import { ApiPortalPage } from "./pages/api-portal";
 import { OcrInputPage } from "./pages/ocr-input";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { NotificationSettingsPage, QueuePage } from "./pages/messaging";
@@ -118,6 +119,7 @@ function App() {
                   { name: "digital_twin", list: "/d/twin", meta: { label: tr("Bản sao số") } },
                   { name: "data_lineage", list: "/d/lineage", meta: { label: tr("Phả hệ dữ liệu") } },
                   { name: "ledger", list: "/d/ledger", meta: { label: tr("Sổ cái") } },
+                  { name: "api_portal", list: "/d/api", meta: { label: tr("Cổng dịch vụ API") } },
                   { name: "assistant", list: "/i/assistant", meta: { label: tr("Trợ lý đa năng") } },
                   { name: "ocr", list: "/i/ocr", meta: { label: tr("Nhập liệu OCR") } },
                   { name: "agents", list: "/i/agents", meta: { label: tr("Tác tử AI") } },
@@ -285,6 +287,7 @@ function App() {
                         </RequireModule>
                       }
                     />
+                    <Route path="/d/api" element={<ApiPortalPage />} />
                     <Route
                       path="/d/ledger"
                       element={

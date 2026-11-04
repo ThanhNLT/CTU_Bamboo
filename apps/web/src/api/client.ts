@@ -29,6 +29,10 @@ const deviceId = (() => {
   }
 })();
 
+/** Mã thiết bị cho nhịp hiện diện (ADR #64); trình duyệt chặn bộ nhớ thì dùng mã riêng của phiên này. */
+const sessionDevice = crypto.randomUUID();
+export const getDeviceId = () => deviceId || sessionDevice;
+
 const agent = (() => {
   const ua = navigator.userAgent;
   const browser = /Edg\//.test(ua)
