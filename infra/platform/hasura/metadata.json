@@ -1462,6 +1462,20 @@
               }
             },
             {
+              "name": "reused_from_ai_question",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_question"
+                  },
+                  "column_mapping": {
+                    "reused_from": "id"
+                  }
+                }
+              }
+            },
+            {
               "name": "tenant",
               "using": {
                 "manual_configuration": {
@@ -1476,11 +1490,49 @@
               }
             }
           ],
+          "array_relationships": [
+            {
+              "name": "ai_questions_by_reused_from_ai_question",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_question"
+                  },
+                  "column_mapping": {
+                    "id": "reused_from"
+                  }
+                }
+              }
+            }
+          ],
           "select_permissions": [
             {
               "role": "user",
               "permission": {
-                "columns": "*",
+                "columns": [
+                  "agent_id",
+                  "answer",
+                  "citations",
+                  "cold_start",
+                  "completion_tokens",
+                  "created_at",
+                  "error",
+                  "finished_at",
+                  "first_token_at",
+                  "guard",
+                  "id",
+                  "kb_document_id",
+                  "model",
+                  "person_id",
+                  "prompt_tokens",
+                  "question",
+                  "reused_from",
+                  "started_at",
+                  "status",
+                  "tenant_id",
+                  "thinking"
+                ],
                 "filter": {
                   "_and": [
                     {
@@ -1527,7 +1579,29 @@
             {
               "role": "platform_admin",
               "permission": {
-                "columns": "*",
+                "columns": [
+                  "agent_id",
+                  "answer",
+                  "citations",
+                  "cold_start",
+                  "completion_tokens",
+                  "created_at",
+                  "error",
+                  "finished_at",
+                  "first_token_at",
+                  "guard",
+                  "id",
+                  "kb_document_id",
+                  "model",
+                  "person_id",
+                  "prompt_tokens",
+                  "question",
+                  "reused_from",
+                  "started_at",
+                  "status",
+                  "tenant_id",
+                  "thinking"
+                ],
                 "filter": {
                   "_and": [
                     {
@@ -3021,6 +3095,21 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "acknowledged_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "charts",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "kpi",
+                    "name": "chart"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
                   }
                 }
               }
@@ -7249,6 +7338,462 @@
                   ]
                 },
                 "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "kpi",
+            "name": "chart"
+          },
+          "object_relationships": [
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "is_mine",
+              "definition": {
+                "function": {
+                  "schema": "kpi",
+                  "name": "chart_is_mine"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Biểu đồ BI do người gọi tạo (sửa, xóa được)"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_or": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "shared": {
+                                "_eq": true
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "is_mine"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_or": [
+                            {
+                              "person_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "shared": {
+                                "_eq": true
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "is_mine"
+                ]
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "person_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "name",
+                  "chart_type",
+                  "spec",
+                  "shared"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {
+                  "_exists": {
+                    "_table": {
+                      "schema": "core",
+                      "name": "tenant_module"
+                    },
+                    "_where": {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "module": {
+                            "_eq": "data"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "person_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "name",
+                  "chart_type",
+                  "spec",
+                  "shared"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "columns": [
+                  "name",
+                  "chart_type",
+                  "spec",
+                  "shared"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "columns": [
+                  "name",
+                  "chart_type",
+                  "spec",
+                  "shared"
+                ]
+              }
+            }
+          ],
+          "delete_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "person_id": {
+                            "_eq": "X-Hasura-User-Id"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             }
           ]
@@ -11842,7 +12387,11 @@
         "arguments": [
           {
             "name": "metric",
-            "type": "String!"
+            "type": "String"
+          },
+          {
+            "name": "metrics",
+            "type": "[String!]"
           },
           {
             "name": "dimensions",
@@ -16515,6 +17064,10 @@
             "type": "String!"
           },
           {
+            "name": "measures",
+            "type": "[jsonb!]!"
+          },
+          {
             "name": "columns",
             "type": "[String!]!"
           },
@@ -17934,6 +18487,10 @@
           {
             "name": "models",
             "type": "[AiModel!]!"
+          },
+          {
+            "name": "loaded",
+            "type": "[jsonb!]!"
           }
         ]
       },
@@ -17991,6 +18548,22 @@
           {
             "name": "completion_tokens",
             "type": "Int!"
+          },
+          {
+            "name": "reused",
+            "type": "Int!"
+          },
+          {
+            "name": "retried",
+            "type": "Int!"
+          },
+          {
+            "name": "tokens_per_second",
+            "type": "Float"
+          },
+          {
+            "name": "avg_context_tokens",
+            "type": "Float"
           }
         ]
       },

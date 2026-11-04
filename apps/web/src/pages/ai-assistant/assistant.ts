@@ -5,8 +5,10 @@
 import { request, wsClient } from "../../api/client";
 import type { Assistant, Citation, HistoryGroup, Question } from "./types";
 import { tr, trf } from "../../i18n";
+import { fold } from "../../utils/text";
 
-const FIELDS = `id question status answer thinking citations guard error model kb_document_id created_at started_at finished_at`;
+const FIELDS = `id question status answer thinking citations guard error model kb_document_id reused_from created_at
+  started_at finished_at`;
 
 export const fetchAssistants = async () => {
   const { ai_assistants } = await request<{ ai_assistants: { ai_enabled: boolean; assistants: Assistant[] } }>(
@@ -65,14 +67,31 @@ export const parseRich = (text: string): RichPart[] =>
       return cite?.[1] ? { type: "cite", n: Number(cite[1]) } : { type: "text", value: s };
     });
 
-export const citationLabel = (c: Citation) =>
-  [c.doc_no, c.heading ?? c.file_name ?? c.title].filter(Boolean).join(" · ");
+/** Nguồn trích bằng tên văn bản: "Quy chế mua sắm (TL-0003) · Điều 2, Điều 5". */
+export const citationLabel = (c: Citation) => {
+  const sections = c.sections?.length ? c.sections : c.heading ? [c.heading] : [];
+  const name = c.title ? (c.doc_no ? `${c.title} (${c.doc_no})` : c.title) : (c.doc_no ?? c.file_name ?? "");
+  return [name, sections.slice(0, 3).join(", ")].filter(Boolean).join(" · ");
+};
+
+export const shortTitle = (c: Citation, max = 36) => {
+  const t = c.title || c.doc_no || c.file_name || "";
+  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
+};
+
+/** Câu trả lời đã nêu tên văn bản ngay trước số trích dẫn thì chỉ hiện số, chưa nêu thì hiện tên văn bản. */
+export const namedBefore = (before: string, c: Citation) =>
+  !!c.title && fold(before.slice(-160)).includes(fold(c.title));
 
 export const citationLink = (c: Citation) => `/h/library?doc=${encodeURIComponent(c.kb_document_id)}`;
 
+/** Bản sao chép: số trích dẫn kèm tên văn bản khi câu chưa nêu tên, cuối có danh sách nguồn. */
 export const plainText = (q: Question) =>
   [
-    q.answer.replace(/\*\*/g, ""),
+    q.answer.replace(/\*\*/g, "").replace(/\[(\d+)\]/g, (m, n: string, offset: number, all: string) => {
+      const c = q.citations.find((x) => x.n === Number(n));
+      return c && !namedBefore(all.slice(0, offset), c) ? `[${shortTitle(c, 60)}]` : m;
+    }),
     ...(q.citations.length ? ["", tr("Nguồn:"), ...q.citations.map((c) => `[${c.n}] ${citationLabel(c)}`)] : []),
   ].join("\n");
 

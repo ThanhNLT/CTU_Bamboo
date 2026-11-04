@@ -71,3 +71,31 @@ def test_truy_van_chay_bang_tai_khoan_tenant(monkeypatch):
     assert client.sql[0][1] == {"as_user": "t_11111111-1111-1111-1111-111111111111", "schema": "silver"}
     catalog = semantic.semantic_catalog(None, {}, {}, None)
     assert {s["name"] for s in catalog["sources"]} == set(semantic.SOURCES)
+
+
+def test_nhieu_chi_so_cung_nguon_cho_bieu_do():
+    sql, columns, info = semantic.compile_query(
+        {"metrics": ["request_count", "request_amount"], "dimensions": ["category"], "limit": 20}
+    )
+    assert columns == ["category", "request_count", "request_amount"]
+    assert sql == (
+        'SELECT "category_code" AS "category", count(*) AS "request_count", '
+        'coalesce(sum(total_amount), 0) AS "request_amount" FROM "proc_purchase_request" '
+        "GROUP BY 1 ORDER BY 1 LIMIT 20"
+    )
+    assert [m["name"] for m in info["measures"]] == ["request_count", "request_amount"]
+    assert info["measures"][1]["unit"] == "đồng"
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        {"metrics": []},
+        {"metrics": ["request_count", "order_count"]},
+        {"metrics": ["request_count", "request_count"]},
+        {"metrics": ["kpi_avg", "kpi_max", "kpi_min", "kpi_periods", "kpi_avg"]},
+    ],
+)
+def test_nhieu_chi_so_tu_choi_khac_nguon_hoac_lap(args):
+    with pytest.raises(ActionError):
+        semantic.compile_query(args)

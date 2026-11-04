@@ -218,6 +218,9 @@ SELECT
     json_extract_scalar(after, '$["thinking"]') AS "thinking",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["first_token_at"]')) AS timestamp(6) with time zone) AS "first_token_at",
     CAST(json_extract_scalar(after, '$["cold_start"]') AS boolean) AS "cold_start",
+    json_extract_scalar(after, '$["context_key"]') AS "context_key",
+    CAST(json_extract_scalar(after, '$["reused_from"]') AS uuid) AS "reused_from",
+    CAST(json_extract_scalar(after, '$["attempts"]') AS integer) AS "attempts",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (

@@ -12,6 +12,8 @@ export type Citation = {
   attachment_id: string | null;
   file_name: string | null;
   heading: string | null;
+  /** Các mục (Điều, Chương...) của văn bản đã đưa vào ngữ cảnh; lượt hỏi cũ trích theo đoạn nên không có. */
+  sections?: string[] | null;
 };
 
 export type Question = {
@@ -25,6 +27,8 @@ export type Question = {
   error: string | null;
   model: string;
   kb_document_id: string | null;
+  /** Lượt hỏi trước có cùng câu hỏi trên cùng các đoạn tài liệu, câu trả lời được dùng lại. */
+  reused_from?: string | null;
   created_at: string;
   started_at: string | null;
   finished_at: string | null;
