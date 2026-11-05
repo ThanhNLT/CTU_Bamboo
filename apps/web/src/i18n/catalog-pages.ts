@@ -1527,8 +1527,8 @@ export const EN_PAGES: Record<string, string> = {
   "OCR không đọc được tệp.": "OCR could not read the file.",
   "OCR lỗi": "OCR error",
   "Ollama chưa chạy nên chưa lấy được danh mục mô hình.": "Ollama is not running, so the model list is not available.",
-  "Ollama không phản hồi (AI bị tắt ở mức RAM 8, hoặc dịch vụ ":
-    "Ollama is not responding (AI is turned off at the 8 GB RAM level, or the service ",
+  "Ollama không phản hồi (dịch vụ đang khởi động, chưa tải xong mô hình, hoặc ":
+    "Ollama is not responding (the service is starting, models are still downloading, or ",
   "PDF quét, PNG, JPEG · tối đa 25 MB · mỗi tệp tạo một đề nghị mua sắm nháp":
     "Scanned PDF, PNG, JPEG · up to 25 MB · each file creates a draft purchase request",
   "PII đã che": "PII masked",

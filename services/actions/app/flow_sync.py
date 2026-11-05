@@ -174,11 +174,18 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
         obs.purge_forever(settings.database_url)
     while True:
         if time.monotonic() - last_refresh >= refresh_seconds:
-            work.execute("SELECT wf.refresh_all()")
-            work.execute("SELECT kpi.refresh()")
-            work.execute("SELECT kpi.freeze()")
-            work.execute("SELECT chat.sync_all()")  # phân công hết hạn theo thời gian: rời kênh đơn vị (ADR #65)
-            work.commit()
+            # Lỗi một lần làm mới (CSDL bận, dữ liệu lạ) chỉ ghi log rồi thử lại vòng sau, không làm chết cả tiến trình
+            try:
+                work.execute("SELECT wf.refresh_all()")
+                work.execute("SELECT kpi.refresh()")
+                work.execute("SELECT kpi.freeze()")
+                work.execute("SELECT chat.sync_all()")  # phân công hết hạn theo thời gian: rời kênh đơn vị (ADR #65)
+                work.commit()
+            except psycopg.OperationalError:
+                raise  # mất kết nối CSDL: thoát để Docker khởi động lại với kết nối mới
+            except Exception as exc:  # noqa: BLE001
+                work.rollback()
+                log.warning("làm mới số liệu định kỳ lỗi: %s", exc)
             last_refresh = time.monotonic()
         while run_once(work, flowable):
             pass
