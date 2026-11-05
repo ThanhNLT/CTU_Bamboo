@@ -383,7 +383,7 @@ HR_UNITS = [
 ]
 HR_SCOPE = {"CHIP_NS": "CHIP", "DT_NS": "DT", "GD_NS": "GD", "TDX_NS": "TDX", "BVX_TCCB": "BVX"}
 # Tài khoản cho kịch bản demo chuyển và tiếp nhận nhân sự (docs: data/demo/chuyen-tiep-nhan-nhan-su.md).
-# Các ghế này đã có người giữ; seed gắn tài khoản vào người đang giữ ghế (xem Seeder.transfer_demo_accounts).
+# Các ghế này đã có người giữ; seed gắn tài khoản vào người đang giữ ghế (xem Seeder.ensure_demo_accounts).
 TRANSFER_DEMO_USERS = [
     _u("tp.nhansu.dienthoai", "Nguyễn Thị Hồng Nhung", Seat("TDX", "DT_NS.HEAD")),
     _u("tp.phanmem.dienthoai", "Trần Quốc Bảo", Seat("TDX", "DT_RD_PM.HEAD")),

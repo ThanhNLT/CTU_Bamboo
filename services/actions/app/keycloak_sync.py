@@ -7,6 +7,7 @@ import logging
 import pathlib
 
 import httpx
+import psycopg
 
 log = logging.getLogger("keycloak_sync")
 
@@ -169,3 +170,56 @@ def ensure_demo_users(
     if added:
         log.info("đã thêm %d tài khoản demo vào realm %s", added, REALM)
     return added
+
+
+def fix_demo_user_ids(
+    base_url: str, user: str, password: str, demo_password: str, realm_file: pathlib.Path = REALM_FILE
+) -> list[tuple[str, str]]:
+    """Tài khoản demo trùng tên đăng nhập nhưng lệch id so với realm (volume Keycloak cũ, tài khoản tạo lại bằng tay):
+    token mang `sub` không khớp người nào trong CSDL nên đăng nhập báo "chưa thuộc tenant nào". Xóa tài khoản lệch rồi
+    nhập lại đúng id, mật khẩu demo; trả các cặp (id cũ, id đúng) để chuyển liên kết trong CSDL. Chỉ chạy ở chế độ demo
+    (có mật khẩu demo) và chỉ chạm các tên đăng nhập có trong realm demo."""
+    if not demo_password:
+        return []
+    users = json.loads(realm_file.read_text(encoding="utf-8").replace("${DEMO_PASSWORD}", demo_password))["users"]
+    base_url = base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
+    fixed: list[tuple[str, str]] = []
+    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=30) as http:
+        for wanted in users:
+            found = http.get("/users", params={"username": wanted["username"], "exact": "true"})
+            found.raise_for_status()
+            current = next((u for u in found.json() if u["username"] == wanted["username"]), None)
+            if current is None or current["id"] == wanted["id"]:
+                continue
+            taken = http.get(f"/users/{wanted['id']}")
+            if taken.status_code == 200:
+                log.warning(
+                    "tài khoản demo %s: id %s đang thuộc tài khoản %s, không tự sửa",
+                    wanted["username"],
+                    wanted["id"],
+                    taken.json().get("username"),
+                )
+                continue
+            http.delete(f"/users/{current['id']}").raise_for_status()
+            http.post("/partialImport", json={"ifResourceExists": "SKIP", "users": [wanted]}).raise_for_status()
+            log.warning(
+                "tài khoản demo %s lệch id (%s), đã tạo lại đúng id %s", wanted["username"], current["id"], wanted["id"]
+            )
+            fixed.append((current["id"], wanted["id"]))
+    return fixed
+
+
+def relink_people(database_url: str, fixed: list[tuple[str, str]]) -> int:
+    """Người trong CSDL đang gắn id cũ của tài khoản demo vừa tạo lại thì chuyển sang id đúng."""
+    if not fixed:
+        return 0
+    with psycopg.connect(database_url) as conn:
+        n = 0
+        for old, new in fixed:
+            n += conn.execute(
+                """UPDATE core.person p SET idp_subject = %s WHERE idp_subject = %s
+                   AND NOT EXISTS (SELECT FROM core.person q WHERE q.tenant_id = p.tenant_id AND q.idp_subject = %s)""",
+                (new, old, new),
+            ).rowcount
+    return n

@@ -106,6 +106,20 @@ def main() -> int:
         settings.keycloak_admin_password,
         os.environ.get("DEMO_PASSWORD", ""),
     )
+    # Tài khoản demo lệch id thì tạo lại đúng id và chuyển liên kết người trong CSDL (đăng nhập không còn "chưa thuộc
+    # tenant nào"); người chưa gắn tài khoản thì seed gắn lại (Seeder.ensure_demo_accounts)
+    fixed = keycloak_sync.fix_demo_user_ids(
+        settings.keycloak_url,
+        settings.keycloak_admin_user,
+        settings.keycloak_admin_password,
+        os.environ.get("DEMO_PASSWORD", ""),
+    )
+    if fixed:
+        log.warning(
+            "đã sửa %d tài khoản demo lệch id, chuyển liên kết %d người",
+            len(fixed),
+            keycloak_sync.relink_people(settings.database_url, fixed),
+        )
     setup_code.announce(settings.database_url)
     return 0
 
