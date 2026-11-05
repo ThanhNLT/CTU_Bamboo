@@ -148,3 +148,34 @@ def test_dac_quyen_lakehouse(roles):
     assert s3["bms-lakehouse"]["actions"] == [f"{a}:bms-lakehouse" for a in ("Read", "Write", "List", "Tagging")]
     for name in ("bms-app", "bms-search"):
         assert not any("bms-lakehouse" in a for a in s3[name]["actions"]), f"{name} không vào bucket lakehouse"
+
+
+def test_tu_unseal_sau_khi_khoi_dong_lai(roles):
+    """OpenBao khởi động lại thì bị khóa: `openbao-unseal` mở lại, dịch vụ đang chờ (config.load) đăng nhập tiếp được."""
+    import threading
+    import time
+
+    root = Bao(ADDR, json.loads(KEYS.read_text())["root_token"])
+    assert openbao_init.unseal_if_sealed(ADDR, KEYS) is False, "đang mở thì không làm gì"
+    root.request("PUT", "sys/seal")
+    try:
+        assert Bao(ADDR).request("GET", "sys/seal-status")["sealed"] is True
+        # dịch vụ khởi động khi OpenBao còn khóa: chờ thay vì thoát ngay
+        threading.Timer(4, openbao_init.unseal_if_sealed, (ADDR, KEYS)).start()
+        started = time.monotonic()
+        bao = config._login(ADDR, str(roles["actions"]), wait=60)
+        assert time.monotonic() - started >= 3
+        assert bao.read("bms/actions")["secret"]
+    finally:
+        openbao_init.unseal_if_sealed(ADDR, KEYS)
+    assert Bao(ADDR).request("GET", "sys/seal-status")["sealed"] is False
+
+
+def test_khong_cho_khi_sai_secret(tmp_path):
+    """Sai role/secret (lỗi 4xx) thì báo ngay, không chờ hết thời gian."""
+    if not ADDR:
+        _missing("OpenBao (BAO_ADDR)")
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"role_id": "x", "secret_id": "y"}))
+    with pytest.raises(BaoError):
+        config._login(ADDR, str(bad), wait=60)
