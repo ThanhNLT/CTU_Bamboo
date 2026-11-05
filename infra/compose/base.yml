@@ -43,9 +43,12 @@ services:
       SIGNATURE_ONLINE: ${SIGNATURE_ONLINE:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
       SETUP_ALLOW_UNVERIFIED: ${SETUP_ALLOW_UNVERIFIED:-true}
+      # Có dữ liệu demo thì vẫn mở trang đăng ký (thử cả hai luồng); SEED_DEMO=false thì chỉ mở khi máy chưa có công ty
+      SETUP_OPEN_SIGNUP: ${SETUP_OPEN_SIGNUP:-${SEED_DEMO:-true}}
       TRINO_URL: https://trino:8443
       TRINO_CA_FILE: /run/bms/trino-ca.pem
-      OLLAMA_URL: ${OLLAMA_URL-http://ollama:11434}
+      # để trống (cấu hình cũ của mức RAM 8) vẫn dùng Ollama trong compose: AI luôn chạy (ADR #69)
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
       AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
       AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}

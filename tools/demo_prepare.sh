@@ -18,9 +18,9 @@ ok=1
 
 fail() { echo "THIẾU  $*"; ok=0; }
 
-echo "== Mức RAM và GPU =="
+echo "== Dịch vụ AI =="
 mode=$(docker compose exec -T actions printenv OLLAMA_URL 2> /dev/null | tr -d '\r' || true)
-[ -n "$mode" ] && echo "ok     actions có OLLAMA_URL (AI bật)" || fail "OLLAMA_URL trống: máy đang ở mức RAM 8, chạy BAMBOO_RAM=16 make up-gpu"
+[ -n "$mode" ] && echo "ok     actions có OLLAMA_URL (AI bật)" || fail "OLLAMA_URL trống: chạy lại docker compose up -d (hoặc make up)"
 ocr_health=$(curl -fsS http://127.0.0.1:8866/health 2> /dev/null || true)
 [ -n "$ocr_health" ] && echo "ok     OCR: $ocr_health" || fail "dịch vụ ocr chưa chạy"
 

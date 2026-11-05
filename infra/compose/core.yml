@@ -239,6 +239,27 @@ services:
       - trino-secrets:/etc/trino/secrets
     restart: "no"
 
+  # OpenBao dùng khóa Shamir nên bị khóa mỗi lần container khởi động lại (khởi động lại máy, Docker Desktop, WSL);
+  # openbao-init chỉ chạy khi `docker compose up`. Dịch vụ này tự unseal lại, nếu không actions, flow-sync... không lấy
+  # được bí mật, khởi động lại liên tục và cổng API trả 502.
+  openbao-unseal:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    environment:
+      BAO_APPROLE_FILE: ""
+      BAO_KEYS_FILE: /openbao/keys/init.json
+    command: ["python", "-m", "app.openbao_init", "--watch"]
+    # đọc tệp khóa unseal (chỉ root đọc được, do openbao-init ghi)
+    user: "0"
+    volumes:
+      - openbao-keys:/openbao/keys:ro
+    restart: unless-stopped
+
   seaweedfs:
     logging: *logging
     image: chrislusf/seaweedfs:4.48
