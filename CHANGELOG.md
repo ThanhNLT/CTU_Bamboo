@@ -4,6 +4,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Chuyển tiếng Việt / tiếng Anh ở trang đăng nhập và đăng ký:** nút **VI | EN** cạnh nút sáng/tối ở trang đăng ký, khôi phục tài khoản chủ sở hữu, trang chào đăng nhập của ứng dụng và trang nhập tài khoản Keycloak (thay ô chọn thả xuống). Ứng dụng mở Keycloak đúng ngôn ngữ đang chọn (`ui_locales`); chọn trên Keycloak thì ứng dụng theo (cùng khóa `bamboo.locale`, qua cổng API cùng origin).
+
 **Dọn tài khoản thử E2E trên CSDL demo:** `tools/demo_cleanup.sh --apply` xóa thêm người, tài khoản Keycloak (`e2e.*`), đơn vị "Nhóm Thử …" và vị trí có hậu tố ngẫu nhiên do kiểm thử E2E tạo; vị trí, người còn được quyết định nhân sự nhắc tới thì kết thúc hiệu lực và gỡ tài khoản (quyết định chỉ ghi thêm).
 
 **Sửa đăng nhập tài khoản demo báo "Tài khoản chưa thuộc tenant nào":** chạy `make up`. Job `bootstrap` phát hiện tài khoản demo trong Keycloak trùng tên đăng nhập nhưng lệch id so với realm, xóa tài khoản trùng, tạo lại đúng id với mật khẩu demo và chuyển liên kết người trong CSDL. Seed gắn lại tài khoản demo cho người đang giữ ghế khi bị gỡ (cả 30 tài khoản, không chỉ kịch bản chuyển nhân sự), và chạy từng phần dữ liệu demo phụ trong savepoint: một phần lỗi chỉ bỏ phần đó, tổ chức, người, tài khoản vẫn nạp đủ (trước đây CSDL mới có thể trống hoàn toàn).
