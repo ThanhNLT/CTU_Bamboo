@@ -50,6 +50,8 @@ Ví dụ cách giao diện trong `apps/web/src/pages` dùng API cho luồng mua 
 | `/p/ic-orders` danh sách, chi tiết (đơn hàng nội bộ, [ADR #42](#adr-42)) | `ic_ic_order` (+ `seller_unit`, `buyer_unit`, `created_by_person`, `ic_order_items` { `lot` }, `purchase_requests`, `purchase_orders`, `comments`), computed field `can_confirm`; lọc "Chờ tôi xác nhận": `where: {can_confirm: {_eq: true}}`. Lô chọn được: `mfg_lot(where: {item_id: {_in: …}, status: {_eq: "RELEASED"}, org_unit: {path: {_descendant: <path công ty bán>}}})` |
 | Nút **Xác nhận và xuất lô**, **Từ chối**, **Hủy đơn** | Mutation `confirm_ic_order(order_id, lots: [{line_id, lot_id}])` → `status`, `purchase_order_id`; `reject_ic_order(order_id, reason)`, `cancel_ic_order(order_id, reason)` |
 | Đơn hàng nội bộ trên chi tiết đề nghị | `proc_purchase_request.ic_order` { `doc_no` `status` }; nhà cung cấp nội bộ: `partner.internal_unit_id` |
+| `/h/chat` Tin nhắn ([ADR #65](#adr-65)) | subscription `chat_conversation` (computed field `unread`, `display_name`; `members` của mình: `muted`, `role`), subscription `chat_message(where: {conversation_id}, order_by: {id: desc}, limit: 100)` (+ `sender`, `attachment`), `chat_member` (`last_read_id` cho "đã xem"); gửi `insert_chat_message_one` (`conversation_id`, `body`, `reply_to_id`, `attachment_id`, `mentions` dạng `{uuid,…}`), sửa/thu hồi `update_chat_message_by_pk` (`body` / `deleted_at`), đã đọc, tắt thông báo `update_chat_member_by_pk`; tệp: `get_upload_url(entity_type: "chat.conversation")` |
+| `/h/calendar` Lịch công tác ([ADR #65](#adr-65)) | `calendar_events(from, to, view: all/mine/unit, unit_id)` → `events` (mỗi lần diễn ra một mục; `source: project` là công việc dự án); `calendar_save(event: jsonb)` → `id`, `invited`, `conflicts`; `calendar_cancel`, `calendar_respond(id, response)`; tín hiệu `live_event` chủ đề `calendar` |
 | `/d/api` Cổng dịch vụ API ([ADR #64](#adr-64)) | `api_catalog` (phạm vi, endpoint); quản trị viên: `api_api_key` (+ `created_by_person`, `usages`), `api_key_create`, `api_key_revoke`. Hệ thống ngoài gọi REST `/api/v1/*` với `Authorization: Bearer bak_…`, đặc tả `/api/v1/openapi.json` |
 | `/d/lineage` Phả hệ dữ liệu | `meta_lineage_node(where: {origin})` (+ `quality_checks`), `meta_lineage_edge`, `meta_pipeline_run`; nút **Thu thập và kiểm tra**: `lineage_refresh` |
 | `/i/bi` Phân tích BI ([ADR #63](#adr-63)) | `semantic_catalog` → `sources` { `name` `label` `dimensions` `measures` }, `grains`; `semantic_query(metrics: [String!], dimensions, time_grain, from, to, filters, limit)` → `columns`, `rows`, `measures`, `sql`. Biểu đồ đã lưu: `kpi_chart` (của mình hoặc `shared`, computed field `is_mine`), `insert_kpi_chart_one` (`name`, `chart_type`, `spec`, `shared`), `update_kpi_chart_by_pk`, `delete_kpi_chart_by_pk` (chỉ của mình) |
@@ -57,7 +59,7 @@ Ví dụ cách giao diện trong `apps/web/src/pages` dùng API cho luồng mua 
 
 ## 3. Danh mục Hasura Action
 
-Nghiệp vụ nhiều bước đi qua 109 Hasura Action (dịch vụ `actions`, khai báo trong `infra/platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (62) đọc trực tiếp qua GraphQL với quyền theo dòng.
+Nghiệp vụ nhiều bước đi qua 127 Hasura Action (dịch vụ `actions`, khai báo trong `infra/platform/hasura/metadata.json`). Mỗi Action tự kiểm quyền theo người gọi và tenant trong phiên; bảng và view (75) đọc trực tiếp qua GraphQL với quyền theo dòng.
 
 | Nhóm | Query | Mutation |
 |---|---|---|
@@ -71,6 +73,7 @@ Nghiệp vụ nhiều bước đi qua 109 Hasura Action (dịch vụ `actions`, 
 | Kiểm toán, sổ cái, dữ liệu cá nhân | `audit_log_detail`, `verify_audit_chain`, `audit_anchors`, `audit_anchor_verify`, `ledger_overview`, `ledger_archive`, `check_pii` | `audit_anchor_now`, `ledger_verify`, `ledger_open_archive` |
 | Thông báo, hàng đợi tin nhắn | `notification_prefs`, `my_deliveries`, `queue_overview`, `queue_verify` | `save_notification_pref`, `delete_notification_pref`, `send_test_notification`, `queue_retry` |
 | Dữ liệu số: điều hành, Lakehouse, KPI, bản sao số | `ops_dashboard`, `lakehouse_datasets`, `lakehouse_preview`, `semantic_catalog`, `semantic_query`, `kpi_snapshots`, `get_kpi_report_pdf` | `iot_acknowledge` |
+| Nhắn tin, lịch công tác ([ADR #65](#adr-65)) | `calendar_events`; subscription `chat_conversation`, `chat_message`, `chat_member` | `chat_open_direct`, `chat_create_group`, `chat_update_group`, `chat_leave`, `calendar_save`, `calendar_cancel`, `calendar_respond`; `insert_chat_message_one`, `update_chat_message_by_pk`, `update_chat_member_by_pk` |
 | Thời gian thực, phả hệ, cổng dịch vụ API ([ADR #64](#adr-64)) | `lineage_graph`, `api_catalog`; subscription `live_event`, `live_v_online` | `lineage_refresh`, `api_key_create`, `api_key_revoke`; `insert_live_presence_one` |
 | Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ocr_retry` |
 | Vận hành | `obs_logs`, `backup_runs` | – |

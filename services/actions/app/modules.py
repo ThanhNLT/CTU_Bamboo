@@ -95,6 +95,15 @@ CORE_ACTIONS = frozenset(
         "api_key_revoke",
         "ext_rotate_key",
         "ext_launch",
+        # Nhắn tin và lịch công tác (ADR #65): cộng tác hằng ngày thuộc phần lõi, luôn bật
+        "chat_open_direct",
+        "chat_create_group",
+        "chat_update_group",
+        "chat_leave",
+        "calendar_events",
+        "calendar_save",
+        "calendar_cancel",
+        "calendar_respond",
     }
 )
 

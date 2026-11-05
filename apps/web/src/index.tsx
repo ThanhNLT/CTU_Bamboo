@@ -8,6 +8,9 @@ import { ReactKeycloakProvider } from "@react-keycloak/web";
 import App from "./App";
 import { setToken } from "./api/client";
 import { keycloak } from "./auth/keycloak";
+import { registerServiceWorker } from "./pwa";
+
+registerServiceWorker();
 
 const root = createRoot(document.getElementById("root") as HTMLElement);
 
