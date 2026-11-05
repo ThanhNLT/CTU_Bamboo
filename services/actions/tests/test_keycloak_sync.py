@@ -9,6 +9,7 @@ import httpx
 import pytest
 
 from app import keycloak_sync
+from conftest import TEST_DB_URL
 
 KEYCLOAK = os.environ.get("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080")
 ADMIN = (os.environ.get("KEYCLOAK_ADMIN", "kcadmin"), os.environ.get("KEYCLOAK_ADMIN_PASSWORD", "kcadmin-dev"))
@@ -164,3 +165,42 @@ def test_realm_dung_theme_dang_nhap_bamboo(admin):
             assert keycloak_sync.ensure_login_theme(KEYCLOAK, *ADMIN) is False
         finally:
             http.put("", json={"loginTheme": original}).raise_for_status()
+
+
+def test_sua_tai_khoan_demo_lech_id(admin, tmp_path, conn):
+    """Keycloak có tài khoản demo trùng tên nhưng lệch id: tạo lại đúng id, mật khẩu demo, chuyển liên kết người."""
+    http, _ = admin
+    wanted = "6f0c1d2e-0000-4000-8000-00000000e2e2"
+    realm = tmp_path / "realm.json"
+    user = {
+        "id": wanted,
+        "username": "demo.lech.id",
+        "enabled": True,
+        "firstName": "Lệch",
+        "lastName": "Id",
+        "email": "demo.lech.id@example.invalid",
+        "emailVerified": True,
+        "credentials": [{"type": "password", "value": "${DEMO_PASSWORD}", "temporary": False}],
+    }
+    realm.write_text(json.dumps({"users": [user]}), encoding="utf-8")
+    http.post("/users", json={"username": "demo.lech.id", "enabled": True}).raise_for_status()
+    wrong = http.get("/users", params={"username": "demo.lech.id", "exact": "true"}).json()[0]["id"]
+    assert wrong != wanted
+    person = conn.execute(
+        "SELECT test.person('TDX', %s, 'Người lệch id', %s) AS id", (f"lech_{wrong[:8]}", wrong)
+    ).fetchone()["id"]
+    try:
+        fixed = keycloak_sync.fix_demo_user_ids(KEYCLOAK, *ADMIN, "pw-lech-test", realm)
+        assert fixed == [(wrong, wanted)]
+        assert http.get(f"/users/{wanted}").json()["username"] == "demo.lech.id"
+        assert http.get(f"/users/{wrong}").status_code == 404
+        assert keycloak_sync.fix_demo_user_ids(KEYCLOAK, *ADMIN, "pw-lech-test", realm) == [], "lần sau không đổi gì"
+        assert keycloak_sync.relink_people(TEST_DB_URL, fixed) == 1
+        assert (
+            conn.execute("SELECT idp_subject FROM core.person WHERE id = %s", (person,)).fetchone()["idp_subject"]
+            == wanted
+        )
+    finally:
+        http.delete(f"/users/{wanted}")
+        http.delete(f"/users/{wrong}")
+        conn.execute("DELETE FROM core.person WHERE id = %s", (person,))
