@@ -3,12 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dayjs, { type Dayjs } from "dayjs";
+import isoWeek from "dayjs/plugin/isoWeek";
 import { ChevronDown, ChevronRight, Diamond } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { tr, trf } from "../../../i18n";
 import { cn } from "../../../utils/cn";
 import type { Dependency, Task } from "../types";
+
+// Trang dự án là một chunk riêng: tự nạp plugin, không dựa vào trang lịch đã nạp trước (ADR #67)
+dayjs.extend(isoWeek);
 
 export type Zoom = "day" | "week" | "month";
 
@@ -80,6 +84,7 @@ export const Gantt = ({
     return out;
   }, [tasks, collapsed]);
   const rowOf = useMemo(() => new Map(visible.map((t, i) => [t.id, i])), [visible]);
+  const byId = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
 
   const x = (date: string | Dayjs) => dayjs(date).diff(start, "day") * px;
 
@@ -153,8 +158,8 @@ export const Gantt = ({
   const today = dayjs().startOf("day");
   const arrows = deps
     .map((d) => {
-      const p = tasks.find((t) => t.id === d.predecessor_id);
-      const s = tasks.find((t) => t.id === d.successor_id);
+      const p = byId.get(d.predecessor_id);
+      const s = byId.get(d.successor_id);
       const pr = rowOf.get(d.predecessor_id);
       const sr = rowOf.get(d.successor_id);
       if (!p || !s || pr === undefined || sr === undefined) return null;
