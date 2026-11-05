@@ -39,6 +39,7 @@ LINKS = {
     "hr.personnel_decision": "/h/decisions",
     "chat.conversation": "/h/chat/{id}",
     "cal.event": "/h/calendar?event={id}",
+    "pm.project": "/p/projects/{id}",
 }
 CHANNELS = ("email", "sms", "webhook")
 
