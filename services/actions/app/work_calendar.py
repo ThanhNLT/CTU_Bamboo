@@ -124,6 +124,7 @@ def calendar_events(conn: psycopg.Connection, session: dict, args: dict, _ctx: C
                LEFT JOIN core.org_unit u ON u.id = e.org_unit_id
                JOIN core.person p ON p.id = e.organizer_id
                WHERE e.tenant_id = %(tenant)s AND e.cancelled_at IS NULL AND e.starts_at < %(to)s
+                 AND cal.last_end(e.recurrence, e.ends_at, e.starts_at, e.recur_until) > %(from)s
                  AND cal.can_read(e.id, %(me)s)
                  AND (%(view)s = 'all'
                       OR (%(view)s = 'mine' AND (e.organizer_id = %(me)s OR EXISTS (
@@ -288,6 +289,8 @@ def conflicts(conn: psycopg.Connection, event_id: str) -> list[dict]:
                JOIN cal.event e ON e.tenant_id = (SELECT tenant_id FROM me) AND e.id <> %(id)s AND e.cancelled_at IS NULL
                                 AND e.kind <> 'DEADLINE'
                                 AND e.starts_at < (SELECT starts_at FROM me) + %(h)s
+                                AND cal.last_end(e.recurrence, e.ends_at, e.starts_at, e.recur_until)
+                                    > (SELECT starts_at FROM me)
                                 AND (e.organizer_id = p.person_id OR EXISTS (
                                     SELECT FROM cal.attendee a WHERE a.event_id = e.id AND a.person_id = p.person_id
                                                                  AND a.response <> 'DECLINED'))

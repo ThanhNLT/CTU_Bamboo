@@ -153,8 +153,9 @@ def test_du_an_quyen_lap_lich_bao_cao(hasura, conn, org):
     assert [t["wbs"] for t in detail["tasks"]] == ["1", "2"] and all(t["critical"] for t in detail["tasks"])
     assert detail["stats"]["total_tasks"] == 2
     assert run(Q_DETAIL, {"id": pid}, who=outsider)["errors"][0]["extensions"]["code"] == "not-found"
-    listed = run("query { pm_project { code progress can_manage } }", {}, who=nv)["data"]["pm_project"]
+    listed = run("query { pm_project { code stats can_manage } }", {}, who=nv)["data"]["pm_project"]
     assert [p["code"] for p in listed] == [code] and listed[0]["can_manage"] is False
+    assert listed[0]["stats"]["total_tasks"] == 2, "số liệu tiến độ trong một computed field"
     assert run("query { pm_project { code } }", {}, who=outsider)["data"]["pm_project"] == []
     tasks_seen = run("query($p: uuid!) { pm_task(where: {project_id: {_eq: $p}}) { id } }", {"p": pid}, who=outsider)[
         "data"
