@@ -610,15 +610,17 @@
   border-color: var(--color-line);
 }
 
-.ant-modal .ant-modal-content,
-.ant-modal .ant-modal-header {
-  background: var(--glass-strong);
-}
 .ant-modal .ant-modal-content {
+  background: var(--glass-strong);
   border: 1px solid var(--glass-card-edge);
   border-radius: 22px;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
+}
+/* Tiêu đề nằm trong thân hộp thoại (đã là kính): tô thêm một lớp kính thành ô sáng hơn bo tròn nửa trên, vì Ant Design
+   bo hai góc trên của tiêu đề */
+.ant-modal .ant-modal-header {
+  background: transparent;
 }
 .ant-drawer .ant-drawer-content {
   background: var(--glass-strong);

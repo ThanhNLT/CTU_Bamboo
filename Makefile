@@ -9,15 +9,12 @@ DEMO_PASSWORD ?= demo-password
 PNPM ?= pnpm
 UV_LINT := uv run --frozen --only-group lint
 
-AI_SERVICES := ollama-core ollama-init ocr-core ocr-init ai-worker
-
+# Mọi mức RAM đều chạy đầy đủ, kể cả AI; mức 8 chỉ hạ heap JVM và cho dịch vụ dùng thưa ngủ sớm (ADR #69)
 up:
-	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans $$BAMBOO_SERVICES \
-		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
+	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans
 
 up-gpu:
-	eval "$$(tools/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
-		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
+	eval "$$(tools/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans
 
 down:
 	docker compose down

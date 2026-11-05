@@ -84,7 +84,13 @@ def _normalize_code(code: str) -> str:
 
 
 def is_open(conn: psycopg.Connection) -> bool:
+    """Máy chưa có công ty nào."""
     return not conn.execute("SELECT EXISTS (SELECT FROM core.tenant)").fetchone()[0]
+
+
+def accepting(conn: psycopg.Connection, open_signup: bool) -> bool:
+    """Nhận đăng ký: máy trống, hoặc SETUP_OPEN_SIGNUP mở đăng ký cả khi đã có công ty (bản demo)."""
+    return open_signup or is_open(conn)
 
 
 def new_code(conn: psycopg.Connection) -> str:
@@ -362,12 +368,15 @@ def parse_registration(body: dict) -> dict:
     }
 
 
-def start(conn: psycopg.Connection, ctx: Context, body: dict) -> dict:
+def start(conn: psycopg.Connection, ctx: Context, body: dict, open_signup: bool = False) -> dict:
     conn.execute("SELECT pg_advisory_xact_lock(hashtext('core.setup'))")
-    if not is_open(conn):
+    if not accepting(conn, open_signup):
         raise ActionError("Hệ thống đã có công ty; đăng nhập để tiếp tục", "setup-closed", 409)
-    # Lệnh cũ gửi kèm mã thiết lập thì vẫn kiểm mã; trình hướng dẫn mới dựa vào cửa sổ 24 giờ
-    code_id = check_code(conn, str(body["setup_code"])) if body.get("setup_code") else window_code(conn)
+    # Lệnh cũ gửi kèm mã thiết lập thì vẫn kiểm mã; trình hướng dẫn mới dựa vào cửa sổ 24 giờ (đăng ký mở thì không cần)
+    if body.get("setup_code"):
+        code_id = check_code(conn, str(body["setup_code"]))
+    else:
+        code_id = None if open_signup else window_code(conn)
     if "members" not in body and isinstance(body.get("company"), dict):
         # Dạng cũ của ADR #57: chủ sở hữu là người đại diện khai trong company, kèm tùy chọn một quản trị viên
         c = body["company"]
@@ -486,6 +495,8 @@ def _role(conn: psycopg.Connection, tenant, code: str):
 def _build_company(conn: psycopg.Connection, data: dict, accounts: list[dict], signer, signed) -> uuid.UUID:
     """Dựng công ty theo dữ liệu đăng ký trong một giao dịch: đơn vị, vị trí, người, phân quyền, công cụ."""
     company, owner = data["company"], data["owner"]
+    # Chỉ công ty khởi tạo máy chủ trống mới quản lý mô-đun trên máy (ADR #56); đăng ký thêm khi đã có công ty thì không
+    platform = is_open(conn)
     tid, root, director, admin_seat = conn.execute(
         "SELECT * FROM core.create_tenant(%s, %s)",
         (company["code"], company.get("short_name") or company["legal_name"]),
@@ -575,8 +586,8 @@ def _build_company(conn: psycopg.Connection, data: dict, accounts: list[dict], s
 
     verification = _record(conn, tid, signer, signed) if signer else None
     conn.execute(
-        "INSERT INTO core.tenant_owner (tenant_id, person_id, platform, verification_id) VALUES (%s, %s, true, %s)",
-        (tid, owner_id, verification),
+        "INSERT INTO core.tenant_owner (tenant_id, person_id, platform, verification_id) VALUES (%s, %s, %s, %s)",
+        (tid, owner_id, platform, verification),
     )
     return tid
 
@@ -588,10 +599,11 @@ def finish(
     application_id: str,
     token: str,
     signed: bytes | None,
+    open_signup: bool = False,
 ) -> dict:
     users: KeycloakUsers | None = ctx.users
     with pool.connection() as conn, conn.transaction():
-        if not is_open(conn):
+        if not accepting(conn, open_signup):
             raise ActionError("Hệ thống đã có công ty; đăng nhập để tiếp tục", "setup-closed", 409)
         a = _application(conn, application_id, token, "SETUP")
     data, company = a["data"], a["data"]["company"]
@@ -645,14 +657,19 @@ def finish(
     try:
         with pool.connection() as conn, conn.transaction():
             conn.execute("SELECT pg_advisory_xact_lock(hashtext('core.setup'))")
-            if not is_open(conn):
+            if not accepting(conn, open_signup):
                 raise ActionError("Hệ thống đã có công ty; đăng nhập để tiếp tục", "setup-closed", 409)
             _application(conn, application_id, token, "SETUP")
-            used = conn.execute(
-                "UPDATE core.setup_code SET used_at = now() WHERE id = %s AND used_at IS NULL AND revoked_at IS NULL",
-                (data["setup_code_id"],),
+            # Đơn tạo khi đăng ký mở (SETUP_OPEN_SIGNUP) không gắn mã thiết lập
+            code_id = data.get("setup_code_id")
+            used = code_id is None or (
+                conn.execute(
+                    "UPDATE core.setup_code SET used_at = now() WHERE id = %s AND used_at IS NULL AND revoked_at IS NULL",
+                    (code_id,),
+                ).rowcount
+                == 1
             )
-            if used.rowcount != 1:
+            if not used:
                 raise ActionError(
                     "Thời gian đăng ký đã hết; người quản trị máy chủ chạy `make setup-code` rồi đăng ký lại",
                     "setup-window-closed",
@@ -764,14 +781,16 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings, ctx
     def status():
         with pool_of().connection() as conn:
             empty = is_open(conn)
-            window = empty and bool(
-                conn.execute(
-                    """SELECT EXISTS (SELECT FROM core.setup_code
-                                      WHERE used_at IS NULL AND revoked_at IS NULL AND expires_at > now())"""
-                ).fetchone()[0]
-            )
+            code_alive = conn.execute(
+                """SELECT EXISTS (SELECT FROM core.setup_code
+                                  WHERE used_at IS NULL AND revoked_at IS NULL AND expires_at > now())"""
+            ).fetchone()[0]
+        window = settings.setup_open_signup or (empty and code_alive)
+        open_ = empty or settings.setup_open_signup
         return {
-            "open": empty,
+            # Máy chưa có công ty: trang đăng nhập mời tạo công ty thay vì chuyển thẳng tới Keycloak
+            "empty": empty,
+            "open": open_,
             # Còn mã thiết lập hiệu lực: đăng ký được mà không phải nhập mã (ADR #62)
             "window_open": window,
             "signature_ready": bool(legal_sign.load_trust_roots(ctx.signature_trust_dir)),
@@ -780,7 +799,7 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings, ctx
                 {"code": m.code, "name": m.name, "description": m.description, "depends": list(m.depends)}
                 for m in modules.CATALOG
             ]
-            if empty
+            if open_
             else [],
         }
 
@@ -795,7 +814,7 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings, ctx
 
         def run():
             with pool_of().connection() as conn, conn.transaction():
-                return start(conn, ctx, body)
+                return start(conn, ctx, body, settings.setup_open_signup)
 
         def failed():
             with pool_of().connection() as conn, conn.transaction():
@@ -877,6 +896,7 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings, ctx
                 application_id,
                 str(body.get("token") or ""),
                 signed,
+                settings.setup_open_signup,
             )
         except ActionError as exc:
             return _error(exc)
