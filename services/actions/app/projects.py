@@ -162,24 +162,61 @@ def _shift(tasks: dict[str, dict], kids, tid: str, days: int, moved: set[str]) -
         _shift(tasks, kids, c, days, moved)
 
 
+def _topological(tasks: dict[str, dict], deps: list[dict]) -> list[dict]:
+    """Phụ thuộc xếp theo thứ tự tô-pô của việc trước trên đồ thị (phụ thuộc + con→cha), để việc dời lan truyền xuôi
+    trong một vòng thay vì hàng chục vòng khi đọc theo thứ tự uuid (ADR #67)."""
+    succ: dict[str, list[str]] = defaultdict(list)
+    indeg = dict.fromkeys(tasks, 0)
+    for d in deps:
+        succ[d["predecessor_id"]].append(d["successor_id"])
+        indeg[d["successor_id"]] += 1
+    for t in tasks.values():
+        if t["parent_id"]:
+            succ[t["id"]].append(t["parent_id"])
+            indeg[t["parent_id"]] += 1
+    queue = [tid for tid, n in indeg.items() if n == 0]
+    rank: dict[str, int] = {}
+    while queue:
+        tid = queue.pop()
+        rank[tid] = len(rank)
+        for nxt in succ.get(tid, []):
+            indeg[nxt] -= 1
+            if indeg[nxt] == 0:
+                queue.append(nxt)
+    return sorted(deps, key=lambda d: rank.get(d["predecessor_id"], len(tasks)))
+
+
 def schedule(tasks: dict[str, dict], deps: list[dict]) -> set[str]:
     """Dời công việc phía sau cho thỏa mọi phụ thuộc kết thúc→bắt đầu (giữ thời lượng, chỉ dời về sau).
 
-    Công việc tổng hợp bị dời thì cả cây con dời theo. Trả tập công việc đã dời. Lặp tới khi ổn định; CSDL đã chặn vòng
-    lặp phụ thuộc nên số vòng không quá số công việc.
+    Công việc tổng hợp bị dời thì cả cây con dời theo, và ngày của các việc tổng hợp bên trên cập nhật ngay. Phụ thuộc
+    xét theo thứ tự tô-pô nên thường một vòng là xong; lặp tới khi ổn định, ràng buộc mâu thuẫn thì báo lỗi. Trả tập
+    công việc đã dời.
     """
     kids = _children(tasks)
     moved: set[str] = set()
+    ordered = _topological(tasks, deps)
+    rollup(tasks)
+
+    def refresh_up(tid: str) -> None:
+        parent = tasks[tid]["parent_id"]
+        while parent:
+            p, ch = tasks[parent], [tasks[c] for c in kids[parent]]
+            p["start_date"] = min(c["start_date"] for c in ch)
+            p["end_date"] = max(c["end_date"] for c in ch)
+            parent = p["parent_id"]
+
     for _ in range(len(tasks) + 1):
-        rollup(tasks)
         changed = False
-        for d in deps:
+        for d in ordered:
             pred, succ = tasks[d["predecessor_id"]], tasks[d["successor_id"]]
             earliest = pred["end_date"] + dt.timedelta(days=_gap(pred) + d["lag_days"])
             if succ["start_date"] < earliest:
                 _shift(tasks, kids, succ["id"], (earliest - succ["start_date"]).days, moved)
+                refresh_up(succ["id"])
                 changed = True
         if not changed:
+            rollup(tasks)
             return moved
     raise ActionError("Không lập được lịch: phụ thuộc mâu thuẫn")
 
@@ -507,14 +544,15 @@ def _task_fields(data: dict, old: dict | None) -> dict:
 
 
 def _persist(conn: psycopg.Connection, tasks: dict[str, dict], moved: set[str], original: dict[str, tuple]) -> int:
-    n = 0
-    for tid, t in tasks.items():
-        if original.get(tid) != (t["start_date"], t["end_date"]) and tid in original:
-            conn.execute(
-                "UPDATE pm.task SET start_date = %s, end_date = %s WHERE id = %s", (t["start_date"], t["end_date"], tid)
-            )
-            n += 1 if tid in moved else 0
-    return n
+    """Ghi ngày mới của mọi công việc đổi trong một câu lệnh (trước đây một câu mỗi công việc, ADR #67)."""
+    changed = [t for tid, t in tasks.items() if tid in original and original[tid] != (t["start_date"], t["end_date"])]
+    if changed:
+        conn.execute(
+            """UPDATE pm.task t SET start_date = c.s, end_date = c.e
+               FROM unnest(%s::uuid[], %s::date[], %s::date[]) AS c(id, s, e) WHERE t.id = c.id""",
+            ([t["id"] for t in changed], [t["start_date"] for t in changed], [t["end_date"] for t in changed]),
+        )
+    return sum(1 for t in changed if t["id"] in moved)
 
 
 def _reschedule(conn: psycopg.Connection, project_id) -> int:

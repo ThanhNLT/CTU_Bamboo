@@ -99,9 +99,14 @@ def test_vong_doi_khoa_pham_vi_ip_thu_hoi(actions_server, admin, conn):
 
     usage = conn.execute("SELECT calls, errors FROM api.usage WHERE key_id = %s", (created["id"],)).fetchone()
     assert (usage["calls"], usage["errors"]) == (2, 0), "lượt bị từ chối vì phạm vi không chạy Action"
-    assert conn.execute("SELECT last_used_at FROM api.api_key WHERE id = %s", (created["id"],)).fetchone()[
-        "last_used_at"
-    ]
+    used = conn.execute(
+        "SELECT api.api_key_last_used_at(k) AS at FROM api.api_key k WHERE id = %s", (created["id"],)
+    ).fetchone()
+    assert used["at"], "lần dùng cuối ghi ở dòng đếm theo ngày"
+    assert not conn.execute(
+        "SELECT 1 FROM audit.log WHERE table_name = 'api.api_key' AND op = 'UPDATE' AND row_id::text LIKE '%%' || %s || '%%'",
+        (created["id"],),
+    ).fetchone(), "gọi API không sinh nhật ký kiểm toán"
 
     fenced = action(
         actions_server, "api_key_create", {**args, "name": "Chỉ mạng nội bộ", "allowed_ips": ["10.1.0.0/16"]}, gd, tdx
