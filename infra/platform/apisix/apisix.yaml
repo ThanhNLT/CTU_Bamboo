@@ -125,6 +125,7 @@ routes:
         request_headers: [Authorization]
         upstream_headers: [X-User-Sub]
         timeout: 3000
+        status_on_error: 503
       limit-count:
         count: 600
         time_window: 60
@@ -148,6 +149,7 @@ routes:
         request_headers: [Authorization]
         upstream_headers: [X-User-Sub]
         timeout: 3000
+        status_on_error: 503
       limit-count:
         count: 30
         time_window: 60

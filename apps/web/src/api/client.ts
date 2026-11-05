@@ -98,14 +98,31 @@ export const setTenant = (tenantId: string | null) => {
   wsClient.terminate();
 };
 
-type GqlErrorShape = { response?: { errors?: { message: string; extensions?: { code?: string } }[] } };
+type GqlErrorShape = {
+  response?: { status?: number; error?: string; errors?: { message: string; extensions?: { code?: string } }[] };
+};
 
 export const toHttpError = (error: unknown): HttpError => {
-  const first = (error as GqlErrorShape)?.response?.errors?.[0];
+  const response = (error as GqlErrorShape)?.response;
+  const first = response?.errors?.[0];
   const code = first?.extensions?.code;
-  const statusCode = code === "not-found" ? 404 : code === "forbidden" ? 403 : code === "unauthorized" ? 401 : 400;
+  // Cổng API trả trang lỗi HTML (dịch vụ chưa sẵn sàng, WAF chặn): giữ mã HTTP, không hiện nguyên trang HTML
+  const gateway = !first && response?.status && response.status >= 400 ? response.status : undefined;
+  const statusCode =
+    code === "not-found" ? 404 : code === "forbidden" ? 403 : code === "unauthorized" ? 401 : (gateway ?? 400);
   return {
-    message: first?.message ?? (error instanceof Error ? error.message : tr("Lỗi không xác định")),
+    message:
+      first?.message ??
+      (gateway
+        ? trf(
+            gateway >= 500
+              ? "Hệ thống đang khởi động hoặc tạm gián đoạn (mã {0}), thử lại sau ít giây"
+              : "Cổng API từ chối yêu cầu (mã {0})",
+            [gateway],
+          )
+        : error instanceof Error
+          ? error.message
+          : tr("Lỗi không xác định")),
     statusCode,
     errors: code ? { code } : undefined,
   } as HttpError;

@@ -498,6 +498,10 @@ tài khoản tạo lại bằng tay) bằng tài khoản đúng id và chuyển 
 ghế nếu bị gỡ. Một phần dữ liệu demo lỗi không còn kéo đổ cả seed (tổ chức, người, tài khoản vẫn được nạp; `seed` thoát mã
 1 và ghi phần lỗi trong `docker compose logs seed`).
 
+Báo **"Không lấy được danh sách tenant"** kèm mã 503 (hoặc 403 ở bản cũ) nghĩa là cổng API chưa gọi được dịch vụ `actions`
+(đang khởi động, hoặc đã dừng). Trang tự thử lại khoảng một phút; nếu vẫn lỗi, xem `docker compose ps actions` và
+`docker compose logs --tail 80 actions`.
+
 **Tập đoàn X – công ty mẹ**
 
 | Tên đăng nhập | Họ tên, vị trí | Nên thử |
