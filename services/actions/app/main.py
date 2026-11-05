@@ -31,6 +31,7 @@ from . import (
     attachments,
     audit,
     auth,
+    chat,
     config,
     documents,
     ext,
@@ -60,6 +61,7 @@ from . import (
     setup,
     trino,
     twin,
+    work_calendar,
 )
 from .common import ActionError, Context, bind_session, require_read, session_identity
 from .flow_sync import PROCESS_KEY, business_key
@@ -210,6 +212,8 @@ HANDLERS = {
     **ext.HANDLERS,
     **api_gateway.HANDLERS,
     **lineage_sync.HANDLERS,
+    **chat.HANDLERS,
+    **work_calendar.HANDLERS,
 }
 
 

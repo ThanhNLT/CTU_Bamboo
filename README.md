@@ -226,6 +226,9 @@ flowchart LR
 | | Điều chuyển nội bộ và liên tập đoàn | `/h/transfer` |
 | | Quyết định nhân sự (in PDF) | `/h/decisions` |
 | | Kênh nhận thông báo (email, SMS, webhook) | `/settings/notifications` |
+| | Tin nhắn: nhắn riêng, nhóm, kênh phòng ban tự đồng bộ theo phân công; @nhắc tên, gửi tệp, thu hồi, đã xem | `/h/chat` |
+| | Lịch công tác ngày/tuần/tháng/quý: lịch cá nhân, lịch chung của đơn vị, mời họp, báo trùng giờ, nhắc lịch, xuất `.ics` | `/h/calendar` |
+| | Ứng dụng web cho thiết bị di động: cài lên màn hình chính, thanh điều hướng dưới, thông báo trên thiết bị | (mọi trang) |
 | [P] Quy trình số | **Đề nghị mua sắm**: lập, dòng hàng, đính kèm, gửi duyệt, duyệt / trả về / từ chối, hủy, bình luận, in phiếu, sơ đồ quy trình | `/p/documents` |
 | | Đơn hàng nội bộ: xác nhận kèm lô, từ chối, hủy | `/p/ic-orders` |
 | | Hồ sơ chứng từ | `/p/records` |

@@ -16,7 +16,9 @@ from . import config
 MAX_BYTES = 25 * 1024 * 1024
 UPLOAD_TTL = 900
 DOWNLOAD_TTL = 300
-ENTITY_TYPES = {"proc.purchase_request", "hr.onboarding_request", "collab.kb_document"}
+ENTITY_TYPES = {"proc.purchase_request", "hr.onboarding_request", "collab.kb_document", "chat.conversation"}
+# Loại chứng từ có trạng thái duyệt: tệp của chứng từ đã kết thúc được giữ làm bằng chứng
+STATUS_ENTITY_TYPES = {"proc.purchase_request", "hr.onboarding_request", "collab.kb_document"}
 
 _ZIP = (b"PK\x03\x04",)
 ALLOWED_TYPES: dict[str, tuple[bytes, ...] | None] = {
