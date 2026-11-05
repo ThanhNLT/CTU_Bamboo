@@ -64,6 +64,7 @@ services:
 
   ocr-core:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..
       dockerfile: infra/docker/ocr.Dockerfile
@@ -87,6 +88,7 @@ services:
   ocr-init:
     logging: *logging
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..
       dockerfile: infra/docker/ocr.Dockerfile
