@@ -233,6 +233,7 @@ flowchart LR
 | | Đơn hàng nội bộ: xác nhận kèm lô, từ chối, hủy | `/p/ic-orders` |
 | | Hồ sơ chứng từ | `/p/records` |
 | | Thiết kế quy trình BPMN: vẽ, kiểm lỗi, chạy thử, phát hành, yêu cầu sửa, chạy tự động | `/p/process` |
+| | Dự án và kế hoạch: văn bản kế hoạch chi tiết, WBS, phụ thuộc tự dời lịch, sơ đồ Gantt, đường găng, đường cơ sở, báo cáo tiến độ theo kỳ (in PDF) | `/p/projects` |
 | | Quản trị: cơ cấu tổ chức, người dùng, vai trò và phân quyền, danh mục và dữ liệu chủ (có nhập Excel) | `/admin/org`, `/admin/people`, `/admin/roles`, `/admin/catalog` |
 | [D] Dữ liệu số | Trung tâm điều hành thời gian thực kèm bản đồ cơ sở (quy trình, sản xuất, bệnh viện, chất lượng) | `/d/ops` |
 | | Dịch vụ dữ liệu trên Lakehouse | `/d/services` |

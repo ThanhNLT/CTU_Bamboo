@@ -81,6 +81,7 @@ export const NotificationBell = () => {
     else if (n.entity_id && n.entity_type === "collab.kb_document") go({ to: `/h/library/proposals/${n.entity_id}` });
     else if (n.entity_type === "hr.personnel_decision") go({ to: "/h/decisions" });
     else if (n.entity_type === "chat.conversation" && n.entity_id) go({ to: `/h/chat/${n.entity_id}` });
+    else if (n.entity_type === "pm.project" && n.entity_id) go({ to: `/p/projects/${n.entity_id}` });
     else if (n.entity_type === "cal.event" && n.entity_id) go({ to: `/h/calendar?event=${n.entity_id}` });
     else if (n.entity_type === "wf.process_model" && n.entity_id) go({ to: `/p/process?id=${n.entity_id}` });
     else if (n.entity_type === "core.tenant") go({ to: "/admin/company" });

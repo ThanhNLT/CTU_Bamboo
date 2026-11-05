@@ -284,6 +284,22 @@ Hai schema `chat`, `cal` không nằm trong publication CDC; tin nhắn không g
   `cal.can_manage_unit` (trưởng đơn vị hoặc cấp trên, hoặc quyền `cal.unit.manage`); `cal.send_reminders()` ghi
   `cal.reminder_sent` để mỗi lần diễn ra chỉ nhắc một lần.
 
+### 5.9c. Quản lý dự án (054, [ADR #66](#adr-66))
+
+Schema `pm` thuộc mô-đun `project`, không nằm trong publication CDC; dự án, thành viên, công việc, báo cáo có nhật ký kiểm toán.
+
+- `pm.project`: mã (duy nhất trong công ty), tên, đơn vị chủ trì, người quản lý, trạng thái `PLANNING`/`ACTIVE`/`ON_HOLD`/
+  `DONE`/`CANCELLED`, thời gian (≤ 10 năm), ngân sách, sáu mục văn bản kế hoạch (mục tiêu, phạm vi, sản phẩm bàn giao,
+  phương pháp, rủi ro, các bên liên quan), nhóm nhắn tin (`chat.conversation`), `baseline_at`. `pm.member`: vai trò
+  `MANAGER`/`MEMBER`/`VIEWER`.
+- `pm.task`: cây WBS (`parent_id`, `seq`), ngày bắt đầu/kết thúc, mốc (bắt đầu = kết thúc), % hoàn thành, người phụ trách,
+  ngày đường cơ sở; trigger chặn vòng cha–con. `pm.dependency`: kết thúc→bắt đầu, `lag_days` −365…365; trigger chặn vòng
+  phụ thuộc và phụ thuộc giữa việc tổng hợp với con của nó.
+- `pm.report`: kỳ, tình trạng `GREEN`/`AMBER`/`RED`, tóm tắt, kết quả, vướng mắc, kế hoạch kỳ tới, số liệu chụp lúc lập
+  (`planned_pct`, `actual_pct`, `spi`, `late_tasks`, `snapshot` bảng công việc); trigger chặn sửa.
+- `pm.can_read`, `pm.can_manage` (thành viên / người quản lý, hoặc quyền `pm.project.read` / `pm.project.manage` trên đơn vị
+  chủ trì); `pm.stats(dự án, ngày)` tính thực hiện %, kế hoạch %, SPI, số việc trễ trên công việc lá, trọng số theo số ngày.
+
 ### 5.10. Trí tuệ số
 
 - `core.ai_agent`: tác tử của tenant (mô hình Ollama, trạng thái, guardrail `scope_guard`/`pii_guard`/`prompt_guard`/`think`,
