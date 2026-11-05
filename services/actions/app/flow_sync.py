@@ -177,10 +177,17 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
             work.execute("SELECT wf.refresh_all()")
             work.execute("SELECT kpi.refresh()")
             work.execute("SELECT kpi.freeze()")
+            work.execute("SELECT chat.sync_all()")  # phân công hết hạn theo thời gian: rời kênh đơn vị (ADR #65)
             work.commit()
             last_refresh = time.monotonic()
         while run_once(work, flowable):
             pass
+        try:
+            work.execute("SELECT cal.send_reminders()")  # nhắc lịch công tác trước N phút (ADR #65)
+            work.commit()
+        except Exception as exc:  # noqa: BLE001
+            work.rollback()
+            log.warning("gửi nhắc lịch lỗi: %s", exc)
         if accounts:
             try:
                 hr_account.run_once(account_conn, *accounts)

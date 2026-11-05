@@ -10,6 +10,7 @@ import { Link, useLocation } from "react-router";
 
 import { tr, useLocale } from "../../i18n";
 import { useModules } from "../../modules/useModules";
+import { useUnreadTotal } from "../../pages/chat/useUnreadTotal";
 import { cn } from "../../utils/cn";
 import { BambooLogo } from "./BambooLogo";
 import { findActive, NAV_GROUPS, type NavGroup, type NavItem } from "./nav";
@@ -109,7 +110,9 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   const { pathname } = useLocation();
   const activeKey = findActive(pathname)?.key;
   const inboxCount = useInboxCount();
-  const badgeOf = (item: NavItem) => (item.key === "inbox" ? inboxCount : item.badge);
+  const unread = useUnreadTotal();
+  const badgeOf = (item: NavItem) =>
+    item.key === "inbox" ? inboxCount : item.key === "chat" ? unread || undefined : item.badge;
   const { enabled, overview } = useModules();
   // mô-đun ngoài đã bật: nhóm menu "Mở rộng", mỗi mục menu manifest khai là một trang trong khung nhúng (ADR #58)
   const external: NavGroup = {

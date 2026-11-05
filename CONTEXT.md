@@ -175,6 +175,26 @@ _Tránh dùng_: văn bản (khi nói tệp đính kèm), tài liệu (khi nói t
 Chứng từ xin đưa một tài liệu (hoặc bản thay thế một tài liệu đang hiệu lực) vào thư viện, số dạng `TL-2026-000001`, đi qua chuỗi duyệt như các chứng từ khác; duyệt xong là **xuất bản**, bản bị thay thế **ngừng hiệu lực**.
 _Tránh dùng_: đăng tài liệu, upload tài liệu
 
+**Cuộc trò chuyện** (`chat.conversation`):
+Nơi nhắn tin giữa nhiều người trong một công ty: **tin nhắn riêng** (hai người, mỗi cặp một cuộc), **nhóm** (người tạo là chủ nhóm, thêm/bớt người) hoặc **kênh phòng ban** (mỗi đơn vị một kênh, thành viên là người đang có phân công trong đơn vị và các đơn vị con, tự đổi khi điều chuyển). Chỉ thành viên đọc và gửi được; tin nhắn không vào nhật ký kiểm toán hay Lakehouse.
+_Tránh dùng_: bình luận (bình luận gắn với một chứng từ), thông báo, chat room
+
+**Thu hồi tin nhắn**:
+Người gửi xóa nội dung và tệp của tin mình đã gửi; mọi người vẫn thấy dòng "Tin nhắn đã thu hồi". Sửa tin chỉ trong 24 giờ.
+_Tránh dùng_: xóa tin
+
+**Lịch công tác** (`cal.event`):
+Một sự kiện có giờ hoặc cả ngày (họp, công việc, công tác, nghỉ phép, hạn chót), có thể lặp ngày/tuần/tháng đến một ngày cuối. **Lịch cá nhân** chỉ người tổ chức và người được mời thấy; **lịch chung của đơn vị** mọi người trong đơn vị và đơn vị con thấy, do trưởng đơn vị (hoặc cấp trên, hoặc người có quyền `cal.unit.manage`) đặt.
+_Tránh dùng_: cuộc hẹn, event
+
+**Lần diễn ra**:
+Một lần cụ thể của lịch lặp trong khoảng đang xem; máy chủ trải từ luật lặp, không lưu thành dòng riêng. Nhắc lịch gửi một lần cho mỗi lần diễn ra.
+_Tránh dùng_: bản sao lịch
+
+**Trùng lịch**:
+Người tổ chức hoặc người được mời đã có lịch khác (chưa từ chối) chồng giờ với lịch đang lưu. Hệ thống báo, không chặn.
+_Tránh dùng_: xung đột (khi nói chồng giờ)
+
 ## Dữ liệu
 
 **Cơ sở** (đơn vị có tọa độ):
