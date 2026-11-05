@@ -32,13 +32,23 @@ export const HEALTH_STYLE: Record<Health, string> = {
   RED: "bg-red-50 text-red-700",
 };
 
-export const fetchProjects = async () => {
-  const { pm_project } = await request<{ pm_project: ProjectRow[] }>(
+type ProjectStats = { actual_pct: number | null; planned_pct: number | null; late_tasks: number | null };
+
+/** Danh sách dự án xem được; số liệu tiến độ lấy một lần từ computed field `stats` (ADR #67). */
+export const fetchProjects = async (): Promise<ProjectRow[]> => {
+  const { pm_project } = await request<{
+    pm_project: (Omit<ProjectRow, "progress" | "planned" | "late_tasks"> & { stats: ProjectStats | null })[];
+  }>(
     `query { pm_project(order_by: [{status: asc}, {end_date: asc}]) {
-       id code name status start_date end_date progress planned late_tasks can_manage
+       id code name status start_date end_date stats can_manage
        manager { full_name } org_unit { name } } }`,
   );
-  return pm_project;
+  return pm_project.map(({ stats, ...p }) => ({
+    ...p,
+    progress: stats?.actual_pct ?? null,
+    planned: stats?.planned_pct ?? null,
+    late_tasks: stats?.late_tasks ?? null,
+  }));
 };
 
 export const fetchDetail = async (id: string) => {
