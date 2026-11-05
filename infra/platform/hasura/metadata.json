@@ -57,6 +57,28 @@
               }
             }
           ],
+          "computed_fields": [
+            {
+              "name": "last_used_at",
+              "definition": {
+                "function": {
+                  "schema": "api",
+                  "name": "api_key_last_used_at"
+                }
+              },
+              "comment": "Lần gọi gần nhất"
+            },
+            {
+              "name": "last_ip",
+              "definition": {
+                "function": {
+                  "schema": "api",
+                  "name": "api_key_last_ip"
+                }
+              },
+              "comment": "IP của lần gọi gần nhất"
+            }
+          ],
           "select_permissions": [
             {
               "role": "user",
@@ -67,8 +89,6 @@
                   "created_by",
                   "expires_at",
                   "id",
-                  "last_ip",
-                  "last_used_at",
                   "name",
                   "prefix",
                   "revoked_at",
@@ -107,7 +127,11 @@
                     }
                   ]
                 },
-                "allow_aggregations": true
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "last_used_at",
+                  "last_ip"
+                ]
               }
             },
             {
@@ -119,8 +143,6 @@
                   "created_by",
                   "expires_at",
                   "id",
-                  "last_ip",
-                  "last_used_at",
                   "name",
                   "prefix",
                   "revoked_at",
@@ -159,7 +181,11 @@
                     }
                   ]
                 },
-                "allow_aggregations": true
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "last_used_at",
+                  "last_ip"
+                ]
               }
             }
           ]
@@ -11637,34 +11663,14 @@
               "comment": "Người gọi có được xem chứng từ không"
             },
             {
-              "name": "progress",
+              "name": "stats",
               "definition": {
                 "function": {
                   "schema": "pm",
-                  "name": "project_progress"
+                  "name": "project_stats"
                 }
               },
-              "comment": "% thực hiện (bình quân theo số ngày của công việc lá)"
-            },
-            {
-              "name": "planned",
-              "definition": {
-                "function": {
-                  "schema": "pm",
-                  "name": "project_planned"
-                }
-              },
-              "comment": "% kế hoạch tới hôm nay"
-            },
-            {
-              "name": "late_tasks",
-              "definition": {
-                "function": {
-                  "schema": "pm",
-                  "name": "project_late_tasks"
-                }
-              },
-              "comment": "Số công việc quá hạn chưa xong"
+              "comment": "Số liệu tiến độ: actual_pct, planned_pct, spi, late_tasks, total_tasks, done_tasks (một lần tính, ADR #67)"
             },
             {
               "name": "can_manage",
@@ -11726,9 +11732,7 @@
                 "allow_aggregations": true,
                 "computed_fields": [
                   "can_read",
-                  "progress",
-                  "planned",
-                  "late_tasks",
+                  "stats",
                   "can_manage"
                 ]
               }
@@ -11780,9 +11784,7 @@
                 "allow_aggregations": true,
                 "computed_fields": [
                   "can_read",
-                  "progress",
-                  "planned",
-                  "late_tasks",
+                  "stats",
                   "can_manage"
                 ]
               }

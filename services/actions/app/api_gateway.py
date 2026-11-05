@@ -320,12 +320,15 @@ def authorize(conn: psycopg.Connection, header: str, ip: str, scope: str) -> dic
 
 
 def record_use(conn: psycopg.Connection, key_id, ip: str, failed: bool) -> None:
+    """Một câu lệnh mỗi lượt gọi, chỉ vào dòng đếm theo ngày (ADR #67): không sửa api.api_key nên không sinh nhật ký
+    kiểm toán và không xếp hàng trên khóa đầu chuỗi hash của công ty."""
     conn.execute(
-        """INSERT INTO api.usage (key_id, day, calls, errors) VALUES (%s, current_date, 1, %s)
-           ON CONFLICT (key_id, day) DO UPDATE SET calls = api.usage.calls + 1, errors = api.usage.errors + EXCLUDED.errors""",
-        (key_id, int(failed)),
+        """INSERT INTO api.usage (key_id, day, calls, errors, last_used_at, last_ip)
+           VALUES (%s, current_date, 1, %s, now(), %s::inet)
+           ON CONFLICT (key_id, day) DO UPDATE SET calls = api.usage.calls + 1, errors = api.usage.errors + EXCLUDED.errors,
+               last_used_at = EXCLUDED.last_used_at, last_ip = EXCLUDED.last_ip""",
+        (key_id, int(failed), ip or None),
     )
-    conn.execute("UPDATE api.api_key SET last_used_at = now(), last_ip = %s::inet WHERE id = %s", (ip or None, key_id))
 
 
 def org_units(conn: psycopg.Connection, session: dict) -> list[dict]:
