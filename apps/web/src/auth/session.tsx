@@ -10,6 +10,7 @@ import { getTenant, request, setTenant } from "../api/client";
 import { SessionContext, type AccountTenant } from "./useSession";
 import { tr } from "../i18n";
 
+const RETRIES = 20;
 const MY_TENANTS = `query MyTenants { my_tenants { tenant_id tenant_code tenant_name person_id full_name } }`;
 
 export const TenantGate = ({ children }: { children: ReactNode }) => {
@@ -17,9 +18,15 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
   const [selected, setSelected] = useState<string | null>(getTenant());
   const [error, setError] = useState<string | null>(null);
 
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     request<{ my_tenants: AccountTenant[] }>(MY_TENANTS, undefined, { withTenant: false })
       .then(({ my_tenants }) => {
+        if (!alive) return;
+        setError(null);
         setTenants(my_tenants);
         const stored = my_tenants.find((t) => t.tenant_id === getTenant());
         if (stored) return;
@@ -27,8 +34,17 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
         setTenant(only);
         setSelected(only);
       })
-      .catch((e) => setError(e.message));
-  }, []);
+      .catch((e: { message: string; statusCode?: number }) => {
+        if (!alive) return;
+        // Cổng API chưa sẵn sàng (vừa khởi động) thì tự thử lại, tối đa khoảng một phút
+        if ((e.statusCode ?? 0) >= 500 && attempt < RETRIES) timer = setTimeout(() => setAttempt((n) => n + 1), 3000);
+        else setError(e.message);
+      });
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [attempt]);
 
   const switchTenant = useCallback((tenantId: string) => {
     setTenant(tenantId);
@@ -44,6 +60,7 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
         style={{ margin: 48 }}
         message={tr("Không lấy được danh sách tenant")}
         description={error}
+        action={<Button onClick={() => window.location.reload()}>{tr("Thử lại")}</Button>}
       />
     );
   }

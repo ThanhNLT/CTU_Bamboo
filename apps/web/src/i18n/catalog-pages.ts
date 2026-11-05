@@ -982,6 +982,9 @@ export const EN_PAGES: Record<string, string> = {
   "Không khớp với bản niêm phong": "Does not match the seal",
   "Không khớp · 30 ngày": "Mismatches · 30 days",
   "Không lấy được danh sách tenant": "Could not get the tenant list",
+  "Hệ thống đang khởi động hoặc tạm gián đoạn (mã {0}), thử lại sau ít giây":
+    "The system is starting up or temporarily unavailable (code {0}), try again in a few seconds",
+  "Cổng API từ chối yêu cầu (mã {0})": "The API gateway rejected the request (code {0})",
   "Không mở được mô-đun": "Could not open the module",
   "Không ngắt tác vụ": "Non-interrupting",
   "Không nhận ra dòng hàng nào": "No line items recognized",
