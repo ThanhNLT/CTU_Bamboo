@@ -6,9 +6,21 @@ import { useEffect, useRef, useState } from "react";
 
 import { wsClient } from "../api/client";
 
-/** Chủ đề tín hiệu thay đổi (trigger `live.track` ở migration 052, ADR #64). */
+/** Chủ đề tín hiệu thay đổi (trigger `live.track` ở migration 052, ADR #64; lịch 053, dự án 054). */
 export type LiveTopic =
-  "approval" | "procurement" | "ic" | "production" | "hr" | "iot" | "kpi" | "lineage" | "files" | "knowledge" | "org";
+  | "approval"
+  | "procurement"
+  | "ic"
+  | "production"
+  | "hr"
+  | "iot"
+  | "kpi"
+  | "lineage"
+  | "files"
+  | "knowledge"
+  | "org"
+  | "calendar"
+  | "project";
 
 const LATEST = `subscription Live($t: [String!]) {
   live_event(where: {topic: {_in: $t}}, order_by: {id: desc}, limit: 1) { id at }
