@@ -51,7 +51,8 @@ export const bambooModdle = {
         { name: "url", isAttr: true, type: "String" },
         { name: "method", isAttr: true, type: "String" },
         { name: "body", isAttr: true, type: "String" },
-        { name: "name", isAttr: true, type: "String" },
+        // bamboo:name không khai ở đây: trùng tên với bpmn:name làm bpmn-moddle bỏ cả tác vụ khi đọc sơ đồ (ADR #67);
+        // thuộc tính không khai vẫn đọc/ghi được qua $attrs
         { name: "value", isAttr: true, type: "String" },
       ],
     },
