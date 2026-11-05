@@ -1004,34 +1004,64 @@ class Seeder:
                 owner[0],
             )
 
-    def transfer_demo_accounts(self):
-        """Gắn tài khoản demo vào người đang giữ ghế (trưởng phòng nhân sự, trưởng đơn vị, nhân viên) cho kịch bản
-        chuyển và tiếp nhận nhân sự; chạy lại trên CSDL đã có dữ liệu vẫn bổ sung được."""
-        for user in TRANSFER_DEMO_USERS:
-            seat = user.seats[0]
+    def ensure_demo_accounts(self):
+        """Mọi tài khoản demo đều gắn với một người trong từng tenant của nó (đăng nhập không bao giờ gặp "chưa thuộc
+        tenant nào"). Tài khoản đã gắn thì bỏ qua; chưa gắn thì gắn vào người đang giữ ghế demo của nó. Ghế của kịch bản
+        chuyển và tiếp nhận nhân sự lấy người giữ ghế (kể cả khi người đó đang gắn tài khoản khác); ghế còn lại chỉ gắn khi
+        người giữ ghế chưa có tài khoản, để không giành tài khoản của người thật. Chạy lại trên CSDL đã có dữ liệu được."""
+        transfer = {u.username for u in TRANSFER_DEMO_USERS}
+        for user in [*DEMO_USERS, *HR_DEMO_USERS, *TRANSFER_DEMO_USERS]:
             subject = str(user.id)
-            if self.x("SELECT 1 FROM core.person WHERE idp_subject = %s", subject).fetchone():
-                continue
-            holder = self.x(
-                "SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position)
-            )
-            holder = holder.fetchone()
-            if holder is None:
-                continue
-            previous = self.x("SELECT idp_subject FROM core.person WHERE id = %s", holder[0]).fetchone()
-            if previous and previous[0]:
-                log.warning(
-                    "%s: người giữ ghế %s đang gắn tài khoản %s, chuyển sang tài khoản demo",
-                    user.username,
-                    seat.position,
-                    previous[0],
+            for seat in user.seats:
+                tenant = self.tenant_id(seat.tenant)
+                if self.x(
+                    "SELECT 1 FROM core.person WHERE tenant_id = %s AND idp_subject = %s", tenant, subject
+                ).fetchone():
+                    continue
+                holder = self.x(
+                    "SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position)
+                ).fetchone()
+                if holder is None:
+                    log.warning("%s: ghế %s không có người giữ, chưa gắn được tài khoản", user.username, seat.position)
+                    continue
+                previous = self.x("SELECT idp_subject FROM core.person WHERE id = %s", holder[0]).fetchone()[0]
+                if previous and user.username not in transfer:
+                    log.warning(
+                        "%s: người giữ ghế %s đã gắn tài khoản %s, không gắn tài khoản demo",
+                        user.username,
+                        seat.position,
+                        previous,
+                    )
+                    continue
+                if previous:
+                    log.warning(
+                        "%s: người giữ ghế %s đang gắn tài khoản %s, chuyển sang tài khoản demo",
+                        user.username,
+                        seat.position,
+                        previous,
+                    )
+                self.x(
+                    "UPDATE core.person SET idp_subject = %s, full_name = %s WHERE id = %s",
+                    subject,
+                    user.full_name,
+                    holder[0],
                 )
-            self.x(
-                "UPDATE core.person SET idp_subject = %s, full_name = %s WHERE id = %s",
-                subject,
-                user.full_name,
-                holder[0],
-            )
+                log.info("đã gắn tài khoản demo %s vào ghế %s", user.username, seat.position)
+
+    def optional(self, *parts) -> list[str]:
+        """Chạy các phần demo phụ, mỗi phần trong một savepoint: một phần lỗi chỉ bỏ phần đó (ghi log), không kéo đổ
+        tổ chức, người và tài khoản đã nạp. Trả tên các phần lỗi."""
+        failed = []
+        for part in parts:
+            try:
+                with self.conn.transaction():
+                    part()
+            except Exception:
+                name = getattr(part, "__name__", "demo")
+                name = "demo_load" if name == "<lambda>" else name
+                log.exception("phần demo %s lỗi, bỏ qua", name)
+                failed.append(name)
+        return failed
 
     def process_catalog_demo(self):
         """Quy trình thiết kế sẵn ở trang Thiết kế quy trình: đã phát hành, đã phát hành kèm yêu cầu sửa, bản nháp."""
@@ -1498,25 +1528,31 @@ class Seeder:
             self.master_data(t.code)
         self.approval_rules()
         self.delegation()
-        self.purchase_requests()
         self.hr_demo()
-        self.transfer_demo_accounts()
-        self.decision_demo()
-        self.ic_demo()
-        self.lakehouse_demo()
-        self.master_data_admin_demo()
-        self.process_design_demo()
-        self.process_catalog_demo()
-        self.supervision_demo()
-        self.library_demo()
-        self.ai_demo()
-        self.ops_demo()
-        self.approval_history_demo()
-        self.collab_demo()
+        self.ensure_demo_accounts()
+        self.failed = self.optional(
+            self.purchase_requests,
+            self.decision_demo,
+            self.ic_demo,
+            self.lakehouse_demo,
+            self.master_data_admin_demo,
+            self.process_design_demo,
+            self.process_catalog_demo,
+            self.supervision_demo,
+            self.library_demo,
+            self.ai_demo,
+            self.ops_demo,
+            self.approval_history_demo,
+            self.collab_demo,
+        )
         self.modules()
 
 
+FAILED: list[str] = []  # phần demo phụ lỗi ở lần chạy gần nhất (main trả mã lỗi để `make up` thấy)
+
+
 def seed(conn: psycopg.Connection) -> bool:
+    FAILED.clear()
     if conn.execute("SELECT 1 FROM core.tenant WHERE code = 'TDX'").fetchone():
         with conn.transaction():
             seeder = Seeder(conn)
@@ -1524,27 +1560,33 @@ def seed(conn: psycopg.Connection) -> bool:
             for t in TENANTS:
                 seeder.master_data(t.code)
             seeder.hr_demo()
-            seeder.transfer_demo_accounts()
-            seeder.decision_demo()
-            seeder.ic_demo()
-            seeder.lakehouse_demo()
-            seeder.master_data_admin_demo()
-            seeder.process_design_demo()
-            seeder.process_catalog_demo()
-            seeder.supervision_demo()
-            seeder.library_demo()
-            seeder.ai_demo()
-            seeder.ops_demo()
-            seeder.approval_history_demo()
-            seeder.collab_demo()
+            seeder.ensure_demo_accounts()
+            FAILED.extend(
+                seeder.optional(
+                    seeder.decision_demo,
+                    seeder.ic_demo,
+                    seeder.lakehouse_demo,
+                    seeder.master_data_admin_demo,
+                    seeder.process_design_demo,
+                    seeder.process_catalog_demo,
+                    seeder.supervision_demo,
+                    seeder.library_demo,
+                    seeder.ai_demo,
+                    seeder.ops_demo,
+                    seeder.approval_history_demo,
+                    seeder.collab_demo,
+                    lambda: demo_load.load(conn),
+                )
+            )
             seeder.modules()
-            demo_load.load(conn)
             conn.execute("SELECT kpi.refresh()")
             conn.execute("SELECT kpi.freeze()")
         return False
     with conn.transaction():
-        Seeder(conn).run()
-        demo_load.load(conn)
+        seeder = Seeder(conn)
+        seeder.run()
+        FAILED.extend(seeder.failed)
+        FAILED.extend(seeder.optional(lambda: demo_load.load(conn)))
     return True
 
 
@@ -1556,6 +1598,10 @@ def main() -> int:
     url = os.environ.get("DATABASE_URL", "postgresql://bms:bms-dev@db:5432/bms")
     with psycopg.connect(url) as conn:
         log.info("đã nạp dữ liệu demo" if seed(conn) else "đã có dữ liệu demo: chỉ bổ sung phần mới")
+    if FAILED:
+        # Tổ chức, người và tài khoản demo đã nạp (đăng nhập được); chỉ các phần sau bị bỏ, xem log phía trên
+        log.error("một số phần demo lỗi: %s", ", ".join(FAILED))
+        return 1
     return 0
 
 
