@@ -385,13 +385,13 @@ services:
       web:
         condition: service_started
       hasura:
-        condition: service_started
+        condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
       seaweedfs:
         condition: service_started
       actions:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "127.0.0.1:${GATEWAY_PORT:-8000}:9080"
     restart: unless-stopped
