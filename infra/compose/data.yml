@@ -79,6 +79,7 @@ services:
 
   kafka:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/kafka
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-kafka:${BAMBOO_TAG:-dev}
@@ -181,6 +182,7 @@ services:
     extends:
       file: base.yml
       service: actions-base
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       args:
         DEP_GROUPS: lakehouse
@@ -199,6 +201,7 @@ services:
 
   trino-core:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/trino
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
@@ -224,6 +227,7 @@ services:
 
   trino-init:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/trino
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
@@ -237,6 +241,7 @@ services:
 
   sleeper:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..
       dockerfile: infra/docker/sleeper.Dockerfile
