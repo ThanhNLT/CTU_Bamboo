@@ -321,3 +321,70 @@ def test_tai_khoan_demo_chuyen_tiep_nhan(conn):
             conn, "SELECT person_id FROM core.position_holder(%s)", uid(seat.tenant, "position", seat.position)
         )
         assert rows[0][1] == holder, user.username
+
+
+def test_du_lieu_demo_khong_gian_h_p_d(conn):
+    """Tin nhắn, lịch, dự án, khóa API bám tình huống của README (ADR #64–#66); chạy lại không nhân đôi."""
+    counts = (
+        "SELECT (SELECT count(*) FROM chat.message), (SELECT count(*) FROM cal.event), (SELECT count(*) FROM pm.project),"
+        " (SELECT count(*) FROM pm.report), (SELECT count(*) FROM api.api_key), (SELECT count(*) FROM api.usage)"
+    )
+    before = conn.execute(counts).fetchone()
+    assert before[0] >= 25 and before[1] >= 12 and before[2] == 5 and before[3] >= 5 and before[4] == 2
+    assert seed.seed(conn) is False
+    assert conn.execute(counts).fetchone() == before, "chạy lại không nhân đôi"
+
+    status = dict(conn.execute("SELECT code, status FROM pm.project").fetchall())
+    assert status == {
+        "DX-2027": "ACTIVE",
+        "CHIP-CR02": "ACTIVE",
+        "DT-SMT4": "PLANNING",
+        "GD-BH": "DONE",
+        "BVX-EMR": "ACTIVE",
+    }
+    assert (
+        one(conn, "SELECT t.code FROM pm.project p JOIN core.tenant t ON t.id = p.tenant_id WHERE p.code = 'BVX-EMR'")
+        == "BVX"
+    )
+    assert (
+        one(conn, "SELECT health FROM pm.report r JOIN pm.project p ON p.id = r.project_id WHERE p.code = 'CHIP-CR02'")
+        == "RED"
+    )
+    assert one(conn, "SELECT late_tasks FROM pm.stats(%s)", uid("TDX", "project", "CHIP-CR02")) >= 1, (
+        "dự án phòng sạch có việc trễ"
+    )
+
+    gd_chip = account_id("gd.chip")
+    trip = conn.execute(
+        """SELECT e.kind, e.all_day, e.starts_at <= now() AND e.ends_at > now() FROM cal.event e
+           JOIN core.person p ON p.id = e.organizer_id WHERE p.idp_subject = %s AND e.kind = 'TRIP'""",
+        (str(gd_chip),),
+    ).fetchone()
+    assert trip == ("TRIP", True, True), "Giám đốc Chip X đang đi công tác"
+    assert one(conn, "SELECT count(*) FROM cal.event WHERE scope = 'UNIT' AND recurrence <> 'NONE'") >= 5
+
+    # Bộ đếm tin chưa đọc khớp số đếm thật; trưởng phòng Mua hàng có tin nhắn riêng chưa đọc
+    assert (
+        one(
+            conn,
+            """SELECT count(*) FROM chat.member WHERE left_at IS NULL
+                        AND unread <> chat.count_unread(conversation_id, person_id, last_read_id)""",
+        )
+        == 0
+    )
+    assert (
+        one(
+            conn,
+            """SELECT sum(m.unread) FROM chat.member m JOIN chat.conversation c ON c.id = m.conversation_id
+                        JOIN core.person p ON p.id = m.person_id WHERE c.kind = 'DIRECT' AND p.idp_subject = %s""",
+            str(account_id("tp.muahang.dienthoai")),
+        )
+        == 2
+    )
+    assert one(conn, "SELECT count(*) FROM chat.message WHERE created_at < now() - interval '1 day'") > 0, (
+        "tin trải qua nhiều ngày"
+    )
+    assert one(conn, "SELECT count(*) FROM collab.notification WHERE kind = 'MENTION'") >= 1
+
+    assert one(conn, "SELECT count(*) FROM api.api_key WHERE revoked_at IS NOT NULL") == 1
+    assert one(conn, "SELECT max(last_used_at) > now() - interval '1 day' FROM api.usage") is True
