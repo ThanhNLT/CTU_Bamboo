@@ -2,7 +2,8 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
 
--- Xóa đề nghị mua sắm do người dùng lập qua ứng dụng (không phải dữ liệu seed) cùng mọi thứ đi kèm.
+-- Xóa đề nghị mua sắm do người dùng lập qua ứng dụng (không phải dữ liệu seed) cùng mọi thứ đi kèm, và tài khoản,
+-- đơn vị, vị trí do kiểm thử E2E tạo (phần cuối).
 -- Dữ liệu seed được lập khi CSDL không có phiên người dùng nên dòng INSERT trong audit.log không có actor_id;
 -- đề nghị lập qua giao diện thì có. Nhật ký kiểm toán chỉ cho ghi thêm nên được giữ nguyên (trigger sẽ ghi thêm
 -- các dòng DELETE, chuỗi băm vẫn hợp lệ). Chạy bằng tools/demo_cleanup.sh, không chạy tay.
@@ -78,9 +79,73 @@ WHERE s.tenant_id = d.tenant_id AND s.prefix = d.prefix AND s.year = d.year AND 
   AND s.last_no > d.mx;
 SELECT kpi.refresh();
 
+-- Tài khoản, đơn vị và vị trí do kiểm thử E2E tạo trên CSDL demo: người "Người Thử …" (trưởng các "Nhóm Thử …"), "Trần
+-- Thị Thử …" (hồ sơ tiếp nhận thử), đơn vị mã E2E_<số>, vị trí có hậu tố ngẫu nhiên kiểu "mvynp2kk". Hồ sơ tiếp nhận thử
+-- giữ lại nhưng bỏ liên kết tới người bị xóa; tài khoản Keycloak tương ứng do demo_cleanup.sh xóa (dòng NOTICE KEYCLOAK).
+CREATE TEMP TABLE test_unit ON COMMIT DROP AS
+SELECT id FROM core.org_unit WHERE code ~ '^E2E_[0-9]+';
+CREATE TEMP TABLE test_pos ON COMMIT DROP AS
+SELECT id FROM core.position WHERE org_unit_id IN (SELECT id FROM test_unit) OR name ~ ' (mv|mu)[0-9a-z]{6}$';
+CREATE TEMP TABLE test_person ON COMMIT DROP AS
+SELECT id, full_name, idp_subject FROM core.person
+WHERE full_name ~ '^(Người Thử|Trần Thị Thử) '
+   OR id IN (SELECT a.person_id FROM core.assignment a WHERE a.position_id IN (SELECT id FROM test_pos)
+             AND NOT EXISTS (SELECT FROM core.assignment b WHERE b.person_id = a.person_id
+                                                             AND b.position_id NOT IN (SELECT id FROM test_pos)));
+
+\echo === Tài khoản, đơn vị, vị trí thử E2E sẽ xóa ===
+SELECT 'người' AS loai, full_name AS ten FROM test_person
+UNION ALL SELECT 'đơn vị', u.code || ' ' || u.name FROM core.org_unit u WHERE u.id IN (SELECT id FROM test_unit)
+UNION ALL SELECT 'vị trí', p.name FROM core.position p WHERE p.id IN (SELECT id FROM test_pos)
+ORDER BY 1, 2;
+
+DO $$
+DECLARE s text;
+BEGIN
+    FOR s IN SELECT idp_subject FROM test_person WHERE idp_subject IS NOT NULL LOOP
+        RAISE NOTICE 'KEYCLOAK %', s;
+    END LOOP;
+END $$;
+
+DELETE FROM chat.member WHERE person_id IN (SELECT id FROM test_person);
+DELETE FROM collab.notification WHERE recipient_id IN (SELECT id FROM test_person) OR actor_id IN (SELECT id FROM test_person);
+UPDATE hr.onboarding_request SET person_id = NULL WHERE person_id IN (SELECT id FROM test_person);
+DELETE FROM core.delegation WHERE delegator_id IN (SELECT id FROM test_person) OR delegate_id IN (SELECT id FROM test_person)
+    OR position_id IN (SELECT id FROM test_pos);
+DELETE FROM core.team_member WHERE person_id IN (SELECT id FROM test_person);
+DELETE FROM core.role_grant WHERE person_id IN (SELECT id FROM test_person) OR position_id IN (SELECT id FROM test_pos)
+    OR scope_unit_id IN (SELECT id FROM test_unit) OR org_unit_id IN (SELECT id FROM test_unit);
+DELETE FROM core.assignment WHERE person_id IN (SELECT id FROM test_person) OR position_id IN (SELECT id FROM test_pos);
+-- Quyết định nhân sự chỉ ghi thêm (giá trị pháp lý): vị trí, người, đơn vị còn được quyết định nhắc tới thì giữ lại,
+-- kết thúc hiệu lực và gỡ tài khoản thay vì xóa
+CREATE TEMP TABLE keep_pos ON COMMIT DROP AS
+SELECT DISTINCT x AS id FROM hr.personnel_decision d,
+    unnest(ARRAY[d.issuer_position_id, d.source_position_id, d.target_position_id]) x
+WHERE x IN (SELECT id FROM test_pos);
+CREATE TEMP TABLE keep_person ON COMMIT DROP AS
+SELECT DISTINCT x AS id FROM hr.personnel_decision d, unnest(ARRAY[d.issuer_id, d.person_id]) x
+WHERE x IN (SELECT id FROM test_person);
+CREATE TEMP TABLE keep_unit ON COMMIT DROP AS
+SELECT DISTINCT a.id FROM core.position p
+JOIN core.org_unit u ON u.id = p.org_unit_id
+JOIN core.org_unit a ON a.tenant_id = u.tenant_id AND u.path <@ a.path
+WHERE p.id IN (SELECT id FROM keep_pos) AND a.id IN (SELECT id FROM test_unit);
+
+UPDATE core.position SET reports_to_id = NULL
+WHERE reports_to_id IN (SELECT id FROM test_pos) AND id NOT IN (SELECT id FROM keep_pos);
+DELETE FROM core.position WHERE id IN (SELECT id FROM test_pos) AND id NOT IN (SELECT id FROM keep_pos);
+UPDATE core.position SET valid_period = tstzrange(lower(valid_period), greatest(lower(valid_period), now()))
+WHERE id IN (SELECT id FROM keep_pos) AND (upper_inf(valid_period) OR upper(valid_period) > now());
+DELETE FROM core.person WHERE id IN (SELECT id FROM test_person) AND id NOT IN (SELECT id FROM keep_person);
+UPDATE core.person SET idp_subject = NULL WHERE id IN (SELECT id FROM keep_person);
+DELETE FROM core.org_unit WHERE id IN (SELECT id FROM test_unit) AND id NOT IN (SELECT id FROM keep_unit);
+UPDATE core.org_unit SET valid_period = tstzrange(lower(valid_period), greatest(lower(valid_period), now()))
+WHERE id IN (SELECT id FROM keep_unit) AND (upper_inf(valid_period) OR upper(valid_period) > now());
+
 \echo === Còn lại ===
 SELECT (SELECT count(*) FROM proc.purchase_request) AS de_nghi,
        (SELECT count(*) FROM ic.ic_order) AS lenh_noi_bo,
-       (SELECT count(*) FROM wf.task WHERE status = 'OPEN') AS viec_dang_cho;
+       (SELECT count(*) FROM wf.task WHERE status = 'OPEN') AS viec_dang_cho,
+       (SELECT count(*) FROM core.person WHERE idp_subject IS NOT NULL) AS nguoi_co_tai_khoan;
 
 :finish;
