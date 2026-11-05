@@ -2,12 +2,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import os
 import pathlib
+import time
 from dataclasses import dataclass, replace
 from urllib.parse import quote, urlparse, urlunparse
 
+import httpx
+
 from bamboo_common.openbao import Bao, BaoError
+
+log = logging.getLogger("config")
 
 SECRET_FIELDS = {
     "bms/actions": {"secret": "actions_secret"},
@@ -100,6 +106,8 @@ class Settings:
     signature_trust_dir: str = "/repo/infra/platform/trust"
     signature_online: bool = True
     setup_allow_unverified: bool = True
+    # Mở trang đăng ký cả khi máy đã có công ty (bản demo: dữ liệu mẫu và đăng ký cùng dùng được); không cần mã 24 giờ
+    setup_open_signup: bool = False
 
 
 DEV_DEFAULTS = {
@@ -178,11 +186,25 @@ def _with_credentials(url: str, username: str, password: str) -> str:
     return urlunparse(parsed._replace(netloc=netloc))
 
 
+def _login(addr: str, approle: str, wait: float) -> Bao:
+    """Đăng nhập AppRole, chờ tối đa `wait` giây khi OpenBao chưa sẵn sàng (đang khởi động, đang khóa chờ
+    `openbao-unseal`) thay vì thoát ngay để Docker khởi động lại liên tục."""
+    deadline = time.monotonic() + wait
+    while True:
+        try:
+            return Bao.from_approle_file(addr, approle)
+        except (httpx.HTTPError, BaoError) as exc:
+            if time.monotonic() >= deadline or (isinstance(exc, BaoError) and exc.status < 500):
+                raise
+            log.warning("chờ OpenBao sẵn sàng: %s", exc)
+            time.sleep(3)
+
+
 def load() -> Settings:
     settings = _from_env()
     addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
     if addr and approle:
-        settings = with_openbao(settings, Bao.from_approle_file(addr, approle))
+        settings = with_openbao(settings, _login(addr, approle, float(os.environ.get("BAO_WAIT_SECONDS", "120"))))
     return settings
 
 
@@ -267,4 +289,5 @@ def _from_env() -> Settings:
         ),
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
+        setup_open_signup=env("SETUP_OPEN_SIGNUP", "false").lower() in ("1", "true", "yes"),
     )

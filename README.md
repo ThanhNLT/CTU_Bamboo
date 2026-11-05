@@ -250,14 +250,14 @@ flowchart LR
 | Vận hành | Hàng đợi tin nhắn (đưa lại tin chết, xác minh biên nhận) | `/admin/queue` |
 | | Vận hành hệ thống: nhật ký tập trung, neo kiểm toán, sao lưu | `/admin/ops` |
 
-Trang AI và OCR chỉ có ở mức RAM 16 GB (xem mục dưới).
+Trang AI và OCR chạy ở mọi cấu hình (cả máy 8 GB, chậm hơn khi đổi mô hình; xem mục dưới).
 
 ## Yêu cầu cấu hình máy tính
 
 | | Tối thiểu | Khuyến nghị |
 |---|---|---|
 | CPU | 4 nhân (vCPU) | 8 nhân |
-| RAM Docker thấy được | 8 GB (chức năng cơ bản, không AI, không OCR) | 16 GB (đầy đủ, gồm AI và OCR); thêm 2 GB nếu bật ClamAV |
+| RAM Docker thấy được | 8 GB (đầy đủ gồm AI và OCR; mỗi lúc một mô hình AI, lượt hỏi đầu sau khi nhàn rỗi chậm hơn) | 16 GB (đầy đủ, mô hình hỏi đáp và mô hình nhúng cùng nằm trên RAM); thêm 2 GB nếu bật ClamAV |
 | Ổ đĩa | 20 GB SSD trống | 50 GB SSD (image OCR khoảng 14 GB, mô hình AI khoảng 3,7 GB) |
 | GPU | Không cần | NVIDIA 8 GB VRAM trở lên để AI, OCR nhanh hơn (đã kiểm trên RTX 4060) |
 | Hệ điều hành | Linux, macOS, Windows 10/11 với WSL2 | Linux |
@@ -273,10 +273,10 @@ Lần đầu cần Internet để tải image và mô hình; sau đó chạy đ�
 ```bash
 git clone https://github.com/ThanhNLT/Bamboo.git
 cd Bamboo
-make up        # tự chọn mức RAM: 8 GB chỉ chức năng cơ bản, 16 GB đầy đủ gồm AI (BAMBOO_RAM=8 hoặc 16 để chọn tay)
+make up        # đầy đủ gồm AI ở mọi mức RAM; máy 8 GB tự tiết kiệm RAM hơn (BAMBOO_RAM=8 hoặc 16 để chọn tay)
 ```
 
-Không có `make` thì dùng `docker compose up -d` (chạy đầy đủ, gồm AI). Không cần tạo `.env` hay chạy migration tay: lệnh build
+Không có `make` thì dùng `docker compose up -d` (cũng chạy đầy đủ, gồm AI). Không cần tạo `.env` hay chạy migration tay: lệnh build
 image từ mã nguồn rồi tự chạy theo thứ tự migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp
 metadata Hasura. Lần đầu mất khoảng 5–10 phút. Theo dõi:
 
@@ -292,7 +292,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
   hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.
 - **Bật thêm:** ClamAV `docker compose --profile scan up -d` (đặt `CLAMAV_HOST=clamav`), gom log container
-  `COMPOSE_PROFILES=ai,logs`.
+  `COMPOSE_PROFILES=logs`.
 - **Dừng:** `docker compose down` (giữ dữ liệu), `docker compose down -v` (xóa sạch, kể cả khóa OpenBao).
 - **Cấu hình:** mọi biến có giá trị mặc định cho máy dev; muốn đổi thì `cp .env.example .env` rồi sửa. Triển khai thật (tên miền
   HTTPS, `BAMBOO_ENV=production`, sao lưu, nâng cấp): [Triển khai production](docs/van-hanh/trien-khai.md).
@@ -490,6 +490,12 @@ và realm Keycloak.
 
 Mật khẩu chung **`demo-password`** (biến `DEMO_PASSWORD`). Đổi người dùng bằng **Đăng xuất** ở thanh bên trái.
 
+**Đăng ký doanh nghiệp mới** dùng được cùng lúc với dữ liệu demo: ở trang đăng nhập bấm **Tạo tài khoản →** (hoặc mở
+<http://localhost:8000/khoi-tao>), khai chủ sở hữu, doanh nghiệp, quy mô, thành viên và công cụ cần bật; hệ thống tạo công ty
+mới cùng tài khoản với mật khẩu tạm (đổi ở lần đăng nhập đầu, chủ sở hữu cài thêm OTP). Biến `SETUP_OPEN_SIGNUP` (bỏ trống thì
+theo `SEED_DEMO`) quyết định trang này có mở khi máy đã có công ty hay không; production đặt `SEED_DEMO=false` nên trang chỉ
+mở khi máy chưa có công ty (ADR #62, #68).
+
 Đăng nhập được nhưng báo **"Tài khoản chưa thuộc tenant nào"** nghĩa là id tài khoản trong Keycloak không khớp người nào
 trong CSDL. Thường do chạy image cũ (bản dựng trước, hoặc kéo từ GHCR) chưa có migration và seed mới: `docker compose up -d`
 và `make up` đều dựng lại image từ mã đang có (`pull_policy: build`; đặt `BAMBOO_PULL_POLICY=missing` trong `.env` để dùng
@@ -501,6 +507,11 @@ ghế nếu bị gỡ. Một phần dữ liệu demo lỗi không còn kéo đ�
 Báo **"Không lấy được danh sách tenant"** kèm mã 503 (hoặc 403 ở bản cũ) nghĩa là cổng API chưa gọi được dịch vụ `actions`
 (đang khởi động, hoặc đã dừng). Trang tự thử lại khoảng một phút; nếu vẫn lỗi, xem `docker compose ps actions` và
 `docker compose logs --tail 80 actions`.
+
+Báo **502 Bad Gateway** và `flow-sync`, `actions` tự khởi động lại liên tục sau khi khởi động lại máy hoặc Docker: OpenBao bị
+khóa (sealed) mỗi lần container khởi động lại. Dịch vụ `openbao-unseal` tự mở khóa trong vài giây và các dịch vụ chờ OpenBao
+tối đa 2 phút (`BAO_WAIT_SECONDS`) thay vì thoát; bản cũ chưa có dịch vụ này thì chạy lại `docker compose up -d`. Kiểm bằng
+`docker compose logs --tail 20 openbao-unseal`.
 
 **Tập đoàn X – công ty mẹ**
 

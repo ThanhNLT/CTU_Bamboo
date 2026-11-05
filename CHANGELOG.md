@@ -4,6 +4,14 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Sửa 502 Bad Gateway và `flow-sync` khởi động lại liên tục sau khi khởi động lại máy hoặc Docker:** OpenBao dùng khóa Shamir nên bị khóa mỗi lần container khởi động lại, còn `openbao-init` chỉ chạy khi `docker compose up`; `actions`, `flow-sync` không đăng nhập AppRole được nên chết ngay và bị khởi động lại liên tục. Dịch vụ mới `openbao-unseal` (`python -m app.openbao_init --watch`) tự unseal lại; các dịch vụ chờ OpenBao sẵn sàng tối đa 120 giây (`BAO_WAIT_SECONDS`) thay vì thoát ngay, sai AppRole (4xx) vẫn báo lỗi ngay. Một lần làm mới số liệu định kỳ lỗi của `flow-sync` chỉ ghi log rồi thử lại vòng sau, không làm chết tiến trình.
+
+**AI chạy mặc định ở mọi cấu hình (ADR #69):** `make up` ở mức RAM 8 không còn dừng Ollama, OCR, `ai-worker`; mức 8 chỉ tiết kiệm bộ nhớ (một mô hình AI trên RAM mỗi lúc, gỡ mô hình sau 2 phút và cho OCR ngủ sau 120 giây nhàn rỗi, heap JVM nhỏ). `OLLAMA_URL` để trống trong `.env` cũ không còn tắt AI. Biến mới `OLLAMA_MAX_LOADED_MODELS` (mặc định 2).
+
+**Trang đăng ký dùng được cùng dữ liệu demo:** trước đây trang đăng ký chỉ mở khi máy chưa có công ty, nên `docker compose up` (nạp sẵn dữ liệu demo) không có nút **Tạo tài khoản**. Biến mới `SETUP_OPEN_SIGNUP` (compose: theo `SEED_DEMO`, mặc định bật) mở đăng ký cả khi đã có công ty, không cần mã thiết lập 24 giờ; trang Keycloak hiện nút **Tạo tài khoản →**, `/khoi-tao` mở trình hướng dẫn. Công ty đăng ký thêm không được quản lý mô-đun trên máy (chỉ công ty khởi tạo máy chủ trống). `/setup/status` thêm trường `empty`; trang `/login` chỉ dừng ở màn hình chọn khi máy chưa có công ty. Production (`SEED_DEMO=false`) giữ cách cũ.
+
+**Sửa ô bo tròn nửa trên sau tiêu đề hộp thoại (Bamboo Glass):** tiêu đề hộp thoại bị tô thêm một lớp kính chồng lên thân hộp thoại, thành ô sáng hơn bo hai góc trên ở mọi hộp thoại có tiêu đề (rõ nhất ở chế độ sáng); tiêu đề nay trong suốt, dùng chung nền kính của hộp thoại.
+
 **Chuyển tiếng Việt / tiếng Anh ở trang đăng nhập và đăng ký:** nút **VI | EN** cạnh nút sáng/tối ở trang đăng ký, khôi phục tài khoản chủ sở hữu, trang chào đăng nhập của ứng dụng và trang nhập tài khoản Keycloak (thay ô chọn thả xuống). Ứng dụng mở Keycloak đúng ngôn ngữ đang chọn (`ui_locales`); chọn trên Keycloak thì ứng dụng theo (cùng khóa `bamboo.locale`, qua cổng API cùng origin).
 
 **Dọn tài khoản thử E2E trên CSDL demo:** `tools/demo_cleanup.sh --apply` xóa thêm người, tài khoản Keycloak (`e2e.*`), đơn vị "Nhóm Thử …" và vị trí có hậu tố ngẫu nhiên do kiểm thử E2E tạo; vị trí, người còn được quyết định nhân sự nhắc tới thì kết thúc hiệu lực và gỡ tài khoản (quyết định chỉ ghi thêm).
