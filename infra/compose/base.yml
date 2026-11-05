@@ -7,6 +7,7 @@
 
 services:
   actions-base:
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..
       dockerfile: infra/docker/python.Dockerfile

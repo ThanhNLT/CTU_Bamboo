@@ -60,6 +60,7 @@ services:
 
   migrate:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..
       dockerfile: infra/docker/migrate.Dockerfile
@@ -81,6 +82,7 @@ services:
 
   seed:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..
       dockerfile: infra/docker/python.Dockerfile
@@ -102,6 +104,7 @@ services:
 
   keycloak:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/keycloak
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-keycloak:${BAMBOO_TAG:-dev}
@@ -186,6 +189,7 @@ services:
 
   openbao:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/openbao
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-openbao:${BAMBOO_TAG:-dev}
@@ -371,6 +375,7 @@ services:
 
   gateway:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/apisix
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-gateway:${BAMBOO_TAG:-dev}
@@ -398,6 +403,7 @@ services:
 
   web:
     logging: *logging
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..
       dockerfile: infra/docker/web.Dockerfile
