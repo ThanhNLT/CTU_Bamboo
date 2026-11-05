@@ -46,6 +46,8 @@ import { AiAssistantPage } from "./pages/ai-assistant";
 import { AiAgentsPage } from "./pages/ai-agents";
 import { BiAnalyticsPage } from "./pages/bi-analytics";
 import { ApiPortalPage } from "./pages/api-portal";
+import { ChatPage } from "./pages/chat";
+import { CalendarPage } from "./pages/work-calendar";
 import { OcrInputPage } from "./pages/ocr-input";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { NotificationSettingsPage, QueuePage } from "./pages/messaging";
@@ -288,6 +290,9 @@ function App() {
                       }
                     />
                     <Route path="/d/api" element={<ApiPortalPage />} />
+                    <Route path="/h/chat" element={<ChatPage />} />
+                    <Route path="/h/chat/:id" element={<ChatPage />} />
+                    <Route path="/h/calendar" element={<CalendarPage />} />
                     <Route
                       path="/d/ledger"
                       element={

@@ -284,7 +284,7 @@ def delete_attachment(conn: psycopg.Connection, session: dict, args: dict, ctx: 
     att, person = _load(conn, session, args["attachment_id"], lock=True)
     if att["uploaded_by"] != uuid.UUID(person):
         raise ActionError("Chỉ người tải lên được xóa tệp", "forbidden", 403)
-    if att["entity_type"] in storage.ENTITY_TYPES:
+    if att["entity_type"] in storage.STATUS_ENTITY_TYPES:
         row = conn.execute(f"SELECT status FROM {att['entity_type']} WHERE id = %s", (att["entity_id"],)).fetchone()
         if row and row[0] not in EDITABLE_STATUSES:
             raise ActionError(

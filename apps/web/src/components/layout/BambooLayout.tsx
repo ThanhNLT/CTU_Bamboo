@@ -9,6 +9,7 @@ import { useLocation } from "react-router";
 import { AppHeader } from "./AppHeader";
 import { AppSider, SiderContent } from "./AppSider";
 import { CommandBar } from "./CommandBar";
+import { MobileTabBar } from "./MobileTabBar";
 
 const COLLAPSED_KEY = "bamboo.sider.collapsed";
 
@@ -53,9 +54,12 @@ export const BambooLayout = ({ children }: PropsWithChildren) => {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader collapsed={collapsed} onCollapsedChange={setCollapsed} onOpenMobileNav={() => setMobileOpen(true)} />
-        <main className="min-w-0 flex-1 px-3 pb-6 pt-4 sm:px-4 md:pl-1 md:pr-3 md:pt-5">{children}</main>
+        <main className="min-w-0 flex-1 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 sm:px-4 md:pb-6 md:pl-1 md:pr-3 md:pt-5">
+          {children}
+        </main>
       </div>
 
+      <MobileTabBar onMore={() => setMobileOpen(true)} />
       <CommandBar />
     </div>
   );
