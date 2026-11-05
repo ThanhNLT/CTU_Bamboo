@@ -68,6 +68,16 @@
           "sizes": "192x192"
         }
       ]
+    },
+    {
+      "name": "Dự án",
+      "url": "/p/projects",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

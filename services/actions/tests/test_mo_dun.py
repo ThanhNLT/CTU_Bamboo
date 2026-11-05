@@ -188,5 +188,8 @@ def test_du_lieu_demo_bat_du_moi_mo_dun():
     demo = re.search(r"DEMO_MODULES = \(([^)]*)\)", text).group(1)
     assert sorted(re.findall(r'"([a-z_]+)"', demo)) == sorted(modules.BY_CODE)
     migration = (ROOT / "db/migrations/bms/042_mo_dun.sql").read_text(encoding="utf-8")
-    upgrade = re.search(r"unnest\(ARRAY\[([^\]]*)\]\)", migration).group(1)
-    assert sorted(re.findall(r"'([a-z_]+)'", upgrade)) == sorted(modules.BY_CODE)
+    upgrade = re.findall(r"'([a-z_]+)'", re.search(r"unnest\(ARRAY\[([^\]]*)\]\)", migration).group(1))
+    # Mô-đun thêm sau 042 được cài cho hệ thống đang chạy ở migration của chính nó (vd 054: project)
+    for later in sorted((ROOT / "db/migrations/bms").glob("*.sql")):
+        upgrade += re.findall(r"SELECT '([a-z_]+)', 'migration \d+'", later.read_text(encoding="utf-8"))
+    assert sorted(upgrade) == sorted(modules.BY_CODE)
