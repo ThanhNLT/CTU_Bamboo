@@ -4,6 +4,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Sửa `docker compose up` trên bản clone Windows không đăng nhập được tài khoản demo:** Git for Windows mặc định `core.autocrlf=true` nên script `.sh` mang CRLF; chép vào image, `migrate` thoát ngay (`env: 'bash\r'`), kéo theo Keycloak, Hasura, actions, cổng API không chạy. Thêm `.gitattributes` buộc checkout LF trên mọi hệ điều hành; image `migrate`, `web`, `gateway`, `kafka`, `trino` bỏ CRLF khỏi script và cấu hình lúc dựng, nên cả bản clone cũ vẫn chạy được bằng một lệnh.
+
 **Chuyển tiếng Việt / tiếng Anh ở trang đăng nhập và đăng ký:** nút **VI | EN** cạnh nút sáng/tối ở trang đăng ký, khôi phục tài khoản chủ sở hữu, trang chào đăng nhập của ứng dụng và trang nhập tài khoản Keycloak (thay ô chọn thả xuống). Ứng dụng mở Keycloak đúng ngôn ngữ đang chọn (`ui_locales`); chọn trên Keycloak thì ứng dụng theo (cùng khóa `bamboo.locale`, qua cổng API cùng origin).
 
 **Dọn tài khoản thử E2E trên CSDL demo:** `tools/demo_cleanup.sh --apply` xóa thêm người, tài khoản Keycloak (`e2e.*`), đơn vị "Nhóm Thử …" và vị trí có hậu tố ngẫu nhiên do kiểm thử E2E tạo; vị trí, người còn được quyết định nhân sự nhắc tới thì kết thúc hiệu lực và gỡ tài khoản (quyết định chỉ ghi thêm).
