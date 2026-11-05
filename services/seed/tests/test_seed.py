@@ -388,3 +388,29 @@ def test_du_lieu_demo_khong_gian_h_p_d(conn):
 
     assert one(conn, "SELECT count(*) FROM api.api_key WHERE revoked_at IS NOT NULL") == 1
     assert one(conn, "SELECT max(last_used_at) > now() - interval '1 day' FROM api.usage") is True
+
+
+def test_tai_khoan_demo_mat_lien_ket_thi_tu_gan_lai(conn):
+    """Người giữ ghế demo bị gỡ tài khoản (sửa tay, tài khoản lệch...) thì lần seed sau gắn lại; mọi tài khoản demo đều
+    thuộc đủ tenant của mình."""
+    gd = str(account_id("gd.dienthoai"))
+    conn.execute("UPDATE core.person SET idp_subject = NULL WHERE idp_subject = %s", (gd,))
+    conn.commit()
+    assert not conn.execute("SELECT 1 FROM core.account_tenants(%s)", (gd,)).fetchone()
+    assert seed.seed(conn) is False
+    assert one(conn, "SELECT tenant_code FROM core.account_tenants(%s)", gd) == "TDX"
+    for user in [*DEMO_USERS, *HR_DEMO_USERS, *TRANSFER_DEMO_USERS]:
+        tenants = {r[0] for r in conn.execute("SELECT tenant_code FROM core.account_tenants(%s)", (str(user.id),))}
+        assert tenants == {s.tenant for s in user.seats}, user.username
+
+
+def test_phan_demo_loi_khong_keo_do_seed(conn, monkeypatch):
+    def collab_demo(self):
+        raise RuntimeError("giả lập lỗi")
+
+    monkeypatch.setattr(seed.Seeder, "collab_demo", collab_demo)
+    persons = one(conn, "SELECT count(*) FROM core.person WHERE idp_subject IS NOT NULL")
+    assert seed.seed(conn) is False
+    assert seed.FAILED == ["collab_demo"], "chỉ phần lỗi bị bỏ"
+    assert one(conn, "SELECT count(*) FROM core.person WHERE idp_subject IS NOT NULL") == persons
+    assert one(conn, "SELECT count(*) FROM pm.project") == 5, "dữ liệu đã có không bị mất"
