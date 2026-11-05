@@ -6,6 +6,7 @@ import { useLogout } from "@refinedev/core";
 import { useKBar } from "@refinedev/kbar";
 import { Dropdown, Popover, type MenuProps } from "antd";
 import {
+  BellRing,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -13,6 +14,7 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  MonitorSmartphone,
   Moon,
   Search,
   Sparkles,
@@ -26,6 +28,7 @@ import { ColorModeContext } from "../../contexts/color-mode/context";
 import { LOCALES, setLocale, trf, useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
 import { NotificationBell } from "../notifications/Bell";
+import { askNotifications, notificationsSupported, useInstall } from "../../pwa";
 import { OnlinePeople } from "./OnlinePeople";
 import { EXTRA_PAGES, findActive, NAV_GROUPS } from "./nav";
 import { BambooLogo } from "./BambooLogo";
@@ -225,6 +228,8 @@ const UserMenu = () => {
   const { t } = useLocale();
   const { tenant } = useSession();
   const { mutate: logout } = useLogout();
+  const install = useInstall();
+  const canAsk = notificationsSupported() && Notification.permission === "default";
   const items: MenuProps["items"] = [
     {
       key: "me",
@@ -237,6 +242,26 @@ const UserMenu = () => {
       ),
     },
     { type: "divider" },
+    ...(install
+      ? [
+          {
+            key: "install",
+            icon: <MonitorSmartphone className="h-3.5 w-3.5" />,
+            label: t("Cài ứng dụng lên thiết bị"),
+            onClick: () => void install(),
+          },
+        ]
+      : []),
+    ...(canAsk
+      ? [
+          {
+            key: "notify",
+            icon: <BellRing className="h-3.5 w-3.5" />,
+            label: t("Bật thông báo trên thiết bị này"),
+            onClick: () => void askNotifications(),
+          },
+        ]
+      : []),
     { key: "logout", icon: <LogOut className="h-3.5 w-3.5" />, label: t("Đăng xuất"), onClick: () => logout() },
   ];
   return (

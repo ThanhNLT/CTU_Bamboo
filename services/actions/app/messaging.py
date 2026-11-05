@@ -28,6 +28,10 @@ KINDS = {
     "PROCESS_CHANGE_RESOLVED": "Yêu cầu sửa quy trình đã được xử lý",
     "PROCESS_AUTOMATION": "Thông báo từ quy trình tự động",
     "IC_ORDER_NEW": "Đơn hàng nội bộ mới",
+    "CHAT_MESSAGE": "Có tin nhắn riêng khi tôi không mở ứng dụng",
+    "CALENDAR_INVITE": "Được mời tham dự lịch công tác",
+    "CALENDAR_REMINDER": "Nhắc lịch công tác sắp đến",
+    "CALENDAR_CHANGED": "Lịch tôi tham dự đổi giờ hoặc bị hủy",
 }
 
 

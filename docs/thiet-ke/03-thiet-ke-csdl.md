@@ -266,6 +266,24 @@ Hai schema `live`, `api` không nằm trong publication CDC.
 - `api.api_key`: khóa API của công ty (tên, tiền tố hiển thị, SHA-256, phạm vi, dải IP, hạn dùng ≤ 366 ngày, người tạo, thu
   hồi, lần dùng cuối); có nhật ký kiểm toán. `api.usage`: lượt gọi và lỗi theo khóa, ngày.
 
+### 5.9b. Nhắn tin và lịch công tác (053, [ADR #65](#adr-65))
+
+Hai schema `chat`, `cal` không nằm trong publication CDC; tin nhắn không ghi nhật ký kiểm toán.
+
+- `chat.conversation`: `DIRECT` (một cuộc cho mỗi cặp, `direct_key`), `GROUP` (có tên), `UNIT` (một kênh cho mỗi đơn vị,
+  `org_unit_id`); `last_message_at`, `last_preview` cập nhật khi có tin. `chat.member`: vai trò chủ nhóm/thành viên, nguồn
+  (`MANUAL` / `UNIT`), `left_at`, `last_read_id` (chỉ tiến), `muted`. `chat.sync_units(tenant)` đồng bộ thành viên kênh đơn vị
+  theo phân công trong cây con (trigger cấp câu lệnh trên `core.assignment`, `core.org_unit`; `chat.sync_all()` mỗi phút).
+- `chat.message` (khóa `bigint` tăng dần): người gửi, nội dung ≤ 4.000 ký tự, tệp (`core.attachment` loại `chat.conversation`),
+  tin trả lời, người được nhắc; `edited_at`, `deleted_at` (thu hồi xóa nội dung). Computed field `chat.conversation_can_read`,
+  `chat.conversation_unread`, `chat.conversation_display_name`. `wf.entity_can_read`, `collab.entity_tenant` bọc hàm gốc
+  (`*_base`) để thêm loại `chat.conversation`.
+- `cal.event`: tiêu đề, loại, thời gian (UTC; cả ngày chuẩn hóa theo giờ Việt Nam), lặp `DAILY`/`WEEKLY`/`MONTHLY` đến
+  `recur_until`, phạm vi `PERSONAL`/`UNIT` (`org_unit_id`), nhắc trước, `cancelled_at`; có nhật ký kiểm toán. `cal.attendee`:
+  trả lời `PENDING`/`ACCEPTED`/`DECLINED`/`TENTATIVE`. `cal.occurrences(event, from, to)` trải lần lặp; `cal.can_read`,
+  `cal.can_manage_unit` (trưởng đơn vị hoặc cấp trên, hoặc quyền `cal.unit.manage`); `cal.send_reminders()` ghi
+  `cal.reminder_sent` để mỗi lần diễn ra chỉ nhắc một lần.
+
 ### 5.10. Trí tuệ số
 
 - `core.ai_agent`: tác tử của tenant (mô hình Ollama, trạng thái, guardrail `scope_guard`/`pii_guard`/`prompt_guard`/`think`,
