@@ -8,6 +8,9 @@ RUN wget -q -O /tmp/coraza.zip \
  && echo "${CORAZA_SHA256}  /tmp/coraza.zip" | sha256sum -c - \
  && unzip -q /tmp/coraza.zip -d /tmp/coraza \
  && test -f /tmp/coraza/coraza-proxy-wasm.wasm
+# bỏ CRLF của bản clone Windows (core.autocrlf=true): APISIX standalone cần dòng `#END` đúng nguyên văn
+COPY config.yaml apisix.yaml /tmp/conf/
+RUN sed -i 's/\r$//' /tmp/conf/config.yaml /tmp/conf/apisix.yaml
 
 FROM apache/apisix:3.19.0-debian
 LABEL org.opencontainers.image.title="bamboo-gateway" \
@@ -17,6 +20,6 @@ LABEL org.opencontainers.image.title="bamboo-gateway" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV APISIX_STAND_ALONE=true
 COPY --from=coraza --chown=apisix:0 /tmp/coraza/coraza-proxy-wasm.wasm /usr/local/apisix/proxywasm/coraza-proxy-wasm.wasm
-COPY --chown=apisix:0 config.yaml /usr/local/apisix/conf/config.yaml
-COPY --chown=apisix:0 apisix.yaml /usr/local/apisix/conf/apisix.yaml
+COPY --from=coraza --chown=apisix:0 /tmp/conf/config.yaml /usr/local/apisix/conf/config.yaml
+COPY --from=coraza --chown=apisix:0 /tmp/conf/apisix.yaml /usr/local/apisix/conf/apisix.yaml
 EXPOSE 9080
