@@ -149,6 +149,32 @@ _Tránh dùng_: PII (trong giao diện), thông tin bí mật
 Giá trị đã thay phần lớn ký tự để người đọc vẫn đối chiếu được mà không đọc được toàn bộ: `•••••••••789`, `0912 *** 678`, `n***@…`. Nhật ký kiểm toán chỉ hiện bản che; ô trao đổi đề nghị gửi bản che khi phát hiện số CCCD, điện thoại, tài khoản.
 _Tránh dùng_: mask, ẩn (khi giá trị vẫn hiện một phần)
 
+## Dự án
+
+**Dự án** (`pm.project`):
+Một việc lớn có mã, đơn vị chủ trì, người quản lý, thời gian và văn bản kế hoạch chi tiết (mục tiêu, phạm vi, sản phẩm bàn giao, phương pháp, rủi ro, các bên liên quan). Thành viên là người quản lý, thành viên hoặc người theo dõi.
+_Tránh dùng_: chương trình, đề án (khi nói dự án trong hệ thống)
+
+**Công việc dự án** (`pm.task`):
+Một mục trong cấu trúc phân rã công việc (WBS) của dự án, đánh số 1, 1.1, 1.2…; **công việc tổng hợp** có việc con, ngày và % lấy từ con; **mốc** là công việc không kéo dài, đánh dấu một kết quả.
+_Tránh dùng_: việc duyệt (việc duyệt là `wf.task` trong Hộp việc), nhiệm vụ
+
+**Phụ thuộc**:
+Công việc sau chỉ bắt đầu sau khi công việc trước kết thúc (cộng độ trễ). Đổi ngày việc trước thì hệ thống tự dời các việc sau.
+_Tránh dùng_: liên kết công việc
+
+**Đường găng**:
+Chuỗi công việc không còn ngày dự trữ: chậm một ngày ở đây là dự án kết thúc muộn một ngày.
+_Tránh dùng_: đường tới hạn
+
+**Đường cơ sở**:
+Ngày của mọi công việc được chốt tại một thời điểm để so với kế hoạch hiện tại (chậm/sớm bao nhiêu ngày).
+_Tránh dùng_: kế hoạch gốc (khi đã có đường cơ sở)
+
+**Báo cáo tiến độ** (`pm.report`):
+Báo cáo của người quản lý dự án cho một kỳ, kèm số liệu chụp lúc lập: % kế hoạch, % thực hiện, **SPI** (thực hiện chia kế hoạch, dưới 1 là chậm) và số việc trễ. Đã lập thì không sửa.
+_Tránh dùng_: báo cáo KPI (KPI là chỉ số của công ty)
+
 ## Kiểm toán và cộng tác
 
 **Nhật ký kiểm toán** (`audit.log`):
