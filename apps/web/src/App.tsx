@@ -48,6 +48,7 @@ import { BiAnalyticsPage } from "./pages/bi-analytics";
 import { ApiPortalPage } from "./pages/api-portal";
 import { ChatPage } from "./pages/chat";
 import { CalendarPage } from "./pages/work-calendar";
+import { ProjectListPage, ProjectPage } from "./pages/projects";
 import { OcrInputPage } from "./pages/ocr-input";
 import { OperationsCenterPage } from "./pages/operations-center";
 import { NotificationSettingsPage, QueuePage } from "./pages/messaging";
@@ -293,6 +294,22 @@ function App() {
                     <Route path="/h/chat" element={<ChatPage />} />
                     <Route path="/h/chat/:id" element={<ChatPage />} />
                     <Route path="/h/calendar" element={<CalendarPage />} />
+                    <Route
+                      path="/p/projects"
+                      element={
+                        <RequireModule module="project">
+                          <ProjectListPage />
+                        </RequireModule>
+                      }
+                    />
+                    <Route
+                      path="/p/projects/:id"
+                      element={
+                        <RequireModule module="project">
+                          <ProjectPage />
+                        </RequireModule>
+                      }
+                    />
                     <Route
                       path="/d/ledger"
                       element={

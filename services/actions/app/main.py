@@ -55,6 +55,7 @@ from . import (
     process_automation,
     process_design,
     process_regulation,
+    projects,
     receipts,
     search,
     semantic,
@@ -214,6 +215,7 @@ HANDLERS = {
     **lineage_sync.HANDLERS,
     **chat.HANDLERS,
     **work_calendar.HANDLERS,
+    **projects.HANDLERS,
 }
 
 

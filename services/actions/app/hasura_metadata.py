@@ -28,6 +28,7 @@ SCHEMAS = (
     "api",
     "chat",
     "cal",
+    "pm",
 )
 HIDDEN = {
     ("wf", "flow_sync"),
@@ -102,9 +103,21 @@ CAN_READ = {
     # Nhắn tin, lịch công tác (ADR #65): thành viên cuộc trò chuyện; người tổ chức, người được mời, người trong đơn vị
     ("chat", "conversation"): ("chat", "conversation_can_read"),
     ("cal", "event"): ("cal", "event_can_read"),
+    # Dự án (ADR #66): thành viên, người quản lý, người có pm.project.read/manage trên đơn vị chủ trì
+    ("pm", "project"): ("pm", "project_can_read"),
+}
+
+# Computed field chỉ nhận dòng (không cần phiên)
+ROW_COMPUTED = {
+    ("pm", "project"): [
+        ("progress", ("pm", "project_progress"), "% thực hiện (bình quân theo số ngày của công việc lá)"),
+        ("planned", ("pm", "project_planned"), "% kế hoạch tới hôm nay"),
+        ("late_tasks", ("pm", "project_late_tasks"), "Số công việc quá hạn chưa xong"),
+    ],
 }
 
 EXTRA_COMPUTED = {
+    ("pm", "project"): [("can_manage", ("pm", "project_can_manage"), "Người gọi sửa được kế hoạch dự án không")],
     ("chat", "conversation"): [
         ("unread", ("chat", "conversation_unread"), "Số tin chưa đọc của người gọi"),
         (
@@ -175,6 +188,10 @@ SELECT_FILTER = {
     ("chat", "member"): {"_and": [TENANT, {"conversation": {"can_read": {"_eq": True}}}]},
     ("chat", "message"): {"_and": [TENANT, {"conversation": {"can_read": {"_eq": True}}}]},
     ("cal", "attendee"): {"_and": [TENANT, {"event": {"can_read": {"_eq": True}}}]},
+    **{
+        ("pm", t): {"_and": [TENANT, {"project": {"can_read": {"_eq": True}}}]}
+        for t in ("member", "task", "dependency", "report")
+    },
     ("core", "ai_agent"): {"_and": [TENANT, IS_AI_ADMIN]},
     ("core", "ai_question"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "attachment_ocr"): {"_and": [TENANT, {"attachment": {"can_read": {"_eq": True}}}]},
@@ -202,6 +219,7 @@ MODULE_TABLES = {
     **{("kpi", t): "data" for t in ("chart", "definition", "pin", "value")},
     **{("meta", t): "data" for t in ("data_issue", "lineage_edge", "lineage_node", "pipeline_run", "quality_check")},
     **{("core", t): "ai" for t in ("ai_agent", "ai_question", "attachment_ocr")},
+    **{("pm", t): "project" for t in ("project", "member", "task", "dependency", "report")},
 }
 
 
@@ -340,6 +358,135 @@ def _action(
     }
 
 
+def _project_actions() -> list[dict]:
+    """Quản lý dự án (ADR #66): đọc chi tiết, sửa kế hoạch, công việc, báo cáo, văn bản PDF; mô-đun `project`."""
+    roles = [ROLE, ADMIN_ROLE]
+    return [
+        _action(
+            "pm_project_detail",
+            "query",
+            [("id", "uuid!")],
+            "ProjectDetail!",
+            roles,
+            "Dự án kèm WBS đã tính ngày, % của công việc tổng hợp, đường găng, dự trữ, số liệu tiến độ, báo cáo",
+        ),
+        _action(
+            "pm_project_save",
+            "mutation",
+            [("project", "jsonb!")],
+            "ProjectSaved!",
+            roles,
+            "Lập hoặc sửa dự án và văn bản kế hoạch",
+        ),
+        _action(
+            "pm_members_set",
+            "mutation",
+            [("project_id", "uuid!"), ("members", "jsonb!")],
+            "ProjectMembers!",
+            roles,
+            "Đặt thành viên và vai trò của dự án; đồng bộ nhóm nhắn tin của dự án",
+        ),
+        _action(
+            "pm_task_save",
+            "mutation",
+            [("task", "jsonb!")],
+            "ProjectTaskSaved!",
+            roles,
+            "Thêm hoặc sửa công việc, phụ thuộc; tự dời công việc phía sau cho thỏa phụ thuộc",
+        ),
+        _action(
+            "pm_task_delete", "mutation", [("id", "uuid!")], "ProjectTaskDeleted!", roles, "Xóa công việc và cây con"
+        ),
+        _action(
+            "pm_task_reorder",
+            "mutation",
+            [("id", "uuid!"), ("direction", "String!")],
+            "ProjectTaskMoved!",
+            roles,
+            "Đổi thứ tự (up/down) hoặc cấp (indent/outdent) của công việc",
+        ),
+        _action(
+            "pm_baseline_set",
+            "mutation",
+            [("project_id", "uuid!")],
+            "ProjectBaseline!",
+            roles,
+            "Chốt đường cơ sở của kế hoạch",
+        ),
+        _action(
+            "pm_report_create",
+            "mutation",
+            [("report", "jsonb!")],
+            "ProjectReportCreated!",
+            roles,
+            "Lập báo cáo tiến độ theo kỳ (chụp số liệu, báo thành viên)",
+        ),
+        _action(
+            "pm_plan_pdf",
+            "query",
+            [("project_id", "uuid!")],
+            "ProjectPdf!",
+            roles,
+            "Văn bản kế hoạch dự án (PDF)",
+            timeout=60,
+        ),
+        _action(
+            "pm_report_pdf",
+            "query",
+            [("report_id", "uuid!")],
+            "ProjectPdf!",
+            roles,
+            "Báo cáo tiến độ (PDF)",
+            timeout=60,
+        ),
+    ]
+
+
+PROJECT_TYPES = [
+    {
+        "name": "ProjectDetail",
+        "fields": [
+            {"name": "project", "type": "jsonb!"},
+            {"name": "members", "type": "[jsonb!]!"},
+            {"name": "tasks", "type": "[jsonb!]!"},
+            {"name": "dependencies", "type": "[jsonb!]!"},
+            {"name": "stats", "type": "jsonb!"},
+            {"name": "reports", "type": "[jsonb!]!"},
+            {"name": "can_manage", "type": "Boolean!"},
+            {"name": "my_role", "type": "String"},
+            {"name": "warnings", "type": "[String!]!"},
+        ],
+    },
+    {"name": "ProjectSaved", "fields": [{"name": "id", "type": "uuid!"}, {"name": "created", "type": "Boolean!"}]},
+    {"name": "ProjectMembers", "fields": [{"name": "members", "type": "Int!"}]},
+    {"name": "ProjectTaskSaved", "fields": [{"name": "id", "type": "uuid!"}, {"name": "shifted", "type": "Int!"}]},
+    {"name": "ProjectTaskDeleted", "fields": [{"name": "deleted", "type": "Int!"}]},
+    {"name": "ProjectTaskMoved", "fields": [{"name": "id", "type": "uuid!"}]},
+    {"name": "ProjectBaseline", "fields": [{"name": "tasks", "type": "Int!"}]},
+    {
+        "name": "ProjectReportCreated",
+        "fields": [
+            {"name": "id", "type": "uuid!"},
+            {"name": "health", "type": "String!"},
+            {"name": "planned_pct", "type": "Float"},
+            {"name": "actual_pct", "type": "Float"},
+            {"name": "spi", "type": "Float"},
+            {"name": "late_tasks", "type": "Int"},
+        ],
+    },
+    {
+        "name": "ProjectPdf",
+        "fields": [
+            {"name": "file_name", "type": "String!"},
+            {"name": "url", "type": "String!"},
+            {"name": "check_code", "type": "String!"},
+            {"name": "cached", "type": "Boolean!"},
+            {"name": "expires_in", "type": "Int!"},
+        ],
+    },
+]
+
+
 def _attachment_rel() -> dict:
     return {
         "name": "attachment",
@@ -422,9 +569,12 @@ def build(conn: psycopg.Connection) -> dict:
     for s, t, ts, tt, *_ in fks:
         fk_count[(s, t, ts, tt)] += 1
 
-    for s, t, ts, tt, _name, src_cols, dst_cols in fks:
+    # Schema mới xử lý sau cùng: trùng tên quan hệ mảng thì schema mới nhận tiền tố, tên cũ của API giữ nguyên
+    late = ("chat", "cal", "pm")
+    for s, t, ts, tt, _name, src_cols, dst_cols in sorted(fks, key=lambda f: f[0] in late):
         own = [c for c in src_cols if c != "tenant_id"] or list(src_cols)
-        obj_name = _strip(own[0])
+        # Khóa ngoại ghép (dự án, công việc) đặt tên theo cột cuối: parent, predecessor, successor
+        obj_name = _strip(own[-1])
         if obj_name in columns[(s, t)]:
             obj_name = f"{obj_name}_{tt}"
         mapping = dict(zip(src_cols, dst_cols, strict=True))
@@ -434,6 +584,13 @@ def build(conn: psycopg.Connection) -> dict:
         arr = _plural(t) if fk_count[(s, t, ts, tt)] == 1 else f"{_plural(t)}_by_{obj_name}"
         if (s, t) == (ts, tt):
             arr = "children" if obj_name == "parent" else f"{_plural(t)}_by_{obj_name}"
+        taken = {
+            r["name"]
+            for k in ("object_relationships", "array_relationships")
+            for r in entries.get((ts, tt), {}).get(k, [])
+        }
+        if arr in taken:  # bảng cùng tên ở hai schema (wf.task, pm.task): thêm tiền tố schema
+            arr = f"{s}_{arr}"
         add_rel("array", (ts, tt), arr, (s, t), {v: k for k, v in mapping.items()})
 
     for kind, source, name, target, mapping in MANUAL_RELATIONSHIPS:
@@ -448,6 +605,11 @@ def build(conn: psycopg.Connection) -> dict:
                     "comment": "Người gọi có được xem chứng từ không",
                 }
             ]
+    for key, fields in ROW_COMPUTED.items():
+        for name, (fs, fn), comment in fields:
+            entries[key].setdefault("computed_fields", []).append(
+                {"name": name, "definition": {"function": {"schema": fs, "name": fn}}, "comment": comment}
+            )
     for key, fields in EXTRA_COMPUTED.items():
         for name, (fs, fn), comment in fields:
             entries[key].setdefault("computed_fields", []).append(
@@ -948,6 +1110,7 @@ def build(conn: psycopg.Connection) -> dict:
                 [ROLE, ADMIN_ROLE],
                 "Người được mời nhận lời, từ chối hoặc chưa chắc (ADR #65)",
             ),
+            *_project_actions(),
             _action(
                 "semantic_catalog",
                 "query",
@@ -2406,6 +2569,7 @@ def build(conn: psycopg.Connection) -> dict:
                     "name": "CalendarResponded",
                     "fields": [{"name": "id", "type": "uuid!"}, {"name": "response", "type": "String!"}],
                 },
+                *PROJECT_TYPES,
                 {
                     "name": "SemanticCatalog",
                     "fields": [
