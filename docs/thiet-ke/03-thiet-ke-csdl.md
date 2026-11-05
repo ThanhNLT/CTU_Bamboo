@@ -300,6 +300,16 @@ Schema `pm` thuộc mô-đun `project`, không nằm trong publication CDC; dự
 - `pm.can_read`, `pm.can_manage` (thành viên / người quản lý, hoặc quyền `pm.project.read` / `pm.project.manage` trên đơn vị
   chủ trì); `pm.stats(dự án, ngày)` tính thực hiện %, kế hoạch %, SPI, số việc trễ trên công việc lá, trọng số theo số ngày.
 
+### 5.9d. Tối ưu H, P, D (055, [ADR #67](#adr-67))
+
+- `chat.member.unread`: số tin chưa đọc giữ sẵn (trigger `message_0_count` cộng/trừ khi gửi, thu hồi; `member_before_update`
+  trừ phần đã đọc khi mốc tiến; vào lại cuộc thì đếm lại bằng `chat.count_unread`). `chat.conversation_unread` đọc cột này.
+- `cal.occurrences` trải lần lặp từ lần đầu giao với khoảng xem; `cal.last_end(...)` (thời điểm cuối cùng lịch còn diễn ra) có
+  chỉ mục `event_active`, `event_reminder`.
+- `pm.task_parent` (chỉ mục `parent_id`); `pm.project_stats(dự án)` jsonb thay ba computed field cũ.
+- `api.usage.last_used_at`, `last_ip` thay cột cùng tên của `api.api_key` (computed field `api.api_key_last_used_at`,
+  `api.api_key_last_ip`).
+
 ### 5.10. Trí tuệ số
 
 - `core.ai_agent`: tác tử của tenant (mô hình Ollama, trạng thái, guardrail `scope_guard`/`pii_guard`/`prompt_guard`/`think`,

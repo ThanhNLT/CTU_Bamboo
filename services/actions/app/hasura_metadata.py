@@ -110,9 +110,16 @@ CAN_READ = {
 # Computed field chỉ nhận dòng (không cần phiên)
 ROW_COMPUTED = {
     ("pm", "project"): [
-        ("progress", ("pm", "project_progress"), "% thực hiện (bình quân theo số ngày của công việc lá)"),
-        ("planned", ("pm", "project_planned"), "% kế hoạch tới hôm nay"),
-        ("late_tasks", ("pm", "project_late_tasks"), "Số công việc quá hạn chưa xong"),
+        (
+            "stats",
+            ("pm", "project_stats"),
+            "Số liệu tiến độ: actual_pct, planned_pct, spi, late_tasks, total_tasks, done_tasks (một lần tính, ADR #67)",
+        ),
+    ],
+    # Lần dùng khóa API đọc từ dòng đếm theo ngày (ADR #67)
+    ("api", "api_key"): [
+        ("last_used_at", ("api", "api_key_last_used_at"), "Lần gọi gần nhất"),
+        ("last_ip", ("api", "api_key_last_ip"), "IP của lần gọi gần nhất"),
     ],
 }
 
@@ -640,8 +647,8 @@ def build(conn: psycopg.Connection) -> dict:
             if "deleted_at" in columns[key] and key != ("collab", "comment"):
                 perm["filter"]["_and"].append({"deleted_at": {"_is_null": True}})
             perm["computed_fields"] = [f["name"] for f in entry["computed_fields"]]
-        elif key in EXTRA_COMPUTED:
-            perm["computed_fields"] = [name for name, _, _ in EXTRA_COMPUTED[key]]
+        elif key in EXTRA_COMPUTED or key in ROW_COMPUTED:
+            perm["computed_fields"] = [f["name"] for f in entry["computed_fields"]]
         entry["select_permissions"] = [{"role": ROLE, "permission": perm}, {"role": ADMIN_ROLE, "permission": perm}]
 
     pr = entries[("proc", "purchase_request")]
