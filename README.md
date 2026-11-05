@@ -483,7 +483,8 @@ và realm Keycloak.
   triệu thêm Tổng giám đốc. Đơn vị trực thuộc tập đoàn từ 50 triệu lên thẳng Tổng giám đốc. Bệnh viện X: thiết bị y tế luôn hai
   bước.
 - **Dọn dữ liệu thử:** `tools/demo_cleanup.sh` (xem trước), `tools/demo_cleanup.sh --apply` (xóa đề nghị do người dùng lập
-  khi thử).
+  khi thử, cùng tài khoản, đơn vị, vị trí do kiểm thử E2E tạo: "Người Thử …", "Nhóm Thử …", tài khoản Keycloak `e2e.*`;
+  vị trí, người còn được quyết định nhân sự nhắc tới thì chỉ kết thúc hiệu lực và gỡ tài khoản vì quyết định không xóa được).
 
 ### Tài khoản demo
 
