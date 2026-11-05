@@ -11,7 +11,24 @@ import psycopg
 
 from . import config
 
-SCHEMAS = ("core", "mdm", "wf", "proc", "ic", "mfg", "collab", "audit", "hr", "iot", "meta", "kpi", "live", "api")
+SCHEMAS = (
+    "core",
+    "mdm",
+    "wf",
+    "proc",
+    "ic",
+    "mfg",
+    "collab",
+    "audit",
+    "hr",
+    "iot",
+    "meta",
+    "kpi",
+    "live",
+    "api",
+    "chat",
+    "cal",
+)
 HIDDEN = {
     ("wf", "flow_sync"),
     ("wf", "v_flow_state"),
@@ -36,6 +53,7 @@ HIDDEN = {
     ("core", "module_install"),
     ("core", "login_device"),
     ("core", "external_module"),
+    ("cal", "reminder_sent"),
 }
 ROLE = "user"
 ADMIN_ROLE = "platform_admin"
@@ -81,9 +99,20 @@ CAN_READ = {
     ("ic", "ic_order"): ("ic", "ic_order_can_read"),
     ("proc", "purchase_order"): ("proc", "purchase_order_can_read"),
     ("collab", "kb_document"): ("collab", "kb_document_can_read"),
+    # Nhắn tin, lịch công tác (ADR #65): thành viên cuộc trò chuyện; người tổ chức, người được mời, người trong đơn vị
+    ("chat", "conversation"): ("chat", "conversation_can_read"),
+    ("cal", "event"): ("cal", "event_can_read"),
 }
 
 EXTRA_COMPUTED = {
+    ("chat", "conversation"): [
+        ("unread", ("chat", "conversation_unread"), "Số tin chưa đọc của người gọi"),
+        (
+            "display_name",
+            ("chat", "conversation_display_name"),
+            "Tên hiển thị theo người xem (cuộc hai người: tên người kia)",
+        ),
+    ],
     ("kpi", "chart"): [("is_mine", ("kpi", "chart_is_mine"), "Biểu đồ BI do người gọi tạo (sửa, xóa được)")],
     ("hr", "onboarding_request"): [
         (
@@ -143,6 +172,9 @@ SELECT_FILTER = {
     # Biểu đồ BI: của mình hoặc được chia sẻ trong công ty
     ("kpi", "chart"): {"_and": [TENANT, {"_or": [{"person_id": {"_eq": ME}}, {"shared": {"_eq": True}}]}]},
     ("core", "v_ai_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
+    ("chat", "member"): {"_and": [TENANT, {"conversation": {"can_read": {"_eq": True}}}]},
+    ("chat", "message"): {"_and": [TENANT, {"conversation": {"can_read": {"_eq": True}}}]},
+    ("cal", "attendee"): {"_and": [TENANT, {"event": {"can_read": {"_eq": True}}}]},
     ("core", "ai_agent"): {"_and": [TENANT, IS_AI_ADMIN]},
     ("core", "ai_question"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "attachment_ocr"): {"_and": [TENANT, {"attachment": {"can_read": {"_eq": True}}}]},
@@ -551,6 +583,32 @@ def build(conn: psycopg.Connection) -> dict:
     ]
     presence["delete_permissions"] = [{"role": r, "permission": {"filter": own_presence}} for r in (ROLE, ADMIN_ROLE)]
 
+    # Tin nhắn (ADR #65): thành viên gửi thẳng qua GraphQL; người gửi sửa nội dung (24 giờ) hoặc thu hồi tin của mình.
+    # Trigger chat.message_before_write kiểm lại thành viên, tệp, tin trả lời và giữ nguyên các cột không được đổi.
+    in_conversation = {"conversation": {"can_read": {"_eq": True}}}
+    message = entries[("chat", "message")]
+    message["insert_permissions"] = [
+        {
+            "role": r,
+            "permission": {
+                "check": {"_and": [TENANT, in_conversation]},
+                "set": {"tenant_id": "X-Hasura-Tenant-Id", "sender_id": ME},
+                "columns": ["conversation_id", "body", "attachment_id", "reply_to_id", "mentions"],
+            },
+        }
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    own_message = {"_and": [TENANT, {"sender_id": {"_eq": ME}}, {"deleted_at": {"_is_null": True}}]}
+    message["update_permissions"] = [
+        {"role": r, "permission": {"filter": own_message, "check": TENANT, "columns": ["body", "deleted_at"]}}
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+    own_member = {"_and": [TENANT, {"person_id": {"_eq": ME}}]}
+    entries[("chat", "member")]["update_permissions"] = [
+        {"role": r, "permission": {"filter": own_member, "check": own_member, "columns": ["last_read_id", "muted"]}}
+        for r in (ROLE, ADMIN_ROLE)
+    ]
+
     chart = entries[("kpi", "chart")]
     chart["insert_permissions"] = [
         {
@@ -825,6 +883,70 @@ def build(conn: psycopg.Connection) -> dict:
                 "ApiKeyRevoked!",
                 [ROLE, ADMIN_ROLE],
                 "Quản trị viên công ty thu hồi khóa API, có hiệu lực ngay (ADR #64)",
+            ),
+            _action(
+                "chat_open_direct",
+                "mutation",
+                [("person_id", "uuid!")],
+                "ChatConversationRef!",
+                [ROLE, ADMIN_ROLE],
+                "Mở (hoặc tạo) cuộc nhắn tin hai người với đồng nghiệp cùng công ty (ADR #65)",
+            ),
+            _action(
+                "chat_create_group",
+                "mutation",
+                [("title", "String!"), ("member_ids", "[uuid!]!")],
+                "ChatConversationRef!",
+                [ROLE, ADMIN_ROLE],
+                "Lập nhóm nhắn tin, người tạo là chủ nhóm (ADR #65)",
+            ),
+            _action(
+                "chat_update_group",
+                "mutation",
+                [("conversation_id", "uuid!"), ("title", "String"), ("add_ids", "[uuid!]"), ("remove_ids", "[uuid!]")],
+                "ChatGroupUpdated!",
+                [ROLE, ADMIN_ROLE],
+                "Chủ nhóm đổi tên, thêm hoặc bớt thành viên (ADR #65)",
+            ),
+            _action(
+                "chat_leave",
+                "mutation",
+                [("conversation_id", "uuid!")],
+                "ChatLeft!",
+                [ROLE, ADMIN_ROLE],
+                "Rời nhóm hoặc cuộc hai người; kênh đơn vị theo phân công, không tự rời được (ADR #65)",
+            ),
+            _action(
+                "calendar_events",
+                "query",
+                [("from", "String!"), ("to", "String!"), ("view", "String"), ("unit_id", "uuid")],
+                "CalendarEvents!",
+                [ROLE, ADMIN_ROLE],
+                "Các lần diễn ra của lịch công tác người gọi xem được trong khoảng thời gian, kèm hạn công việc dự án (ADR #65)",
+            ),
+            _action(
+                "calendar_save",
+                "mutation",
+                [("event", "jsonb!")],
+                "CalendarSaved!",
+                [ROLE, ADMIN_ROLE],
+                "Tạo hoặc sửa lịch công tác, mời người tham dự; trả các lịch trùng giờ (ADR #65)",
+            ),
+            _action(
+                "calendar_cancel",
+                "mutation",
+                [("id", "uuid!")],
+                "CalendarCancelled!",
+                [ROLE, ADMIN_ROLE],
+                "Hủy lịch công tác, báo người được mời (ADR #65)",
+            ),
+            _action(
+                "calendar_respond",
+                "mutation",
+                [("id", "uuid!"), ("response", "String!")],
+                "CalendarResponded!",
+                [ROLE, ADMIN_ROLE],
+                "Người được mời nhận lời, từ chối hoặc chưa chắc (ADR #65)",
             ),
             _action(
                 "semantic_catalog",
@@ -2237,6 +2359,52 @@ def build(conn: psycopg.Connection) -> dict:
                 {
                     "name": "ApiKeyRevoked",
                     "fields": [{"name": "id", "type": "uuid!"}, {"name": "revoked", "type": "Boolean!"}],
+                },
+                {
+                    "name": "ChatConversationRef",
+                    "fields": [{"name": "conversation_id", "type": "uuid!"}, {"name": "created", "type": "Boolean!"}],
+                },
+                {
+                    "name": "ChatGroupUpdated",
+                    "fields": [
+                        {"name": "conversation_id", "type": "uuid!"},
+                        {"name": "added", "type": "Int!"},
+                        {"name": "removed", "type": "Int!"},
+                        {"name": "members", "type": "Int!"},
+                    ],
+                },
+                {
+                    "name": "ChatLeft",
+                    "fields": [{"name": "conversation_id", "type": "uuid!"}, {"name": "left", "type": "Boolean!"}],
+                },
+                {
+                    "name": "CalendarEvents",
+                    "fields": [
+                        {"name": "events", "type": "[jsonb!]!"},
+                        {"name": "from", "type": "String!"},
+                        {"name": "to", "type": "String!"},
+                    ],
+                },
+                {
+                    "name": "CalendarSaved",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "created", "type": "Boolean!"},
+                        {"name": "invited", "type": "Int!"},
+                        {"name": "conflicts", "type": "[jsonb!]!"},
+                    ],
+                },
+                {
+                    "name": "CalendarCancelled",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "cancelled", "type": "Boolean!"},
+                        {"name": "notified", "type": "Int!"},
+                    ],
+                },
+                {
+                    "name": "CalendarResponded",
+                    "fields": [{"name": "id", "type": "uuid!"}, {"name": "response", "type": "String!"}],
                 },
                 {
                     "name": "SemanticCatalog",

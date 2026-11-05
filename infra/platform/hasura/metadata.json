@@ -448,6 +448,823 @@
         },
         {
           "table": {
+            "schema": "cal",
+            "name": "attendee"
+          },
+          "object_relationships": [
+            {
+              "name": "event",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "event"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "event_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "event": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "event": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "cal",
+            "name": "event"
+          },
+          "array_relationships": [
+            {
+              "name": "attendees",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "attendee"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "event_id"
+                  }
+                }
+              }
+            }
+          ],
+          "object_relationships": [
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "organizer",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "organizer_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "cal",
+                  "name": "event_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "chat",
+            "name": "conversation"
+          },
+          "object_relationships": [
+            {
+              "name": "created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "created_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "members",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "member"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "conversation_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "messages",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "message"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "conversation_id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "chat",
+                  "name": "conversation_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            },
+            {
+              "name": "unread",
+              "definition": {
+                "function": {
+                  "schema": "chat",
+                  "name": "conversation_unread"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Số tin chưa đọc của người gọi"
+            },
+            {
+              "name": "display_name",
+              "definition": {
+                "function": {
+                  "schema": "chat",
+                  "name": "conversation_display_name"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Tên hiển thị theo người xem (cuộc hai người: tên người kia)"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "unread",
+                  "display_name"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "can_read": {
+                        "_eq": true
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "unread",
+                  "display_name"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "chat",
+            "name": "member"
+          },
+          "object_relationships": [
+            {
+              "name": "conversation",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "conversation"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "conversation_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "conversation": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "conversation": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "columns": [
+                  "last_read_id",
+                  "muted"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "person_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    }
+                  ]
+                },
+                "columns": [
+                  "last_read_id",
+                  "muted"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "chat",
+            "name": "message"
+          },
+          "object_relationships": [
+            {
+              "name": "attachment",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment"
+                  },
+                  "column_mapping": {
+                    "attachment_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "reply_to",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "message"
+                  },
+                  "column_mapping": {
+                    "reply_to_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "conversation",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "conversation"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "conversation_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "sender",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "sender_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "messages_by_reply_to",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "message"
+                  },
+                  "column_mapping": {
+                    "id": "reply_to_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "conversation": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "conversation": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ],
+          "insert_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "conversation": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "sender_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "conversation_id",
+                  "body",
+                  "attachment_id",
+                  "reply_to_id",
+                  "mentions"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "check": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "conversation": {
+                        "can_read": {
+                          "_eq": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "set": {
+                  "tenant_id": "X-Hasura-Tenant-Id",
+                  "sender_id": "X-Hasura-User-Id"
+                },
+                "columns": [
+                  "conversation_id",
+                  "body",
+                  "attachment_id",
+                  "reply_to_id",
+                  "mentions"
+                ]
+              }
+            }
+          ],
+          "update_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "sender_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "deleted_at": {
+                        "_is_null": true
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "columns": [
+                  "body",
+                  "deleted_at"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "filter": {
+                  "_and": [
+                    {
+                      "tenant_id": {
+                        "_eq": "X-Hasura-Tenant-Id"
+                      }
+                    },
+                    {
+                      "sender_id": {
+                        "_eq": "X-Hasura-User-Id"
+                      }
+                    },
+                    {
+                      "deleted_at": {
+                        "_is_null": true
+                      }
+                    }
+                  ]
+                },
+                "check": {
+                  "tenant_id": {
+                    "_eq": "X-Hasura-Tenant-Id"
+                  }
+                },
+                "columns": [
+                  "body",
+                  "deleted_at"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
             "schema": "collab",
             "name": "comment"
           },
@@ -1993,6 +2810,37 @@
             "schema": "core",
             "name": "attachment"
           },
+          "array_relationships": [
+            {
+              "name": "messages",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "message"
+                  },
+                  "column_mapping": {
+                    "id": "attachment_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "attachment_ocrs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment_ocr"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "attachment_id"
+                  }
+                }
+              }
+            }
+          ],
           "object_relationships": [
             {
               "name": "tenant",
@@ -2032,23 +2880,6 @@
                     "name": "attachment_ocr"
                   },
                   "column_mapping": {
-                    "id": "attachment_id"
-                  }
-                }
-              }
-            }
-          ],
-          "array_relationships": [
-            {
-              "name": "attachment_ocrs",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "attachment_ocr"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
                     "id": "attachment_id"
                   }
                 }
@@ -2600,6 +3431,36 @@
           },
           "array_relationships": [
             {
+              "name": "events",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "event"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "conversations",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "conversation"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "kb_documents",
               "using": {
                 "manual_configuration": {
@@ -3015,6 +3876,81 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "attendees",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "attendee"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "events",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "event"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "organizer_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "conversations",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "conversation"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "members",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "member"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "messages",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "message"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "sender_id"
                   }
                 }
               }
@@ -13173,6 +14109,286 @@
       "comment": "Quản trị viên công ty thu hồi khóa API, có hiệu lực ngay (ADR #64)"
     },
     {
+      "name": "chat_open_direct",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/chat_open_direct",
+        "arguments": [
+          {
+            "name": "person_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ChatConversationRef!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Mở (hoặc tạo) cuộc nhắn tin hai người với đồng nghiệp cùng công ty (ADR #65)"
+    },
+    {
+      "name": "chat_create_group",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/chat_create_group",
+        "arguments": [
+          {
+            "name": "title",
+            "type": "String!"
+          },
+          {
+            "name": "member_ids",
+            "type": "[uuid!]!"
+          }
+        ],
+        "output_type": "ChatConversationRef!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập nhóm nhắn tin, người tạo là chủ nhóm (ADR #65)"
+    },
+    {
+      "name": "chat_update_group",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/chat_update_group",
+        "arguments": [
+          {
+            "name": "conversation_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "title",
+            "type": "String"
+          },
+          {
+            "name": "add_ids",
+            "type": "[uuid!]"
+          },
+          {
+            "name": "remove_ids",
+            "type": "[uuid!]"
+          }
+        ],
+        "output_type": "ChatGroupUpdated!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chủ nhóm đổi tên, thêm hoặc bớt thành viên (ADR #65)"
+    },
+    {
+      "name": "chat_leave",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/chat_leave",
+        "arguments": [
+          {
+            "name": "conversation_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ChatLeft!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Rời nhóm hoặc cuộc hai người; kênh đơn vị theo phân công, không tự rời được (ADR #65)"
+    },
+    {
+      "name": "calendar_events",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/calendar_events",
+        "arguments": [
+          {
+            "name": "from",
+            "type": "String!"
+          },
+          {
+            "name": "to",
+            "type": "String!"
+          },
+          {
+            "name": "view",
+            "type": "String"
+          },
+          {
+            "name": "unit_id",
+            "type": "uuid"
+          }
+        ],
+        "output_type": "CalendarEvents!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Các lần diễn ra của lịch công tác người gọi xem được trong khoảng thời gian, kèm hạn công việc dự án (ADR #65)"
+    },
+    {
+      "name": "calendar_save",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/calendar_save",
+        "arguments": [
+          {
+            "name": "event",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "CalendarSaved!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tạo hoặc sửa lịch công tác, mời người tham dự; trả các lịch trùng giờ (ADR #65)"
+    },
+    {
+      "name": "calendar_cancel",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/calendar_cancel",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "CalendarCancelled!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Hủy lịch công tác, báo người được mời (ADR #65)"
+    },
+    {
+      "name": "calendar_respond",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/calendar_respond",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "response",
+            "type": "String!"
+          }
+        ],
+        "output_type": "CalendarResponded!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người được mời nhận lời, từ chối hoặc chưa chắc (ADR #65)"
+    },
+    {
       "name": "semantic_catalog",
       "definition": {
         "kind": "synchronous",
@@ -17941,6 +19157,121 @@
           {
             "name": "revoked",
             "type": "Boolean!"
+          }
+        ]
+      },
+      {
+        "name": "ChatConversationRef",
+        "fields": [
+          {
+            "name": "conversation_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "created",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
+        "name": "ChatGroupUpdated",
+        "fields": [
+          {
+            "name": "conversation_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "added",
+            "type": "Int!"
+          },
+          {
+            "name": "removed",
+            "type": "Int!"
+          },
+          {
+            "name": "members",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ChatLeft",
+        "fields": [
+          {
+            "name": "conversation_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "left",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
+        "name": "CalendarEvents",
+        "fields": [
+          {
+            "name": "events",
+            "type": "[jsonb!]!"
+          },
+          {
+            "name": "from",
+            "type": "String!"
+          },
+          {
+            "name": "to",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "CalendarSaved",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "created",
+            "type": "Boolean!"
+          },
+          {
+            "name": "invited",
+            "type": "Int!"
+          },
+          {
+            "name": "conflicts",
+            "type": "[jsonb!]!"
+          }
+        ]
+      },
+      {
+        "name": "CalendarCancelled",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "cancelled",
+            "type": "Boolean!"
+          },
+          {
+            "name": "notified",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "CalendarResponded",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "response",
+            "type": "String!"
           }
         ]
       },

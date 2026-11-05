@@ -37,6 +37,8 @@ LINKS = {
     "collab.kb_document": "/h/library/proposals/{id}",
     "wf.process_model": "/p/process?id={id}",
     "hr.personnel_decision": "/h/decisions",
+    "chat.conversation": "/h/chat/{id}",
+    "cal.event": "/h/calendar?event={id}",
 }
 CHANNELS = ("email", "sms", "webhook")
 
