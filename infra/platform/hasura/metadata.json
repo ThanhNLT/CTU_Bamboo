@@ -745,6 +745,20 @@
                   }
                 }
               }
+            },
+            {
+              "name": "projects",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "id": "conversation_id"
+                  }
+                }
+              }
             }
           ],
           "computed_fields": [
@@ -2810,37 +2824,6 @@
             "schema": "core",
             "name": "attachment"
           },
-          "array_relationships": [
-            {
-              "name": "messages",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "chat",
-                    "name": "message"
-                  },
-                  "column_mapping": {
-                    "id": "attachment_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "attachment_ocrs",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "core",
-                    "name": "attachment_ocr"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "attachment_id"
-                  }
-                }
-              }
-            }
-          ],
           "object_relationships": [
             {
               "name": "tenant",
@@ -2878,6 +2861,37 @@
                   "remote_table": {
                     "schema": "core",
                     "name": "attachment_ocr"
+                  },
+                  "column_mapping": {
+                    "id": "attachment_id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "attachment_ocrs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "attachment_ocr"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "attachment_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "messages",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "message"
                   },
                   "column_mapping": {
                     "id": "attachment_id"
@@ -3431,36 +3445,6 @@
           },
           "array_relationships": [
             {
-              "name": "events",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "cal",
-                    "name": "event"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "org_unit_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "conversations",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "chat",
-                    "name": "conversation"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "org_unit_id"
-                  }
-                }
-              }
-            },
-            {
               "name": "kb_documents",
               "using": {
                 "manual_configuration": {
@@ -3744,6 +3728,51 @@
                   }
                 }
               }
+            },
+            {
+              "name": "events",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "event"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "conversations",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "conversation"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "projects",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "org_unit_id"
+                  }
+                }
+              }
             }
           ],
           "object_relationships": [
@@ -3876,81 +3905,6 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "created_by"
-                  }
-                }
-              }
-            },
-            {
-              "name": "attendees",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "cal",
-                    "name": "attendee"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "person_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "events",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "cal",
-                    "name": "event"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "organizer_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "conversations",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "chat",
-                    "name": "conversation"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "created_by"
-                  }
-                }
-              }
-            },
-            {
-              "name": "members",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "chat",
-                    "name": "member"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "person_id"
-                  }
-                }
-              }
-            },
-            {
-              "name": "messages",
-              "using": {
-                "manual_configuration": {
-                  "remote_table": {
-                    "schema": "chat",
-                    "name": "message"
-                  },
-                  "column_mapping": {
-                    "tenant_id": "tenant_id",
-                    "id": "sender_id"
                   }
                 }
               }
@@ -4469,6 +4423,156 @@
                 "manual_configuration": {
                   "remote_table": {
                     "schema": "wf",
+                    "name": "task"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "assignee_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "attendees",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "attendee"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "events",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "cal",
+                    "name": "event"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "organizer_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "conversations",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "conversation"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "members",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "member"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "messages",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "message"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "sender_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "pm_members",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "member"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "projects_by_created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "projects_by_manager",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "manager_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "reports",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "report"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "pm_tasks",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
                     "name": "task"
                   },
                   "column_mapping": {
@@ -11089,6 +11193,942 @@
         },
         {
           "table": {
+            "schema": "pm",
+            "name": "dependency"
+          },
+          "object_relationships": [
+            {
+              "name": "predecessor",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "task"
+                  },
+                  "column_mapping": {
+                    "project_id": "project_id",
+                    "predecessor_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "successor",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "task"
+                  },
+                  "column_mapping": {
+                    "project_id": "project_id",
+                    "successor_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "project",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "project_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "pm",
+            "name": "member"
+          },
+          "object_relationships": [
+            {
+              "name": "person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "person_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "project",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "project_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "pm",
+            "name": "project"
+          },
+          "array_relationships": [
+            {
+              "name": "dependencys",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "dependency"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "project_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "members",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "member"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "project_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "reports",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "report"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "project_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tasks",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "task"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "project_id"
+                  }
+                }
+              }
+            }
+          ],
+          "object_relationships": [
+            {
+              "name": "conversation",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "chat",
+                    "name": "conversation"
+                  },
+                  "column_mapping": {
+                    "conversation_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "created_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "manager",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "manager_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "org_unit",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "org_unit"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "org_unit_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "computed_fields": [
+            {
+              "name": "can_read",
+              "definition": {
+                "function": {
+                  "schema": "pm",
+                  "name": "project_can_read"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi có được xem chứng từ không"
+            },
+            {
+              "name": "progress",
+              "definition": {
+                "function": {
+                  "schema": "pm",
+                  "name": "project_progress"
+                }
+              },
+              "comment": "% thực hiện (bình quân theo số ngày của công việc lá)"
+            },
+            {
+              "name": "planned",
+              "definition": {
+                "function": {
+                  "schema": "pm",
+                  "name": "project_planned"
+                }
+              },
+              "comment": "% kế hoạch tới hôm nay"
+            },
+            {
+              "name": "late_tasks",
+              "definition": {
+                "function": {
+                  "schema": "pm",
+                  "name": "project_late_tasks"
+                }
+              },
+              "comment": "Số công việc quá hạn chưa xong"
+            },
+            {
+              "name": "can_manage",
+              "definition": {
+                "function": {
+                  "schema": "pm",
+                  "name": "project_can_manage"
+                },
+                "session_argument": "hasura_session"
+              },
+              "comment": "Người gọi sửa được kế hoạch dự án không"
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "progress",
+                  "planned",
+                  "late_tasks",
+                  "can_manage"
+                ]
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "can_read": {
+                            "_eq": true
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true,
+                "computed_fields": [
+                  "can_read",
+                  "progress",
+                  "planned",
+                  "late_tasks",
+                  "can_manage"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "pm",
+            "name": "report"
+          },
+          "object_relationships": [
+            {
+              "name": "created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "created_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "project",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "project_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "pm",
+            "name": "task"
+          },
+          "array_relationships": [
+            {
+              "name": "dependencys_by_predecessor",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "dependency"
+                  },
+                  "column_mapping": {
+                    "project_id": "project_id",
+                    "id": "predecessor_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "dependencys_by_successor",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "dependency"
+                  },
+                  "column_mapping": {
+                    "project_id": "project_id",
+                    "id": "successor_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "children",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "task"
+                  },
+                  "column_mapping": {
+                    "project_id": "project_id",
+                    "id": "parent_id"
+                  }
+                }
+              }
+            }
+          ],
+          "object_relationships": [
+            {
+              "name": "parent",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "task"
+                  },
+                  "column_mapping": {
+                    "project_id": "project_id",
+                    "parent_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "assignee",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "assignee_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "project",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "project_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "project": {
+                            "can_read": {
+                              "_eq": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "project"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
             "schema": "proc",
             "name": "purchase_order"
           },
@@ -14387,6 +15427,324 @@
         }
       ],
       "comment": "Người được mời nhận lời, từ chối hoặc chưa chắc (ADR #65)"
+    },
+    {
+      "name": "pm_project_detail",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/pm_project_detail",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProjectDetail!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Dự án kèm WBS đã tính ngày, % của công việc tổng hợp, đường găng, dự trữ, số liệu tiến độ, báo cáo"
+    },
+    {
+      "name": "pm_project_save",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/pm_project_save",
+        "arguments": [
+          {
+            "name": "project",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "ProjectSaved!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập hoặc sửa dự án và văn bản kế hoạch"
+    },
+    {
+      "name": "pm_members_set",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/pm_members_set",
+        "arguments": [
+          {
+            "name": "project_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "members",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "ProjectMembers!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đặt thành viên và vai trò của dự án; đồng bộ nhóm nhắn tin của dự án"
+    },
+    {
+      "name": "pm_task_save",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/pm_task_save",
+        "arguments": [
+          {
+            "name": "task",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "ProjectTaskSaved!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thêm hoặc sửa công việc, phụ thuộc; tự dời công việc phía sau cho thỏa phụ thuộc"
+    },
+    {
+      "name": "pm_task_delete",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/pm_task_delete",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProjectTaskDeleted!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Xóa công việc và cây con"
+    },
+    {
+      "name": "pm_task_reorder",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/pm_task_reorder",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "direction",
+            "type": "String!"
+          }
+        ],
+        "output_type": "ProjectTaskMoved!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đổi thứ tự (up/down) hoặc cấp (indent/outdent) của công việc"
+    },
+    {
+      "name": "pm_baseline_set",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/pm_baseline_set",
+        "arguments": [
+          {
+            "name": "project_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProjectBaseline!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chốt đường cơ sở của kế hoạch"
+    },
+    {
+      "name": "pm_report_create",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/pm_report_create",
+        "arguments": [
+          {
+            "name": "report",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "ProjectReportCreated!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Lập báo cáo tiến độ theo kỳ (chụp số liệu, báo thành viên)"
+    },
+    {
+      "name": "pm_plan_pdf",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/pm_plan_pdf",
+        "arguments": [
+          {
+            "name": "project_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProjectPdf!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Văn bản kế hoạch dự án (PDF)"
+    },
+    {
+      "name": "pm_report_pdf",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/pm_report_pdf",
+        "arguments": [
+          {
+            "name": "report_id",
+            "type": "uuid!"
+          }
+        ],
+        "output_type": "ProjectPdf!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 60
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Báo cáo tiến độ (PDF)"
     },
     {
       "name": "semantic_catalog",
@@ -19272,6 +20630,163 @@
           {
             "name": "response",
             "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectDetail",
+        "fields": [
+          {
+            "name": "project",
+            "type": "jsonb!"
+          },
+          {
+            "name": "members",
+            "type": "[jsonb!]!"
+          },
+          {
+            "name": "tasks",
+            "type": "[jsonb!]!"
+          },
+          {
+            "name": "dependencies",
+            "type": "[jsonb!]!"
+          },
+          {
+            "name": "stats",
+            "type": "jsonb!"
+          },
+          {
+            "name": "reports",
+            "type": "[jsonb!]!"
+          },
+          {
+            "name": "can_manage",
+            "type": "Boolean!"
+          },
+          {
+            "name": "my_role",
+            "type": "String"
+          },
+          {
+            "name": "warnings",
+            "type": "[String!]!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectSaved",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "created",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectMembers",
+        "fields": [
+          {
+            "name": "members",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectTaskSaved",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "shifted",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectTaskDeleted",
+        "fields": [
+          {
+            "name": "deleted",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectTaskMoved",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectBaseline",
+        "fields": [
+          {
+            "name": "tasks",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "ProjectReportCreated",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "health",
+            "type": "String!"
+          },
+          {
+            "name": "planned_pct",
+            "type": "Float"
+          },
+          {
+            "name": "actual_pct",
+            "type": "Float"
+          },
+          {
+            "name": "spi",
+            "type": "Float"
+          },
+          {
+            "name": "late_tasks",
+            "type": "Int"
+          }
+        ]
+      },
+      {
+        "name": "ProjectPdf",
+        "fields": [
+          {
+            "name": "file_name",
+            "type": "String!"
+          },
+          {
+            "name": "url",
+            "type": "String!"
+          },
+          {
+            "name": "check_code",
+            "type": "String!"
+          },
+          {
+            "name": "cached",
+            "type": "Boolean!"
+          },
+          {
+            "name": "expires_in",
+            "type": "Int!"
           }
         ]
       },

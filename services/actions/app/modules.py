@@ -264,6 +264,31 @@ CATALOG: tuple[Module, ...] = (
         ),
     ),
     Module(
+        "project",
+        "Quản lý dự án",
+        "Kế hoạch dự án chi tiết, WBS, phụ thuộc, sơ đồ Gantt, đường găng, báo cáo tiến độ theo kỳ",
+        actions=frozenset(
+            {
+                "pm_project_detail",
+                "pm_project_save",
+                "pm_members_set",
+                "pm_task_save",
+                "pm_task_delete",
+                "pm_task_reorder",
+                "pm_baseline_set",
+                "pm_report_create",
+                "pm_plan_pdf",
+                "pm_report_pdf",
+            }
+        ),
+        open_work=(
+            OpenWork(
+                "dự án đang lập kế hoạch hoặc đang thực hiện",
+                "SELECT count(*) FROM pm.project WHERE tenant_id = %(tenant)s AND status IN ('PLANNING', 'ACTIVE')",
+            ),
+        ),
+    ),
+    Module(
         "ai",
         "Trí tuệ số",
         "Trợ lý hỏi đáp trên tài liệu, tác tử AI, OCR tiếng Việt; chạy mô hình cục bộ (Ollama), cần nhiều RAM",
