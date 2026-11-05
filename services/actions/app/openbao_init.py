@@ -348,6 +348,31 @@ def write_internal_ca(root: Bao, paths: list[pathlib.Path]) -> None:
             log.info("đã ghi CA nội bộ %s", path)
 
 
+def unseal_if_sealed(addr: str, keys_file: pathlib.Path) -> bool:
+    """Mở khóa OpenBao đã khởi tạo nhưng đang khóa (sau khi container `openbao` khởi động lại). Trả True nếu vừa mở."""
+    bao = Bao(addr)
+    status = bao.request("GET", "sys/seal-status")
+    if not status["initialized"] or not status["sealed"] or not keys_file.exists():
+        return False
+    for key in json.loads(keys_file.read_text(encoding="utf-8"))["unseal_keys_b64"]:
+        bao.request("PUT", "sys/unseal", {"key": key})
+    return True
+
+
+def watch_unseal(addr: str, keys_file: pathlib.Path, interval: float = 5.0) -> None:
+    """Dịch vụ `openbao-unseal`: OpenBao dùng khóa Shamir nên mỗi lần khởi động lại (khởi động lại máy, Docker) đều
+    bị khóa; `openbao-init` chỉ chạy một lần khi `docker compose up`. Không có vòng này, `actions`, `flow-sync`... không
+    đăng nhập AppRole được, chết rồi bị khởi động lại liên tục và cổng API trả 502."""
+    log.info("theo dõi trạng thái khóa của OpenBao mỗi %.0f giây", interval)
+    while True:
+        try:
+            if unseal_if_sealed(addr, keys_file):
+                log.warning("OpenBao vừa khởi động lại và bị khóa: đã unseal")
+        except (httpx.HTTPError, BaoError, OSError, ValueError, KeyError) as exc:
+            log.info("chưa kiểm được OpenBao: %s", exc)
+        time.sleep(interval)
+
+
 def run(
     addr: str,
     keys_file: pathlib.Path,
@@ -398,8 +423,13 @@ def run(
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    config.assert_production_ready()
     env = os.environ.get
+    if "--watch" in sys.argv[1:]:
+        watch_unseal(
+            env("BAO_ADDR", "http://openbao:8200"), pathlib.Path(env("BAO_KEYS_FILE", "/openbao/keys/init.json"))
+        )
+        return 0
+    config.assert_production_ready()
     s3_path = env("S3_CONFIG_PATH")
     meili_path = env("MEILI_CONFIG_PATH")
     trino_path = env("TRINO_CATALOG_PATH")

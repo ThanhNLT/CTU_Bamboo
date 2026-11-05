@@ -15,8 +15,8 @@ test("đăng ký sử dụng: chủ sở hữu, doanh nghiệp, thiết lập nh
   const status = await request
     .get(`${SETUP_URL}/status`)
     .then((r) => r.json())
-    .catch(() => ({ open: false }));
-  test.skip(!status.open || !status.window_open, "Máy chủ đã có công ty hoặc đã hết 24 giờ mở đăng ký");
+    .catch(() => ({ empty: false }));
+  test.skip(!status.empty || !status.window_open, "Máy chủ đã có công ty hoặc đã hết 24 giờ mở đăng ký");
 
   await page.goto("/login");
   await expect(page.getByText(/Hệ thống chưa có công ty nào/)).toBeVisible();
