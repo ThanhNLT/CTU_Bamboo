@@ -288,6 +288,13 @@ docker compose logs -f bootstrap
 Mở **<http://localhost:8000>** (dùng đúng `localhost`, không dùng `127.0.0.1`), bấm **Đăng nhập bằng tài khoản tập đoàn**, dùng
 một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-demo) với mật khẩu `demo-password`.
 
+- **Clone trên Windows** (PowerShell, Git for Windows): `.gitattributes` buộc mọi tệp văn bản checkout với LF, và các image
+  tự bỏ CRLF khỏi script, nên `docker compose up -d` chạy được cả khi `core.autocrlf=true`. Bản clone cũ (trước khi có
+  `.gitattributes`) vẫn mang CRLF trong thư mục làm việc: sau `git pull` chạy `git rm -r -q --cached . && git reset --hard`
+  (xóa thay đổi chưa commit) để checkout lại với LF. Triệu chứng của CRLF: `docker compose logs migrate` báo
+  `env: 'bash\r': No such file or directory`, các dịch vụ còn lại không lên và trang đăng nhập không mở được.
+- **`make up` và `docker compose up` phải chạy trên cùng một bản clone:** hai lệnh dùng chung tên dự án `bamboo` (chung
+  image, volume), nên chạy `make up` ở một bản clone cũ (ví dụ trong WSL) sẽ dựng lại giao diện cũ đè lên.
 - **GPU NVIDIA:** cài `nvidia-container-toolkit` rồi chạy `make up-gpu`.
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
   hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.

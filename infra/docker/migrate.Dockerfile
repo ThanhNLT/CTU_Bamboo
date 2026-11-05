@@ -8,4 +8,6 @@ LABEL org.opencontainers.image.title="bamboo-migrate" \
       org.opencontainers.image.licenses="Apache-2.0"
 COPY db /repo/db
 COPY tools/db /repo/tools/db
+# Bản clone Windows (core.autocrlf=true) mang CRLF: `bash\r` làm migrate thoát ngay, cả hệ thống không lên
+RUN find /repo -type f \( -name '*.sh' -o -name '*.sql' \) -exec sed -i 's/\r$//' {} + && chmod 0755 /repo/tools/db/*.sh
 ENTRYPOINT ["/repo/tools/db/up.sh"]
