@@ -32,6 +32,8 @@ KINDS = {
     "CALENDAR_INVITE": "Được mời tham dự lịch công tác",
     "CALENDAR_REMINDER": "Nhắc lịch công tác sắp đến",
     "CALENDAR_CHANGED": "Lịch tôi tham dự đổi giờ hoặc bị hủy",
+    "PROJECT_TASK": "Được giao việc hoặc thêm vào dự án",
+    "PROJECT_REPORT": "Có báo cáo tiến độ dự án mới",
 }
 
 

@@ -651,7 +651,7 @@ này và lưu định nghĩa biểu đồ ở `kpi.chart` (của mình, hoặc `
 
 ## 22. Mô-đun chức năng (`modules.py`, migration 042, ADR #56)
 
-Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị → Quản lý chức năng** (`/admin/modules`).
+Phần lõi luôn bật (gồm cả nhắn tin và lịch công tác, [ADR #65](#adr-65)); 12 mô-đun dựng sẵn bật/tắt ở **Quản trị → Quản lý chức năng** (`/admin/modules`).
 
 | Mô-đun | Cần | Container |
 |---|---|---|
@@ -666,6 +666,7 @@ Phần lõi luôn bật; 11 mô-đun dựng sẵn bật/tắt ở **Quản trị
 | `ledger` Sổ cái | – | – |
 | `data` Dữ liệu số | – | `kafka`, `debezium`, `lakehouse-sink`, `trino-core` |
 | `ai` Trí tuệ số | `files`, `search` | `ollama-core`, `ocr-core`, `ai-worker` |
+| `project` Quản lý dự án ([ADR #66](#adr-66)) | – | – |
 
 - **Hai tầng:** cài trên máy (`core.module_install`, chỉ `platform_admin`; container chạy) và bật cho công ty (`core.tenant_module`, quyền `core.module.manage`). Quản trị nền tảng bấm **Bật** với mô-đun chưa cài thì cài luôn.
 - **Chặn khi chưa bật:** Action trả `module-disabled` (403); bảng thuộc riêng mô-đun (`hasura_metadata.MODULE_TABLES`) không đọc, không ghi được qua GraphQL; menu ẩn, trang hiện thông báo "chưa bật".
