@@ -154,6 +154,20 @@ class KeycloakUsers:
         ).raise_for_status()
         return True
 
+    def delete(self, subject: str) -> bool:
+        """Xóa hẳn tài khoản (chỉ dùng khi dọn tài khoản thử của E2E trên CSDL demo, tools/demo_cleanup.sh)."""
+        resp = self.http.delete(f"/users/{subject}", headers=self._headers())
+        if resp.status_code == 404:
+            return False
+        resp.raise_for_status()
+        return True
+
+    def usernames_like(self, prefix: str) -> list[dict]:
+        """Tài khoản có tên đăng nhập bắt đầu bằng `prefix` (tối đa 500)."""
+        resp = self.http.get("/users", params={"search": prefix, "max": 500}, headers=self._headers())
+        resp.raise_for_status()
+        return [u for u in resp.json() if u["username"].startswith(prefix)]
+
 
 def provision(conn: psycopg.Connection, users: KeycloakUsers, cipher: PiiCipher, request_id) -> str:
     row = conn.execute(
