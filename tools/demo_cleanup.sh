@@ -3,7 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Xóa các đề nghị mua sắm do người dùng lập qua ứng dụng khi thử chức năng duyệt, đưa dữ liệu về như tài liệu demo.
+# Xóa các đề nghị mua sắm do người dùng lập qua ứng dụng khi thử chức năng duyệt, và tài khoản, đơn vị, vị trí do kiểm
+# thử E2E tạo ("Người Thử …", "Nhóm Thử …", tài khoản Keycloak e2e.*), đưa dữ liệu về như tài liệu demo.
 # Mặc định chỉ xem trước (không ghi gì). Thêm --apply để xóa thật.
 #   tools/demo_cleanup.sh            # xem trước
 #   tools/demo_cleanup.sh --apply    # xóa thật
@@ -25,7 +26,7 @@ out=$(docker compose exec -T db psql -X -q -U bms -d bms -v finish=$mode -f - < 
     echo "Không xóa gì (giao dịch đã hủy)." >&2
     exit 1
 }
-echo "$out" | grep -v 'NOTICE:  FLOWABLE '
+echo "$out" | grep -v 'NOTICE:  FLOWABLE \|NOTICE:  KEYCLOAK '
 
 if [ "$mode" = ROLLBACK ]; then
     echo
@@ -53,4 +54,21 @@ with httpx.Client(base_url=s.flowable_url, auth=(s.flowable_user, s.flowable_pas
 print(f"đã dọn {len(sys.argv) - 1} quy trình Flowable")
 PY
 fi
+# Tài khoản Keycloak của người thử vừa xóa, cùng mọi tài khoản e2e.* còn sót (E2E đặt tên đăng nhập e2e.<mã>)
+subjects=$(echo "$out" | sed -n 's/.*NOTICE:  KEYCLOAK //p' | tr '\n' ' ')
+# shellcheck disable=SC2086
+docker compose exec -T actions python - $subjects << 'PY'
+import re
+import sys
+
+from app import config, hr_account, keycloak_sync
+
+s = config.load()
+if not s.keycloak_provisioner_secret:
+    print("chưa cấu hình client bms-provisioner: không xóa được tài khoản Keycloak", file=sys.stderr)
+    sys.exit(0)
+users = hr_account.KeycloakUsers(s.keycloak_url, keycloak_sync.PROVISIONER_ID, s.keycloak_provisioner_secret)
+ids = set(sys.argv[1:]) | {u["id"] for u in users.usernames_like("e2e.") if re.fullmatch(r"e2e\.[0-9a-z]+", u["username"])}
+print(f"đã xóa {sum(users.delete(i) for i in ids)} tài khoản Keycloak thử E2E")
+PY
 echo "Xong. Chỉ mục tìm kiếm sẽ được search-sync dọn trong ít giây."
