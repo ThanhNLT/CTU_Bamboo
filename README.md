@@ -455,7 +455,7 @@ Mở <http://localhost:5173> và đăng nhập bằng tài khoản demo.
 ## Cơ sở dữ liệu demo
 
 Dữ liệu demo của **Tập đoàn X** hư cấu, 100% giả lập, tự nạp lần đầu chạy (`SEED_DEMO=true`, tắt bằng `false` khi dùng cho
-công ty thật: [Khởi tạo cho công ty mới](docs/van-hanh/cong-ty-moi.md)). Một database PostgreSQL `bms` (41 migration, 16 schema:
+công ty thật: [Khởi tạo cho công ty mới](docs/van-hanh/cong-ty-moi.md)). Một database PostgreSQL `bms` (55 migration, 21 schema:
 [thiết kế CSDL](docs/thiet-ke/03-thiet-ke-csdl.md)); danh sách tài khoản sinh từ `services/seed/app/demo.py`, dùng chung cho CSDL
 và realm Keycloak.
 
@@ -465,6 +465,18 @@ và realm Keycloak.
 - **Dữ liệu nghiệp vụ:** 10 đề nghị mua sắm dừng ở các bước khác nhau kèm lịch sử duyệt nhiều ngày (cho Trung tâm điều hành),
   8 nhà cung cấp (gồm nhà cung cấp nội bộ), 12 vật tư, lô sản xuất, đơn hàng nội bộ, ghế trống chờ tiếp nhận, tài liệu quy chế
   trong thư viện tri thức, 7 quy trình BPMN mẫu, tác tử AI "Trợ lý quy chế".
+- **Cộng tác và dự án** (`services/seed/app/demo_hpd.py`, mốc thời gian tính quanh hôm nay):
+  - **Tin nhắn:** kênh của mọi phòng ban (tự theo phân công) có trao đổi ở kênh Tập đoàn X, Phòng Mua hàng Điện thoại X,
+    Phòng sạch Chip X (sự cố CR-02), Khoa Chẩn đoán hình ảnh; nhóm "Ban điều hành tập đoàn", "Điều chuyển nhân sự quý IV",
+    "Mua sắm thiết bị y tế"; tin riêng chưa đọc giữa `nv.muahang.dienthoai` và `tp.muahang.dienthoai`, giữa `gd.chip` và
+    `pgd.chip`; có @nhắc tên.
+  - **Lịch công tác:** giao ban Ban Tổng giám đốc, Điện thoại X, Văn phòng Chuyển đổi số (hằng tuần), kiểm tra an toàn phòng
+    sạch (hằng tháng), Hội đồng thiết bị y tế Bệnh viện X; chuyến công tác Singapore của `gd.chip`; họp duyệt đề nghị 650
+    triệu có mời và trả lời; đào tạo Bamboo; nghỉ phép; đánh giá KPI cuối quý, hạn báo cáo thuế.
+  - **Dự án:** DX-2027 (chuyển đổi số, chậm 5 ngày, 2 báo cáo), CHIP-CR02 (nâng cấp phòng sạch, 2 việc trễ, báo cáo đỏ),
+    DT-SMT4 (đang lập kế hoạch), GD-BH (đã xong), BVX-EMR (Bệnh viện X, đúng tiến độ); đủ WBS, phụ thuộc, mốc, đường cơ sở.
+  - **Cổng dịch vụ API:** hai khóa mẫu của Tập đoàn X (một đang dùng kèm 30 ngày lượt gọi, một đã thu hồi); chỉ lưu mã băm
+    của chuỗi ngẫu nhiên nên không dùng được để gọi thật.
 - **Dữ liệu số:** bản sao số phòng sạch (chuỗi đo 24 giờ, ngưỡng, sự cố), phả hệ và chất lượng dữ liệu, KPI, nạp từ
   `services/seed/data/demo`. Làm mới theo giờ hiện tại: `docker compose run --rm seed python -m app.demo_load --refresh`.
 - **Hạn mức duyệt mẫu:** công ty thành viên dưới 50 triệu quản lý trực tiếp duyệt; 50–500 triệu thêm giám đốc công ty; từ 500
@@ -481,19 +493,19 @@ Mật khẩu chung **`demo-password`** (biến `DEMO_PASSWORD`). Đổi người
 
 | Tên đăng nhập | Họ tên, vị trí | Nên thử |
 |---|---|---|
-| `tgd` | Nguyễn Văn Thành, Tổng giám đốc | Thấy đề nghị toàn tập đoàn; hộp việc có đề nghị 650 triệu và 300 triệu chờ duyệt |
+| `tgd` | Nguyễn Văn Thành, Tổng giám đốc | Thấy đề nghị toàn tập đoàn; hộp việc có đề nghị 650 triệu và 300 triệu chờ duyệt; lịch họp duyệt và nhóm "Ban điều hành tập đoàn" |
 | `pho.tgd` | Trần Thị Mai, Phó tổng giám đốc | Vị trí báo cáo cho Tổng giám đốc; ban hành quyết định nhân sự |
 | `gd.taichinh` | Phạm Thu Hà, Giám đốc tài chính | Xem mọi đề nghị trong tenant, menu **Kiểm toán**, đối soát chuỗi hash |
-| `cdo` | Lê Quang Huy, Giám đốc chuyển đổi số | Quản trị tổ chức, thiết kế quy trình |
+| `cdo` | Lê Quang Huy, Giám đốc chuyển đổi số | Quản trị tổ chức, thiết kế quy trình; quản lý dự án DX-2027 (Gantt, báo cáo tiến độ); khóa API ở `/d/api` |
 | `gd.nhansu.tapdoan` | Phạm Thị Thanh Vân, Trưởng phòng nhân sự tập đoàn | Duyệt quyết định điều chuyển liên tập đoàn |
 
 **Công ty Chip X**
 
 | Tên đăng nhập | Họ tên, vị trí | Nên thử |
 |---|---|---|
-| `gd.chip` | Hoàng Minh Đức, Giám đốc | Đang đi công tác, đã ủy quyền cho phó giám đốc |
+| `gd.chip` | Hoàng Minh Đức, Giám đốc | Đang đi công tác (lịch cả ngày ở `/h/calendar`), đã ủy quyền cho phó giám đốc |
 | `pgd.chip` | Vũ Thị Lan, Phó giám đốc | Hộp việc có đề nghị 90 triệu gắn nhãn **Duyệt thay (ủy quyền)** |
-| `qd.phongsach.chip` | Đặng Văn Long, Quản đốc phòng sạch | Hộp việc có đề nghị máy đếm hạt bụi 35 triệu; bản sao số phòng sạch |
+| `qd.phongsach.chip` | Đặng Văn Long, Quản đốc phòng sạch | Hộp việc có đề nghị máy đếm hạt bụi 35 triệu; bản sao số phòng sạch; dự án CHIP-CR02 đang trễ |
 | `kd.chip` | Bùi Thị Ngọc, Chuyên viên kinh doanh B2B | Lập đề nghị dưới tư cách nhân viên |
 | `ns.chip` | Châu Văn Phát, Chuyên viên nhân sự | Lập hồ sơ tiếp nhận cho Chip X (không lập được cho công ty khác) |
 
@@ -503,7 +515,7 @@ Mật khẩu chung **`demo-password`** (biến `DEMO_PASSWORD`). Đổi người
 |---|---|---|
 | `nv.muahang.dienthoai` | Phan Văn Nam, Chuyên viên mua hàng | Lập đề nghị kèm dòng hàng, đính kèm báo giá, gửi duyệt; xem đề nghị bị trả về |
 | `nv3.muahang.dienthoai` | Cao Thị Mỹ Linh, Chuyên viên mua hàng | Tự lập đề nghị điều chuyển sang đơn vị khác |
-| `tp.muahang.dienthoai` | Đỗ Thị Hương, Trưởng phòng mua hàng | Duyệt đề nghị dưới 50 triệu của phòng; duyệt bước 1 hồ sơ tiếp nhận người vào phòng (chỉ thấy CCCD đã che) |
+| `tp.muahang.dienthoai` | Đỗ Thị Hương, Trưởng phòng mua hàng | Duyệt đề nghị dưới 50 triệu của phòng; duyệt bước 1 hồ sơ tiếp nhận người vào phòng (chỉ thấy CCCD đã che); có tin nhắn riêng chưa đọc |
 | `gd.dienthoai` | Ngô Thanh Sơn, Giám đốc | Đã duyệt bước 1 của đề nghị 650 triệu; duyệt bước 2 hồ sơ tiếp nhận |
 | `ns.dienthoai` | Hồ Thị Thu Trang, Chuyên viên nhân sự | Lập hồ sơ tiếp nhận vào ghế trống, CCCD mã hóa, **Xem đầy đủ** ghi nhật ký |
 | `tp.nhansu.dienthoai` | Nguyễn Thị Hồng Nhung, Trưởng phòng nhân sự | Bước duyệt nhân sự của điều chuyển |
@@ -522,7 +534,7 @@ Mật khẩu chung **`demo-password`** (biến `DEMO_PASSWORD`). Đổi người
 
 | Tên đăng nhập | Họ tên, vị trí | Nên thử |
 |---|---|---|
-| `gd.benhvien` | Võ Thị Bích, Giám đốc bệnh viện | Bước 2 của đề nghị máy siêu âm 4D (thiết bị y tế luôn duyệt 2 cấp) |
+| `gd.benhvien` | Võ Thị Bích, Giám đốc bệnh viện | Bước 2 của đề nghị máy siêu âm 4D (thiết bị y tế luôn duyệt 2 cấp); dự án BVX-EMR |
 | `bs.cdha.benhvien` | Lưu Thị Yến, Bác sĩ chẩn đoán hình ảnh | Người lập đề nghị máy siêu âm 4D |
 | `tk.duoc.benhvien` | Dương Văn Khoa, Trưởng khoa Dược | Không thấy dữ liệu tập đoàn |
 | `ns.benhvien` | Quách Văn Toàn, Chuyên viên phòng Tổ chức cán bộ | Lập hồ sơ tiếp nhận cho bệnh viện |
