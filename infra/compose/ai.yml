@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# AI: Ollama, OCR và tiến trình trả lời trợ lý (ADR #52, #54). Bật/tắt theo mô-đun (ADR #56); `make up` ở mức RAM 8 GB dừng chúng.
+# AI: Ollama, OCR và tiến trình trả lời trợ lý (ADR #52, #54). Chạy mặc định ở mọi mức RAM (ADR #69); bật/tắt theo mô-đun (ADR #56).
 # Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
 # Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
 # nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
@@ -20,7 +20,8 @@ services:
     image: ollama/ollama:0.35.1
     environment:
       OLLAMA_NUM_PARALLEL: "1"
-      OLLAMA_MAX_LOADED_MODELS: "2"
+      # mức RAM 8 (make up) chỉ giữ một mô hình trên RAM, đổi qua lại giữa mô hình hỏi đáp và mô hình nhúng
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
       OLLAMA_KEEP_ALIVE: ${AI_KEEP_ALIVE:-5m}
       OLLAMA_CONTEXT_LENGTH: "8192"
       OLLAMA_FLASH_ATTENTION: "1"

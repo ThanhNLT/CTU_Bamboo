@@ -37,11 +37,12 @@ export const Login: React.FC = () => {
   const navigate = useNavigate();
   const started = useRef(false);
   const [manual] = useState(recentlyTried);
-  // Máy chủ chưa có công ty nào thì cho chọn "Tạo công ty mới" thay vì chuyển thẳng tới trang đăng nhập (ADR #57)
+  // Máy chủ chưa có công ty nào thì cho chọn "Tạo công ty mới" thay vì chuyển thẳng tới trang đăng nhập (ADR #57).
+  // Đã có công ty mà vẫn mở đăng ký (SETUP_OPEN_SIGNUP) thì chuyển như cũ: trang Keycloak có nút "Tạo tài khoản"
   const [setupOpen, setSetupOpen] = useState<boolean>();
 
   useEffect(() => {
-    void setupStatus().then((s) => setSetupOpen(s.open));
+    void setupStatus().then((s) => setSetupOpen(s.open && s.empty));
   }, []);
 
   useEffect(() => {

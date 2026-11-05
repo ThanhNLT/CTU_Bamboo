@@ -484,7 +484,7 @@ class Manager:
         }
 
     def _check_services(self, codes: list[str]) -> None:
-        """Mô-đun cần container mà máy chưa tạo (ví dụ AI ở mức RAM 8) thì không cài được."""
+        """Mô-đun cần container mà máy chưa tạo (ví dụ dựng bằng compose cũ thiếu dịch vụ) thì không cài được."""
         status = _service_status(self.ctx)
         if status is None:
             return
@@ -493,8 +493,8 @@ class Manager:
         ]
         if missing:
             raise ActionError(
-                f"Máy chủ chưa có container {', '.join(sorted(set(missing)))}: chạy lại `make up` "
-                "(mô-đun Trí tuệ số cần mức RAM 16, ADR #54) rồi cài lại",
+                f"Máy chủ chưa có container {', '.join(sorted(set(missing)))}: chạy lại `docker compose up -d` "
+                "(hoặc `make up`) rồi cài lại",
                 "service-missing",
                 409,
             )
