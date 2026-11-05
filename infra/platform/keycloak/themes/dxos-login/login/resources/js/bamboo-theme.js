@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Chế độ sáng/tối của trang đăng nhập Bamboo, kèm nút mặt trăng/mặt trời cạnh ô chọn ngôn ngữ.
+// Chế độ sáng/tối của trang đăng nhập Bamboo, kèm nút mặt trăng/mặt trời cạnh nút chọn ngôn ngữ VI | EN.
 // Dùng chung khóa "colorMode" với ứng dụng web (apps/web/src/contexts/color-mode): qua cổng API cùng một origin
 // nên chọn ở đâu thì nơi kia theo. Thay cho script darkMode của keycloak.v2 (chỉ theo cài đặt hệ điều hành).
 (function () {
@@ -113,7 +113,55 @@
             .catch(function () {});
     };
 
+    // Chọn ngôn ngữ VI | EN cùng kiểu với trang đăng ký của ứng dụng, thay ô chọn thả xuống của keycloak.v2. Lựa chọn
+    // ghi vào "bamboo.locale" (khóa ngôn ngữ của ứng dụng web; qua cổng API cùng origin nên hai bên cùng một ngôn ngữ).
+    var LOCALE_KEY = "bamboo.locale";
+    var NAMES = { vi: "Tiếng Việt", en: "English" };
+    var language = function () {
+        var select = document.getElementById("login-select-toggle");
+        if (!select) return;
+        var current = (root.lang || "vi").slice(0, 2);
+        var choices = [];
+        for (var i = 0; i < select.options.length; i++) {
+            var url = select.options[i].value;
+            var m = /[?&]kc_locale=([a-z]{2})/.exec(url);
+            if (m) choices.push({ code: m[1], url: url });
+        }
+        if (choices.length < 2) return;
+        choices.sort(function (a, b) {
+            return a.code === "vi" ? -1 : b.code === "vi" ? 1 : 0;
+        });
+        try {
+            localStorage.setItem(LOCALE_KEY, current);
+        } catch (e) {}
+        var group = document.createElement("div");
+        group.className = "bb-locale";
+        group.setAttribute("role", "radiogroup");
+        group.setAttribute("aria-label", current === "vi" ? "Ngôn ngữ" : "Language");
+        choices.forEach(function (c) {
+            var button = document.createElement("button");
+            button.type = "button";
+            button.setAttribute("role", "radio");
+            button.setAttribute("aria-checked", String(c.code === current));
+            button.setAttribute("lang", c.code);
+            button.title = NAMES[c.code] || c.code;
+            button.textContent = c.code.toUpperCase();
+            button.addEventListener("click", function () {
+                if (c.code === current) return;
+                try {
+                    localStorage.setItem(LOCALE_KEY, c.code);
+                } catch (e) {}
+                window.location.href = c.url;
+            });
+            group.appendChild(button);
+        });
+        var control = select.closest(".pf-v5-c-form-control") || select;
+        control.style.display = "none";
+        control.parentNode.insertBefore(group, control);
+    };
+
     var ready = function () {
+        language();
         mount();
         greet();
     };

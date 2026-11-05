@@ -6,6 +6,7 @@ import { Moon, Sun } from "lucide-react";
 import { useContext, type ReactNode } from "react";
 
 import { BambooLogo } from "../../components/layout/BambooLogo";
+import { LocaleToggle } from "../../components/LocaleToggle";
 import { ColorModeContext } from "../../contexts/color-mode/context";
 import { useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
@@ -26,20 +27,23 @@ export const AuthShell = ({ children, wide = false }: { children: ReactNode; wid
           <BambooLogo className="h-8 w-8 drop-shadow-[0_4px_8px_rgb(19_58_30_/_0.25)]" />
           <span className="text-[17px] font-semibold tracking-[-0.02em] text-ink">Bamboo DX-OS</span>
         </a>
-        <button
-          type="button"
-          onClick={() => setMode(dark ? "light" : "dark")}
-          aria-pressed={dark}
-          aria-label={t(dark ? "Chế độ sáng" : "Chế độ tối")}
-          title={t(dark ? "Chế độ sáng" : "Chế độ tối")}
-          className="glass grid h-9 w-9 place-items-center rounded-full border text-body transition-transform active:scale-95"
-        >
-          {dark ? (
-            <Sun className="h-[18px] w-[18px]" strokeWidth={2} />
-          ) : (
-            <Moon className="h-[18px] w-[18px]" strokeWidth={1.75} />
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <LocaleToggle />
+          <button
+            type="button"
+            onClick={() => setMode(dark ? "light" : "dark")}
+            aria-pressed={dark}
+            aria-label={t(dark ? "Chế độ sáng" : "Chế độ tối")}
+            title={t(dark ? "Chế độ sáng" : "Chế độ tối")}
+            className="glass grid h-9 w-9 place-items-center rounded-full border text-body transition-transform active:scale-95"
+          >
+            {dark ? (
+              <Sun className="h-[18px] w-[18px]" strokeWidth={2} />
+            ) : (
+              <Moon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+            )}
+          </button>
+        </div>
       </header>
 
       <main
