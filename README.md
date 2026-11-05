@@ -489,6 +489,12 @@ và realm Keycloak.
 
 Mật khẩu chung **`demo-password`** (biến `DEMO_PASSWORD`). Đổi người dùng bằng **Đăng xuất** ở thanh bên trái.
 
+Đăng nhập được nhưng báo **"Tài khoản chưa thuộc tenant nào"** nghĩa là id tài khoản trong Keycloak không khớp người nào
+trong CSDL. Chạy lại `make up`: job `bootstrap` thay tài khoản demo trùng tên đăng nhập nhưng lệch id (volume Keycloak cũ,
+tài khoản tạo lại bằng tay) bằng tài khoản đúng id và chuyển liên kết; job `seed` gắn lại tài khoản demo cho người đang giữ
+ghế nếu bị gỡ. Một phần dữ liệu demo lỗi không còn kéo đổ cả seed (tổ chức, người, tài khoản vẫn được nạp; `seed` thoát mã
+1 và ghi phần lỗi trong `docker compose logs seed`).
+
 **Tập đoàn X – công ty mẹ**
 
 | Tên đăng nhập | Họ tên, vị trí | Nên thử |
