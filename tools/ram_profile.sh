@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # Chọn mức RAM (ADR #54) và in các dòng `export` cho `eval`; thông báo mức đã chọn ghi ra stderr.
-#   BAMBOO_RAM=8   chỉ chức năng cơ bản, không AI (Ollama, OCR, ai-worker không chạy), heap JVM nhỏ hơn
-#   BAMBOO_RAM=16  đầy đủ chức năng
+#   BAMBOO_RAM=8   đầy đủ chức năng kể cả AI, tiết kiệm RAM: heap JVM nhỏ hơn, mỗi lúc một mô hình AI, dịch vụ dùng thưa
+#                  (Ollama, OCR, Trino, Tika, Gotenberg) ngủ sớm hơn (ADR #69)
+#   BAMBOO_RAM=16  đầy đủ chức năng, giá trị mặc định
 # Bỏ trống thì tự chọn theo RAM Docker thấy được (WSL2 mặc định chỉ cấp một nửa RAM máy, nâng bằng .wslconfig).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -24,16 +25,15 @@ if [ -z "$mode" ]; then
     echo "Tự chọn mức RAM $mode (Docker thấy $((kb / 1024)) MB); đặt BAMBOO_RAM=8 hoặc 16 để chọn tay" >&2
 fi
 
-services=""
 case "$mode" in
     16)
         echo "Mức RAM 16: đầy đủ chức năng, gồm AI (Ollama, OCR ngủ khi nhàn rỗi)" >&2
         ;;
     8)
-        # chỉ dựng và chạy các dịch vụ không thuộc AI (Makefile: AI_SERVICES)
-        services=$(docker compose config --services | grep -vxE 'ollama-core|ollama-init|ocr-core|ocr-init|ai-worker' | paste -sd' ' -)
         cat << 'VARS'
-export OLLAMA_URL=
+export OLLAMA_MAX_LOADED_MODELS="${OLLAMA_MAX_LOADED_MODELS:-1}"
+export AI_KEEP_ALIVE="${AI_KEEP_ALIVE:-2m}"
+export OCR_IDLE_SECONDS="${OCR_IDLE_SECONDS:-120}"
 export KEYCLOAK_HEAP="${KEYCLOAK_HEAP:--Xms64m -Xmx384m}"
 export FLOWABLE_JAVA_OPTS="${FLOWABLE_JAVA_OPTS:--Xms64m -Xmx384m}"
 export KAFKA_HEAP="${KAFKA_HEAP:--Xms64m -Xmx384m}"
@@ -43,7 +43,7 @@ export KEYCLOAK_DB_POOL="${KEYCLOAK_DB_POOL:-10}"
 export GATEWAY_WORKERS="${GATEWAY_WORKERS:-1}"
 export SLEEPER_IDLE_SECONDS="${SLEEPER_IDLE_SECONDS:-120}"
 VARS
-        echo "Mức RAM 8: chỉ chức năng cơ bản, không AI" >&2
+        echo "Mức RAM 8: đầy đủ chức năng kể cả AI, tiết kiệm RAM (mỗi lúc một mô hình AI, dịch vụ dùng thưa ngủ sớm)" >&2
         ;;
     *)
         echo "BAMBOO_RAM phải là 8 hoặc 16 (đang là '$mode')" >&2
@@ -51,4 +51,3 @@ VARS
         ;;
 esac
 echo "export BAMBOO_RAM_MODE=$mode"
-echo "export BAMBOO_SERVICES='$services'"

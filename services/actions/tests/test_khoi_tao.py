@@ -86,7 +86,7 @@ def env(empty_db, pki, tmp_path, monkeypatch):
     ctx = Context(users=users, signature_trust_dir=str(tmp_path), signature_online=False, gotenberg_url="http://x")
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": empty_db, "sleeper_url": ""})
     with TestClient(main.create_app(settings, ctx=ctx)) as client:
-        yield {"client": client, "users": users, "db": empty_db, "leaf": leaf, "key": key}
+        yield {"client": client, "users": users, "db": empty_db, "leaf": leaf, "key": key, "ctx": ctx}
 
 
 def issue_code(db: str) -> str:
@@ -495,6 +495,40 @@ def test_dang_ky_nhanh_khong_can_ma(env):
         enabled = [r[0] for r in conn.execute("SELECT module FROM core.tenant_module ORDER BY module")]
         assert enabled == ["approval", "procurement"]
     assert client.get("/setup/status").json() == client.get("/setup/status").json() | {"open": False, "modules": []}
+
+
+def test_dang_ky_mo_khi_da_co_cong_ty(env):
+    """SETUP_OPEN_SIGNUP (bản demo): máy đã có công ty vẫn đăng ký được, không cần mã thiết lập; chỉ công ty khởi tạo
+    máy chủ trống mới quản lý mô-đun trên máy (platform)."""
+    client, db = env["client"], env["db"]
+    issue_code(db)
+    assert finish_unsigned(client, register(client)).status_code == 200
+    # mặc định: đã có công ty thì đóng đăng ký
+    assert register(client).json()["code"] == "setup-closed"
+
+    settings = config.Settings(
+        **{**SETTINGS.__dict__, "database_url": db, "sleeper_url": "", "setup_open_signup": True}
+    )
+    with TestClient(main.create_app(settings, ctx=env["ctx"])) as opened:
+        status = opened.get("/setup/status").json()
+        assert status["empty"] is False and status["open"] is True and status["window_open"] is True
+        assert status["modules"]
+        r = register(
+            opened,
+            owner=OWNER | {"username": "binh.tran", "email": "binh@hoabinh.vn"},
+            company={"legal_name": "Công ty TNHH Hòa Bình", "tax_code": "0109876543", "industry": "Dịch vụ"},
+        )
+        r = finish_unsigned(opened, r)
+        assert r.status_code == 200, r.text
+        assert r.json()["tenant_code"] == "HOABINH"
+
+    with psycopg.connect(db) as conn:
+        owners = conn.execute(
+            """SELECT t.code, o.platform FROM core.tenant_owner o JOIN core.tenant t ON t.id = o.tenant_id
+               ORDER BY t.code"""
+        ).fetchall()
+        assert owners == [("HOABINH", False), ("THUONGMAIMINHANH", True)]
+        assert conn.execute("SELECT count(*) FROM core.setup_code WHERE used_at IS NOT NULL").fetchone()[0] == 1
 
 
 def test_dang_ky_chi_tiet_co_phong_ban(env):

@@ -9,6 +9,9 @@ import { tr, trf } from "../../i18n";
 export type ModuleInfo = { code: string; name: string; description: string; depends: string[] };
 
 export type SetupStatus = {
+  /** Máy chủ chưa có công ty nào */
+  empty: boolean;
+  /** Nhận đăng ký: máy trống, hoặc máy chủ mở đăng ký cả khi đã có công ty (SETUP_OPEN_SIGNUP, bản demo) */
   open: boolean;
   /** Còn trong 24 giờ sau khi cài: đăng ký không cần mã thiết lập (ADR #62) */
   window_open: boolean;
@@ -85,6 +88,7 @@ const call = async <T>(path: string, init?: RequestInit): Promise<T> => {
 };
 
 const CLOSED: SetupStatus = {
+  empty: false,
   open: false,
   window_open: false,
   signature_ready: false,
@@ -92,7 +96,7 @@ const CLOSED: SetupStatus = {
   modules: [],
 };
 
-/** Trang đăng ký chỉ mở khi máy chủ chưa có công ty nào (ADR #57); không hỏi được thì coi như đóng. */
+/** Trang đăng ký mở khi máy chủ chưa có công ty nào (ADR #57) hoặc bật SETUP_OPEN_SIGNUP; không hỏi được thì coi như đóng. */
 export const setupStatus = (): Promise<SetupStatus> =>
   call<SetupStatus>("/status")
     .then((s) => ({ ...CLOSED, ...s, modules: (s.modules ?? []).map(localizeModule) }))

@@ -53,7 +53,7 @@ Giao diện quản trị đi kèm một số dịch vụ (Hasura Console, Keyclo
 
 Mỗi dịch vụ có volume secret riêng chỉ mount vào đúng dịch vụ đó: `openbao-init` ghi file AppRole (role-id + secret-id, quyền 0400) vào `actions-secrets`, `bootstrap-secrets` và `search-secrets`, cấu hình S3 vào `seaweedfs-config`, cấu hình Meilisearch (quyền 0600) vào `meilisearch-config`. Dịch vụ nào cũng thấy `/run/bms/approle.json` của riêng mình, không thấy secret của dịch vụ kia. Mô hình giống Vault Agent / External Secrets Operator sẽ dùng trên Kubernetes.
 
-Dịch vụ Python đọc secret lúc khởi động (`config.load()`): có `BAO_ADDR` và `BAO_APPROLE_FILE` thì đăng nhập AppRole và thay giá trị env bằng secret đọc được (`SECRET_FIELDS` trong `config.py`); đường dẫn bị policy chặn thì giữ giá trị env. Chạy ngoài compose (kiểm thử native) không đặt hai biến này thì dùng env.
+Dịch vụ Python đọc secret lúc khởi động (`config.load()`): có `BAO_ADDR` và `BAO_APPROLE_FILE` thì đăng nhập AppRole và thay giá trị env bằng secret đọc được (`SECRET_FIELDS` trong `config.py`); đường dẫn bị policy chặn thì giữ giá trị env. OpenBao chưa sẵn sàng (đang khởi động, đang khóa chờ `openbao-unseal` mở) thì chờ tối đa `BAO_WAIT_SECONDS` (120 giây) rồi mới thoát; sai AppRole (lỗi 4xx) thì thoát ngay. Chạy ngoài compose (kiểm thử native) không đặt hai biến này thì dùng env.
 
 Dịch vụ hạ tầng (PostgreSQL, Keycloak, Hasura, Flowable) vẫn nhận mật khẩu qua biến môi trường vì Docker Compose không có cơ chế inject secret từ OpenBao; trên k3s dùng External Secrets Operator đọc từ OpenBao.
 
@@ -558,7 +558,7 @@ Dịch vụ `ocr` không trạng thái (`POST /ocr` một trang ảnh, `POST /un
 VietOCR nhận dạng, chạy trên PyTorch (CUDA nếu có, không thì CPU). `ai-worker` giữ một hàng đợi chung với lượt hỏi AI, OCR ảnh
 và trang PDF không có lớp chữ, lưu kết quả ở `core.attachment_ocr` và đưa văn bản vào chỉ mục tìm kiếm. Job `ocr-init` tải
 trọng số lần đầu (kiểm sha256). Trang Nhập liệu OCR (`/i/ocr`, Action `ocr_document`) rút nhà cung cấp, mã số thuế, dòng hàng
-và số tiền bằng quy tắc (`ocr_fields.py`), không dùng mô hình. Chỉ chạy ở mức RAM 16 (ADR #54).
+và số tiền bằng quy tắc (`ocr_fields.py`), không dùng mô hình. Chạy ở mọi mức RAM (ADR #69).
 
 ## 14. Dịch vụ tự ngủ – `sleeper` (ADR #53)
 
@@ -692,6 +692,7 @@ Phần lõi luôn bật (gồm cả nhắn tin và lịch công tác, [ADR #65](
 | `SIGNATURE_TRUST_DIR` | `/repo/infra/platform/trust` | Thư mục chứng thư gốc tin cậy |
 | `SIGNATURE_ONLINE` | `true` | Kiểm thu hồi chứng thư qua OCSP/CRL (chặt) |
 | `SETUP_ALLOW_UNVERIFIED` | `true` | Cho tạo công ty chưa xác thực, ký bổ sung sau |
+| `SETUP_OPEN_SIGNUP` | `false` (compose: theo `SEED_DEMO`) | Mở trang đăng ký cả khi máy đã có công ty, không cần mã thiết lập; công ty đăng ký thêm không quản lý mô-đun trên máy |
 
 
 ## 24. Thời gian thực, phả hệ tự động, cổng dịch vụ API (migration 052, ADR #64)
