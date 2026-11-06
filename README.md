@@ -143,19 +143,20 @@ Mức: **Có** = đã hiện thực, có kiểm thử; **Một phần** = có nh
 | Quy trình | Flowable REST 8; bpmn-js | Apache-2.0; giấy phép bpmn.io | Luồng duyệt BPMN, thiết kế quy trình trên giao diện, chạy thử sandbox, quy trình tự động (hẹn giờ, webhook, sự kiện) | Có |
 | Lưu trữ đối tượng | SeaweedFS 4 | Apache-2.0 | Tệp đính kèm, ổ đĩa, Lakehouse; bucket kiểm dịch, link có chữ ký | Có |
 | Két bí mật, ký số | OpenBao 2 | MPL-2.0 | Secret, AppRole riêng từng dịch vụ, mã hóa dữ liệu nhạy cảm, chữ ký Ed25519 cho biên nhận và bản neo | Có |
-| Quét tệp | Bộ quét nội bộ Bamboo; ClamAV 1.4 (tùy chọn) | Apache-2.0; GPL-2.0-only | Kiểm cấu trúc, macro, mã chủ động, tệp nhúng, bom nén; ClamAV quét theo mẫu virus | Một phần (chưa có CDR) |
+| Quét tệp, CDR | Bộ quét nội bộ Bamboo, CDR (Pillow, pypdf); ClamAV 1.4 (bật ở mức RAM 16) | Apache-2.0, MIT-CMU, BSD-3-Clause; GPL-2.0-only | Kiểm cấu trúc, macro, mã chủ động, tệp nhúng, bom nén; dựng lại ảnh, Office, PDF bỏ nội dung chủ động; ClamAV quét theo mẫu virus | Có |
 | Tìm kiếm | Meilisearch 1 Community, Apache Tika 4 | MIT, Apache-2.0 | Tìm toàn văn có dấu/không dấu trong chứng từ và nội dung tệp, lọc lại theo quyền; tìm ngữ nghĩa bằng vector | Có |
 | Sinh văn bản PDF | Gotenberg 8 (Chromium), Jinja2 | MIT, BSD-3-Clause | Phiếu đề nghị, quyết định nhân sự, báo cáo KPI; mã kiểm tra là mã băm nội dung | Có |
 | CDC, trục sự kiện | Debezium Server 3, Apache Kafka 4 (KRaft) | Apache-2.0 | Đẩy mọi thay đổi của CSDL vào Kafka, SCRAM + ACL | Có |
 | Lakehouse | Apache Iceberg (pyiceberg, pyarrow), Trino 483 | Apache-2.0 | Lịch sử thay đổi (bronze), trạng thái hiện tại có kiểu (silver), lớp ngữ nghĩa, lọc theo tenant | Có |
 | AI cục bộ | Ollama 0.35, Qwen3-4B (chat), bge-m3 (vector) | MIT, Apache-2.0, MIT | Trợ lý RAG có trích dẫn, guardrail, tìm ngữ nghĩa; chạy CPU hoặc GPU | Có |
 | OCR tiếng Việt | PaddleOCR + VietOCR trên PyTorch | Apache-2.0, BSD-3-Clause | Đọc bản quét, rút nhà cung cấp, mã số thuế, dòng hàng, số tiền để điền chứng từ | Có |
+| IT/OT | Eclipse Mosquitto 2 (dynamic-security), paho-mqtt; NGSI-LD | EPL-2.0/EDL-1.0 | Thiết bị gửi số đo qua MQTT (TLS, tài khoản theo công ty) hoặc REST NGSI-LD vào bản sao số | Có |
 | Che dữ liệu cá nhân | Microsoft Presidio | MIT | Nhận diện CCCD, điện thoại, tài khoản, email theo mẫu Việt Nam; bản che trong nhật ký và ô trao đổi | Có |
 | Thông báo đa kênh | Hàng đợi `msg.queue` trong PostgreSQL; Mailpit (hộp thư thử) | –; MIT | Email, SMS, webhook có thử lại, hàng chết, biên nhận có chữ ký chống chối bỏ | Có |
-| Nhật ký tập trung | Vector 0.46 (tùy chọn), bảng `obs.log_event` | MPL-2.0 | Gom log dịch vụ và container kèm mã truy vết `X-Request-Id`, đã che dữ liệu cá nhân | Một phần (chưa có OpenTelemetry, Prometheus, Grafana) |
+| Nhật ký, truy vết, giám sát | Vector 0.46 (tùy chọn), bảng `obs.log_event`; OpenTelemetry Collector, Jaeger 2, Prometheus 3, Grafana 13 (nhóm `observability`) | MPL-2.0; Apache-2.0; AGPL-3.0-only (Grafana, chạy riêng, không sửa) | Log kèm `X-Request-Id`, đã che dữ liệu cá nhân; span theo yêu cầu và câu lệnh SQL; số liệu, bảng điều khiển, cảnh báo | Có |
 | Sao lưu, GitOps | Script `tools/ops`, `tools/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu cấu hình với kho mã | Một phần (không dùng Argo CD, Kubernetes) |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI, psycopg | MIT, LGPL-3.0 (psycopg, dùng như thư viện) | Hasura Actions, xác thực, đồng bộ, worker nền, job khởi tạo | Có |
-| Giao diện | Refine 5, React 19, Ant Design 5 | MIT | Ứng dụng web Tầng 2, đa ngôn ngữ phần khung (Việt, Anh) | Có |
+| Giao diện | Refine 5, React 19, Ant Design 5 | MIT | Ứng dụng web Tầng 2, đầy đủ tiếng Việt và tiếng Anh | Có |
 
 Danh sách đầy đủ thư viện Python, JavaScript và giấy phép: [NOTICE](NOTICE). Lý do chọn từng công nghệ và phương án đã loại:
 [nhật ký quyết định kiến trúc](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md).
@@ -164,12 +165,11 @@ Danh sách đầy đủ thư viện Python, JavaScript và giấy phép: [NOTICE
 
 Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp theo:
 
-- **Hội tụ IT/OT thật:** thu dữ liệu cảm biến qua MQTT và context broker NGSI-LD (bản sao số, phả hệ, chất lượng dữ liệu hiện
-  đọc từ dữ liệu demo nạp sẵn).
-- **Bảo mật:** mTLS giữa các dịch vụ, chữ ký số bằng chứng thư công cộng (PKI), làm sạch tệp (CDR).
-- **Giám sát:** OpenTelemetry, Prometheus, Grafana.
-- **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; giao diện cho lớp
-  ngữ nghĩa và báo cáo KPI; kịch bản tự động do người dùng viết mã; dịch toàn bộ trang nghiệp vụ sang tiếng Anh.
+- **Bảo mật:** mTLS cho các chặng HTTP nội bộ còn lại (APISIX, Hasura, Keycloak, Flowable: cần sidecar hoặc service mesh),
+  ký số bằng chứng thư công cộng và HSM (cần thiết bị hoặc dịch vụ ký số từ xa của CA).
+- **Vận hành:** chuyển sang Kubernetes (k3s) và Argo CD; span của APISIX, Hasura.
+- **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; dịch thông báo
+  lỗi do máy chủ trả về sang tiếng Anh.
 - **Lakehouse:** chính sách vòng đời và xóa dữ liệu.
 - **Tầng 3:** ứng dụng ngành (OMS, WMS, MES/SCADA, EMR, CRM) cắm vào nền tảng.
 
@@ -316,6 +316,9 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 | Flowable REST | <http://localhost:8082/flowable-rest> | `rest-admin` / `test` |
 | Trino | <https://localhost:8085> | `bms-admin`, mật khẩu in bằng `make trino-password` |
 | Hộp thư thử (Mailpit) | <http://localhost:8025> | không cần |
+| Grafana (nhóm `observability`) | <http://localhost:3001> | `admin` / `grafana-dev` |
+| Jaeger, Prometheus | <http://localhost:16686>, <http://localhost:9090> | không cần |
+| MQTT (Mosquitto) | `localhost:1883`, TLS `localhost:8883` | tài khoản thiết bị tạo ở Cổng dịch vụ API |
 | PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`make psql`) |
 
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
