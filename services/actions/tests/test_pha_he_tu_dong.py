@@ -53,3 +53,17 @@ def test_thu_thap_ghi_do_thi_auto_giu_do_thi_mau(conn):
     assert len(graph["nodes"]) == auto and graph["edges"]
     assert all(ch["checked_at"].endswith("+00:00") or "T" in ch["checked_at"] for ch in graph["checks"])
     conn.execute("DELETE FROM meta.lineage_node WHERE id = 'demo-x'")
+
+
+def test_thu_thap_tu_dong_theo_lich_khong_can_trino(conn):
+    with psycopg.connect(TEST_APP_DB_URL) as c, c.transaction():
+        out = lineage_sync.auto_collect(c)
+    assert out["nodes"] > 10 and out["checks"] >= 1
+    run = conn.execute(
+        """SELECT engine, result, tenant_id FROM meta.pipeline_run WHERE task = 'lineage.auto'
+           ORDER BY started_at DESC LIMIT 1"""
+    ).fetchone()
+    assert run is not None and run["engine"] == "PostgreSQL" and run["tenant_id"] is None, "mức nền tảng"
+    assert run["result"] == ("check_failed" if out["failed"] else "success")
+    auto = conn.execute("SELECT count(*) AS n FROM meta.lineage_node WHERE origin = 'auto'").fetchone()["n"]
+    assert auto == out["nodes"], "đồ thị dựng lại từ cấu hình đang chạy"
