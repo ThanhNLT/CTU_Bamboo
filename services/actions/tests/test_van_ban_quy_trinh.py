@@ -227,9 +227,9 @@ def regulator(conn, designer):  # noqa: F811
     )
     conn.execute(
         """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
-           SELECT test.id('TDX'), id, test.id('P_GD'), 'TENANT' FROM core.role
+           SELECT test.id('TDX'), id, test.id(%s), 'TENANT' FROM core.role
            WHERE tenant_id = test.id('TDX') AND code = %s""",
-        (role,),
+        (designer["k"]("P_GD"), role),
     )
     if not conn.execute(
         "SELECT 1 FROM wf.approval_rule WHERE tenant_id = test.id('TDX') AND process_code = 'KB_DOCUMENT'"
@@ -247,10 +247,12 @@ def test_hai_chieu_van_ban_va_so_do(hasura, client, conn, s3, regulator):  # noq
     i = {"TDX": tenant, "c": gd}
     doc_id = conn.execute(
         """INSERT INTO collab.kb_document (tenant_id, title, category, scope, requester_id, requester_position_id)
-           VALUES (test.id('TDX'), %s, 'sop', 'company', %s, test.id('P_GD')) RETURNING id""",
-        (f"Quy chế mua sắm {uuid.uuid4().hex[:6]}", gd),
-    ).fetchone()[0]
-    att = upload(hasura, i, str(doc_id), MUA_SAM.encode(), name="mua-sam.txt", ctype="text/plain")
+           VALUES (test.id('TDX'), %s, 'sop', 'company', %s, test.id(%s)) RETURNING id""",
+        (f"Quy chế mua sắm {uuid.uuid4().hex[:6]}", gd, k("P_GD")),
+    ).fetchone()["id"]
+    att = upload(
+        hasura, i, str(doc_id), MUA_SAM.encode(), name="mua-sam.txt", ctype="text/plain", entity="collab.kb_document"
+    )
     confirm = hasura(CONFIRM, {"a": att}, person=gd, tenant=tenant)
     assert confirm["data"]["confirm_upload"]["status"] == "CLEAN", confirm
 
@@ -285,4 +287,4 @@ def test_hai_chieu_van_ban_va_so_do(hasura, client, conn, s3, regulator):  # noq
     text = conn.execute(
         "SELECT file_name FROM core.attachment WHERE entity_id = %s AND status = 'CLEAN'", (out["document_id"],)
     ).fetchall()
-    assert out["files"][0] in {t[0] for t in text}
+    assert out["files"][0] in {t["file_name"] for t in text}
