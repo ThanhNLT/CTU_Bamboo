@@ -35,18 +35,29 @@ def _pdf() -> bytes:
 
 PDF = _pdf()
 
-UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!) {
-  get_upload_url(entity_type: "proc.purchase_request", entity_id: $id, file_name: $name,
+UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!, $entity: String!) {
+  get_upload_url(entity_type: $entity, entity_id: $id, file_name: $name,
                  content_type: $type, size_bytes: $size) { attachment_id upload_url method content_type } }"""
 CONFIRM = """mutation($a: uuid!) { confirm_upload(attachment_id: $a) {
   status scan_result attachment { status sha256 file_name } } }"""
 DOWNLOAD = """query($a: uuid!) { get_download_url(attachment_id: $a) { url } }"""
 
 
-def upload(hasura, i, pr_id, content: bytes, *, name="bao-gia.pdf", ctype="application/pdf", size=None, person="c"):
+def upload(
+    hasura,
+    i,
+    pr_id,
+    content: bytes,
+    *,
+    name="bao-gia.pdf",
+    ctype="application/pdf",
+    size=None,
+    person="c",
+    entity="proc.purchase_request",
+):
     data = hasura(
         UPLOAD,
-        {"id": pr_id, "name": name, "type": ctype, "size": size or len(content)},
+        {"id": pr_id, "name": name, "type": ctype, "size": size or len(content), "entity": entity},
         person=i[person],
         tenant=i["TDX"],
     )
