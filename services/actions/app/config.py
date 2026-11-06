@@ -131,6 +131,7 @@ DEV_DEFAULTS = {
     "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",
     "FLOWABLE_ADMIN_PASSWORD": "test",
     "DEMO_PASSWORD": "demo-password",
+    "GRAFANA_ADMIN_PASSWORD": "grafana-dev",
 }
 
 

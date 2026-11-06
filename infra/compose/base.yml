@@ -18,6 +18,7 @@ services:
       BAMBOO_ENV: ${BAMBOO_ENV:-development}
       # openbao-init từ chối chạy ở production khi Console còn bật
       HASURA_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana-dev}
       DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms
       ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
       FLOWABLE_URL: http://flowable:8080/flowable-rest/service
@@ -56,6 +57,8 @@ services:
       AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
       AI_CPU_MODELS: ${AI_CPU_MODELS:-bge-m3}
       MQTT_HOST: ${MQTT_HOST-mosquitto}
+      # Truy vết OpenTelemetry (ADR #75): `make up` mức RAM 16 đặt http://otel-collector:4318; để trống là tắt
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
 
   hasura-base:
     image: hasura/graphql-engine:v2.51.0-ce

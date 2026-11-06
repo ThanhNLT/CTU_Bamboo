@@ -50,4 +50,14 @@ VARS
         exit 1
         ;;
 esac
+# Giám sát (ADR #75): mức 16 bật nhóm observability (OTel Collector, Jaeger, Prometheus, Grafana) và truy vết;
+# mức 8 tắt để tiết kiệm khoảng 1 GB, bật tay bằng BAMBOO_OBSERVABILITY=true. COMPOSE_PROFILES sẵn có được giữ.
+obs=${BAMBOO_OBSERVABILITY:-$(env_value BAMBOO_OBSERVABILITY)}
+[ -z "$obs" ] && { [ "$mode" = 16 ] && obs=true || obs=false; }
+if [ "$obs" = true ]; then
+    profiles=${COMPOSE_PROFILES:-$(env_value COMPOSE_PROFILES)}
+    echo "export COMPOSE_PROFILES=\"${profiles:+$profiles,}observability\""
+    echo 'export OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}"'
+    echo "Giám sát: Grafana http://localhost:3001, Jaeger http://localhost:16686, Prometheus http://localhost:9090" >&2
+fi
 echo "export BAMBOO_RAM_MODE=$mode"

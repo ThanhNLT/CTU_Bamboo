@@ -123,6 +123,8 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
+      # /metrics trên cổng quản trị 9000 (chỉ mạng nội bộ) cho Prometheus (ADR #75)
+      KC_METRICS_ENABLED: "true"
       JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms64m -Xmx512m}
       MALLOC_ARENA_MAX: "2"
       KC_DB_POOL_MAX_SIZE: ${KEYCLOAK_DB_POOL:-20}
