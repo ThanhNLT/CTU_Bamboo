@@ -167,7 +167,7 @@ export const AutomationTab = ({
               disabled={!canManage || busy}
               placeholder={tr("Không đăng ký sự kiện nào")}
               value={automation?.events ?? []}
-              options={(automation?.eventCatalog ?? []).map((e) => ({ value: e.code, label: e.label }))}
+              options={(automation?.eventCatalog ?? []).map((e) => ({ value: e.code, label: tr(e.label) }))}
               onChange={(v: string[]) => void run(() => onEvents(v))}
             />
           </div>
