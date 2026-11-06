@@ -200,7 +200,8 @@ services:
     restart: unless-stopped
 
   # Hội tụ IT/OT (ADR #74): thiết bị publish `bamboo/<mã công ty>/<mã thiết bị>/attrs` (NGSI-LD), iot-bridge ghi vào
-  # bản sao số. Mặc định chỉ nghe 127.0.0.1; mở cho mạng OT bằng MQTT_BIND (đặt sau tường lửa, nên dùng TLS ở biên).
+  # bản sao số. Thiết bị trong mạng OT dùng cổng TLS 8883 (MQTT_BIND, mặc định 127.0.0.1); 1883 chỉ mở cho 127.0.0.1;
+  # iot-bridge và actions dùng cổng mTLS nội bộ 8884 bằng chứng chỉ do CA nội bộ OpenBao cấp (ADR #76).
   mosquitto:
     logging: *logging
     image: eclipse-mosquitto:2.0.21
@@ -208,10 +209,12 @@ services:
       openbao-init:
         condition: service_completed_successfully
     ports:
-      - "${MQTT_BIND:-127.0.0.1}:1883:1883"
+      - "127.0.0.1:1883:1883"
+      - "${MQTT_BIND:-127.0.0.1}:8883:8883"
     volumes:
       - ../platform/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto-data:/mosquitto/data
+      - mosquitto-tls:/mosquitto/tls:ro
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 1883"]
       interval: 10s
