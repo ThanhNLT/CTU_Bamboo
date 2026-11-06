@@ -1393,6 +1393,14 @@ def build(conn: psycopg.Connection) -> dict:
                 "Xác minh chữ ký biên nhận và mã băm nội dung của một tin đã giao (cần core.org.manage)",
             ),
             _action(
+                "process_script_test",
+                "mutation",
+                [("model_id", "uuid!"), ("script", "String!"), ("variables", "jsonb")],
+                "ProcessScriptTest!",
+                [ROLE, ADMIN_ROLE],
+                "Chạy thử kịch bản của tác vụ tự động với biến mẫu, không đụng dữ liệu (ADR #73, người thiết kế)",
+            ),
+            _action(
                 "process_automation_enable",
                 "mutation",
                 [("id", "uuid!"), ("events", "[String!]")],
@@ -3191,6 +3199,17 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "events", "type": "jsonb!"},
                         {"name": "actions", "type": "jsonb!"},
                         {"name": "autonomy", "type": "jsonb!"},
+                    ],
+                },
+                {
+                    "name": "ProcessScriptTest",
+                    "fields": [
+                        {"name": "ok", "type": "Boolean!"},
+                        {"name": "error", "type": "String"},
+                        {"name": "line", "type": "Int"},
+                        {"name": "outputs", "type": "jsonb!"},
+                        {"name": "log", "type": "jsonb!"},
+                        {"name": "steps", "type": "Int!"},
                     ],
                 },
                 {
