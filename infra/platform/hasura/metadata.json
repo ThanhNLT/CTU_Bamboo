@@ -4486,6 +4486,36 @@
               }
             },
             {
+              "name": "mqtt_accounts_by_created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "mqtt_account"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "mqtt_accounts_by_revoked_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "mqtt_account"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "revoked_by"
+                  }
+                }
+              }
+            },
+            {
               "name": "charts",
               "using": {
                 "manual_configuration": {
@@ -8755,6 +8785,188 @@
                       ]
                     }
                   }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "iot",
+            "name": "mqtt_account"
+          },
+          "object_relationships": [
+            {
+              "name": "created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "created_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "revoked_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "revoked_by": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -16254,6 +16466,142 @@
       "comment": "Ghi nhận một sự cố thiết bị của Bản sao số kèm hướng xử lý (ADR #50)"
     },
     {
+      "name": "iot_entities",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/iot_entities",
+        "arguments": [
+          {
+            "name": "type",
+            "type": "String"
+          },
+          {
+            "name": "id",
+            "type": "String"
+          },
+          {
+            "name": "limit",
+            "type": "Int"
+          }
+        ],
+        "output_type": "IotEntities!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thực thể bản sao số dạng NGSI-LD chuẩn, kèm giá trị đo mới nhất (ADR #74)"
+    },
+    {
+      "name": "iot_ingest",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/iot_ingest",
+        "arguments": [
+          {
+            "name": "entity",
+            "type": "String!"
+          },
+          {
+            "name": "attrs",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "IotIngestResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Ghi số đo NGSI-LD của một thiết bị (cần iot.ingest ở đơn vị của thiết bị, ADR #74)"
+    },
+    {
+      "name": "iot_mqtt_account_create",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/iot_mqtt_account_create",
+        "arguments": [
+          {
+            "name": "label",
+            "type": "String!"
+          }
+        ],
+        "output_type": "IotMqttAccount!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tạo tài khoản MQTT cho thiết bị / cổng OT, mật khẩu hiện một lần (quản trị viên công ty)"
+    },
+    {
+      "name": "iot_mqtt_account_revoke",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/iot_mqtt_account_revoke",
+        "arguments": [
+          {
+            "name": "username",
+            "type": "String!"
+          }
+        ],
+        "output_type": "IotMqttRevoked!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thu hồi tài khoản MQTT, ngắt kết nối ngay (quản trị viên công ty)"
+    },
+    {
       "name": "process_models",
       "definition": {
         "kind": "synchronous",
@@ -21365,6 +21713,62 @@
           {
             "name": "documents",
             "type": "[KbDocument!]!"
+          }
+        ]
+      },
+      {
+        "name": "IotEntities",
+        "fields": [
+          {
+            "name": "entities",
+            "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "IotIngestResult",
+        "fields": [
+          {
+            "name": "entity",
+            "type": "String!"
+          },
+          {
+            "name": "written",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "IotMqttAccount",
+        "fields": [
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "password",
+            "type": "String!"
+          },
+          {
+            "name": "topic",
+            "type": "String!"
+          },
+          {
+            "name": "message",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "IotMqttRevoked",
+        "fields": [
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "revoked",
+            "type": "Boolean!"
           }
         ]
       },

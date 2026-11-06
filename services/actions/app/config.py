@@ -30,6 +30,7 @@ SECRET_FIELDS = {
     "bms/meilisearch-indexer": {"key": "meili_indexer_key"},
     "bms/kafka-lakehouse": {"username": "kafka_username", "password": "kafka_password"},
     "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
+    "bms/mosquitto": {"admin_password": "mqtt_admin_password", "bridge_password": "mqtt_bridge_password"},
 }
 
 
@@ -108,6 +109,11 @@ class Settings:
     setup_allow_unverified: bool = True
     # Mở trang đăng ký cả khi máy đã có công ty (bản demo: dữ liệu mẫu và đăng ký cùng dùng được); không cần mã 24 giờ
     setup_open_signup: bool = False
+    # Broker MQTT cho thiết bị OT (ADR #74); để trống host là tắt
+    mqtt_host: str = ""
+    mqtt_port: int = 1883
+    mqtt_admin_password: str = ""
+    mqtt_bridge_password: str = ""
 
 
 DEV_DEFAULTS = {
@@ -298,5 +304,9 @@ def _from_env() -> Settings:
         ),
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
+        mqtt_host=env("MQTT_HOST", ""),
+        mqtt_port=int(env("MQTT_PORT", "1883")),
+        mqtt_admin_password=env("MQTT_ADMIN_PASSWORD", ""),
+        mqtt_bridge_password=env("MQTT_BRIDGE_PASSWORD", ""),
         setup_open_signup=env("SETUP_OPEN_SIGNUP", "false").lower() in ("1", "true", "yes"),
     )

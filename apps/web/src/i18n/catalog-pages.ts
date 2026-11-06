@@ -3275,4 +3275,29 @@ export const EN_PAGES: Record<string, string> = {
   "Kịch bản": "Script",
   '# Biến của quy trình dùng trực tiếp theo tên, ví dụ amount, doc_no\nmuc = "cao" if amount >= 50_000_000 else "thuong"\ncan_bao_gia = amount >= 50_000_000\nhan = add_days(today(), 7)\nlog("muc duyet", muc)':
     '# Process variables are used directly by name, e.g. amount, doc_no\nlevel = "high" if amount >= 50_000_000 else "normal"\nneeds_quotes = amount >= 50_000_000\ndue = add_days(today(), 7)\nlog("approval level", level)',
+  // Hội tụ IT/OT: MQTT và NGSI-LD (ADR #74)
+  "Chưa có số đo trực tiếp: đang hiện dữ liệu mẫu": "No live readings yet: showing sample data",
+  "Chưa có tài khoản thiết bị.": "No device accounts yet.",
+  "Chủ đề": "Topic",
+  "Lưu mật khẩu ngay: hệ thống không hiện lại": "Save the password now: it will not be shown again",
+  "Mật khẩu": "Password",
+  "Ngày tạo": "Created",
+  "Nhập tên gợi nhớ (tối đa 80 ký tự)": "Enter a label (up to 80 characters)",
+  "Sao chép mật khẩu": "Copy password",
+  "Số đo nhận trực tiếp từ thiết bị (NGSI-LD)": "Readings received live from the device (NGSI-LD)",
+  "Thiết bị MQTT": "MQTT devices",
+  "Thiết bị hoặc cổng OT gửi số đo vào Bản sao số qua broker MQTT của hệ thống. Mỗi tài khoản chỉ được gửi vào nhánh chủ đề của công ty; thân bản tin theo NGSI-LD. Hệ thống ngoài không dùng MQTT thì gửi qua REST NGSI-LD bằng khóa API phạm vi iot.write.":
+    "Devices or OT gateways send readings to the Digital twin through the system's MQTT broker. Each account can only publish under the company's topic branch; payloads follow NGSI-LD. Systems that do not use MQTT send through the NGSI-LD REST API with an API key scoped iot.write.",
+  "Thiết bị đang dùng tài khoản này bị ngắt kết nối ngay và không gửi được số đo nữa.":
+    "Devices using this account are disconnected immediately and can no longer send readings.",
+  "Thu hồi tài khoản “{0}”?": "Revoke account “{0}”?",
+  "Trực tiếp · API": "Live · API",
+  "Trực tiếp · MQTT": "Live · MQTT",
+  "Tài khoản thiết bị đã tạo": "Device account created",
+  "Tên gợi nhớ": "Label",
+  "Tạo tài khoản thiết bị MQTT": "Create an MQTT device account",
+  "Ví dụ: Cổng OT nhà máy Bắc Ninh": "For example: Bac Ninh plant OT gateway",
+  "Thực thể bản sao số dạng NGSI-LD và giá trị đo mới nhất": "Digital twin entities as NGSI-LD with latest readings",
+  "Gửi số đo thiết bị dạng NGSI-LD (người tạo khóa cần quyền iot.ingest)":
+    "Send device readings as NGSI-LD (the key creator needs the iot.ingest permission)",
 };

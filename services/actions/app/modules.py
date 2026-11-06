@@ -248,7 +248,7 @@ CATALOG: tuple[Module, ...] = (
         "data",
         "Dữ liệu số",
         "Trung tâm điều hành, bản sao số, KPI, Lakehouse và dịch vụ dữ liệu (Kafka, Debezium, Trino)",
-        services=("kafka", "debezium", "lakehouse-sink", "trino-core"),
+        services=("kafka", "debezium", "lakehouse-sink", "trino-core", "mosquitto", "iot-bridge"),
         actions=frozenset(
             {
                 "lakehouse_datasets",
@@ -259,6 +259,10 @@ CATALOG: tuple[Module, ...] = (
                 "lineage_graph",
                 "ops_dashboard",
                 "iot_acknowledge",
+                "iot_entities",
+                "iot_ingest",
+                "iot_mqtt_account_create",
+                "iot_mqtt_account_revoke",
                 "kpi_snapshots",
                 "get_kpi_report_pdf",
             }

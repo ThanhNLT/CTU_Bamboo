@@ -17,7 +17,7 @@ import httpx
 
 from bamboo_common.openbao import Bao, BaoError
 
-from . import config, search, storage
+from . import config, mqtt_admin, search, storage
 
 log = logging.getLogger("openbao_init")
 
@@ -30,6 +30,7 @@ path "secret/data/bms/actions"   { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-search" { capabilities = ["read"] }
 path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 path "secret/data/bms/trino-actions" { capabilities = ["read"] }
+path "secret/data/bms/mosquitto" { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
 path "transit/sign/receipt"      { capabilities = ["update"] }
@@ -194,6 +195,12 @@ def sync_secrets(root: Bao) -> None:
             log.info("đã sinh mật khẩu Trino secret/%s", path)
     if root.read("bms/trino-internal") is None:
         root.write("bms/trino-internal", {"shared_secret": secrets.token_urlsafe(48)})
+    if root.read("bms/mosquitto") is None:
+        root.write(
+            "bms/mosquitto",
+            {"admin_password": secrets.token_urlsafe(32), "bridge_password": secrets.token_urlsafe(32)},
+        )
+        log.info("đã sinh mật khẩu Mosquitto secret/bms/mosquitto")
     if root.read("bms/keycloak-provisioner") is None:
         root.write("bms/keycloak-provisioner", {"client_secret": secrets.token_urlsafe(32)})
         log.info("đã sinh secret client bms-provisioner")
@@ -384,6 +391,7 @@ def run(
     trino_uid: int | None = None,
     trino_secrets_dir: pathlib.Path | None = None,
     ca_outputs: list[pathlib.Path] | None = None,
+    mqtt_dynsec_path: pathlib.Path | None = None,
 ) -> None:
     wait_reachable(addr)
     root = Bao(addr, init_and_unseal(addr, keys_file))
@@ -414,6 +422,15 @@ def run(
         trino_secrets(root, trino_secrets_dir, trino_uid)
     if ca_outputs:
         write_internal_ca(root, ca_outputs)
+    if mqtt_dynsec_path and not mqtt_dynsec_path.exists():
+        # Chỉ ghi lần đầu: Mosquitto tự lưu tài khoản thiết bị tạo sau đó vào cùng tệp
+        creds = root.read("bms/mosquitto")
+        text = json.dumps(mqtt_admin.dynsec_config(creds["admin_password"], creds["bridge_password"]), indent=2)
+        _write_if_changed(mqtt_dynsec_path, text, 0o600)
+        mqtt_uid = os.environ.get("MQTT_UID")
+        if mqtt_uid:
+            os.chown(mqtt_dynsec_path, int(mqtt_uid), int(mqtt_uid))
+        log.info("đã ghi cấu hình dynamic-security Mosquitto %s", mqtt_dynsec_path)
     for role, path in approle_outputs.items():
         if role not in POLICIES:
             raise ValueError(f"Không có AppRole {role}")
@@ -447,6 +464,7 @@ def main() -> int:
         int(trino_uid) if trino_uid else None,
         pathlib.Path(trino_secrets_dir) if trino_secrets_dir else None,
         [pathlib.Path(p) for p in env("INTERNAL_CA_OUTPUTS", "").split(",") if p],
+        pathlib.Path(env("MQTT_DYNSEC_PATH")) if env("MQTT_DYNSEC_PATH") else None,
     )
     return 0
 
