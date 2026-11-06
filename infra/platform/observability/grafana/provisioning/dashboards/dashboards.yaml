@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: 1
+providers:
+  - name: bamboo
+    folder: Bamboo
+    type: file
+    disableDeletion: true
+    options:
+      path: /var/lib/grafana/dashboards
