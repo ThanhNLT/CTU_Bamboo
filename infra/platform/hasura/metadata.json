@@ -2388,6 +2388,20 @@
           ],
           "array_relationships": [
             {
+              "name": "ai_agent_runs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent_run"
+                  },
+                  "column_mapping": {
+                    "id": "agent_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "ai_questions",
               "using": {
                 "manual_configuration": {
@@ -2397,6 +2411,172 @@
                   },
                   "column_mapping": {
                     "id": "agent_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_ai_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_ai_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "ai_agent_run"
+          },
+          "object_relationships": [
+            {
+              "name": "agent",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent"
+                  },
+                  "column_mapping": {
+                    "agent_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
                   }
                 }
               }
@@ -2937,6 +3117,16 @@
                 "session_argument": "hasura_session"
               },
               "comment": "Người gọi có được xem chứng từ không"
+            },
+            {
+              "name": "para",
+              "definition": {
+                "function": {
+                  "schema": "core",
+                  "name": "attachment_para"
+                }
+              },
+              "comment": "PROJECTS | AREAS | RESOURCES | ARCHIVES theo trạng thái chứng từ"
             }
           ],
           "select_permissions": [
@@ -2982,7 +3172,8 @@
                 },
                 "allow_aggregations": true,
                 "computed_fields": [
-                  "can_read"
+                  "can_read",
+                  "para"
                 ]
               }
             },
@@ -3028,7 +3219,8 @@
                 },
                 "allow_aggregations": true,
                 "computed_fields": [
-                  "can_read"
+                  "can_read",
+                  "para"
                 ]
               }
             }
@@ -18877,6 +19069,83 @@
       "comment": "Sửa tác tử AI (cần core.ai.manage)"
     },
     {
+      "name": "ai_agent_automation",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_automation",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "triggers",
+            "type": "jsonb!"
+          },
+          {
+            "name": "instructions",
+            "type": "String"
+          },
+          {
+            "name": "allowed_actions",
+            "type": "jsonb!"
+          },
+          {
+            "name": "autonomy",
+            "type": "String"
+          },
+          {
+            "name": "webhook_url",
+            "type": "String"
+          }
+        ],
+        "output_type": "AiAgentAutomation!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đặt sự kiện kích hoạt, nhiệm vụ, hành động được phép để tác tử tự hành động (ADR #72, cần core.ai.manage)"
+    },
+    {
+      "name": "ai_agent_trigger_options",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_trigger_options",
+        "arguments": [],
+        "output_type": "AiAgentTriggerOptions!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Danh mục sự kiện, hành động và mức tự chủ cho tác tử tự hành động (cần core.ai.manage)"
+    },
+    {
       "name": "ai_agent_unregister",
       "definition": {
         "kind": "synchronous",
@@ -22353,6 +22622,52 @@
           },
           {
             "name": "tool_list",
+            "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "AiAgentAutomation",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "triggers",
+            "type": "jsonb!"
+          },
+          {
+            "name": "instructions",
+            "type": "String"
+          },
+          {
+            "name": "allowed_actions",
+            "type": "jsonb!"
+          },
+          {
+            "name": "autonomy",
+            "type": "String!"
+          },
+          {
+            "name": "webhook_url",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "AiAgentTriggerOptions",
+        "fields": [
+          {
+            "name": "events",
+            "type": "jsonb!"
+          },
+          {
+            "name": "actions",
+            "type": "jsonb!"
+          },
+          {
+            "name": "autonomy",
             "type": "jsonb!"
           }
         ]

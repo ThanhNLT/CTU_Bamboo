@@ -4,7 +4,8 @@
 """Tác tử AI và Trợ lý RAG (ADR #51).
 
 Quản trị (cần core.ai.manage, kiểm qua core.v_ai_admin): ai_agent_register, ai_agent_update,
-ai_agent_unregister, ai_models, ai_agent_stats.
+ai_agent_unregister, ai_models, ai_agent_stats; tự hành động khi có sự kiện (ADR #72): ai_agent_automation,
+ai_agent_trigger_options (lần chạy trong core.ai_agent_run, ai-worker thực hiện qua ai_agent_runner).
 Người dùng: ai_assistants (tác tử hỏi được), ai_ask (lưu lượt hỏi, worker nền trả lời dần).
 Nhật ký kiểm toán bật qua audit.enable('core.ai_agent') và trigger audit_log trên core.ai_question.
 """
@@ -237,9 +238,17 @@ def ai_agent_unregister(conn: psycopg.Connection, session: dict, args: dict, _ct
         "SELECT 1 FROM core.ai_agent WHERE id = %s AND tenant_id = %s FOR UPDATE", (agent_id, tenant)
     ).fetchone():
         raise ActionError("Không tìm thấy tác tử AI", "not-found", 404)
-    if conn.execute("SELECT 1 FROM core.ai_question WHERE agent_id = %s LIMIT 1", (agent_id,)).fetchone():
+    if conn.execute(
+        """SELECT 1 FROM core.ai_question WHERE agent_id = %s
+           UNION ALL SELECT 1 FROM core.ai_agent_run WHERE agent_id = %s LIMIT 1""",
+        (agent_id, agent_id),
+    ).fetchone():
         conn.execute("UPDATE core.ai_agent SET status = 'inactive' WHERE id = %s", (agent_id,))
-        return {"id": str(agent_id), "deleted": False, "message": "Tác tử đã có lượt hỏi nên chỉ ngừng kích hoạt"}
+        return {
+            "id": str(agent_id),
+            "deleted": False,
+            "message": "Tác tử đã có lượt hỏi hoặc lần tự hành động nên chỉ ngừng kích hoạt",
+        }
     conn.execute("DELETE FROM core.ai_agent WHERE id = %s", (agent_id,))
     return {"id": str(agent_id), "deleted": True, "message": "Đã xóa tác tử AI"}
 
@@ -399,6 +408,87 @@ def ai_ask(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -
     return {"id": str(row[0]), "status": row[1], "position": 0 if refused else queue_position(conn, row[0])}
 
 
+# --- Tự hành động khi có sự kiện (ADR #72) ----------------------------------------------------------------------
+
+AGENT_ACTIONS = {
+    "comment": "Bình luận vào chứng từ (đứng tên người phụ trách tác tử)",
+    "notify": "Gửi thông báo cho người lập, người đang duyệt hoặc người phụ trách tác tử",
+    "webhook": "Gửi kết quả đánh giá tới webhook HTTPS đã khai",
+}
+AUTONOMY = {"act": "Tự thực hiện", "dry_run": "Chỉ đề xuất, không thực hiện"}
+MAX_TRIGGERS = 10
+
+
+def _events() -> dict[str, str]:
+    from .process_automation import EVENTS
+
+    return EVENTS
+
+
+def _automation_out(row) -> dict:
+    return {
+        "id": str(row[0]),
+        "triggers": row[1],
+        "instructions": row[2],
+        "allowed_actions": row[3],
+        "autonomy": row[4],
+        "webhook_url": row[5],
+    }
+
+
+def ai_agent_automation(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    """Đặt sự kiện kích hoạt, nhiệm vụ và hành động được phép của tác tử. triggers rỗng là tắt tự hành động."""
+    person, tenant = _identity(session)
+    _require_admin(conn, person, tenant)
+    bind_session(conn, session)
+    agent_id = args.get("id")
+    if not conn.execute(
+        "SELECT 1 FROM core.ai_agent WHERE id = %s AND tenant_id = %s FOR UPDATE", (agent_id, tenant)
+    ).fetchone():
+        raise ActionError("Không tìm thấy tác tử AI", "not-found", 404)
+
+    triggers = list(dict.fromkeys(_json_array(args, "triggers", "sự kiện kích hoạt") or []))
+    events = _events()
+    unknown = [t for t in triggers if t not in events]
+    if unknown:
+        raise ActionError(f"Sự kiện chưa hỗ trợ: {', '.join(map(str, unknown))}")
+    if len(triggers) > MAX_TRIGGERS:
+        raise ActionError(f"Tối đa {MAX_TRIGGERS} sự kiện cho một tác tử")
+    allowed = list(dict.fromkeys(_json_array(args, "allowed_actions", "hành động được phép") or []))
+    bad = [a for a in allowed if a not in AGENT_ACTIONS]
+    if bad:
+        raise ActionError(f"Hành động chưa hỗ trợ: {', '.join(map(str, bad))} (chỉ có {', '.join(AGENT_ACTIONS)})")
+    instructions = _text(args, "instructions", "nhiệm vụ của tác tử", required=bool(triggers))
+    if instructions and len(instructions) > 4000:
+        raise ActionError("Nhiệm vụ tối đa 4000 ký tự")
+    if instructions and is_injection(instructions):
+        raise ActionError("Nhiệm vụ có dấu hiệu thay đổi chỉ dẫn hệ thống của tác tử")
+    autonomy = _text(args, "autonomy", "mức tự chủ", required=False) or "act"
+    if autonomy not in AUTONOMY:
+        raise ActionError("Mức tự chủ phải là 'act' hoặc 'dry_run'")
+    webhook = _text(args, "webhook_url", "địa chỉ webhook", required="webhook" in allowed)
+    if webhook and not webhook.startswith("https://"):
+        raise ActionError("Webhook phải dùng https://")
+
+    row = conn.execute(
+        """UPDATE core.ai_agent SET triggers = %s, instructions = %s, allowed_actions = %s, autonomy = %s,
+                  webhook_url = %s
+           WHERE id = %s RETURNING id, triggers, instructions, allowed_actions, autonomy, webhook_url""",
+        (triggers, instructions, allowed, autonomy, webhook, agent_id),
+    ).fetchone()
+    return _automation_out(row)
+
+
+def ai_agent_trigger_options(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
+    person, tenant = _identity(session)
+    _require_admin(conn, person, tenant)
+    return {
+        "events": [{"code": k, "label": v} for k, v in _events().items()],
+        "actions": [{"code": k, "label": v} for k, v in AGENT_ACTIONS.items()],
+        "autonomy": [{"code": k, "label": v} for k, v in AUTONOMY.items()],
+    }
+
+
 HANDLERS = {
     "ai_agent_register": ai_agent_register,
     "ai_agent_update": ai_agent_update,
@@ -407,4 +497,6 @@ HANDLERS = {
     "ai_agent_stats": ai_agent_stats,
     "ai_assistants": ai_assistants,
     "ai_ask": ai_ask,
+    "ai_agent_automation": ai_agent_automation,
+    "ai_agent_trigger_options": ai_agent_trigger_options,
 }
