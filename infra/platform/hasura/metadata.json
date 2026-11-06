@@ -16922,6 +16922,45 @@
       "comment": "Xác minh chữ ký biên nhận và mã băm nội dung của một tin đã giao (cần core.org.manage)"
     },
     {
+      "name": "process_script_test",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_script_test",
+        "arguments": [
+          {
+            "name": "model_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "script",
+            "type": "String!"
+          },
+          {
+            "name": "variables",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "ProcessScriptTest!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chạy thử kịch bản của tác vụ tự động với biến mẫu, không đụng dữ liệu (ADR #73, người thiết kế)"
+    },
+    {
       "name": "process_automation_enable",
       "definition": {
         "kind": "synchronous",
@@ -22669,6 +22708,35 @@
           {
             "name": "autonomy",
             "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessScriptTest",
+        "fields": [
+          {
+            "name": "ok",
+            "type": "Boolean!"
+          },
+          {
+            "name": "error",
+            "type": "String"
+          },
+          {
+            "name": "line",
+            "type": "Int"
+          },
+          {
+            "name": "outputs",
+            "type": "jsonb!"
+          },
+          {
+            "name": "log",
+            "type": "jsonb!"
+          },
+          {
+            "name": "steps",
+            "type": "Int!"
           }
         ]
       },

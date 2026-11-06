@@ -3262,4 +3262,17 @@ export const EN_PAGES: Record<string, string> = {
   "Đơn hàng nội bộ được xác nhận": "Internal order confirmed",
   "Đơn hàng nội bộ được đối trừ công nợ": "Internal order settled against receivables",
   "Quyết định nhân sự được ban hành": "Personnel decision issued",
+  // Kịch bản tự viết trong quy trình tự động (ADR #73)
+  "Biến kiểu đơn được gán thành biến quy trình; {0}_ok báo đã chạy xong.":
+    "Simple-typed variables you assign become process variables; {0}_ok signals the step finished.",
+  "Biến mẫu": "Sample variables",
+  "Biến mẫu không phải JSON hợp lệ": "Sample variables are not valid JSON",
+  "Chạy kịch bản tự viết": "Run a custom script",
+  "Chạy thử với biến mẫu (JSON)": "Test run with sample variables (JSON)",
+  "Chạy được. Biến sau bước:": "Ran successfully. Variables after the step:",
+  "Cú pháp Python rút gọn: gán, if, for, while, f-string, list/dict. Hàm: len, min, max, sum, round, sorted, today(), now(), add_days(), days_between(), log(). Không import, không truy cập tệp hay mạng; tối đa 2 giây.":
+    "A reduced Python syntax: assignment, if, for, while, f-strings, lists/dicts. Functions: len, min, max, sum, round, sorted, today(), now(), add_days(), days_between(), log(). No imports, no file or network access; at most 2 seconds.",
+  "Kịch bản": "Script",
+  '# Biến của quy trình dùng trực tiếp theo tên, ví dụ amount, doc_no\nmuc = "cao" if amount >= 50_000_000 else "thuong"\ncan_bao_gia = amount >= 50_000_000\nhan = add_days(today(), 7)\nlog("muc duyet", muc)':
+    '# Process variables are used directly by name, e.g. amount, doc_no\nlevel = "high" if amount >= 50_000_000 else "normal"\nneeds_quotes = amount >= 50_000_000\ndue = add_days(today(), 7)\nlog("approval level", level)',
 };

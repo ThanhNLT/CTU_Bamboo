@@ -198,6 +198,7 @@ CATALOG: tuple[Module, ...] = (
                 "process_regulation_draft",
                 "process_version_get",
                 "process_sandbox_run",
+                "process_script_test",
                 "process_change_request_create",
                 "process_change_request_resolve",
                 "process_automation_enable",
