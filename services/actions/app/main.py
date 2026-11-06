@@ -40,12 +40,14 @@ from . import (
     hr_account,
     ic,
     ingest,
+    iot,
     kb,
     lakehouse_query,
     ledger,
     lineage_sync,
     messaging,
     modules,
+    mqtt_admin,
     obs,
     ocr,
     ocr_import,
@@ -193,6 +195,7 @@ HANDLERS = {
     **ops.HANDLERS,
     **audit.HANDLERS,
     **twin.HANDLERS,
+    **iot.HANDLERS,
     "check_pii": pii_guard.check_pii,
     **admin.HANDLERS,
     **lakehouse_query.HANDLERS,
@@ -312,6 +315,9 @@ def create_app(
         signature_trust_dir=settings.signature_trust_dir,
         signature_online=settings.signature_online,
         actions_secret=settings.actions_secret,
+        mqtt=mqtt_admin.Dynsec(settings.mqtt_host, settings.mqtt_port, settings.mqtt_admin_password)
+        if settings.mqtt_host
+        else None,
     )
     verifier = verifier or auth.KeycloakVerifier(
         settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)

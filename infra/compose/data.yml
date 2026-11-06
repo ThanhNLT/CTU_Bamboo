@@ -199,6 +199,41 @@ services:
     command: ["python", "-m", "app.lakehouse_sink"]
     restart: unless-stopped
 
+  # Hội tụ IT/OT (ADR #74): thiết bị publish `bamboo/<mã công ty>/<mã thiết bị>/attrs` (NGSI-LD), iot-bridge ghi vào
+  # bản sao số. Mặc định chỉ nghe 127.0.0.1; mở cho mạng OT bằng MQTT_BIND (đặt sau tường lửa, nên dùng TLS ở biên).
+  mosquitto:
+    logging: *logging
+    image: eclipse-mosquitto:2.0.21
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    ports:
+      - "${MQTT_BIND:-127.0.0.1}:1883:1883"
+    volumes:
+      - ../platform/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 1883"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  iot-bridge:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      mosquitto:
+        condition: service_healthy
+    volumes:
+      - actions-secrets:/run/bms:ro
+    command: ["python", "-m", "app.iot_bridge"]
+    restart: unless-stopped
+
   trino-core:
     logging: *logging
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
@@ -261,7 +296,7 @@ services:
       # Danh sách phải khớp services/actions/app/modules.py (MANAGED_SERVICES; kiểm bởi test_mo_dun.py)
       SLEEPER_MODULES_URL: http://actions:8000/modules/services
       SLEEPER_HOLD_UNTIL: bootstrap
-      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
+      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
     networks:
       default:
         aliases: [trino, tika, gotenberg, ollama, ocr]
@@ -287,6 +322,7 @@ services:
 
 
 volumes:
+  mosquitto-data:
   meilisearch-data:
   kafka-data:
   debezium-data:

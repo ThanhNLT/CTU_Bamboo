@@ -225,6 +225,8 @@ services:
       TRINO_UID: "1000"
       TRINO_SECRETS_DIR: /etc/trino/secrets
       INTERNAL_CA_OUTPUTS: /run/bms-actions/trino-ca.pem
+      MQTT_DYNSEC_PATH: /mosquitto-data/dynamic-security.json
+      MQTT_UID: "1883"
     command: ["python", "-m", "app.openbao_init"]
     user: "0"
     volumes:
@@ -237,6 +239,7 @@ services:
       - meilisearch-config:/etc/meilisearch
       - trino-catalog:/etc/trino/bms-catalog
       - trino-secrets:/etc/trino/secrets
+      - mosquitto-data:/mosquitto-data
     restart: "no"
 
   # OpenBao dùng khóa Shamir nên bị khóa mỗi lần container khởi động lại (khởi động lại máy, Docker Desktop, WSL);
