@@ -57,6 +57,7 @@ services:
       AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
       AI_CPU_MODELS: ${AI_CPU_MODELS:-bge-m3}
       MQTT_HOST: ${MQTT_HOST-mosquitto}
+      MQTT_TLS_DIR: /run/bms/mqtt
       # Truy vết OpenTelemetry (ADR #75): `make up` mức RAM 16 đặt http://otel-collector:4318; để trống là tắt
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
 

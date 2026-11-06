@@ -229,6 +229,8 @@ services:
       INTERNAL_CA_OUTPUTS: /run/bms-actions/trino-ca.pem
       MQTT_DYNSEC_PATH: /mosquitto-data/dynamic-security.json
       MQTT_UID: "1883"
+      # Chứng chỉ mTLS nội bộ (ADR #76): danh-tính=thư-mục@uid
+      SERVICE_CERT_OUTPUTS: mosquitto=/mosquitto-tls@1883,bamboo-bridge=/run/bms-actions/mqtt@10001,bamboo-admin=/run/bms-actions/mqtt@10001
     command: ["python", "-m", "app.openbao_init"]
     user: "0"
     volumes:
@@ -242,6 +244,7 @@ services:
       - trino-catalog:/etc/trino/bms-catalog
       - trino-secrets:/etc/trino/secrets
       - mosquitto-data:/mosquitto-data
+      - mosquitto-tls:/mosquitto-tls
     restart: "no"
 
   # OpenBao dùng khóa Shamir nên bị khóa mỗi lần container khởi động lại (khởi động lại máy, Docker Desktop, WSL);

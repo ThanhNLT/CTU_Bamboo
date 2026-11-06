@@ -28,6 +28,25 @@ class MqttUnavailable(Exception):
     pass
 
 
+def connect_options(identity: str, password: str, port: int, tls_dir: str = "", tls_port: int = 8884):
+    """(cổng, mật khẩu, hàm cấu hình TLS) cho một danh tính: có chứng chỉ do openbao-init cấp thì mTLS, không thì
+    mật khẩu qua cổng thường. Với mTLS, Mosquitto lấy CN của chứng chỉ làm tên đăng nhập (use_identity_as_username)."""
+    import pathlib
+
+    base = pathlib.Path(tls_dir) if tls_dir else None
+    if base and (base / f"{identity}.crt").exists() and (base / f"{identity}.key").exists():
+
+        def tls(client) -> None:
+            client.tls_set(
+                ca_certs=str(base / "ca.crt"),
+                certfile=str(base / f"{identity}.crt"),
+                keyfile=str(base / f"{identity}.key"),
+            )
+
+        return tls_port, None, tls
+    return port, password, None
+
+
 def hash_password(password: str, salt: bytes | None = None, iterations: int = ITERATIONS) -> dict:
     salt = salt or secrets.token_bytes(12)
     digest = hashlib.pbkdf2_hmac("sha512", password.encode(), salt, iterations, 64)
@@ -112,18 +131,24 @@ def new_username(code: str) -> str:
 class Dynsec:
     """Gửi một lô lệnh dynamic-security và chờ trả lời (kết nối ngắn bằng tài khoản quản trị)."""
 
-    def __init__(self, host: str, port: int, password: str, timeout: float = 10.0):
-        self.host, self.port, self.password, self.timeout = host, port, password, timeout
+    def __init__(
+        self, host: str, port: int, password: str, timeout: float = 10.0, tls_dir: str = "", tls_port: int = 8884
+    ):
+        self.host, self.timeout = host, timeout
+        self.port, self.password, self.tls = connect_options(ADMIN_USER, password, port, tls_dir, tls_port)
 
     def run(self, commands: list[dict]) -> list[dict]:
-        if not self.host or not self.password:
+        if not self.host or not (self.password or self.tls):
             raise MqttUnavailable("Chưa cấu hình broker MQTT")
         from paho.mqtt import client as mqtt
 
         done = threading.Event()
         replies: list[dict] = []
         client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"bamboo-admin-{uuid.uuid4().hex[:8]}")
-        client.username_pw_set(ADMIN_USER, self.password)
+        if self.tls:
+            self.tls(client)
+        else:
+            client.username_pw_set(ADMIN_USER, self.password)
 
         def on_connect(c, _userdata, _flags, reason, _props):
             if reason.is_failure:

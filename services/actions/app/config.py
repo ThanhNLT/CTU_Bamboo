@@ -114,6 +114,9 @@ class Settings:
     mqtt_port: int = 1883
     mqtt_admin_password: str = ""
     mqtt_bridge_password: str = ""
+    # mTLS nội bộ (ADR #76): thư mục có ca.crt, <danh tính>.crt/.key do openbao-init cấp; có thì dùng cổng mTLS
+    mqtt_tls_dir: str = ""
+    mqtt_tls_port: int = 8884
 
 
 DEV_DEFAULTS = {
@@ -309,5 +312,7 @@ def _from_env() -> Settings:
         mqtt_port=int(env("MQTT_PORT", "1883")),
         mqtt_admin_password=env("MQTT_ADMIN_PASSWORD", ""),
         mqtt_bridge_password=env("MQTT_BRIDGE_PASSWORD", ""),
+        mqtt_tls_dir=env("MQTT_TLS_DIR", ""),
+        mqtt_tls_port=int(env("MQTT_TLS_PORT", "8884")),
         setup_open_signup=env("SETUP_OPEN_SIGNUP", "false").lower() in ("1", "true", "yes"),
     )
