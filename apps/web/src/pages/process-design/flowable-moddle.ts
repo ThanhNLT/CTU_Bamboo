@@ -54,6 +54,7 @@ export const bambooModdle = {
         // bamboo:name không khai ở đây: trùng tên với bpmn:name làm bpmn-moddle bỏ cả tác vụ khi đọc sơ đồ (ADR #67);
         // thuộc tính không khai vẫn đọc/ghi được qua $attrs
         { name: "value", isAttr: true, type: "String" },
+        { name: "script", isAttr: true, type: "String" },
       ],
     },
   ],

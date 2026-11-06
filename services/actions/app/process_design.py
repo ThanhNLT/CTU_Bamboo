@@ -18,7 +18,7 @@ PERMISSION = "wf.process.design"
 BPMN = "http://www.omg.org/spec/BPMN/20100524/MODEL"
 FLOWABLE = "http://flowable.org/bpmn"
 BAMBOO = "http://bamboo.local/bpmn"
-AUTOMATION_ACTIONS = {"notify", "http", "setvar"}
+AUTOMATION_ACTIONS = {"notify", "http", "setvar", "script"}
 AUTOMATION_AUDIENCES = {"INITIATOR", "UNIT", "COMPANY", "GROUP"}
 AUTOMATION_VARIABLE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,40}$")
 AUTOMATION_URL = re.compile(r"^https://[A-Za-z0-9.-]+(:\d{1,5})?(/\S*)?$")
@@ -47,6 +47,18 @@ def action_params(el: ET.Element) -> tuple[dict, list[str]]:
             problems.append("Phương thức chỉ nhận GET hoặc POST")
         if len(params["body"]) > 2000:
             problems.append("Nội dung gửi tối đa 2000 ký tự")
+    elif action == "script":
+        # Kịch bản do người dùng viết (ADR #73): kiểm cú pháp và cấu trúc ngay khi thiết kế
+        from . import script_sandbox
+
+        params["script"] = el.get(f"{{{BAMBOO}}}script") or ""
+        if not params["script"].strip():
+            problems.append("Kịch bản đang trống")
+        else:
+            try:
+                script_sandbox.parse(params["script"])
+            except script_sandbox.ScriptError as exc:
+                problems.append(f"Kịch bản: {exc}")
     else:
         params["name"], params["value"] = attr("name"), attr("value")
         if not AUTOMATION_VARIABLE.match(params["name"]) or params["name"] in ("initiator", "sandbox", "event"):
@@ -849,7 +861,30 @@ def process_sandbox_run(conn: psycopg.Connection, session: dict, args: dict, ctx
     return {"id": str(run_id), "status": status, "error": error, "steps": steps}
 
 
+def process_script_test(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    """Chạy thử kịch bản của tác vụ tự động với biến mẫu (ADR #73); không đọc, không ghi dữ liệu nào."""
+    from . import script_sandbox
+
+    _need_design(conn, session, args["model_id"])
+    variables = args.get("variables") or {}
+    if not isinstance(variables, dict):
+        raise ActionError("Biến mẫu phải là đối tượng JSON")
+    try:
+        result = script_sandbox.run(args.get("script") or "", variables)
+    except script_sandbox.ScriptError as exc:
+        return {"ok": False, "error": str(exc), "line": exc.line, "outputs": {}, "log": [], "steps": 0}
+    return {
+        "ok": True,
+        "error": None,
+        "line": None,
+        "outputs": result.outputs,
+        "log": result.log,
+        "steps": result.steps,
+    }
+
+
 HANDLERS = {
+    "process_script_test": process_script_test,
     "process_models": process_models,
     "process_model_get": process_model_get,
     "process_model_validate": process_model_validate,

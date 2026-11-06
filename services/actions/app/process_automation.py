@@ -25,7 +25,7 @@ from psycopg.rows import dict_row
 
 from bamboo_common.flowable import FlowableClient
 
-from . import config, delivery
+from . import config, delivery, script_sandbox
 from .common import ActionError, Context
 from .process_design import (
     AUTOMATION_ACTIONS,
@@ -466,7 +466,23 @@ def exec_http(conn, settings, run: str, job: dict, params: dict, variables: dict
     }
 
 
-EXECUTORS = {"notify": exec_notify, "http": exec_http, "setvar": exec_setvar}
+def exec_script(conn, settings, run: str, job: dict, params: dict, variables: dict) -> dict:
+    """Kịch bản của người dùng (ADR #73): lỗi kịch bản là lỗi vĩnh viễn (không thử lại), ghi vào nhật ký lần chạy."""
+    inputs = {k: v for k, v in variables.items() if k != "initiator"}
+    try:
+        result = script_sandbox.run(params["script"], inputs)
+    except script_sandbox.ScriptError as exc:
+        raise delivery.DeliveryError(f"Kịch bản {job['elementId']}: {exc}", permanent=True) from exc
+    if result.log:
+        conn.execute(
+            """UPDATE wf.automation_run SET variables = variables || jsonb_build_object(%s, %s::jsonb)
+               WHERE id = %s""",
+            (f"{job['elementId']}_log", json.dumps(result.log, ensure_ascii=False), run),
+        )
+    return {**result.outputs, f"{job['elementId']}_ok": True}
+
+
+EXECUTORS = {"notify": exec_notify, "http": exec_http, "setvar": exec_setvar, "script": exec_script}
 
 
 def _run_for_job(conn: psycopg.Connection, job: dict, automation: dict) -> str:
