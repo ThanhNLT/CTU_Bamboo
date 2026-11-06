@@ -15,7 +15,7 @@ import psycopg
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from psycopg_pool import ConnectionPool
 from starlette.concurrency import run_in_threadpool
 
@@ -62,6 +62,7 @@ from . import (
     search,
     semantic,
     setup,
+    telemetry,
     trino,
     twin,
     work_calendar,
@@ -334,6 +335,7 @@ def create_app(
             app.state.pool.close()
 
     app = FastAPI(title="Bamboo actions", lifespan=lifespan)
+    telemetry.register_queue_collector(lambda: app.state.pool)
     memberships = auth.MembershipCache()
     app.state.verifier, app.state.memberships = verifier, memberships
     app.include_router(ingest.router)
@@ -353,6 +355,12 @@ def create_app(
     @app.get("/healthz")
     def healthz():
         return {"ok": True}
+
+    @app.get("/metrics")
+    def metrics():
+        """Số liệu Prometheus (ADR #75); cổng API không định tuyến đường này nên chỉ mạng nội bộ hỏi được."""
+        body, content_type = telemetry.metrics_body()
+        return Response(body, media_type=content_type)
 
     @app.get("/modules/services")
     def module_services():
@@ -410,8 +418,14 @@ def create_app(
         request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
         obs.bind(trace_id=request_id[:100])
         started = time.perf_counter()
+        trace_id = telemetry.tag_request(request_id[:100])
         response = await call_next(request)
         response.headers["X-Request-Id"] = request_id[:100]
+        if trace_id:
+            response.headers["X-Trace-Id"] = trace_id
+        route = getattr(request.scope.get("route"), "path", None) or "unmatched"
+        if route not in ("/healthz", "/metrics"):
+            telemetry.observe_http(request.method, route, response.status_code, time.perf_counter() - started)
         if request.url.path != "/healthz":
             ms = round((time.perf_counter() - started) * 1000)
             level = (
@@ -490,6 +504,7 @@ def create_app(
         try:
             result = await run_in_threadpool(run_action, app.state.pool, name, payload, ctx)
         except ActionError as exc:
+            telemetry.observe_action(name, "rejected", time.perf_counter() - started)
             log.warning(
                 "action %s bị từ chối: %s",
                 name,
@@ -500,13 +515,17 @@ def create_app(
             )
             return JSONResponse({"message": exc.message, "extensions": {"code": exc.code}}, exc.status)
         except Exception:
+            telemetry.observe_action(name, "error", time.perf_counter() - started)
             log.exception("action %s lỗi không lường trước", name, extra={"fields": {"action": name}})
             raise
+        telemetry.observe_action(name, "ok", time.perf_counter() - started)
         log.info(
             "action %s", name, extra={"fields": {"action": name, "ms": round((time.perf_counter() - started) * 1000)}}
         )
         return result
 
+    # Sau cùng để middleware OpenTelemetry bọc ngoài mọi middleware khác (span có trước khi gắn X-Request-Id)
+    telemetry.setup_tracing(app, "bamboo-actions")
     return app
 
 

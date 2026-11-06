@@ -234,6 +234,65 @@ services:
     command: ["python", "-m", "app.iot_bridge"]
     restart: unless-stopped
 
+  # Giám sát (ADR #75), nhóm `observability`: `make up` bật ở mức RAM 16, hoặc `docker compose --profile observability up -d`.
+  # Giao diện chỉ nghe 127.0.0.1: Grafana :3001, Jaeger :16686, Prometheus :9090.
+  otel-collector:
+    logging: *logging
+    profiles: [observability]
+    image: otel/opentelemetry-collector:0.164.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ../platform/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    mem_limit: 160m
+    restart: unless-stopped
+
+  jaeger:
+    logging: *logging
+    profiles: [observability]
+    image: jaegertracing/jaeger:2.23.0
+    ports:
+      - "127.0.0.1:16686:16686"
+    mem_limit: 256m
+    restart: unless-stopped
+
+  prometheus:
+    logging: *logging
+    profiles: [observability]
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-7d}
+    volumes:
+      - ../platform/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../platform/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    mem_limit: 384m
+    restart: unless-stopped
+
+  grafana:
+    logging: *logging
+    profiles: [observability]
+    image: grafana/grafana-oss:13.0.1
+    depends_on: [prometheus, jaeger]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana-dev}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/bamboo.json
+    volumes:
+      - ../platform/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../platform/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3001:3000"
+    mem_limit: 256m
+    restart: unless-stopped
+
   trino-core:
     logging: *logging
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
