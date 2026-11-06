@@ -35,7 +35,8 @@ def _pdf() -> bytes:
 
 PDF = _pdf()
 
-UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!, $entity: String!) {
+UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!,
+                    $entity: String! = "proc.purchase_request") {
   get_upload_url(entity_type: $entity, entity_id: $id, file_name: $name,
                  content_type: $type, size_bytes: $size) { attachment_id upload_url method content_type } }"""
 CONFIRM = """mutation($a: uuid!) { confirm_upload(attachment_id: $a) {
