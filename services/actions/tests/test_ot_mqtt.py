@@ -237,3 +237,74 @@ def test_dau_cuoi_qua_mosquitto(conn, twin):
     assert not device.is_connected(), "thu hồi là ngắt kết nối ngay"
     device.loop_stop()
     bridge_client.loop_stop()
+
+
+MQTT_TLS_DIR = os.environ.get("MQTT_TEST_TLS_DIR", "")
+MQTT_TLS_PORT = int(os.environ.get("MQTT_TEST_TLS_PORT", "0") or 0)
+
+
+def test_chon_mtls_khi_co_chung_chi(tmp_path):
+    assert mqtt_admin.connect_options("bamboo-bridge", "pw", 1883, str(tmp_path), 8884)[:2] == (1883, "pw")
+    (tmp_path / "bamboo-bridge.crt").write_text("x")
+    (tmp_path / "bamboo-bridge.key").write_text("x")
+    port, password, tls = mqtt_admin.connect_options("bamboo-bridge", "pw", 1883, str(tmp_path), 8884)
+    assert (port, password) == (8884, None) and tls is not None, "có chứng chỉ thì dùng mTLS, không gửi mật khẩu"
+
+
+@pytest.mark.skipif(not (MQTT_TLS_DIR and MQTT_TLS_PORT and _mqtt_up()), reason="cần Mosquitto có cổng mTLS")
+def test_mtls_noi_bo_quan_tri_va_cau_noi():
+    from paho.mqtt import client as mqtt
+
+    admin = mqtt_admin.Dynsec(MQTT_HOST, MQTT_PORT, "", tls_dir=MQTT_TLS_DIR, tls_port=MQTT_TLS_PORT)
+    username, password = f"tdx-{uuid.uuid4().hex[:8]}", "mat-khau-thiet-bi"
+    admin.create_device("TDX", username, password, "Thử mTLS")
+
+    port, _, tls = mqtt_admin.connect_options(mqtt_admin.BRIDGE_USER, "", MQTT_PORT, MQTT_TLS_DIR, MQTT_TLS_PORT)
+    got, ready = [], threading.Event()
+    bridge = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"b-{uuid.uuid4().hex[:6]}")
+    tls(bridge)
+    bridge.on_connect = lambda c, *_: c.subscribe(iot_bridge.SUBSCRIPTION, qos=1)
+    bridge.on_subscribe = lambda *_: ready.set()
+    bridge.on_message = lambda _c, _u, m: got.append(m.topic)
+    bridge.connect(MQTT_HOST, port)
+    bridge.loop_start()
+    assert ready.wait(5), "cầu nối đăng nhập bằng chứng chỉ CN=bamboo-bridge"
+
+    plain = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"p-{uuid.uuid4().hex[:6]}")
+    plain.username_pw_set(mqtt_admin.BRIDGE_USER, "doan-mo")
+    refused = threading.Event()
+    plain.on_connect = lambda _c, _u, _f, reason, _p: reason.is_failure and refused.set()
+    plain.tls_set(ca_certs=f"{MQTT_TLS_DIR}/ca.crt")
+    try:
+        plain.connect(MQTT_HOST, MQTT_TLS_PORT)
+        plain.loop_start()
+        connected = not refused.wait(2) and plain.is_connected()
+    except OSError:
+        connected = False
+    finally:
+        plain.loop_stop()
+    assert not connected, "cổng mTLS từ chối máy khách không có chứng chỉ"
+
+    device = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"d-{uuid.uuid4().hex[:6]}")
+    device.username_pw_set(username, password)
+    device.connect(MQTT_HOST, MQTT_PORT)
+    device.loop_start()
+    time.sleep(0.5)
+    device.publish("bamboo/TDX/CR-MTLS/attrs", b'{"temperature": 21}', qos=1).wait_for_publish(5)
+    deadline = time.monotonic() + 5
+    while not got and time.monotonic() < deadline:
+        time.sleep(0.1)
+    assert got == ["bamboo/TDX/CR-MTLS/attrs"]
+    admin.delete_device(username)
+    device.loop_stop()
+    bridge.loop_stop()
+
+
+def test_khai_bao_dau_ra_chung_chi_dich_vu():
+    from app import openbao_init
+
+    out = openbao_init.parse_cert_outputs("mosquitto=/mosquitto-tls@1883, bamboo-bridge=/run/bms-actions/mqtt")
+    assert out == {
+        "mosquitto": (openbao_init.pathlib.Path("/mosquitto-tls"), 1883),
+        "bamboo-bridge": (openbao_init.pathlib.Path("/run/bms-actions/mqtt"), None),
+    }
