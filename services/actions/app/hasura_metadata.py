@@ -116,6 +116,10 @@ ROW_COMPUTED = {
             "Số liệu tiến độ: actual_pct, planned_pct, spi, late_tasks, total_tasks, done_tasks (một lần tính, ADR #67)",
         ),
     ],
+    # Nhóm P.A.R.A của tệp suy từ chứng từ chứa tệp (ADR #71)
+    ("core", "attachment"): [
+        ("para", ("core", "attachment_para"), "PROJECTS | AREAS | RESOURCES | ARCHIVES theo trạng thái chứng từ"),
+    ],
     # Lần dùng khóa API đọc từ dòng đếm theo ngày (ADR #67)
     ("api", "api_key"): [
         ("last_used_at", ("api", "api_key_last_used_at"), "Lần gọi gần nhất"),
@@ -200,6 +204,7 @@ SELECT_FILTER = {
         for t in ("member", "task", "dependency", "report")
     },
     ("core", "ai_agent"): {"_and": [TENANT, IS_AI_ADMIN]},
+    ("core", "ai_agent_run"): {"_and": [TENANT, IS_AI_ADMIN]},
     ("core", "ai_question"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "attachment_ocr"): {"_and": [TENANT, {"attachment": {"can_read": {"_eq": True}}}]},
     **{key: {"_and": [TENANT, IS_ADMIN]} for key in ADMIN_READ},
@@ -225,7 +230,7 @@ MODULE_TABLES = {
     **{("iot", t): "data" for t in ("entity", "incident", "measurement", "model", "site")},
     **{("kpi", t): "data" for t in ("chart", "definition", "pin", "value")},
     **{("meta", t): "data" for t in ("data_issue", "lineage_edge", "lineage_node", "pipeline_run", "quality_check")},
-    **{("core", t): "ai" for t in ("ai_agent", "ai_question", "attachment_ocr")},
+    **{("core", t): "ai" for t in ("ai_agent", "ai_agent_run", "ai_question", "attachment_ocr")},
     **{("pm", t): "project" for t in ("project", "member", "task", "dependency", "report")},
 }
 
@@ -1950,6 +1955,29 @@ def build(conn: psycopg.Connection) -> dict:
                 "Sửa tác tử AI (cần core.ai.manage)",
             ),
             _action(
+                "ai_agent_automation",
+                "mutation",
+                [
+                    ("id", "uuid!"),
+                    ("triggers", "jsonb!"),
+                    ("instructions", "String"),
+                    ("allowed_actions", "jsonb!"),
+                    ("autonomy", "String"),
+                    ("webhook_url", "String"),
+                ],
+                "AiAgentAutomation!",
+                [ROLE, ADMIN_ROLE],
+                "Đặt sự kiện kích hoạt, nhiệm vụ, hành động được phép để tác tử tự hành động (ADR #72, cần core.ai.manage)",
+            ),
+            _action(
+                "ai_agent_trigger_options",
+                "query",
+                [],
+                "AiAgentTriggerOptions!",
+                [ROLE, ADMIN_ROLE],
+                "Danh mục sự kiện, hành động và mức tự chủ cho tác tử tự hành động (cần core.ai.manage)",
+            ),
+            _action(
                 "ai_agent_unregister",
                 "mutation",
                 [("id", "uuid!")],
@@ -3144,6 +3172,25 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "status", "type": "String!"},
                         {"name": "guardrail_config", "type": "jsonb!"},
                         {"name": "tool_list", "type": "jsonb!"},
+                    ],
+                },
+                {
+                    "name": "AiAgentAutomation",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "triggers", "type": "jsonb!"},
+                        {"name": "instructions", "type": "String"},
+                        {"name": "allowed_actions", "type": "jsonb!"},
+                        {"name": "autonomy", "type": "String!"},
+                        {"name": "webhook_url", "type": "String"},
+                    ],
+                },
+                {
+                    "name": "AiAgentTriggerOptions",
+                    "fields": [
+                        {"name": "events", "type": "jsonb!"},
+                        {"name": "actions", "type": "jsonb!"},
+                        {"name": "autonomy", "type": "jsonb!"},
                     ],
                 },
                 {

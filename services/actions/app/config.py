@@ -128,9 +128,18 @@ DEV_DEFAULTS = {
 }
 
 
+# Biến phải tắt ở production (giá trị mặc định của compose đang bật)
+PRODUCTION_OFF = {"HASURA_ENABLE_CONSOLE": "true"}
+
+
+def _enabled(value: str) -> bool:
+    return value.strip().lower() not in ("", "0", "false", "no", "off")
+
+
 def production_problems(env: dict[str, str] | None = None) -> list[str]:
     env = os.environ if env is None else env
-    return [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
+    problems = [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
+    return problems + [name for name, dev in PRODUCTION_OFF.items() if _enabled(env.get(name, dev))]
 
 
 def assert_production_ready(env: dict[str, str] | None = None) -> None:
@@ -142,7 +151,7 @@ def assert_production_ready(env: dict[str, str] | None = None) -> None:
         raise SystemExit(
             "BAMBOO_ENV=production nhưng còn giá trị mặc định của môi trường dev: "
             + ", ".join(problems)
-            + ". Đặt giá trị riêng trong .env (xem .env.example)."
+            + ". Đặt giá trị riêng trong .env (xem .env.example); HASURA_ENABLE_CONSOLE phải là false."
         )
 
 

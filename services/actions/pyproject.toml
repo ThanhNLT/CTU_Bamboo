@@ -25,6 +25,7 @@ dependencies = [
     "pypdfium2",
     "pillow",
     "pyhanko",
+    "pypdf>=7",
 ]
 
 [dependency-groups]
