@@ -88,7 +88,14 @@ def run_forever(settings: config.Settings) -> None:
 
     inbox: queue.Queue = queue.Queue(maxsize=10_000)
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"bamboo-bridge-{uuid.uuid4().hex[:6]}")
-    client.username_pw_set(mqtt_admin.BRIDGE_USER, settings.mqtt_bridge_password)
+    port, password, tls = mqtt_admin.connect_options(
+        mqtt_admin.BRIDGE_USER, settings.mqtt_bridge_password, settings.mqtt_port, settings.mqtt_tls_dir,
+        settings.mqtt_tls_port,
+    )  # fmt: skip
+    if tls:
+        tls(client)
+    else:
+        client.username_pw_set(mqtt_admin.BRIDGE_USER, password)
     client.reconnect_delay_set(1, 30)
 
     def on_connect(c, _userdata, _flags, reason, _props):
@@ -96,7 +103,8 @@ def run_forever(settings: config.Settings) -> None:
             log.warning("không đăng nhập được Mosquitto: %s", reason)
             return
         c.subscribe(SUBSCRIPTION, qos=1)
-        log.info("iot-bridge đã kết nối %s:%s, nghe %s", settings.mqtt_host, settings.mqtt_port, SUBSCRIPTION)
+        log.info("iot-bridge đã kết nối %s:%s (%s), nghe %s", settings.mqtt_host, port, "mTLS" if tls else "mật khẩu",
+                 SUBSCRIPTION)  # fmt: skip
 
     def on_message(_c, _userdata, msg):
         try:
@@ -107,7 +115,7 @@ def run_forever(settings: config.Settings) -> None:
     client.on_connect, client.on_message = on_connect, on_message
     while True:
         try:
-            client.connect(settings.mqtt_host, settings.mqtt_port, keepalive=30)
+            client.connect(settings.mqtt_host, port, keepalive=30)
             break
         except OSError as exc:
             log.warning("chờ Mosquitto: %s", exc)
