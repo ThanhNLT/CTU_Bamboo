@@ -4,9 +4,12 @@
 
 import type { LucideIcon } from "lucide-react";
 
-export type DriveSection = "mine" | "all" | "recent";
+// Nhóm P.A.R.A suy từ trạng thái chứng từ chứa tệp (máy chủ tính, ADR #71)
+export type ParaGroup = "PROJECTS" | "AREAS" | "RESOURCES" | "ARCHIVES";
 
-export type DriveNavItem = { key: DriveSection; label: string; icon: LucideIcon; badge?: number };
+export type DriveSection = "mine" | "all" | "recent" | ParaGroup;
+
+export type DriveNavItem = { key: DriveSection; label: string; icon: LucideIcon; badge?: number; hint?: string };
 
 export type StorageSegment = { key: string; label: string; bytes: number; className: string };
 
@@ -18,6 +21,7 @@ export type DriveFolder = {
   fileCount: number;
   bytes: number;
   sharedWith?: number;
+  para?: ParaGroup;
 };
 
 export type ScanResult = "clean" | "infected" | "rejected" | "pending";
@@ -34,6 +38,7 @@ export type DriveFile = {
   bytes: number | null;
   scan: ScanResult;
   locked: boolean;
+  para: ParaGroup;
 };
 
 export type SortKey = "updated" | "name" | "size";

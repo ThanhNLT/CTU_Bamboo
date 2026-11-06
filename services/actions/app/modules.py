@@ -303,6 +303,8 @@ CATALOG: tuple[Module, ...] = (
                 "ai_agent_register",
                 "ai_agent_update",
                 "ai_agent_unregister",
+                "ai_agent_automation",
+                "ai_agent_trigger_options",
                 "ocr_retry",
                 "ocr_document",
             }

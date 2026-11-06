@@ -16,6 +16,8 @@ services:
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-actions:${BAMBOO_TAG:-dev}
     environment:
       BAMBOO_ENV: ${BAMBOO_ENV:-development}
+      # openbao-init từ chối chạy ở production khi Console còn bật
+      HASURA_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
       DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms
       ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
       FLOWABLE_URL: http://flowable:8080/flowable-rest/service

@@ -4,6 +4,7 @@
 
 import { Folder, Users } from "lucide-react";
 
+import { PARA_LABEL } from "../nav";
 import type { DriveFolder } from "../types";
 import { formatBytes } from "../utils";
 import { tr } from "../../../i18n";
@@ -23,6 +24,7 @@ export const FolderCard = ({ folder, onOpen }: { folder: DriveFolder; onOpen?: (
       </span>
       <span className="mt-0.5 flex items-center gap-1 text-[11.5px] text-muted">
         {folder.fileCount} {tr(" tệp · ")} {formatBytes(folder.bytes)}
+        {folder.para ? ` · ${PARA_LABEL[folder.para]}` : null}
         {folder.sharedWith ? (
           <>
             {" · "}
