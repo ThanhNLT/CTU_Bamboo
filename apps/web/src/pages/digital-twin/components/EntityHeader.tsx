@@ -47,6 +47,23 @@ export const EntityHeader = ({
           <Dot tone={status.tone} />
           {status.label} · {entity.grade}
         </span>
+        <span
+          className={cn(
+            "ml-2 mt-2.5 inline-flex h-6 items-center rounded-ui px-2.5 text-[12px]",
+            entity.liveSource ? "bg-sky-50 text-sky-800" : "bg-black/[0.045] text-muted",
+          )}
+          title={
+            entity.liveSource
+              ? tr("Số đo nhận trực tiếp từ thiết bị (NGSI-LD)")
+              : tr("Chưa có số đo trực tiếp: đang hiện dữ liệu mẫu")
+          }
+        >
+          {entity.liveSource === "mqtt"
+            ? tr("Trực tiếp · MQTT")
+            : entity.liveSource === "api"
+              ? tr("Trực tiếp · API")
+              : tr("Dữ liệu mẫu")}
+        </span>
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2.5">

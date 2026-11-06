@@ -55,6 +55,7 @@ services:
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
       AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
       AI_CPU_MODELS: ${AI_CPU_MODELS:-bge-m3}
+      MQTT_HOST: ${MQTT_HOST-mosquitto}
 
   hasura-base:
     image: hasura/graphql-engine:v2.51.0-ce

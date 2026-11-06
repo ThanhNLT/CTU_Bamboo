@@ -61,6 +61,8 @@ export type TwinEntity = {
   grade: string;
   offlineMinutes?: number;
   lastSeenAt: string | null;
+  /** Nguồn số đo trực tiếp (ADR #74); null = dữ liệu mẫu */
+  liveSource: "mqtt" | "api" | null;
   status: EntityStatus;
   subtitle: string;
   metrics: Metric[];

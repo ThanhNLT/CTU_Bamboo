@@ -26,6 +26,7 @@ dependencies = [
     "pillow",
     "pyhanko",
     "pypdf>=7",
+    "paho-mqtt>=2",
 ]
 
 [dependency-groups]
