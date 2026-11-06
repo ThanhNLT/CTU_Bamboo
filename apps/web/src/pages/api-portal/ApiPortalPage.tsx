@@ -9,10 +9,11 @@ import { useCallback, useEffect, useState } from "react";
 import { fetchCatalog, fetchIsAdmin, fetchKeys } from "./api";
 import { ApiDocs } from "./components/ApiDocs";
 import { ApiKeys } from "./components/ApiKeys";
+import { MqttAccounts } from "./components/MqttAccounts";
 import type { ApiKey, Catalog } from "./types";
 import { tr } from "../../i18n";
 
-type Tab = "docs" | "keys";
+type Tab = "docs" | "keys" | "mqtt";
 
 /** Cổng dịch vụ API (ADR #64): tài liệu REST /api/v1 cho mọi người, khóa API cho quản trị viên công ty. */
 export const ApiPortalPage = () => {
@@ -71,6 +72,7 @@ export const ApiPortalPage = () => {
             options={[
               { value: "docs", label: tr("Tài liệu API") },
               { value: "keys", label: tr("Khóa API") },
+              { value: "mqtt", label: tr("Thiết bị MQTT") },
             ]}
           />
         )}
@@ -82,6 +84,7 @@ export const ApiPortalPage = () => {
       {catalog && tab === "keys" && isAdmin && (
         <ApiKeys keys={keys} scopes={catalog.scopes} onChanged={() => void loadKeys()} />
       )}
+      {catalog && tab === "mqtt" && isAdmin && <MqttAccounts />}
       {catalog && !isAdmin && (
         <p className="m-0 text-[12.5px] text-muted">
           {tr("Cần khóa API? Quản trị viên công ty tạo khóa ở trang này, chọn phạm vi và hạn dùng.")}

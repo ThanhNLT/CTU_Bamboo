@@ -16,7 +16,7 @@ const RECENT_MINUTES = 60;
 
 const ENTITIES = `query TwinEntities {
   iot_entity(order_by: {code: asc}) {
-    id code urn type name site_code connection_state last_seen_at state
+    id code urn type name site_code connection_state last_seen_at live_source state
     site { name province }
     type_model { kind category grade attributes }
     incidents(order_by: {started_at: desc}, limit: 20) {
@@ -65,6 +65,7 @@ type EntityRow = {
   site_code: string;
   connection_state: "online" | "offline";
   last_seen_at: string | null;
+  live_source: "mqtt" | "api" | null;
   state: Record<string, { value: number; observed_at: string }>;
   site: { name: string; province: string | null } | null;
   type_model: { kind: string; category: EntityCategory; grade: string; attributes: Attr[] };
@@ -155,6 +156,7 @@ export const toEntity = (r: EntityRow, now: number): TwinEntity => {
     grade: r.type_model.grade,
     offlineMinutes,
     lastSeenAt: r.last_seen_at,
+    liveSource: r.live_source,
     status,
     subtitle: offlineMinutes
       ? trf("Mất tín hiệu {0} phút", [offlineMinutes])
