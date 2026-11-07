@@ -67,8 +67,8 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 
 | | |
 |---|---|
-| Mã nguồn | <https://github.com/ThanhNLT/Bamboo> |
-| Báo lỗi, đề xuất | [GitHub Issues](https://github.com/ThanhNLT/Bamboo/issues) (có mẫu báo lỗi và đề xuất); lỗ hổng bảo mật: [SECURITY.md](SECURITY.md) |
+| Mã nguồn | <https://github.com/CTUBamboo/Bamboo> |
+| Báo lỗi, đề xuất | [GitHub Issues](https://github.com/CTUBamboo/Bamboo/issues) (có mẫu báo lỗi và đề xuất); lỗ hổng bảo mật: [SECURITY.md](SECURITY.md) |
 | Lịch sử thay đổi | [CHANGELOG.md](CHANGELOG.md) theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo [Semantic Versioning](https://semver.org/lang/vi/) |
 | Giấy phép | [Apache-2.0](LICENSE) |
 | Tài liệu kỹ thuật | [`docs/`](docs/) (Sphinx, build bằng `make -C docs html`): [yêu cầu đề thi và đối chiếu](docs/tong-quan/01-yeu-cau-va-kien-truc.md), [thiết kế CSDL](docs/thiet-ke/03-thiet-ke-csdl.md), [dịch vụ nền tảng](docs/thiet-ke/06-dich-vu-nen-tang.md), [API](docs/thiet-ke/08-api-giao-dien.md), [nhật ký quyết định kiến trúc (ADR)](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md), [triển khai production](docs/van-hanh/trien-khai.md), [khởi tạo cho công ty mới](docs/van-hanh/cong-ty-moi.md) |
@@ -76,16 +76,16 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 
 ### Các phiên bản đã phát hành
 
-Bản phát hành ở [GitHub Releases](https://github.com/ThanhNLT/Bamboo/releases), mỗi bản gồm mã nguồn `bamboo-<phiên bản>.tar.gz`
+Bản phát hành ở [GitHub Releases](https://github.com/CTUBamboo/Bamboo/releases), mỗi bản gồm mã nguồn `bamboo-<phiên bản>.tar.gz`
 và `SHA256SUMS`; bản 0.1.0–0.3.0 có thêm `compose.release.yml` và image dựng sẵn trên GitHub Container Registry. Định dạng
 phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗi bản).
 
 | Phiên bản | Ngày | Nội dung chính |
 |---|---|---|
-| [0.4.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
-| [0.3.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
-| [0.2.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
-| [0.1.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
+| [0.4.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
+| [0.3.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
+| [0.2.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
+| [0.1.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
 
 ### Cấu trúc mã nguồn
 
@@ -271,7 +271,7 @@ Lần đầu cần Internet để tải image và mô hình; sau đó chạy đ�
 ## Chạy bằng một lệnh với Docker
 
 ```bash
-git clone https://github.com/ThanhNLT/Bamboo.git
+git clone https://github.com/CTUBamboo/Bamboo.git
 cd Bamboo
 make up        # đầy đủ gồm AI ở mọi mức RAM; máy 8 GB tự tiết kiệm RAM hơn (BAMBOO_RAM=8 hoặc 16 để chọn tay)
 ```
@@ -303,7 +303,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
 hiện có tới bản 0.3.0; bản 0.4.0 chạy từ mã nguồn bằng lệnh ở trên.
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y
 ```
 
 Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -f compose.release.yml up -d`.

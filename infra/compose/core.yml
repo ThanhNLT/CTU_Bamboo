@@ -69,7 +69,7 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/migrate.Dockerfile
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-migrate:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-migrate:${BAMBOO_TAG:-dev}
     depends_on:
       db:
         condition: service_healthy
@@ -93,7 +93,7 @@ services:
       dockerfile: infra/docker/python.Dockerfile
       args:
         APP_DIR: services/seed
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-seed:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-seed:${BAMBOO_TAG:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -112,7 +112,7 @@ services:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/keycloak
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-keycloak:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-keycloak:${BAMBOO_TAG:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -203,7 +203,7 @@ services:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/openbao
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-openbao:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-openbao:${BAMBOO_TAG:-dev}
     command: ["server"]
     volumes:
       - openbao-data:/openbao/file
@@ -421,7 +421,7 @@ services:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/apisix
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-gateway:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-gateway:${BAMBOO_TAG:-dev}
     environment:
       APISIX_WORKER_PROCESSES: ${GATEWAY_WORKERS:-2}
     depends_on:
@@ -452,7 +452,7 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/web.Dockerfile
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-web:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-web:${BAMBOO_TAG:-dev}
     environment:
       BAMBOO_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8000}
       BAMBOO_HASURA_URL: ${HASURA_PUBLIC_URL:-http://localhost:8000/graphql}
