@@ -115,6 +115,7 @@ export type SelectedElement = {
   automationBody?: string;
   automationName?: string;
   automationValue?: string;
+  automationScript?: string;
   timerCycle?: string;
 };
 

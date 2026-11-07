@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Cảnh báo cơ bản (ADR #75); xem ở Grafana → Alerting hoặc Prometheus → Alerts.
+groups:
+  - name: bamboo
+    rules:
+      - alert: DichVuKhongTraLoi
+        expr: up == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.job }} không trả lời Prometheus quá 2 phút"
+      - alert: TyLeLoiActionCao
+        expr: >
+          sum(rate(bamboo_action_calls_total{outcome="error"}[5m]))
+          / clamp_min(sum(rate(bamboo_action_calls_total[5m])), 0.001) > 0.05
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Hơn 5% lượt gọi Action lỗi không lường trước trong 5 phút"
+      - alert: HangChetCoTin
+        expr: sum(bamboo_message_queue{status="DEAD"}) > 0
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Hàng đợi thông báo có tin trong hàng chết (xem Quản trị → Hàng đợi)"
+      - alert: TepKetKiemDich
+        expr: bamboo_attachments_pending > 20
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Nhiều tệp nằm trong bucket kiểm dịch quá 15 phút"
+      - alert: ThietBiNgoaiTuyen
+        expr: sum(bamboo_iot_live_devices{state="offline"}) > 0
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Có thiết bị gửi số đo trực tiếp đang ngoại tuyến"

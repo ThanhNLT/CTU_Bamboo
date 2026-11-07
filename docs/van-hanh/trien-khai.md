@@ -22,12 +22,14 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 4 | Tên miền HTTPS | Một tên miền trỏ vào cổng API; đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó (mục 3) |
 | 5 | Keycloak chế độ production | `KEYCLOAK_MODE=start` (bắt buộc đi sau reverse proxy TLS) |
 | 6 | Redirect URI của ứng dụng | Job `bootstrap` tự bổ sung `WEB_ORIGIN` vào client `bms-web` mỗi lần khởi động (cả khi đổi tên miền sau lần import đầu). Giá trị cũ không bị xóa: gỡ `http://localhost:5173` (chỉ dùng cho `pnpm dev`) và tên miền cũ trong Keycloak → realm `bms` → Clients → `bms-web` |
-| 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp) |
-| 8 | Quét virus bằng ClamAV (bộ quét nội bộ luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus) | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
+| 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp). Với `BAMBOO_ENV=production`, `openbao-init` từ chối chạy nếu Console còn bật (ADR #76) |
+| 8 | Quét virus bằng ClamAV (bộ quét nội bộ và CDR luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus, ADR #70) | `make up` ở mức RAM 16 tự bật (`BAMBOO_CLAMAV=true` để bật ở mức 8); chạy tay: `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
 | 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`, `CDC_DB_PASSWORD` (Debezium), `LAKEHOUSE_DB_PASSWORD` (catalog Iceberg); superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
 | 12 | Trục dữ liệu (ADR #45) | Mật khẩu Kafka `DEBEZIUM_KAFKA_PASSWORD`, `LAKEHOUSE_KAFKA_PASSWORD` (Kafka từ chối client không có tài khoản, ACL theo tiền tố topic). Trino chỉ nhận đăng nhập qua HTTPS bằng chứng chỉ của CA nội bộ OpenBao; mật khẩu `bms-admin`, `bms-actions` do OpenBao sinh; người dùng tenant chỉ thấy dữ liệu của tenant mình (row filter). Không mở cổng 8085 của Trino ra ngoài máy chủ |
+| 13 | Giám sát (ADR #75) | `GRAFANA_ADMIN_PASSWORD` riêng (bắt buộc với `BAMBOO_ENV=production`). Grafana `:3001`, Jaeger `:16686`, Prometheus `:9090` chỉ nghe 127.0.0.1: xem qua đường hầm SSH, không mở ra Internet. Mức RAM 8 bật bằng `BAMBOO_OBSERVABILITY=true` |
+| 14 | Thiết bị OT qua MQTT (ADR #74, #76) | Thiết bị trong mạng OT dùng cổng TLS 8883: đặt `MQTT_BIND` bằng IP của mạng OT (không phải 0.0.0.0 trên máy có Internet), mở tường lửa chỉ cho dải thiết bị; phát CA nội bộ (`/mosquitto/tls/ca.crt`) cho thiết bị để kiểm chứng chỉ máy chủ. Tài khoản thiết bị tạo ở Cổng dịch vụ API → Thiết bị MQTT; sao lưu volume `mosquitto-data` (giữ tài khoản thiết bị) |
 
 ## 3. Tên miền và TLS
 

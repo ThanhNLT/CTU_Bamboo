@@ -46,6 +46,8 @@ SCOPES = {
     "lineage.read": "Phả hệ và chất lượng dữ liệu",
     "search.read": "Tìm kiếm toàn văn chứng từ và tệp",
     "org.read": "Cơ cấu tổ chức (đơn vị)",
+    "iot.read": "Thực thể bản sao số dạng NGSI-LD và giá trị đo mới nhất",
+    "iot.write": "Gửi số đo thiết bị dạng NGSI-LD (người tạo khóa cần quyền iot.ingest)",
 }
 
 
@@ -116,6 +118,31 @@ ENDPOINTS = (
         (("query", "string", "Từ khóa"), ("kind", "string", "purchase_request | attachment"), ("limit", "integer", "")),
     ),
     Endpoint("GET", "/api/v1/org-units", "org.read", None, "Đơn vị tổ chức đang hiệu lực"),
+    Endpoint(
+        "GET",
+        "/api/v1/ngsi-ld/v1/entities",
+        "iot.read",
+        "iot_entities",
+        "Thực thể bản sao số (NGSI-LD dạng chuẩn)",
+        (("type", "string", "Loại thực thể, ví dụ CleanRoom"), ("limit", "integer", "Tối đa 500")),
+    ),
+    Endpoint(
+        "GET",
+        "/api/v1/ngsi-ld/v1/entities/{entity_id}",
+        "iot.read",
+        "iot_entities",
+        "Một thực thể theo URN hoặc mã thiết bị",
+        (("entity_id", "string", "URN NGSI-LD hoặc mã thiết bị"),),
+    ),
+    Endpoint(
+        "POST",
+        "/api/v1/ngsi-ld/v1/entities/{entity_id}/attrs",
+        "iot.write",
+        "iot_ingest",
+        "Gửi số đo: thân NGSI-LD {thuộc tính: {type: Property, value, observedAt}} hoặc {thuộc tính: số, observedAt}",
+        (("entity_id", "string", "URN NGSI-LD hoặc mã thiết bị"),),
+        body=True,
+    ),
 )
 
 
@@ -413,6 +440,29 @@ def router(
     @api.get("/api/v1/kpi/{kpi_key}")
     async def kpi(request: Request, kpi_key: str, limit: int = 60):
         return await call(request, by_path[("GET", "/api/v1/kpi/{kpi_key}")], {"kpi_key": kpi_key, "limit": limit})
+
+    ngsi = "/api/v1/ngsi-ld/v1/entities"
+
+    @api.get(ngsi)
+    async def ngsi_entities(request: Request, type: str | None = None, limit: int = 100):  # noqa: A002
+        out = await call(request, by_path[("GET", ngsi)], {"type": type, "limit": limit})
+        return out["entities"] if isinstance(out, dict) else out
+
+    @api.get(ngsi + "/{entity_id}")
+    async def ngsi_entity(request: Request, entity_id: str):
+        out = await call(request, by_path[("GET", ngsi + "/{entity_id}")], {"id": entity_id})
+        return out["entities"][0] if isinstance(out, dict) else out
+
+    @api.post(ngsi + "/{entity_id}/attrs")
+    async def ngsi_attrs(request: Request, entity_id: str):
+        try:
+            body = await request.json()
+        except ValueError:
+            body = None
+        if not isinstance(body, dict):
+            return JSONResponse({"message": "Thân yêu cầu phải là JSON object", "code": "bad-request"}, 400)
+        out = await call(request, by_path[("POST", ngsi + "/{entity_id}/attrs")], {"entity": entity_id, "attrs": body})
+        return out
 
     @api.get("/api/v1/ops/{tab}")
     async def ops(request: Request, tab: str, days: int = 30):

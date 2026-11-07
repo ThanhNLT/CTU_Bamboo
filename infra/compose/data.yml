@@ -199,6 +199,103 @@ services:
     command: ["python", "-m", "app.lakehouse_sink"]
     restart: unless-stopped
 
+  # Hội tụ IT/OT (ADR #74): thiết bị publish `bamboo/<mã công ty>/<mã thiết bị>/attrs` (NGSI-LD), iot-bridge ghi vào
+  # bản sao số. Thiết bị trong mạng OT dùng cổng TLS 8883 (MQTT_BIND, mặc định 127.0.0.1); 1883 chỉ mở cho 127.0.0.1;
+  # iot-bridge và actions dùng cổng mTLS nội bộ 8884 bằng chứng chỉ do CA nội bộ OpenBao cấp (ADR #76).
+  mosquitto:
+    logging: *logging
+    image: eclipse-mosquitto:2.0.21
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:1883:1883"
+      - "${MQTT_BIND:-127.0.0.1}:8883:8883"
+    volumes:
+      - ../platform/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-tls:/mosquitto/tls:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 1883"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  iot-bridge:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      mosquitto:
+        condition: service_healthy
+    volumes:
+      - actions-secrets:/run/bms:ro
+    command: ["python", "-m", "app.iot_bridge"]
+    restart: unless-stopped
+
+  # Giám sát (ADR #75), nhóm `observability`: `make up` bật ở mức RAM 16, hoặc `docker compose --profile observability up -d`.
+  # Giao diện chỉ nghe 127.0.0.1: Grafana :3001, Jaeger :16686, Prometheus :9090.
+  otel-collector:
+    logging: *logging
+    profiles: [observability]
+    image: otel/opentelemetry-collector:0.164.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ../platform/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    mem_limit: 160m
+    restart: unless-stopped
+
+  jaeger:
+    logging: *logging
+    profiles: [observability]
+    image: jaegertracing/jaeger:2.23.0
+    ports:
+      - "127.0.0.1:16686:16686"
+    mem_limit: 256m
+    restart: unless-stopped
+
+  prometheus:
+    logging: *logging
+    profiles: [observability]
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-7d}
+    volumes:
+      - ../platform/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../platform/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    mem_limit: 384m
+    restart: unless-stopped
+
+  grafana:
+    logging: *logging
+    profiles: [observability]
+    image: grafana/grafana-oss:13.0.1
+    depends_on: [prometheus, jaeger]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana-dev}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/bamboo.json
+    volumes:
+      - ../platform/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../platform/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3001:3000"
+    mem_limit: 256m
+    restart: unless-stopped
+
   trino-core:
     logging: *logging
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
@@ -261,7 +358,7 @@ services:
       # Danh sách phải khớp services/actions/app/modules.py (MANAGED_SERVICES; kiểm bởi test_mo_dun.py)
       SLEEPER_MODULES_URL: http://actions:8000/modules/services
       SLEEPER_HOLD_UNTIL: bootstrap
-      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
+      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
     networks:
       default:
         aliases: [trino, tika, gotenberg, ollama, ocr]
@@ -287,6 +384,7 @@ services:
 
 
 volumes:
+  mosquitto-data:
   meilisearch-data:
   kafka-data:
   debezium-data:

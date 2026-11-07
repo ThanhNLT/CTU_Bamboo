@@ -14,6 +14,53 @@ export type Agent = {
   guardrail_config: Partial<Record<GuardKey, boolean>>;
   tool_list: string[];
   created_at: string;
+  triggers: string[];
+  instructions: string | null;
+  allowed_actions: AgentAction[];
+  autonomy: Autonomy;
+  webhook_url: string | null;
+};
+
+/** Tự hành động khi có sự kiện (ADR #72) */
+export type AgentAction = "comment" | "notify" | "webhook";
+export type Autonomy = "act" | "dry_run";
+export type Option = { code: string; label: string };
+export type TriggerOptions = { events: Option[]; actions: Option[]; autonomy: Option[] };
+
+export type AutomationInput = {
+  triggers: string[];
+  instructions: string;
+  allowed_actions: AgentAction[];
+  autonomy: Autonomy;
+  webhook_url?: string | null;
+};
+
+export type RunAction = {
+  type: AgentAction;
+  text?: string;
+  to?: string;
+  message?: string;
+  ok: boolean | null;
+  dry_run?: boolean;
+  error?: string;
+  recipients?: number;
+};
+
+export type AgentRun = {
+  id: string;
+  agent_id: string;
+  event: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  payload: { doc_no?: string; amount?: number } | null;
+  status: "queued" | "running" | "done" | "error" | "skipped";
+  assessment: string | null;
+  risk: "low" | "medium" | "high" | null;
+  plan: { rejected?: { action: string; reason: string }[]; sources?: string[] } | null;
+  actions: RunAction[];
+  error: string | null;
+  created_at: string;
+  finished_at: string | null;
 };
 
 export type AgentStats = {

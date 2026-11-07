@@ -472,6 +472,7 @@ export const ProcessDesignPage = () => {
           </div>
           {access !== "view" && (
             <PropertiesPanel
+              modelId={detail?.id}
               showChecks={canDesign}
               element={selected}
               forms={forms}

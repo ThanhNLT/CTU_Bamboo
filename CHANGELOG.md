@@ -4,6 +4,16 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp (hoàn thiện Tầng 1 và các nguyên lý, ADR #70–#77):** chạy `make up` (image `actions`, `web` đổi; dịch vụ mới `mosquitto`, `iot-bridge`; nhóm `observability` mới). Migration `056`–`058`.
+- **CDR cho tệp tải lên (ADR #70):** sau khi quét sạch, ảnh được mã hóa lại (bỏ EXIF, dữ liệu thừa), tệp Office dựng lại gói zip (bỏ liên kết ngoài, sổ tính liên kết, DTD), PDF ghi lại chỉ với đối tượng còn dùng (bỏ hành động tự chạy, JavaScript, tệp nhúng, XFA, dữ liệu sau `%%EOF`); PDF đã ký số giữ nguyên. Người dùng tải về bản đã dựng lại; mã băm bản gốc lưu trong báo cáo quét. `make up` ở mức RAM 16 bật ClamAV (`BAMBOO_CLAMAV`).
+- **Ổ đĩa theo P.A.R.A (ADR #71):** tệp tự vào **Dự án / Lĩnh vực phụ trách / Tài nguyên / Lưu trữ** theo trạng thái chứng từ; dự án nhận tệp đính kèm (thẻ **Tệp dự án**).
+- **Tác tử AI tự hành động (ADR #72):** ở trang Tác tử AI, chọn sự kiện kích hoạt (ví dụ đề nghị mua sắm gửi duyệt), viết nhiệm vụ, chọn hành động được phép (bình luận, thông báo, webhook) và mức tự chủ; tác tử đọc chứng từ, tra quy chế, tự làm và ghi từng lần chạy.
+- **Kịch bản tự viết trong quy trình tự động (ADR #73):** hành động **Chạy kịch bản tự viết** (cú pháp Python rút gọn, chạy bằng trình thông dịch an toàn, giới hạn bước, thời gian, bộ nhớ), chạy thử ngay trong bảng thuộc tính.
+- **IT/OT qua MQTT và NGSI-LD (ADR #74):** broker Mosquitto, tài khoản thiết bị theo công ty (Cổng dịch vụ API → **Thiết bị MQTT**), REST `/api/v1/ngsi-ld/v1/entities`; số đo vào Bản sao số ngay, sự cố tự mở/đóng theo ngưỡng, thiết bị im lặng 15 phút chuyển ngoại tuyến; trang ghi rõ **Trực tiếp** hay **Dữ liệu mẫu**.
+- **Giám sát (ADR #75):** OpenTelemetry (Collector → Jaeger), Prometheus, Grafana với bảng điều khiển và cảnh báo dựng sẵn; `actions` có `/metrics`, phản hồi có `X-Trace-Id`. `make up` mức 16 bật (`BAMBOO_OBSERVABILITY`).
+- **mTLS nội bộ (ADR #76):** CA nội bộ OpenBao cấp chứng chỉ dịch vụ, tự gia hạn; `iot-bridge` và `actions` vào Mosquitto qua cổng mTLS 8884, thiết bị dùng TLS 8883. Production từ chối khởi động khi Hasura Console còn bật hoặc `GRAFANA_ADMIN_PASSWORD` còn mặc định.
+- **Phả hệ thu tự động theo lịch (ADR #77):** `flow-sync` dựng lại phả hệ và kiểm slot CDC mỗi 15 phút (`LINEAGE_AUTO_MINUTES`) mà không đánh thức Trino.
+
 **Sửa 502 Bad Gateway và `flow-sync` khởi động lại liên tục sau khi khởi động lại máy hoặc Docker:** OpenBao dùng khóa Shamir nên bị khóa mỗi lần container khởi động lại, còn `openbao-init` chỉ chạy khi `docker compose up`; `actions`, `flow-sync` không đăng nhập AppRole được nên chết ngay và bị khởi động lại liên tục. Dịch vụ mới `openbao-unseal` (`python -m app.openbao_init --watch`) tự unseal lại; các dịch vụ chờ OpenBao sẵn sàng tối đa 120 giây (`BAO_WAIT_SECONDS`) thay vì thoát ngay, sai AppRole (4xx) vẫn báo lỗi ngay. Một lần làm mới số liệu định kỳ lỗi của `flow-sync` chỉ ghi log rồi thử lại vòng sau, không làm chết tiến trình.
 
 **AI chạy mặc định ở mọi cấu hình (ADR #69):** `make up` ở mức RAM 8 không còn dừng Ollama, OCR, `ai-worker`; mức 8 chỉ tiết kiệm bộ nhớ (một mô hình AI trên RAM mỗi lúc, gỡ mô hình sau 2 phút và cho OCR ngủ sau 120 giây nhàn rỗi, heap JVM nhỏ). `OLLAMA_URL` để trống trong `.env` cũ không còn tắt AI. Biến mới `OLLAMA_MAX_LOADED_MODELS` (mặc định 2).
