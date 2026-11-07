@@ -87,7 +87,7 @@ services:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/kafka
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-kafka:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-kafka:${BAMBOO_TAG:-dev}
     environment:
       CLUSTER_ID: b5T4hzPsQrOmfv9Kr38lIg
       KAFKA_NODE_ID: 1
@@ -195,7 +195,7 @@ services:
     build:
       args:
         DEP_GROUPS: lakehouse
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-lakehouse:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-lakehouse:${BAMBOO_TAG:-dev}
     depends_on:
       bootstrap:
         condition: service_completed_successfully
@@ -312,7 +312,7 @@ services:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/trino
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-trino:${BAMBOO_TAG:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -339,7 +339,7 @@ services:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/trino
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-trino:${BAMBOO_TAG:-dev}
     depends_on:
       sleeper:
         condition: service_healthy
@@ -354,7 +354,7 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/sleeper.Dockerfile
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-sleeper:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-sleeper:${BAMBOO_TAG:-dev}
     depends_on:
       trino-core:
         condition: service_started
