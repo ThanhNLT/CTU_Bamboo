@@ -18,7 +18,7 @@ permissions:
   packages: write
 
 env:
-  PREFIX: ghcr.io/thanhnlt/bamboo
+  PREFIX: ghcr.io/ctubamboo/bamboo
 
 jobs:
   build:
