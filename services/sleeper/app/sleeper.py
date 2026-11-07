@@ -41,10 +41,14 @@ class Docker:
         self.socket_path = socket_path
         self.project = project
 
-    async def _call(self, method: str, path: str, ok: tuple[int, ...]) -> bytes:
+    async def _call(self, method: str, path: str, ok: tuple[int, ...], body: dict | None = None) -> bytes:
+        payload = json.dumps(body).encode() if body is not None else b""
+        head = f"{method} {path} HTTP/1.0\r\nHost: docker\r\nContent-Length: {len(payload)}\r\n"
+        if body is not None:
+            head += "Content-Type: application/json\r\n"
         reader, writer = await asyncio.open_unix_connection(self.socket_path)
         try:
-            writer.write(f"{method} {path} HTTP/1.0\r\nHost: docker\r\nContent-Length: 0\r\n\r\n".encode())
+            writer.write(head.encode() + b"\r\n" + payload)
             await writer.drain()
             raw = await reader.read()
         finally:
@@ -63,18 +67,219 @@ class Docker:
         ]
         query = quote(json.dumps({"label": labels}))
         found = json.loads(await self._call("GET", f"/containers/json?all=1&filters={query}", (200,)))
+        # lúc đổi CPU <-> GPU có thêm bản tạm cùng nhãn (tên có hậu tố SWAP_SUFFIXES): ưu tiên bản chính
+        found.sort(key=lambda c: any(n.endswith(SWAP_SUFFIXES) for n in c.get("Names") or []))
         if not found:
             raise DockerError(f"không thấy container của dịch vụ {service} (dự án {self.project})")
         return found[0]["Id"]
 
+    async def inspect(self, container: str) -> dict:
+        return json.loads(await self._call("GET", f"/containers/{container}/json", (200,)))
+
     async def state(self, container: str) -> dict:
-        return json.loads(await self._call("GET", f"/containers/{container}/json", (200,)))["State"]
+        return (await self.inspect(container))["State"]
 
     async def start(self, container: str) -> None:
         await self._call("POST", f"/containers/{container}/start", (204, 304))
 
     async def stop(self, container: str, grace: int = 30) -> None:
         await self._call("POST", f"/containers/{container}/stop?t={grace}", (204, 304))
+
+    async def create(self, name: str, body: dict) -> str:
+        return json.loads(await self._call("POST", f"/containers/create?name={quote(name)}", (201,), body))["Id"]
+
+    async def rename(self, container: str, name: str) -> None:
+        await self._call("POST", f"/containers/{container}/rename?name={quote(name)}", (204,))
+
+    async def remove(self, container: str) -> None:
+        await self._call("DELETE", f"/containers/{container}?force=1", (204, 404))
+
+    async def wait(self, container: str) -> int:
+        return json.loads(await self._call("POST", f"/containers/{container}/wait", (200,)))["StatusCode"]
+
+
+SWAP_SUFFIXES = ("-sleeper-old", "-sleeper-new")
+# Xin mọi GPU NVIDIA (như `--gpus all`); Docker Desktop WSL2 và nvidia-container-toolkit đều nhận
+GPU_REQUEST = {"Driver": "nvidia", "Count": -1, "DeviceIDs": None, "Capabilities": [["gpu"]], "Options": {}}
+
+
+def has_gpu(info: dict) -> bool:
+    return any(
+        r.get("Driver") == "nvidia" or ["gpu"] in (r.get("Capabilities") or [])
+        for r in (info.get("HostConfig") or {}).get("DeviceRequests") or []
+    )
+
+
+def clone_body(info: dict, gpu: bool) -> dict:
+    """Thân `POST /containers/create` tái tạo đúng container compose (cấu hình, nhãn, volume, mạng), chỉ đổi GPU.
+    Nhãn com.docker.compose.* giữ nguyên (cả config-hash) nên `docker compose up` sau đó coi container là của nó và
+    không tạo lại."""
+    config = dict(info["Config"])
+    if config.get("Hostname") == info["Id"][:12]:
+        config.pop("Hostname")  # Docker tự đặt theo id; giữ thì container mới mang id cũ
+    config.pop("MacAddress", None)
+    host = dict(info["HostConfig"])
+    others = [r for r in host.get("DeviceRequests") or [] if not has_gpu({"HostConfig": {"DeviceRequests": [r]}})]
+    host["DeviceRequests"] = others + [GPU_REQUEST] if gpu else others
+    networks = {
+        name: {k: ep[k] for k in ("Aliases", "Links", "IPAMConfig", "DriverOpts") if ep.get(k)}
+        for name, ep in ((info.get("NetworkSettings") or {}).get("Networks") or {}).items()
+    }
+    return {**config, "HostConfig": host, "NetworkingConfig": {"EndpointsConfig": networks}}
+
+
+class Gpu:
+    """Cho Ollama, OCR dùng card NVIDIA khi máy có, chỉ với `docker compose up` (ADR #79).
+
+    Compose không xin GPU có điều kiện được (xin mà máy không có thì container không tạo được), nên compose luôn tạo bản
+    CPU. Sau khi `gate` (ai-worker, chạy sau ollama-init và ocr-core) đã chạy, sleeper thử một container nhỏ xin GPU từ
+    chính image đó; được thì tạo lại từng dịch vụ với cùng cấu hình cộng GPU, kiểm container mới khởi động được rồi mới
+    xóa bản CPU. Tạo, khởi động lỗi thì trả lại bản CPU và không thử nữa cho tới lần sleeper khởi động sau. Container
+    GPU về sau không start được (đổi driver, tháo card) thì tự đổi về CPU. mode: auto | true | false (BAMBOO_GPU)."""
+
+    def __init__(
+        self,
+        docker: Docker,
+        services: list[str],
+        targets: list["Target"],
+        mode: str = "auto",
+        gate: str = "ai-worker",
+        verify_timeout: float = 240,
+    ):
+        self.docker = docker
+        self.services = services
+        self.targets = {t.service: t for t in targets}
+        self.mode = mode
+        self.gate = gate
+        self.verify_timeout = verify_timeout
+        self.usable: bool | None = None  # None: chưa thử
+        self.failed: set[str] = set()
+
+    async def probe(self, image: str) -> bool:
+        name = f"{self.docker.project}-gpu-probe"
+        await self.docker.remove(name)
+        body = {
+            "Image": image,
+            "Entrypoint": ["true"],
+            "Cmd": [],
+            "Labels": {"bamboo.sleeper": "gpu-probe"},
+            "HostConfig": {"NetworkMode": "none", "DeviceRequests": [GPU_REQUEST]},
+        }
+        try:
+            probe = await self.docker.create(name, body)
+            try:
+                await self.docker.start(probe)
+                return await asyncio.wait_for(self.docker.wait(probe), 60) == 0
+            finally:
+                await self.docker.remove(probe)
+        except (DockerError, OSError, asyncio.TimeoutError) as exc:
+            log.info("không dùng được GPU NVIDIA (%s): Ollama, OCR chạy trên CPU", exc)
+            return False
+
+    async def _gate_open(self) -> bool:
+        try:
+            return bool((await self.docker.state(await self.docker.find(self.gate))).get("Running"))
+        except DockerError:
+            return False
+
+    async def reconcile(self) -> list[str]:
+        """Một lượt; trả các dịch vụ vừa đổi."""
+        done = []
+        for service in self.services:
+            try:
+                info = await self.docker.inspect(await self.docker.find(service))
+            except DockerError:
+                continue
+            state = info["State"]
+            if has_gpu(info):
+                # card hỏng, driver đổi: container GPU không start được thì về CPU
+                if not state.get("Running") and state.get("Error"):
+                    log.warning("%s không khởi động được với GPU (%s): đổi về CPU", service, state["Error"])
+                    self.failed.add(service)
+                    if await self._swap(service, info, gpu=False):
+                        done.append(service)
+                continue
+            if self.mode == "false" or service in self.failed or self.usable is False:
+                continue
+            target = self.targets.get(service)
+            if state.get("Running") and (not await self._gate_open() or (target and target.writers)):
+                continue  # compose còn đang chờ dịch vụ này, hoặc đang có yêu cầu đi qua
+            if self.usable is None:
+                self.usable = await self.probe(info["Config"]["Image"])
+                if not self.usable:
+                    continue
+                log.info("thấy GPU NVIDIA: chuyển %s sang GPU", ", ".join(self.services))
+            if await self._swap(service, info, gpu=True):
+                done.append(service)
+            else:
+                self.failed.add(service)
+        return done
+
+    async def _swap(self, service: str, info: dict, gpu: bool) -> bool:
+        target = self.targets.get(service)
+        lock = target.awake_lock if target else asyncio.Lock()
+        async with lock:
+            ok = await self._replace(service, info, gpu)
+            if target:
+                target.container = ""
+        return ok
+
+    async def _replace(self, service: str, info: dict, gpu: bool) -> bool:
+        name = info["Name"].lstrip("/")
+        old = info["Id"]
+        running = bool(info["State"].get("Running"))
+        kind = "GPU" if gpu else "CPU"
+        await self.docker.remove(name + "-sleeper-new")
+        try:
+            new = await self.docker.create(name + "-sleeper-new", clone_body(info, gpu))
+        except DockerError as exc:
+            log.warning("không tạo được %s bản %s: %s", service, kind, exc)
+            return False
+        try:
+            if running:
+                await self.docker.stop(old)
+            await self.docker.rename(old, name + "-sleeper-old")
+            await self.docker.rename(new, name)
+        except DockerError as exc:
+            log.warning("không đổi được %s sang %s: %s", service, kind, exc)
+            await self.docker.remove(new)
+            await self._restore(old, name, running)
+            return False
+        if await self._verify(new):
+            if not running:
+                await self.docker.stop(new)  # đang ngủ thì để ngủ, có yêu cầu sleeper sẽ đánh thức
+            await self.docker.remove(old)
+            log.info("%s chạy bản %s", service, kind)
+            return True
+        log.warning("%s bản %s không khởi động được: giữ bản cũ", service, kind)
+        await self.docker.remove(new)
+        await self._restore(old, name, running)
+        return False
+
+    async def _restore(self, old: str, name: str, running: bool) -> None:
+        try:
+            await self.docker.rename(old, name)
+            if running:
+                await self.docker.start(old)
+        except DockerError as exc:
+            log.error("không trả lại được container %s: %s", name, exc)
+
+    async def _verify(self, container: str) -> bool:
+        """Container mới start được và (nếu có healthcheck) healthy trong verify_timeout."""
+        try:
+            await self.docker.start(container)
+        except DockerError as exc:
+            log.warning("start lỗi: %s", exc)
+            return False
+        deadline = time.monotonic() + self.verify_timeout
+        while time.monotonic() < deadline:
+            state = await self.docker.state(container)
+            if not state.get("Running"):
+                return False
+            if state.get("Health", {}).get("Status", "healthy") == "healthy":
+                return True
+            await asyncio.sleep(1)
+        return False
 
 
 def parse_targets(spec: str, default_idle: float) -> list["Target"]:
@@ -331,7 +536,9 @@ class Sleeper:
         wake_timeout: float = 180,
         check_every: float = 30,
         modules: Modules | None = None,
+        gpu: Gpu | None = None,
     ):
+        self.gpu = gpu
         self.docker = docker
         self.targets = targets
         self.wake_timeout = wake_timeout
@@ -385,11 +592,24 @@ class Sleeper:
         servers.append(await asyncio.start_server(self._admin, "0.0.0.0", admin_port))
         for t in self.targets:
             log.info("cổng %d -> %s:%d, ngủ sau %.0f giây", t.listen_port, t.service, t.port, t.idle_seconds)
-        if self.modules is None:
+        if self.modules is not None:
+            log.info("theo mô-đun từ %s, quản lý %s", self.modules.url, ", ".join(sorted(self.modules.managed)))
+        if self.modules is None and self.gpu is None:
             await self.watch()
         else:
-            log.info("theo mô-đun từ %s, quản lý %s", self.modules.url, ", ".join(sorted(self.modules.managed)))
-            await asyncio.gather(self.watch(), self.modules.watch(float(os.environ.get("SLEEPER_MODULES_EVERY", "15"))))
+            await asyncio.gather(self.watch(), self.background(float(os.environ.get("SLEEPER_MODULES_EVERY", "15"))))
+
+    async def background(self, every: float) -> None:
+        """Đối chiếu mô-đun rồi GPU, tuần tự để hai việc không cùng start/stop một container."""
+        while True:
+            if self.modules is not None:
+                await self.modules.reconcile()
+            if self.gpu is not None:
+                try:
+                    await self.gpu.reconcile()
+                except (DockerError, OSError) as exc:
+                    log.warning("không đối chiếu được GPU: %s", exc)
+            await asyncio.sleep(every)
 
 
 def main() -> None:
@@ -403,7 +623,10 @@ def main() -> None:
     managed = {s.strip() for s in os.environ.get("SLEEPER_MANAGED", "").split(",") if s.strip()}
     hold_until = os.environ.get("SLEEPER_HOLD_UNTIL", "")
     modules = Modules(docker, modules_url, managed, targets, hold_until=hold_until) if modules_url and managed else None
-    sleeper = Sleeper(docker, targets, float(os.environ.get("SLEEPER_WAKE_TIMEOUT", "180")), modules=modules)
+    gpu_mode = os.environ.get("SLEEPER_GPU", "auto").strip().lower() or "auto"
+    gpu_services = [s.strip() for s in os.environ.get("SLEEPER_GPU_SERVICES", "").split(",") if s.strip()]
+    gpu = Gpu(docker, gpu_services, targets, gpu_mode) if gpu_services and gpu_mode != "false" else None
+    sleeper = Sleeper(docker, targets, float(os.environ.get("SLEEPER_WAKE_TIMEOUT", "180")), modules=modules, gpu=gpu)
     asyncio.run(sleeper.run(int(os.environ.get("SLEEPER_ADMIN_PORT", "9000"))))
 
 

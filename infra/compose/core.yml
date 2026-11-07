@@ -14,6 +14,10 @@ x-logging: &logging
     max-size: "10m"
     max-file: "3"
 
+# Healthcheck (ADR #78): kiểm dày (start_interval) trong start_period để `depends_on: service_healthy` và `sleeper` đánh
+# thức nhanh, sau khi healthy chỉ kiểm mỗi 30 giây. start_period = tổng thời gian chờ khởi động cũ (interval × retries).
+# Cần Docker Engine 25+.
+
 x-db-env: &db-env
   PGHOST: db
   PGUSER: bms
@@ -53,10 +57,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bms -d bms"]
-      interval: 2s
+      interval: 30s
       timeout: 3s
-      retries: 30
-      start_period: 10s
+      retries: 3
+      start_period: 70s
+      start_interval: 1s
 
   migrate:
     logging: *logging
@@ -137,10 +142,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3 && grep -q UP <&3"]
-      interval: 5s
+      interval: 30s
       timeout: 5s
-      retries: 60
-      start_period: 30s
+      retries: 3
+      start_period: 330s
+      start_interval: 2s
 
   flowable:
     logging: *logging
@@ -162,10 +168,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 8080"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
-      retries: 60
-      start_period: 20s
+      retries: 3
+      start_period: 320s
+      start_interval: 2s
 
   hasura:
     logging: *logging
@@ -185,9 +192,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3 && grep -q OK <&3"]
-      interval: 3s
+      interval: 30s
       timeout: 3s
-      retries: 60
+      retries: 3
+      start_period: 180s
+      start_interval: 1s
 
   openbao:
     logging: *logging
@@ -203,9 +212,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null 'http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200&standbycode=200'"]
-      interval: 2s
+      interval: 30s
       timeout: 3s
-      retries: 30
+      retries: 3
+      start_period: 60s
+      start_interval: 1s
 
   openbao-init:
     logging: *logging
@@ -286,6 +297,7 @@ services:
       - "127.0.0.1:9333:9333"
       - "127.0.0.1:8888:8888"
     restart: unless-stopped
+    # giữ nhịp 3 giây: healthcheck này còn gửi SIGHUP nạp lại s3.json mới ngay sau khi openbao-init ghi
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333 && { [ ! /etc/bms/s3.json -nt /tmp/s3.json.loaded ] || { touch /tmp/s3.json.loaded && kill -HUP 1; }; }"]
       interval: 3s
@@ -357,9 +369,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
-      interval: 3s
+      interval: 30s
       timeout: 3s
-      retries: 40
+      retries: 3
+      start_period: 120s
+      start_interval: 1s
 
   flow-sync:
     logging: *logging
@@ -426,9 +440,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9080 && printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3 && grep -q ok <&3"]
-      interval: 3s
+      interval: 30s
       timeout: 3s
-      retries: 40
+      retries: 3
+      start_period: 120s
+      start_interval: 1s
 
   web:
     logging: *logging
@@ -447,9 +463,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
-      retries: 10
+      retries: 3
+      start_period: 50s
+      start_interval: 2s
 
 
 volumes:
@@ -466,3 +484,4 @@ volumes:
   lakehouse-secrets:
   trino-catalog:
   trino-secrets:
+  mosquitto-tls:
