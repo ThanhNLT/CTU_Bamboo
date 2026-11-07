@@ -534,8 +534,7 @@ Giao diện ──ai_ask──▶ actions: kiểm tác tử, prompt_guard, che P
 Chạy CPU mất vài chục giây mỗi lượt; một lượt một lúc nên người sau phải chờ. Hàng đợi chung cho mọi tenant (một mô hình), nên vị trí chờ người hỏi thấy gồm cả lượt của tenant khác (chỉ là con số, không lộ nội dung). Chỉ chạy một `ai-worker`. Mô hình 4B có thể trả lời thiếu ý hoặc trích sai số đoạn; smoke test `tools/ai_smoke.sh` dùng để kiểm bằng mắt. Chỉ lấy tài liệu thư viện đang hiệu lực, không lấy tệp chứng từ hay Ổ đĩa.
 
 ```bash
-make up                                           # AI chạy cùng hệ thống (CPU)
-make up-gpu                                       # kèm GPU NVIDIA (docs/van-hanh/trien-khai.md)
+make up                                           # AI chạy cùng hệ thống, tự dùng GPU NVIDIA khi có
 make test-actions T=tests/test_tro_ly_ai.py       # chia đoạn, guardrail, worker với Ollama giả
 tools/ai_smoke.sh                                 # hỏi thật 5 câu mẫu khi đã tải xong mô hình
 ```

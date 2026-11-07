@@ -9,7 +9,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | CPU | 4 vCPU | 8 vCPU |
 | RAM | 8 GB | 16 GB (thêm 2 GB nếu bật ClamAV) |
 | Đĩa | 20 GB SSD | 50 GB SSD, tách volume dữ liệu |
-| Phần mềm | Docker Engine 24+, Docker Compose 2.40.2+ (chạy từ artifact OCI; các bản 2.34.0–2.40.1 có lỗ hổng CVE-2025-62725) | |
+| Phần mềm | Docker Engine 25+, Docker Compose 2.40.2+ (chạy từ artifact OCI; các bản 2.34.0–2.40.1 có lỗ hổng CVE-2025-62725) | |
 | Kiến trúc | amd64 hoặc arm64 (image PostGIS chạy qua giả lập trên arm64) | amd64 |
 
 ## 2. Danh sách kiểm tra trước khi mở cho người dùng
@@ -214,21 +214,20 @@ sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart doc
 docker run --rm --gpus all ubuntu nvidia-smi   # thấy GPU là được
 ```
 
-Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chép tệp bổ sung một lần thành `docker-compose.override.yml` (Compose tự nạp, tệp này không đưa lên git), từ đó chỉ cần lệnh thường:
+Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chạy như thường (`docker compose up -d` hoặc `make up`), không cần tệp compose bổ sung (ADR #79): compose luôn tạo Ollama và OCR bản CPU (máy nào cũng tạo được), rồi khi `ai-worker` đã chạy, `sleeper` thử một container nhỏ xin GPU từ image Ollama. Được thì nó tạo lại `ollama-core`, `ocr-core` với đúng cấu hình cộng GPU (giữ nhãn compose nên `docker compose up` lần sau không tạo lại), kiểm container mới lên được rồi mới xóa bản CPU; không được thì giữ CPU. Container GPU về sau không start được (đổi driver, tháo card) thì tự về CPU.
 
 ```bash
-cp infra/compose/gpu.yml docker-compose.override.yml
-docker compose up -d
-docker compose exec ollama ollama ps        # cột PROCESSOR ghi "100% GPU" khi đang trả lời
+docker compose logs sleeper | grep -i gpu   # "thấy GPU NVIDIA: chuyển ..." hoặc "không dùng được GPU NVIDIA (...)"
+docker compose exec ollama-core ollama ps   # cột PROCESSOR ghi "100% GPU" khi đang trả lời
 curl 127.0.0.1:8866/health                  # "device" là tên GPU
 ```
 
-Máy không có GPU thì đừng chép: Docker không tạo được container xin GPU mà máy không có, Compose cũng không tự dò được GPU. Không muốn chép thì dùng `make up-gpu`.
+`BAMBOO_GPU=false` trong `.env` để luôn chạy CPU. Lắp card hoặc cài toolkit sau khi đã chạy thì `docker compose restart sleeper` để thử lại. `infra/compose/gpu.yml` vẫn dùng được để ép GPU ngay từ đầu (`docker compose -f compose.yaml -f infra/compose/gpu.yml up -d`), nhưng khi đó máy không có card thì container không tạo được.
 
 **Dựng máy demo (RTX 5060 Laptop + Ryzen 9840HS).** Số đo trong tài liệu này là của RTX 4060; số chính thức của buổi demo là số đo trên máy demo. Làm trước ngày 27/10, không để đến sáng ngày demo vì tải khoảng 18 GB (mô hình ~3,7 GB, image `ocr` ~14 GB):
 
 1. Cài NVIDIA Container Toolkit như trên; GPU Blackwell cần driver đủ mới, image `ocr` dùng CUDA 12.8 và Ollama 0.35.1 đều hỗ trợ, nhưng chưa chạy thử trên máy này nên kiểm bằng `docker run --rm --gpus all ubuntu nvidia-smi`.
-2. Chạy `BAMBOO_RAM=16 make up-gpu`, không để tự dò. WSL2 mặc định chỉ cấp một nửa RAM máy: máy 16 GB sẽ bị tự chọn mức 8 (AI vẫn chạy nhưng mỗi lúc một mô hình, lượt hỏi đầu chậm). Dùng WSL2 thì đặt `memory=12GB` (hoặc hơn) trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`. `BAMBOO_RAM=16` đặt trong `.env` cũng có hiệu lực với `make up`.
+2. Chạy `BAMBOO_RAM=16 make up`, không để tự dò mức RAM; GPU tự dò, kiểm bằng `docker compose logs sleeper | grep -i gpu`. WSL2 mặc định chỉ cấp một nửa RAM máy: máy 16 GB sẽ bị tự chọn mức 8 (AI vẫn chạy nhưng mỗi lúc một mô hình, lượt hỏi đầu chậm). Dùng WSL2 thì đặt `memory=12GB` (hoặc hơn) trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`. `BAMBOO_RAM=16` đặt trong `.env` cũng có hiệu lực với `make up`.
 3. Chạy `tools/ai_smoke.sh --cold` rồi `tools/ai_smoke.sh`; ghi số đo vào mục Bổ sung của [ADR #52](#adr-52). Có nhóm câu nào trượt hoặc điểm của nhóm ngoài phạm vi chạm 0,7 thì hiệu chỉnh `AI_MIN_SCORE` như trên. Câu nào bị `error` do hết token thì tắt `think` cho tác tử demo ở trang Tác tử AI.
 4. Đính kèm sẵn một báo giá quét vào một đề nghị mua sắm, chờ nhãn "Đã OCR" (không OCR trực tiếp trên sân khấu: OCR và mô hình sinh không nạp cùng lúc nên lượt hỏi ngay sau đó phải nạp lạnh).
 5. Ngay trước buổi demo chạy `tools/demo_prepare.sh`: kiểm AI đang bật, giữ qwen3 và bge-m3 trong bộ nhớ 2 giờ, kiểm đã có tệp "Đã OCR".

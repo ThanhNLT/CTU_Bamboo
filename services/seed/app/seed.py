@@ -455,7 +455,7 @@ class Seeder:
             "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read", "audit.read"]),
             "QUAN_TRI_TO_CHUC": (
                 "Quản trị tổ chức",
-                ["core.org.manage", "core.permission.manage", "core.module.manage"],
+                ["core.org.manage", "core.permission.manage", "core.module.manage", "core.ai.manage"],
             ),
         }
         for code, (name, perms) in roles.items():
