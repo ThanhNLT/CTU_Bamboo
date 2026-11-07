@@ -19,8 +19,8 @@ ARG PACKAGE=
 ARG DEP_GROUPS=
 LABEL org.opencontainers.image.title="bamboo-python" \
       org.opencontainers.image.description="Bamboo DX-OS: dịch vụ Python (actions, flow-sync, bootstrap, openbao-init, seed)" \
-      org.opencontainers.image.source="https://github.com/ThanhNLT/Bamboo" \
-      org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
+      org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2
 WORKDIR /repo/${APP_DIR}
