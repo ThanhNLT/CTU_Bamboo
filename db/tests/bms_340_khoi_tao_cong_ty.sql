@@ -20,6 +20,8 @@ SELECT test.put('qt', core.place_person(test.id('ABC'), 'sub-qt', 'Quản trị 
 INSERT INTO core.tenant_owner (tenant_id, person_id, platform) VALUES (test.id('ABC'), test.id('chu'), true);
 SELECT test.ok(core.has_permission(test.id('chu'), 'core.module.manage', test.id('ABC_ROOT')), 'chủ sở hữu quản trị được');
 SELECT test.ok(core.has_permission(test.id('qt'), 'core.permission.manage', test.id('ABC_ROOT')), 'quản trị viên có quyền');
+SELECT test.ok(EXISTS (SELECT FROM core.v_ai_admin WHERE tenant_id = test.id('ABC') AND person_id = test.id('chu')),
+               'chủ công ty mới quản trị được tác tử AI (migration 059)');
 
 -- Người thường của công ty mới
 INSERT INTO core.position (tenant_id, id, org_unit_id, name)
