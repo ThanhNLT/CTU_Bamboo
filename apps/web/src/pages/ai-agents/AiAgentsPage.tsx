@@ -6,13 +6,25 @@ import type { HttpError } from "@refinedev/core";
 import { App } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchAgents, fetchModels, fetchStats, registerAgent, removeAgent, updateAgent } from "./api";
+import {
+  fetchAgents,
+  fetchModels,
+  fetchRuns,
+  fetchStats,
+  fetchTriggerOptions,
+  registerAgent,
+  removeAgent,
+  setAutomation,
+  updateAgent,
+} from "./api";
 import { AgentModal } from "./components/AgentModal";
+import { AgentRunsPanel } from "./components/AgentRunsPanel";
+import { AutomationModal } from "./components/AutomationModal";
 import { AiAgentsHeader } from "./components/AiAgentsHeader";
 import { AiAgentsTable } from "./components/AiAgentsTable";
 import { AiKpiCards } from "./components/AiKpiCards";
 import { AiResourcePanel } from "./components/AiResourcePanel";
-import type { Agent, AgentStats, AiModel, LoadedModel } from "./types";
+import type { Agent, AgentRun, AgentStats, AiModel, LoadedModel, TriggerOptions } from "./types";
 import { STATS_DAYS, totals } from "./utils";
 import { tr, trf } from "../../i18n";
 
@@ -29,10 +41,21 @@ export const AiAgentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Editing>();
   const [saving, setSaving] = useState(false);
+  const [runs, setRuns] = useState<AgentRun[]>([]);
+  const [options, setOptions] = useState<TriggerOptions | null>(null);
+  const [automating, setAutomating] = useState<Agent>();
 
   const load = useCallback(async () => {
     try {
-      const [m, a, s] = await Promise.all([fetchModels(), fetchAgents(), fetchStats(STATS_DAYS)]);
+      const [m, a, s, r, o] = await Promise.all([
+        fetchModels(),
+        fetchAgents(),
+        fetchStats(STATS_DAYS),
+        fetchRuns(),
+        fetchTriggerOptions(),
+      ]);
+      setRuns(r);
+      setOptions(o);
       setModels(m.models);
       setLoaded(m.loaded ?? []);
       setAiEnabled(m.ai_enabled);
@@ -58,6 +81,7 @@ export const AiAgentsPage = () => {
       await action();
       message.success(done);
       setEditing(undefined);
+      setAutomating(undefined);
       await load();
     } catch (e) {
       message.error((e as Error).message);
@@ -132,8 +156,24 @@ export const AiAgentsPage = () => {
         stats={stats}
         loading={loading}
         onEdit={(agent) => setEditing({ agent })}
+        onAutomate={setAutomating}
         onToggle={toggle}
         onRemove={remove}
+      />
+
+      <AgentRunsPanel runs={runs} agents={agents} events={options?.events ?? []} />
+
+      <AutomationModal
+        open={automating != null}
+        agent={automating}
+        options={options}
+        saving={saving}
+        onCancel={() => setAutomating(undefined)}
+        onSubmit={(v) => {
+          const agent = automating;
+          if (agent)
+            void run(() => setAutomation(agent.id, v), trf("Đã lưu cấu hình tự hành động của {0}.", [agent.name]));
+        }}
       />
 
       <AgentModal

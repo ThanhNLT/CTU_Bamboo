@@ -409,3 +409,22 @@ export const draftRegulation = async (id: string, submit: boolean, version?: num
     message: d.message,
   };
 };
+
+export type ScriptTest = {
+  ok: boolean;
+  error: string | null;
+  line: number | null;
+  outputs: Record<string, unknown>;
+  log: string[];
+  steps: number;
+};
+
+/** Chạy thử kịch bản của tác vụ tự động với biến mẫu (ADR #73), không đụng dữ liệu. */
+export const testScript = async (modelId: string, script: string, variables: Record<string, unknown>) => {
+  const { process_script_test } = await request<{ process_script_test: ScriptTest }>(
+    `mutation St($m: uuid!, $s: String!, $v: jsonb) {
+      process_script_test(model_id: $m, script: $s, variables: $v) { ok error line outputs log steps } }`,
+    { m: modelId, s: script, v: variables },
+  );
+  return process_script_test;
+};

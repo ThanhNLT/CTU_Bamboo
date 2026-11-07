@@ -25,6 +25,14 @@ dependencies = [
     "pypdfium2",
     "pillow",
     "pyhanko",
+    "pypdf>=7",
+    "paho-mqtt>=2",
+    "prometheus-client",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-http",
+    "opentelemetry-instrumentation-fastapi",
+    "opentelemetry-instrumentation-httpx",
+    "opentelemetry-instrumentation-psycopg",
 ]
 
 [dependency-groups]

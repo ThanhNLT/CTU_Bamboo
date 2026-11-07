@@ -2388,6 +2388,20 @@
           ],
           "array_relationships": [
             {
+              "name": "ai_agent_runs",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent_run"
+                  },
+                  "column_mapping": {
+                    "id": "agent_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "ai_questions",
               "using": {
                 "manual_configuration": {
@@ -2397,6 +2411,172 @@
                   },
                   "column_mapping": {
                     "id": "agent_id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_ai_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_ai_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "ai_agent_run"
+          },
+          "object_relationships": [
+            {
+              "name": "agent",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent"
+                  },
+                  "column_mapping": {
+                    "agent_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
                   }
                 }
               }
@@ -2937,6 +3117,16 @@
                 "session_argument": "hasura_session"
               },
               "comment": "Người gọi có được xem chứng từ không"
+            },
+            {
+              "name": "para",
+              "definition": {
+                "function": {
+                  "schema": "core",
+                  "name": "attachment_para"
+                }
+              },
+              "comment": "PROJECTS | AREAS | RESOURCES | ARCHIVES theo trạng thái chứng từ"
             }
           ],
           "select_permissions": [
@@ -2982,7 +3172,8 @@
                 },
                 "allow_aggregations": true,
                 "computed_fields": [
-                  "can_read"
+                  "can_read",
+                  "para"
                 ]
               }
             },
@@ -3028,7 +3219,8 @@
                 },
                 "allow_aggregations": true,
                 "computed_fields": [
-                  "can_read"
+                  "can_read",
+                  "para"
                 ]
               }
             }
@@ -4289,6 +4481,36 @@
                   "column_mapping": {
                     "tenant_id": "tenant_id",
                     "id": "acknowledged_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "mqtt_accounts_by_created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "mqtt_account"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "created_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "mqtt_accounts_by_revoked_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "iot",
+                    "name": "mqtt_account"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "revoked_by"
                   }
                 }
               }
@@ -8563,6 +8785,188 @@
                       ]
                     }
                   }
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "iot",
+            "name": "mqtt_account"
+          },
+          "object_relationships": [
+            {
+              "name": "created_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "created_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "revoked_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "revoked_by": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_exists": {
+                            "_table": {
+                              "schema": "core",
+                              "name": "v_admin"
+                            },
+                            "_where": {
+                              "_and": [
+                                {
+                                  "person_id": {
+                                    "_eq": "X-Hasura-User-Id"
+                                  }
+                                },
+                                {
+                                  "tenant_id": {
+                                    "_eq": "X-Hasura-Tenant-Id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "data"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 },
                 "allow_aggregations": true
               }
@@ -16062,6 +16466,142 @@
       "comment": "Ghi nhận một sự cố thiết bị của Bản sao số kèm hướng xử lý (ADR #50)"
     },
     {
+      "name": "iot_entities",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/iot_entities",
+        "arguments": [
+          {
+            "name": "type",
+            "type": "String"
+          },
+          {
+            "name": "id",
+            "type": "String"
+          },
+          {
+            "name": "limit",
+            "type": "Int"
+          }
+        ],
+        "output_type": "IotEntities!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thực thể bản sao số dạng NGSI-LD chuẩn, kèm giá trị đo mới nhất (ADR #74)"
+    },
+    {
+      "name": "iot_ingest",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/iot_ingest",
+        "arguments": [
+          {
+            "name": "entity",
+            "type": "String!"
+          },
+          {
+            "name": "attrs",
+            "type": "jsonb!"
+          }
+        ],
+        "output_type": "IotIngestResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Ghi số đo NGSI-LD của một thiết bị (cần iot.ingest ở đơn vị của thiết bị, ADR #74)"
+    },
+    {
+      "name": "iot_mqtt_account_create",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/iot_mqtt_account_create",
+        "arguments": [
+          {
+            "name": "label",
+            "type": "String!"
+          }
+        ],
+        "output_type": "IotMqttAccount!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Tạo tài khoản MQTT cho thiết bị / cổng OT, mật khẩu hiện một lần (quản trị viên công ty)"
+    },
+    {
+      "name": "iot_mqtt_account_revoke",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/iot_mqtt_account_revoke",
+        "arguments": [
+          {
+            "name": "username",
+            "type": "String!"
+          }
+        ],
+        "output_type": "IotMqttRevoked!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Thu hồi tài khoản MQTT, ngắt kết nối ngay (quản trị viên công ty)"
+    },
+    {
       "name": "process_models",
       "definition": {
         "kind": "synchronous",
@@ -16728,6 +17268,45 @@
         }
       ],
       "comment": "Xác minh chữ ký biên nhận và mã băm nội dung của một tin đã giao (cần core.org.manage)"
+    },
+    {
+      "name": "process_script_test",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/process_script_test",
+        "arguments": [
+          {
+            "name": "model_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "script",
+            "type": "String!"
+          },
+          {
+            "name": "variables",
+            "type": "jsonb"
+          }
+        ],
+        "output_type": "ProcessScriptTest!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chạy thử kịch bản của tác vụ tự động với biến mẫu, không đụng dữ liệu (ADR #73, người thiết kế)"
     },
     {
       "name": "process_automation_enable",
@@ -18875,6 +19454,83 @@
         }
       ],
       "comment": "Sửa tác tử AI (cần core.ai.manage)"
+    },
+    {
+      "name": "ai_agent_automation",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_automation",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "triggers",
+            "type": "jsonb!"
+          },
+          {
+            "name": "instructions",
+            "type": "String"
+          },
+          {
+            "name": "allowed_actions",
+            "type": "jsonb!"
+          },
+          {
+            "name": "autonomy",
+            "type": "String"
+          },
+          {
+            "name": "webhook_url",
+            "type": "String"
+          }
+        ],
+        "output_type": "AiAgentAutomation!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đặt sự kiện kích hoạt, nhiệm vụ, hành động được phép để tác tử tự hành động (ADR #72, cần core.ai.manage)"
+    },
+    {
+      "name": "ai_agent_trigger_options",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ai_agent_trigger_options",
+        "arguments": [],
+        "output_type": "AiAgentTriggerOptions!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Danh mục sự kiện, hành động và mức tự chủ cho tác tử tự hành động (cần core.ai.manage)"
     },
     {
       "name": "ai_agent_unregister",
@@ -21061,6 +21717,62 @@
         ]
       },
       {
+        "name": "IotEntities",
+        "fields": [
+          {
+            "name": "entities",
+            "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "IotIngestResult",
+        "fields": [
+          {
+            "name": "entity",
+            "type": "String!"
+          },
+          {
+            "name": "written",
+            "type": "Int!"
+          }
+        ]
+      },
+      {
+        "name": "IotMqttAccount",
+        "fields": [
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "password",
+            "type": "String!"
+          },
+          {
+            "name": "topic",
+            "type": "String!"
+          },
+          {
+            "name": "message",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "IotMqttRevoked",
+        "fields": [
+          {
+            "name": "username",
+            "type": "String!"
+          },
+          {
+            "name": "revoked",
+            "type": "Boolean!"
+          }
+        ]
+      },
+      {
         "name": "IotAckResult",
         "fields": [
           {
@@ -22354,6 +23066,81 @@
           {
             "name": "tool_list",
             "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "AiAgentAutomation",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "triggers",
+            "type": "jsonb!"
+          },
+          {
+            "name": "instructions",
+            "type": "String"
+          },
+          {
+            "name": "allowed_actions",
+            "type": "jsonb!"
+          },
+          {
+            "name": "autonomy",
+            "type": "String!"
+          },
+          {
+            "name": "webhook_url",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "name": "AiAgentTriggerOptions",
+        "fields": [
+          {
+            "name": "events",
+            "type": "jsonb!"
+          },
+          {
+            "name": "actions",
+            "type": "jsonb!"
+          },
+          {
+            "name": "autonomy",
+            "type": "jsonb!"
+          }
+        ]
+      },
+      {
+        "name": "ProcessScriptTest",
+        "fields": [
+          {
+            "name": "ok",
+            "type": "Boolean!"
+          },
+          {
+            "name": "error",
+            "type": "String"
+          },
+          {
+            "name": "line",
+            "type": "Int"
+          },
+          {
+            "name": "outputs",
+            "type": "jsonb!"
+          },
+          {
+            "name": "log",
+            "type": "jsonb!"
+          },
+          {
+            "name": "steps",
+            "type": "Int!"
           }
         ]
       },
