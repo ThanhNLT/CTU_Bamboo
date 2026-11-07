@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import hashlib
+import io
 import socket
 import struct
 import threading
@@ -19,20 +21,44 @@ from app.common import Context
 from bamboo_common import scanner
 from conftest import SETTINGS, ids, pr
 
-PDF = b"%PDF-1.7\n" + b"x" * 2000 + b"\n%%EOF\n"
 
-UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!) {
-  get_upload_url(entity_type: "proc.purchase_request", entity_id: $id, file_name: $name,
+def _pdf() -> bytes:
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    writer.add_blank_page(595, 842)
+    writer.add_metadata({"/Title": "Báo giá Q4"})
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
+
+
+PDF = _pdf()
+
+UPLOAD = """mutation($id: uuid!, $name: String!, $type: String!, $size: Int!,
+                    $entity: String! = "proc.purchase_request") {
+  get_upload_url(entity_type: $entity, entity_id: $id, file_name: $name,
                  content_type: $type, size_bytes: $size) { attachment_id upload_url method content_type } }"""
 CONFIRM = """mutation($a: uuid!) { confirm_upload(attachment_id: $a) {
   status scan_result attachment { status sha256 file_name } } }"""
 DOWNLOAD = """query($a: uuid!) { get_download_url(attachment_id: $a) { url } }"""
 
 
-def upload(hasura, i, pr_id, content: bytes, *, name="bao-gia.pdf", ctype="application/pdf", size=None, person="c"):
+def upload(
+    hasura,
+    i,
+    pr_id,
+    content: bytes,
+    *,
+    name="bao-gia.pdf",
+    ctype="application/pdf",
+    size=None,
+    person="c",
+    entity="proc.purchase_request",
+):
     data = hasura(
         UPLOAD,
-        {"id": pr_id, "name": name, "type": ctype, "size": size or len(content)},
+        {"id": pr_id, "name": name, "type": ctype, "size": size or len(content), "entity": entity},
         person=i[person],
         tenant=i["TDX"],
     )
@@ -115,7 +141,12 @@ def test_tai_len_quet_tai_ve(hasura, conn, s3):
 
     url = hasura(DOWNLOAD, {"a": att}, person=i["tp_mh_dt"], tenant=i["TDX"])["data"]["get_download_url"]["url"]
     resp = httpx.get(url)
-    assert resp.content == PDF and "filename*=UTF-8''B%C3%A1o" in resp.headers["content-disposition"]
+    assert resp.content.startswith(b"%PDF-") and "filename*=UTF-8''B%C3%A1o" in resp.headers["content-disposition"]
+    assert hashlib.sha256(resp.content).hexdigest() == result["attachment"]["sha256"], "mã băm là của bản đã dựng lại"
+    cdr_report = conn.execute("SELECT scan_report->'cdr' AS cdr FROM core.attachment WHERE id = %s", (att,)).fetchone()[
+        "cdr"
+    ]
+    assert cdr_report["original_sha256"] == hashlib.sha256(PDF).hexdigest() and cdr_report["actions"], cdr_report
     data = hasura(DOWNLOAD, {"a": att}, person=i["a"], tenant=i["TDX"])
     assert data["errors"][0]["extensions"]["code"] == "not-found"
     q = """query($id: uuid!) { proc_purchase_request_by_pk(id: $id) { attachments { id status } } }"""

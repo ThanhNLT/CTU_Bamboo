@@ -13,7 +13,7 @@ from psycopg.rows import dict_row
 from bamboo_common.flowable import FlowableClient
 from bamboo_common.pii import PiiCipher
 
-from . import anchoring, attachments, config, delivery, hr_account, obs, process_automation
+from . import anchoring, attachments, config, delivery, hr_account, lineage_sync, obs, process_automation
 from .keycloak_sync import PROVISIONER_ID
 
 PROCESS_KEY = "purchaseRequestApproval"
@@ -162,7 +162,8 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
     work = psycopg.connect(settings.database_url, row_factory=dict_row)
     accounts = _account_service(settings)
     account_conn = psycopg.connect(settings.database_url) if accounts else None
-    last_refresh = 0.0
+    last_refresh = last_lineage = 0.0
+    lineage_every = float(os.environ.get("LINEAGE_AUTO_MINUTES", "15")) * 60
     otp_checked: set[str] = set()
     log.info("flow-sync đang chạy")
     process_automation.start_background(settings)
@@ -187,6 +188,17 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
                 work.rollback()
                 log.warning("làm mới số liệu định kỳ lỗi: %s", exc)
             last_refresh = time.monotonic()
+        if lineage_every > 0 and time.monotonic() - last_lineage >= lineage_every:
+            # Phả hệ và kiểm tra CDC thu tự động theo lịch, không đánh thức Trino (ADR #77)
+            try:
+                lineage_sync.auto_collect(work)
+                work.commit()
+            except psycopg.OperationalError:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                work.rollback()
+                log.warning("thu thập phả hệ tự động lỗi: %s", exc)
+            last_lineage = time.monotonic()
         while run_once(work, flowable):
             pass
         try:

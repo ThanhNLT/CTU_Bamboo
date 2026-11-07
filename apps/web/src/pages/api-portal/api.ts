@@ -74,3 +74,32 @@ export const curlOf = (e: {
   }
   return lines.join("\n");
 };
+
+/** Tài khoản MQTT của thiết bị / cổng OT (ADR #74) */
+export type MqttAccount = {
+  username: string;
+  label: string;
+  created_at: string;
+  revoked_at: string | null;
+  created_by_person: { full_name: string } | null;
+};
+export type CreatedMqttAccount = { username: string; password: string; topic: string; message: string };
+
+export const fetchMqttAccounts = async () => {
+  const { iot_mqtt_account } = await request<{ iot_mqtt_account: MqttAccount[] }>(
+    `query { iot_mqtt_account(order_by: {created_at: desc}) {
+      username label created_at revoked_at created_by_person { full_name } } }`,
+  );
+  return iot_mqtt_account;
+};
+
+export const createMqttAccount = async (label: string) => {
+  const { iot_mqtt_account_create } = await request<{ iot_mqtt_account_create: CreatedMqttAccount }>(
+    `mutation($l: String!) { iot_mqtt_account_create(label: $l) { username password topic message } }`,
+    { l: label },
+  );
+  return iot_mqtt_account_create;
+};
+
+export const revokeMqttAccount = (username: string) =>
+  request(`mutation($u: String!) { iot_mqtt_account_revoke(username: $u) { revoked } }`, { u: username });

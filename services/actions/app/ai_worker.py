@@ -29,7 +29,7 @@ from psycopg.types.json import Jsonb
 
 from bamboo_common.ollama import Ollama, OllamaUnavailable
 
-from . import ai_agent, ai_chunks, config, ocr, pii_guard, search
+from . import ai_agent, ai_agent_runner, ai_chunks, config, ocr, pii_guard, search
 from .common import bind_session
 from .gpu import Gpu, sleeper_awake
 from .storage import Storage
@@ -447,9 +447,38 @@ def requeue(conn: psycopg.Connection, q: dict) -> int:
     return row["attempts"]
 
 
+def agent_chunks(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings):
+    """Tìm quy chế cho tác tử tự hành động (ADR #72) bằng quyền xem của người phụ trách tác tử."""
+
+    def find(run: dict, query: str) -> list[dict]:
+        q = {"id": run["id"], "question": query, "tenant_id": run["tenant_id"], "kb_document_id": None,
+             "person_id": run["owner"]}  # fmt: skip
+        try:
+            return find_chunks(conn, meili, ai, settings, q)
+        except (search.SearchUnavailable, OSError) as exc:
+            log.warning("tác tử %s không tìm được quy chế: %s", run["agent_id"], exc)
+            return []
+
+    return find
+
+
+def run_agent(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, gpu: Gpu):
+    """Một lần tự hành động của tác tử: nạp mô hình chat của tác tử (như lượt hỏi) rồi chạy."""
+    pending = conn.execute("SELECT model FROM core.ai_agent_run r JOIN core.ai_agent a ON a.id = r.agent_id "
+                           "WHERE r.status = 'queued' ORDER BY r.created_at LIMIT 1").fetchone()  # fmt: skip
+    conn.commit()
+    if pending is None:
+        return None
+    if gpu.ensure_chat(pending["model"]):
+        prewarm(ai, pending["model"])
+    return ai_agent_runner.run_once(conn, ai, settings, agent_chunks(conn, meili, ai, settings))
+
+
 def step(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, gpu: Gpu, files) -> bool:
-    """Một việc trên hàng đợi mô hình chính: lượt hỏi trước, hết lượt hỏi thì một trang OCR."""
+    """Một việc trên hàng đợi mô hình chính: lượt hỏi trước, rồi lần tự hành động của tác tử, rồi một trang OCR."""
     if run_once(conn, meili, ai, settings, gpu):
+        return True
+    if run_agent(conn, meili, ai, settings, gpu):
         return True
     return files is not None and ocr.run_once(conn, gpu, files) is not None
 
@@ -476,6 +505,8 @@ def run_forever(settings: config.Settings, idle_seconds: float = 5.0) -> None:
         try:
             if n := recover_stale(work):
                 log.info("đánh dấu lỗi %s lượt hỏi bị gián đoạn", n)
+            if n := ai_agent_runner.recover_stale(work):
+                log.info("đánh dấu lỗi %s lần tự hành động của tác tử bị gián đoạn", n)
             use_ocr = files if time.monotonic() >= ocr_paused_until else None
             while step(work, meili, ai, settings, gpu, use_ocr):
                 backoff = idle_seconds
