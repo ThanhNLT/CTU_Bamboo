@@ -31,9 +31,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7700/health"]
-      interval: 3s
+      interval: 30s
       timeout: 3s
-      retries: 40
+      retries: 3
+      start_period: 120s
+      start_interval: 1s
 
   # Ba dịch vụ -core dùng thưa nên ngủ khi nhàn rỗi; tên mạng cũ (tika, gotenberg, trino) và cổng công bố thuộc `sleeper` (ADR #53)
   tika-core:
@@ -45,10 +47,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9998 && printf 'GET /version HTTP/1.0\r\n\r\n' >&3 && grep -q Tika <&3"]
-      interval: 5s
+      interval: 30s
       timeout: 5s
-      retries: 30
-      start_period: 10s
+      retries: 3
+      start_period: 160s
+      start_interval: 2s
 
   gotenberg-core:
     logging: *logging
@@ -58,9 +61,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/health"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
-      retries: 30
+      retries: 3
+      start_period: 150s
+      start_interval: 2s
 
   search-sync:
     logging: *logging
@@ -115,11 +120,14 @@ services:
       - "127.0.0.1:19092:19092"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "test -f /tmp/bamboo-kafka-ready && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9094 > /dev/null 2>&1"]
-      interval: 10s
-      timeout: 15s
-      retries: 30
-      start_period: 15s
+      # start.sh chỉ ghi tệp ready sau khi kafka-broker-api-versions trả lời và đã tạo tài khoản SCRAM, ACL; sau đó chỉ
+      # kiểm cổng (không khởi thêm một JVM ~200 MB mỗi lần kiểm như trước)
+      test: ["CMD", "bash", "-c", "test -f /tmp/bamboo-kafka-ready && exec 3<>/dev/tcp/127.0.0.1/9094"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 315s
+      start_interval: 2s
 
   debezium:
     logging: *logging
@@ -172,10 +180,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health HTTP/1.0\r\n\r\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
-      retries: 30
-      start_period: 20s
+      retries: 3
+      start_period: 320s
+      start_interval: 2s
 
   lakehouse-sink:
     logging: *logging
@@ -217,9 +226,11 @@ services:
       - mosquitto-tls:/mosquitto/tls:ro
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 1883"]
-      interval: 10s
+      interval: 30s
       timeout: 3s
-      retries: 10
+      retries: 3
+      start_period: 100s
+      start_interval: 2s
     restart: unless-stopped
 
   iot-bridge:
@@ -317,10 +328,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "/usr/lib/trino/bin/health-check"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
-      retries: 30
-      start_period: 20s
+      retries: 3
+      start_period: 320s
+      start_interval: 2s
 
   trino-init:
     logging: *logging
@@ -359,10 +371,15 @@ services:
       SLEEPER_MODULES_URL: http://actions:8000/modules/services
       SLEEPER_HOLD_UNTIL: bootstrap
       SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
+      # GPU NVIDIA (ADR #79): compose tạo Ollama, OCR bản CPU; máy có card (nvidia-container-toolkit hoặc Docker Desktop
+      # WSL2) thì sleeper thử rồi tạo lại hai container này kèm GPU, lỗi thì giữ CPU. BAMBOO_GPU=false để luôn chạy CPU
+      SLEEPER_GPU: ${BAMBOO_GPU:-auto}
+      SLEEPER_GPU_SERVICES: ollama-core,ocr-core
     networks:
       default:
         aliases: [trino, tika, gotenberg, ollama, ocr]
-    # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn, và nó chỉ start/stop container thuộc SLEEPER_TARGETS
+    # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn; nó chỉ start/stop container thuộc SLEEPER_TARGETS,
+    # SLEEPER_MANAGED và tạo lại container SLEEPER_GPU_SERVICES (cùng cấu hình, thêm hoặc bỏ GPU)
     user: "0"
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
@@ -378,9 +395,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/healthz', timeout=2)"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
-      retries: 20
+      retries: 3
+      start_period: 100s
+      start_interval: 2s
 
 
 volumes:
@@ -388,3 +407,5 @@ volumes:
   meilisearch-data:
   kafka-data:
   debezium-data:
+  prometheus-data:
+  grafana-data:

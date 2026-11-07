@@ -9,12 +9,12 @@ DEMO_PASSWORD ?= demo-password
 PNPM ?= pnpm
 UV_LINT := uv run --frozen --only-group lint
 
-# Mọi mức RAM đều chạy đầy đủ, kể cả AI; mức 8 chỉ hạ heap JVM và cho dịch vụ dùng thưa ngủ sớm (ADR #69)
+# Mọi mức RAM đều chạy đầy đủ, kể cả AI; mức 8 chỉ hạ heap JVM và cho dịch vụ dùng thưa ngủ sớm (ADR #69).
+# GPU NVIDIA do sleeper tự dò khi hệ thống đã lên (ADR #79): có card thì AI chạy trên GPU, không thì CPU/RAM.
 up:
 	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans
 
-up-gpu:
-	eval "$$(tools/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans
+up-gpu: up  # giữ cho lệnh cũ; GPU nay tự dò
 
 down:
 	docker compose down
