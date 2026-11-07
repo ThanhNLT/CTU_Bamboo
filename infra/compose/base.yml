@@ -13,7 +13,7 @@ services:
       dockerfile: infra/docker/python.Dockerfile
       args:
         APP_DIR: services/actions
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-actions:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-actions:${BAMBOO_TAG:-dev}
     environment:
       BAMBOO_ENV: ${BAMBOO_ENV:-development}
       # 7 tiến trình Python dùng chung image này: giới hạn vùng cấp phát glibc như các dịch vụ JVM (ADR #78)

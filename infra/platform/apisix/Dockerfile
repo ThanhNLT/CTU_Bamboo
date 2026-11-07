@@ -12,8 +12,8 @@ RUN wget -q -O /tmp/coraza.zip \
 FROM apache/apisix:3.19.0-debian
 LABEL org.opencontainers.image.title="bamboo-gateway" \
       org.opencontainers.image.description="Bamboo DX-OS: cổng API APISIX kèm WAF Coraza (OWASP CRS)" \
-      org.opencontainers.image.source="https://github.com/ThanhNLT/Bamboo" \
-      org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
+      org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV APISIX_STAND_ALONE=true
 COPY --from=coraza --chown=apisix:0 /tmp/coraza/coraza-proxy-wasm.wasm /usr/local/apisix/proxywasm/coraza-proxy-wasm.wasm
