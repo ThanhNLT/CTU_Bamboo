@@ -25,8 +25,8 @@ RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -nam
 FROM nginxinc/nginx-unprivileged:1.30-alpine
 LABEL org.opencontainers.image.title="bamboo-web" \
       org.opencontainers.image.description="Bamboo DX-OS: ứng dụng Refine (Tầng 2) phục vụ bằng nginx" \
-      org.opencontainers.image.source="https://github.com/ThanhNLT/Bamboo" \
-      org.opencontainers.image.documentation="https://github.com/ThanhNLT/Bamboo#readme" \
+      org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --chmod=0755 apps/web/docker/40-bamboo-config.sh /docker-entrypoint.d/40-bamboo-config.sh
