@@ -779,3 +779,45 @@ Mô-đun **phải** kiểm chữ ký và độ lệch thời gian (ví dụ dùn
 | `POST /ext-api/v1/notifications` `{person_id, title, body?}` | `notify.send` | `{ok: true}`; thông báo loại `EXTERNAL`, tiêu đề có tiền tố `[tên mô-đun]` |
 
 Lỗi trả `{message, code}`: `unauthorized` (401, sai khóa), `module-disabled` (403), `forbidden` (403, thiếu phạm vi), `not-found` (404).
+
+## 26. CDR, P.A.R.A, tác tử tự hành động, kịch bản (migration 056, 057, ADR #70–#73)
+
+- **CDR** (`cdr.py`): `confirm_upload` → quét → `attachments.disarm` → bản dựng lại vào `bms-documents`. `scan_report.cdr` = `{engine, actions, skipped, original_sha256, original_size, size}`; PDF có `/ByteRange` (đã ký số) giữ nguyên.
+- **P.A.R.A** (`core.para_of`, computed field `core_attachment.para`): `PROJECTS | AREAS | RESOURCES | ARCHIVES` theo trạng thái chứng từ; loại chứng từ mới `pm.project` nhận tệp.
+- **Tác tử tự hành động** (`ai_agent_runner.py`): `wf.emit_event` sinh `core.ai_agent_run` (chống trùng theo `agent_id, dedup_key`) → `ai-worker` (`run_agent`, sau lượt hỏi) → kế hoạch JSON → kiểm → thực hiện. Action `ai_agent_automation(id, triggers, instructions, allowed_actions, autonomy, webhook_url)`, `ai_agent_trigger_options`; Hasura cho quản trị AI đọc `core_ai_agent_run`.
+- **Kịch bản** (`script_sandbox.py`): hành động `script` của tác vụ dịch vụ (`bamboo:script`), external task `bamboo.script`; `process_script_test(model_id, script, variables)` chạy thử.
+
+```bash
+make test-actions T="tests/test_cdr.py tests/test_tac_tu_tu_hanh_dong.py tests/test_kich_ban.py"
+make test-db T=para    # và T=tac_tu
+```
+
+## 27. Hội tụ IT/OT: MQTT, NGSI-LD (migration 058, ADR #74, #76)
+
+| Service | Mô-đun | Việc |
+|---|---|---|
+| `mosquitto` | `data` | `eclipse-mosquitto:2.0.21`, plugin dynamic-security (`/mosquitto/data/dynamic-security.json` do `openbao-init` ghi lần đầu); cổng 1883 (127.0.0.1), 8883 TLS (`MQTT_BIND`), 8884 mTLS nội bộ |
+| `iot-bridge` | `data` | `python -m app.iot_bridge`: nghe `bamboo/+/+/attrs`, gọi `iot.ingest`; mỗi phút `iot.mark_offline(15)` |
+
+- Chủ đề: `bamboo/<mã công ty>/<mã thiết bị hoặc URN NGSI-LD>/attrs`; thân NGSI-LD dạng chuẩn hoặc gọn, tối đa 64 KB, 50 thuộc tính.
+- Tài khoản thiết bị: `iot_mqtt_account_create(label)` → `{username, password, topic}` (mật khẩu hiện một lần), `iot_mqtt_account_revoke(username)`; vai trò `tenant-<mã>` chỉ `publishClientSend bamboo/<mã>/#`.
+- REST: `GET /api/v1/ngsi-ld/v1/entities`, `GET …/{id}`, `POST …/{id}/attrs` (khóa API phạm vi `iot.read`, `iot.write`; người tạo khóa cần `iot.ingest`).
+- Chứng chỉ mTLS: `openbao-init` (`SERVICE_CERT_OUTPUTS`) cấp `mosquitto`, `bamboo-bridge`, `bamboo-admin` từ vai trò PKI `service`, 90 ngày, tự cấp lại khi còn dưới 30 ngày; `MQTT_TLS_DIR=/run/bms/mqtt`.
+
+Gửi thử từ máy chủ (tài khoản tạo ở Cổng dịch vụ API → Thiết bị MQTT):
+
+```bash
+mosquitto_pub -h localhost -p 1883 -u <tài khoản> -P <mật khẩu> -t bamboo/TDX/CR-01/attrs \
+  -m '{"temperature": {"type": "Property", "value": 21.4}}'
+```
+
+## 28. Giám sát (ADR #75)
+
+| Service | Profile | Việc |
+|---|---|---|
+| `otel-collector` | `observability` | OTLP gRPC 4317 / HTTP 4318 → Jaeger; số liệu của chính nó ở `:8888` |
+| `jaeger` | `observability` | Lưu span trong bộ nhớ, giao diện `127.0.0.1:16686` |
+| `prometheus` | `observability` | Thu `actions:8000/metrics`, `gateway:9091/apisix/prometheus/metrics`, `keycloak:9000/metrics`, `otel-collector:8888`; luật cảnh báo `infra/platform/observability/alerts.yml`; `127.0.0.1:9090` |
+| `grafana` | `observability` | Nguồn Prometheus + Jaeger, bảng điều khiển **Bamboo tổng quan** (`infra/platform/observability/grafana/`); `127.0.0.1:3001`, tài khoản `admin` / `GRAFANA_ADMIN_PASSWORD` |
+
+Số liệu của `actions`: `bamboo_http_requests_total{method,route,status}`, `bamboo_http_request_duration_seconds`, `bamboo_action_calls_total{action,outcome}`, `bamboo_action_duration_seconds`, `bamboo_message_queue{status}`, `bamboo_ai_questions{status}`, `bamboo_ai_agent_runs{status}`, `bamboo_attachments_pending`, `bamboo_ocr_pending`, `bamboo_iot_live_devices{state}`. Truy vết bật khi `OTEL_EXPORTER_OTLP_ENDPOINT` có giá trị (`make up` mức 16 đặt `http://otel-collector:4318`); phản hồi có `X-Trace-Id`, span có `bamboo.request_id`.

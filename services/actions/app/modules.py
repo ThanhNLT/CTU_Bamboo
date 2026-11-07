@@ -198,6 +198,7 @@ CATALOG: tuple[Module, ...] = (
                 "process_regulation_draft",
                 "process_version_get",
                 "process_sandbox_run",
+                "process_script_test",
                 "process_change_request_create",
                 "process_change_request_resolve",
                 "process_automation_enable",
@@ -247,7 +248,7 @@ CATALOG: tuple[Module, ...] = (
         "data",
         "Dữ liệu số",
         "Trung tâm điều hành, bản sao số, KPI, Lakehouse và dịch vụ dữ liệu (Kafka, Debezium, Trino)",
-        services=("kafka", "debezium", "lakehouse-sink", "trino-core"),
+        services=("kafka", "debezium", "lakehouse-sink", "trino-core", "mosquitto", "iot-bridge"),
         actions=frozenset(
             {
                 "lakehouse_datasets",
@@ -258,6 +259,10 @@ CATALOG: tuple[Module, ...] = (
                 "lineage_graph",
                 "ops_dashboard",
                 "iot_acknowledge",
+                "iot_entities",
+                "iot_ingest",
+                "iot_mqtt_account_create",
+                "iot_mqtt_account_revoke",
                 "kpi_snapshots",
                 "get_kpi_report_pdf",
             }
@@ -303,6 +308,8 @@ CATALOG: tuple[Module, ...] = (
                 "ai_agent_register",
                 "ai_agent_update",
                 "ai_agent_unregister",
+                "ai_agent_automation",
+                "ai_agent_trigger_options",
                 "ocr_retry",
                 "ocr_document",
             }

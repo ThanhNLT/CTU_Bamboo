@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Pause, Pencil, Play, Trash2 } from "lucide-react";
+import { Pause, Pencil, Play, Trash2, Zap } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
 import type { Agent, AgentStats } from "../types";
@@ -18,6 +18,7 @@ export const AiAgentsTable = ({
   stats,
   loading,
   onEdit,
+  onAutomate,
   onToggle,
   onRemove,
 }: {
@@ -25,6 +26,7 @@ export const AiAgentsTable = ({
   stats: AgentStats[];
   loading: boolean;
   onEdit: (a: Agent) => void;
+  onAutomate: (a: Agent) => void;
   onToggle: (a: Agent) => void;
   onRemove: (a: Agent) => void;
 }) => {
@@ -81,6 +83,14 @@ export const AiAgentsTable = ({
                   <td className="border-b border-line/70 py-2.5 pr-3">
                     <span className="block font-semibold text-ink">{a.name}</span>
                     <span className="font-mono text-[11px] text-muted">{a.tool_list.join(" · ") || "—"}</span>
+                    {a.triggers.length > 0 && (
+                      <span className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-800">
+                        <Zap className="h-3 w-3" aria-hidden />
+                        {a.autonomy === "dry_run"
+                          ? trf("Đề xuất khi có {0} sự kiện", [a.triggers.length])
+                          : trf("Tự hành động khi có {0} sự kiện", [a.triggers.length])}
+                      </span>
+                    )}
                   </td>
                   <td className="border-b border-line/70 px-3 py-2.5 font-mono text-[12px] text-body">{a.model}</td>
                   <td className="border-b border-line/70 px-3 py-2.5">
@@ -135,6 +145,15 @@ export const AiAgentsTable = ({
                         aria-label={trf("Sửa {0}", [a.name])}
                       >
                         <Pencil className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onAutomate(a)}
+                        className={iconBtn}
+                        aria-label={trf("Tự hành động của {0}", [a.name])}
+                        title={tr("Tự hành động khi có sự kiện")}
+                      >
+                        <Zap className="h-3.5 w-3.5" aria-hidden />
                       </button>
                       <button
                         type="button"

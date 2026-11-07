@@ -50,4 +50,26 @@ VARS
         exit 1
         ;;
 esac
+# Giám sát (ADR #75): mức 16 bật nhóm observability (OTel Collector, Jaeger, Prometheus, Grafana) và truy vết;
+# mức 8 tắt để tiết kiệm khoảng 1 GB, bật tay bằng BAMBOO_OBSERVABILITY=true. COMPOSE_PROFILES sẵn có được giữ.
+# ClamAV (ADR #26, #70): mức 16 bật profile scan và quét thêm bằng ClamAV; mức 8 chỉ bộ quét nội bộ + CDR (ClamAV
+# cần thêm 1–2 GB), bật tay bằng BAMBOO_CLAMAV=true. Lần đầu ClamAV tải cơ sở dữ liệu mẫu virus mất vài phút: trong lúc
+# đó tải tệp lên báo "chưa quét được virus, thử lại sau".
+profiles=${COMPOSE_PROFILES:-$(env_value COMPOSE_PROFILES)}
+add_profile() { case ",$profiles," in *",$1,"*) ;; *) profiles=${profiles:+$profiles,}$1 ;; esac; }
+obs=${BAMBOO_OBSERVABILITY:-$(env_value BAMBOO_OBSERVABILITY)}
+[ -z "$obs" ] && { [ "$mode" = 16 ] && obs=true || obs=false; }
+clamav=${BAMBOO_CLAMAV:-$(env_value BAMBOO_CLAMAV)}
+[ -z "$clamav" ] && { [ "$mode" = 16 ] && clamav=true || clamav=false; }
+if [ "$obs" = true ]; then
+    add_profile observability
+    echo 'export OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}"'
+    echo "Giám sát: Grafana http://localhost:3001, Jaeger http://localhost:16686, Prometheus http://localhost:9090" >&2
+fi
+if [ "$clamav" = true ]; then
+    add_profile scan
+    echo "export CLAMAV_HOST=\"\${CLAMAV_HOST:-clamav}\""
+    echo "Quét virus: bộ quét nội bộ + CDR + ClamAV" >&2
+fi
+[ -n "$profiles" ] && echo "export COMPOSE_PROFILES=\"$profiles\""
 echo "export BAMBOO_RAM_MODE=$mode"

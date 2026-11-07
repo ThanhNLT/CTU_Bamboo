@@ -30,6 +30,7 @@ SECRET_FIELDS = {
     "bms/meilisearch-indexer": {"key": "meili_indexer_key"},
     "bms/kafka-lakehouse": {"username": "kafka_username", "password": "kafka_password"},
     "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
+    "bms/mosquitto": {"admin_password": "mqtt_admin_password", "bridge_password": "mqtt_bridge_password"},
 }
 
 
@@ -108,6 +109,14 @@ class Settings:
     setup_allow_unverified: bool = True
     # Mở trang đăng ký cả khi máy đã có công ty (bản demo: dữ liệu mẫu và đăng ký cùng dùng được); không cần mã 24 giờ
     setup_open_signup: bool = False
+    # Broker MQTT cho thiết bị OT (ADR #74); để trống host là tắt
+    mqtt_host: str = ""
+    mqtt_port: int = 1883
+    mqtt_admin_password: str = ""
+    mqtt_bridge_password: str = ""
+    # mTLS nội bộ (ADR #76): thư mục có ca.crt, <danh tính>.crt/.key do openbao-init cấp; có thì dùng cổng mTLS
+    mqtt_tls_dir: str = ""
+    mqtt_tls_port: int = 8884
 
 
 DEV_DEFAULTS = {
@@ -125,12 +134,22 @@ DEV_DEFAULTS = {
     "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",
     "FLOWABLE_ADMIN_PASSWORD": "test",
     "DEMO_PASSWORD": "demo-password",
+    "GRAFANA_ADMIN_PASSWORD": "grafana-dev",
 }
+
+
+# Biến phải tắt ở production (giá trị mặc định của compose đang bật)
+PRODUCTION_OFF = {"HASURA_ENABLE_CONSOLE": "true"}
+
+
+def _enabled(value: str) -> bool:
+    return value.strip().lower() not in ("", "0", "false", "no", "off")
 
 
 def production_problems(env: dict[str, str] | None = None) -> list[str]:
     env = os.environ if env is None else env
-    return [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
+    problems = [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
+    return problems + [name for name, dev in PRODUCTION_OFF.items() if _enabled(env.get(name, dev))]
 
 
 def assert_production_ready(env: dict[str, str] | None = None) -> None:
@@ -142,7 +161,7 @@ def assert_production_ready(env: dict[str, str] | None = None) -> None:
         raise SystemExit(
             "BAMBOO_ENV=production nhưng còn giá trị mặc định của môi trường dev: "
             + ", ".join(problems)
-            + ". Đặt giá trị riêng trong .env (xem .env.example)."
+            + ". Đặt giá trị riêng trong .env (xem .env.example); HASURA_ENABLE_CONSOLE phải là false."
         )
 
 
@@ -289,5 +308,11 @@ def _from_env() -> Settings:
         ),
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
+        mqtt_host=env("MQTT_HOST", ""),
+        mqtt_port=int(env("MQTT_PORT", "1883")),
+        mqtt_admin_password=env("MQTT_ADMIN_PASSWORD", ""),
+        mqtt_bridge_password=env("MQTT_BRIDGE_PASSWORD", ""),
+        mqtt_tls_dir=env("MQTT_TLS_DIR", ""),
+        mqtt_tls_port=int(env("MQTT_TLS_PORT", "8884")),
         setup_open_signup=env("SETUP_OPEN_SIGNUP", "false").lower() in ("1", "true", "yes"),
     )
