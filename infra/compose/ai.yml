@@ -71,7 +71,7 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/ocr.Dockerfile
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-ocr:${BAMBOO_TAG:-dev}
     depends_on:
       ocr-init:
         condition: service_completed_successfully
@@ -91,7 +91,7 @@ services:
 
   ocr-init:
     logging: *logging
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-ocr:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-ocr:${BAMBOO_TAG:-dev}
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../..

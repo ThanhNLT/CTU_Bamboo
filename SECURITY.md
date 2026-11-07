@@ -16,7 +16,7 @@ Dự án đang ở giai đoạn trước 1.0: chỉ bản phát hành mới nh�
 
 ## Phạm vi
 
-Trong phạm vi: mã trong kho (dịch vụ Python, giao diện, migration CSDL, cấu hình cổng API, Keycloak, Hasura, OpenBao, SeaweedFS trong `compose.yaml`, `infra/compose/` và `infra/platform/`), image phát hành trên `ghcr.io/thanhnlt/bamboo-*`.
+Trong phạm vi: mã trong kho (dịch vụ Python, giao diện, migration CSDL, cấu hình cổng API, Keycloak, Hasura, OpenBao, SeaweedFS trong `compose.yaml`, `infra/compose/` và `infra/platform/`), image phát hành trên `ghcr.io/ctubamboo/bamboo-*`.
 
 Ngoài phạm vi: lỗ hổng của phần mềm bên thứ ba chưa sửa ở upstream (báo cho dự án đó), cấu hình dev mặc định khi chưa đặt `BAMBOO_ENV=production`, tài khoản và dữ liệu demo.
 
