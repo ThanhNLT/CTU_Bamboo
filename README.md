@@ -262,7 +262,7 @@ Trang AI và OCR chạy ở mọi cấu hình (cả máy 8 GB, chậm hơn khi �
 | GPU | Không cần | NVIDIA 8 GB VRAM trở lên để AI, OCR nhanh hơn (đã kiểm trên RTX 4060) |
 | Hệ điều hành | Linux, macOS, Windows 10/11 với WSL2 | Linux |
 | Kiến trúc | amd64 hoặc arm64 (image PostGIS chạy qua giả lập trên arm64) | amd64 |
-| Phần mềm | Docker Engine 24+ với Docker Compose v2 | Docker Compose 2.40.2+ (chạy image dựng sẵn từ OCI) |
+| Phần mềm | Docker Engine 25+ với Docker Compose v2 | Docker Compose 2.40.2+ (chạy image dựng sẵn từ OCI) |
 
 Trên Windows, đặt mã nguồn trong hệ thống tệp của WSL2 ([ADR #12](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)). WSL2 mặc định
 chỉ cấp một nửa RAM máy: máy 16 GB muốn chạy đầy đủ thì đặt `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`.
@@ -288,7 +288,9 @@ docker compose logs -f bootstrap
 Mở **<http://localhost:8000>** (dùng đúng `localhost`, không dùng `127.0.0.1`), bấm **Đăng nhập bằng tài khoản tập đoàn**, dùng
 một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-demo) với mật khẩu `demo-password`.
 
-- **GPU NVIDIA:** cài `nvidia-container-toolkit` rồi chạy `make up-gpu`.
+- **GPU NVIDIA:** không cần cấu hình gì. Máy có card NVIDIA (Docker Desktop WSL2, hoặc Linux có `nvidia-container-toolkit`)
+  thì vài phút sau khi hệ thống lên, AI và OCR tự chuyển sang GPU; không có card hoặc GPU lỗi thì chạy trên CPU/RAM
+  (`docker compose logs sleeper` ghi đã chọn gì). `BAMBOO_GPU=false` trong `.env` để luôn chạy CPU.
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
   hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.
 - **Bật thêm:** ClamAV `docker compose --profile scan up -d` (đặt `CLAMAV_HOST=clamav`), gom log container

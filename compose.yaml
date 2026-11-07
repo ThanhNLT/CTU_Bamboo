@@ -5,7 +5,7 @@
 # Một lệnh dựng toàn bộ hệ thống (ADR #13): `docker compose up -d` (hoặc `make up`) tại gốc repo.
 # Định nghĩa dịch vụ nằm trong infra/compose/, chia theo nhóm; mỗi tệp được nạp như một mô hình riêng nên đường dẫn
 # tương đối trong đó tính từ infra/compose/. Biến môi trường lấy từ shell và tệp .env ở gốc repo (thư mục dự án).
-# GPU NVIDIA: make up-gpu (= -f compose.yaml -f infra/compose/gpu.yml).
+# GPU NVIDIA: tự dùng khi máy có, sleeper chuyển Ollama, OCR sang GPU sau khi hệ thống lên (ADR #79); BAMBOO_GPU=false tắt.
 name: bamboo
 
 include:

@@ -93,7 +93,14 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "drive", label: tr("Ổ đĩa tài liệu"), to: "/h/drive", icon: FolderClosed, module: "files" },
       { key: "library", label: tr("Thư viện tri thức"), to: "/h/library", icon: LibraryBig, module: "knowledge" },
       { key: "ocr", label: tr("Nhập liệu OCR"), to: "/i/ocr", icon: ScanText, module: "ai" },
-      { key: "agents", label: tr("Tác tử AI"), to: "/i/agents", icon: Bot, module: "ai" },
+      {
+        key: "agents",
+        label: tr("Tác tử AI"),
+        to: "/i/agents",
+        icon: Bot,
+        module: "ai",
+        access: { resource: "ai_agents", action: "list" },
+      },
     ],
   },
   {
