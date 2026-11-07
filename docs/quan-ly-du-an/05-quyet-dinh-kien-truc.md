@@ -83,6 +83,8 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [75](#adr-75) | 06/11/2026 | Giám sát bằng OpenTelemetry, Prometheus, Grafana, Jaeger (nhóm dịch vụ `observability`) |
 | [76](#adr-76) | 06/11/2026 | mTLS nội bộ bằng chứng chỉ dịch vụ do CA OpenBao cấp (bắt đầu từ MQTT); Hasura Console bắt buộc tắt ở production |
 | [77](#adr-77) | 06/11/2026 | Phả hệ và kiểm tra CDC thu tự động theo lịch, không đánh thức Trino (bổ sung ADR #64) |
+| [78](#adr-78) | 07/11/2026 | Healthcheck kiểm dày lúc khởi động, thưa khi đã chạy (`start_interval`); Kafka bỏ JVM trong healthcheck |
+| [79](#adr-79) | 07/11/2026 | `sleeper` tự chuyển Ollama, OCR sang GPU NVIDIA khi máy có, chỉ với `docker compose up` |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -824,6 +826,24 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Trang Phả hệ và chất lượng luôn có số liệu thu từ pipeline đang chạy mà không ai phải bấm, trong khi Trino vẫn ngủ được (ADR #53).
 - **Đã loại:** Đối chiếu theo công ty theo lịch (đánh thức Trino liên tục); OpenLineage + Marquez (ADR #64 đã loại).
 - **Giới hạn hiện tại:** Chưa thu số lần ghi của `lakehouse-sink`; chưa kiểm theo cột.
+
+(adr-78)=
+## ADR #78: Healthcheck kiểm dày lúc khởi động, thưa khi đã chạy (`start_interval`); Kafka bỏ JVM trong healthcheck
+
+- **Ngày:** 07/11/2026
+- **Quyết định:** Mọi healthcheck trong `infra/compose/` (trừ SeaweedFS) đổi sang `interval: 30s`, `retries: 3`, `start_interval: 1s` (lệnh kiểm cũ chạy mỗi 2–3 giây) hoặc `2s` (mỗi 5–10 giây), `start_period` bằng đúng tổng thời gian chờ khởi động cũ (`start_period + interval × retries`, ví dụ Keycloak 330 giây). Healthcheck của Kafka không gọi `kafka-broker-api-versions.sh` nữa mà kiểm tệp ready (do `start.sh` ghi sau khi broker trả lời và đã tạo SCRAM, ACL) cùng cổng 9094. SeaweedFS giữ nhịp 3 giây vì healthcheck còn gửi `SIGHUP` nạp lại `s3.json`. Image `actions` (7 tiến trình Python: `actions`, `flow-sync`, `search-sync`, `iot-bridge`, `ai-worker`, `lakehouse-sink`, `openbao-unseal`) đặt `MALLOC_ARENA_MAX=2` như các dịch vụ JVM. Yêu cầu nâng lên Docker Engine 25+.
+- **Lý do:** Docker chạy healthcheck suốt đời container chứ không chỉ lúc khởi động: 19 dịch vụ kiểm mỗi 2–10 giây là khoảng 400 lần `exec` mỗi phút, trong đó `actions`, `sleeper`, `ocr-core` mỗi lần khởi một trình thông dịch Python và Kafka mỗi 10 giây khởi một JVM (~200 MB, 1–2 giây CPU), làm máy nhàn rỗi vẫn tốn CPU và không cho WSL2 hạ tải. `start_interval` chỉ áp dụng trong `start_period` (tính lại mỗi lần container start), nên `depends_on: service_healthy` và `sleeper` đánh thức dịch vụ ngủ còn nhanh hơn trước (kiểm mỗi 1–2 giây thay vì 5–10 giây), còn lúc đã chạy số lần kiểm giảm 3–15 lần.
+- **Đã loại:** Bỏ healthcheck (mất `depends_on: service_healthy`, `sleeper` không biết lúc nào dịch vụ sẵn sàng); chỉ tăng `interval` (khởi động và đánh thức chậm đi); gộp các tiến trình Python nền vào một container (đổi lớn cách triển khai, một lỗi làm chết mọi tiến trình).
+- **Giới hạn hiện tại:** Dịch vụ đã chạy mà treo thì tới 90 giây mới bị báo `unhealthy` (trước đây 6–30 giây); Docker Engine 24 trở xuống báo lỗi `start_interval` khi `docker compose up`.
+
+(adr-79)=
+## ADR #79: `sleeper` tự chuyển Ollama, OCR sang GPU NVIDIA khi máy có, chỉ với `docker compose up`
+
+- **Ngày:** 07/11/2026
+- **Quyết định:** Compose luôn tạo `ollama-core`, `ocr-core` bản CPU. `sleeper` (đã giữ Docker socket để đánh thức hai dịch vụ này, ADR #53) đối chiếu mỗi 15 giây: khi `ai-worker` đang chạy (tức compose đã qua `ollama-init` và `ocr-core`) hoặc dịch vụ đang ngủ, và không có yêu cầu nào đang đi qua, nó thử một lần container nhỏ (`true`, mạng `none`) từ image Ollama xin GPU `nvidia` (`Count: -1`, như `--gpus all`). Được thì với từng dịch vụ trong `SLEEPER_GPU_SERVICES`: tạo bản mới cùng `Config`, `HostConfig` (volume, restart), mạng và alias, nhãn compose (cả `config-hash`) cộng yêu cầu GPU; dừng, đổi tên bản cũ; start bản mới và chờ healthy (240 giây); được thì xóa bản cũ (dịch vụ đang ngủ thì dừng lại bản mới), không được thì trả bản cũ và không thử lại cho tới khi `sleeper` khởi động lại. Container có GPU mà không start được (`State.Error`, ví dụ đổi driver, tháo card) thì tạo lại bản CPU. `BAMBOO_GPU=false` (`SLEEPER_GPU`) tắt. `make up-gpu` thành bí danh của `make up`; `infra/compose/gpu.yml` giữ để ép GPU từ đầu. Bổ sung [ADR #51](#adr-51), [ADR #52](#adr-52) (trước đây GPU chỉ bật khi chạy `make up-gpu` hoặc chép tay `gpu.yml` thành `docker-compose.override.yml`).
+- **Lý do:** Người dùng phổ thông chỉ chạy `docker compose up`. Compose không có điều kiện theo phần cứng: khai `deploy.resources.reservations.devices` với driver `nvidia` trên máy không có toolkit thì container không tạo được, nên không thể để mặc định. Dò lúc chạy bằng chính thao tác Docker sẽ làm (container thử xin GPU) đúng cho cả Docker Desktop WSL2 (không liệt kê runtime `nvidia`) lẫn Linux có toolkit, và lỗi GPU không bao giờ làm AI ngừng chạy. Giữ nguyên nhãn compose nên `docker compose up`, `down`, `ps`, `logs` vẫn coi container là của nó; compose tạo lại (đổi cấu hình, image) thì sleeper chuyển lại.
+- **Đã loại:** `make up` dò rồi ghi `COMPOSE_FILE` vào `.env` (bản đầu của ADR này, cùng ngày: `docker compose up` trên bản clone mới vẫn chạy CPU, và sửa `.env` của người dùng); đọc `docker info` tìm runtime `nvidia` (Docker Desktop không liệt kê); container Ollama, OCR thứ hai ngoài compose (`docker compose down` không dọn được mạng).
+- **Giới hạn hiện tại:** Mấy phút đầu sau `docker compose up` (tới khi `ai-worker` chạy) AI chạy CPU; lúc chuyển, lượt hỏi đang chờ phải đợi container mới lên (vài giây). `docker compose up` gắn log (không `-d`) không theo log container mới tạo, xem bằng `docker compose logs -f ollama-core`. Chỉ NVIDIA.
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
