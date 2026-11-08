@@ -1,11 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Quy trình tự động chỉ chạy theo sự kiện của chứng từ thuộc phạm vi đã phát hành (đơn vị sở hữu + đối tượng
--- UNIT/COMPANY/GROUP của phiên bản đang chạy), không còn chạy theo mọi sự kiện cùng loại trong tenant.
--- Sự kiện mang danh sách đơn vị liên quan (unit_ids) để so với phạm vi.
-
 CREATE FUNCTION wf.automation_in_scope(p_automation uuid, p_unit_ids jsonb, p_at timestamptz DEFAULT now())
 RETURNS boolean
 LANGUAGE sql STABLE AS $$

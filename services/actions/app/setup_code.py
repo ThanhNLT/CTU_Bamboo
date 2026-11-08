@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Mở cửa sổ đăng ký 24 giờ trên hệ thống trống (ADR #57, #62): `python -m app.setup_code` (`make setup-code`).
 
 `bootstrap` tự gọi mỗi lần khởi động khi hệ thống chưa có công ty; mã cũ chưa dùng bị hủy. Trong khi còn mã hiệu lực, trang

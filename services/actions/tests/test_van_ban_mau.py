@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import datetime
 import uuid
 
@@ -9,7 +5,7 @@ import httpx
 import psycopg
 import pytest
 from test_phieu_pdf import _pdf_text, _reachable_tika
-from test_quyet_dinh_nhan_su import day, leaders, session  # noqa: F401  (fixture dùng chung)
+from test_quyet_dinh_nhan_su import day, leaders, session  # noqa: F401
 
 from app import documents
 from app.common import ActionError, Context

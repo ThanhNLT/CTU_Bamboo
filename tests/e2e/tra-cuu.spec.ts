@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 

@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE SCHEMA IF NOT EXISTS collab;
 
 CREATE FUNCTION collab.entity_tenant(p_type text, p_id uuid) RETURNS uuid

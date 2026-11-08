@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App } from "antd";
 import {
   ChevronLeft,
@@ -70,7 +66,7 @@ const ImagePreview = ({ name, kind }: { name: string; kind: Attachment["kind"] }
 );
 
 const toolBtn =
-  "grid h-7 w-7 place-items-center rounded-ui text-body transition-colors hover:bg-canvas disabled:cursor-default disabled:opacity-40 " +
+  "grid h-7 w-7 place-items-center rounded-full text-body transition-colors hover:bg-canvas disabled:cursor-default disabled:opacity-40 " +
   "focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
 const useDownload = () => {
@@ -171,7 +167,7 @@ export const DocumentViewer = ({
             <button
               type="button"
               onClick={() => void download(file.id)}
-              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-ui bg-black/[0.045] px-3 text-[12px] font-medium text-ink hover:bg-black/[0.07] focus-visible:outline-2 focus-visible:outline-bamboo-500"
+              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-black/[0.045] px-3 text-[12px] font-medium text-ink hover:bg-black/[0.07] focus-visible:outline-2 focus-visible:outline-bamboo-500"
             >
               <Download className="h-3.5 w-3.5" aria-hidden /> {tr(" Tải tệp")}
             </button>
@@ -204,7 +200,7 @@ export const DocumentViewer = ({
         </div>
 
         {(!file || file.scan === "clean") && (
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-ui border border-line bg-surface px-1.5 py-1 shadow-float">
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-line bg-surface px-1.5 py-1 shadow-float">
             <button
               type="button"
               className={toolBtn}

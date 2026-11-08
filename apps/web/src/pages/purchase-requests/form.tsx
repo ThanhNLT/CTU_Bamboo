@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useEffect, useState } from "react";
 import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space, Table, Typography } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";

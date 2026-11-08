@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import uuid
 from dataclasses import dataclass, field
 
@@ -382,8 +378,6 @@ HR_UNITS = [
     ("BVX", "BVX_TCCB", "Phòng Tổ chức cán bộ", "BVX", "PHONG", "Trưởng phòng", 2, "Chuyên viên tổ chức"),
 ]
 HR_SCOPE = {"CHIP_NS": "CHIP", "DT_NS": "DT", "GD_NS": "GD", "TDX_NS": "TDX", "BVX_TCCB": "BVX"}
-# Tài khoản cho kịch bản demo chuyển và tiếp nhận nhân sự (docs: data/demo/chuyen-tiep-nhan-nhan-su.md).
-# Các ghế này đã có người giữ; seed gắn tài khoản vào người đang giữ ghế (xem Seeder.ensure_demo_accounts).
 TRANSFER_DEMO_USERS = [
     _u("tp.nhansu.dienthoai", "Nguyễn Thị Hồng Nhung", Seat("TDX", "DT_NS.HEAD")),
     _u("tp.phanmem.dienthoai", "Trần Quốc Bảo", Seat("TDX", "DT_RD_PM.HEAD")),

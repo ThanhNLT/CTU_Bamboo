@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE TABLE core.permission (
     code         text PRIMARY KEY,
     description  text NOT NULL

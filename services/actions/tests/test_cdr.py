@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import io
 import zipfile
 
@@ -52,7 +48,7 @@ def real_png(exif: bool = True, trailing: bytes = b"") -> bytes:
 
 def real_jpeg() -> bytes:
     meta = Image.Exif()
-    meta[0x0112] = 6  # xoay 90 độ
+    meta[0x0112] = 6
     meta[0x010F] = "May anh X"
     buf = io.BytesIO()
     Image.new("RGB", (16, 8), (200, 0, 0)).save(buf, "JPEG", exif=meta)

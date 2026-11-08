@@ -1,13 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 057: Tác tử AI tự hành động khi có sự kiện nghiệp vụ (ADR #72).
--- Quản trị AI chọn sự kiện kích hoạt, nhiệm vụ và những hành động tác tử được phép làm (bình luận vào chứng từ, gửi
--- thông báo, gọi webhook đã khai sẵn). Mỗi sự kiện khớp sinh một lần chạy; ai-worker đọc chứng từ (và quy chế trong
--- thư viện nếu tác tử có search_docs), hỏi mô hình một kế hoạch dạng JSON, kiểm từng hành động theo cấu hình rồi mới làm.
--- Tác tử hành động thay mặt người phụ trách (người tạo): không bao giờ có quyền rộng hơn người đó.
-
 ALTER TABLE core.ai_agent
     ADD COLUMN triggers         text[] NOT NULL DEFAULT '{}',
     ADD COLUMN instructions     text CHECK (length(instructions) <= 4000),
@@ -46,8 +36,6 @@ CREATE INDEX ai_agent_run_queue ON core.ai_agent_run (created_at) WHERE status =
 CREATE INDEX ai_agent_run_agent ON core.ai_agent_run (tenant_id, agent_id, created_at DESC);
 CALL audit.enable('core.ai_agent_run');
 
--- Sự kiện nghiệp vụ: ngoài hàng đợi của quy trình tự động, sinh lần chạy cho mọi tác tử đang hoạt động đăng ký sự kiện
--- đó (cùng khóa chống trùng), rồi đánh thức ai-worker.
 CREATE OR REPLACE FUNCTION wf.emit_event(p_tenant uuid, p_name text, p_key text, p_payload jsonb) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -83,7 +71,6 @@ ALTER TABLE collab.notification
                         'CHAT_MESSAGE', 'CALENDAR_INVITE', 'CALENDAR_REMINDER', 'CALENDAR_CHANGED',
                         'PROJECT_TASK', 'PROJECT_REPORT', 'AI_AGENT'));
 
--- Người duyệt đang giữ việc của chứng từ (đích "approvers" của hành động notify)
 CREATE FUNCTION wf.open_approvers(p_type text, p_id uuid) RETURNS SETOF uuid
 LANGUAGE sql STABLE AS $$
     SELECT DISTINCT t.assignee_id

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import io
 import socket
@@ -331,7 +327,6 @@ def test_quet_lai_tep_cu_chua_tung_quet(conn, database, s3, hasura):
             (pr_id, f"{label}.pdf", ctype, len(content), key, hashlib.sha256(content).hexdigest(), i["c"]),
         ).fetchone()["id"]
 
-    # Chưa quét lại thì chưa tải về được dù trạng thái cũ là CLEAN
     data = hasura(DOWNLOAD, {"a": str(made["sach"])}, person=i["c"], tenant=i["TDX"])
     assert data["errors"][0]["extensions"]["code"] == "not-scanned", data
 

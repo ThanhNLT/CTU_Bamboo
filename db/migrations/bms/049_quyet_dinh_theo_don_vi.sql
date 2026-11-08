@@ -1,12 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Quyết định nhân sự theo phạm vi đơn vị: quyền hr.decision.issue / hr.decision.read được cấp theo cây đơn vị
--- (TENANT, SUBTREE, UNIT) nên giám đốc công ty con chỉ ban hành và xem quyết định trong công ty mình; Tổng giám đốc
--- (cấp TENANT) vẫn ban hành và xem toàn tập đoàn. Trước đây quyền chỉ được kiểm tại đơn vị gốc.
-
--- "Có quyền ở đâu đó": dùng để hiện chức năng; phạm vi cụ thể do trigger bên dưới kiểm theo từng vị trí
 CREATE OR REPLACE FUNCTION hr.can_issue_decision(p_person uuid, p_tenant uuid, p_at timestamptz DEFAULT now())
 RETURNS boolean
 LANGUAGE sql STABLE AS $$
@@ -23,7 +14,6 @@ LANGUAGE sql STABLE AS $$
                      AND core.has_permission(p_person, 'hr.decision.read', u.id, p_at))
 $$;
 
--- Người ban hành phải có quyền ban hành tại đơn vị của mọi vị trí liên quan (nguồn và đích)
 CREATE FUNCTION hr.check_decision_scope() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Lịch công tác theo ngày/tuần/tháng/quý (ADR #65).
 
 - Sự kiện **cá nhân** (người tổ chức và người được mời thấy) hoặc **lịch đơn vị** (mọi người trong cây con của đơn vị thấy,
@@ -347,7 +344,6 @@ def calendar_save(conn: psycopg.Connection, session: dict, args: dict, _ctx: Con
             for r in cur.execute("SELECT person_id FROM cal.attendee WHERE event_id = %s", (event_id,))
         }
         if moved:
-            # Đổi giờ: mọi người trả lời lại
             conn.execute(
                 "UPDATE cal.attendee SET response = 'PENDING', responded_at = NULL WHERE event_id = %s", (event_id,)
             )

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { request } from "../api/client";
 import { keycloak } from "../auth/keycloak";
 import { tr } from "../i18n";
@@ -43,8 +39,6 @@ export const isPlatformAdmin = (): boolean =>
 
 const role = () => (isPlatformAdmin() ? ("platform_admin" as const) : undefined);
 
-// Tên và mô tả mô-đun dựng sẵn do máy chủ trả bằng tiếng Việt (danh mục cố định trong modules.py): dịch theo ngôn ngữ đang
-// chọn; mô-đun ngoài giữ nguyên tên nhà phát triển khai trong manifest
 export const localizeModule = <T extends { name: string; description: string; external?: boolean }>(m: T): T =>
   m.external ? m : { ...m, name: tr(m.name), description: tr(m.description) };
 

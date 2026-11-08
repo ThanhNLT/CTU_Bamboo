@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { request, wsClient } from "../../../api/client";
@@ -48,9 +44,7 @@ export const useGql = <T>(query: string, variables?: Record<string, unknown>) =>
           setError(undefined);
           setLoading(false);
         },
-        error: () => {
-          // mất kết nối realtime: giữ dữ liệu hiện có, lần ghi kế tiếp vẫn tải lại bằng HTTP
-        },
+        error: () => {},
         complete: () => {},
       },
     );

@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
 FROM apache/kafka:4.3.1
 LABEL org.opencontainers.image.title="bamboo-kafka" \
       org.opencontainers.image.description="Bamboo DX-OS: Kafka KRaft kèm SCRAM và ACL cho CDC" \

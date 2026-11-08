@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Modal, Select } from "antd";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";

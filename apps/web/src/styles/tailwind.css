@@ -1,20 +1,12 @@
-/*
- * SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 @layer theme, base, components, utilities;
 
 @import "tailwindcss/theme.css" layer(theme);
 @import "@refinedev/antd/dist/reset.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-/* Chế độ tối bật bằng data-theme="dark" trên thẻ html (nút mặt trăng ở thanh trên) */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  /* Thang Tre (Bamboo Design System): 600 là màu chính, chữ trắng trên 600 đạt 5,3:1 */
   --color-bamboo-50: #f1f8f2;
   --color-bamboo-100: #e8f3e8;
   --color-bamboo-200: #c3e2c9;
@@ -26,14 +18,12 @@
   --color-bamboo-800: #194b25;
   --color-bamboo-900: #133a1e;
 
-  /* Một bán kính bo góc cho mọi thành phần: mọi lớp rounded-* đều ra 10px */
   --radius: 10px;
   --radius-ui: 10px;
   --radius-xs: 10px;
   --radius-sm: 10px;
   --radius-md: 10px;
   --radius-lg: 10px;
-  /* Thẻ, khung lớn bo rộng hơn theo vật liệu kính (Bamboo Glass): rounded-xl cho khối con, rounded-2xl cho thẻ */
   --radius-xl: 14px;
   --radius-2xl: 20px;
   --radius-3xl: 10px;
@@ -41,7 +31,6 @@
 
   --color-canvas: #f5f7f5;
   --color-surface: #ffffff;
-  /* Ô đang chọn trong thanh tab dạng phân đoạn (Tất cả / Nháp / Đang duyệt...) */
   --color-segment: #ffffff;
   --color-line: #e4e9e5;
   --color-ink: #1b231e;
@@ -52,16 +41,10 @@
     "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  /* Thẻ kính: viền sáng phía trên, bóng mềm lan rộng phía dưới */
-  --shadow-card:
-    inset 0 1px 0 rgb(255 255 255 / 0.75), 0 1px 2px rgb(16 24 20 / 0.04), 0 14px 34px -18px rgb(19 58 30 / 0.22);
-  --shadow-float: 0 12px 32px -8px rgb(16 24 20 / 0.18), 0 2px 6px rgb(16 24 20 / 0.06);
-  /* Vật liệu kính (Liquid Glass): viền sáng phía trên, bóng mềm phía dưới */
-  --shadow-glass:
-    inset 0 1px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(16 24 20 / 0.04), 0 8px 24px -12px rgb(16 24 20 / 0.12);
-  --shadow-glass-active:
-    inset 0 1px 0 rgb(255 255 255 / 0.28), inset 0 -1px 0 rgb(0 0 0 / 0.12), 0 6px 16px -6px rgb(31 94 46 / 0.55),
-    0 1px 2px rgb(19 58 30 / 0.25);
+  --shadow-card: var(--elevation-card);
+  --shadow-float: var(--elevation-float);
+  --shadow-glass: var(--elevation-glass);
+  --shadow-glass-active: var(--elevation-glass-active);
 
   --animate-stripes: stripes 0.9s linear infinite;
   @keyframes stripes {
@@ -108,21 +91,22 @@
     --scrollbar-thumb-hover: rgb(27 35 30 / 0.4);
     --glass-bg: rgb(255 255 255 / 0.72);
     --glass-edge: rgb(255 255 255 / 0.6);
-    /* Bamboo Glass: thẻ nội dung, thanh nổi (đầu trang, thanh bên, menu, hộp thoại), ô lõm bên trong thẻ */
     --glass-card: rgb(255 255 255 / 0.62);
     --glass-card-edge: rgb(255 255 255 / 0.8);
     --glass-strong: rgb(255 255 255 / 0.8);
     --glass-well: rgb(27 35 30 / 0.035);
     --glass-blur: blur(24px) saturate(170%);
-    /* Nền đặc cho cột ghim của bảng (phải che nội dung cuộn ngang phía dưới) */
     --surface-solid: #ffffff;
+    --elevation-card:
+      inset 0 1px 0 rgb(255 255 255 / 0.75), 0 1px 2px rgb(16 24 20 / 0.04), 0 14px 34px -18px rgb(19 58 30 / 0.22);
+    --elevation-float: 0 12px 32px -8px rgb(16 24 20 / 0.18), 0 2px 6px rgb(16 24 20 / 0.06);
+    --elevation-glass:
+      inset 0 1px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(16 24 20 / 0.04), 0 8px 24px -12px rgb(16 24 20 / 0.12);
+    --elevation-glass-active:
+      inset 0 1px 0 rgb(255 255 255 / 0.28), inset 0 -1px 0 rgb(0 0 0 / 0.12), 0 6px 16px -6px rgb(31 94 46 / 0.55),
+      0 1px 2px rgb(19 58 30 / 0.25);
   }
 
-  /*
-   * Chế độ tối: đổi giá trị token, mọi lớp tiện ích (bg-surface, text-ink, border-line...) tự đổi theo.
-   * Thang Tre đảo chiều: 50–300 thành nền xanh tối, 700–900 thành chữ xanh sáng; 600 giữ làm màu nút chính.
-   * Các màu trạng thái nhạt (red/amber/yellow-50...) thành nền tối cùng sắc, màu chữ đậm (700–900) sáng lên.
-   */
   :root[data-theme="dark"] {
     color-scheme: dark;
     --scrollbar-thumb: rgb(232 239 233 / 0.22);
@@ -138,7 +122,6 @@
     --color-canvas: #0f1511;
     --color-surface: #18201b;
     --color-segment: #34413a;
-    /* Lớp phủ mờ bg-black/[...] thành trắng mờ để vẫn thấy trên nền tối */
     --color-black: #ffffff;
     --color-line: #2a352e;
     --color-ink: #e8efe9;
@@ -183,15 +166,12 @@
     --color-sky-100: #15303f;
     --color-sky-700: #7dd3fc;
 
-    --shadow-card:
-      inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 34px -18px rgb(0 0 0 / 0.7);
-    --shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    --elevation-card:
+      inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 34px -18px rgb(0 0 0 / 0.7);
+    --elevation-float: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.3);
+    --elevation-glass: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.6);
   }
 
-  /*
-   * Thanh cuộn kiểu macOS: mảnh, bo tròn, không có nút mũi tên hai đầu, rãnh trong suốt.
-   * Chrome/Edge/Safari dùng ::-webkit-scrollbar; Firefox (không hỗ trợ selector đó) dùng scrollbar-width/color.
-   */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -224,7 +204,6 @@
 }
 
 @layer components {
-  /* Kính: blur 30 · saturate 180% · độ trong 72% */
   .glass {
     background-color: var(--glass-bg);
     border-color: var(--glass-edge);
@@ -233,9 +212,6 @@
     box-shadow: var(--shadow-glass);
   }
 
-  /*
-   * Nền ứng dụng (Bamboo Glass): xanh Tre nhạt có quầng sáng, đứng yên khi cuộn để các tấm kính có thứ để làm mờ.
-   */
   .app-canvas {
     background-color: var(--color-canvas);
     background-image:
@@ -253,7 +229,6 @@
       linear-gradient(160deg, #0f1a13 0%, #0c150f 50%, #09100c 100%);
   }
 
-  /* Thanh nổi: đầu trang, thanh bên, menu, hộp thoại */
   .glass-bar {
     background-color: var(--glass-strong);
     border: 1px solid var(--glass-card-edge);
@@ -262,7 +237,6 @@
     box-shadow: var(--shadow-card);
   }
 
-  /* Thẻ nhấn: nền xanh Tre, chữ trắng (một thẻ quan trọng nhất trên trang, như mẫu dashboard) */
   .glass-accent {
     color: #fff;
     background: linear-gradient(155deg, #3e8a4f 0%, #2f7a3e 50%, #1f5e2e 100%);
@@ -272,10 +246,6 @@
       0 18px 40px -18px rgb(31 94 46 / 0.65);
   }
 
-  /*
-   * Trang đăng nhập/đăng ký (ADR #62): một tấm kính chia hai nửa trên nền xanh Tre có quầng sáng, nửa phải là lời chào
-   * cắt chéo. Cùng ngôn ngữ với trang đăng nhập Keycloak (infra/platform/keycloak/themes/dxos-login).
-   */
   .auth-backdrop {
     position: relative;
     min-height: 100vh;
@@ -293,7 +263,6 @@
       radial-gradient(48rem 34rem at 92% 96%, rgb(47 122 62 / 0.4), transparent 60%),
       linear-gradient(160deg, #1f5e2e 0%, #133a1e 45%, #0b1a10 100%);
   }
-  /* Các mảng sáng mờ trôi chậm phía sau tấm kính để kính có thứ mà làm mờ */
   .auth-orb {
     position: absolute;
     z-index: -1;
@@ -347,7 +316,6 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
   }
-  /* Nửa lời chào: nền nhấn nhẹ, mép trái cắt chéo như mẫu (chỉ trên màn hình rộng) */
   .auth-greeting {
     position: relative;
     background: var(--auth-accent-pane);
@@ -374,7 +342,6 @@
     }
   }
 
-  /* Nút viên thuốc kiểu iOS: chính (xanh Tre) và viền kính */
   .auth-pill {
     display: inline-flex;
     align-items: center;
@@ -427,7 +394,6 @@
     background: rgb(255 255 255 / 0.12);
   }
 
-  /* Ô chọn dạng thẻ (quy mô, công cụ, vai trò) */
   .auth-tile {
     display: flex;
     width: 100%;
@@ -473,7 +439,6 @@
     box-shadow: 0 0 0 3px rgb(95 174 110 / 0.18);
   }
 
-  /* Ô nhập trên kính: nền trong mờ thay vì trắng đặc */
   .auth-form .ant-input-outlined,
   .auth-form .ant-input-affix-wrapper.ant-input-outlined,
   .auth-form .ant-input-number-outlined,
@@ -493,10 +458,6 @@
   }
 }
 
-/*
- * Chế độ tối cho Tag trạng thái của Ant Design: Tag lấy chữ thẳng từ màu trạng thái (xanh, đỏ đậm) nên quá tối trên nền tối.
- * Để ngoài @layer vì CSS của Ant Design không thuộc layer nào.
- */
 :root[data-theme="dark"] .ant-tag.ant-tag-processing,
 :root[data-theme="dark"] .ant-tag.ant-tag-success {
   color: #8fd19c;
@@ -508,25 +469,17 @@
   color: #fcd34d;
 }
 
-/*
- * Bamboo Glass cho mọi thẻ của ứng dụng: các trang dựng thẻ bằng "bg-surface shadow-card" (hoặc Panel) nên chỉ cần một quy
- * tắc ở đây là cả ứng dụng thành kính. Đổi biến --color-surface ngay trên thẻ (không đè background-color) để hover:bg-*
- * của từng trang vẫn thắng; khối con dùng bg-surface trong thẻ cũng trong theo, thành lớp kính chồng lớp.
- */
 @layer utilities {
   :where(.shadow-card).bg-surface {
     --color-surface: var(--glass-card);
     border-color: var(--glass-card-edge);
   }
-  /* Chỉ khối chứa mới làm mờ nền: ô nhập không cần (đã nằm trong thẻ kính), và backdrop-filter tạo lớp xếp chồng
-     riêng khiến ô nhập đè lên biểu tượng đặt tuyệt đối phía trước nó */
   :where(.shadow-card).bg-surface:not(input, textarea, select, button) {
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
   }
 }
 
-/* Ant Design dùng cùng vật liệu kính (ngoài @layer vì CSS của Ant Design không thuộc layer nào) */
 .ant-card {
   background: var(--glass-card);
   border-color: var(--glass-card-edge);
@@ -538,7 +491,10 @@
 .ant-card .ant-card-head {
   border-bottom-color: var(--color-line);
 }
-/* Bảng đứng riêng trên nền (trang dựng bằng List của Refine): chính bảng là một thẻ kính */
+.ant-card .ant-card-actions {
+  background: transparent;
+  border-top-color: var(--color-line);
+}
 .ant-table-wrapper .ant-table {
   background: var(--glass-card);
   border: 1px solid var(--glass-card-edge);
@@ -548,11 +504,12 @@
   backdrop-filter: var(--glass-blur);
   box-shadow: var(--shadow-card);
 }
-/* Ô bảng trong suốt để thấy lớp kính; hàng đang di chuột (bộ chọn :hover của Ant Design cụ thể hơn) vẫn tô màu */
 .ant-table-wrapper .ant-table .ant-table-thead > tr > th,
 .ant-table-wrapper .ant-table .ant-table-thead > tr > td,
 .ant-table-wrapper .ant-table .ant-table-tbody > tr > td:not(.ant-table-cell-fix-left):not(.ant-table-cell-fix-right),
+.ant-table-wrapper .ant-table .ant-table-placeholder,
 .ant-table-wrapper .ant-table .ant-table-placeholder > td,
+.ant-table-wrapper .ant-table .ant-table-placeholder:hover > td,
 .ant-table-wrapper .ant-table .ant-table-container,
 .ant-table-wrapper .ant-table .ant-table-summary > tr > td {
   background: transparent;
@@ -565,7 +522,6 @@
   color: var(--color-muted);
   font-weight: 500;
 }
-/* Bảng nằm trong thẻ, hộp thoại, ngăn kéo: không thêm lớp kính thứ hai */
 .ant-card .ant-table-wrapper .ant-table,
 .bg-surface .ant-table-wrapper .ant-table,
 .glass-bar .ant-table-wrapper .ant-table,
@@ -580,7 +536,6 @@
   backdrop-filter: none;
 }
 
-/* Tiêu đề trang dựng bằng List/Show của Refine: cùng cỡ chữ và lề với các trang tự dựng */
 .ant-page-header.ant-page-header-ghost {
   padding-inline: 0;
   padding-top: 4px;
@@ -595,10 +550,10 @@
   margin: 0;
 }
 
-/* Bảng thông tin (Descriptions): ô nhãn là ô lõm nhẹ, viền mảnh, bo góc như khối con */
 .ant-descriptions.ant-descriptions-bordered .ant-descriptions-view {
   border-color: var(--color-line);
   border-radius: 14px;
+  overflow: hidden;
 }
 .ant-descriptions.ant-descriptions-bordered .ant-descriptions-item-label {
   background: var(--glass-well);
@@ -617,8 +572,6 @@
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
-/* Tiêu đề nằm trong thân hộp thoại (đã là kính): tô thêm một lớp kính thành ô sáng hơn bo tròn nửa trên, vì Ant Design
-   bo hai góc trên của tiêu đề */
 .ant-modal .ant-modal-header {
   background: transparent;
 }
@@ -636,4 +589,17 @@
   border-radius: 16px;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
+}
+
+.ant-input-search > .ant-input-group > .ant-input-group-addon:last-child .ant-input-search-button {
+  border-start-end-radius: 10px;
+  border-end-end-radius: 10px;
+}
+.ant-space-compact:has(.ant-input, .ant-select, .ant-picker, .ant-input-number) > .ant-btn-compact-first-item {
+  border-start-start-radius: 10px;
+  border-end-start-radius: 10px;
+}
+.ant-space-compact:has(.ant-input, .ant-select, .ant-picker, .ant-input-number) > .ant-btn-compact-last-item {
+  border-start-end-radius: 10px;
+  border-end-end-radius: 10px;
 }

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """OCR tệp đính kèm quét (ADR #52): chọn trang, gọi dịch vụ `ocr`, ghi từng trang vào core.attachment_ocr.
 
 Ảnh luôn OCR; PDF chỉ OCR trang không có chữ (dưới MIN_PAGE_CHARS ký tự), tối đa MAX_PAGES trang.
@@ -134,7 +131,7 @@ class Files:
 
     def get(self, key: str) -> bytes | None:
         if key != self.key:
-            self.release()  # bỏ tệp cũ trước khi tải tệp mới, không giữ hai tệp cùng lúc
+            self.release()
             self.data = self.read(key)
             self.key = key
         return self.data
@@ -147,7 +144,7 @@ def run_once(conn: psycopg.Connection, gpu, files: Files) -> str | None:
     """OCR một trang của việc đứng đầu hàng đợi. Trả trạng thái việc sau bước này, None khi hết việc."""
     status = _run_page(conn, gpu, files)
     if status != "RUNNING":
-        files.release()  # việc đã xong hoặc tạm hoãn: không giữ tệp (tới 25 MB) trong bộ nhớ lúc nhàn rỗi
+        files.release()
     return status
 
 

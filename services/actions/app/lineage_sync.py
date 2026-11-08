@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Phả hệ dữ liệu thu tự động từ hệ thống đang chạy (ADR #64), thay cho phả hệ chỉ có ở tệp mẫu (ADR #50).
 
 Đồ thị `auto` dựng lại từ chính cấu hình hệ thống, không khai tay:
@@ -32,12 +29,11 @@ from .trino import TrinoError
 
 log = logging.getLogger("lineage_sync")
 
-LOCK_KEY = 0x6C696E65  # "line"
+LOCK_KEY = 0x6C696E65
 SYNC_WINDOW_MINUTES = 5
 WAL_WARN_BYTES = 64 * 1024 * 1024
 OWNER = "Nền tảng Bamboo"
 
-# Bảng Trung tâm điều hành đọc thẳng từ PostgreSQL (ADR #49)
 OPS_TABLES = ("wf.task", "wf.approval_history", "proc.purchase_request", "ic.ic_order", "mfg.lot", "core.org_unit")
 CONSUMERS = {
     "app:bi": ("Phân tích BI", "Trang · Phân tích BI, API /api/v1/metrics", "/i/bi"),
@@ -141,7 +137,6 @@ def save_graph(conn: psycopg.Connection, nodes: list[dict], edges: list[dict]) -
     conn.execute("SELECT pg_advisory_xact_lock(%s)", (LOCK_KEY,))
     ids = [n["id"] for n in nodes]
     conn.execute("DELETE FROM meta.lineage_edge WHERE origin = 'auto'")
-    # Nút có sự cố dữ liệu đã báo thì giữ lại (khóa ngoại), chỉ bỏ nút không còn trong đồ thị
     conn.execute(
         """DELETE FROM meta.lineage_node n WHERE origin = 'auto' AND NOT (id = ANY(%s))
              AND NOT EXISTS (SELECT 1 FROM meta.data_issue i WHERE i.node_id = n.id)""",
@@ -267,7 +262,6 @@ def check_tenant(conn: psycopg.Connection, session: dict, ctx: Context, lake_tab
             (f"đối chiếu postgres ↔ silver.{silver_name(t)}", node, duration, "success" if passed else "check_failed",
              tenant),
         )  # fmt: skip
-    # Giữ 200 lần chạy gần nhất của công ty
     conn.execute(
         """DELETE FROM meta.pipeline_run WHERE tenant_id = %s AND id NOT IN (
                SELECT id FROM meta.pipeline_run WHERE tenant_id = %s ORDER BY started_at DESC LIMIT 200)""",

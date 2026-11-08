@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
 INSERT INTO wf.process_model (tenant_id, id, process_key, name, bpmn_xml, created_by, owner_unit_id)
@@ -17,13 +13,11 @@ VALUES (test.id('TDX'), test.put('AU', gen_random_uuid()), test.id('MA'), 1, 'de
 INSERT INTO wf.automation_run (tenant_id, id, automation_id, flowable_instance_id, trigger, started_by)
 VALUES (test.id('TDX'), test.put('RUN', gen_random_uuid()), test.id('AU'), 'inst-1', 'MANUAL', test.id('c'));
 
--- Chỉ một bản chạy tự động hiệu lực cho mỗi quy trình
 SELECT test.throws($$ INSERT INTO wf.process_automation (tenant_id, model_id, version, flowable_deployment_id,
                          flowable_definition_id, definition_key, activated_by)
                      VALUES (test.id('TDX'), test.id('MA'), 2, 'd2', 'f2', 'k2', test.id('tp_mh_dt')) $$,
                    '%one_active%', 'một quy trình chỉ có một bản chạy tự động hiệu lực');
 
--- Gửi cho phạm vi đơn vị: mọi người trong phòng (kể cả người phát hành)
 SELECT test.eq(wf.automation_notify(test.id('RUN'), 'n1'),
                (SELECT count(*)::int FROM wf.people_under(test.id('DT_MH')) x), 'báo cho mọi người trong phòng');
 SELECT test.eq((SELECT count(*)::int FROM collab.notification WHERE recipient_id = test.id('c') AND kind = 'PROCESS_AUTOMATION'),
@@ -31,12 +25,10 @@ SELECT test.eq((SELECT count(*)::int FROM collab.notification WHERE recipient_id
 SELECT test.eq((SELECT count(*)::int FROM collab.notification WHERE recipient_id = test.id('gd_chip') AND kind = 'PROCESS_AUTOMATION'),
                0, 'người ngoài phạm vi không nhận');
 
--- Người khởi chạy
 SELECT test.eq(wf.automation_notify(test.id('RUN'), 'n2'), 1, 'báo riêng cho người khởi chạy');
 SELECT test.eq((SELECT count(*)::int FROM collab.notification WHERE recipient_id = test.id('c') AND title LIKE '%Đã gửi nhắc việc'),
                1, 'người khởi chạy nhận đúng nội dung');
 
--- Lần chạy do hẹn giờ (không có người khởi chạy) báo cho người bật chạy tự động
 INSERT INTO wf.automation_run (tenant_id, id, automation_id, flowable_instance_id, trigger)
 VALUES (test.id('TDX'), test.put('RUN2', gen_random_uuid()), test.id('AU'), 'inst-2', 'TIMER');
 SELECT test.eq(wf.automation_notify(test.id('RUN2'), 'n2'), 1, 'hẹn giờ: báo cho người bật tự động');

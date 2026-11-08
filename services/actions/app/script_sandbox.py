@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Kịch bản do người dùng viết trong quy trình tự động (ADR #73).
 
 Ngôn ngữ là một tập con của Python, chạy bằng trình thông dịch duyệt cây cú pháp ở đây, không bao giờ dùng exec/eval:
@@ -34,7 +30,6 @@ MAX_LOG_LINES = 50
 MAX_OUTPUTS = 50
 RESERVED = {"initiator", "sandbox", "event"}
 SCALAR = (str, int, float, bool, type(None))
-# Định dạng f-string: căn lề, dấu, độ rộng tối đa 3 chữ số, phân tách nghìn, số chữ số thập phân, kiểu
 FORMAT_SPEC = re.compile(r"^(.?[<>^=])?[+\- ]?0?\d{0,3}[,_]?(\.\d{1,2})?[bcdeEfFgGnosxX%]?$")
 
 
@@ -134,7 +129,6 @@ CMPOPS = {
     ast.Is: lambda a, b: a is b,
     ast.IsNot: lambda a, b: a is not b,
 }
-# Kiểu dữ liệu được phép tồn tại trong bộ nhớ kịch bản
 VALUE_TYPES = (str, int, float, bool, type(None), list, dict, tuple, range, enumerate, zip, reversed)
 
 
@@ -158,7 +152,6 @@ class Interpreter:
         self.deadline = time.monotonic() + max_seconds
         self.builtins = {**BUILTINS, "log": self._log}
 
-    # --- tiện ích ---
     def _tick(self, node: ast.AST) -> None:
         self.steps += 1
         if self.steps > self.max_steps:
@@ -175,7 +168,6 @@ class Interpreter:
         if name.startswith("_"):
             raise ScriptError("Không dùng tên bắt đầu bằng dấu gạch dưới", getattr(node, "lineno", None))
 
-    # --- câu lệnh ---
     def run(self, tree: ast.Module) -> None:
         self._block(tree.body)
 
@@ -275,7 +267,6 @@ class Interpreter:
             case _:
                 raise ScriptError("Vế trái phép gán không hợp lệ", getattr(target, "lineno", None))
 
-    # --- biểu thức ---
     def _truth(self, value) -> bool:
         return bool(value)
 

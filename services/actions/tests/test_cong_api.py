@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Cổng dịch vụ API (ADR #64): khóa của công ty, phạm vi, hạn dùng, dải IP, thu hồi, đếm lượt gọi."""
 
 import uuid
@@ -139,7 +135,6 @@ def test_khoa_goi_thay_nguoi_tao_va_loi_action_van_dem(actions_server, admin, co
         headers={"authorization": f"Bearer {key}"},
         timeout=30,
     )
-    # Người tạo khóa không có data.lakehouse.read: Action từ chối như khi chính người đó gọi
     assert r.status_code == 403 and r.json()["code"] == "forbidden"
     row = conn.execute(
         "SELECT u.calls, u.errors FROM api.usage u JOIN api.api_key k ON k.id = u.key_id WHERE k.key_sha256 = %s",

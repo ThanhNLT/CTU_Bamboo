@@ -1,10 +1,5 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
--- Hàng đợi: chống gửi trùng, mã băm nội dung, không sửa nội dung
 SELECT test.put('M1', msg.enqueue(test.id('TDX'), 'notify.email', '{"to": "a@x.vn", "n": 1}', 'k1', test.id('c')));
 SELECT test.eq(msg.enqueue(test.id('TDX'), 'notify.email', '{"to": "khac@x.vn"}', 'k1'), test.id('M1'), 'trùng khóa thì trả tin cũ');
 SELECT test.eq((SELECT count(*)::int FROM msg.queue WHERE tenant_id = test.id('TDX')), 1, 'không sinh tin trùng');
@@ -13,14 +8,12 @@ SELECT test.eq((SELECT payload_sha256 FROM msg.queue WHERE id = test.id('M1')),
 SELECT test.throws($$UPDATE msg.queue SET payload = '{"to": "sua@x.vn"}' WHERE id = test.id('M1')$$, '%Không sửa nội dung%', 'không sửa nội dung');
 SELECT test.throws($$UPDATE msg.queue SET payload_sha256 = 'x' WHERE id = test.id('M1')$$, '%Không sửa nội dung%', 'không sửa mã băm');
 
--- Nhận việc: chỉ tin đến hạn, đúng chủ đề; tin chưa đến hạn không bị nhận
 SELECT msg.enqueue(test.id('TDX'), 'notify.sms', '{"to": "+84900000000"}', 'k2', NULL, 5, interval '1 hour');
 SELECT test.eq((SELECT count(*)::int FROM msg.lease('notify.sms', 'w1')), 0, 'chưa đến hạn chưa nhận được');
 SELECT test.eq((SELECT count(*)::int FROM msg.lease('notify.email', 'w1')), 1, 'nhận được tin email đến hạn');
 SELECT test.eq((SELECT count(*)::int FROM msg.lease('notify.email', 'w2')), 0, 'tin đang giữ không giao cho worker khác');
 SELECT test.eq((SELECT status || attempts FROM msg.queue WHERE id = test.id('M1')), 'LEASED1', 'đang giữ, lần thử 1');
 
--- Thất bại: lùi dần rồi vào hàng chết
 SELECT test.eq(msg.fail(test.id('M1'), 'SMTP từ chối'), 'PENDING', 'lỗi thì chờ thử lại');
 SELECT test.ok((SELECT next_attempt_at > now() + interval '20 seconds' AND next_attempt_at < now() + interval '40 seconds'
                 FROM msg.queue WHERE id = test.id('M1')), 'lần 1 chờ khoảng 30 giây');
@@ -38,7 +31,6 @@ SELECT test.eq(msg.fail(test.id('M1'), 'lỗi 4'), 'DEAD', 'hết lượt thì v
 SELECT test.eq((SELECT count(*)::int FROM msg.attempt WHERE message_id = test.id('M1') AND NOT ok), 4, 'ghi lại từng lần thử');
 SELECT test.eq((SELECT count(*)::int FROM msg.lease('notify.email', 'w1')), 0, 'hàng chết không tự nhận lại');
 
--- Đưa lại từ hàng chết rồi giao thành công kèm biên nhận
 SELECT msg.retry(test.id('M1'));
 SELECT test.eq((SELECT count(*)::int FROM msg.lease('notify.email', 'w1')), 1, 'đưa lại thì nhận được');
 SELECT test.throws($$SELECT msg.complete(test.id('M1'), NULL)$$, '%check%', 'giao rồi phải có biên nhận');
@@ -47,13 +39,11 @@ SELECT test.eq((SELECT status FROM msg.queue WHERE id = test.id('M1')), 'DELIVER
 SELECT test.throws($$SELECT msg.retry(test.id('M1'))$$, '%hàng chết%', 'tin đã giao không đưa lại');
 SELECT test.throws($$UPDATE msg.queue SET status = 'PENDING' WHERE id = test.id('M1')$$, '%đã giao%', 'tin đã giao không đổi');
 
--- Tin đang giữ quá hạn được nhận lại
 SELECT msg.enqueue(test.id('TDX'), 'notify.webhook', '{"url": "https://x.vn"}', 'k3');
 SELECT count(*) FROM msg.lease('notify.webhook', 'w1');
 UPDATE msg.queue SET leased_until = now() - interval '1 second' WHERE idempotency_key = 'k3';
 SELECT test.eq((SELECT count(*)::int FROM msg.lease('notify.webhook', 'w2')), 1, 'worker chết thì tin được nhận lại');
 
--- Tùy chọn kênh và tự sinh tin khi có thông báo mới
 INSERT INTO collab.notification_pref (tenant_id, person_id, channel, address)
 VALUES (test.id('TDX'), test.id('c'), 'EMAIL', 'c@bamboo.vn'),
        (test.id('TDX'), test.id('c'), 'SMS', '+84901234567');

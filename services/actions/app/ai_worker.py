@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Worker trả lời lượt hỏi Trợ lý RAG (ADR #51): `python -m app.ai_worker`.
 
 Mỗi lần lấy một lượt `queued` (FIFO, SKIP LOCKED), tìm đoạn trong `documents_kb_chunk`, lọc theo quyền
@@ -38,13 +35,10 @@ log = logging.getLogger("ai_worker")
 
 CANDIDATES = 30
 CONTEXT_CHUNKS = 6
-# Ngân sách ngữ cảnh: chạy CPU thì thời gian đọc prompt tăng theo số token, ~3 đoạn đầy (800 token) là đủ trả lời
 CONTEXT_TOKENS = 3000
-# Đoạn có điểm thấp hơn đoạn tốt nhất quá mức này chỉ làm loãng ngữ cảnh của mô hình 4B
 RELATIVE_DROP = 0.15
 MAX_ATTEMPTS = 8
 REUSE_DAYS = 7
-# Đổi khi sửa prompt hoặc cách dựng ngữ cảnh để không dùng lại câu trả lời sinh theo cách cũ
 PROMPT_VERSION = "2"
 SEMANTIC_RATIO = 0.7
 FLUSH_SECONDS = 0.4
@@ -57,7 +51,7 @@ THINK_OVERRUN_MESSAGE = (
 )
 TRUNCATED_NOTE = "\n\n(câu trả lời bị cắt do quá dài)"
 ANSWER_MAX_TOKENS = 1024
-THINK_MAX_TOKENS = 2048  # dòng suy nghĩ và câu trả lời dùng chung giới hạn
+THINK_MAX_TOKENS = 2048
 SYSTEM_PROMPT = """Bạn là trợ lý tra cứu Thư viện tri thức của doanh nghiệp. Trả lời bằng tiếng Việt, ngắn gọn.
 Quy tắc:
 - Chỉ trả lời dựa trên các văn bản trong <tai_lieu>. Không dùng kiến thức bên ngoài, không đoán.
@@ -400,7 +394,6 @@ def answer(
     if truncated:
         text += TRUNCATED_NOTE
     citations = citations_of(docs, text) if docs else []
-    # Câu bị cắt không đáng dùng lại cho lần hỏi sau
     reuse = {"context_key": key} if key and not truncated else {}
     _finish(conn, q, status="done", thinking=clean_think, answer=text, citations=citations, **usage, **reuse)
     return "done"
@@ -511,7 +504,6 @@ def run_forever(settings: config.Settings, idle_seconds: float = 5.0) -> None:
             while step(work, meili, ai, settings, gpu, use_ocr):
                 backoff = idle_seconds
         except OllamaUnavailable as exc:
-            # Lùi dần (tối đa 1 phút) để Ollama đang dậy hoặc đang quá tải không bị dồn yêu cầu
             log.warning("ai-worker tạm dừng %s giây, Ollama chưa sẵn sàng: %s", round(backoff), exc)
             time.sleep(backoff)
             backoff = min(backoff * 2, 60.0)

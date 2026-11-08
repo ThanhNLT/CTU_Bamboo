@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-#
-# GitOps: kho Git là nguồn sự thật của cấu hình. Mỗi lần chạy:
-#   1. kéo nhánh theo dõi (chỉ fast-forward; lịch sử bị viết lại thì dừng và báo);
-#   2. nếu cấu hình compose đã đổi so với lần áp dụng cuối, hoặc có dịch vụ lệch khỏi trạng thái mong muốn
-#      (không chạy / không khỏe), thì `docker compose up -d --remove-orphans` để đưa hệ thống về đúng cấu hình;
-#   3. ghi trạng thái vào $STATE_FILE (JSON) và thoát khác 0 nếu có lỗi.
-# Chạy định kỳ bằng systemd timer hoặc cron (xem docs/van-hanh/gitops.md); `--dry-run` chỉ in việc sẽ làm.
 set -uo pipefail
 
 REPO="${REPO_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
@@ -21,7 +12,7 @@ cd "$REPO" || exit 2
 log() { echo "$(date -u +%FT%TZ) $*"; }
 dc() { docker compose -p "$PROJECT" "$@"; }
 
-write_state() { # trạng thái, ghi chú
+write_state() {
     printf '{"at": "%s", "status": "%s", "commit": "%s", "config_hash": "%s", "note": "%s"}\n' \
         "$(date -u +%FT%TZ)" "$1" "$(git rev-parse --short HEAD 2> /dev/null)" "${state_hash:-}" "${2//\"/\'}" > "$STATE_FILE"
 }

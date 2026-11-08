@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Button, Input, Segmented, Select, Table, Tag, Typography } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
@@ -61,7 +57,6 @@ const LogsTab = () => {
   );
   useEffect(() => {
     load();
-    // chỉ nạp lần đầu; các lần sau do bộ lọc kích hoạt
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

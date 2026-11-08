@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { ReactElement } from "react";
 import { useState } from "react";
 import { App, Avatar, Button, Flex, Input, List, Popconfirm, Space, Typography } from "antd";

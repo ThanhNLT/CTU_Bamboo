@@ -1,11 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Quy trình tự động: một phiên bản đã phát hành được bật chạy tự động trên Flowable. Hệ thống tự thực hiện các tác vụ
--- tự động (gửi thông báo) và tự bắt đầu theo hẹn giờ; người có quyền cũng khởi chạy tay được. Mỗi lần chạy ghi lại để
--- giám sát.
-
 ALTER TABLE collab.notification
     DROP CONSTRAINT notification_kind_check,
     ADD CHECK (kind IN ('TASK_ASSIGNED', 'REQUEST_APPROVED', 'REQUEST_REJECTED', 'REQUEST_RETURNED',
@@ -59,7 +51,6 @@ CREATE TABLE wf.automation_run (
 CREATE INDEX ON wf.automation_run (tenant_id, automation_id, started_at DESC);
 CREATE INDEX ON wf.automation_run (status) WHERE status = 'RUNNING';
 
--- Thực hiện hành động "gửi thông báo" của một phần tử trong một lần chạy; trả về số người được báo
 CREATE FUNCTION wf.automation_notify(p_run uuid, p_activity text) RETURNS int
 LANGUAGE plpgsql AS $$
 DECLARE

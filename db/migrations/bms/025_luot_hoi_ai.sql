@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 025: Lượt hỏi Trợ lý RAG và hàng đợi nạp đoạn vào chỉ mục vector (ADR #51).
-
--- Hàng đợi nạp đoạn: cùng cách làm với search.pending, theo từng tài liệu thư viện.
 CREATE TABLE search.pending_chunk (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
     kb_document_id   uuid PRIMARY KEY,
@@ -68,7 +61,6 @@ BEGIN
     RETURN NULL;
 END $$;
 
--- Lượt hỏi: một câu hỏi độc lập gửi một tác tử AI, worker nền trả lời dần.
 CREATE TABLE core.ai_question (
     id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id          uuid NOT NULL REFERENCES core.tenant,
@@ -105,6 +97,5 @@ END $$;
 CREATE TRIGGER ai_question_notify AFTER INSERT ON core.ai_question
 FOR EACH ROW WHEN (NEW.status = 'queued') EXECUTE FUNCTION core.ai_question_notify();
 
--- Kiểm toán khi tạo và khi đổi trạng thái; bỏ các lần worker ghi dần câu trả lời (~1 giây / lần).
 CREATE TRIGGER audit_log AFTER INSERT OR UPDATE OF status OR DELETE ON core.ai_question
 FOR EACH ROW EXECUTE FUNCTION audit.log_change('id');

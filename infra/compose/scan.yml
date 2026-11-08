@@ -1,12 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# Quét virus tệp tải lên bằng ClamAV (profile scan, ADR #26).
-# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
-# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
-# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
-
 x-logging: &logging
   driver: json-file
   options:

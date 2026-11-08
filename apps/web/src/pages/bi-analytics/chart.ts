@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import dayjs from "dayjs";
 
 import { getLocale, tr, trf } from "../../i18n";
@@ -10,7 +6,6 @@ import type { Catalog, ChartSpec, Pivot, QueryResult, Source } from "./types";
 
 export const MAX_SERIES = 12;
 
-// Bảng màu phân loại mở đầu bằng xanh Tre, đủ tương phản ở cả nền sáng và tối
 export const PALETTE = [
   "#2f7a3e",
   "#e07b39",

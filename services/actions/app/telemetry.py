@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Số liệu Prometheus và truy vết OpenTelemetry (ADR #75).
 
 - `/metrics` (chỉ mạng nội bộ, cổng API không định tuyến): lượt gọi và thời gian theo route HTTP và theo Action, cùng
@@ -40,7 +36,6 @@ ACTION_SECONDS = Histogram(
     "bamboo_action_duration_seconds", "Thời gian chạy Action", ["action"], buckets=BUCKETS, registry=REGISTRY
 )
 
-# (tên số liệu, mô tả, nhãn, câu SQL trả (nhãn..., giá trị))
 QUEUE_QUERIES = (
     (
         "bamboo_message_queue",

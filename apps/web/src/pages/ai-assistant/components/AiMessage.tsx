@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useState } from "react";
 import { AlertTriangle, Brain, ChevronDown, ChevronRight, Copy, RotateCcw, ShieldAlert, Sparkles } from "lucide-react";
 import { Link } from "react-router";
@@ -20,7 +16,7 @@ export const AiAvatar = () => (
 );
 
 const iconBtn =
-  "grid h-7 w-7 place-items-center rounded-ui text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
+  "grid h-7 w-7 place-items-center rounded-full text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
 const Notice = ({

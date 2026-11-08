@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT format('CREATE ROLE %I', r)
 FROM unnest(ARRAY['bamboo_app', 'bamboo_hasura', 'bamboo_actions', 'bamboo_keycloak', 'bamboo_flowable',
                    'bamboo_cdc', 'bamboo_lakehouse']) r

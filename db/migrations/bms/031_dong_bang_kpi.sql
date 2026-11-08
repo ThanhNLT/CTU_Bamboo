@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Đóng băng số liệu thống kê theo kỳ: giá trị KPI của kỳ đã kết thúc được chụp lại một lần, không sửa, không xóa.
--- kpi.value luôn được tính lại từ dữ liệu nguồn; kpi.snapshot giữ giá trị đã báo cáo của kỳ đã đóng.
-
 CREATE TABLE kpi.snapshot (
     tenant_id     uuid NOT NULL,
     kpi_key       text NOT NULL,
@@ -20,8 +13,6 @@ CREATE TABLE kpi.snapshot (
 );
 CREATE INDEX ON kpi.snapshot (tenant_id, frozen_at DESC);
 
--- Chống sửa; xóa chỉ được phép khi xóa cả định nghĩa KPI (khóa ngoại ON DELETE CASCADE chạy dưới trigger này
--- nên cần cho phép khi bảng cha đang bị xóa).
 CREATE FUNCTION kpi.snapshot_guard() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -43,7 +34,6 @@ LANGUAGE sql IMMUTABLE AS $$
     END
 $$;
 
--- Chụp mọi kỳ đã kết thúc (period_end <= p_at) chưa được chụp; trả về số bản ghi mới. Chạy lặp lại không đổi gì.
 CREATE FUNCTION kpi.freeze(p_at timestamptz DEFAULT now()) RETURNS int
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -68,7 +58,6 @@ BEGIN
     RETURN v_count;
 END $$;
 
--- Kiểm tra bản chụp không bị sửa ngoài trigger (ví dụ bằng quyền cao): trả về các kỳ có mã băm lệch
 CREATE FUNCTION kpi.verify_snapshots(p_tenant uuid) RETURNS TABLE (kpi_key text, period_start timestamptz)
 LANGUAGE sql STABLE AS $$
     SELECT s.kpi_key, s.period_start FROM kpi.snapshot s

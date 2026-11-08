@@ -1,24 +1,17 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
--- Tập đoàn mẹ: phòng nhân sự chung
 SELECT test.unit('TDX', 'ME_NS', 'ME', 'PHONG', 'Phòng Nhân sự Tập đoàn');
 UPDATE core.org_unit SET is_hr = true WHERE id = test.id('ME_NS');
 SELECT test.position('TDX', 'P_TP_NS_ME', 'ME_NS', 'Trưởng phòng Nhân sự Tập đoàn', true);
 SELECT test.person('TDX', 'nx', 'Nhân sự Tập đoàn');
 SELECT test.assign('TDX', 'nx', 'P_TP_NS_ME');
 
--- Công ty Chip X (nguồn): phòng nhân sự của công ty
 SELECT test.unit('TDX', 'CHIP_NS', 'CHIP', 'PHONG', 'Phòng Nhân sự Chip X');
 UPDATE core.org_unit SET is_hr = true WHERE id = test.id('CHIP_NS');
 SELECT test.position('TDX', 'P_TP_NS_CHIP', 'CHIP_NS', 'Trưởng phòng Nhân sự Chip X', true);
 SELECT test.person('TDX', 'ns_chip', 'Nhân sự Chip X');
 SELECT test.assign('TDX', 'ns_chip', 'P_TP_NS_CHIP');
 
--- Bệnh viện X (tenant đích, con của tập đoàn)
 SELECT test.unit('BVX', 'BV', NULL, 'BENH_VIEN', 'Bệnh viện X', true);
 SELECT test.unit('BVX', 'BV_KHTH', 'BV', 'PHONG', 'Phòng Kế hoạch tổng hợp');
 SELECT test.position('BVX', 'P_TP_KHTH', 'BV_KHTH', 'Trưởng phòng KHTH', true);
@@ -31,7 +24,6 @@ SELECT test.position('BVX', 'P_TP_NS_BVX', 'BV_NS', 'Trưởng phòng Nhân sự
 SELECT test.person('BVX', 'bvx_ns', 'Nhân sự Bệnh viện X');
 SELECT test.assign('BVX', 'bvx_ns', 'P_TP_NS_BVX');
 
--- Hỗ trợ
 CREATE FUNCTION test.expect_fail(p_sql text, p_like text) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -58,7 +50,6 @@ CREATE FUNCTION test.wf_assignee(p_type text, p_key text) RETURNS text
 LANGUAGE sql STABLE AS $$ SELECT test.key((SELECT t.assignee_id FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id
     WHERE s.entity_type = p_type AND s.entity_id = test.id(p_key) AND t.status = 'OPEN')) $$;
 
--- Kịch bản 1: tenant đích từ chối
 SELECT test.put('OUT_R', hr.create_transfer_out(test.id('a'), test.id('a'), test.id('P_NV_KD_CHIP'),
                                                 test.id('BVX'), test.id('BV_KHTH'), test.plus_days(20),
                                                 'Muốn chuyển sang bệnh viện'));
@@ -75,7 +66,6 @@ SELECT test.eq((SELECT stage FROM hr.transfer_out WHERE id = test.id('OUT_R')), 
 SELECT test.eq((SELECT count(*) FROM core.assignment WHERE person_id = test.id('a') AND position_id = test.id('P_NV_KD_CHIP')
                 AND upper_inf(valid_period)), 1::bigint, 'từ chối thì vẫn giữ vị trí cũ');
 
--- Kịch bản 2: duyệt đầy đủ, qua tập đoàn
 SELECT test.expect_fail(format('SELECT hr.create_transfer_out(%L,%L,%L,%L,%L,%L,%L)', test.id('a'), test.id('a'),
     test.id('P_NV_KD_CHIP'), test.id('TDX'), test.id('CHIP_KD'), test.plus_days(20), 'x'),
     '%nội bộ%');

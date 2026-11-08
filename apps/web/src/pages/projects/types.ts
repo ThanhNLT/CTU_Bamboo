@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type ProjectStatus = "PLANNING" | "ACTIVE" | "ON_HOLD" | "DONE" | "CANCELLED";
 export type Role = "MANAGER" | "MEMBER" | "VIEWER";
 export type Health = "GREEN" | "AMBER" | "RED";
