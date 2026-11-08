@@ -1,12 +1,7 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import pytest
 
 from app.ocr_fields import fold, parse_document, vn_number
 
-# Chữ OCR của docs/Presentation/demo-ocr/01-bao-gia.pdf: các ô cùng hàng được gộp thành một dòng
 QUOTE = """CÔNG TY TNHH THIẾT BỊ KỸ THUẬT A   Số: BG-2026-0412
 Số 25 đường Láng Hạ, quận Đống Đa, Hà Nội · MST 0101234567   Ngày lập: 21/10/2026
 BẢNG BÁO GIÁ

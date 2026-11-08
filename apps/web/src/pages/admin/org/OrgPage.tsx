@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Dropdown, Spin } from "antd";
 import { ChevronDown, FileSpreadsheet, Plus } from "lucide-react";
 import { useState } from "react";

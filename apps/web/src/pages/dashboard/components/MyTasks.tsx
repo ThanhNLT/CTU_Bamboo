@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Segmented } from "antd";
 import { Check } from "lucide-react";
 import { useState } from "react";

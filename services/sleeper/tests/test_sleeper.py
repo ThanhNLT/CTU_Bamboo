@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 import asyncio
 import time
 import unittest
@@ -16,7 +13,7 @@ class FakeDocker:
         self.running = False
         self.started = 0
         self.stopped = 0
-        self.health = None  # None = không có healthcheck
+        self.health = None
         self.started_at = "2020-01-01T00:00:00.5Z"
         self.server = None
 
@@ -59,7 +56,6 @@ class SleeperTest(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.up_port = free_port()
         self.docker = FakeDocker(self.up_port)
-        # Target nối tới `service` bằng open_connection; 127.0.0.1 đóng vai tên mạng compose
         self.target = Target(free_port(), "127.0.0.1", self.up_port, idle_seconds=0.2)
         self.sleeper = Sleeper(self.docker, [self.target], wake_timeout=5, check_every=0.05)
         self.server = await asyncio.start_server(
@@ -97,7 +93,7 @@ class SleeperTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_sleeps_after_idle_and_wakes_again(self):
         await self.ask(b"x")
-        self.assertFalse(await self.target.sleep_if_idle(self.docker))  # vừa dùng xong
+        self.assertFalse(await self.target.sleep_if_idle(self.docker))
         await asyncio.sleep(0.3)
         self.assertTrue(await self.target.sleep_if_idle(self.docker))
         self.assertEqual(self.docker.stopped, 1)
@@ -187,7 +183,6 @@ class ModulesTest(unittest.IsolatedAsyncioTestCase):
         done = await modules.reconcile()
         self.assertEqual(done, {"started": ["flowable"], "stopped": ["kafka", "trino-core"]})
         self.assertTrue(self.lazy.blocked)
-        # lần sau không còn gì để làm
         self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
 
     async def test_lazy_service_is_unblocked_but_not_started(self):
@@ -203,7 +198,6 @@ class ModulesTest(unittest.IsolatedAsyncioTestCase):
         modules = self.make(
             {"run": [], "stop": ["flowable"]}, {"flowable": flowable, "bootstrap": bootstrap}, hold_until="bootstrap"
         )
-        # lần chạy trước của bootstrap đã xong trước khi Flowable được compose chạy lại
         self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
         bootstrap.update(Running=True, Status="running")
         self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
@@ -238,7 +232,7 @@ class ModulesTest(unittest.IsolatedAsyncioTestCase):
         status = await modules.status()
         self.assertEqual(status["flowable"], {"running": True})
         self.assertEqual(status["kafka"], {"running": None})
-        self.assertNotIn("trino-core", status)  # dịch vụ ngủ do Sleeper.status báo
+        self.assertNotIn("trino-core", status)
 
     async def test_blocked_target_does_not_wake(self):
         docker = FakeDocker(free_port())

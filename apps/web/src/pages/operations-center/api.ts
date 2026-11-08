@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
@@ -163,7 +159,6 @@ export const useOpsTab = <T extends OpsTab>(tab: T | null, days: number) => {
     return () => clearInterval(timer);
   }, [tab, load]);
 
-  // Có thay đổi ở bất kỳ tài khoản nào: tải lại ngay, giữ số liệu cũ trên màn hình trong lúc tải
   useEffect(() => {
     if (tick) void load();
   }, [tick, load]);

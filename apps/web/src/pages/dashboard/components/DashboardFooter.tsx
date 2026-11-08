@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { tr } from "../../../i18n";
 
 const SOURCE_URL: string | undefined = import.meta.env.VITE_SOURCE_URL;

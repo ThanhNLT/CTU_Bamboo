@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { request } from "../../api/client";
 import type { Catalog, ChartSpec, ChartType, QueryResult, SavedChart } from "./types";
 

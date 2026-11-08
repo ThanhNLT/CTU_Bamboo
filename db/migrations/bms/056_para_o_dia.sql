@@ -1,16 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 056: Ổ đĩa theo P.A.R.A (ADR #71). Mỗi tệp tự thuộc một trong bốn nhóm, suy từ chứng từ chứa tệp, không cần người dùng
--- tự xếp thư mục:
---   PROJECTS  (Dự án)    việc có đích và có kết thúc đang làm: dự án chưa xong, đề nghị/hồ sơ đang soạn hoặc chờ duyệt,
---                        tài liệu thư viện đang soạn; nhóm nhắn tin của dự án đang chạy
---   AREAS     (Lĩnh vực) trách nhiệm thường xuyên không có ngày kết thúc: kênh phòng ban, nhóm nhắn tin, trao đổi riêng
---   RESOURCES (Tài nguyên) tham khảo dùng chung: tài liệu thư viện tri thức đang hiệu lực
---   ARCHIVES  (Lưu trữ)  đã xong: dự án hoàn thành/hủy, chứng từ đã có kết quả, tài liệu hết hiệu lực
--- Dự án (Không gian P) nhận tệp đính kèm: loại chứng từ `pm.project`, ai xem được dự án thì xem được tệp.
-
 CREATE FUNCTION pm.attachment_tenant(p_id uuid) RETURNS uuid
 LANGUAGE sql STABLE AS $$ SELECT tenant_id FROM pm.project WHERE id = p_id $$;
 
@@ -69,6 +56,5 @@ LANGUAGE sql STABLE AS $$
     END
 $$;
 
--- Computed field `para` của core_attachment (Hasura)
 CREATE FUNCTION core.attachment_para(p_row core.attachment) RETURNS text
 LANGUAGE sql STABLE AS $$ SELECT core.para_of(p_row.entity_type, p_row.entity_id) $$;

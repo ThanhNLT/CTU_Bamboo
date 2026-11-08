@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Dịch vụ OCR tiếng Việt (ADR #52): `uvicorn app.main:app`.
 
 Không trạng thái: `POST /ocr` nhận ảnh một trang, trả các dòng chữ theo thứ tự đọc; `POST /unload` gỡ mô hình
@@ -113,7 +110,7 @@ def _trim_heap() -> None:
     try:
         ctypes.CDLL("libc.so.6").malloc_trim(0)
     except (OSError, AttributeError):
-        pass  # không phải glibc
+        pass
 
 
 def _out_of_memory(exc: BaseException) -> bool:

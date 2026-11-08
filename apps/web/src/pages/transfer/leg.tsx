@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Show } from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
@@ -25,7 +21,6 @@ type LegKind = "in" | "group";
 
 type TargetPosition = { id: string; name: string; assignments: { valid_period: string }[] };
 
-// Chứng từ tiếp nhận (tenant đích) và quyết định (tenant mẹ): người duyệt đăng nhập đúng tenant của chứng từ
 export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
   const { id } = useParsed();
   const { message } = App.useApp();
@@ -55,7 +50,6 @@ export const TransferLegShow = ({ kind }: { kind: LegKind }) => {
     void load();
   }, [load]);
 
-  // Trưởng đơn vị tiếp nhận (bước 1) phải chọn vị trí trước khi duyệt
   const choosing = Boolean(
     kind === "in" &&
     tr &&

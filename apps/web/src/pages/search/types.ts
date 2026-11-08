@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type ResultType = "record" | "document" | "knowledge" | "twin" | "data";
 export type Company = "chip" | "phone" | "appliance" | "hospital";
 export type SearchMode = "keyword" | "semantic" | "hybrid";

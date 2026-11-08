@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-# Chọn mức RAM (ADR #54) và in các dòng `export` cho `eval`; thông báo mức đã chọn ghi ra stderr.
-#   BAMBOO_RAM=8   đầy đủ chức năng kể cả AI, tiết kiệm RAM: heap JVM nhỏ hơn, mỗi lúc một mô hình AI, dịch vụ dùng thưa
-#                  (Ollama, OCR, Trino, Tika, Gotenberg) ngủ sớm hơn (ADR #69)
-#   BAMBOO_RAM=16  đầy đủ chức năng, giá trị mặc định
-# Bỏ trống thì tự chọn theo RAM Docker thấy được (WSL2 mặc định chỉ cấp một nửa RAM máy, nâng bằng .wslconfig).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -20,7 +12,6 @@ if [ -z "$mode" ]; then
         [ -n "$bytes" ] && kb=$((bytes / 1024))
     fi
     [ -z "$kb" ] && kb=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
-    # máy "16 GB" báo khoảng 15 GiB, máy "8 GB" báo khoảng 7,5 GiB
     if [ "$kb" -ge $((12 * 1024 * 1024)) ]; then mode=16; else mode=8; fi
     echo "Tự chọn mức RAM $mode (Docker thấy $((kb / 1024)) MB); đặt BAMBOO_RAM=8 hoặc 16 để chọn tay" >&2
 fi
@@ -50,11 +41,6 @@ VARS
         exit 1
         ;;
 esac
-# Giám sát (ADR #75): mức 16 bật nhóm observability (OTel Collector, Jaeger, Prometheus, Grafana) và truy vết;
-# mức 8 tắt để tiết kiệm khoảng 1 GB, bật tay bằng BAMBOO_OBSERVABILITY=true. COMPOSE_PROFILES sẵn có được giữ.
-# ClamAV (ADR #26, #70): mức 16 bật profile scan và quét thêm bằng ClamAV; mức 8 chỉ bộ quét nội bộ + CDR (ClamAV
-# cần thêm 1–2 GB), bật tay bằng BAMBOO_CLAMAV=true. Lần đầu ClamAV tải cơ sở dữ liệu mẫu virus mất vài phút: trong lúc
-# đó tải tệp lên báo "chưa quét được virus, thử lại sau".
 profiles=${COMPOSE_PROFILES:-$(env_value COMPOSE_PROFILES)}
 add_profile() { case ",$profiles," in *",$1,"*) ;; *) profiles=${profiles:+$profiles,}$1 ;; esac; }
 obs=${BAMBOO_OBSERVABILITY:-$(env_value BAMBOO_OBSERVABILITY)}

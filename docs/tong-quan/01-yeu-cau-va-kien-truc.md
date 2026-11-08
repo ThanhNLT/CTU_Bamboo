@@ -43,12 +43,12 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 
 | Tiêu chí | Đáp ứng trong kho mã |
 |---|---|
-| Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `ThanhNLT/Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
+| Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `CTUBamboo/Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
 | Giấy phép OSI ghi trong từng tệp mã | Header SPDX theo chuẩn REUSE 3.3; ngoại lệ (tệp không ghi được header) khai báo trong `REUSE.toml`; kiểm bằng `reuse lint` |
 | Không có giấy phép không tương thích | Mã của dự án Apache-2.0; thành phần bên thứ ba và giấy phép liệt kê trong `NOTICE` |
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |
-| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` và `compose.release.yml`; [CHANGELOG](https://github.com/ThanhNLT/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
+| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` và `compose.release.yml`; [CHANGELOG](https://github.com/CTUBamboo/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
 | Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | README: chạy bằng một lệnh (`make up`) và build từng thành phần không dùng Docker; cấu hình bằng biến môi trường (`.env.example`); Docker Engine, Compose, make, pnpm, pip |
 | Chạy được ngoài thư mục mã nguồn | `compose.release.yml` chạy bằng image phát hành, không cần thư mục mã |
 | Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`uv.lock`, `pnpm-lock.yaml`); dịch vụ dùng image chính thức của upstream, không vá mã |

@@ -1,13 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Quy trình ⇄ văn bản quy định trong thư viện tri thức. Hai chiều dùng chung một bảng liên kết:
---   SOURCE      văn bản đã hiệu lực mà từ đó dựng bản nháp sơ đồ (Action process_from_document);
---   REGULATION  văn bản quy định lập từ một phiên bản đã phát hành của sơ đồ (Action process_regulation_draft). Văn bản
---               đi theo chuỗi duyệt tài liệu (KB_DOCUMENT); duyệt xong là quy định đang hiệu lực của công ty và thay thế
---               bản quy định của phiên bản trước (collab.kb_publish).
--- Phiên bản quy trình bất biến (audit.append_only) nên liên kết nằm ở bảng riêng, không thêm cột vào wf.process_version.
 CREATE TABLE wf.process_regulation (
     tenant_id       uuid NOT NULL REFERENCES core.tenant,
     id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),

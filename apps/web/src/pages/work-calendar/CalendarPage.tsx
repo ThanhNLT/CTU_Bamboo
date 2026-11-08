@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, Segmented, Select, Spin, Tooltip } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { CalendarDays, ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
@@ -78,7 +74,6 @@ export const CalendarPage = () => {
     void load();
   }, [load]);
 
-  // Lịch đổi ở bất kỳ thiết bị nào trong công ty: tải lại; dự phòng mỗi phút khi mất kết nối thời gian thực
   const live = useLiveTopics(["calendar"], () => void load());
   useEffect(() => {
     const timer = setInterval(() => void load(), 60_000);

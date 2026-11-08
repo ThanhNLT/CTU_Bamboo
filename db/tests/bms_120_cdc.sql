@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.ok(EXISTS (SELECT FROM pg_publication_tables WHERE pubname = 'bms_cdc'
                        AND schemaname = 'proc' AND tablename = 'purchase_request'), 'Đề nghị mua sắm có trong publication');
 SELECT test.ok(EXISTS (SELECT FROM pg_publication_tables WHERE pubname = 'bms_cdc'

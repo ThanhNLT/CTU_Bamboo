@@ -1,17 +1,6 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 052: Không gian D (ADR #64): tín hiệu thay đổi thời gian thực và hiện diện người dùng; phả hệ dữ liệu thu tự động;
--- khóa của cổng dịch vụ API. Hai schema mới `live`, `api` không nằm trong publication CDC nên không vào Kafka/Lakehouse.
-
 CREATE SCHEMA live;
 CREATE SCHEMA api;
 
--- ---------------------------------------------------------------------------------------------------------------
--- Tín hiệu thay đổi: mỗi câu lệnh ghi vào bảng được theo dõi thêm một dòng (công ty, chủ đề). Trình duyệt chỉ giữ một
--- subscription Hasura đọc dòng mới nhất của các chủ đề nó quan tâm, thấy đổi thì tải lại số liệu. UNLOGGED: mất khi
--- PostgreSQL sập cũng không sao (trình duyệt vẫn tải lại theo chu kỳ dự phòng), đổi lại không sinh WAL.
 CREATE UNLOGGED TABLE live.event (
     id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id  uuid NOT NULL,
@@ -31,14 +20,12 @@ BEGIN
         INSERT INTO live.event (tenant_id, topic) SELECT DISTINCT tenant_id, TG_ARGV[0] FROM new_rows
             WHERE tenant_id IS NOT NULL;
     END IF;
-    -- Dọn dần: tín hiệu chỉ cần sống vài giây, giữ một giờ cho chắc
     IF random() < 0.01 THEN
         DELETE FROM live.event WHERE at < now() - interval '1 hour';
     END IF;
     RETURN NULL;
 END $$;
 
--- Gắn ba trigger cấp câu lệnh (bảng chuyển tiếp chỉ dùng được với một sự kiện mỗi trigger)
 CREATE PROCEDURE live.track(p_table regclass, p_topic text)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -70,7 +57,6 @@ CALL live.track('core.org_unit', 'org');
 CALL live.track('core.position', 'org');
 CALL live.track('core.assignment', 'org');
 
--- Hiện diện: mỗi thiết bị đang mở ứng dụng gửi nhịp 30 giây một lần kèm trang đang xem
 CREATE TABLE live.presence (
     tenant_id  uuid NOT NULL,
     person_id  uuid NOT NULL,
@@ -85,7 +71,7 @@ CREATE INDEX presence_seen ON live.presence (tenant_id, seen_at DESC);
 CREATE FUNCTION live.presence_touch() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
-    NEW.seen_at := now();  -- giờ của máy chủ, không tin giờ của trình duyệt
+    NEW.seen_at := now();
     IF random() < 0.02 THEN
         DELETE FROM live.presence WHERE seen_at < now() - interval '1 day';
     END IF;
@@ -94,7 +80,6 @@ END $$;
 CREATE TRIGGER presence_touch BEFORE INSERT OR UPDATE ON live.presence
     FOR EACH ROW EXECUTE FUNCTION live.presence_touch();
 
--- Người đang trực tuyến (nhịp trong 75 giây): mỗi người một dòng, trang của thiết bị gửi nhịp gần nhất
 CREATE VIEW live.v_online AS
 SELECT DISTINCT ON (p.tenant_id, p.person_id)
        p.tenant_id, p.person_id, pe.full_name, p.path, p.seen_at
@@ -103,18 +88,13 @@ JOIN core.person pe ON pe.tenant_id = p.tenant_id AND pe.id = p.person_id
 WHERE p.seen_at > now() - interval '75 seconds'
 ORDER BY p.tenant_id, p.person_id, p.seen_at DESC;
 
--- ---------------------------------------------------------------------------------------------------------------
--- Phả hệ dữ liệu thu tự động: nút/cạnh `auto` dựng lại từ publication CDC, Lakehouse, lớp ngữ nghĩa; nút `demo` từ tệp mẫu.
 ALTER TABLE meta.lineage_node ADD COLUMN origin text NOT NULL DEFAULT 'demo' CHECK (origin IN ('demo', 'auto'));
 ALTER TABLE meta.lineage_edge ADD COLUMN origin text NOT NULL DEFAULT 'demo' CHECK (origin IN ('demo', 'auto'));
--- Kiểm tra và lần chạy của từng công ty (số dòng của công ty nào chỉ công ty đó thấy); NULL = mức nền tảng
 ALTER TABLE meta.quality_check ADD COLUMN tenant_id uuid REFERENCES core.tenant ON DELETE CASCADE;
 ALTER TABLE meta.pipeline_run ADD COLUMN tenant_id uuid REFERENCES core.tenant ON DELETE CASCADE;
 CREATE INDEX quality_check_tenant ON meta.quality_check (tenant_id, node_id);
 CREATE INDEX pipeline_run_tenant ON meta.pipeline_run (tenant_id, started_at DESC);
 
--- ---------------------------------------------------------------------------------------------------------------
--- Cổng dịch vụ API: khóa của công ty, gọi thay mặt người tạo trong phạm vi đã chọn. Chỉ lưu SHA-256 của khóa.
 CREATE TABLE api.api_key (
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id     uuid NOT NULL REFERENCES core.tenant,

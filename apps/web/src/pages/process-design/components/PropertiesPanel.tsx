@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Input, Select } from "antd";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 

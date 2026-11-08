@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import logging
 import time
 import uuid
@@ -51,7 +47,7 @@ def attachment_docs(conn: psycopg.Connection, settings: config.Settings, entity_
         return []
     content = ""
     if att["name_only"]:
-        pass  # hồ sơ nhân sự: chỉ tìm theo tên tệp, nội dung không vào chỉ mục (nhạy cảm)
+        pass
     elif att["content_type"] in search.TEXT_TYPES:
         data = storage.read_document(settings, att["storage_key"])
         if data is None:
@@ -83,7 +79,6 @@ def sync_one(
     if entity_type == "core.attachment":
         docs = attachment_docs(conn, settings, entity_id)
         conn.rollback()
-        # Xóa mọi phần cũ trước: nội dung ngắn đi thì không còn phần thừa
         meili.delete_by_filter(settings.meili_index, f'attachment_id = "{uuid.UUID(str(entity_id))}"')
         if docs:
             meili.put_documents(settings.meili_index, docs)
@@ -229,7 +224,6 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0) -> None:
             if ai is not None and not chunks_checked:
                 reindex_chunks_if_empty(work, meili, settings.meili_chunk_index)
                 chunks_checked = True
-            # Chỉ gọi Ollama khi có đoạn cần nạp: hỏi thăm định kỳ sẽ giữ container ollama-core không bao giờ ngủ
             if ai is not None and chunks_pending(work) and ai_ready(ai):
                 while run_chunks_once(work, meili, ai, settings):
                     pass

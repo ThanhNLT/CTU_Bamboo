@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { CalendarDays, House, Inbox, Menu, MessagesSquare, type LucideIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router";
@@ -23,7 +19,6 @@ export const MobileTabBar = ({ onMore }: { onMore: () => void }) => {
   const unread = useUnreadTotal();
   const previous = useRef(unread);
 
-  // Có tin mới khi ứng dụng đang chạy nền: hiện thông báo của hệ điều hành (nếu đã cho phép)
   useEffect(() => {
     if (unread > previous.current) {
       void notifyDevice(tr("Bamboo – tin nhắn mới"), trf("Bạn có {0} tin nhắn chưa đọc", [unread]), "/h/chat", "chat");

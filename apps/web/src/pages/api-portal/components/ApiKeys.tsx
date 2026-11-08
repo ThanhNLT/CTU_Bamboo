@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Checkbox, Form, Input, Modal, Select, Table, Tag } from "antd";
 import { Copy, KeyRound, Plus, ShieldOff } from "lucide-react";
 import { useState } from "react";

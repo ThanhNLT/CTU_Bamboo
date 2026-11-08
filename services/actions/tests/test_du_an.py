@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Quản lý dự án (ADR #66): lập lịch theo phụ thuộc, WBS, đường găng, quyền, báo cáo tiến độ, mô-đun `project`."""
 
 import datetime as dt
@@ -29,8 +25,8 @@ def _t(tid, start, end, parent=None, seq=0, progress=0, milestone=False):
 def test_lap_lich_doi_viec_sau_va_ca_cay_con():
     tasks = {
         "a": _t("a", D(2026, 11, 2), D(2026, 11, 6), seq=1),
-        "b": _t("b", D(2026, 11, 4), D(2026, 11, 5), seq=2),  # phải bắt đầu sau a: dời 5 ngày
-        "p": _t("p", D(2026, 11, 1), D(2026, 11, 1), seq=3),  # tổng hợp, phụ thuộc b
+        "b": _t("b", D(2026, 11, 4), D(2026, 11, 5), seq=2),
+        "p": _t("p", D(2026, 11, 1), D(2026, 11, 1), seq=3),
         "p1": _t("p1", D(2026, 11, 3), D(2026, 11, 4), parent="p", seq=1),
         "p2": _t("p2", D(2026, 11, 5), D(2026, 11, 5), parent="p", seq=2, milestone=True),
     }
@@ -40,7 +36,6 @@ def test_lap_lich_doi_viec_sau_va_ca_cay_con():
     ]
     moved = projects.schedule(tasks, deps)
     assert (tasks["b"]["start_date"], tasks["b"]["end_date"]) == (D(2026, 11, 7), D(2026, 11, 8)), "giữ thời lượng"
-    # p phải bắt đầu ≥ 8/11 + 1 + 2 = 11/11; p bắt đầu theo con sớm nhất (3/11) nên cả cây dời 8 ngày
     assert tasks["p1"]["start_date"] == D(2026, 11, 11) and tasks["p2"]["start_date"] == D(2026, 11, 13)
     assert (tasks["p"]["start_date"], tasks["p"]["end_date"]) == (D(2026, 11, 11), D(2026, 11, 13)), "cha phủ các con"
     assert moved == {"b", "p", "p1", "p2"}
@@ -51,7 +46,7 @@ def test_wbs_duong_gang_va_tien_do_tong_hop():
     tasks = {
         "a": _t("a", D(2026, 11, 2), D(2026, 11, 8), seq=1, progress=100),
         "b": _t("b", D(2026, 11, 9), D(2026, 11, 18), seq=2, progress=50),
-        "c": _t("c", D(2026, 11, 9), D(2026, 11, 10), seq=3),  # nhánh song song, còn dư thời gian
+        "c": _t("c", D(2026, 11, 9), D(2026, 11, 10), seq=3),
         "g": _t("g", D(2026, 11, 1), D(2026, 11, 1), seq=4),
         "g1": _t("g1", D(2026, 11, 19), D(2026, 11, 19), parent="g", seq=1, milestone=True),
     }
@@ -136,11 +131,9 @@ def test_du_an_quyen_lap_lich_bao_cao(hasura, conn, org):
         (nv,),
     ).fetchone(), "người phụ trách nhận thông báo"
 
-    # Dời việc trước thì việc sau dời theo
     moved = run(save, {"t": {"id": a, "end_date": "2026-11-09"}})["data"]["pm_task_save"]
     assert moved["shifted"] == 1
 
-    # Người phụ trách chỉ cập nhật % của việc mình
     ok = run(save, {"t": {"id": b["id"], "progress": 40}}, who=nv)
     assert ok["data"]["pm_task_save"]["id"] == b["id"], ok
     denied = run(save, {"t": {"id": b["id"], "name": "đổi tên"}}, who=nv)
@@ -162,7 +155,6 @@ def test_du_an_quyen_lap_lich_bao_cao(hasura, conn, org):
     ]["pm_task"]
     assert tasks_seen == [], "người ngoài không đọc công việc qua GraphQL"
 
-    # Vòng phụ thuộc bị chặn
     loop = run(save, {"t": {"id": a, "predecessors": [{"id": b["id"], "lag_days": 0}]}})
     assert "vòng lặp" in loop["errors"][0]["message"]
 
@@ -183,7 +175,6 @@ def test_du_an_quyen_lap_lich_bao_cao(hasura, conn, org):
         "deleted": 1
     }
 
-    # Tắt mô-đun: Action trả module-disabled, bảng không đọc được
     conn.execute("DELETE FROM core.tenant_module WHERE tenant_id = %s AND module = 'project'", (tenant,))
     try:
         off = run(Q_DETAIL, {"id": pid})

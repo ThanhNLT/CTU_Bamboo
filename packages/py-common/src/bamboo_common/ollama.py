@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Gọi Ollama cục bộ (ADR #51): danh mục mô hình, embedding, sinh câu trả lời qua API tương thích OpenAI."""
 
 import json
@@ -9,7 +6,6 @@ from dataclasses import dataclass
 
 import httpx
 
-# Ollama ngủ khi nhàn rỗi (sleeper, ADR #53): lần gọi đầu chờ container dậy; dưới thời gian chờ 30 giây của Action Hasura
 WAKE_SECONDS = 25.0
 
 

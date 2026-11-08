@@ -1,8 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Không gian I (ADR #63): biểu đồ BI đã lưu và cột dùng lại câu trả lời của lượt hỏi AI.
 SELECT test.fixture();
 SELECT test.person('TDX', 'bi1', 'Người dựng biểu đồ');
 
@@ -36,11 +31,9 @@ UPDATE kpi.chart SET shared = true WHERE name = 'Đề nghị theo tháng';
 SELECT test.ok((SELECT updated_at > now() - interval '1 minute' FROM kpi.chart WHERE name = 'Đề nghị theo tháng'),
                'sửa biểu đồ thì cập nhật updated_at');
 
--- Xóa người thì xóa biểu đồ của người đó
 DELETE FROM kpi.chart WHERE person_id = test.id('bi1') AND name <> 'Đề nghị theo tháng';
 SELECT test.eq((SELECT count(*)::int FROM kpi.chart WHERE tenant_id = test.id('TDX')), 1, 'còn một biểu đồ');
 
--- Lượt hỏi dùng lại câu trả lời: mặc định chưa thử lại, chưa dùng lại
 SELECT test.eq((SELECT column_default FROM information_schema.columns
                 WHERE table_schema = 'core' AND table_name = 'ai_question' AND column_name = 'attempts'), '0',
                'số lần thử lại mặc định 0');

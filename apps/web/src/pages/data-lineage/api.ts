@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
@@ -10,7 +6,6 @@ import { LAYERS } from "./graph";
 import type { LineageEdge, LineageNode, RunResult, RunRow } from "./types";
 import { tr, trf } from "../../i18n";
 
-// Phả hệ "auto" thu từ hệ thống đang chạy, "demo" nạp từ tệp mẫu (ADR #50, #64)
 export type LineageOrigin = "auto" | "demo";
 
 const LINEAGE = `query Lineage($o: String!) {
@@ -166,7 +161,6 @@ export const useLineage = (origin: LineageOrigin) => {
   useEffect(() => {
     void load();
   }, [load]);
-  // Kiểm tra, lần chạy, sự cố dữ liệu mới của người khác hiện ngay (ADR #64)
   const live = useLiveTopics(["lineage"], load);
   return { ...state, reload: load, live };
 };

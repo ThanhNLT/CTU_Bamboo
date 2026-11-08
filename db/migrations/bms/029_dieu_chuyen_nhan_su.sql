@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 ALTER TABLE core.org_unit ADD COLUMN is_hr boolean NOT NULL DEFAULT false;
 COMMENT ON COLUMN core.org_unit.is_hr IS 'Phòng nhân sự của công ty: trưởng phòng là người duyệt điều chuyển';
 
@@ -97,9 +93,6 @@ CREATE TRIGGER transfer_request_notify AFTER UPDATE OF status ON hr.transfer_req
 FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION hr.transfer_request_notify();
 
--- Bổ nhiệm giữ chính mới cho người đã từng giữ chính trong tenant chỉ được tạo bởi đề nghị điều chuyển đã duyệt
--- (hr.complete_transfer bật cờ). Chặn cả trường hợp kết thúc bổ nhiệm cũ rồi bổ nhiệm mới không qua duyệt.
--- AFTER: ràng buộc assignment_one_primary_per_person báo lỗi trước khi trigger này chạy.
 CREATE FUNCTION core.assignment_transfer_guard() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -128,7 +121,6 @@ DECLARE
     v_position uuid;
 BEGIN
     SELECT tenant_id INTO v_tenant FROM core.org_unit WHERE id = p_source_unit;
-    -- Công ty chung gần nhất của đơn vị nguồn và đơn vị đích: công ty mẹ nếu hai đơn vị khác công ty
     SELECT c.id INTO v_company
     FROM core.org_unit s, core.org_unit t, core.org_unit c
     WHERE s.id = p_source_unit AND t.id = p_target_unit
@@ -276,7 +268,6 @@ BEGIN
     PERFORM wf.activate_next('hr.transfer_request', v_r.id, v_round, p_at);
 END $$;
 
--- Trưởng đơn vị tiếp nhận (đang được giao việc bước 1) chọn vị trí trong đơn vị; duyệt bằng wf.act sau đó
 CREATE FUNCTION hr.choose_transfer_position(p_id uuid, p_actor uuid, p_position uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -375,7 +366,6 @@ LANGUAGE sql STABLE AS $$
     SELECT wf.entity_can_read('hr.transfer_request', p_row.id, core.session_person(hasura_session))
 $$;
 
--- Đăng ký chứng từ điều chuyển vào các hàm dùng chung của luồng duyệt (bản mới nhất của từng hàm)
 CREATE OR REPLACE FUNCTION wf.entity_requester(p_type text, p_id uuid,
                                                OUT tenant_id uuid, OUT requester_id uuid,
                                                OUT requester_position_id uuid)
@@ -399,7 +389,6 @@ BEGIN
         INTO tenant_id, requester_id, requester_position_id
         FROM hr.transfer_out r WHERE r.id = p_id;
     WHEN 'hr.transfer_in' THEN
-        -- Người lập ở tenant nguồn: chỉ dùng để nhận diện, không khớp với người duyệt ở tenant đích
         SELECT i.tenant_id, o.requester_id, o.requester_position_id
         INTO tenant_id, requester_id, requester_position_id
         FROM hr.transfer_in i JOIN hr.transfer_out o ON o.id = i.out_id WHERE i.id = p_id;
@@ -437,7 +426,6 @@ BEGIN
         END IF;
     WHEN 'hr.transfer_out' THEN
         IF p_status = 'APPROVED' THEN
-            -- Tenant nguồn đã duyệt: chuyển sang tenant đích; chứng từ chỉ xong khi tập đoàn quyết định
             UPDATE hr.transfer_out SET status = 'PENDING', stage = 'TARGET' WHERE id = p_id;
             PERFORM hr.start_transfer_in(p_id, now());
         ELSE
@@ -560,7 +548,6 @@ DECLARE
     v_result uuid[];
 BEGIN
     IF p_type = 'hr.transfer_request' THEN
-        -- Người được điều chuyển không tự duyệt việc điều chuyển của mình
         RETURN ARRAY(SELECT person_id FROM hr.transfer_request WHERE id = p_id);
     ELSIF p_type = 'hr.transfer_out' THEN
         RETURN ARRAY(SELECT person_id FROM hr.transfer_out WHERE id = p_id);
@@ -668,12 +655,6 @@ BEGIN
         RETURN NULL;
     END CASE;
 END $$;
-
--- ===== Điều chuyển liên tập đoàn =====
--- Ba chứng từ liên kết, mỗi chứng từ nằm trong tenant của người duyệt (phiên làm việc chỉ có một tenant):
---   hr.transfer_out   tenant nguồn: người lập, trưởng đơn vị quản lý trực tiếp, HR nguồn duyệt
---   hr.transfer_in    tenant đích: trưởng đơn vị tiếp nhận chọn vị trí, HR công ty đích duyệt
---   hr.transfer_group tenant mẹ: trưởng phòng nhân sự tập đoàn quyết định; khi duyệt thì thực thi
 
 CREATE TABLE hr.transfer_out (
     tenant_id              uuid NOT NULL REFERENCES core.tenant,
@@ -801,7 +782,6 @@ RETURNS boolean LANGUAGE sql STABLE AS $$
     SELECT wf.entity_can_read('hr.transfer_group', p_row.id, core.session_person(hasura_session))
 $$;
 
--- Lý do không được lập đề nghị mới cho người này (đề nghị dở dang trong cùng người, việc duyệt đang mở, mua sắm chờ duyệt)
 CREATE FUNCTION hr.transfer_blocker(p_person uuid) RETURNS text
 LANGUAGE plpgsql STABLE AS $$
 DECLARE
@@ -827,7 +807,6 @@ BEGIN
     RETURN NULL;
 END $$;
 
--- Người lập: nhân viên, trưởng đơn vị quản lý trực tiếp, hoặc người có quyền hr.transfer.create tại đơn vị nguồn
 CREATE FUNCTION hr.transfer_requester(p_actor uuid, p_person uuid, p_source_position uuid, p_at timestamptz,
                                       OUT o_kind text, OUT o_position uuid)
 LANGUAGE plpgsql STABLE AS $$
@@ -992,7 +971,6 @@ BEGIN
     PERFORM wf.cancel_entity('hr.transfer_out', p_id, p_reason, p_at, p_actor);
 END $$;
 
--- Tenant nguồn đã duyệt: tạo chứng từ tiếp nhận ở tenant đích và mở bước duyệt của trưởng đơn vị tiếp nhận
 CREATE FUNCTION hr.start_transfer_in(p_out uuid, p_at timestamptz DEFAULT now()) RETURNS uuid
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -1055,7 +1033,6 @@ BEGIN
     UPDATE hr.transfer_in SET target_position_id = p_position WHERE id = p_id;
 END $$;
 
--- Tenant đích đã duyệt: lập quyết định ở tenant mẹ, mở bước duyệt của trưởng phòng nhân sự tập đoàn
 CREATE FUNCTION hr.start_transfer_group(p_in uuid, p_at timestamptz DEFAULT now()) RETURNS uuid
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -1088,7 +1065,6 @@ BEGIN
     RETURN v_g;
 END $$;
 
--- Quyết định tập đoàn đã duyệt: kết thúc bổ nhiệm ở tenant nguồn, lập người và bổ nhiệm ở tenant đích
 CREATE FUNCTION hr.complete_cross_transfer(p_group uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -1122,7 +1098,6 @@ BEGIN
     END IF;
     UPDATE core.assignment SET valid_period = tstzrange(lower(valid_period), v_from) WHERE id = v_src.id;
 
-    -- Cùng tài khoản (idp_subject) thì dùng lại hồ sơ người ở tenant đích nếu đã có
     SELECT idp_subject INTO v_idp FROM core.person WHERE id = v_o.person_id;
     SELECT id INTO v_pers FROM core.person
     WHERE tenant_id = v_i.tenant_id AND v_idp IS NOT NULL AND idp_subject = v_idp;
@@ -1140,7 +1115,6 @@ BEGIN
     UPDATE hr.transfer_out SET status = 'APPROVED', stage = 'DONE' WHERE id = v_o.id;
 END $$;
 
--- Một chứng từ trong chuỗi bị từ chối / hủy: kết thúc đề nghị ở tenant nguồn
 CREATE FUNCTION hr.cross_transfer_stopped(p_out uuid, p_status text) RETURNS void
 LANGUAGE sql AS $$
     UPDATE hr.transfer_out
