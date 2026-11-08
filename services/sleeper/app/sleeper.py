@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Dịch vụ ngủ (ADR #53): `python -m app.sleeper`.
 
 Đứng trước các dịch vụ dùng thưa (Trino, Tika, Gotenberg; Ollama và OCR của AI) dưới đúng tên mạng cũ. Có yêu cầu đến thì dựng
@@ -67,7 +64,6 @@ class Docker:
         ]
         query = quote(json.dumps({"label": labels}))
         found = json.loads(await self._call("GET", f"/containers/json?all=1&filters={query}", (200,)))
-        # lúc đổi CPU <-> GPU có thêm bản tạm cùng nhãn (tên có hậu tố SWAP_SUFFIXES): ưu tiên bản chính
         found.sort(key=lambda c: any(n.endswith(SWAP_SUFFIXES) for n in c.get("Names") or []))
         if not found:
             raise DockerError(f"không thấy container của dịch vụ {service} (dự án {self.project})")
@@ -99,7 +95,6 @@ class Docker:
 
 
 SWAP_SUFFIXES = ("-sleeper-old", "-sleeper-new")
-# Xin mọi GPU NVIDIA (như `--gpus all`); Docker Desktop WSL2 và nvidia-container-toolkit đều nhận
 GPU_REQUEST = {"Driver": "nvidia", "Count": -1, "DeviceIDs": None, "Capabilities": [["gpu"]], "Options": {}}
 
 
@@ -116,7 +111,7 @@ def clone_body(info: dict, gpu: bool) -> dict:
     không tạo lại."""
     config = dict(info["Config"])
     if config.get("Hostname") == info["Id"][:12]:
-        config.pop("Hostname")  # Docker tự đặt theo id; giữ thì container mới mang id cũ
+        config.pop("Hostname")
     config.pop("MacAddress", None)
     host = dict(info["HostConfig"])
     others = [r for r in host.get("DeviceRequests") or [] if not has_gpu({"HostConfig": {"DeviceRequests": [r]}})]
@@ -152,7 +147,7 @@ class Gpu:
         self.mode = mode
         self.gate = gate
         self.verify_timeout = verify_timeout
-        self.usable: bool | None = None  # None: chưa thử
+        self.usable: bool | None = None
         self.failed: set[str] = set()
 
     async def probe(self, image: str) -> bool:
@@ -192,7 +187,6 @@ class Gpu:
                 continue
             state = info["State"]
             if has_gpu(info):
-                # card hỏng, driver đổi: container GPU không start được thì về CPU
                 if not state.get("Running") and state.get("Error"):
                     log.warning("%s không khởi động được với GPU (%s): đổi về CPU", service, state["Error"])
                     self.failed.add(service)
@@ -203,7 +197,7 @@ class Gpu:
                 continue
             target = self.targets.get(service)
             if state.get("Running") and (not await self._gate_open() or (target and target.writers)):
-                continue  # compose còn đang chờ dịch vụ này, hoặc đang có yêu cầu đi qua
+                continue
             if self.usable is None:
                 self.usable = await self.probe(info["Config"]["Image"])
                 if not self.usable:
@@ -247,7 +241,7 @@ class Gpu:
             return False
         if await self._verify(new):
             if not running:
-                await self.docker.stop(new)  # đang ngủ thì để ngủ, có yêu cầu sleeper sẽ đánh thức
+                await self.docker.stop(new)
             await self.docker.remove(old)
             log.info("%s chạy bản %s", service, kind)
             return True
@@ -313,7 +307,7 @@ class Target:
     awake_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     writers: set = field(default_factory=set)
     container: str = ""
-    blocked: bool = False  # mô-đun của dịch vụ chưa cài: không đánh thức
+    blocked: bool = False
 
     def touch(self) -> None:
         self.last_activity = time.monotonic()
@@ -351,7 +345,7 @@ class Target:
     async def sleep_if_idle(self, docker: Docker) -> bool:
         """Dừng container nếu không có byte nào qua proxy quá idle_seconds; trả True nếu vừa dừng."""
         if self.awake_lock.locked():
-            return False  # đang đánh thức hoặc đang dừng
+            return False
         async with self.awake_lock:
             try:
                 state = await self.inspect(docker)
@@ -364,7 +358,7 @@ class Target:
                 return False
             log.info("cho %s ngủ sau %.0f giây nhàn rỗi", self.service, quiet)
             await docker.stop(self.container)
-        for writer in list(self.writers):  # kết nối giữ sống (keep-alive) của máy khách trỏ vào container đã dừng
+        for writer in list(self.writers):
             writer.close()
         return True
 
@@ -372,7 +366,7 @@ class Target:
         self.writers.add(writer)
         upstream = None
         try:
-            first = await reader.read(CHUNK)  # thăm dò TCP không gửi byte nào thì không đánh thức
+            first = await reader.read(CHUNK)
             if not first:
                 return
             if self.blocked:
@@ -460,7 +454,7 @@ class Modules:
         try:
             done = await self.docker.state(await self.docker.find(self.hold_until))
         except DockerError:
-            return True  # compose chưa tạo container bootstrap
+            return True
         if done.get("Running") or done.get("Status") in ("created", "restarting") or done.get("ExitCode"):
             return True
         return started_at(done, "FinishedAt") < started_at(state)
@@ -469,7 +463,7 @@ class Modules:
         container = self.containers.get(service) or await self.docker.find(service)
         try:
             state = await self.docker.state(container)
-        except DockerError:  # compose tạo lại container: tìm lại theo nhãn
+        except DockerError:
             container = await self.docker.find(service)
             state = await self.docker.state(container)
         self.containers[service] = container
@@ -482,7 +476,7 @@ class Modules:
         except (OSError, ValueError, asyncio.TimeoutError) as exc:
             log.debug("chưa hỏi được mô-đun từ %s: %s", self.url, exc)
             return {"started": [], "stopped": []}
-        order = [s for s in desired.get("run", []) if s in self.managed]  # actions trả theo thứ tự khởi động
+        order = [s for s in desired.get("run", []) if s in self.managed]
         run = set(order)
         stop = (set(desired.get("stop", [])) & self.managed) - run
         done = {"started": [], "stopped": []}

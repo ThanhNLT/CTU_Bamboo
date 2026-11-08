@@ -1,8 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# OpenTelemetry Collector (ADR #75): nhận span OTLP từ actions, giới hạn bộ nhớ, gom lô rồi chuyển cho Jaeger.
 receivers:
   otlp:
     protocols:

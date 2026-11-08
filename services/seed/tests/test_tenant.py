@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import os
 import pathlib
 from urllib.parse import urlparse, urlunparse
@@ -41,9 +37,7 @@ def test_tao_cong_ty_moi(conn):
     assert one(conn, "SELECT count(*) FROM core.position WHERE tenant_id = %s AND is_head", tid) == 1
     assert one(conn, "SELECT count(*) FROM wf.approval_rule WHERE tenant_id = %s", tid) == 2
     assert one(conn, "SELECT count(*) FROM core.catalog_item WHERE tenant_id = %s AND catalog = 'UNIT_TYPE'", tid) > 0
-    # công ty mới chỉ có phần lõi; quản trị viên tự bật mô-đun cần dùng (ADR #56)
     assert one(conn, "SELECT count(*) FROM core.tenant_module WHERE tenant_id = %s", tid) == 0
-    # người chạy lệnh trên máy chủ là chủ sở hữu (ADR #57)
     assert one(conn, "SELECT person_id FROM core.tenant_owner WHERE tenant_id = %s", tid) == person
 
 

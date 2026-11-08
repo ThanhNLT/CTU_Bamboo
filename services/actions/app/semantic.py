@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Lớp ngữ nghĩa trên Lakehouse: người dùng chọn chỉ số, chiều và bộ lọc theo tên nghiệp vụ, hệ thống sinh câu truy vấn.
 
 Chỉ tên trong danh mục dưới đây mới vào được câu SQL; giá trị lọc được kiểm định dạng chặt, nên không có cách đưa SQL tự do
@@ -21,7 +17,6 @@ GRAINS = {"day": "ngày", "week": "tuần", "month": "tháng"}
 MAX_LIMIT = 1000
 MAX_METRICS = 4
 
-# Mỗi nguồn: bảng silver, cột thời gian, các chiều (tên → cột) và các chỉ số (tên → biểu thức tổng hợp)
 SOURCES = {
     "proc_purchase_request": {
         "label": "Đề nghị mua sắm",

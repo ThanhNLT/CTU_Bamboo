@@ -1,12 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 058: Hội tụ IT/OT (ADR #74, sửa ADR #50). Bản sao số nhận số đo thật: thiết bị hoặc cổng OT publish MQTT vào Mosquitto
--- (`bamboo/<mã công ty>/<mã thiết bị>/attrs`, thân NGSI-LD), dịch vụ iot-bridge gọi iot.ingest; hệ thống ngoài gửi qua
--- REST NGSI-LD `/api/v1/ngsi-ld/v1/entities/{id}/attrs` (khóa API phạm vi iot.write). iot.ingest kiểm thuộc tính theo
--- mô hình thiết bị, ghi chuỗi đo (trigger cũ giữ giá trị mới nhất), mở sự cố khi vượt ngưỡng và đóng khi về ngưỡng.
-
 ALTER TABLE iot.entity ADD COLUMN live_source text CHECK (live_source IN ('mqtt', 'api'));
 COMMENT ON COLUMN iot.entity.live_source IS 'Nguồn số đo trực tiếp gần nhất; NULL = chỉ có dữ liệu mẫu (ADR #50)';
 
@@ -56,7 +47,6 @@ BEGIN
         ON CONFLICT (entity_id, attribute, observed_at) DO UPDATE SET value = EXCLUDED.value;
         v_n := v_n + 1;
 
-        -- Ngưỡng của mô hình: mở sự cố khi vượt, cập nhật đỉnh khi còn vượt, đóng khi về trong ngưỡng
         v_attr := v_attrs -> v_key;
         v_side := CASE WHEN (v_attr ->> 'max') IS NOT NULL AND v_value > (v_attr ->> 'max')::double precision THEN 'above'
                        WHEN (v_attr ->> 'min') IS NOT NULL AND v_value < (v_attr ->> 'min')::double precision THEN 'below'
@@ -76,7 +66,6 @@ BEGIN
                                           peak, severity, status)
                 VALUES (p_tenant, 'RT-' || lpad(nextval('iot.incident_live_seq')::text, 6, '0'), v_entity.id, v_key,
                         v_side, v_limit, p_observed, 0, v_value,
-                        -- Lệch quá 10% ngưỡng (hoặc 1 đơn vị với ngưỡng 0) là nghiêm trọng
                         CASE WHEN abs(v_value - v_limit) > greatest(abs(v_limit) * 0.1, 1) THEN 'critical'
                              ELSE 'warning' END,
                         'open');
@@ -97,7 +86,6 @@ BEGIN
 END $$;
 COMMENT ON FUNCTION iot.ingest IS 'Nạp một lần đo của thiết bị (mã hoặc URN NGSI-LD) trong công ty; trả số giá trị đã ghi';
 
--- Thiết bị nhận số đo trực tiếp mà im lặng quá lâu thì chuyển ngoại tuyến (dữ liệu mẫu không bị đụng tới)
 CREATE FUNCTION iot.mark_offline(p_minutes int DEFAULT 15) RETURNS int
 LANGUAGE sql AS $$
     WITH changed AS (
@@ -108,8 +96,6 @@ LANGUAGE sql AS $$
     SELECT count(*)::int FROM changed
 $$;
 
--- Tài khoản MQTT của thiết bị / cổng OT: mỗi công ty chỉ publish được vào nhánh chủ đề của mình. Mật khẩu chỉ nằm trong
--- Mosquitto (plugin dynamic-security, băm PBKDF2), bảng này để quản trị và kiểm toán.
 CREATE TABLE iot.mqtt_account (
     tenant_id   uuid NOT NULL REFERENCES core.tenant,
     username    text PRIMARY KEY CHECK (username ~ '^[a-z0-9][a-z0-9-]{2,63}$'),
@@ -124,7 +110,6 @@ CREATE TABLE iot.mqtt_account (
 CREATE INDEX mqtt_account_tenant ON iot.mqtt_account (tenant_id);
 CALL audit.enable('iot.mqtt_account', 'username');
 
--- Ghi số đo qua REST thay mặt người tạo khóa API: cần quyền iot.ingest ở đơn vị sở hữu thiết bị
 INSERT INTO core.permission (code, description)
 VALUES ('iot.ingest', 'Gửi số đo thiết bị vào bản sao số của đơn vị (qua cổng API, NGSI-LD)');
 INSERT INTO core.role_permission (tenant_id, role_id, permission_code)

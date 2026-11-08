@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type Named = { name: string; label: string };
 export type Measure = Named & { unit: string };
 export type Source = Named & { dimensions: Named[]; measures: Measure[] };

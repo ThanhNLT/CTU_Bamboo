@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import http.server
 import io
 import json
@@ -14,7 +10,7 @@ from PIL import Image
 from psycopg.rows import dict_row
 from test_tep_dinh_kem import CONFIRM, upload
 from test_tim_kiem import SEARCH, sync
-from test_tro_ly_ai import act, ai_env, fake_ai, make_agent, question  # noqa: F401 (fixture)
+from test_tro_ly_ai import act, ai_env, fake_ai, make_agent, question  # noqa: F401
 
 from app import ai_worker, ocr
 from app.gpu import Gpu
@@ -104,7 +100,7 @@ def fake_ocr():
 
 
 @pytest.fixture
-def ocr_env(ai_env, fake_ocr, s3, conn):  # noqa: F811 (fixture từ test_tro_ly_ai)
+def ocr_env(ai_env, fake_ocr, s3, conn):  # noqa: F811
     conn.execute("UPDATE core.attachment_ocr SET status = 'SKIPPED' WHERE status IN ('PENDING', 'RUNNING')")
     fake_ocr.text, fake_ocr.oom, fake_ocr.calls, fake_ocr.unloads = "BÁO GIÁ máy bơm ly tâm Ebara", 0, 0, 0
     client = ocr.OcrClient(fake_ocr.url)

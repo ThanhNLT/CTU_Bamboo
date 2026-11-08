@@ -1,18 +1,6 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
-// Kiểm giấy phép phụ thuộc production của một package JS trong workspace pnpm.
-// Thay `license-checker` (không đọc đúng bố cục node_modules dạng symlink của pnpm).
-//
-//   node tools/ci/check_licenses.mjs [thư-mục-package]   (mặc định: apps/web)
-//
-// Nguồn dữ liệu: `pnpm licenses list --prod --json`. Biểu thức SPDX được tính theo OR/AND.
-
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
-// Cùng danh sách cho phép với bước CI cũ (license-checker --onlyAllow).
 const ALLOWED = new Set([
   "MIT",
   "ISC",
@@ -25,8 +13,6 @@ const ALLOWED = new Set([
   "MIT OR CC0-1.0",
 ]);
 
-// Ngoại lệ đã duyệt: bpmn-js khai "SEE LICENSE IN LICENSE" (giấy phép bpmn.io = MIT + giữ logo
-// bpmn.io trên sơ đồ), xem NOTICE. Bước CI cũ cũng loại trừ gói này.
 const EXCEPTIONS = new Set(["bpmn-js"]);
 
 function stripParens(expr) {

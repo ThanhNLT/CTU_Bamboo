@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Hội tụ IT/OT (ADR #74): NGSI-LD qua MQTT và REST vào bản sao số."""
 
 import datetime as dt

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import logging
 import os
 import pathlib
@@ -107,14 +103,11 @@ class Settings:
     signature_trust_dir: str = "/repo/infra/platform/trust"
     signature_online: bool = True
     setup_allow_unverified: bool = True
-    # Mở trang đăng ký cả khi máy đã có công ty (bản demo: dữ liệu mẫu và đăng ký cùng dùng được); không cần mã 24 giờ
     setup_open_signup: bool = False
-    # Broker MQTT cho thiết bị OT (ADR #74); để trống host là tắt
     mqtt_host: str = ""
     mqtt_port: int = 1883
     mqtt_admin_password: str = ""
     mqtt_bridge_password: str = ""
-    # mTLS nội bộ (ADR #76): thư mục có ca.crt, <danh tính>.crt/.key do openbao-init cấp; có thì dùng cổng mTLS
     mqtt_tls_dir: str = ""
     mqtt_tls_port: int = 8884
 
@@ -137,8 +130,6 @@ DEV_DEFAULTS = {
     "GRAFANA_ADMIN_PASSWORD": "grafana-dev",
 }
 
-
-# Biến phải tắt ở production (giá trị mặc định của compose đang bật)
 PRODUCTION_OFF = {"HASURA_ENABLE_CONSOLE": "true"}
 
 

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Archive, BookOpen, Clock, Files, FolderKanban, Layers, User } from "lucide-react";
 
 import type { DriveNavItem, ParaGroup } from "./types";
@@ -13,7 +9,6 @@ export const DRIVE_NAV: DriveNavItem[] = [
   { key: "recent", label: tr("7 ngày gần đây"), icon: Clock },
 ];
 
-// P.A.R.A: tệp tự vào nhóm theo chứng từ chứa nó, không cần tự xếp thư mục
 export const PARA_NAV: (DriveNavItem & { key: ParaGroup })[] = [
   {
     key: "PROJECTS",

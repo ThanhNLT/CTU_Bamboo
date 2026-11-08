@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Alert, Button, Card, Flex, List, Spin, Typography } from "antd";
 import { BankOutlined, MedicineBoxOutlined } from "@ant-design/icons";
@@ -36,7 +32,6 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
       })
       .catch((e: { message: string; statusCode?: number }) => {
         if (!alive) return;
-        // Cổng API chưa sẵn sàng (vừa khởi động) thì tự thử lại, tối đa khoảng một phút
         if ((e.statusCode ?? 0) >= 500 && attempt < RETRIES) timer = setTimeout(() => setAttempt((n) => n + 1), 3000);
         else setError(e.message);
       });

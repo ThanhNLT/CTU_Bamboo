@@ -1,10 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
-// Chế độ sáng/tối của trang đăng nhập Bamboo, kèm nút mặt trăng/mặt trời cạnh nút chọn ngôn ngữ VI | EN.
-// Dùng chung khóa "colorMode" với ứng dụng web (apps/web/src/contexts/color-mode): qua cổng API cùng một origin
-// nên chọn ở đâu thì nơi kia theo. Thay cho script darkMode của keycloak.v2 (chỉ theo cài đặt hệ điều hành).
 (function () {
     var KEY = "colorMode";
     var DARK_CLASS = "pf-v5-theme-dark";
@@ -23,7 +16,6 @@
         root.style.colorScheme = mode;
     };
 
-    // Áp ngay trong <head> để không nháy sai màu khi tải
     var mode = read();
     apply(mode);
 
@@ -42,7 +34,6 @@
     };
 
     var render = function (button) {
-        // Đang tối thì hiện mặt trời (bấm để về sáng), đang sáng thì hiện mặt trăng
         button.innerHTML = mode === "dark" ? SUN : MOON;
         button.setAttribute("aria-pressed", String(mode === "dark"));
         button.setAttribute("aria-label", label());
@@ -63,7 +54,6 @@
             render(button);
         });
 
-        // Cạnh ô chọn ngôn ngữ; trang không có ô ngôn ngữ thì tạo hàng tiện ích dưới tiêu đề
         var utilities = document.querySelector(".pf-v5-c-login__main-header-utilities");
         if (!utilities) {
             var header = document.querySelector(".pf-v5-c-login__main-header");
@@ -76,8 +66,6 @@
         utilities.appendChild(button);
     };
 
-    // Nửa lời chào bên phải ô đăng nhập (ADR #62), cùng bố cục với trang /login của ứng dụng web.
-    // Keycloak đi qua cổng API cùng origin với web nên hỏi được /setup/status: còn mở đăng ký thì hiện nút "Tạo tài khoản".
     var greet = function () {
         var main = document.querySelector(".pf-v5-c-login__main");
         if (!main || !document.getElementById("kc-form-login")) return;
@@ -113,8 +101,6 @@
             .catch(function () {});
     };
 
-    // Chọn ngôn ngữ VI | EN cùng kiểu với trang đăng ký của ứng dụng, thay ô chọn thả xuống của keycloak.v2. Lựa chọn
-    // ghi vào "bamboo.locale" (khóa ngôn ngữ của ứng dụng web; qua cổng API cùng origin nên hai bên cùng một ngôn ngữ).
     var LOCALE_KEY = "bamboo.locale";
     var NAMES = { vi: "Tiếng Việt", en: "English" };
     var language = function () {

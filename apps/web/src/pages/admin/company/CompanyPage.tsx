@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Descriptions, Spin, Tag, Upload } from "antd";
 import { useCallback, useEffect, useState } from "react";
 

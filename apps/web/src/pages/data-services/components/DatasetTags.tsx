@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -12,7 +8,7 @@ import { tr } from "../../../i18n";
 const Tag = ({ className, children }: { className: string; children: ReactNode }) => (
   <span
     className={cn(
-      "inline-flex items-center gap-1 whitespace-nowrap rounded-ui px-2 py-0.5 text-[11px] font-medium",
+      "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium",
       className,
     )}
   >

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Search } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
@@ -47,7 +43,7 @@ export const ChatSidebar = ({
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           placeholder={tr("Tìm lượt hỏi")}
-          className="h-9 w-full rounded-xl border border-transparent bg-canvas pl-9 pr-3 text-[13px] text-ink outline-none placeholder:text-muted focus:border-bamboo-400 focus:bg-surface focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
+          className="h-9 w-full rounded-ui border border-transparent bg-canvas pl-9 pr-3 text-[13px] text-ink outline-none placeholder:text-muted focus:border-bamboo-400 focus:bg-surface focus:ring-3 focus:ring-bamboo-100 [&::-webkit-search-cancel-button]:hidden"
         />
       </label>
 

@@ -1,10 +1,5 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { LucideIcon } from "lucide-react";
 
-// Nhóm P.A.R.A suy từ trạng thái chứng từ chứa tệp (máy chủ tính, ADR #71)
 export type ParaGroup = "PROJECTS" | "AREAS" | "RESOURCES" | "ARCHIVES";
 
 export type DriveSection = "mine" | "all" | "recent" | ParaGroup;

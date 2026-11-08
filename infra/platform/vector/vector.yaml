@@ -1,8 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-#
-# Gom log của mọi container trong dự án về nhật ký tập trung của Bamboo (obs.log_event).
-# Bật bằng: docker compose --profile logs up -d vector
 sources:
   containers:
     type: docker_logs

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useEffect, useId, useState } from "react";
 
 import { cn } from "../../../utils/cn";
@@ -9,7 +5,7 @@ import type { Decision } from "../types";
 import { tr } from "../../../i18n";
 
 const base =
-  "inline-flex h-10 items-center justify-center rounded-ui text-[13.5px] transition-colors " +
+  "inline-flex h-10 items-center justify-center rounded-full text-[13.5px] transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const ActionWidget = ({
@@ -64,7 +60,7 @@ export const ActionWidget = ({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
-          "mt-2.5 block w-full resize-y rounded-xl border bg-canvas px-3 py-2 text-[13px] text-ink outline-none transition-colors",
+          "mt-2.5 block w-full resize-y rounded-ui border bg-canvas px-3 py-2 text-[13px] text-ink outline-none transition-colors",
           "placeholder:text-muted focus:bg-surface focus:ring-3 disabled:cursor-not-allowed disabled:opacity-60",
           error ? "border-red-300 focus:ring-red-100" : "border-line focus:border-bamboo-400 focus:ring-bamboo-100",
         )}

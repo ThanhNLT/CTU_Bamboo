@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hmac
 import json
 import logging
@@ -349,7 +345,7 @@ def create_app(
     app.include_router(ext.router(lambda: app.state.pool, settings))
     app.include_router(api_gateway.router(lambda: app.state.pool, run_action, lambda: ctx))
     origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
-    if origins:  # trang khởi tạo gọi /setup từ origin của web khi chạy dev (qua cổng API thì cùng origin)
+    if origins:
         app.add_middleware(
             PathCORS,
             prefix="/setup/",
@@ -530,7 +526,6 @@ def create_app(
         )
         return result
 
-    # Sau cùng để middleware OpenTelemetry bọc ngoài mọi middleware khác (span có trước khi gắn X-Request-Id)
     telemetry.setup_tracing(app, "bamboo-actions")
     return app
 

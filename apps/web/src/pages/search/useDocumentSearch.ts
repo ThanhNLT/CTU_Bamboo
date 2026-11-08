@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { request } from "../../api/client";
@@ -74,7 +70,6 @@ const toResult = (h: Hit, i: number): SearchResult => {
     };
   }
   if (h.entity_type === "hr.onboarding_request") {
-    // Hồ sơ nhân sự chỉ tìm được theo tên tệp (nội dung không vào chỉ mục)
     return {
       key: `doc:${h.kind}:${h.attachment_id ?? h.entity_id}`,
       type: "document",

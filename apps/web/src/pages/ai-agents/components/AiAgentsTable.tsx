@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Pause, Pencil, Play, Trash2, Zap } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
@@ -10,7 +6,7 @@ import { GUARDS, STATUS, guardOn, num, seconds, statsOf } from "../utils";
 import { tr, trf } from "../../../i18n";
 
 const iconBtn =
-  "grid h-8 w-8 place-items-center rounded-ui text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
+  "grid h-8 w-8 place-items-center rounded-full text-muted transition-colors hover:bg-black/[0.05] hover:text-ink " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
 export const AiAgentsTable = ({
@@ -128,7 +124,7 @@ export const AiAgentsTable = ({
                   <td className="border-b border-line/70 px-3 py-2.5">
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-ui px-2 py-0.5 text-[11.5px]",
+                        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px]",
                         st.badge ?? "text-ink",
                       )}
                     >

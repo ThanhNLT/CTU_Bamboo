@@ -1,16 +1,4 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-# Xóa các đề nghị mua sắm do người dùng lập qua ứng dụng khi thử chức năng duyệt, và tài khoản, đơn vị, vị trí do kiểm
-# thử E2E tạo ("Người Thử …", "Nhóm Thử …", tài khoản Keycloak e2e.*), đưa dữ liệu về như tài liệu demo.
-# Mặc định chỉ xem trước (không ghi gì). Thêm --apply để xóa thật.
-#   tools/demo_cleanup.sh            # xem trước
-#   tools/demo_cleanup.sh --apply    # xóa thật
-# Giữ nguyên dữ liệu seed, nhật ký kiểm toán (chỉ ghi thêm), người dùng và tệp khác. Xóa cả quy trình Flowable
-# tương ứng; chỉ mục tìm kiếm tự dọn bởi search-sync. Đề nghị seed mà bạn đã duyệt thử vẫn giữ trạng thái đã đổi:
-# muốn khôi phục cả phần đó thì phải nạp lại CSDL (docker compose down -v).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -54,7 +42,6 @@ with httpx.Client(base_url=s.flowable_url, auth=(s.flowable_user, s.flowable_pas
 print(f"đã dọn {len(sys.argv) - 1} quy trình Flowable")
 PY
 fi
-# Tài khoản Keycloak của người thử vừa xóa, cùng mọi tài khoản e2e.* còn sót (E2E đặt tên đăng nhập e2e.<mã>)
 subjects=$(echo "$out" | sed -n 's/.*NOTICE:  KEYCLOAK //p' | tr '\n' ' ')
 # shellcheck disable=SC2086
 docker compose exec -T actions python - $subjects << 'PY'

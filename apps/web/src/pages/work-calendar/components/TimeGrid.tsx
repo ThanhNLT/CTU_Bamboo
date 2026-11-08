@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import dayjs, { type Dayjs } from "dayjs";
 import { Repeat } from "lucide-react";
 import { useEffect, useRef } from "react";

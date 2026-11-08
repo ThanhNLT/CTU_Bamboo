@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Select } from "antd";
 import { SearchX } from "lucide-react";
 
@@ -94,7 +90,7 @@ export const SearchResultList = ({
             type="button"
             onClick={onShowMore}
             disabled={loading}
-            className="h-8 rounded-ui bg-black/[0.045] px-4 text-[12.5px] font-semibold text-ink transition-colors hover:bg-bamboo-50 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
+            className="h-8 rounded-full bg-black/[0.045] px-4 text-[12.5px] font-semibold text-ink transition-colors hover:bg-bamboo-50 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
           >
             {remaining > 0 ? trf("Xem thêm {0} kết quả", [remaining]) : tr("Xem thêm")}
           </button>

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import json
 import pathlib
@@ -100,14 +96,11 @@ CAN_READ = {
     ("ic", "ic_order"): ("ic", "ic_order_can_read"),
     ("proc", "purchase_order"): ("proc", "purchase_order_can_read"),
     ("collab", "kb_document"): ("collab", "kb_document_can_read"),
-    # Nhắn tin, lịch công tác (ADR #65): thành viên cuộc trò chuyện; người tổ chức, người được mời, người trong đơn vị
     ("chat", "conversation"): ("chat", "conversation_can_read"),
     ("cal", "event"): ("cal", "event_can_read"),
-    # Dự án (ADR #66): thành viên, người quản lý, người có pm.project.read/manage trên đơn vị chủ trì
     ("pm", "project"): ("pm", "project_can_read"),
 }
 
-# Computed field chỉ nhận dòng (không cần phiên)
 ROW_COMPUTED = {
     ("pm", "project"): [
         (
@@ -116,11 +109,9 @@ ROW_COMPUTED = {
             "Số liệu tiến độ: actual_pct, planned_pct, spi, late_tasks, total_tasks, done_tasks (một lần tính, ADR #67)",
         ),
     ],
-    # Nhóm P.A.R.A của tệp suy từ chứng từ chứa tệp (ADR #71)
     ("core", "attachment"): [
         ("para", ("core", "attachment_para"), "PROJECTS | AREAS | RESOURCES | ARCHIVES theo trạng thái chứng từ"),
     ],
-    # Lần dùng khóa API đọc từ dòng đếm theo ngày (ADR #67)
     ("api", "api_key"): [
         ("last_used_at", ("api", "api_key_last_used_at"), "Lần gọi gần nhất"),
         ("last_ip", ("api", "api_key_last_ip"), "IP của lần gọi gần nhất"),
@@ -156,7 +147,6 @@ EXTRA_COMPUTED = {
 
 HIDDEN_COLUMNS = {
     ("core", "attachment"): {"storage_key"},
-    # Năm sinh khai lúc đăng ký (ADR #62): chỉ quản trị xem, đồng nghiệp chỉ thấy điện thoại, email
     ("core", "person"): {"birth_year"},
     ("core", "attachment_ocr"): {"page_texts", "pages", "attempts", "next_attempt_at"},
     ("core", "ai_question"): {"context_key", "attempts"},
@@ -185,15 +175,11 @@ SELECT_FILTER = {
     ("meta", "lineage_node"): {},
     ("meta", "lineage_edge"): {},
     ("kpi", "pin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
-    # Thời gian thực (ADR #64): tín hiệu thay đổi và người đang trực tuyến của công ty; nhịp hiện diện của chính mình
     ("live", "presence"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
-    # Phả hệ: kiểm tra và lần chạy mức nền tảng (tenant NULL) hoặc của công ty trong phiên
     ("meta", "quality_check"): {"_or": [{"tenant_id": {"_is_null": True}}, TENANT]},
     ("meta", "pipeline_run"): {"_or": [{"tenant_id": {"_is_null": True}}, TENANT]},
-    # Cổng dịch vụ API: chỉ quản trị viên công ty xem khóa và lượt gọi
     ("api", "api_key"): {"_and": [TENANT, IS_ADMIN]},
     ("api", "usage"): {"key": {"_and": [TENANT, IS_ADMIN]}},
-    # Biểu đồ BI: của mình hoặc được chia sẻ trong công ty
     ("kpi", "chart"): {"_and": [TENANT, {"_or": [{"person_id": {"_eq": ME}}, {"shared": {"_eq": True}}]}]},
     ("core", "v_ai_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("chat", "member"): {"_and": [TENANT, {"conversation": {"can_read": {"_eq": True}}}]},
@@ -214,8 +200,6 @@ SELECT_FILTER = {
     ("proc", "purchase_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
 }
 
-# Bảng thuộc riêng một mô-đun (ADR #56): mô-đun chưa bật cho tenant trong phiên thì không đọc, không ghi được qua GraphQL.
-# Bảng dùng chung (người, đơn vị, tệp đính kèm, việc duyệt...) thuộc phần lõi.
 MODULE_TABLES = {
     **{
         ("proc", t): "procurement"
@@ -246,7 +230,7 @@ def module_on(code: str) -> dict:
 
 
 def _gate_modules(entries: dict) -> None:
-    done = set()  # một quyền có thể dùng chung cho nhiều role
+    done = set()
     for key, code in MODULE_TABLES.items():
         entry = entries[key]
         for kind, field in (
@@ -291,7 +275,6 @@ MANUAL_RELATIONSHIPS = [
     ("array", ("hr", "transfer_request"), "approval_steps", ("wf", "approval_step"), {"id": "entity_id"}),
     ("array", ("hr", "transfer_request"), "approval_history", ("wf", "approval_history"), {"id": "entity_id"}),
     ("object", ("wf", "v_inbox"), "transfer_request", ("hr", "transfer_request"), {"entity_id": "id"}),
-    # Chứng từ điều chuyển liên tập đoàn: cùng bộ quan hệ như chứng từ nội bộ, tên theo loại
     *[
         rel
         for leg in ("transfer_out", "transfer_in", "transfer_group")
@@ -582,11 +565,9 @@ def build(conn: psycopg.Connection) -> dict:
     for s, t, ts, tt, *_ in fks:
         fk_count[(s, t, ts, tt)] += 1
 
-    # Schema mới xử lý sau cùng: trùng tên quan hệ mảng thì schema mới nhận tiền tố, tên cũ của API giữ nguyên
     late = ("chat", "cal", "pm")
     for s, t, ts, tt, _name, src_cols, dst_cols in sorted(fks, key=lambda f: f[0] in late):
         own = [c for c in src_cols if c != "tenant_id"] or list(src_cols)
-        # Khóa ngoại ghép (dự án, công việc) đặt tên theo cột cuối: parent, predecessor, successor
         obj_name = _strip(own[-1])
         if obj_name in columns[(s, t)]:
             obj_name = f"{obj_name}_{tt}"
@@ -602,7 +583,7 @@ def build(conn: psycopg.Connection) -> dict:
             for k in ("object_relationships", "array_relationships")
             for r in entries.get((ts, tt), {}).get(k, [])
         }
-        if arr in taken:  # bảng cùng tên ở hai schema (wf.task, pm.task): thêm tiền tố schema
+        if arr in taken:
             arr = f"{s}_{arr}"
         add_rel("array", (ts, tt), arr, (s, t), {v: k for k, v in mapping.items()})
 
@@ -758,8 +739,6 @@ def build(conn: psycopg.Connection) -> dict:
     ]
     presence["delete_permissions"] = [{"role": r, "permission": {"filter": own_presence}} for r in (ROLE, ADMIN_ROLE)]
 
-    # Tin nhắn (ADR #65): thành viên gửi thẳng qua GraphQL; người gửi sửa nội dung (24 giờ) hoặc thu hồi tin của mình.
-    # Trigger chat.message_before_write kiểm lại thành viên, tệp, tin trả lời và giữ nguyên các cột không được đổi.
     in_conversation = {"conversation": {"can_read": {"_eq": True}}}
     message = entries[("chat", "message")]
     message["insert_permissions"] = [

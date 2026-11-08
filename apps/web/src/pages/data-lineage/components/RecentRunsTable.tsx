@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useState } from "react";
 
 import { cn } from "../../../utils/cn";
@@ -13,7 +9,7 @@ const DEFAULT_ROWS = 3;
 const ResultBadge = ({ result }: { result: RunResult }) => {
   if (result === "check_failed") {
     return (
-      <span className="inline-flex h-6 items-center gap-1.5 rounded-ui border border-red-200 bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
+      <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
         <span className="h-1.5 w-1.5 rounded-ui bg-red-500" aria-hidden />
         {tr("Lỗi kiểm tra")}
       </span>

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Chia tài liệu thư viện thành đoạn và nạp vào chỉ mục vector (ADR #51).
 
 Mỗi đoạn ~800 token, gối ~100, mang tiêu đề gần nhất để trích dẫn dễ đọc. Vector do actions
@@ -155,7 +152,6 @@ def records(conn: psycopg.Connection, settings: config.Settings, doc_id) -> list
         "title": doc["title"],
     }
     out = []
-    # Một dòng để mục lục ("Điều 1. ...") không bị coi là tiêu đề rồi rơi khỏi nội dung đoạn.
     toc = f"Mục lục: {'; '.join(doc['toc'])}." if doc["toc"] else ""
     meta = " ".join(p for p in (f"{doc['title']}.", doc["summary"] or "", toc) if p)
     for n, c in enumerate(split(meta)):

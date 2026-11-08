@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useMemo } from "react";
 import {
   CartesianGrid,
@@ -62,7 +58,7 @@ const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: Time
   <div
     role="group"
     aria-label={tr("Khoảng thời gian")}
-    className="inline-flex shrink-0 gap-0.5 rounded-ui bg-black/[0.045] p-1"
+    className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1"
   >
     {(Object.keys(RANGES) as TimeRange[]).map((key) => {
       const active = key === value;
@@ -73,7 +69,7 @@ const RangeToggle = ({ value, onChange }: { value: TimeRange; onChange: (r: Time
           aria-pressed={active}
           onClick={() => onChange(key)}
           className={cn(
-            "h-7 rounded-ui px-3 text-[12px] transition-colors",
+            "h-7 rounded-full px-3 text-[12px] transition-colors",
             "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
             active ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
           )}

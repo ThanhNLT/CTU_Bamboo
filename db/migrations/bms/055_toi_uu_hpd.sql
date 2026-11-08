@@ -1,12 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 055: tối ưu Không gian H, P, D (ADR #67). Đo trên 118 người, 20.000 tin nhắn, 3.000 lịch, 50 dự án × 200 việc.
-
--- ---------------------------------------------------------------------------------------------------------------
--- H. Số tin chưa đọc giữ sẵn trên dòng thành viên. Huy hiệu menu và danh sách cuộc trò chuyện là live query Hasura
--- chạy lại mỗi giây cho mỗi người đang mở ứng dụng; đếm lại tin mỗi lần tốn theo số tin tồn đọng, đọc một cột thì không.
 ALTER TABLE chat.member ADD COLUMN unread int NOT NULL DEFAULT 0 CHECK (unread >= 0);
 
 CREATE FUNCTION chat.count_unread(p_conversation uuid, p_person uuid, p_after bigint) RETURNS int
@@ -17,8 +8,6 @@ $$;
 
 UPDATE chat.member SET unread = chat.count_unread(conversation_id, person_id, last_read_id) WHERE left_at IS NULL;
 
--- Mốc đã đọc tiến lên: trừ đúng số tin của người khác nằm giữa mốc cũ và mốc mới (luôn khớp với phần cộng dồn, kể cả
--- khi một câu lệnh chèn nhiều tin). Vào lại cuộc trò chuyện thì đếm lại từ đầu; rời thì về 0.
 CREATE OR REPLACE FUNCTION chat.member_before_update() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -40,8 +29,6 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- Tin mới: cộng một cho mọi thành viên khác (một câu UPDATE theo khóa chính), người gửi đã đọc tới tin của mình.
--- Thu hồi tin chưa đọc: trừ lại.
 CREATE FUNCTION chat.message_count() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -56,12 +43,9 @@ BEGIN
     END IF;
     RETURN NULL;
 END $$;
--- Tên bắt đầu bằng "0" để chạy trước message_after_insert (trigger cùng thời điểm chạy theo thứ tự tên): người vừa
--- được đưa lại vào cuộc hai người ở đó đếm lại từ đầu, không bị cộng hai lần
 CREATE TRIGGER message_0_count AFTER INSERT OR UPDATE OF deleted_at ON chat.message
     FOR EACH ROW EXECUTE FUNCTION chat.message_count();
 
--- Người mới vào cuộc trò chuyện xem được lịch sử nhưng không tính là tin chưa đọc
 CREATE FUNCTION chat.member_before_insert() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -81,7 +65,6 @@ LANGUAGE sql STABLE AS $$
                        AND left_at IS NULL), 0)
 $$;
 
--- Đồng bộ kênh đơn vị chỉ ghi dòng thật sự đổi (trước đây mọi thành viên đi qua ON CONFLICT mỗi lần, mỗi phút)
 CREATE OR REPLACE FUNCTION chat.sync_units(p_tenant uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -107,8 +90,6 @@ BEGIN
       AND NOT EXISTS (SELECT FROM chat_should s WHERE s.conversation_id = m.conversation_id AND s.person_id = m.person_id);
 END $$;
 
--- Đồng bộ kênh đơn vị chỉ khi phân công / đơn vị thật sự đổi (người, vị trí, thời hạn, cây đơn vị), không phải mỗi câu
--- lệnh chạm bảng (bảng chuyển tiếp không dùng được với danh sách cột nên so dòng cũ và mới)
 CREATE FUNCTION chat.assignment_updated() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -143,9 +124,6 @@ DROP TRIGGER chat_sync_unit_upd ON core.org_unit;
 CREATE TRIGGER chat_sync_unit_upd AFTER UPDATE ON core.org_unit REFERENCING OLD TABLE AS old_rows NEW TABLE AS new_rows
     FOR EACH STATEMENT EXECUTE FUNCTION chat.org_unit_updated();
 
--- ---------------------------------------------------------------------------------------------------------------
--- H. Lịch: trải lần lặp từ đúng lần đầu giao với khoảng xem (trước đây sinh 801 lần rồi lọc), và chỉ xét lịch còn có
--- thể giao với khoảng (lịch đơn đã qua, chuỗi lặp đã hết không đọc tới).
 CREATE OR REPLACE FUNCTION cal.occurrences(p_event cal.event, p_from timestamptz, p_to timestamptz)
 RETURNS TABLE (occurs_at timestamptz, ends_at timestamptz)
 LANGUAGE plpgsql STABLE AS $$
@@ -165,7 +143,6 @@ BEGIN
     END IF;
     v_step := CASE p_event.recurrence WHEN 'DAILY' THEN interval '1 day' WHEN 'WEEKLY' THEN interval '1 week'
                                       ELSE interval '1 month' END;
-    -- Lần đầu có thể còn giao với khoảng xem (lùi một bước cho an toàn)
     IF p_event.recurrence = 'MONTHLY' THEN
         v_n := greatest(0, (extract(year FROM v_from) - extract(year FROM v_start))::int * 12
                            + (extract(month FROM v_from) - extract(month FROM v_start))::int - 1);
@@ -182,7 +159,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Thời điểm cuối cùng một lịch còn diễn ra: lọc nhanh lịch đã qua bằng chỉ mục
 CREATE FUNCTION cal.last_end(p_recurrence text, p_ends_at timestamptz, p_starts_at timestamptz, p_until date)
 RETURNS timestamptz LANGUAGE sql IMMUTABLE AS $$
     SELECT CASE WHEN p_recurrence = 'NONE' THEN p_ends_at
@@ -229,7 +205,6 @@ BEGIN
     RETURN v_count;
 END $$;
 
--- Quyền xem lịch: lịch cá nhân không cần dò cây đơn vị
 CREATE OR REPLACE FUNCTION cal.can_read(p_event uuid, p_person uuid) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT EXISTS (
@@ -245,20 +220,14 @@ LANGUAGE sql STABLE AS $$
                 WHERE a.tenant_id = e.tenant_id AND a.person_id = p_person AND a.valid_period @> now()))))
 $$;
 
--- ---------------------------------------------------------------------------------------------------------------
--- P. "Việc lá" tra công việc con theo parent_id: thiếu chỉ mục nên mỗi lần tính quét toàn bộ công việc của công ty
 CREATE INDEX task_parent ON pm.task (parent_id) WHERE parent_id IS NOT NULL;
 
--- Một computed field trả cả bộ số liệu thay cho ba (mỗi cái gọi pm.stats một lần)
 CREATE FUNCTION pm.project_stats(p_row pm.project) RETURNS jsonb
 LANGUAGE sql STABLE AS $$ SELECT to_jsonb(s) FROM pm.stats(p_row.id) s $$;
 DROP FUNCTION pm.project_progress(pm.project);
 DROP FUNCTION pm.project_planned(pm.project);
 DROP FUNCTION pm.project_late_tasks(pm.project);
 
--- ---------------------------------------------------------------------------------------------------------------
--- D. Lần dùng khóa API ghi vào dòng đếm theo ngày (một câu lệnh mỗi lượt gọi). Trước đây mỗi lượt gọi còn sửa
--- api.api_key, sinh một dòng nhật ký kiểm toán và xếp hàng trên khóa đầu chuỗi hash của công ty.
 ALTER TABLE api.usage ADD COLUMN last_used_at timestamptz, ADD COLUMN last_ip inet;
 UPDATE api.usage u SET last_used_at = k.last_used_at, last_ip = k.last_ip
 FROM api.api_key k

@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE TABLE audit.ledger_check (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
     id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
