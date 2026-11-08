@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import logging
 import os
@@ -175,21 +171,19 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
         obs.purge_forever(settings.database_url)
     while True:
         if time.monotonic() - last_refresh >= refresh_seconds:
-            # Lỗi một lần làm mới (CSDL bận, dữ liệu lạ) chỉ ghi log rồi thử lại vòng sau, không làm chết cả tiến trình
             try:
                 work.execute("SELECT wf.refresh_all()")
                 work.execute("SELECT kpi.refresh()")
                 work.execute("SELECT kpi.freeze()")
-                work.execute("SELECT chat.sync_all()")  # phân công hết hạn theo thời gian: rời kênh đơn vị (ADR #65)
+                work.execute("SELECT chat.sync_all()")
                 work.commit()
             except psycopg.OperationalError:
-                raise  # mất kết nối CSDL: thoát để Docker khởi động lại với kết nối mới
+                raise
             except Exception as exc:  # noqa: BLE001
                 work.rollback()
                 log.warning("làm mới số liệu định kỳ lỗi: %s", exc)
             last_refresh = time.monotonic()
         if lineage_every > 0 and time.monotonic() - last_lineage >= lineage_every:
-            # Phả hệ và kiểm tra CDC thu tự động theo lịch, không đánh thức Trino (ADR #77)
             try:
                 lineage_sync.auto_collect(work)
                 work.commit()
@@ -202,7 +196,7 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0, refresh_s
         while run_once(work, flowable):
             pass
         try:
-            work.execute("SELECT cal.send_reminders()")  # nhắc lịch công tác trước N phút (ADR #65)
+            work.execute("SELECT cal.send_reminders()")
             work.commit()
         except Exception as exc:  # noqa: BLE001
             work.rollback()

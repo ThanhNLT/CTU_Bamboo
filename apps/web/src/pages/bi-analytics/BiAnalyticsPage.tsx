@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { HttpError } from "@refinedev/core";
 import { App, Input, Popover, Switch } from "antd";
 import { ChartNoAxesCombined, Code, DatabaseZap, Download, Lock, Plus, Save } from "lucide-react";
@@ -117,7 +113,6 @@ export const BiAnalyticsPage = () => {
     return () => {
       alive = false;
     };
-    // Chỉ tải một lần khi mở trang; tham số ?chart= chỉ đọc lúc đầu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

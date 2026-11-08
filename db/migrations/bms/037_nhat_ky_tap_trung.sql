@@ -1,11 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Gom nhật ký ứng dụng tập trung: mọi dịch vụ (actions, flow-sync, các worker) và, qua Vector, log của các container
--- ghi vào obs.log_event kèm mã truy vết (trace_id = X-Request-Id do cổng API cấp). Tra cứu theo dịch vụ, mức, từ khóa
--- và xem toàn bộ chuỗi sự kiện của một yêu cầu. Dữ liệu cũ tự xóa theo thời hạn lưu giữ.
-
 CREATE SCHEMA obs;
 
 CREATE TABLE obs.log_event (

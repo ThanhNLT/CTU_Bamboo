@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { ArrowUpRight, BellRing, FileText, Gauge, Inbox, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 
@@ -9,7 +5,6 @@ import { cn } from "../../../utils/cn";
 import type { SummaryStat } from "../types";
 import { Dot } from "../../../components/ui";
 
-// Biểu tượng lấy đúng từ menu (Hộp việc, Hồ sơ, Trung tâm điều hành, Thông báo) để người dùng nhận ra ngay
 const ICONS: Record<string, LucideIcon> = { waiting: Inbox, processing: FileText, sla: Gauge, unread: BellRing };
 
 const StatCard = ({ stat, accent }: { stat: SummaryStat; accent: boolean }) => {
@@ -75,11 +70,7 @@ export const SummaryCards = ({ stats }: { stats: SummaryStat[] }) => (
     {stats.map((s, i) => (
       <div
         key={s.key}
-        className={cn(
-          "min-w-0",
-          // Thẻ nhấn và thẻ lẻ cuối cùng chiếm cả hàng trên điện thoại (lưới hai cột)
-          (i === 0 || (i === stats.length - 1 && i % 2 === 1)) && "col-span-2 sm:col-span-1",
-        )}
+        className={cn("min-w-0", (i === 0 || (i === stats.length - 1 && i % 2 === 1)) && "col-span-2 sm:col-span-1")}
       >
         <StatCard stat={s} accent={i === 0} />
       </div>

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import gql from "graphql-tag";
 
 export const TR_LIST = gql`
@@ -103,8 +99,6 @@ export const TR_CHOOSE = `
 export const TR_MY_TASK_FOR = `
   query MyTransferTask($id: uuid!) { wf_v_inbox(where: {entity_id: {_eq: $id}}) { task_id via_delegation } }
 `;
-
-// ---- Điều chuyển liên tập đoàn ----
 
 export const TRO_LIST = gql`
   query CrossTransfers(

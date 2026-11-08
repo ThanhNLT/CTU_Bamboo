@@ -1,22 +1,8 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# Lõi Tầng 1 + giao diện: CSDL, migrate/seed, định danh, quy trình, API, bí mật, lưu trữ tệp, actions và các tiến trình
-# nền dùng chung image actions, cổng API, web, thư thử, sao lưu, gom log (profile logs).
-# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
-# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
-# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
-
 x-logging: &logging
   driver: json-file
   options:
     max-size: "10m"
     max-file: "3"
-
-# Healthcheck (ADR #78): kiểm dày (start_interval) trong start_period để `depends_on: service_healthy` và `sleeper` đánh
-# thức nhanh, sau khi healthy chỉ kiểm mỗi 30 giây. start_period = tổng thời gian chờ khởi động cũ (interval × retries).
-# Cần Docker Engine 25+.
 
 x-db-env: &db-env
   PGHOST: db
@@ -128,7 +114,6 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
-      # /metrics trên cổng quản trị 9000 (chỉ mạng nội bộ) cho Prometheus (ADR #75)
       KC_METRICS_ENABLED: "true"
       JAVA_OPTS_KC_HEAP: ${KEYCLOAK_HEAP:--Xms64m -Xmx512m}
       MALLOC_ARENA_MAX: "2"
@@ -240,7 +225,6 @@ services:
       INTERNAL_CA_OUTPUTS: /run/bms-actions/trino-ca.pem
       MQTT_DYNSEC_PATH: /mosquitto-data/dynamic-security.json
       MQTT_UID: "1883"
-      # Chứng chỉ mTLS nội bộ (ADR #76): danh-tính=thư-mục@uid
       SERVICE_CERT_OUTPUTS: mosquitto=/mosquitto-tls@1883,bamboo-bridge=/run/bms-actions/mqtt@10001,bamboo-admin=/run/bms-actions/mqtt@10001
     command: ["python", "-m", "app.openbao_init"]
     user: "0"
@@ -258,9 +242,6 @@ services:
       - mosquitto-tls:/mosquitto-tls
     restart: "no"
 
-  # OpenBao dùng khóa Shamir nên bị khóa mỗi lần container khởi động lại (khởi động lại máy, Docker Desktop, WSL);
-  # openbao-init chỉ chạy khi `docker compose up`. Dịch vụ này tự unseal lại, nếu không actions, flow-sync... không lấy
-  # được bí mật, khởi động lại liên tục và cổng API trả 502.
   openbao-unseal:
     logging: *logging
     extends:
@@ -273,7 +254,6 @@ services:
       BAO_APPROLE_FILE: ""
       BAO_KEYS_FILE: /openbao/keys/init.json
     command: ["python", "-m", "app.openbao_init", "--watch"]
-    # đọc tệp khóa unseal (chỉ root đọc được, do openbao-init ghi)
     user: "0"
     volumes:
       - openbao-keys:/openbao/keys:ro
@@ -297,7 +277,6 @@ services:
       - "127.0.0.1:9333:9333"
       - "127.0.0.1:8888:8888"
     restart: unless-stopped
-    # giữ nhịp 3 giây: healthcheck này còn gửi SIGHUP nạp lại s3.json mới ngay sau khi openbao-init ghi
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333 && { [ ! /etc/bms/s3.json -nt /tmp/s3.json.loaded ] || { touch /tmp/s3.json.loaded && kill -HUP 1; }; }"]
       interval: 3s
@@ -307,7 +286,6 @@ services:
   mailpit:
     logging: *logging
     image: axllent/mailpit:v1.27
-    # Hộp thư thử cho môi trường phát triển; đặt SMTP_HOST tới máy chủ thật khi triển khai (UI tại localhost:8025)
     ports:
       - "127.0.0.1:8025:8025"
     restart: unless-stopped
@@ -316,7 +294,6 @@ services:
     logging: *logging
     image: postgis/postgis:17-3.5
     platform: linux/amd64
-    # Sao lưu CSDL theo lịch rồi diễn tập khôi phục ngay bản vừa tạo (kết quả ghi vào audit.backup_run)
     entrypoint: ["bash", "/ops/backup-scheduler.sh"]
     environment:
       PGHOST: db
@@ -338,7 +315,6 @@ services:
     logging: *logging
     profiles: [logs]
     image: timberio/vector:0.46.1-debian
-    # Gom log của mọi container về obs.log_event qua actions (/obs/ingest); cần đọc socket Docker
     command: ["--config", "/etc/vector/vector.yaml"]
     environment:
       ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}

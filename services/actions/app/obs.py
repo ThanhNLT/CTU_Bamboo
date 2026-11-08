@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Gom nhật ký và mã truy vết tập trung vào `obs.log_event`.
 
 Mọi bản ghi log của dịch vụ được gắn trace_id (lấy từ X-Request-Id do cổng API cấp), tenant và người dùng đang xử lý,
@@ -91,7 +87,7 @@ class DbHandler(logging.Handler):
         except queue.Full:
             self.dropped += 1
         except Exception:  # noqa: BLE001, S110
-            pass  # ghi log không được làm hỏng chương trình
+            pass
 
     def _write(self, rows: list[tuple]) -> None:
         with self._lock:
@@ -194,9 +190,6 @@ def ingest(conn: psycopg.Connection, events: list[dict]) -> int:
             rows,
         )
     return len(rows)
-
-
-# --- Hành động -------------------------------------------------------------------------------------------------
 
 
 def _reader(conn: psycopg.Connection, session: dict) -> str:

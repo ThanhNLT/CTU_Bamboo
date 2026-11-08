@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import datetime as dt
 import hashlib
 import hmac
@@ -60,7 +56,6 @@ path "secret/data/bms/kafka-lakehouse"     { capabilities = ["read"] }
 
 
 INTERNAL_HOSTS = ["trino"]
-# Danh tính dịch vụ cho mTLS nội bộ (ADR #76): CN = tên dịch vụ, dùng được cả làm chứng chỉ máy chủ và máy khách
 SERVICE_IDENTITIES = ["mosquitto", "bamboo-bridge", "bamboo-admin"]
 SERVICE_CERT_TTL = "2160h"
 TRINO_USERS = {"bms-admin": "bms/trino-admin", "bms-actions": "bms/trino-actions"}
@@ -142,7 +137,7 @@ def configure(root: Bao) -> None:
         root.request("POST", "sys/mounts/transit", {"type": "transit"})
     if root.request("GET", "transit/keys/pii", ok404=True) is None:
         root.request("POST", "transit/keys/pii", {"type": "aes256-gcm96"})
-    for key in ("receipt", "anchor"):  # chữ ký biên nhận giao tin và neo chuỗi kiểm toán
+    for key in ("receipt", "anchor"):
         if root.request("GET", f"transit/keys/{key}", ok404=True) is None:
             root.request("POST", f"transit/keys/{key}", {"type": "ed25519"})
     if "pki/" not in mounts:
@@ -481,7 +476,6 @@ def run(
     for identity, (directory, owner) in (cert_outputs or {}).items():
         service_certs(root, {identity: directory}, owner)
     if mqtt_dynsec_path and not mqtt_dynsec_path.exists():
-        # Chỉ ghi lần đầu: Mosquitto tự lưu tài khoản thiết bị tạo sau đó vào cùng tệp
         creds = root.read("bms/mosquitto")
         text = json.dumps(mqtt_admin.dynsec_config(creds["admin_password"], creds["bridge_password"]), indent=2)
         _write_if_changed(mqtt_dynsec_path, text, 0o600)

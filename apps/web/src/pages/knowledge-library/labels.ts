@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { DocCategory, ScopeFilter } from "./types";
 import { tr, trs } from "../../i18n";
 

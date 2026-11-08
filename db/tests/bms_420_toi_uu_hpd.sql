@@ -1,11 +1,5 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Tối ưu H, P, D (ADR #67): kết quả phải giống hệt cách tính cũ.
 SELECT test.fixture();
 
--- Bộ đếm tin chưa đọc luôn bằng số đếm thật qua gửi, thu hồi, đọc, thành viên mới, rời và vào lại
 CREATE FUNCTION pg_temp.counters_ok(p_label text) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
     PERFORM test.eq((SELECT count(*)::int FROM chat.member m
@@ -36,7 +30,6 @@ BEGIN
                     2, 'chị C đọc tới tin 3: còn tin 4, 5 của người khác');
 END $$;
 
--- Người mới vào thấy lịch sử nhưng không tính là chưa đọc; rời rồi vào lại thì đếm lại
 SELECT test.position('TDX', 'P_NV3_MH_DT', 'DT_MH', 'Chuyên viên mua hàng 3');
 SELECT test.assign('TDX', 'e', 'P_NV3_MH_DT');
 SELECT test.eq((SELECT unread FROM chat.member WHERE conversation_id = test.id('KENH') AND person_id = test.id('e')), 0,
@@ -46,7 +39,6 @@ SELECT test.eq((SELECT unread FROM chat.member WHERE conversation_id = test.id('
                'tin sau khi vào thì tính');
 SELECT pg_temp.counters_ok('sau khi có người mới');
 
--- Tin riêng: người đã ẩn cuộc được đưa lại, đếm đúng một lần
 INSERT INTO chat.conversation (tenant_id, id, kind, direct_key, created_by)
 VALUES (test.id('TDX'), test.put('RIENG', gen_random_uuid()), 'DIRECT', 'a:c', test.id('c'));
 INSERT INTO chat.member (tenant_id, conversation_id, person_id)
@@ -57,7 +49,6 @@ SELECT test.eq((SELECT (left_at IS NULL, unread) FROM chat.member WHERE conversa
                (true, 1), 'người đã ẩn cuộc được đưa lại với đúng 1 tin chưa đọc');
 SELECT pg_temp.counters_ok('cuộc hai người');
 
--- Lần lặp: cách trải mới giống vét cạn (801 lần rồi lọc) ở nhiều khoảng xem, cả ngày/tuần/tháng, cả ngày 31
 CREATE FUNCTION pg_temp.brute(p_event cal.event, p_from timestamptz, p_to timestamptz)
 RETURNS TABLE (occurs_at timestamptz, ends_at timestamptz) LANGUAGE sql STABLE AS $$
     WITH s AS (
@@ -86,7 +77,6 @@ SELECT test.eq(
 SELECT test.ok(cal.last_end('WEEKLY', '2026-03-02 09:30+07', '2026-03-02 08:30+07', '2027-06-30')
                >= '2027-06-30 09:30+07'::timestamptz, 'lần cuối của chuỗi lặp');
 
--- Dự án: một computed field trả đủ số liệu như pm.stats
 INSERT INTO pm.project (tenant_id, id, code, name, org_unit_id, manager_id, start_date, end_date, created_by)
 VALUES (test.id('TDX'), test.put('DA', gen_random_uuid()), 'DA-1', 'x', test.id('DT_MH'), test.id('c'), current_date - 10,
         current_date + 10, test.id('c'));
@@ -96,7 +86,6 @@ VALUES (test.id('TDX'), test.id('DA'), 'a', current_date - 10, current_date - 1,
 SELECT test.eq((SELECT pm.project_stats(j) ->> 'actual_pct' FROM pm.project j WHERE id = test.id('DA')),
                (SELECT actual_pct::text FROM pm.stats(test.id('DA'))), 'stats gộp khớp pm.stats');
 
--- Khóa API: lượt dùng ghi ở dòng đếm theo ngày, không sửa khóa (không sinh nhật ký kiểm toán)
 INSERT INTO api.api_key (tenant_id, id, name, prefix, key_sha256, scopes, created_by, expires_at)
 VALUES (test.id('TDX'), test.put('KHOA', gen_random_uuid()), 'k', 'bak_abcdef', sha256('z'), '{org.read}', test.id('c'),
         now() + interval '1 day');

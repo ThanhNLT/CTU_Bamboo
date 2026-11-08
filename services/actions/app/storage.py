@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import socket
 import struct
 import time
@@ -23,7 +19,6 @@ ENTITY_TYPES = {
     "chat.conversation",
     "pm.project",
 }
-# Loại chứng từ có trạng thái duyệt: tệp của chứng từ đã kết thúc được giữ làm bằng chứng
 STATUS_ENTITY_TYPES = {"proc.purchase_request", "hr.onboarding_request", "collab.kb_document"}
 
 _ZIP = (b"PK\x03\x04",)

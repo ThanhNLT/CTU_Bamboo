@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Kiểm đơn đăng ký đã ký bằng chữ ký số doanh nghiệp (ADR #57).
 
 Đơn hợp lệ khi: tệp bắt đầu đúng bằng các byte của đơn hệ thống đã sinh (ký kiểu cập nhật nối tiếp, không sửa nội dung),
@@ -25,7 +22,6 @@ from pyhanko_certvalidator import ValidationContext
 log = logging.getLogger("legal_sign")
 
 TAX_CODE = re.compile(r"^[0-9]{10}(-[0-9]{3})?$")
-# Mã số thuế trong chứng thư số của doanh nghiệp: thường ở UID dạng "MST:0101234567", có nơi ghi ở OU, CN, serialNumber
 _CERT_TAX = re.compile(r"(?:MST|MSDN|MSNS|TIN)\s*[:\-]?\s*([0-9]{10}(?:-[0-9]{3})?)", re.IGNORECASE)
 _CERT_FIELDS = ("user_id", "serial_number", "organizational_unit_name", "common_name", "organization_name")
 KEY_USAGE = KeyUsageConstraints(key_usage={"digital_signature", "non_repudiation"}, match_all_key_usages=False)
@@ -96,7 +92,7 @@ def verify(
     try:
         reader = PdfFileReader(io.BytesIO(signed))
         signatures = reader.embedded_signatures
-    except Exception as exc:  # noqa: BLE001 - tệp người dùng tải lên, lỗi đọc PDF có nhiều loại
+    except Exception as exc:  # noqa: BLE001
         raise SignatureRejected(f"Không đọc được tệp PDF: {exc}") from exc
     if not signatures:
         raise SignatureRejected("Tệp chưa có chữ ký số")
@@ -113,7 +109,7 @@ def verify(
             continue
         try:
             status = validate_pdf_signature(sig, context, key_usage_settings=KEY_USAGE)
-        except Exception as exc:  # noqa: BLE001 - lỗi xác minh chuỗi chứng thư, thu hồi, mạng
+        except Exception as exc:  # noqa: BLE001
             problems.append(f"không xác minh được chữ ký ({exc})")
             continue
         if not status.intact or not status.valid:

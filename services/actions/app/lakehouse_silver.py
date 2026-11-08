@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import json
 import pathlib
@@ -135,11 +131,9 @@ def build_rules(conn: psycopg.Connection) -> str:
 def build(conn: psycopg.Connection) -> str:
     tables = _tables(conn)
     bronze_cols = ",\n    ".join(f"{_ident(n)} {t}" for n, t in bronze_ddl())
-    # REUSE-IgnoreStart
     out = [
         "-- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors",
         "-- SPDX-License-Identifier: Apache-2.0",
-        # REUSE-IgnoreEnd
         "",
         f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.bronze;",
         f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.silver;",

@@ -1,11 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 053: Không gian H (ADR #65): nhắn tin cá nhân/nhóm/phòng ban và lịch công tác.
--- Hai schema mới `chat`, `cal` không nằm trong publication CDC: tin nhắn là trao đổi riêng, không đưa vào Kafka/Lakehouse
--- và không ghi nhật ký kiểm toán nội dung (nhật ký kiểm toán do quản trị viên đọc được).
-
 CREATE SCHEMA chat;
 CREATE SCHEMA cal;
 
@@ -19,12 +11,6 @@ ALTER TABLE collab.notification
                         'PROCESS_AUTOMATION', 'SECURITY', 'EXTERNAL',
                         'CHAT_MESSAGE', 'CALENDAR_INVITE', 'CALENDAR_REMINDER', 'CALENDAR_CHANGED'));
 
--- ---------------------------------------------------------------------------------------------------------------
--- Nhắn tin. Ba loại cuộc trò chuyện:
---   DIRECT  hai người, mỗi cặp một cuộc (direct_key là cặp mã người đã sắp xếp)
---   GROUP   nhóm tự lập, người tạo là chủ nhóm, thêm/bớt thành viên được
---   UNIT    kênh của một đơn vị: thành viên là người đang có vị trí trong cây con của đơn vị, hệ thống tự đồng bộ
---           theo phân công (chuyển phòng thì tự rời kênh cũ, vào kênh mới)
 CREATE TABLE chat.conversation (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
     id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -82,7 +68,6 @@ CREATE TABLE chat.message (
 CREATE INDEX message_conversation ON chat.message (conversation_id, id DESC);
 CREATE INDEX message_search ON chat.message USING gin (to_tsvector('simple', body));
 
--- Người đang là thành viên (chưa rời) của cuộc trò chuyện
 CREATE FUNCTION chat.is_member(p_conversation uuid, p_person uuid) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT EXISTS (SELECT FROM chat.member
@@ -92,7 +77,6 @@ $$;
 CREATE FUNCTION chat.conversation_can_read(p_row chat.conversation, hasura_session json) RETURNS boolean
 LANGUAGE sql STABLE AS $$ SELECT chat.is_member(p_row.id, core.session_person(hasura_session)) $$;
 
--- Số tin chưa đọc của người gọi (không tính tin của chính mình, tin đã thu hồi)
 CREATE FUNCTION chat.conversation_unread(p_row chat.conversation, hasura_session json) RETURNS integer
 LANGUAGE sql STABLE AS $$
     SELECT count(*)::int
@@ -102,7 +86,6 @@ LANGUAGE sql STABLE AS $$
       AND g.sender_id <> m.person_id AND g.deleted_at IS NULL
 $$;
 
--- Tên hiển thị theo người xem: cuộc hai người hiện tên người kia, kênh đơn vị hiện tên đơn vị
 CREATE FUNCTION chat.conversation_display_name(p_row chat.conversation, hasura_session json) RETURNS text
 LANGUAGE sql STABLE AS $$
     SELECT CASE p_row.kind
@@ -115,8 +98,6 @@ LANGUAGE sql STABLE AS $$
     END
 $$;
 
--- Đồng bộ kênh đơn vị: mỗi đơn vị còn hiệu lực có một kênh; thành viên = người có phân công còn hiệu lực ở vị trí thuộc
--- cây con của đơn vị. Người không còn thuộc đơn vị thì rời kênh (giữ lịch sử, không xóa tin đã gửi).
 CREATE FUNCTION chat.unit_members(p_tenant uuid) RETURNS TABLE (conversation_id uuid, person_id uuid)
 LANGUAGE sql STABLE AS $$
     SELECT DISTINCT c.id, a.person_id
@@ -169,7 +150,6 @@ CREATE TRIGGER chat_sync_unit_ins AFTER INSERT ON core.org_unit REFERENCING NEW 
 CREATE TRIGGER chat_sync_unit_upd AFTER UPDATE ON core.org_unit REFERENCING NEW TABLE AS changed_rows
     FOR EACH STATEMENT EXECUTE FUNCTION chat.assignment_changed();
 
--- Đồng bộ định kỳ (flow-sync gọi mỗi phút): phân công hết hạn theo thời gian không sinh câu lệnh UPDATE nào
 CREATE FUNCTION chat.sync_all() RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -180,7 +160,6 @@ BEGIN
     END LOOP;
 END $$;
 
--- Tin nhắn: người gửi phải là thành viên; tệp phải thuộc cuộc trò chuyện; tin trả lời cùng cuộc; nhắc tên người trong cuộc
 CREATE FUNCTION chat.message_before_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -213,7 +192,6 @@ BEGIN
         RAISE EXCEPTION 'Tin nhắn đã thu hồi';
     END IF;
     IF NEW.deleted_at IS NOT NULL THEN
-        -- Thu hồi: xóa nội dung, giữ dấu vết là có một tin đã thu hồi
         NEW.body := '';
         NEW.attachment_id := NULL;
         NEW.mentions := '{}';
@@ -258,7 +236,6 @@ BEGIN
         WHEN 'GROUP' THEN v_conv.title
         ELSE NULL END;
 
-    -- Người được nhắc tên nhận thông báo (đi theo kênh thông báo ngoài ứng dụng nếu họ đã bật cho loại MENTION)
     FOREACH v_target IN ARRAY NEW.mentions LOOP
         IF NOT EXISTS (SELECT FROM chat.member WHERE conversation_id = NEW.conversation_id AND person_id = v_target
                                                  AND muted) THEN
@@ -268,8 +245,6 @@ BEGIN
         END IF;
     END LOOP;
 
-    -- Tin nhắn riêng: người đã ẩn cuộc trò chuyện thấy lại khi có tin mới; báo cho người nhận khi họ không mở ứng dụng
-    -- (không có nhịp hiện diện 75 giây gần nhất)
     IF v_conv.kind = 'DIRECT' THEN
         UPDATE chat.member SET left_at = NULL WHERE conversation_id = NEW.conversation_id AND left_at IS NOT NULL;
         FOR v_target IN
@@ -278,7 +253,6 @@ BEGIN
               AND NOT m.muted
               AND NOT EXISTS (SELECT FROM live.presence p WHERE p.tenant_id = NEW.tenant_id AND p.person_id = m.person_id
                                                           AND p.seen_at > now() - interval '75 seconds')
-              -- Một thông báo cho mỗi loạt tin chưa đọc, không dồn mỗi tin một thông báo
               AND NOT EXISTS (SELECT FROM collab.notification n
                               WHERE n.recipient_id = m.person_id AND n.kind = 'CHAT_MESSAGE'
                                 AND n.entity_id = NEW.conversation_id AND n.read_at IS NULL)
@@ -292,7 +266,6 @@ END $$;
 CREATE TRIGGER message_after_insert AFTER INSERT ON chat.message
     FOR EACH ROW EXECUTE FUNCTION chat.message_after_insert();
 
--- Đánh dấu đã đọc chỉ tiến, không lùi
 CREATE FUNCTION chat.member_before_update() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -306,8 +279,6 @@ END $$;
 CREATE TRIGGER member_before_update BEFORE UPDATE ON chat.member
     FOR EACH ROW EXECUTE FUNCTION chat.member_before_update();
 
--- Tệp gửi trong cuộc trò chuyện dùng chung kho tệp đính kèm (quét virus, hạn mức): loại chứng từ `chat.conversation`.
--- Bọc hai hàm đọc chứng từ chung thay vì chép lại toàn bộ thân hàm.
 ALTER FUNCTION collab.entity_tenant(text, uuid) RENAME TO entity_tenant_base;
 CREATE FUNCTION collab.entity_tenant(p_type text, p_id uuid) RETURNS uuid
 LANGUAGE plpgsql STABLE AS $$
@@ -329,10 +300,6 @@ BEGIN
     RETURN wf.entity_can_read_base(p_type, p_id, p_person, p_at);
 END $$;
 
--- ---------------------------------------------------------------------------------------------------------------
--- Lịch công tác. Sự kiện cá nhân (người tổ chức + người được mời thấy) hoặc lịch của đơn vị (mọi người trong cây con của
--- đơn vị thấy, ví dụ lịch công tác tuần của Ban giám đốc). Lặp theo ngày/tuần/tháng đến một ngày cuối; giờ lưu UTC, giao
--- diện hiển thị theo múi giờ Asia/Ho_Chi_Minh.
 CREATE TABLE cal.event (
     tenant_id         uuid NOT NULL REFERENCES core.tenant,
     id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -377,7 +344,6 @@ CREATE TABLE cal.attendee (
 );
 CREATE INDEX attendee_person ON cal.attendee (tenant_id, person_id);
 
--- Nhắc lịch đã gửi cho từng lần diễn ra (sự kiện lặp có nhiều lần)
 CREATE TABLE cal.reminder_sent (
     event_id    uuid NOT NULL REFERENCES cal.event ON DELETE CASCADE,
     person_id   uuid NOT NULL,
@@ -391,9 +357,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
     NEW.updated_at := now();
     IF NEW.all_day THEN
-        -- Cả ngày: từ 00:00 ngày đầu đến 00:00 sau ngày cuối, giờ Việt Nam
         NEW.starts_at := date_trunc('day', NEW.starts_at AT TIME ZONE 'Asia/Ho_Chi_Minh') AT TIME ZONE 'Asia/Ho_Chi_Minh';
-        -- Ngày cuối tính cả ngày chứa thời điểm kết thúc (00:00 đúng thì là ngày trước đó)
         NEW.ends_at := greatest(
             (date_trunc('day', (NEW.ends_at - interval '1 microsecond') AT TIME ZONE 'Asia/Ho_Chi_Minh')
                 + interval '1 day') AT TIME ZONE 'Asia/Ho_Chi_Minh',
@@ -403,7 +367,6 @@ BEGIN
 END $$;
 CREATE TRIGGER event_touch BEFORE INSERT OR UPDATE ON cal.event FOR EACH ROW EXECUTE FUNCTION cal.event_touch();
 
--- Người xem được sự kiện: người tổ chức, người được mời, hoặc người trong cây con của đơn vị (lịch đơn vị)
 CREATE FUNCTION cal.can_read(p_event uuid, p_person uuid) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT EXISTS (
@@ -422,7 +385,6 @@ $$;
 CREATE FUNCTION cal.event_can_read(p_row cal.event, hasura_session json) RETURNS boolean
 LANGUAGE sql STABLE AS $$ SELECT cal.can_read(p_row.id, core.session_person(hasura_session)) $$;
 
--- Các lần diễn ra của một sự kiện giao với khoảng [p_from, p_to)
 CREATE FUNCTION cal.occurrences(p_event cal.event, p_from timestamptz, p_to timestamptz)
 RETURNS TABLE (occurs_at timestamptz, ends_at timestamptz)
 LANGUAGE sql STABLE AS $$
@@ -446,7 +408,6 @@ LANGUAGE sql STABLE AS $$
     WHERE occurs_at < p_to AND occurs_at + length > p_from
 $$;
 
--- Gửi nhắc lịch cho các lần diễn ra sắp tới (flow-sync gọi mỗi phút). Trả số nhắc đã gửi.
 CREATE FUNCTION cal.send_reminders() RETURNS integer
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -479,14 +440,11 @@ BEGIN
     RETURN v_count;
 END $$;
 
--- Thay đổi lịch và tin nhắn báo cho trình duyệt đang mở (ADR #64)
 CALL live.track('cal.event', 'calendar');
 CALL live.track('cal.attendee', 'calendar');
 
--- Kênh đơn vị cho các công ty hiện có
 SELECT chat.sync_all();
 
--- Ai được đặt lịch của đơn vị: trưởng đơn vị đó hoặc đơn vị cấp trên, hoặc người được giao quyền cal.unit.manage
 INSERT INTO core.permission (code, description) VALUES
     ('cal.unit.manage', 'Đặt, sửa lịch công tác chung của đơn vị');
 INSERT INTO core.role_permission (tenant_id, role_id, permission_code)

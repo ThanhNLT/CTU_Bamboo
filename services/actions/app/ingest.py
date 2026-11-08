@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """API nạp dữ liệu theo lô: POST /ingest/{loại} với NDJSON hoặc CSV, theo dõi bằng GET /ingest/jobs/{id}.
 
 Dùng lại đúng các bộ xử lý và kiểm tra quyền của trang nhập dữ liệu quản trị (admin.SAVE), nhưng không bị giới hạn 5000 dòng

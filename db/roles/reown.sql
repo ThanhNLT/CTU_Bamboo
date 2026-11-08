@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT format('ALTER DATABASE %I OWNER TO %I', current_database(), :'owner')
 WHERE (SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = current_database()) <> :'owner'
 \gexec

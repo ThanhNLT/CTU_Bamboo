@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import datetime
 import uuid
 
@@ -15,7 +11,6 @@ from conftest import ids
 
 @pytest.fixture
 def app_conn(database):
-    # Kết nối như của dịch vụ actions: hàng dạng tuple, mỗi lệnh tự cam kết
     with psycopg.connect(database, autocommit=True) as c:
         yield c
 

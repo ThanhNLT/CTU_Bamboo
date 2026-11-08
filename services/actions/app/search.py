@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import hmac
 import html
@@ -21,7 +17,6 @@ SEARCH_ACTIONS = ["search"]
 INDEXER_ACTIONS = ["documents.add", "documents.get", "documents.delete", "indexes.get", "tasks.get", "stats.get"]
 
 MAX_TEXT = 100_000
-# Tệp dài được chia thành nhiều phần cho Meilisearch (mỗi thuộc tính chỉ xét được ~65 nghìn từ); phần đầu giữ mã cũ
 PART_CHARS = 50_000
 MAX_PARTS = 40
 MAX_FULL_TEXT = PART_CHARS * MAX_PARTS

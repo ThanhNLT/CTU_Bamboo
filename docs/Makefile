@@ -1,8 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-
-# Gói Python lấy từ uv.lock ở gốc (package bamboo-docs của uv workspace), cài vào docs/.venv riêng
-# để không đụng môi trường của actions ở gốc (hai package khai xung đột phụ thuộc).
 VENV        ?= .venv
 export UV_PROJECT_ENVIRONMENT := $(abspath $(VENV))
 UVRUN       ?= uv run --frozen --package bamboo-docs --no-default-groups

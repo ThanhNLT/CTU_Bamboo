@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { CreateButton, List, ShowButton, useTable } from "@refinedev/antd";
 import { useGo, type BaseRecord } from "@refinedev/core";
 import { Button, Input, Segmented, Space, Table, Typography } from "antd";

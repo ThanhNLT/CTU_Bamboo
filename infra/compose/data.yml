@@ -1,12 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# Dữ liệu: tìm kiếm toàn văn, trích văn bản, dựng PDF, CDC → Kafka → Lakehouse/Trino, dịch vụ ngủ (sleeper, ADR #53).
-# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
-# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
-# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
-
 x-logging: &logging
   driver: json-file
   options:
@@ -37,7 +28,6 @@ services:
       start_period: 120s
       start_interval: 1s
 
-  # Ba dịch vụ -core dùng thưa nên ngủ khi nhàn rỗi; tên mạng cũ (tika, gotenberg, trino) và cổng công bố thuộc `sleeper` (ADR #53)
   tika-core:
     logging: *logging
     image: apache/tika:4.1.0-1
@@ -120,8 +110,6 @@ services:
       - "127.0.0.1:19092:19092"
     restart: unless-stopped
     healthcheck:
-      # start.sh chỉ ghi tệp ready sau khi kafka-broker-api-versions trả lời và đã tạo tài khoản SCRAM, ACL; sau đó chỉ
-      # kiểm cổng (không khởi thêm một JVM ~200 MB mỗi lần kiểm như trước)
       test: ["CMD", "bash", "-c", "test -f /tmp/bamboo-kafka-ready && exec 3<>/dev/tcp/127.0.0.1/9094"]
       interval: 30s
       timeout: 5s
@@ -165,7 +153,6 @@ services:
       DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
       DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
       DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string
-      # mô-đun Dữ liệu số tắt lâu làm mất slot (max_slot_wal_keep_size): bật lại thì chụp lại toàn bộ (ADR #56)
       DEBEZIUM_SOURCE_SNAPSHOT_MODE: when_needed
       DEBEZIUM_FORMAT_KEY: json
       DEBEZIUM_FORMAT_VALUE: json
@@ -208,9 +195,6 @@ services:
     command: ["python", "-m", "app.lakehouse_sink"]
     restart: unless-stopped
 
-  # Hội tụ IT/OT (ADR #74): thiết bị publish `bamboo/<mã công ty>/<mã thiết bị>/attrs` (NGSI-LD), iot-bridge ghi vào
-  # bản sao số. Thiết bị trong mạng OT dùng cổng TLS 8883 (MQTT_BIND, mặc định 127.0.0.1); 1883 chỉ mở cho 127.0.0.1;
-  # iot-bridge và actions dùng cổng mTLS nội bộ 8884 bằng chứng chỉ do CA nội bộ OpenBao cấp (ADR #76).
   mosquitto:
     logging: *logging
     image: eclipse-mosquitto:2.0.21
@@ -248,8 +232,6 @@ services:
     command: ["python", "-m", "app.iot_bridge"]
     restart: unless-stopped
 
-  # Giám sát (ADR #75), nhóm `observability`: `make up` bật ở mức RAM 16, hoặc `docker compose --profile observability up -d`.
-  # Giao diện chỉ nghe 127.0.0.1: Grafana :3001, Jaeger :16686, Prometheus :9090.
   otel-collector:
     logging: *logging
     profiles: [observability]
@@ -366,20 +348,14 @@ services:
       SLEEPER_PROJECT: bamboo
       SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
       SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000,11434=ollama-core:11434,8000=ocr-core:8000
-      # Mô-đun chức năng (ADR #56): dừng container của mô-đun chưa cài, chạy container của mô-đun đã cài.
-      # Danh sách phải khớp services/actions/app/modules.py (MANAGED_SERVICES; kiểm bởi test_mo_dun.py)
       SLEEPER_MODULES_URL: http://actions:8000/modules/services
       SLEEPER_HOLD_UNTIL: bootstrap
       SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
-      # GPU NVIDIA (ADR #79): compose tạo Ollama, OCR bản CPU; máy có card (nvidia-container-toolkit hoặc Docker Desktop
-      # WSL2) thì sleeper thử rồi tạo lại hai container này kèm GPU, lỗi thì giữ CPU. BAMBOO_GPU=false để luôn chạy CPU
       SLEEPER_GPU: ${BAMBOO_GPU:-auto}
       SLEEPER_GPU_SERVICES: ollama-core,ocr-core
     networks:
       default:
         aliases: [trino, tika, gotenberg, ollama, ocr]
-    # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn; nó chỉ start/stop container thuộc SLEEPER_TARGETS,
-    # SLEEPER_MANAGED và tạo lại container SLEEPER_GPU_SERVICES (cùng cấu hình, thêm hoặc bỏ GPU)
     user: "0"
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]

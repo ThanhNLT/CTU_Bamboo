@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Tác tử AI và Trợ lý RAG (ADR #51).
 
 Quản trị (cần core.ai.manage, kiểm qua core.v_ai_admin): ai_agent_register, ai_agent_update,
@@ -31,7 +28,6 @@ DEFAULT_GUARDRAILS = {"scope_guard": True, "pii_guard": True, "prompt_guard": Tr
 MAX_QUESTION = 2000
 PROMPT_REFUSAL = "Câu hỏi có dấu hiệu cố tình thay đổi chỉ dẫn của trợ lý nên không được xử lý."
 
-# Mẫu tiêm lệnh, so trên văn bản đã bỏ dấu và viết thường (chặn cả có dấu lẫn không dấu).
 INJECTION_PATTERNS = (
     r"\bbo qua\s+(?:(?:moi|cac|tat ca|nhung)\s+)*(?:huong dan|chi dan|lenh|quy tac)",
     r"\bignore\s+(?:(?:all|any|previous|prior|the above|above)\s+)*(?:instructions|rules|prompts?)",
@@ -42,7 +38,6 @@ INJECTION_PATTERNS = (
     r"</?\s*(?:tai_lieu|doan)\b",
     r"\bjailbreak",
 )
-# "DAN" so trên văn bản gốc, phân biệt hoa thường, vì bỏ dấu thì "dân", "dẫn" cũng thành "dan".
 CASE_SENSITIVE_PATTERNS = (r"\bDAN\b",)
 _INJECTION = re.compile("|".join(INJECTION_PATTERNS))
 _INJECTION_CS = re.compile("|".join(CASE_SENSITIVE_PATTERNS))
@@ -233,7 +228,6 @@ def ai_agent_unregister(conn: psycopg.Connection, session: dict, args: dict, _ct
     agent_id = args.get("id")
     if not agent_id:
         raise ActionError("Thiếu id tác tử")
-    # Khóa tác tử để ai_ask đồng thời không chèn lượt hỏi giữa lúc kiểm và lúc xóa.
     if not conn.execute(
         "SELECT 1 FROM core.ai_agent WHERE id = %s AND tenant_id = %s FOR UPDATE", (agent_id, tenant)
     ).fetchone():
@@ -263,7 +257,6 @@ def ai_models(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context
     except OllamaUnavailable:
         return {"ai_enabled": False, "models": [], "loaded": []}
     try:
-        # Mức dùng bộ nhớ hiện tại: mô hình đang nạp, tổng dung lượng và phần nằm trên VRAM
         loaded = ctx.ai.running()
     except OllamaUnavailable:
         loaded = []
@@ -407,8 +400,6 @@ def ai_ask(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -
     ).fetchone()
     return {"id": str(row[0]), "status": row[1], "position": 0 if refused else queue_position(conn, row[0])}
 
-
-# --- Tự hành động khi có sự kiện (ADR #72) ----------------------------------------------------------------------
 
 AGENT_ACTIONS = {
     "comment": "Bình luận vào chứng từ (đứng tên người phụ trách tác tử)",

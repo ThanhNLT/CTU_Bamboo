@@ -1,11 +1,4 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
-// Bản dịch tiếng Anh cho nội dung các trang. Khóa là câu tiếng Việt gốc trong mã (bọc bằng tr()/trf()); câu có chỗ trống
-// dùng {0}, {1}… theo thứ tự đối số của trf(). Thêm câu mới thì thêm vào đây (kiểm thử i18n báo câu chưa có bản dịch).
 export const EN_PAGES: Record<string, string> = {
-  // Danh mục mô-đun dựng sẵn (services/actions/app/modules.py), dịch lúc nhận về (modules/api.ts)
   "Nghiệp vụ nhân sự": "HR operations",
   "Thiết kế & tự động hóa quy trình": "Process design & automation",
   "Ổ đĩa & tệp đính kèm": "Drive & attachments",
@@ -2744,7 +2737,6 @@ export const EN_PAGES: Record<string, string> = {
   "＋ Dùng nhà cung cấp mới “{0}”": "＋ Use new supplier “{0}”",
   "＋ Ghi vật tư ngoài danh mục “{0}”": "＋ Record off-catalog item “{0}”",
   "＋ Thêm nhóm hàng “{0}”": "＋ Add item group “{0}”",
-  // Không gian I: Trợ lý AI, tài nguyên AI, Phân tích BI
   " (vai trò Phân tích dữ liệu). Liên hệ quản trị tổ chức của công ty để được cấp.":
     " (Data analyst role). Ask your company's organization admin to grant it.",
   "(trống)": "(empty)",
@@ -2829,7 +2821,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đang nằm trong bộ nhớ": "Currently in memory",
   "dùng lại câu trả lời đã có cho cùng câu hỏi và tài liệu":
     "reused an earlier answer to the same question on the same documents",
-  // Không gian D: thời gian thực, phả hệ tự động, cổng dịch vụ API
   "300 lượt mỗi phút cho mỗi khóa (vượt thì trả 429), thân yêu cầu tối đa 1 MB, khóa hết hạn sau tối đa một năm.":
     "300 calls per minute per key (429 when exceeded), request body up to 1 MB, keys expire after at most one year.",
   "Chưa có dữ liệu phả hệ mẫu (chạy python -m app.demo_load).":
@@ -2907,7 +2898,6 @@ export const EN_PAGES: Record<string, string> = {
     "IP address or CIDR range, e.g. 203.0.113.10 or 10.0.0.0/8; leave empty to allow calls from anywhere.",
   "Địa chỉ gốc": "Base URL",
   "đổi lúc {0}": "changed at {0}",
-  // Không gian H (ADR #65): nhắn tin, lịch công tác
   "Không tải được tin nhắn": "Could not load messages",
   "Không tìm thấy cuộc trò chuyện": "Conversation not found",
   "Chọn một cuộc trò chuyện": "Choose a conversation",
@@ -3048,16 +3038,13 @@ export const EN_PAGES: Record<string, string> = {
   "Trưởng đơn vị hoặc người được giao quyền đặt lịch chung mới lưu được":
     "Only the unit head or someone granted the shared-calendar permission can save",
   "Lịch công tác": "Work calendar",
-  // Ứng dụng web cho thiết bị di động (ADR #65)
   "Bamboo – tin nhắn mới": "Bamboo – new message",
   "Bạn có {0} tin nhắn chưa đọc": "You have {0} unread messages",
   "Bật thông báo trên thiết bị này": "Turn on notifications on this device",
   "Cài ứng dụng lên thiết bị": "Install the app on this device",
   "Điều hướng nhanh": "Quick navigation",
-  // Không gian H (ADR #65): bộ lọc tin nhắn, thông báo tạo lịch
   "Lọc cuộc trò chuyện": "Filter conversations",
   "Đã tạo lịch": "Event created",
-  // Không gian P (ADR #66): quản lý dự án, Gantt
   "Không mở được dự án": "Could not open the project",
   "Đã tự dời {0} công việc phụ thuộc": "{0} dependent tasks were moved automatically",
   "Đang dựng văn bản kế hoạch…": "Building the plan document…",
@@ -3194,7 +3181,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đã lưu thành viên": "Members saved",
   "Thành viên dự án": "Project members",
   "Bỏ khỏi dự án": "Remove from project",
-  // Ổ đĩa theo P.A.R.A (ADR #71)
   "Dự án": "Projects",
   "Lưu trữ": "Archives",
   "Lĩnh vực phụ trách": "Areas",
@@ -3208,7 +3194,6 @@ export const EN_PAGES: Record<string, string> = {
     "Shared reference material: knowledge library documents in effect",
   "Đã xong: dự án đã đóng, chứng từ đã có kết quả, tài liệu hết hiệu lực":
     "Finished: closed projects, decided documents, documents no longer in effect",
-  // Tác tử tự hành động (ADR #72); nhãn sự kiện, hành động, mức tự chủ do máy chủ trả về (ai_agent_trigger_options)
   "Bình luận": "Comment",
   "Chưa có lần chạy. Bấm biểu tượng tia sét ở một tác tử để chọn sự kiện kích hoạt.":
     "No runs yet. Click the lightning icon on an agent to choose the events that trigger it.",
@@ -3252,7 +3237,6 @@ export const EN_PAGES: Record<string, string> = {
   "Tự thực hiện": "Act on its own",
   "Chỉ đề xuất, không thực hiện": "Propose only, do not act",
   "Tác tử AI báo về chứng từ liên quan đến tôi": "An AI agent reports on a document involving me",
-  // Sự kiện nghiệp vụ (services/actions/app/process_automation.py EVENTS), dịch lúc hiển thị
   "Đề nghị mua sắm được gửi duyệt": "Purchase request submitted for approval",
   "Đề nghị mua sắm được duyệt xong": "Purchase request fully approved",
   "Đề nghị mua sắm bị từ chối": "Purchase request rejected",
@@ -3262,7 +3246,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đơn hàng nội bộ được xác nhận": "Internal order confirmed",
   "Đơn hàng nội bộ được đối trừ công nợ": "Internal order settled against receivables",
   "Quyết định nhân sự được ban hành": "Personnel decision issued",
-  // Kịch bản tự viết trong quy trình tự động (ADR #73)
   "Biến kiểu đơn được gán thành biến quy trình; {0}_ok báo đã chạy xong.":
     "Simple-typed variables you assign become process variables; {0}_ok signals the step finished.",
   "Biến mẫu": "Sample variables",
@@ -3275,7 +3258,6 @@ export const EN_PAGES: Record<string, string> = {
   "Kịch bản": "Script",
   '# Biến của quy trình dùng trực tiếp theo tên, ví dụ amount, doc_no\nmuc = "cao" if amount >= 50_000_000 else "thuong"\ncan_bao_gia = amount >= 50_000_000\nhan = add_days(today(), 7)\nlog("muc duyet", muc)':
     '# Process variables are used directly by name, e.g. amount, doc_no\nlevel = "high" if amount >= 50_000_000 else "normal"\nneeds_quotes = amount >= 50_000_000\ndue = add_days(today(), 7)\nlog("approval level", level)',
-  // Hội tụ IT/OT: MQTT và NGSI-LD (ADR #74)
   "Chưa có số đo trực tiếp: đang hiện dữ liệu mẫu": "No live readings yet: showing sample data",
   "Chưa có tài khoản thiết bị.": "No device accounts yet.",
   "Chủ đề": "Topic",

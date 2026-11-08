@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Quy trình ⇄ văn bản quy định trong thư viện tri thức (ADR #59).
 
 - `process_from_document`: đọc văn bản đang hiệu lực trong thư viện (tệp đính kèm, OCR, tóm tắt, mục lục) theo mẫu quy
@@ -157,7 +153,6 @@ def process_from_document(conn: psycopg.Connection, session: dict, args: dict, c
     }
 
 
-# --- chiều ngược: sơ đồ → văn bản quy định -----------------------------------------------------------------------
 def _attach(
     conn: psycopg.Connection, ctx: Context, tenant: str, doc_id: str, person: str, name: str, ctype: str, data: bytes
 ) -> str:

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import uuid
 
@@ -54,7 +50,7 @@ def verify(hasura, i, who="c", **variables):
 
 def test_doi_soat_theo_ma_va_theo_tep(hasura, s3, sealed):
     i, _, doc_no, _, key = sealed
-    digest = hashlib.sha256(s3.read_stored(key)).hexdigest()  # niêm phong bản đã dựng lại (CDR), không phải bản gốc
+    digest = hashlib.sha256(s3.read_stored(key)).hexdigest()
 
     r = verify(hasura, i, code=doc_no)
     assert r["kind"] == "match" and r["actual_sha256"] == digest and r["problem"] is None, r

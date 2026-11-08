@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Cổng dịch vụ API cho hệ thống bên ngoài (ADR #64).
 
 - **Khóa API của công ty** (`api.api_key`): quản trị viên công ty tạo, chọn phạm vi, hạn dùng (tối đa 1 năm), dải IP được
@@ -58,7 +55,7 @@ class Endpoint:
     scope: str
     action: str | None
     summary: str
-    params: tuple[tuple[str, str, str], ...] = ()  # (tên, kiểu, mô tả); tham số đường dẫn viết {tên}
+    params: tuple[tuple[str, str, str], ...] = ()
     body: bool = False
 
 

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Hành động cho kênh thông báo ngoài ứng dụng và hàng đợi tin nhắn."""
 
 import json
