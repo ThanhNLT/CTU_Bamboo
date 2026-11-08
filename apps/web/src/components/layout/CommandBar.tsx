@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import {
   type ActionImpl,
   KBarAnimator,
@@ -16,9 +12,6 @@ import { forwardRef } from "react";
 
 import { useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
-
-// Thay giao diện mặc định của RefineKbar (màu trắng/đen viết cứng bằng inline style) bằng token sáng/tối của Bamboo.
-// Dữ liệu và phím tắt vẫn do useRefineKbar đăng ký như cũ.
 
 const ResultItem = forwardRef<HTMLDivElement, { action: ActionImpl; active: boolean; rootActionId?: string | null }>(
   ({ action, active, rootActionId }, ref) => {
@@ -99,7 +92,7 @@ export const CommandBar = () => {
   return (
     <KBarPortal>
       <KBarPositioner className="z-[9999] bg-[rgb(0_0_0/0.35)] backdrop-blur-[2px] backdrop-saturate-150">
-        <KBarAnimator className="glass w-full max-w-[600px] bg-surface/90 overflow-hidden rounded-ui border border-line pb-2 text-ink shadow-float">
+        <KBarAnimator className="glass w-full max-w-[600px] bg-surface/90 overflow-hidden rounded-[22px] border border-line pb-2 text-ink shadow-float">
           <KBarSearch
             defaultPlaceholder={t("Gõ lệnh hoặc tìm kiếm…")}
             className="w-full border-0 border-b border-line bg-transparent px-5 py-3.5 text-[15px] text-ink outline-none placeholder:text-muted"

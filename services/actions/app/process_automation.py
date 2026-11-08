@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Chạy tự động quy trình đã phát hành.
 
 Người thiết kế bật chạy tự động cho một phiên bản đã phát hành: sơ đồ được chuyển thành định nghĩa Flowable chỉ gồm
@@ -216,7 +212,6 @@ def process_automation_enable(conn: psycopg.Connection, session: dict, args: dic
         "WHERE model_id = %s AND status = 'ACTIVE'",
         (m["id"],),
     ).fetchone()
-    # Không nêu sự kiện thì giữ đăng ký của bản đang chạy khi áp dụng phiên bản mới
     events = _events(args["events"]) if args.get("events") is not None else (list(previous[2]) if previous else [])
     definition_key = f"auto_{str(tenant)[:8]}_{m['process_key']}"
     xml, actions, problems = automation_xml(latest["bpmn_xml"], definition_key)
@@ -402,9 +397,6 @@ def automation_overview(conn: psycopg.Connection, model_id: str) -> dict | None:
         "event_catalog": [{"code": k, "label": v} for k, v in EVENTS.items()],
         "runs": [{**r, "id": str(r["id"])} for r in runs],
     }
-
-
-# --- Tiến trình nền ---------------------------------------------------------------------------------------------
 
 
 def render(template: str, variables: dict, quote: bool = False) -> str:

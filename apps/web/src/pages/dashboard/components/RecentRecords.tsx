@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { ConfigProvider, Table, type TableColumnsType } from "antd";
 import { Lock } from "lucide-react";
 import { useNavigate } from "react-router";

@@ -1,9 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 .bpmn-frame {
   position: relative;
   border-radius: 10px;
@@ -15,7 +9,6 @@
   background: #fff;
 }
 
-/* Trình duyệt vẽ viền focus đen dày quanh thẻ svg của bpmn-js: thay bằng viền xanh mảnh ở khung ngoài */
 .bpmn-editor .djs-container svg:focus,
 .bpmn-editor .djs-container svg:focus-visible {
   outline: none;
@@ -24,7 +17,6 @@
   box-shadow: inset 0 0 0 2px var(--color-bamboo-400, #63ab70);
 }
 
-/* Chế độ xem không có bảng công cụ, thanh ngữ cảnh hay sửa nhãn trực tiếp */
 .bpmn-editor--readonly .djs-palette,
 .bpmn-editor--readonly .djs-context-pad,
 .bpmn-editor--readonly .djs-direct-editing-parent {

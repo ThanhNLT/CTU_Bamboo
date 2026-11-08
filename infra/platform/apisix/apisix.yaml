@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-
 upstreams:
   - id: web
     type: roundrobin
@@ -204,7 +201,6 @@ routes:
       client-control:
         max_body_size: 1048576
 
-  # Cổng dịch vụ API (ADR #64): actions tự kiểm khóa bak_…; giới hạn tần suất theo từng khóa (header Authorization)
   - id: public-api
     uris: [/api/v1/*]
     priority: 15
@@ -289,4 +285,3 @@ routes:
     methods: [GET, HEAD]
     upstream_id: web
     plugin_config_id: waf
-#END

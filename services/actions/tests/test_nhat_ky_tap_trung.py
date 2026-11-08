@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import logging
 import uuid
 
@@ -95,7 +91,6 @@ def test_yeu_cau_http_mang_ma_truy_vet_va_ingest(cur, database):
             "actions"
         }
 
-        # Điểm nhận log từ Vector: cần bí mật, nhận NDJSON, che thông tin nhạy cảm
         nd = (
             '{"timestamp": "2026-10-25T08:00:00Z", "service": "hasura", "level": "warn", "message": "lỗi kết nối của a@b.vn", "trace_id": "%s"}\n'
             '{"service": "keycloak", "message": "đăng nhập thất bại"}\n{"message": ""}\nkhông phải json\n'

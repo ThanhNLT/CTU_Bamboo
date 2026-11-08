@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Khởi tạo công ty lần đầu và chủ sở hữu (ADR #57).
-
--- Thông tin pháp lý của công ty; legal_status NULL là công ty có từ trước khi có quy trình khởi tạo (dữ liệu demo, lệnh CLI)
 ALTER TABLE core.tenant
     ADD COLUMN tax_code text UNIQUE CHECK (tax_code ~ '^[0-9]{10}(-[0-9]{3})?$'),
     ADD COLUMN legal_name text CHECK (length(btrim(legal_name)) BETWEEN 1 AND 300),
@@ -12,7 +5,6 @@ ALTER TABLE core.tenant
     ADD COLUMN legal_rep_name text CHECK (length(btrim(legal_rep_name)) BETWEEN 1 AND 200),
     ADD COLUMN legal_status text CHECK (legal_status IN ('UNVERIFIED', 'VERIFIED'));
 
--- Mã thiết lập một lần: chỉ lưu mã băm, mã rõ chỉ in ra log máy chủ (người có quyền trên máy chủ mới đọc được)
 CREATE TABLE core.setup_code (
     id           integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code_sha256  bytea NOT NULL CHECK (length(code_sha256) = 32),
@@ -23,7 +15,6 @@ CREATE TABLE core.setup_code (
     revoked_at   timestamptz
 );
 
--- Đơn đăng ký sử dụng: tệp PDF hệ thống sinh (kèm mã chống phát lại) để người đại diện ký số
 CREATE TABLE core.setup_application (
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     purpose       text NOT NULL CHECK (purpose IN ('SETUP', 'VERIFY')),
@@ -38,7 +29,6 @@ CREATE TABLE core.setup_application (
     CHECK ((purpose = 'VERIFY') = (tenant_id IS NOT NULL) OR finished_at IS NOT NULL)
 );
 
--- Bằng chứng xác thực pháp lý: đơn đã ký và chứng thư của người ký
 CREATE TABLE core.legal_verification (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
     id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -57,8 +47,6 @@ CREATE TABLE core.legal_verification (
     FOREIGN KEY (tenant_id, verified_by) REFERENCES core.person (tenant_id, id)
 );
 
--- Chủ sở hữu: người đại diện theo pháp luật, mỗi công ty một người. `platform`: công ty tạo qua trang khởi tạo của máy
--- chủ tự cài, chủ sở hữu được cài/gỡ mô-đun trên máy như quản trị nền tảng (ADR #56)
 CREATE TABLE core.tenant_owner (
     tenant_id        uuid PRIMARY KEY REFERENCES core.tenant,
     person_id        uuid NOT NULL,
@@ -72,7 +60,6 @@ CREATE TABLE core.tenant_owner (
 CALL audit.enable('core.tenant_owner', 'tenant_id');
 CALL audit.enable('core.legal_verification');
 
--- Quyền quản trị chỉ chủ sở hữu được trao hoặc thu hồi ở công ty đã có chủ sở hữu
 CREATE FUNCTION core.admin_permissions() RETURNS text[]
 LANGUAGE sql IMMUTABLE AS $$
     SELECT ARRAY['core.org.manage', 'core.permission.manage', 'core.module.manage']
@@ -101,11 +88,11 @@ DECLARE
     v_owner uuid;
 BEGIN
     IF v_actor IS NULL THEN
-        RETURN;  -- tiến trình hệ thống, migration, seed
+        RETURN;
     END IF;
     SELECT person_id INTO v_owner FROM core.tenant_owner WHERE tenant_id = p_tenant;
     IF v_owner IS NULL OR v_owner = v_actor THEN
-        RETURN;  -- công ty chưa có chủ sở hữu giữ cách cũ
+        RETURN;
     END IF;
     RAISE EXCEPTION 'Chỉ chủ sở hữu công ty được trao hoặc thu hồi quyền quản trị';
 END $$;
@@ -146,8 +133,6 @@ CREATE TRIGGER guard_admin_change BEFORE INSERT OR UPDATE OR DELETE ON core.assi
 CREATE TRIGGER guard_admin_change BEFORE INSERT OR UPDATE ON core.delegation
     FOR EACH ROW EXECUTE FUNCTION core.guard_admin_change();
 
--- Dựng khung một công ty mới: đơn vị gốc, danh mục cơ bản, hai vị trí (Giám đốc là trưởng, Quản trị hệ thống), bốn vai
--- trò, quy tắc duyệt mặc định. Dùng chung cho trang khởi tạo (actions) và lệnh `python -m app.tenant` (seed)
 CREATE FUNCTION core.create_tenant(p_code text, p_name text, p_root_type text DEFAULT 'CONG_TY', p_parent text DEFAULT NULL)
 RETURNS TABLE (tenant_id uuid, root_unit_id uuid, director_position_id uuid, admin_position_id uuid)
 LANGUAGE plpgsql AS $$
@@ -225,7 +210,6 @@ BEGIN
     RETURN QUERY SELECT v_tenant, v_root, v_director, v_admin;
 END $$;
 
--- Một người mới giữ chính một vị trí từ hôm nay
 CREATE FUNCTION core.place_person(p_tenant uuid, p_subject text, p_name text, p_employee_code text, p_position uuid)
 RETURNS uuid
 LANGUAGE plpgsql AS $$

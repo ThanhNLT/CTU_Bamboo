@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { TriangleAlert } from "lucide-react";
 
 import type { LineageNode, QualityCheck } from "../types";
@@ -39,7 +35,7 @@ export const QualityAlertBanner = ({
       <button
         type="button"
         onClick={() => onView(first.node.id)}
-        className="inline-flex h-8 shrink-0 items-center self-start rounded-ui border border-red-200 bg-surface px-3.5 text-[12.5px] font-semibold text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 sm:self-auto"
+        className="inline-flex h-8 shrink-0 items-center self-start rounded-full border border-red-200 bg-surface px-3.5 text-[12.5px] font-semibold text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 sm:self-auto"
       >
         {tr("Xem kiểm tra")}
       </button>

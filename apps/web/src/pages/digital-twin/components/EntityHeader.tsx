@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { CheckCircle2, ClipboardCheck, Sparkles } from "lucide-react";
 
 import { Dot, primaryButtonClass, secondaryButtonClass } from "../../../components/ui";
@@ -40,7 +36,7 @@ export const EntityHeader = ({
         </h2>
         <span
           className={cn(
-            "mt-2.5 inline-flex h-6 items-center gap-1.5 rounded-ui px-2.5 text-[12px] font-medium",
+            "mt-2.5 inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium",
             TAG_CLASS[entity.status],
           )}
         >
@@ -49,7 +45,7 @@ export const EntityHeader = ({
         </span>
         <span
           className={cn(
-            "ml-2 mt-2.5 inline-flex h-6 items-center rounded-ui px-2.5 text-[12px]",
+            "ml-2 mt-2.5 inline-flex h-6 items-center rounded-full px-2.5 text-[12px]",
             entity.liveSource ? "bg-sky-50 text-sky-800" : "bg-black/[0.045] text-muted",
           )}
           title={

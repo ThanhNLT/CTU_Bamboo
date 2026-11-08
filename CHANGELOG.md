@@ -200,7 +200,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 Tìm kiếm toàn văn, mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, đăng nhập được sau khi nâng cấp. Gồm cả các sửa lỗi ghi ở mục 0.2.1 trước đây (chưa từng phát hành riêng).
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y   # mở http://localhost:8000
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y   # mở http://localhost:8000
 ```
 
 **Nâng cấp từ 0.1.0 hoặc 0.2.0:** sao lưu (`scripts/ops/backup.sh` hoặc `scripts\ops\backup.ps1`), rồi chạy lệnh trên (hoặc `git pull && docker compose up -d --build` khi chạy từ mã nguồn). Dữ liệu demo giữ nguyên:
@@ -226,7 +226,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y   # mở http://l
 Cổng API Apache APISIX trở thành điểm vào duy nhất của hệ thống.
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
 ```
 
 **Nâng cấp từ 0.1.0:** địa chỉ ứng dụng đổi từ `http://localhost:5173` sang `http://localhost:8000`. Keycloak chỉ import realm ở lần chạy đầu, nên máy đã chạy 0.1.0 cần thêm `http://localhost:8000/*` vào *Valid redirect URIs* và `http://localhost:8000` vào *Web origins* của client `bms-web` trong Keycloak (từ 0.3.0 việc này tự động, xem trên). Triển khai thật: một tên miền trỏ vào cổng và đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó.
@@ -242,7 +242,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y   # mở http://l
 Bản phát hành đầu tiên: nền tảng lõi (Keycloak, Hasura, PostgreSQL, Flowable, SeaweedFS, OpenBao) và ứng dụng Đề nghị mua sắm cho kịch bản Tập đoàn X, chạy bằng một lệnh.
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
 ```
 
 ### Thêm
@@ -260,7 +260,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 - Kiểm thử đầu–cuối bằng Playwright (`npm run test:e2e`) trên stack thật.
 - Toàn bộ hệ thống chạy bằng một lệnh `docker compose up -d`: healthcheck cho mọi dịch vụ chạy lâu, khởi động theo trạng thái healthy, tự khởi động lại (ADR #13).
 - README, NOTICE, `.env.example`, header SPDX cho mọi tệp (chuẩn REUSE 3.3).
-- Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
+- Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/ctubamboo/bamboo:<phiên bản> up -d -y` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
 
 - Sẵn sàng production: `BAMBOO_ENV=production` từ chối khởi động khi còn mật khẩu mặc định; container Python chạy bằng uid 10001; image `web` đọc địa chỉ Keycloak/Hasura lúc khởi động (`/config.js`); nginx nén gzip, header bảo mật, không cache `index.html`; xoay vòng log mọi container; Hasura Console và CORS, địa chỉ và chế độ chạy Keycloak cấu hình được; nhãn OCI cho mọi image.
 - Tài liệu triển khai production (tên miền TLS, sao lưu/khôi phục, nâng cấp, khóa OpenBao), SECURITY.md, mẫu báo lỗi và đề xuất trên GitHub Issues.
@@ -273,8 +273,8 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0
+[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/CTUBamboo/Bamboo/releases/tag/v0.1.0

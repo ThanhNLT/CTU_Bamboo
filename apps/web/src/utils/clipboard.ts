@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export const copyText = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);

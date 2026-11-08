@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { BookOpen, Cpu, Database, Download, FileText, FolderClosed, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 
@@ -83,17 +79,17 @@ export const ResultItem = ({
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11.5px]">
           {result.semantic != null && (
-            <span className="inline-flex h-6 items-center rounded-ui border border-bamboo-200 bg-bamboo-50 px-2.5 font-medium text-bamboo-800">
+            <span className="inline-flex h-6 items-center rounded-full border border-bamboo-200 bg-bamboo-50 px-2.5 font-medium text-bamboo-800">
               {tr("Khớp ý nghĩa ")} {fmtScore(result.semantic)}
             </span>
           )}
           {result.keyword && (
-            <span className="inline-flex h-6 items-center rounded-ui border border-line bg-surface px-2.5 font-medium text-body">
+            <span className="inline-flex h-6 items-center rounded-full border border-line bg-surface px-2.5 font-medium text-body">
               {result.matchedField ? trf("Khớp từ khóa · {0}", [result.matchedField]) : tr("Khớp từ khóa")}
             </span>
           )}
           {result.updatedLabel && (
-            <span className="inline-flex h-6 items-center rounded-ui bg-black/[0.045] px-2.5 font-medium text-body">
+            <span className="inline-flex h-6 items-center rounded-full bg-black/[0.045] px-2.5 font-medium text-body">
               {result.updatedLabel}
             </span>
           )}
@@ -101,7 +97,7 @@ export const ResultItem = ({
             <button
               type="button"
               onClick={() => result.attachmentId && onDownload(result.attachmentId)}
-              className="inline-flex h-6 items-center gap-1 rounded-ui border border-line bg-surface px-2.5 font-medium text-ink hover:bg-canvas"
+              className="inline-flex h-6 items-center gap-1 rounded-full border border-line bg-surface px-2.5 font-medium text-ink hover:bg-canvas"
             >
               <Download className="h-3 w-3" aria-hidden />
               {tr("Tải tệp")}

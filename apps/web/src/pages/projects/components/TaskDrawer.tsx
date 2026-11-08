@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import {
   App,
   Button,
@@ -72,7 +68,6 @@ export const TaskDrawer = ({
   const editable = canManage;
   const progressOnly = !canManage && own && !task?.has_children;
 
-  // Không cho chọn làm cha hay việc trước: chính nó và cây con của nó
   const blocked = useMemo(() => {
     const out = new Set<string>();
     if (!task) return out;

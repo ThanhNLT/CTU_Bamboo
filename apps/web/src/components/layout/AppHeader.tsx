@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useLogout } from "@refinedev/core";
 import { useKBar } from "@refinedev/kbar";
 import { Dropdown, Popover, type MenuProps } from "antd";
@@ -194,7 +190,6 @@ const LanguageSwitch = () => {
   );
 };
 
-// Nút sáng/tối kiểu macOS: ô vuông bo góc, sáng lên lớp kính xanh khi đang ở chế độ tối
 const ColorModeToggle = () => {
   const { t } = useLocale();
   const { mode, setMode } = useContext(ColorModeContext);
@@ -214,7 +209,6 @@ const ColorModeToggle = () => {
           : "text-body hover:bg-bamboo-600 hover:text-white",
       )}
     >
-      {/* Đang tối thì hiện mặt trời (bấm để về sáng), đang sáng thì hiện mặt trăng */}
       {dark ? (
         <Sun className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
       ) : (
@@ -281,7 +275,6 @@ export const AppHeader = ({ collapsed, onCollapsedChange, onOpenMobileNav }: Hea
   const { t } = useLocale();
   const navigate = useNavigate();
   return (
-    // Thanh trên nổi: tấm kính bo tròn cách mép, dính trên cùng khi cuộn
     <div className="sticky top-0 z-20 px-3 pt-3 sm:px-4 md:pl-1 md:pr-3">
       <header className="glass-bar flex h-14 shrink-0 items-center gap-3 rounded-[20px] px-3 md:px-4">
         <button

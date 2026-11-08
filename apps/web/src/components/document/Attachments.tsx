@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { App, Button, List, Popconfirm, Space, Tag, Tooltip, Typography, Upload } from "antd";
@@ -34,7 +30,6 @@ const SCAN: Record<string, { color: string; icon: ReactElement; label: string }>
   REJECTED: { color: "warning", icon: <StopOutlined />, label: tr("Bị loại – đã xóa") },
 };
 
-// Tệp cũ được nhận khi chưa có công cụ quét nào: chờ hệ thống quét lại, chưa tải về được
 const awaitingRescan = (a: { status: string; scan_engines?: string[] }) =>
   a.status === "CLEAN" && (a.scan_engines ?? []).every((e) => e === "unscanned") && (a.scan_engines ?? []).length > 0;
 

@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
 name: Báo lỗi
 description: Hệ thống chạy sai, báo lỗi hoặc không khởi động được
 labels: ["needs-triage"]

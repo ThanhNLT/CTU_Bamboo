@@ -1,19 +1,9 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 059: Quản trị tổ chức quản trị luôn tác tử AI. Trước đây chỉ vai trò riêng QUAN_TRI_AI (seed demo gán cho hai vị trí) có
--- core.ai.manage, nên chủ công ty mới tạo qua trang đăng ký mở trang Tác tử AI chỉ thấy "Bạn cần quyền quản trị tác tử AI".
--- core.ai.manage không thuộc core.admin_permissions() nên thêm vào vai trò không cần chủ sở hữu duyệt.
-
--- Công ty đang chạy: vai trò Quản trị tổ chức (mã QUAN_TRI_TO_CHUC do core.create_tenant và seed tạo) nhận thêm quyền
 INSERT INTO core.role_permission (tenant_id, role_id, permission_code)
 SELECT r.tenant_id, r.id, 'core.ai.manage'
 FROM core.role r
 WHERE r.code = 'QUAN_TRI_TO_CHUC'
   AND NOT EXISTS (SELECT FROM core.role_permission p WHERE p.role_id = r.id AND p.permission_code = 'core.ai.manage');
 
--- Công ty tạo mới: như migration 043, thêm core.ai.manage cho Quản trị tổ chức
 CREATE OR REPLACE FUNCTION core.create_tenant(p_code text, p_name text, p_root_type text DEFAULT 'CONG_TY', p_parent text DEFAULT NULL)
 RETURNS TABLE (tenant_id uuid, root_unit_id uuid, director_position_id uuid, admin_position_id uuid)
 LANGUAGE plpgsql AS $$

@@ -1,9 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Tác tử tự hành động (ADR #72): sự kiện nghiệp vụ sinh lần chạy cho tác tử đang hoạt động đã đăng ký, chỉ khi công ty
--- bật mô-đun AI; một sự kiện chỉ sinh một lần chạy cho mỗi tác tử.
 SELECT test.fixture();
 SELECT test.pr('pr', 'c', 'P_NV_MH_DT', 80000000);
 
@@ -25,7 +19,6 @@ SELECT test.throws($$ INSERT INTO core.ai_agent (tenant_id, name, model, created
                       VALUES (test.id('TDX'), 'Webhook', 'qwen3:4b', test.id('c'), '{webhook}') $$,
                    '%check%', 'webhook phải có địa chỉ');
 
--- Công ty chưa bật mô-đun AI: không sinh lần chạy
 DELETE FROM core.tenant_module WHERE tenant_id = test.id('TDX') AND module = 'ai';
 SELECT wf.emit_event(test.id('TDX'), 'purchase_request.pending', test.id('pr')::text || ':0',
                      jsonb_build_object('entity_id', test.id('pr')));
@@ -46,7 +39,6 @@ SELECT test.eq((SELECT (agent_id, entity_type, entity_id, status)::text FROM cor
 SELECT test.eq((SELECT count(*)::int FROM msg.queue WHERE topic = 'event.purchase_request.pending'), 2,
                'quy trình tự động vẫn nhận sự kiện như cũ');
 
--- Người đang duyệt: chỉ việc còn mở của chứng từ
 SELECT test.eq((SELECT array_agg(p ORDER BY p) FROM wf.open_approvers('proc.purchase_request', test.id('pr')) p),
                (SELECT array_agg(DISTINCT t.assignee_id ORDER BY t.assignee_id)
                 FROM wf.task t JOIN wf.approval_step s ON s.id = t.step_id

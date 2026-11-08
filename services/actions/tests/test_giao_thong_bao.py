@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import email
 import email.policy
 import http.server
@@ -293,7 +289,7 @@ def test_hanh_dong_tuy_chon_va_hang_doi(conn, database, app_conn, smtp):
             (test["id"],),
         )
     conn.execute("ALTER TABLE msg.queue DISABLE TRIGGER queue_before_write")
-    try:  # kẻ có quyền cao sửa thẳng biên nhận thì xác minh chữ ký phải thất bại
+    try:
         conn.execute(
             "UPDATE msg.queue SET receipt = jsonb_set(receipt, '{provider_id}', '\"<gia-mao>\"') WHERE id = %s",
             (test["id"],),

@@ -1,14 +1,10 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import itertools
 import uuid
 import xml.etree.ElementTree as ET
 
 import pytest
 from test_tep_dinh_kem import CONFIRM, upload
-from test_thiet_ke_quy_trinh import call, client, designer  # noqa: F401  (fixture)
+from test_thiet_ke_quy_trinh import call, client, designer  # noqa: F401
 
 from app import forms, process_design, process_regulation, process_text
 from conftest import SETTINGS  # noqa: F401
@@ -86,7 +82,6 @@ def check_layout(nodes, edges, result):
                 x, y, w, h = result.shapes[n.id]
                 inside = min(x1, x2) < x + w and max(x1, x2) > x and min(y1, y2) < y + h and max(y1, y2) > y
                 assert not inside, f"{eid} xuyên qua {n.id}"
-        # đầu nối nằm trên biên phần tử
         sx, sy, sw, sh = result.shapes[e.src]
         px, py = path[0]
         assert sx <= px <= sx + sw and sy <= py <= sy + sh
@@ -94,7 +89,6 @@ def check_layout(nodes, edges, result):
         for sa in segments(pa):
             for sb in segments(pb):
                 assert not overlaps(sa, sb), f"{ea} và {eb} nằm đè lên nhau: {sa} {sb}"
-    # mọi đường, kể cả tự thân, không có đoạn chồng lên chính nó
     for eid, path in result.routes.items():
         for sa, sb in itertools.combinations(segments(path), 2):
             assert not overlaps(sa, sb), f"{eid} tự chồng lên mình"

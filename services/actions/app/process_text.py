@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Văn bản quy định quy trình ⇄ sơ đồ BPMN.
 
 Một mẫu văn bản chung cho hai chiều: đọc văn bản trong thư viện tri thức để dựng sơ đồ (`parse` → `build_bpmn`) và đọc
@@ -61,8 +57,8 @@ def slug(text: str, sep: str = "_", upper: bool = False, limit: int = 48) -> str
 @dataclass
 class Branch:
     label: str
-    kind: str  # approve | reject | return | other | default
-    target: int | None  # số bước; None = kết thúc
+    kind: str
+    target: int | None
     end_name: str = ""
 
 
@@ -71,11 +67,11 @@ class Step:
     no: int
     name: str
     role: str = ""
-    due: str = ""  # ISO-8601, ví dụ PT48H
+    due: str = ""
     note: str = ""
     approval: bool = False
     branches: list[Branch] = field(default_factory=list)
-    next: int | None = -1  # -1: bước kế tiếp theo thứ tự; None: kết thúc; số: nhảy tới bước đó
+    next: int | None = -1
     end_name: str = ""
 
 
@@ -89,7 +85,6 @@ class ProcessSpec:
     warnings: list[str] = field(default_factory=list)
 
 
-# --- thời hạn ----------------------------------------------------------------------------------------------------
 _ISO = re.compile(r"^P(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?)?$")
 
 
@@ -121,7 +116,6 @@ def due_text(iso: str) -> str:
     return " ".join(p for p in parts if p)
 
 
-# --- đọc văn bản -------------------------------------------------------------------------------------------------
 _STEP = re.compile(r"^\s*(?:buoc|step)\s*(\d{1,3})\s*[.):\-]\s*(\S.*)$")
 _BULLET_STEP = re.compile(r"^\s*(\d{1,3})\s*[.)](?!\d)\s*(\S.*)$")
 _SECTION = re.compile(
@@ -358,12 +352,11 @@ def _finish(spec: ProcessSpec) -> None:
             spec.warnings.append(f"Bước {st.no} không có bước nào dẫn tới nên sơ đồ để rời")
 
 
-# --- dựng sơ đồ --------------------------------------------------------------------------------------------------
 @dataclass
 class _Built:
     nodes: list[lay.Node]
     edges: list[lay.Edge]
-    tags: dict[str, dict]  # id → thuộc tính BPMN
+    tags: dict[str, dict]
     flows: dict[str, dict]
 
 
@@ -418,7 +411,6 @@ def _graph(spec: ProcessSpec) -> _Built:
     for st in steps:
         nodes.append(lay.Node(node_id(st.no), "task", st.name, st.role or None))
         tags[node_id(st.no)] = {"tag": "userTask", "step": st}
-    # đưa nút bước vào đúng thứ tự: start, các bước, rồi cổng/kết thúc theo thứ tự tạo
     if steps:
         add_flow("start", node_id(steps[0].no))
     else:
@@ -456,7 +448,6 @@ def _graph(spec: ProcessSpec) -> _Built:
                 add_flow(gid, tgt, br.label, f"${{decision == '{br.kind.upper()}'}}")
             else:
                 add_flow(gid, tgt, br.label, f"${{ketQuaBuoc{st.no} == 'n{k + 1}'}}")
-    # sắp xếp nút theo thứ tự xuất hiện hợp lý cho bố cục: bước theo số, cổng và kết thúc đặt sau nút nguồn
     order = ["start"]
     rest = {n.id: n for n in nodes if n.id != "start"}
     placed = {"start"}
@@ -524,7 +515,6 @@ def build_bpmn(spec: ProcessSpec, key: str, name: str | None = None) -> tuple[st
             body.append(f'<sequenceFlow id="{e.id}" sourceRef="{e.src}" targetRef="{e.tgt}"{nm}>{cond}</sequenceFlow>')
         else:
             body.append(f'<sequenceFlow id="{e.id}" sourceRef="{e.src}" targetRef="{e.tgt}"{nm}/>')
-    # gateway không có nhánh mặc định thì bỏ thuộc tính default rỗng
     body = [b.replace(' default=""', "") for b in body]
 
     doc = f"<documentation>{escape(spec.purpose)}</documentation>" if spec.purpose else ""
@@ -582,7 +572,6 @@ def build_bpmn(spec: ProcessSpec, key: str, name: str | None = None) -> tuple[st
     return xml, result
 
 
-# --- đọc sơ đồ -----------------------------------------------------------------------------------------------------
 def _local(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
@@ -695,7 +684,6 @@ def spec_from_bpmn(xml: str, name: str = "", key: str = "", description: str = "
         reached.append(nid)
         for f in out.get(nid, []):
             queue += advance(f.get("targetRef"), set())
-    # thứ tự đọc: trái sang phải, trên xuống dưới theo bố cục đã vẽ; sơ đồ không có tọa độ thì theo thứ tự lan truyền
     pos = _positions(root)
     if reached and all(n in pos for n in reached):
         rank = {n: i for i, n in enumerate(reached)}
@@ -780,7 +768,6 @@ def spec_from_bpmn(xml: str, name: str = "", key: str = "", description: str = "
     return spec
 
 
-# --- lập văn bản ---------------------------------------------------------------------------------------------------
 def _target_text(no: int | None, end_name: str, steps: dict[int, Step], action: str = "chuyển") -> str:
     if no is None:
         return f"kết thúc ({end_name or DEFAULT_END})"
@@ -830,7 +817,6 @@ def render_text(spec: ProcessSpec) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-# --- hình ảnh sơ đồ cho văn bản PDF --------------------------------------------------------------------------------
 def _wrap(text: str, width: int, lines: int) -> list[str]:
     out: list[str] = []
     cur = ""

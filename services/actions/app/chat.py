@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Nhắn tin cá nhân, nhóm và kênh phòng ban (ADR #65).
 
 Đọc tin và gửi tin đi thẳng qua GraphQL (Hasura) để nhanh: trình duyệt giữ một subscription luồng tin (`chat_message_stream`)
@@ -170,7 +167,6 @@ def chat_leave(conn: psycopg.Connection, session: dict, args: dict, _ctx: Contex
         "UPDATE chat.member SET left_at = now() WHERE conversation_id = %s AND person_id = %s", (conv["id"], person)
     )
     if role == "OWNER":
-        # Chủ nhóm rời thì người vào sớm nhất còn lại làm chủ nhóm
         conn.execute(
             """UPDATE chat.member SET role = 'OWNER'
                WHERE (conversation_id, person_id) = (

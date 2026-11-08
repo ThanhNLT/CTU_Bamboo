@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import pathlib
 import time
@@ -106,7 +102,6 @@ def test_trinh_tu_thiet_ke_phat_hanh_giam_sat(app_conn, world):
     with pytest.raises(ActionError):
         process_design.process_change_request_create(app_conn, nv, {"id": model, "message": "Sửa giúp"}, None)
 
-    # Giám đốc công ty nằm ngoài phòng: chỉ thấy sau khi mở rộng đối tượng ra công ty
     with pytest.raises(ActionError) as err:
         process_design.process_model_get(app_conn, gd, {"id": model}, None)
     assert err.value.status == 404
@@ -143,8 +138,6 @@ def test_trinh_tu_thiet_ke_phat_hanh_giam_sat(app_conn, world):
     with pytest.raises(ActionError):
         process_design.process_change_request_resolve(app_conn, tp, {"id": request_id}, None)
 
-
-# --- Chạy tự động ----------------------------------------------------------------------------------------------
 
 NS = (
     'xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn" '
@@ -315,9 +308,6 @@ def test_hen_gio_tu_khoi_chay(app_conn, database, world, flowable, monkeypatch):
         process_automation.process_automation_disable(app_conn, tp, {"id": model}, ctx)
 
 
-# --- Hành động http / đặt biến, webhook, sự kiện ---------------------------------------------------------------
-
-
 def flow_bpmn(tasks: str, links: str) -> str:
     return f"""<definitions {NS}><process id="p" name="Luồng" isExecutable="true">
   <startEvent id="s"/>{tasks}<endEvent id="e"/>{links}</process></definitions>"""
@@ -445,7 +435,6 @@ def test_webhook_va_su_kien_khoi_chay(app_conn, database, world, flowable):
             "SELECT wf.emit_event(%s, 'ic_order.confirmed', %s, %s::jsonb)",
             (t, uuid.uuid4().hex, json.dumps({"doc_no": "DH-9", "unit_ids": [str(world["unit"])]})),
         )
-        # Sự kiện không thuộc phạm vi quy trình (không mang đơn vị) thì không khởi chạy
         app_conn.execute(
             "SELECT wf.emit_event(%s, 'ic_order.confirmed', %s, '{\"doc_no\": \"DH-X\"}')", (t, uuid.uuid4().hex)
         )
@@ -475,7 +464,6 @@ def test_webhook_va_su_kien_khoi_chay(app_conn, database, world, flowable):
 
         overview = process_design.process_model_get(app_conn, tp, {"id": model}, None)["automation"]
         assert overview["webhook"] is True and overview["events"] == ["ic_order.confirmed"]
-        # Bật lại phiên bản mới thì giữ nguyên webhook và sự kiện đã đăng ký
         process_automation.process_automation_enable(app_conn, tp, {"id": model}, ctx)
         again = process_design.process_model_get(app_conn, tp, {"id": model}, None)["automation"]
         assert again["webhook"] is True and again["events"] == ["ic_order.confirmed"]

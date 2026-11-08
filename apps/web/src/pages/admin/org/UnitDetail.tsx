@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { ConfigProvider, Dropdown, Table, Tag, Tooltip } from "antd";
 import { Building2, Crown, MoreHorizontal, Pencil, Plus, Power, UserPlus } from "lucide-react";
 
@@ -17,7 +13,7 @@ import { periodLabel } from "../shared/period";
 import { tr, trf } from "../../../i18n";
 
 const iconBtn =
-  "grid h-8 w-8 place-items-center rounded-ui text-body hover:bg-canvas focus-visible:outline-2 focus-visible:outline-bamboo-500";
+  "grid h-8 w-8 place-items-center rounded-full text-body hover:bg-canvas focus-visible:outline-2 focus-visible:outline-bamboo-500";
 
 export type PositionAction = "edit" | "assign" | "end-assignment" | "close";
 

@@ -1,10 +1,5 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { tr } from "../../i18n";
 
-// Việt hóa chú thích của bpmn-js (bảng công cụ, ngữ cảnh, menu đổi loại phần tử). Chuỗi không có trong bảng giữ nguyên.
 const DICTIONARY: Record<string, string> = {
   "Activate the hand tool": tr("Công cụ kéo sơ đồ"),
   "Activate the lasso tool": tr("Chọn nhiều phần tử"),
