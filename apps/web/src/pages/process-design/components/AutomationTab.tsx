@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Input, Modal, Select, Tag } from "antd";
 import { useState } from "react";
 
@@ -88,7 +84,6 @@ export const AutomationTab = ({
     try {
       await fn();
     } catch {
-      // trang đã báo lỗi cho người dùng
     } finally {
       setBusy(false);
     }

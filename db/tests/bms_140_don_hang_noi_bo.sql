@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
 INSERT INTO core.role (tenant_id, code, name) VALUES (test.id('TDX'), 'BAN_HANG_NOI_BO', 'Bán hàng nội bộ');

@@ -1,8 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Hội tụ IT/OT (ADR #74): số đo trực tiếp qua iot.ingest, sự cố tự mở/đóng theo ngưỡng của mô hình.
 SELECT test.fixture();
 
 INSERT INTO iot.model (type, kind, category, grade, attributes)
@@ -21,7 +16,6 @@ SELECT test.eq((SELECT (connection_state, live_source)::text FROM iot.entity WHE
 SELECT test.eq((SELECT (state -> 'temperature' ->> 'value')::numeric FROM iot.entity WHERE id = test.id('E')), 21.2,
                'trigger cũ vẫn giữ giá trị mới nhất');
 
--- Vượt ngưỡng: mở sự cố, nặng dần thì cập nhật đỉnh và mức, về ngưỡng thì đóng
 SELECT iot.ingest(test.id('TDX'), 'urn:ngsi-ld:CleanRoom:t:CR-09', '{"particles05": 3600}', now() - interval '15 minutes');
 SELECT test.eq((SELECT (side, threshold, peak, severity, status)::text FROM iot.incident WHERE entity_id = test.id('E')),
                ('above', 3520, 3600, 'warning', 'open')::text, 'vượt nhẹ: cảnh báo');
@@ -36,7 +30,6 @@ SELECT test.eq((SELECT (side, threshold, status)::text FROM iot.incident
                 WHERE entity_id = test.id('E') AND attribute = 'temperature'), ('below', 20, 'open')::text,
                'dưới ngưỡng dưới');
 
--- Kiểm đầu vào
 SELECT test.throws($$SELECT iot.ingest(test.id('TDX'), 'CR-09', '{"pressure": 1}')$$, '%không có trong mô hình%',
                    'thuộc tính lạ');
 SELECT test.throws($$SELECT iot.ingest(test.id('TDX'), 'CR-09', '{"temperature": "nóng"}')$$, '%phải là số%',
@@ -46,7 +39,6 @@ SELECT test.throws($$SELECT iot.ingest(test.id('BVX'), 'CR-09', '{"temperature":
 SELECT test.throws($$SELECT iot.ingest(test.id('TDX'), 'CR-09', '{"temperature": 21}', now() + interval '1 hour')$$,
                    '%lệch quá xa%', 'thời điểm ở tương lai');
 
--- Ngoại tuyến: chỉ thiết bị có số đo trực tiếp
 INSERT INTO iot.entity (tenant_id, code, urn, type, name, site_code, org_unit_id, last_seen_at)
 VALUES (test.id('TDX'), 'CR-MAU', 'urn:ngsi-ld:CleanRoom:t:CR-MAU', 'CleanRoom', 'Mẫu', 'chip-bn', test.id('CHIP'),
         now() - interval '2 days');

@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
 FROM alpine:3.22 AS coraza
 ARG CORAZA_VERSION=0.6.0
 ARG CORAZA_SHA256=cca4e3c75cf6b2e615907f936a1b6dcd0955250e0fb7d3b1c2ecef807d84603c

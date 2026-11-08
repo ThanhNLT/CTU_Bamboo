@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { type PropsWithChildren, useEffect, useState } from "react";
 import { ConfigProvider, theme } from "antd";
 
@@ -12,7 +8,6 @@ const STORAGE_KEY = "colorMode";
 const SHARED_TOKENS = {
   colorPrimary: "#2f7a3e",
   colorInfo: "#2f7a3e",
-  // Một bán kính 10px cho mọi thành phần (ô nhập, nút, thẻ, modal, menu...)
   borderRadius: 10,
   borderRadiusLG: 10,
   borderRadiusSM: 10,
@@ -22,7 +17,6 @@ const SHARED_TOKENS = {
     '"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 };
 
-// Giá trị khớp token Tailwind trong styles/tailwind.css (:root và :root[data-theme="dark"])
 const MODE_TOKENS = {
   light: {
     colorSuccess: "#3e8a4f",
@@ -43,7 +37,6 @@ const MODE_TOKENS = {
     colorBgLayout: "#0f1511",
     colorBgContainer: "#18201b",
     colorBgElevated: "#1d2620",
-    // Chữ phụ của Ant Design (ô trống, chú thích) mặc định chỉ 25–45% độ đậm: nâng lên đạt tương phản 4,5:1
     colorTextTertiary: "#a7b1aa",
     colorTextQuaternary: "#8b978f",
     colorTextPlaceholder: "#8b978f",
@@ -64,7 +57,6 @@ const MODE_COMPONENTS = {
   },
 };
 
-// Bamboo Glass: nút và thanh phân đoạn dạng viên thuốc, hộp thoại và thẻ bo rộng (dùng chung cho mọi trang)
 const SHARED_COMPONENTS = {
   Button: { borderRadius: 999, borderRadiusLG: 999, borderRadiusSM: 999, fontWeight: 500 },
   Segmented: { borderRadius: 999, borderRadiusSM: 999, borderRadiusXS: 999, borderRadiusLG: 999 },
@@ -81,7 +73,6 @@ const mergeComponents = (byMode: Record<string, object>) => {
 
 type Mode = keyof typeof MODE_TOKENS;
 
-// Lần đầu theo cài đặt hệ điều hành; sau đó theo lựa chọn người dùng đã lưu
 const readMode = (): Mode => {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);

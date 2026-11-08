@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-# Dịch vụ OCR (ADR #52): PaddleOCR (engine transformers) + VietOCR trên PyTorch; dùng CUDA nếu có GPU, không thì CPU.
 FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
 LABEL org.opencontainers.image.title="bamboo-ocr" \
       org.opencontainers.image.description="Bamboo DX-OS: OCR tiếng Việt, GPU hoặc CPU (PaddleOCR + VietOCR)" \
@@ -13,12 +10,6 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2 \
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /srv/ocr
-# Phiên bản lấy từ services/ocr/uv.lock (lock riêng, Python 3.11 của image nền). VietOCR: các phụ thuộc cũ
-# (imgaug, albumentations, lmdb, scikit-image, prefetch-generator) bị loại bằng override-dependencies trong
-# services/ocr/pyproject.toml; pip không biết override của uv và metadata vietocr ghim cứng einops/gdown/pillow
-# cũ, nên vietocr vẫn cài riêng bằng `--no-deps` như trước (phụ thuộc thật của nó đã có trong req.txt).
-# Gói đã có trong image nền (numpy, requests, tqdm…) không xuất ra để pip giữ bản của image nền (cùng bản torch),
-# như cách cũ chỉ ghim các gói cài thêm. uv chỉ dùng lúc build, không nằm lại trong image.
 RUN --mount=from=ghcr.io/astral-sh/uv:0.13.6,source=/uv,target=/usr/local/bin/uv \
     --mount=type=bind,source=services/ocr/pyproject.toml,target=/tmp/ocr/pyproject.toml \
     --mount=type=bind,source=services/ocr/uv.lock,target=/tmp/ocr/uv.lock \

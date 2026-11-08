@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import os
 import pathlib
@@ -160,7 +156,6 @@ def test_tu_unseal_sau_khi_khoi_dong_lai(roles):
     root.request("PUT", "sys/seal")
     try:
         assert Bao(ADDR).request("GET", "sys/seal-status")["sealed"] is True
-        # dịch vụ khởi động khi OpenBao còn khóa: chờ thay vì thoát ngay
         threading.Timer(4, openbao_init.unseal_if_sealed, (ADDR, KEYS)).start()
         started = time.monotonic()
         bao = config._login(ADDR, str(roles["actions"]), wait=60)

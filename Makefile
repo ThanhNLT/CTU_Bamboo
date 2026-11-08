@@ -1,20 +1,13 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 .PHONY: check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
-# pnpm ghim ở package.json (packageManager); cài: npm install -g --allow-scripts=pnpm pnpm@12.16.1
 PNPM ?= pnpm
 UV_LINT := uv run --frozen --only-group lint
 
-# Mọi mức RAM đều chạy đầy đủ, kể cả AI; mức 8 chỉ hạ heap JVM và cho dịch vụ dùng thưa ngủ sớm (ADR #69).
-# GPU NVIDIA do sleeper tự dò khi hệ thống đã lên (ADR #79): có card thì AI chạy trên GPU, không thì CPU/RAM.
 up:
 	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans
 
-up-gpu: up  # giữ cho lệnh cũ; GPU nay tự dò
+up-gpu: up
 
 down:
 	docker compose down
@@ -70,7 +63,6 @@ bao-token:
 setup-code:
 	docker compose run --rm actions python -m app.setup_code
 
-# Kiểm tra tĩnh toàn repo, giống job `lint` của CI (.github/workflows/ci.yml).
 check: check-py check-web check-docs
 
 check-py:

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Show } from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
@@ -56,7 +52,6 @@ export const TransferShow = () => {
     void load();
   }, [load]);
 
-  // Bước 1 (trưởng đơn vị tiếp nhận) đang mở và chưa có vị trí: phải chọn vị trí trước khi duyệt
   const choosing = Boolean(
     tr &&
     task &&

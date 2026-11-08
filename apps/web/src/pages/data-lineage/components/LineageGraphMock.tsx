@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { cn } from "../../../utils/cn";
 import { LAYERS, NODE_W, STATUS_LABEL, colLeft, edgePath, graphHeight, graphMetrics } from "../graph";
 import type { Direction, LineageEdge, LineageNode, NodeStatus } from "../types";
@@ -41,7 +37,7 @@ const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: 
   <div
     role="group"
     aria-label={tr("Hướng phả hệ")}
-    className="inline-flex shrink-0 gap-0.5 rounded-ui bg-black/[0.045] p-1"
+    className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.045] p-1"
   >
     {DIRECTIONS.map(({ key, label }) => {
       const active = key === value;
@@ -52,7 +48,7 @@ const DirectionToggle = ({ value, onChange }: { value: Direction; onChange: (d: 
           aria-pressed={active}
           onClick={() => onChange(key)}
           className={cn(
-            "h-7 rounded-ui px-3 text-[12px] transition-colors",
+            "h-7 rounded-full px-3 text-[12px] transition-colors",
             "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
             active ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
           )}

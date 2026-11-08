@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { ApprovalHistory, ApprovalStep } from "../../components/document/types";
 import { tr } from "../../i18n";
 

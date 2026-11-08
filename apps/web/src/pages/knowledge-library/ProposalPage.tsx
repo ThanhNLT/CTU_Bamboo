@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Button, Card, Col, Descriptions, Input, Row, Space, Spin, Tabs, Tag } from "antd";
 import { AuditOutlined, EditOutlined, SendOutlined, StopOutlined } from "@ant-design/icons";
 import { useCallback, useEffect, useState } from "react";

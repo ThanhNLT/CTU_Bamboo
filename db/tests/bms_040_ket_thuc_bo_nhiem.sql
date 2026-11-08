@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
 SELECT test.assign('TDX', 'a', 'P_HD_KT_GD', 'CONTRACT',

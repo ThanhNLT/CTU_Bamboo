@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Button, Checkbox, Drawer, Form, Input } from "antd";
 import { KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";

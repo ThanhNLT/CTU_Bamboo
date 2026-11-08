@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
 FROM openbao/openbao:2.7.1
 LABEL org.opencontainers.image.title="bamboo-openbao" \
       org.opencontainers.image.description="Bamboo DX-OS: OpenBao kèm cấu hình raft một node" \

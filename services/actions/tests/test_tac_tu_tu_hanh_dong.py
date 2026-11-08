@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import uuid
 
@@ -55,9 +51,6 @@ def test_ke_hoach_gioi_han_so_hanh_dong_va_che_noi_dung():
         ai_agent_runner.parse_plan("Tôi không trả lời được", RUN)
 
 
-# ---- Tích hợp: Postgres + Ollama giả ------------------------------------------------------------------------------
-
-
 @pytest.fixture(scope="module")
 def fake():
     server = FakeOllama()
@@ -100,7 +93,7 @@ def clean(conn):
 
 def test_tac_tu_tu_binh_luan_va_thong_bao_khi_de_nghi_gui_duyet(conn, fake, clean):
     i = ids(conn, "TDX", "c", "gd_dt")
-    ag = agent(conn, "gd_dt")  # giám đốc duyệt đề nghị 80 triệu nên xem được
+    ag = agent(conn, "gd_dt")
     fake.reply = json.dumps(
         {
             "assessment": "Đề nghị 80.000.000 đồng vượt 50 triệu nên cần 3 báo giá.",
@@ -151,7 +144,7 @@ def test_che_do_chi_de_xuat_khong_thuc_hien(conn, fake, clean):
 
 
 def test_nguoi_phu_trach_khong_xem_duoc_chung_tu_thi_bo_qua(conn, fake, clean):
-    ag = agent(conn, "a")  # người ngoài phòng mua hàng
+    ag = agent(conn, "a")
     calls = fake.chat_calls
     pr(conn, f"ng_{uuid.uuid4().hex[:6]}", "c", "P_NV_MH_DT", 2_000_000)
     assert drain(conn, fake) == ["skipped"]

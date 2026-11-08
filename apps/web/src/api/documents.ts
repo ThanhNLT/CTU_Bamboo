@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useList, type CrudFilter } from "@refinedev/core";
 import gql from "graphql-tag";
 import { useMemo } from "react";

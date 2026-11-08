@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Copy, Download, SearchX, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -22,7 +18,7 @@ const Row = ({ label, children, mono }: { label: string; children: ReactNode; mo
 );
 
 const actionClass =
-  "inline-flex h-8 items-center gap-1.5 rounded-ui border bg-surface/70 px-3 text-[12px] font-medium text-ink transition-colors hover:bg-surface " +
+  "inline-flex h-8 items-center gap-1.5 rounded-full border bg-surface/70 px-3 text-[12px] font-medium text-ink transition-colors hover:bg-surface " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";
 
 const STYLE = {

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import importlib.util
 import threading
 import uuid
@@ -117,7 +113,6 @@ def test_dang_ky_bat_mo_giao_dien_va_goi_nguoc(actions_server, sample, admin, co
     assert key.startswith("bmk_") and r.json()["reachable"] is True
     app.MODULE_KEY = key
 
-    # chưa bật cho công ty thì không mở được
     assert call(actions_server, "ext_launch", {"code": CODE}, nv, tdx).json()["extensions"]["code"] == "module-disabled"
     r = call(actions_server, "modules", {}, gd, tdx)
     info = next(m for m in r.json()["modules"] if m["code"] == CODE)
@@ -135,7 +130,6 @@ def test_dang_ky_bat_mo_giao_dien_va_goi_nguoc(actions_server, sample, admin, co
     assert page.headers["content-security-policy"].startswith("sandbox allow-scripts")
     assert page.headers["access-control-allow-origin"] == "*" and page.headers["referrer-policy"] == "no-referrer"
 
-    # trang mô-đun gọi API của chính nó (đường dẫn tương đối), mô-đun gọi ngược Bamboo gửi thông báo
     base = launch["path"].rsplit("/", 1)[0]
     r = httpx.post(f"{actions_server}/ext/{base}/api/nhac", json={"person_id": gd, "title": "Nộp báo cáo"})
     assert r.status_code == 200 and r.json() == {"ok": True}, r.text
@@ -146,11 +140,9 @@ def test_dang_ky_bat_mo_giao_dien_va_goi_nguoc(actions_server, sample, admin, co
     assert note == {"kind": "EXTERNAL", "entity_type": CODE, "title": "[Nhắc việc] Nộp báo cáo"}
     assert httpx.options(f"{actions_server}/ext/{base}/api/nhac").status_code == 204
 
-    # gọi thẳng mô-đun không qua Bamboo, hoặc phiên giả, đều bị chặn
     assert httpx.get(url + "/", headers={"X-Bamboo-Person": nv, "X-Bamboo-Tenant": tdx}).status_code == 403
     assert httpx.get(f"{actions_server}/ext/{CODE}/s/gia.mao/").status_code == 403
 
-    # /ext-api: khóa sai, phạm vi chưa khai, công ty chưa bật
     api = f"{actions_server}/ext-api/v1"
     auth = {"Authorization": f"Bearer {key}", "X-Bamboo-Tenant": tdx}
     assert httpx.get(f"{api}/people", headers={**auth, "Authorization": "Bearer sai"}).status_code == 401
@@ -158,7 +150,6 @@ def test_dang_ky_bat_mo_giao_dien_va_goi_nguoc(actions_server, sample, admin, co
     assert httpx.get(f"{api}/people", headers={**auth, "X-Bamboo-Tenant": admin["BVX"]}).status_code == 403
     assert any(p["id"] == gd for p in httpx.get(f"{api}/people", headers=auth).json())
 
-    # tắt mô-đun: phiên đang mở cũng bị chặn ngay
     assert call(actions_server, "module_disable", {"code": CODE}, gd, tdx).status_code == 200
     assert httpx.get(f"{actions_server}/ext/{launch['path']}").status_code == 403
 
@@ -170,27 +161,22 @@ def test_phien_ban_moi_xin_them_pham_vi_thi_tat_de_dong_y_lai(actions_server, sa
         "api_key"
     ]
     assert call(actions_server, "module_enable", {"code": CODE}, gd, tdx).status_code == 200
-    # cập nhật không đổi phạm vi: giữ bật, giữ khóa
     r = call(actions_server, "ext_register", {"manifest": manifest(url, version="1.1")}, gd, tdx, role="platform_admin")
     assert r.json()["updated"] and r.json()["api_key"] is None
     assert conn.execute("SELECT core.module_enabled(%s, %s) AS on", (tdx, CODE)).fetchone()["on"]
-    # xin thêm org.read: tắt ở mọi công ty
     wider = manifest(url, scopes=["people.read", "notify.send", "org.read"], depends=["files"])
     r = call(actions_server, "ext_register", {"manifest": wider}, gd, tdx, role="platform_admin")
     assert "tắt ở 1 công ty" in r.json()["message"], r.text
     assert not conn.execute("SELECT core.module_enabled(%s, %s) AS on", (tdx, CODE)).fetchone()["on"]
-    # bật lại kéo theo mô-đun dựng sẵn nó cần; không tắt được mô-đun dựng sẵn đó khi mô-đun ngoài còn bật
     assert call(actions_server, "module_enable", {"code": CODE}, gd, tdx).status_code == 200
     r = call(actions_server, "module_disable", {"code": "files"}, gd, tdx)
     assert r.json()["extensions"]["code"] == "module-in-use" and "Nhắc việc" in r.json()["message"]
 
-    # đổi khóa: khóa cũ hết hiệu lực ngay
     new = call(actions_server, "ext_rotate_key", {"code": CODE}, gd, tdx, role="platform_admin").json()["api_key"]
     api = f"{actions_server}/ext-api/v1/people"
     assert httpx.get(api, headers={"Authorization": f"Bearer {key}", "X-Bamboo-Tenant": tdx}).status_code == 401
     assert httpx.get(api, headers={"Authorization": f"Bearer {new}", "X-Bamboo-Tenant": tdx}).status_code == 200
 
-    # gỡ khỏi máy: tắt ở công ty trước rồi gỡ, đăng ký bị xóa
     assert call(actions_server, "module_disable", {"code": CODE}, gd, tdx).status_code == 200
     r = call(actions_server, "module_uninstall", {"code": CODE}, gd, tdx, role="platform_admin")
     assert r.status_code == 200, r.text

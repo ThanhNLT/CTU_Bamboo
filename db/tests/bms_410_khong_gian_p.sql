@@ -1,8 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Không gian P (ADR #66): dự án, WBS, phụ thuộc không vòng, số liệu tiến độ, quyền xem/quản lý, báo cáo không sửa.
 SELECT test.fixture();
 
 INSERT INTO pm.project (tenant_id, id, code, name, org_unit_id, manager_id, start_date, end_date, created_by)
@@ -11,8 +6,6 @@ VALUES (test.id('TDX'), test.put('DA', gen_random_uuid()), 'ERP-2027', 'Triển 
 INSERT INTO pm.member (tenant_id, project_id, person_id, role)
 VALUES (test.id('TDX'), test.id('DA'), test.id('c'), 'MEMBER');
 
--- Quyền: người quản lý, thành viên xem; người ngoài không; giám đốc công ty có quyền quản trị (core.org.manage) thì
--- không tự có pm.project.* trong bộ dữ liệu thử nên không xem được
 SELECT test.ok(pm.can_read(test.id('DA'), test.id('tp_mh_dt')) AND pm.can_manage(test.id('DA'), test.id('tp_mh_dt')),
                'người quản lý xem và sửa');
 SELECT test.ok(pm.can_read(test.id('DA'), test.id('c')) AND NOT pm.can_manage(test.id('DA'), test.id('c')),
@@ -22,7 +15,6 @@ SELECT test.throws($$ INSERT INTO pm.project (tenant_id, code, name, org_unit_id
                       VALUES (test.id('TDX'), 'erp 2027', 'x', test.id('DT_MH'), test.id('c'), '2026-11-02',
                               '2026-11-01', test.id('c')) $$, '%check%', 'mã dự án viết hoa, ngày hợp lệ');
 
--- WBS: 1 Khảo sát (5 ngày, xong), 2 Triển khai (cha) gồm 2.1 Cài đặt (10 ngày, 50%), 2.2 Nghiệm thu (mốc)
 INSERT INTO pm.task (tenant_id, id, project_id, seq, name, start_date, end_date, progress)
 VALUES (test.id('TDX'), test.put('T1', gen_random_uuid()), test.id('DA'), 1, 'Khảo sát', '2026-11-02', '2026-11-06', 100),
        (test.id('TDX'), test.put('T2', gen_random_uuid()), test.id('DA'), 2, 'Triển khai', '2026-11-09', '2026-11-20', 0);
@@ -32,7 +24,6 @@ VALUES (test.id('TDX'), test.put('T21', gen_random_uuid()), test.id('DA'), test.
        (test.id('TDX'), test.put('T22', gen_random_uuid()), test.id('DA'), test.id('T2'), 2, 'Nghiệm thu', '2026-11-20',
         '2026-11-20', 0, true);
 
--- Thực hiện = (5×100 + 10×50 + 0) / 15 = 66,67%; kế hoạch tại 13/11 = (5 + 5) / 15 = 66,67%; việc trễ tại 30/11 = 2
 SELECT test.eq((SELECT actual_pct FROM pm.stats(test.id('DA'), '2026-11-13')), 66.67::numeric, 'thực hiện bình quân theo ngày');
 SELECT test.eq((SELECT planned_pct FROM pm.stats(test.id('DA'), '2026-11-13')), 66.67::numeric, 'kế hoạch theo ngày đã trôi qua');
 SELECT test.eq((SELECT spi FROM pm.stats(test.id('DA'), '2026-11-13')), 1.000::numeric, 'đúng tiến độ thì SPI = 1');
@@ -45,7 +36,6 @@ SELECT test.throws($$ INSERT INTO pm.task (tenant_id, project_id, name, start_da
 SELECT test.throws($$ UPDATE pm.task SET parent_id = test.id('T21') WHERE id = test.id('T2') $$,
                    '%con của chính nó%', 'cây công việc không có vòng');
 
--- Phụ thuộc: không vòng, không giữa cha và con, cùng dự án
 INSERT INTO pm.dependency (tenant_id, project_id, predecessor_id, successor_id)
 VALUES (test.id('TDX'), test.id('DA'), test.id('T1'), test.id('T21')),
        (test.id('TDX'), test.id('DA'), test.id('T21'), test.id('T22'));
@@ -56,7 +46,6 @@ SELECT test.throws($$ INSERT INTO pm.dependency (tenant_id, project_id, predeces
                       VALUES (test.id('TDX'), test.id('DA'), test.id('T2'), test.id('T21')) $$,
                    '%tổng hợp%', 'không phụ thuộc giữa cha và con');
 
--- Báo cáo tiến độ: không sửa sau khi lập; xóa dự án xóa theo mọi thứ
 INSERT INTO pm.report (tenant_id, id, project_id, period_from, period_to, health, summary, planned_pct, actual_pct, created_by)
 VALUES (test.id('TDX'), test.put('BC', gen_random_uuid()), test.id('DA'), '2026-11-02', '2026-11-13', 'GREEN',
         'Đúng tiến độ', 66.67, 66.67, test.id('tp_mh_dt'));

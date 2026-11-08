@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Trash, Users } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
@@ -62,7 +58,7 @@ export const SavedCharts = ({
                   type="button"
                   onClick={() => onDelete(c)}
                   aria-label={tr("Xóa biểu đồ")}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-ui text-muted opacity-0 transition-opacity hover:bg-red-50 hover:text-red-700 focus-visible:opacity-100 group-hover:opacity-100"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted opacity-0 transition-opacity hover:bg-red-50 hover:text-red-700 focus-visible:opacity-100 group-hover:opacity-100"
                 >
                   <Trash className="h-3.5 w-3.5" aria-hidden />
                 </button>

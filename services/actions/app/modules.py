@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Mô-đun chức năng (ADR #56).
 
 Danh mục mô-đun dựng sẵn nằm ở đây; CSDL chỉ giữ trạng thái hai tầng (migration 042):
@@ -95,7 +92,6 @@ CORE_ACTIONS = frozenset(
         "api_key_revoke",
         "ext_rotate_key",
         "ext_launch",
-        # Nhắn tin và lịch công tác (ADR #65): cộng tác hằng ngày thuộc phần lõi, luôn bật
         "chat_open_direct",
         "chat_create_group",
         "chat_update_group",
@@ -319,7 +315,7 @@ CATALOG: tuple[Module, ...] = (
 
 BY_CODE = {m.code: m for m in CATALOG}
 ACTION_MODULE = {action: m.code for m in CATALOG for action in m.actions}
-MANAGED_SERVICES = tuple(dict.fromkeys(s for m in CATALOG for s in m.services))  # thứ tự khởi động theo danh mục
+MANAGED_SERVICES = tuple(dict.fromkeys(s for m in CATALOG for s in m.services))
 
 
 def closure(codes, edges) -> list[str]:
@@ -421,7 +417,6 @@ class Manager:
         if not self.person or not self.tenant:
             raise ActionError("Thiếu x-hasura-user-id hoặc x-hasura-tenant-id", "unauthorized", 401)
         self.catalog = load_catalog(conn)
-        # chủ sở hữu công ty khởi tạo máy chủ tự cài (ADR #57) cài/gỡ mô-đun trên máy như quản trị nền tảng
         self.platform = (
             session.get("x-hasura-role") == "platform_admin"
             or conn.execute(

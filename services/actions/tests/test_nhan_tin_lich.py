@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Không gian H (ADR #65): nhắn tin cá nhân/nhóm/phòng ban và lịch công tác qua GraphQL."""
 
 import datetime as dt

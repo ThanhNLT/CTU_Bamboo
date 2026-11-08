@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import os
 import pathlib
@@ -363,7 +359,6 @@ def test_du_lieu_demo_khong_gian_h_p_d(conn):
     assert trip == ("TRIP", True, True), "Giám đốc Chip X đang đi công tác"
     assert one(conn, "SELECT count(*) FROM cal.event WHERE scope = 'UNIT' AND recurrence <> 'NONE'") >= 5
 
-    # Bộ đếm tin chưa đọc khớp số đếm thật; trưởng phòng Mua hàng có tin nhắn riêng chưa đọc
     assert (
         one(
             conn,

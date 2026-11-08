@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Button, Drawer, Input, Popconfirm, Switch, Tag } from "antd";
 import { LogOut, UserMinus } from "lucide-react";
 import { useEffect, useState } from "react";

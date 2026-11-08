@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Bố cục tự động cho sơ đồ BPMN: xếp phần tử theo cột (thứ tự luồng) và làn (người thực hiện), rồi vẽ đường nối vuông góc.
 
 Mọi tọa độ nằm trên lưới 10 px nên hai đường nối chỉ trùng nhau khi cùng một tọa độ. Đường nối được tìm bằng Dijkstra
@@ -27,8 +23,8 @@ MARGIN = 6
 BEND = 40
 CROSS = 70
 TURN_PORT = 12
-TIME_BUDGET = 8.0  # giây cho cả sơ đồ; quá hạn thì các đường còn lại vẽ tạm và được báo là chưa tối ưu
-DIRS = ((1, 0), (0, 1), (-1, 0), (0, -1))  # phải, xuống, trái, lên
+TIME_BUDGET = 8.0
+DIRS = ((1, 0), (0, 1), (-1, 0), (0, -1))
 SLOTS_TASK_H = (0, -20, 20)
 SLOTS_TASK_V = (0, -30, 30)
 GAP_X = (-30, -20, -10, 0, 10, 20, 30)
@@ -38,7 +34,7 @@ GAP_Y = (-30, -20, -10, 0, 10, 20, 30)
 @dataclass
 class Node:
     id: str
-    kind: str  # start | end | task | gateway
+    kind: str
     name: str = ""
     lane: str | None = None
 
@@ -57,7 +53,7 @@ class Layout:
     node_labels: dict[str, tuple[int, int, int, int]] = field(default_factory=dict)
     routes: dict[str, list[tuple[int, int]]] = field(default_factory=dict)
     edge_labels: dict[str, tuple[int, int, int, int]] = field(default_factory=dict)
-    lanes: list[tuple[str, int, int]] = field(default_factory=list)  # tên, y, cao
+    lanes: list[tuple[str, int, int]] = field(default_factory=list)
     width: int = 0
     height: int = 0
     unrouted: list[str] = field(default_factory=list)
@@ -254,7 +250,7 @@ def _edge_label(
 class _Router:
     def __init__(self, nodes, center, ncols, top, nsub, lanes, obstacles, width, height):
         self.center = center
-        self.obstacles = obstacles  # (x1, y1, x2, y2, chủ sở hữu hoặc None cho nhãn)
+        self.obstacles = obstacles
         xs: set[int] = set()
         ys: set[int] = set()
         for k in range(-1, ncols + 1):
@@ -285,14 +281,13 @@ class _Router:
             ys.update([cy - hh, cy + hh, cy - ay, cy + ay, cy])
             xs.update(cx + o for o in sl_v)
             ys.update(cy + o for o in sl_h)
-            for extra in (10, 20, 30):  # stub kéo dài khi đầu stub bị đường khác chiếm
+            for extra in (10, 20, 30):
                 xs.update([cx - ax - extra, cx + ax + extra])
                 ys.update([cy - ay - extra, cy + ay + extra])
         self.xs = sorted(xs)
         self.ys = sorted(ys)
         self.xi = {x: i for i, x in enumerate(self.xs)}
         self.yi = {y: i for i, y in enumerate(self.ys)}
-        # đầu stub của sự kiện và cổng (mỗi cạnh chỉ có một cổng) để dành cho chính chúng, đường khác không đi qua
         self.reserved: set[tuple[int, int]] = set()
         for n in nodes:
             if n.kind == "task":
@@ -304,15 +299,14 @@ class _Router:
                 self.reserved.add((self.xi[px], self.yi[py]))
         self.static_h: dict[tuple[int, int], bool] = {}
         self.static_v: dict[tuple[int, int], bool] = {}
-        self.occ_h: set[tuple[int, int]] = set()  # (dòng y, bước x) đã có đường đi qua
+        self.occ_h: set[tuple[int, int]] = set()
         self.occ_v: set[tuple[int, int]] = set()
-        self.blocked: set[tuple[int, int]] = set()  # (ix, iy): góc, đầu mút đường đã vẽ
-        self.inter_h: set[tuple[int, int]] = set()  # điểm nằm giữa một đoạn ngang đã vẽ
+        self.blocked: set[tuple[int, int]] = set()
+        self.inter_h: set[tuple[int, int]] = set()
         self.inter_v: set[tuple[int, int]] = set()
         self.deadline = float("inf")
         self._index()
 
-    # --- kiểm tra va chạm ----------------------------------------------------------------------------------------
     def _index(self) -> None:
         self._buckets: dict[int, list[tuple]] = defaultdict(list)
         for r in self.obstacles:
@@ -386,7 +380,6 @@ class _Router:
                 return e
         return None
 
-    # --- tìm đường -----------------------------------------------------------------------------------------------
     def route(self, src: Node, dst: Node) -> list[tuple[int, int]] | None:
         starts = []
         for side, d in (("R", 0), ("B", 1), ("T", 3)):

@@ -1,8 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
-// Khóa là câu tiếng Việt gốc dùng trong giao diện; giá trị là bản tiếng Anh. Chuỗi chưa có bản dịch giữ nguyên tiếng Việt.
 export const EN: Record<string, string> = {
   "Làm việc hằng ngày": "Everyday work",
   "Hồ sơ & quy trình": "Records & processes",

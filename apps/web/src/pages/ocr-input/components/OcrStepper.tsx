@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Check, LoaderCircle } from "lucide-react";
 import { Fragment } from "react";
 
@@ -12,7 +8,7 @@ import { tr } from "../../../i18n";
 const Marker = ({ step, index }: { step: Step; index: number }) => {
   if (step.state === "done") {
     return (
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-ui bg-bamboo-600 text-white" aria-hidden>
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-bamboo-600 text-white" aria-hidden>
         <Check className="h-4 w-4" strokeWidth={2.5} />
       </span>
     );
@@ -20,7 +16,7 @@ const Marker = ({ step, index }: { step: Step; index: number }) => {
   if (step.state === "running") {
     return (
       <span
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-ui border-2 border-bamboo-500 text-bamboo-600"
+        className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-bamboo-500 text-bamboo-600"
         aria-hidden
       >
         <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
@@ -30,7 +26,7 @@ const Marker = ({ step, index }: { step: Step; index: number }) => {
   return (
     <span
       className={cn(
-        "grid h-7 w-7 shrink-0 place-items-center rounded-ui border-2 text-[12px] font-semibold",
+        "grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 text-[12px] font-semibold",
         step.state === "active" ? "border-bamboo-600 text-bamboo-700" : "border-line text-muted",
       )}
       aria-hidden

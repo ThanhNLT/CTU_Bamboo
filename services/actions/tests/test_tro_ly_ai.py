@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import http.server
 import json
 import math
@@ -205,8 +201,6 @@ def test_khoa_dung_lai_theo_cau_hoi_va_ngu_canh():
     assert key != ai_worker.context_key({**q, "model": "qwen3:8b"}, guard, chunks)
 
 
-# ---- Tích hợp: Postgres + Meilisearch + server giả tương thích Ollama / OpenAI ----
-
 REPLY = "Theo quy chế, đề nghị từ 50 triệu đồng phải có ba báo giá [1]. Liên hệ 0912345678 nếu cần."
 
 
@@ -314,7 +308,6 @@ def ai_env(search_settings, fake_ai, conn):
             **search_settings.__dict__,
             "ollama_url": fake_ai.url,
             "meili_chunk_index": "documents_kb_chunk_test",
-            # Embedding giả: câu không chung từ nào có cosine 0, Meilisearch quy ra điểm 0,5.
             "ai_min_score": 0.6,
         }
     )
@@ -523,7 +516,7 @@ def test_do_toc_do_luot_hoi_nguoi_cu_va_nap_song_song(ai_env, conn, org):
     q = question(conn, asked["id"])
     assert q["cold_start"] is True, "mô hình sinh chưa nạp thì lượt hỏi chờ nạp"
     assert q["created_at"] <= q["started_at"] <= q["first_token_at"] <= q["finished_at"]
-    for _ in range(40):  # nạp trước chạy ở luồng nền
+    for _ in range(40):
         if "qwen3:4b" in ai_env.fake.loaded:
             break
         time.sleep(0.05)

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Dropdown, Input, Spin, Tooltip } from "antd";
 import dayjs from "dayjs";
 import {
@@ -127,7 +123,6 @@ export const Thread = ({
   const names = useMemo(() => members.map((m) => m.person.full_name), [members]);
   const newest = messages.at(-1)?.id ?? 0;
 
-  // Đánh dấu đã đọc khi đang xem cuối cuộc trò chuyện và cửa sổ đang hiện
   useEffect(() => {
     if (!newest || newest <= lastRead.current || !atBottom.current || document.visibilityState !== "visible") return;
     lastRead.current = newest;
@@ -485,7 +480,7 @@ export const Thread = ({
         )}
         {candidates.length > 0 && (
           <ul
-            className="absolute bottom-full left-3 z-10 m-0 mb-1 w-64 list-none rounded-xl border border-line bg-[var(--surface-solid)] p-1 shadow-float"
+            className="absolute bottom-full left-3 z-10 m-0 mb-1 w-64 list-none rounded-[16px] border border-line bg-[var(--surface-solid)] p-1 shadow-float"
             role="listbox"
             aria-label={tr("Nhắc tên thành viên")}
           >

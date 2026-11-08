@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useGo, useInvalidate, useList } from "@refinedev/core";
 import { Button, Empty, List, Popover, Typography } from "antd";
 import { Bell } from "lucide-react";

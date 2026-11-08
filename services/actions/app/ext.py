@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Mô-đun ngoài do bên thứ ba viết, nối qua cổng API (ADR #58).
 
 - **Đăng ký** (Action `ext_register`, quản trị nền tảng hoặc chủ sở hữu máy chủ): manifest khai mã `x_…`, tên, URL dịch
@@ -46,7 +43,6 @@ SCOPES = {
 }
 _CODE = re.compile(r"^x_[a-z0-9_]{2,30}$")
 _PATH = re.compile(r"^/[A-Za-z0-9._~!$&'()*+,;=:@/%-]*$")
-# Đầu trang an toàn được chép giữa trình duyệt và mô-đun; mọi đầu trang khác (cookie, Authorization...) bị bỏ
 _REQUEST_HEADERS = ("accept", "accept-language", "content-type", "range", "if-none-match", "if-modified-since")
 _RESPONSE_HEADERS = (
     "content-type",
@@ -105,9 +101,6 @@ def sign_request(key: str, ts: str, method: str, path: str, tenant: str, person:
     """Chữ ký mô-đun dùng để kiểm yêu cầu đúng là Bamboo chuyển tới (xem tài liệu viết mô-đun ngoài)."""
     message = "\n".join((ts, method.upper(), path, tenant, person)).encode()
     return hmac.new(key.encode(), message, hashlib.sha256).hexdigest()
-
-
-# ----- Manifest và đăng ký -----
 
 
 def _text(data: dict, key: str, label: str, max_len: int, required: bool = True) -> str | None:
@@ -205,8 +198,6 @@ def ext_register(conn: psycopg.Connection, session: dict, args: dict, ctx: Conte
     )
     notes = []
     if exists:
-        # phiên bản mới của mô-đun: giữ khóa. Xin thêm phạm vi dữ liệu thì tắt ở mọi công ty để quản trị công ty xem
-        # và đồng ý lại khi bật
         conn.execute(
             """UPDATE core.external_module SET name = %s, description = %s, vendor = %s, version = %s, base_url = %s,
                       entry_path = %s, health_path = %s, depends = %s, scopes = %s, menu = %s WHERE module = %s""",
@@ -295,9 +286,6 @@ HANDLERS = {
 }
 
 
-# ----- Cổng /ext: chuyển tiếp trang và API của mô-đun -----
-
-
 def _target(conn: psycopg.Connection, code: str, tenant: str, person: str, secret: str) -> dict | None:
     row = conn.execute(
         """SELECT e.base_url, e.key_salt, p.full_name
@@ -313,8 +301,6 @@ def _target(conn: psycopg.Connection, code: str, tenant: str, person: str, secre
 
 
 def _cors(headers: dict) -> dict:
-    # trang mô-đun chạy ở origin riêng (sandbox) nên lời gọi tới chính nó là gọi khác origin; phiên nằm trong đường
-    # dẫn, không có cookie, nên cho mọi origin là an toàn
     return headers | {"Access-Control-Allow-Origin": "*", "Access-Control-Expose-Headers": "Content-Disposition"}
 
 
@@ -376,7 +362,6 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings) -> 
             ),
             "X-Bamboo-Base": f"/ext/{code}/s/{token}",
         }
-        # đọc trọn thân (cổng API giới hạn 10 MB) để gửi kèm Content-Length; máy chủ đơn giản không đọc được chunked
         body = await request.body()
         upstream = client.build_request(
             request.method, target["base_url"] + upstream_path, headers=headers, content=body or None
@@ -395,8 +380,6 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings) -> 
         return StreamingResponse(
             resp.aiter_raw(), status_code=resp.status_code, headers=secure(out), background=BackgroundTask(resp.aclose)
         )
-
-    # ----- /ext-api: mô-đun gọi Bamboo -----
 
     def _caller(conn: psycopg.Connection, request: Request, scope: str) -> tuple[str, str]:
         header = request.headers.get("authorization", "")
