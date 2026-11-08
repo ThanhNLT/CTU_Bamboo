@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
 SELECT test.position('TDX', 'P_NV_X', 'DT_MH', 'Chuyên viên mua hàng X');
@@ -27,7 +23,6 @@ LANGUAGE sql AS $$
                                        (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + p_days, p_reason)
 $$;
 
--- Quyền ban hành: chỉ người có hr.decision.issue; không tự ra quyết định về mình
 SELECT test.throws($$ SELECT test.issue('c', 'TRANSFER', 'd', 'P_NV2_MH_DT', 'P_NV_X', NULL, 1) $$,
                    '%hr.decision.issue%', 'chuyên viên không có quyền ban hành');
 SELECT test.throws($$ SELECT test.issue('tgd', 'TRANSFER', 'tgd', 'P_TGD', 'P_NV_X', NULL, 1) $$,
@@ -39,7 +34,6 @@ SELECT test.throws($$ SELECT test.issue('tgd', 'TRANSFER', 'd', 'P_NV2_MH_DT', '
 SELECT test.throws($$ SELECT test.issue('tgd', 'TRANSFER', 'd', 'P_NV2_MH_DT', 'P_NV_X', NULL, 1, '  ') $$,
                    '%căn cứ%', 'phải ghi lý do');
 
--- Điều chuyển có hiệu lực từ ngày hiệu lực, giữ nguyên lịch sử bổ nhiệm cũ
 SELECT test.put('QD1', test.issue('ptgd', 'TRANSFER', 'd', 'P_NV2_MH_DT', 'P_NV_X', NULL, 5));
 SELECT test.eq((SELECT doc_no FROM hr.personnel_decision WHERE id = test.id('QD1')) ~ '^QD-\d{4}-\d{6}$', true,
                'số quyết định QD-năm-số');
@@ -55,7 +49,6 @@ SELECT test.eq((SELECT count(*) FROM collab.notification WHERE recipient_id = te
 SELECT test.throws($$ SELECT test.issue('tgd', 'TRANSFER', 'c', 'P_NV_MH_DT', 'P_NV_X', NULL, 5) $$,
                    '%đã có người ngồi%', 'vị trí đích đã có người từ ngày hiệu lực');
 
--- Bổ nhiệm: kiêm nhiệm cho người đang giữ chính; giữ chính cho người chưa có vị trí
 SELECT test.put('QD2', test.issue('tgd', 'APPOINT', 'tp_mh_dt', NULL, 'P_PGD_DT', 'CONCURRENT', 0));
 SELECT test.eq((SELECT assignment_type FROM core.assignment
                 WHERE person_id = test.id('tp_mh_dt') AND position_id = test.id('P_PGD_DT')), 'CONCURRENT', 'kiêm nhiệm');
@@ -70,7 +63,6 @@ SELECT test.throws($$ SELECT test.issue('tgd', 'APPOINT', 'c', NULL, 'P_NV_Z', '
 SELECT test.throws($$ SELECT test.issue('tgd', 'APPOINT', 'c', NULL, 'P_NV_Z', 'ACTING', 9) $$,
                    '%vị trí trưởng%', 'quyền trưởng chỉ cho vị trí trưởng');
 
--- Miễn nhiệm: kết thúc bổ nhiệm kiêm nhiệm, không miễn nhiệm vị trí giữ chính
 SELECT test.put('QD4', test.issue('ptgd', 'DISMISS', 'tp_mh_dt', 'P_PGD_DT', NULL, NULL, 3));
 SELECT test.eq((SELECT upper(valid_period) = hr.day_start((now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 3)
                 FROM core.assignment WHERE person_id = test.id('tp_mh_dt') AND position_id = test.id('P_PGD_DT')),
@@ -78,11 +70,9 @@ SELECT test.eq((SELECT upper(valid_period) = hr.day_start((now() AT TIME ZONE 'A
 SELECT test.throws($$ SELECT test.issue('ptgd', 'DISMISS', 'c', 'P_NV_MH_DT', NULL, NULL, 3) $$,
                    '%điều chuyển%', 'không miễn nhiệm vị trí giữ chính');
 
--- Quyết định bất biến
 SELECT test.throws($$ UPDATE hr.personnel_decision SET reason = 'sửa' $$, '%chỉ cho ghi thêm%', 'không sửa quyết định');
 SELECT test.throws($$ DELETE FROM hr.personnel_decision $$, '%chỉ cho ghi thêm%', 'không xóa quyết định');
 
--- Phạm vi đơn vị: giám đốc Công ty Điện thoại chỉ ban hành trong cây của công ty mình
 SELECT test.position('TDX', 'P_NV_GD', 'GD_KT', 'Chuyên viên kỹ thuật Gia dụng');
 SELECT test.position('TDX', 'P_NV_X2', 'DT_MH', 'Chuyên viên mua hàng X2');
 SELECT test.person('TDX', 'newbie2', 'Nhân viên mới 2');

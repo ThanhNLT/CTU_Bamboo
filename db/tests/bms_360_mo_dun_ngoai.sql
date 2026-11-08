@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
 CREATE FUNCTION pg_temp.register(p_code text, p_scopes text[] DEFAULT '{}', p_url text DEFAULT 'http://mo-dun:8080')

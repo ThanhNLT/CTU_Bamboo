@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import ipaddress
 import time
@@ -118,8 +114,6 @@ def record_login(conn: psycopg.Connection, session: dict, headers) -> bool:
         return False
     forwarded = headers.get("x-forwarded-for", "").split(",")[0] or headers.get("x-real-ip", "")
     network = _network(forwarded)
-    # Hasura không chuyển User-Agent của trình duyệt sang webhook: giao diện tự gửi mã thiết bị ngẫu nhiên (lưu trong
-    # trình duyệt) và mô tả trình duyệt; máy khách khác không gửi thì nhận theo dải mạng
     agent = (headers.get("x-bamboo-agent") or headers.get("user-agent", ""))[:300]
     device_id = headers.get("x-bamboo-device", "")[:100]
     device = hashlib.sha256((f"id|{device_id}" if device_id else f"{agent}|{network}").encode()).digest()

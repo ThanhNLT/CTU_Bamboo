@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Eye, Lock } from "lucide-react";
 
 import type { ArchiveDoc } from "../types";
@@ -33,7 +29,7 @@ export const ArchiveDocRow = ({
       type="button"
       onClick={onOpen}
       aria-label={trf("Mở chỉ đọc: {0}", [doc.title])}
-      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-ui bg-canvas px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-canvas px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500"
     >
       <Eye className="h-3.5 w-3.5" aria-hidden />
       {tr("Mở chỉ đọc")}

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Job ocr-init (ADR #52): tải trọng số PaddleOCR và VietOCR vào volume lần đầu: `python -m app.download`.
 
 Sau lần đầu dịch vụ OCR chạy không cần Internet. Nạp thử bộ mô hình (GPU nếu có, không thì CPU) để kiểm tệp

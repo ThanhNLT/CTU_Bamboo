@@ -1,13 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Truyền thông, giao vận dữ liệu:
---  * msg.queue: hàng đợi tin nhắn bất đồng bộ, mỗi tin có mã băm nội dung, khóa chống gửi trùng, thử lại lùi dần,
---    hàng chết (DEAD) và biên nhận giao hàng có chữ ký của hệ thống (chống chối bỏ);
---  * collab.notification_pref: người dùng chọn nhận thông báo qua email, SMS hoặc webhook;
---  * mỗi thông báo mới sinh tin vào hàng đợi cho các kênh người nhận đã bật.
-
 CREATE SCHEMA msg;
 
 CREATE TABLE msg.queue (
@@ -65,7 +55,6 @@ END $$;
 CREATE TRIGGER queue_before_write BEFORE INSERT OR UPDATE ON msg.queue
 FOR EACH ROW EXECUTE FUNCTION msg.queue_before_write();
 
--- Đưa tin vào hàng đợi; trùng khóa chống gửi trùng thì trả về tin cũ
 CREATE FUNCTION msg.enqueue(p_tenant uuid, p_topic text, p_payload jsonb, p_idempotency text DEFAULT NULL,
                             p_created_by uuid DEFAULT NULL, p_max_attempts int DEFAULT 5,
                             p_delay interval DEFAULT interval '0')
@@ -86,7 +75,6 @@ BEGIN
     RETURN v_id;
 END $$;
 
--- Nhận tối đa p_limit tin đến hạn của các chủ đề có tiền tố p_prefix; tin đang giữ quá hạn được nhận lại
 CREATE FUNCTION msg.lease(p_prefix text, p_owner text, p_limit int DEFAULT 10, p_lease interval DEFAULT interval '2 minutes')
 RETURNS SETOF msg.queue
 LANGUAGE sql AS $$
@@ -115,7 +103,6 @@ BEGIN
     SELECT id, attempts, true, p_receipt ->> 'provider_id' FROM msg.queue WHERE id = p_id;
 END $$;
 
--- Thất bại: lùi dần 30 giây × 2^lần, tối đa 1 giờ; hết lượt thì vào hàng chết
 CREATE FUNCTION msg.fail(p_id uuid, p_error text, p_permanent boolean DEFAULT false) RETURNS text
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -138,7 +125,6 @@ BEGIN
     RETURN 'PENDING';
 END $$;
 
--- Đưa tin trong hàng chết trở lại hàng đợi
 CREATE FUNCTION msg.retry(p_id uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -150,7 +136,6 @@ BEGIN
     PERFORM pg_notify('msg_queue', (SELECT topic FROM msg.queue WHERE id = p_id));
 END $$;
 
--- Tùy chọn nhận thông báo ngoài ứng dụng của từng người
 CREATE TABLE collab.notification_pref (
     tenant_id   uuid NOT NULL REFERENCES core.tenant,
     person_id   uuid NOT NULL,

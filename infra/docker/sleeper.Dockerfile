@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-# Dịch vụ ngủ (ADR #53): chỉ dùng thư viện chuẩn của Python.
 FROM python:3.13-slim
 LABEL org.opencontainers.image.title="bamboo-sleeper" \
       org.opencontainers.image.description="Bamboo DX-OS: đánh thức dịch vụ dùng thưa (Tầng 1, AI) khi có yêu cầu, cho ngủ khi nhàn rỗi" \

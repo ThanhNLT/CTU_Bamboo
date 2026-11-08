@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Quyết định nhân sự do lãnh đạo cao nhất của tenant (Tổng giám đốc, Phó tổng giám đốc...) ban hành: bổ nhiệm, điều
--- chuyển, miễn nhiệm. Có hiệu lực ngay khi ban hành (bổ nhiệm theo ngày hiệu lực), không qua chuỗi duyệt.
-
 INSERT INTO core.permission (code, description) VALUES
     ('hr.decision.issue', 'Ban hành quyết định nhân sự (bổ nhiệm, điều chuyển, miễn nhiệm) trong toàn tenant'),
     ('hr.decision.read', 'Xem mọi quyết định nhân sự của tenant');
@@ -48,7 +41,6 @@ ALTER TABLE collab.notification
                         'IC_ORDER_NEW', 'IC_ORDER_CONFIRMED', 'IC_ORDER_REJECTED', 'IC_ORDER_CANCELLED',
                         'HR_DECISION'));
 
--- Người có quyền ban hành: quyền hr.decision.issue tại đơn vị gốc của tenant
 CREATE FUNCTION hr.can_issue_decision(p_person uuid, p_tenant uuid, p_at timestamptz DEFAULT now()) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT coalesce((SELECT core.has_permission(p_person, 'hr.decision.issue', u.id, p_at)
@@ -65,8 +57,6 @@ LANGUAGE sql STABLE AS $$
                      ORDER BY u.created_at LIMIT 1), false)
 $$;
 
--- p_kind: loại bổ nhiệm (PRIMARY | CONCURRENT | ACTING); điều chuyển luôn là PRIMARY, miễn nhiệm là loại của
--- bổ nhiệm bị kết thúc.
 CREATE FUNCTION hr.issue_personnel_decision(p_actor uuid, p_type text, p_person uuid, p_source_position uuid,
                                             p_target_position uuid, p_kind text, p_effective date, p_reason text,
                                             p_at timestamptz DEFAULT now())

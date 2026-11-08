@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Form, Input, Modal, Table, Tag } from "antd";
 import { Copy, Plus, RadioTower, ShieldOff } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";

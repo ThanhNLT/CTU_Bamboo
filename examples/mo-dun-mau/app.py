@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Mô-đun ngoài mẫu "Nhắc việc" cho Bamboo DX-OS (ADR #58): `python app.py`.
 
 Chỉ dùng thư viện chuẩn của Python. Cho thấy ba việc mọi mô-đun ngoài cần làm:

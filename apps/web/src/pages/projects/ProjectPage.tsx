@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Button, Dropdown, Segmented, Spin, Switch, Tooltip } from "antd";
 import dayjs from "dayjs";
 import {

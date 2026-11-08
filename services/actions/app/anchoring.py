@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Neo chuỗi băm kiểm toán ra ngoài CSDL.
 
 Mỗi lần neo là một văn bản chuẩn (tenant, số thứ tự, mã băm đầu chuỗi, thời điểm) được ký bằng khóa Ed25519 trong
@@ -88,7 +84,7 @@ def anchor_tenant(
            VALUES (%s, %s, decode(%s, 'hex'), %s, %s::jsonb, %s::jsonb, %s)""",
         (tenant, head["seq"], head["hex"], statement, json.dumps(proof), json.dumps(published), at),
     )
-    if commit:  # tiến trình nền tự cam kết; hành động chạy trong giao dịch của người gọi
+    if commit:
         conn.commit()
     return {"seq": head["seq"], "head": head["hex"], "published": published}
 
@@ -187,9 +183,6 @@ def start_background(settings: config.Settings) -> threading.Thread:
     thread = threading.Thread(target=run_forever, args=(settings,), name="audit-anchor", daemon=True)
     thread.start()
     return thread
-
-
-# --- Hành động -------------------------------------------------------------------------------------------------
 
 
 def _reader(conn: psycopg.Connection, session: dict) -> str:

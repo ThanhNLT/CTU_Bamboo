@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
 SELECT test.pr('pr600', 'a', 'P_NV_KD_CHIP', 600000000);

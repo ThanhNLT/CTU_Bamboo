@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Rút các trường của báo giá, hóa đơn, phiếu giao nhận từ chữ OCR (ADR #52).
 
 Chữ OCR sai được, nên mọi trường đều kèm độ tin cậy và dòng nguồn, và số tiền được tự kiểm: số lượng × đơn giá phải bằng
@@ -50,7 +46,6 @@ def vn_number(text: str) -> Decimal | None:
     if not re.fullmatch(r"[\d.,]+", t):
         return None
     if "," in t and "." in t:
-        # dấu cuối cùng là dấu thập phân nếu sau nó không phải nhóm đúng 3 chữ số cùng kiểu ngăn cách nghìn
         last = max(t.rfind(","), t.rfind("."))
         t = t[:last].replace(".", "").replace(",", "") + "." + t[last + 1 :]
     else:
@@ -214,7 +209,6 @@ def parse_document(text: str) -> dict:
     )
     out["total_amount"] = _field(_num_str(total), 0.85, total_src) if total is not None else None
 
-    # --- Tự kiểm số tiền ---
     line_sum = sum((Decimal(i["amount"]) for i in items), Decimal(0))
     for i in items:
         if not i["consistent"]:

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type StepState = "done" | "active" | "running" | "pending";
 
 export type Step = { key: string; title: string; sub: string; state: StepState };

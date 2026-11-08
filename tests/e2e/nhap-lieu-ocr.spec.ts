@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { expect, test } from "@playwright/test";
 
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
-// PNG hợp lệ 1×1 để qua bước quét an toàn
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "base64",
@@ -35,8 +30,6 @@ const item = (
 
 const field = (value: string, confidence = 0.9) => ({ value, confidence, source: null });
 
-// Dịch vụ OCR cần mô hình nặng nên không chạy trong E2E: giả lập kết quả của bước đọc chữ, còn lại (tạo đề nghị nháp,
-// tải lên, quét an toàn, điền và lưu) chạy thật.
 const READY = {
   ocr_document: {
     attachment_id: "00000000-0000-0000-0000-000000000000",

@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 SELECT test.fixture();
 
 SELECT test.ok((SELECT count(*) FROM audit.log WHERE tenant_id = test.id('TDX')) > 0, 'Dữ liệu mẫu đã được ghi nhật ký');

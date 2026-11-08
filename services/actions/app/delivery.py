@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Giao thông báo ra ngoài ứng dụng (email, SMS, webhook) từ hàng đợi `msg.queue`.
 
 Worker nhận tin theo hợp đồng thuê (lease), gửi, rồi ghi biên nhận có chữ ký; lỗi tạm thì lùi dần và thử lại, lỗi
@@ -64,9 +60,6 @@ def mask(address: str) -> str:
     return f"{address[:3]}***{address[-2:]}" if len(address) > 6 else "***"
 
 
-# --- Email --------------------------------------------------------------------------------------------------------
-
-
 def send_email(settings: config.Settings, payload: dict) -> str:
     if not settings.smtp_host:
         raise DeliveryError("SMTP chưa được cấu hình (SMTP_HOST)", permanent=True)
@@ -95,9 +88,6 @@ def send_email(settings: config.Settings, payload: dict) -> str:
     return message_id
 
 
-# --- SMS ----------------------------------------------------------------------------------------------------------
-
-
 def send_sms(settings: config.Settings, payload: dict) -> str:
     if not settings.sms_gateway_url:
         raise DeliveryError("Cổng SMS chưa được cấu hình (SMS_GATEWAY_URL)", permanent=True)
@@ -118,9 +108,6 @@ def send_sms(settings: config.Settings, payload: dict) -> str:
     except ValueError:
         data = {}
     return str(data.get("id") or data.get("message_id") or f"http-{resp.status_code}")
-
-
-# --- Webhook ------------------------------------------------------------------------------------------------------
 
 
 def resolve_public(url: str, allow_private: bool = False) -> tuple[str, str, str]:
@@ -187,9 +174,6 @@ def send_webhook(settings: config.Settings, payload: dict) -> str:
 
 
 SENDERS = {"email": send_email, "sms": send_sms, "webhook": send_webhook}
-
-
-# --- Worker -------------------------------------------------------------------------------------------------------
 
 
 def deliver_one(conn: psycopg.Connection, settings: config.Settings, signer: receipts.Signer, message: dict) -> str:

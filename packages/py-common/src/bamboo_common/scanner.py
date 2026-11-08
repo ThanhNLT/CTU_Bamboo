@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Bộ quét tệp nội bộ: luôn chạy trước khi một tệp được coi là sạch.
 
 Bộ quét không thay ClamAV (không có cơ sở dữ liệu mẫu virus); nó kiểm tra những gì kiểm tra được ngay trong tiến trình:
@@ -55,7 +51,6 @@ PDF_REJECT = {
     b"Encrypt": "mã hóa nên không quét được",
 }
 DANGEROUS_RELS = ("attachedtemplate", "oleobject", "frame", "subdocument", "package", "externallinkpath", "afchunk")
-# DDE chỉ nguy hiểm khi nằm trong trường lệnh của Word hoặc công thức của Excel, không phải chữ trong nội dung văn bản
 _WORD_FIELD = re.compile(rb"<w:instrText[^>]*>(.*?)</w:instrText>|\bw:instr=\"([^\"]*)\"", re.S)
 _WORD_DDE = re.compile(rb"^\s*(?:DDE|DDEAUTO)\b", re.I)
 _XL_FORMULA = re.compile(rb"<f\b[^>]*>(.*?)</f>", re.S)
@@ -68,7 +63,7 @@ class ScanIncomplete(Exception):
 
 @dataclass
 class Finding:
-    severity: str  # infected | reject | warn
+    severity: str
     code: str
     detail: str
 
@@ -154,8 +149,6 @@ def _text(report: Report, data: bytes) -> None:
         report.add("reject", "control-chars", "Quá nhiều ký tự điều khiển, không phải văn bản")
 
 
-# --- PDF ---------------------------------------------------------------------------------------------------------
-
 _NAME = re.compile(rb"/([A-Za-z0-9#]{1,40})")
 _STREAM = re.compile(rb"stream\r?\n(.*?)\r?\nendstream", re.S)
 
@@ -163,7 +156,6 @@ _STREAM = re.compile(rb"stream\r?\n(.*?)\r?\nendstream", re.S)
 def _pdf_names(chunk: bytes) -> set[bytes]:
     names = set()
     for raw in _NAME.findall(chunk):
-        # Tên có thể viết che bằng #xx (ví dụ /Java#53cript)
         names.add(re.sub(rb"#([0-9A-Fa-f]{2})", lambda m: bytes([int(m.group(1), 16)]), raw))
     return names
 
@@ -188,8 +180,6 @@ def _pdf(report: Report, data: bytes, clock: _Clock) -> None:
         return
     if b"%%EOF" not in data[-2048:]:
         report.add("reject", "pdf-eof", "PDF bị cắt cụt hoặc có dữ liệu thừa sau %%EOF")
-    # Tên khóa chỉ tìm ở phần cấu trúc và trong luồng đối tượng (ObjStm): tìm trong dữ liệu nén/ảnh nhị phân sẽ trùng
-    # ngẫu nhiên. Mọi luồng giải nén được vẫn quét chữ ký, tệp thực thi và script.
     skeleton, last = [], 0
     structure_streams: list[bytes] = []
     budget = [64 * 1024 * 1024]
@@ -213,9 +203,6 @@ def _pdf(report: Report, data: bytes, clock: _Clock) -> None:
     names = _pdf_names(b"".join(skeleton))
     if b"OpenAction" in names or b"AA" in names:
         report.add("warn", "pdf-open-action", "PDF có hành động tự chạy khi mở (OpenAction/AA), không có mã chủ động")
-
-
-# --- Ảnh ---------------------------------------------------------------------------------------------------------
 
 
 def _png(report: Report, data: bytes) -> None:
@@ -270,8 +257,6 @@ def _jpeg(report: Report, data: bytes) -> None:
             report.add("reject", "jpeg-trailing", f"Có {len(tail)} byte dữ liệu thừa sau ảnh JPEG")
     _scripts(report, data[: min(len(data), 262144)], "siêu dữ liệu ảnh")
 
-
-# --- OOXML -------------------------------------------------------------------------------------------------------
 
 _REL = re.compile(rb"<Relationship\b[^>]*>", re.I)
 

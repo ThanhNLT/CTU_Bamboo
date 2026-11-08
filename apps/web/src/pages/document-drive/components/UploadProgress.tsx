@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { ChevronUp, Minus, X } from "lucide-react";
 import { useState } from "react";
 
@@ -63,7 +59,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? tr("Mở rộng") : tr("Thu gọn")}
             aria-expanded={!collapsed}
-            className="grid h-7 w-7 place-items-center rounded-ui bg-canvas text-body hover:bg-gray-200/70"
+            className="grid h-7 w-7 place-items-center rounded-full bg-canvas text-body hover:bg-gray-200/70"
           >
             {collapsed ? <ChevronUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
           </button>
@@ -72,7 +68,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
               type="button"
               onClick={onClose}
               aria-label={tr("Đóng")}
-              className="grid h-7 w-7 place-items-center rounded-ui bg-canvas text-body hover:bg-gray-200/70"
+              className="grid h-7 w-7 place-items-center rounded-full bg-canvas text-body hover:bg-gray-200/70"
             >
               <X className="h-4 w-4" />
             </button>

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import base64
 from urllib.parse import urlparse, urlunparse
 
@@ -119,7 +115,6 @@ def test_ma_thiet_lap_sai_bi_khoa_sau_nhieu_lan(env):
         assert apply(client, "AAAA-BBBB-CCCC").json()["code"] == "setup-code-invalid"
     r = apply(client, code)
     assert r.status_code == 403 and r.json()["code"] == "setup-code-locked"
-    # mã mới hủy mã cũ
     assert apply(client, issue_code(db).lower()).status_code == 200
 
 
@@ -151,7 +146,6 @@ def test_khoi_tao_bang_don_da_ky_so(env):
     )
     assert owner == "sub-an.nguyen"
     assert one(db, "SELECT count(*) FROM core.setup_code WHERE used_at IS NOT NULL") == 1
-    # đã có công ty thì trang khởi tạo đóng, đơn không dùng lại được
     assert client.get("/setup/status").json()["open"] is False
     assert apply(client, issue_code(db)).json()["code"] == "setup-closed"
     r = client.post(f"/setup/applications/{app_id}/finish", json={"token": token})
@@ -221,7 +215,6 @@ def test_chua_xac_thuc_roi_ky_bo_sung(env):
     assert (
         r.json()["legal_status"] == "VERIFIED" and "CÔNG TY CỔ PHẦN ABC" in r.json()["verification"]["signer_subject"]
     )
-    # đơn đã dùng không dùng lại được
     r = call(
         "legal_verify",
         {"application_id": application["application_id"], "content_base64": base64.b64encode(signed).decode()},
@@ -229,10 +222,8 @@ def test_chua_xac_thuc_roi_ky_bo_sung(env):
     )
     assert r.json()["extensions"]["code"] == "application-used"
 
-    # chủ sở hữu công ty khởi tạo máy chủ cài được mô-đun; quản trị viên chỉ bật trong số đã cài
     assert call("modules", {}, owner).json()["can_install"] is True
     assert call("modules", {}, admin).json()["can_install"] is False
-    # quản trị viên không tự trao quyền quản trị cho người khác qua trang quản trị
     role = str(one(db, "SELECT id FROM core.role WHERE code = 'QUAN_TRI_TO_CHUC'"))
     seat = str(one(db, "SELECT id FROM core.position WHERE name = 'Quản trị hệ thống'"))
     r = call(
@@ -263,7 +254,6 @@ def test_quan_tri_vien_bi_bat_cai_otp(env):
     with psycopg.connect(db) as conn:
         assert hr_account.enforce_admin_otp(conn, users, done) == 1
         assert sorted(users.asked) == ["sub-an.nguyen", "sub-it.abc"]
-        # đã kiểm thì không hỏi lại Keycloak
         assert hr_account.enforce_admin_otp(conn, users, done) == 0 and len(users.asked) == 2
 
 
@@ -335,13 +325,12 @@ def test_thiet_bi_moi_cua_quan_tri_vien(env):
     headers = {"user-agent": "Mozilla/5.0 Firefox/140", "x-forwarded-for": "203.0.113.25, 10.0.0.1"}
     with psycopg.connect(env["db"]) as conn:
         assert auth.record_login(conn, session, headers) is True
-        assert auth.record_login(conn, session, {**headers, "x-forwarded-for": "203.0.113.99"}) is False  # cùng dải /24
+        assert auth.record_login(conn, session, {**headers, "x-forwarded-for": "203.0.113.99"}) is False
         assert auth.record_login(conn, session, {**headers, "x-forwarded-for": "198.51.100.7"}) is True
         title, body = conn.execute(
             "SELECT title, body FROM collab.notification WHERE kind = 'SECURITY' ORDER BY created_at LIMIT 1"
         ).fetchone()
     assert "Trần Bình" in title and "203.0.113.0" in body and "Firefox" in body
-    # giao diện gửi mã thiết bị: cùng trình duyệt đổi mạng không báo, trình duyệt khác thì báo
     web = {
         "x-bamboo-device": "6f1c-may-cong-ty",
         "x-bamboo-agent": "Chrome trên Windows",
@@ -364,7 +353,6 @@ def test_chuyen_quyen_chu_so_huu(env):
     r = action(client, "transfer_ownership", {"person_id": ids["admin"]}, ids["owner"], t)
     assert r.status_code == 200 and r.json()["owner_name"] == "Trần Bình", r.text
     assert str(one(db, "SELECT person_id FROM core.tenant_owner")) == ids["admin"]
-    # chủ sở hữu cũ không còn trao được quyền quản trị, chủ sở hữu mới thì được
     role = str(one(db, "SELECT id FROM core.role WHERE code = 'QUAN_TRI_TO_CHUC'"))
     seat = str(one(db, "SELECT id FROM core.position WHERE name = 'Quản trị hệ thống'"))
     grant = {"entity": "role_grant", "data": {"role_id": role, "position_id": seat, "scope": "UNIT"}}
@@ -394,7 +382,6 @@ def test_tao_cong_ty_thanh_vien(env):
     assert one(db, "SELECT count(*) FROM core.tenant_module WHERE tenant_id = %s", child) == 0
     assert action(client, "create_subsidiary", body, ids["owner"], t).json()["extensions"]["code"] == "conflict"
 
-    # dùng chung tài khoản của người ở công ty mẹ: không tạo tài khoản mới, người đó vào được cả hai công ty
     shared = {**body, "code": "ABC_TM", "name": "Thương mại ABC", "tax_code": None}
     shared["owner"] = {"username": "it.abc", "full_name": "Trần Bình"}
     r = action(client, "create_subsidiary", shared, ids["owner"], t)
@@ -407,8 +394,6 @@ def test_tao_cong_ty_thanh_vien(env):
         == "account-conflict"
     )
 
-
-# ----- Đăng ký đơn giản (ADR #62) -----
 
 OWNER = {
     "full_name": "Phạm Minh Anh",
@@ -452,7 +437,6 @@ def test_dang_ky_nhanh_khong_can_ma(env):
     client, db, users = env["client"], env["db"], env["users"]
     status = client.get("/setup/status").json()
     assert status["open"] is True and status["window_open"] is False and status["modules"]
-    # chưa có mã thiết lập hiệu lực (máy chủ chưa khởi động bootstrap) thì cửa sổ đăng ký đóng
     assert register(client).json()["code"] == "setup-window-closed"
     issue_code(db)
     assert client.get("/setup/status").json()["window_open"] is True
@@ -469,7 +453,6 @@ def test_dang_ky_nhanh_khong_can_ma(env):
     body = r.json()
     assert body["legal_status"] == "UNVERIFIED" and body["modules"] == ["approval", "procurement"]
     assert [a["username"] for a in body["accounts"]] == ["anh.pham", "ha.le", "nam.do", "hai.vu"]
-    # chủ sở hữu và quản trị viên phải cài OTP, thành viên thường chỉ đổi mật khẩu
     assert users.created["sub-anh.pham"]["required"] == ("UPDATE_PASSWORD", "CONFIGURE_TOTP")
     assert users.created["sub-hai.vu"]["required"] == ("UPDATE_PASSWORD", "CONFIGURE_TOTP")
     assert users.created["sub-nam.do"]["required"] == ("UPDATE_PASSWORD",)
@@ -490,7 +473,6 @@ def test_dang_ky_nhanh_khong_can_ma(env):
             ).fetchall()
         )
         assert roles == {"sub-anh.pham": "QUAN_TRI_TO_CHUC", "sub-ha.le": "KIEM_SOAT", "sub-hai.vu": "QUAN_TRI_TO_CHUC"}
-        # quản trị viên ngồi ghế Quản trị hệ thống có sẵn, không tạo ghế trống thừa
         assert conn.execute("SELECT count(*) FROM core.position WHERE name = 'Quản trị hệ thống'").fetchone()[0] == 1
         enabled = [r[0] for r in conn.execute("SELECT module FROM core.tenant_module ORDER BY module")]
         assert enabled == ["approval", "procurement"]
@@ -503,7 +485,6 @@ def test_dang_ky_mo_khi_da_co_cong_ty(env):
     client, db = env["client"], env["db"]
     issue_code(db)
     assert finish_unsigned(client, register(client)).status_code == 200
-    # mặc định: đã có công ty thì đóng đăng ký
     assert register(client).json()["code"] == "setup-closed"
 
     settings = config.Settings(
@@ -568,7 +549,6 @@ def test_dang_ky_chi_tiet_co_phong_ban(env):
             ("Phòng Kinh doanh", "PHONG", "Nhân viên", False, "sub-nv.kd"),
             ("Nhà máy Bình Dương", "NHA_MAY", "Quản đốc", True, "sub-quan.doc"),
         ]
-        # mỗi phòng ban mới nhận vai trò Nhân viên giao cho đơn vị; trưởng bộ phận được duyệt trong cây đơn vị
         assert (
             conn.execute(
                 """SELECT count(*) FROM core.role_grant g JOIN core.role r ON r.id = g.role_id
@@ -599,6 +579,5 @@ def test_dang_ky_du_lieu_sai(env):
     assert "Không có công cụ" in register(client, modules=["khong-co"]).json()["message"]
     assert "Năm sinh" in register(client, owner=OWNER | {"birth_year": 2030}).json()["message"]
     assert "Quy mô" in register(client, size_band="1000").json()["message"]
-    # hộ kinh doanh dùng mã số thuế cá nhân 12 chữ số
     r = register(client, company={"legal_name": "Hộ kinh doanh Bánh mì 37", "tax_code": "001088012345"})
     assert finish_unsigned(client, r).status_code == 200

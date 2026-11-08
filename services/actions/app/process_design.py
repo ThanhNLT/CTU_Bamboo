@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import json
 import re
@@ -48,7 +44,6 @@ def action_params(el: ET.Element) -> tuple[dict, list[str]]:
         if len(params["body"]) > 2000:
             problems.append("Nội dung gửi tối đa 2000 ký tự")
     elif action == "script":
-        # Kịch bản do người dùng viết (ADR #73): kiểm cú pháp và cấu trúc ngay khi thiết kế
         from . import script_sandbox
 
         params["script"] = el.get(f"{{{BAMBOO}}}script") or ""
@@ -289,7 +284,7 @@ def with_process_id(xml: str, process_id: str, name: str | None = None) -> str:
     proc = root.find(f"{{{BPMN}}}process")
     old = proc.get("id")
     if not root.get("targetNamespace"):
-        root.set("targetNamespace", "http://bamboo.local/process")  # Flowable bắt buộc có
+        root.set("targetNamespace", "http://bamboo.local/process")
     proc.set("id", process_id)
     proc.set("isExecutable", "true")
     if name:
@@ -476,13 +471,13 @@ def _change_requests(conn: psycopg.Connection, model_id: str, only: str | None) 
 
 
 def _automation(conn: psycopg.Connection, model_id: str) -> dict | None:
-    from .process_automation import automation_overview  # nhập muộn: mô-đun kia nhập lại mô-đun này
+    from .process_automation import automation_overview
 
     return automation_overview(conn, model_id)
 
 
 def _regulations(conn: psycopg.Connection, model_id: str) -> list[dict]:
-    from .process_regulation import regulations  # nhập muộn: mô-đun kia nhập lại mô-đun này
+    from .process_regulation import regulations
 
     return regulations(conn, model_id)
 
@@ -514,7 +509,6 @@ def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx:
         "regulations": [],
     }
     if access == "view":
-        # Nhân viên chỉ xem sơ đồ của phiên bản đang áp dụng
         return {**base, "bpmn_xml": latest["bpmn_xml"], "viewing_version": latest["version"]}
 
     versions = cur.execute(
@@ -792,7 +786,6 @@ def process_sandbox_run(conn: psycopg.Connection, session: dict, args: dict, ctx
         raise ActionError("Chỉ người thiết kế hoặc giám sát được chạy demo quy trình", "forbidden", 403)
     version = None
     if access == "review":
-        # Người giám sát chạy demo đúng phiên bản đang áp dụng, không đụng tới bản nháp
         latest = _latest(conn, args["id"])
         if latest is None:
             raise ActionError("Quy trình chưa phát hành nên chưa chạy demo được", "rejected")

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Đăng ký sử dụng: khởi tạo công ty lần đầu trên máy chủ tự cài (ADR #57, đơn giản hóa ở ADR #62).
 
 Luồng đăng ký (công khai qua cổng API `/setup/*`, chỉ mở khi hệ thống chưa có công ty nào):
@@ -48,11 +45,9 @@ MEMBER_FIRST_LOGIN = ("UPDATE_PASSWORD",)
 MAX_MEMBERS = 200
 MAX_UNITS = 50
 SIZE_BANDS = ("1-10", "11-50", "51-200", "200+")
-# Hộ kinh doanh dùng mã số thuế cá nhân 12 chữ số; chữ ký số doanh nghiệp vẫn kiểm theo legal_sign.TAX_CODE
 TAX_CODE = re.compile(r"^([0-9]{10}(-[0-9]{3})?|[0-9]{12})$")
 _PHONE = re.compile(r"^\+?[0-9 .-]{8,20}$")
 UNIT_TYPES = ("PHONG", "KHOI", "VAN_PHONG", "CHI_NHANH", "NHA_MAY", "PHAN_XUONG", "TRUNG_TAM", "DOI", "KHOA")
-# Vai trò dựng sẵn khi đăng ký → (chức danh, tên vị trí mặc định, vai trò của core.create_tenant, phạm vi)
 MEMBER_ROLES = {
     "STAFF": ("NHAN_VIEN", "Nhân viên", None, None),
     "MANAGER": ("TRUONG_BO_PHAN", "Trưởng bộ phận", "QUAN_LY", "SUBTREE"),
@@ -214,7 +209,6 @@ def _new_application(
         "nonce": _random_code(4),
         "expires_at": (dt.datetime.now(dt.UTC) + APPLICATION_TTL).isoformat(),
     }
-    # Đơn đăng ký chỉ dựng khi người dùng chọn ký số (ADR #62): bỏ qua ký số thì không cần Gotenberg
     pdf = render_pdf(ctx, application) if render else b""
     application["id"] = str(
         conn.execute(
@@ -363,7 +357,6 @@ def parse_registration(body: dict) -> dict:
         "units": units,
         "members": members,
         "modules": wanted,
-        # Đơn PDF (ADR #57) in quản trị viên đầu tiên
         "admin": {k: admin[k] for k in ("username", "full_name", "email")} if admin else None,
     }
 
@@ -372,13 +365,11 @@ def start(conn: psycopg.Connection, ctx: Context, body: dict, open_signup: bool 
     conn.execute("SELECT pg_advisory_xact_lock(hashtext('core.setup'))")
     if not accepting(conn, open_signup):
         raise ActionError("Hệ thống đã có công ty; đăng nhập để tiếp tục", "setup-closed", 409)
-    # Lệnh cũ gửi kèm mã thiết lập thì vẫn kiểm mã; trình hướng dẫn mới dựa vào cửa sổ 24 giờ (đăng ký mở thì không cần)
     if body.get("setup_code"):
         code_id = check_code(conn, str(body["setup_code"]))
     else:
         code_id = None if open_signup else window_code(conn)
     if "members" not in body and isinstance(body.get("company"), dict):
-        # Dạng cũ của ADR #57: chủ sở hữu là người đại diện khai trong company, kèm tùy chọn một quản trị viên
         c = body["company"]
         owner = {"full_name": c.get("legal_rep_name"), "title": c.get("legal_rep_title"), **(body.get("owner") or {})}
         admin = body.get("admin")
@@ -433,7 +424,6 @@ def application_pdf(conn: psycopg.Connection, ctx: Context, application_id: str,
         raise ActionError("Không tìm thấy đơn", "not-found", 404)
     a = _application(conn, application_id, token, purpose[0])
     if not a["pdf"]:
-        # Dựng lần đầu khi người dùng chọn ký số; lưu lại để đơn ký được so đúng từng byte với đơn đã tải
         application = {
             **a["data"],
             "purpose": purpose[0],
@@ -495,7 +485,6 @@ def _role(conn: psycopg.Connection, tenant, code: str):
 def _build_company(conn: psycopg.Connection, data: dict, accounts: list[dict], signer, signed) -> uuid.UUID:
     """Dựng công ty theo dữ liệu đăng ký trong một giao dịch: đơn vị, vị trí, người, phân quyền, công cụ."""
     company, owner = data["company"], data["owner"]
-    # Chỉ công ty khởi tạo máy chủ trống mới quản lý mô-đun trên máy (ADR #56); đăng ký thêm khi đã có công ty thì không
     platform = is_open(conn)
     tid, root, director, admin_seat = conn.execute(
         "SELECT * FROM core.create_tenant(%s, %s)",
@@ -527,7 +516,6 @@ def _build_company(conn: psycopg.Connection, data: dict, accounts: list[dict], s
                VALUES (%s, %s, %s, %s, %s) RETURNING id""",
             (tid, root, unit_type, f"{company['code']}_{n:02d}"[:40], u["name"]),
         ).fetchone()[0]
-        # Vai trò giao cho đơn vị không lan xuống đơn vị con: mỗi phòng ban mới nhận vai trò Nhân viên
         conn.execute(
             "INSERT INTO core.role_grant (tenant_id, role_id, org_unit_id, scope) VALUES (%s, %s, %s, 'UNIT')",
             (tid, staff_role, unit_ids[u["key"]]),
@@ -550,13 +538,11 @@ def _build_company(conn: psycopg.Connection, data: dict, accounts: list[dict], s
         title_code, default_name, role_code, scope = MEMBER_ROLES[m["role"]]
         unit = unit_ids[m.get("unit")]
         if m["role"] == "ADMIN" and admin_free and unit == root:
-            # Quản trị viên đầu tiên ngồi ghế Quản trị hệ thống core.create_tenant đã tạo (đã có vai trò quản trị)
             admin_free = False
             if m.get("title"):
                 conn.execute("UPDATE core.position SET name = %s WHERE id = %s", (m["title"], admin_seat))
             person(acc["subject"], m, n, admin_seat)
             continue
-        # Đơn vị gốc đã có Giám đốc làm trưởng; mỗi phòng ban chỉ một trưởng
         is_head = m["role"] == "MANAGER" and unit != root and unit not in headed
         if is_head:
             headed.add(unit)
@@ -618,7 +604,6 @@ def finish(
     if users is None:
         raise ActionError("Máy chủ chưa cấu hình tạo tài khoản đăng nhập (bms-provisioner)", "unavailable", 503)
 
-    # Dữ liệu đơn cũ (trước ADR #62) có owner không họ tên và một admin riêng
     owner = data["owner"] | {"full_name": data["owner"].get("full_name") or company["legal_rep_name"]}
     members = data.get("members")
     if members is None:
@@ -650,7 +635,7 @@ def finish(
         for subject in created:
             try:
                 users.disable(subject)
-            except Exception as err:  # noqa: BLE001 - dọn tài khoản thừa, lỗi không che lỗi gốc
+            except Exception as err:  # noqa: BLE001
                 log.warning("không vô hiệu hóa được tài khoản %s: %s", subject, err)
         raise ActionError(f"{exc}: chọn tên đăng nhập hoặc email khác", "account-conflict", 409) from exc
 
@@ -660,7 +645,6 @@ def finish(
             if not accepting(conn, open_signup):
                 raise ActionError("Hệ thống đã có công ty; đăng nhập để tiếp tục", "setup-closed", 409)
             _application(conn, application_id, token, "SETUP")
-            # Đơn tạo khi đăng ký mở (SETUP_OPEN_SIGNUP) không gắn mã thiết lập
             code_id = data.get("setup_code_id")
             used = code_id is None or (
                 conn.execute(
@@ -683,7 +667,7 @@ def finish(
         for subject in created:
             try:
                 users.disable(subject)
-            except Exception as exc:  # noqa: BLE001 - dọn tài khoản thừa, lỗi không che lỗi gốc
+            except Exception as exc:  # noqa: BLE001
                 log.warning("không vô hiệu hóa được tài khoản %s sau khi khởi tạo lỗi: %s", subject, exc)
         raise
     log.info("đã khởi tạo công ty %s (%s)", company["code"], "đã xác thực" if signer else "chưa xác thực")
@@ -695,9 +679,6 @@ def finish(
         "modules": data.get("modules") or [],
         "accounts": [{k: v for k, v in acc.items() if k != "subject"} for acc in accounts],
     }
-
-
-# ----- Khôi phục tài khoản chủ sở hữu bằng chữ ký số (công khai, khi chủ sở hữu mất mật khẩu hoặc OTP) -----
 
 
 def _owner_of_tax(conn: psycopg.Connection, tax_code: str):
@@ -767,9 +748,6 @@ def finish_recovery(pool: ConnectionPool, ctx: Context, application_id: str, tok
     return {"tenant_name": a["data"]["company"]["legal_name"], "username": username, "password": password}
 
 
-# ----- API công khai /setup/* (cổng API giới hạn tần suất, không kiểm token) -----
-
-
 def _error(exc: ActionError) -> JSONResponse:
     return JSONResponse({"message": exc.message, "code": exc.code}, exc.status)
 
@@ -788,10 +766,8 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings, ctx
         window = settings.setup_open_signup or (empty and code_alive)
         open_ = empty or settings.setup_open_signup
         return {
-            # Máy chưa có công ty: trang đăng nhập mời tạo công ty thay vì chuyển thẳng tới Keycloak
             "empty": empty,
             "open": open_,
-            # Còn mã thiết lập hiệu lực: đăng ký được mà không phải nhập mã (ADR #62)
             "window_open": window,
             "signature_ready": bool(legal_sign.load_trust_roots(ctx.signature_trust_dir)),
             "allow_unverified": settings.setup_allow_unverified,
@@ -902,9 +878,6 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings, ctx
             return _error(exc)
 
     return api
-
-
-# ----- Xác thực bổ sung từ bên trong (Hasura Action, chỉ chủ sở hữu) -----
 
 
 def _owner_tenant(conn: psycopg.Connection, session: dict) -> dict:

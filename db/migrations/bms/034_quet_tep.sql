@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Một tệp chỉ được coi là sạch (CLEAN) sau khi ít nhất một công cụ đã quét xong. Trước đây khi chưa bật ClamAV, tệp vẫn
--- được ghi "CLEAN – bỏ qua". Nay ghi rõ công cụ đã quét và báo cáo; tệp cũ chưa từng được quét được đánh dấu để quét lại.
-
 ALTER TABLE core.attachment
     ADD COLUMN scan_engines text[] NOT NULL DEFAULT '{}',
     ADD COLUMN scan_report  jsonb;
@@ -21,7 +14,6 @@ ALTER TABLE core.attachment ENABLE TRIGGER attachment_check;
 ALTER TABLE core.attachment
     ADD CONSTRAINT attachment_clean_scanned CHECK (status <> 'CLEAN' OR cardinality(scan_engines) > 0);
 
--- Như bản trước, thêm: quét lại phát hiện vấn đề thì tệp CLEAN được chuyển INFECTED / REJECTED (chỉ khi bật bms.rescan)
 CREATE OR REPLACE FUNCTION core.attachment_check() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -65,5 +57,4 @@ BEGIN
     RETURN NEW;
 END $$;
 
--- Tệp chờ quét lại, mới nhất trước (dùng cho tiến trình nền)
 CREATE INDEX attachment_unscanned ON core.attachment (created_at) WHERE status = 'CLEAN' AND scan_engines = '{unscanned}';

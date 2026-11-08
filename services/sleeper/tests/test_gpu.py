@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Tự dùng GPU NVIDIA khi máy có (ADR #79), với Docker Engine giả."""
 
 import itertools
@@ -129,7 +126,7 @@ class GpuTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_cho_compose_xong_moi_doi(self):
         e = FakeEngine(gpu_ok=True)
-        e.add("ollama-core")  # ai-worker chưa chạy: compose còn chờ ollama-core healthy
+        e.add("ollama-core")
         self.assertEqual(await self.gpu(e).reconcile(), [])
         self.assertFalse(has_gpu(await e.inspect("bamboo-ollama-core-1")))
 
@@ -154,7 +151,7 @@ class GpuTest(unittest.IsolatedAsyncioTestCase):
         e.add("ai-worker")
         e.add("ollama-core")
         gpu = self.gpu(e)
-        gpu.usable = True  # thử container nhỏ được nhưng dịch vụ thật không lên
+        gpu.usable = True
 
         async def broken(_cid):
             return False

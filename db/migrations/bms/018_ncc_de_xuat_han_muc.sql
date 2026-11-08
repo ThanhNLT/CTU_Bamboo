@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 ALTER TABLE proc.purchase_request
     ADD COLUMN proposed_partner_name text
         CHECK (proposed_partner_name IS NULL OR length(btrim(proposed_partner_name)) BETWEEN 2 AND 200),

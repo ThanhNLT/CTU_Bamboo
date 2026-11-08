@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { tr } from "../../i18n";
 
 /** Văn bản mẫu: ghi quy trình theo mẫu này vào tài liệu trong thư viện tri thức thì dựng được sơ đồ BPMN tự động. */

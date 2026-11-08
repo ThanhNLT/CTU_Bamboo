@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Hội tụ IT/OT (ADR #74): số đo thiết bị theo NGSI-LD, qua MQTT (iot-bridge) hoặc REST (cổng API).
 
 - `parse_attrs`: nhận thân NGSI-LD dạng chuẩn (`{"temperature": {"type": "Property", "value": 21.3, "observedAt": …}}`)

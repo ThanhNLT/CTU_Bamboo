@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 INSERT INTO core.permission (code, description) VALUES
     ('wf.process.design', 'Thiết kế, kiểm tra, chạy thử và phát hành quy trình BPMN của tenant');
 

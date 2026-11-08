@@ -1,9 +1,4 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-# Build context = gốc repo (workspace pnpm): docker build -f infra/docker/web.Dockerfile .
-# Tệp được đưa vào context: infra/docker/web.Dockerfile.dockerignore.
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
-# pnpm cùng bản với "packageManager" ở package.json gốc (npm chạy postinstall chọn binary theo nền tảng).
 RUN npm install -g --no-audit --no-fund pnpm@12.16.1
 WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

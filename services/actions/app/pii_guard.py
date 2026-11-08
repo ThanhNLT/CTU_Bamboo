@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import re
 import threading
 from dataclasses import dataclass
@@ -38,7 +34,6 @@ BANK_ACCOUNT = r"(?i)\b(?:stk|số tài khoản|tài khoản(?: ngân hàng)?)\D
 _UPPER = "A-ZĐÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ"
 _LOWER = "a-zđàáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ"
 _NAME = rf"[{_UPPER}][{_LOWER}]+(?:[ ][{_UPPER}][{_LOWER}]+){{1,4}}"
-# Nhận diện theo ngữ cảnh: chỉ khi có từ khóa đi trước, để không che nhầm mã chứng từ hay số liệu
 TAX_CODE = r"(?i:\b(?:mã số thuế|mst))\D{0,15}?(?P<pii>(?<!\d)\d{10}(?:[- ]?\d{3})?(?!\d))"
 HEALTH_INSURANCE = r"(?i:\b(?:bhyt|bảo hiểm y tế))\D{0,20}?(?P<pii>[A-Z]{2}(?:[ -]?\d){13}(?!\d))"
 SOCIAL_INSURANCE = r"(?i:\b(?:bhxh|sổ bảo hiểm xã hội))\D{0,15}?(?P<pii>(?<!\d)\d{10}(?!\d))"

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Sinh văn bản từ mẫu: quyết định nhân sự và báo cáo KPI đã đóng băng.
 
 Dùng chung đường ống với phiếu đề nghị mua sắm (`forms`): mẫu Jinja2 (tự escape) → Gotenberg/Chromium → PDF lưu trong kho
@@ -57,9 +53,6 @@ def _digest(*parts: str) -> str:
     for part in parts:
         h.update(part.encode())
     return h.hexdigest()
-
-
-# --- Quyết định nhân sự -----------------------------------------------------------------------------------------------
 
 
 def _decision(conn: psycopg.Connection, session: dict, decision_id: str) -> dict:
@@ -134,9 +127,6 @@ def get_personnel_decision_pdf(conn: psycopg.Connection, session: dict, args: di
         ctx, f"{d['tenant_id']}/hr.personnel_decision/{d['id']}/forms", digest, html, d["doc_no"], f"{d['doc_no']}.pdf"
     )
     return {"decision_id": str(d["id"]), "doc_no": d["doc_no"], **out}
-
-
-# --- Báo cáo KPI đã đóng băng -----------------------------------------------------------------------------------------
 
 
 def period_label(grain: str, start: dt.datetime) -> str:

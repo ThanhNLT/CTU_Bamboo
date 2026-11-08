@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 DO $$
 DECLARE
     s text;
@@ -21,7 +17,6 @@ BEGIN
         IF s = 'audit' THEN
             EXECUTE format('GRANT SELECT ON ALL TABLES IN SCHEMA %I TO bamboo_app', s);
             EXECUTE format('REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA %I FROM bamboo_app', s);
-            -- Neo chuỗi kiểm toán: dịch vụ chỉ được thêm bản neo và cập nhật nơi đã công bố (trigger chặn mọi sửa đổi khác)
             IF to_regclass('audit.anchor') IS NOT NULL THEN
                 GRANT INSERT ON audit.anchor TO bamboo_app;
                 GRANT UPDATE (published) ON audit.anchor TO bamboo_app;

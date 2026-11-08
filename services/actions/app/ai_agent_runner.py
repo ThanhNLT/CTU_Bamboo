@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Tác tử AI tự hành động khi có sự kiện nghiệp vụ (ADR #72), chạy trong hàng đợi của ai-worker.
 
 Một lần chạy (`core.ai_agent_run`) sinh ra khi sự kiện khớp `triggers` của tác tử đang hoạt động. Worker:
@@ -109,9 +106,6 @@ def _finish(conn: psycopg.Connection, run: dict, **fields) -> None:
     conn.commit()
 
 
-# --- Đọc chứng từ ------------------------------------------------------------------------------------------------
-
-
 def facts(conn: psycopg.Connection, entity_type: str | None, entity_id) -> dict | None:
     """Thông tin chứng từ đưa vào prompt; None khi không có chứng từ."""
     if not entity_type or not entity_id:
@@ -160,9 +154,6 @@ def _can_read(conn: psycopg.Connection, run: dict) -> bool:
     return conn.execute(
         "SELECT wf.entity_can_read(%s, %s, %s) AS ok", (run["entity_type"], run["entity_id"], run["owner"])
     ).fetchone()["ok"]
-
-
-# --- Kế hoạch của mô hình ------------------------------------------------------------------------------------------
 
 
 def build_messages(run: dict, doc: dict | None, chunks: list[dict]) -> list[dict]:
@@ -233,9 +224,6 @@ def parse_plan(text: str, run: dict, mask=lambda t: t) -> dict:
                 continue
             plan["actions"].append({"type": "webhook"})
     return plan
-
-
-# --- Thực hiện -----------------------------------------------------------------------------------------------------
 
 
 def _recipients(conn: psycopg.Connection, run: dict, target: str) -> list[str]:
