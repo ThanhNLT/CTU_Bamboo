@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App } from "antd";
 import { Download, Link2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -94,7 +90,7 @@ export const LedgerPage = () => {
     void loadArchive();
     const initial = params.get("doc");
     if (initial) void verifyCode(initial);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi mở trang
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verifyFile = async (file: File) => {

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useList } from "@refinedev/core";
 import gql from "graphql-tag";
 import { useEffect, useMemo, useState } from "react";
@@ -67,7 +63,6 @@ type ExtraFolder = { id: string; name: string; entityType: string; to: string; o
 const PARA_KEYS = new Set<string>(PARA_NAV.map((n) => n.key));
 const PROJECT_DONE = new Set(["DONE", "CANCELLED"]);
 
-// Thư mục ngoài chứng từ duyệt: dự án (Không gian P) và cuộc trò chuyện. Mô-đun dự án tắt thì không hỏi pm_project.
 const useExtraFolders = () => {
   const modules = useModules();
   const withProjects = modules.ready && modules.enabled("project");
@@ -125,7 +120,6 @@ const SCAN: Record<string, ScanResult> = {
   REJECTED: "rejected",
   PENDING: "pending",
 };
-// Tệp cũ chưa từng được quét: coi như đang kiểm tra cho tới khi hệ thống quét lại xong
 const scanOf = (row: { status: string; scan_engines?: string[] }): ScanResult =>
   row.status === "CLEAN" && (row.scan_engines ?? []).includes("unscanned")
     ? "pending"

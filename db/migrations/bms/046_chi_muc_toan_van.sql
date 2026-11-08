@@ -1,17 +1,6 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Chỉ mục toàn văn đầy đủ: (1) tệp dài được lập chỉ mục theo từng phần (trước đây cắt ở 100.000 ký tự); (2) tệp đính kèm
--- hồ sơ tiếp nhận nhân sự tìm được theo TÊN TỆP. Nội dung các tệp này (bản quét CCCD, tài khoản ngân hàng) không vào chỉ
--- mục và không OCR: CCCD, số tài khoản của hồ sơ được mã hóa riêng bằng OpenBao và chỉ xem rõ với hr.onboarding.private.read,
--- còn chỉ mục chữ rõ sẽ để người chỉ có hr.onboarding.read đọc được qua đoạn trích.
-
--- Loại chứng từ có tệp đính kèm vào chỉ mục (kể cả loại chỉ đánh chỉ mục tên tệp)
 CREATE FUNCTION search.attachment_searchable(p_entity_type text) RETURNS boolean
 LANGUAGE sql IMMUTABLE AS $$ SELECT search.attachment_indexable(p_entity_type) OR p_entity_type = 'hr.onboarding_request' $$;
 
--- Loại chỉ đánh chỉ mục tên tệp, không đọc nội dung
 CREATE FUNCTION search.attachment_name_only(p_entity_type text) RETURNS boolean
 LANGUAGE sql IMMUTABLE AS $$ SELECT p_entity_type = 'hr.onboarding_request' $$;
 
@@ -27,7 +16,6 @@ BEGIN
     RETURN NULL;
 END $$;
 
--- Quyền xem thật do wf.entity_can_read quyết định lúc tìm; hàm này chỉ loại tệp của chứng từ chưa đủ điều kiện vào chỉ mục
 CREATE OR REPLACE FUNCTION search.attachment_visible(p_entity_type text, p_entity_id uuid) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT CASE p_entity_type
@@ -57,5 +45,4 @@ BEGIN
     RETURN n;
 END $$;
 
--- Đánh dấu lại mọi tệp và tài liệu để search-sync nạp lại; chỉ ghi hàng đợi `search.pending` nên chạy lại cũng không hại
 SELECT search.mark_all();

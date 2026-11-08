@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Link } from "react-router";
 
 import { citationLabel, citationLink, namedBefore, parseRich, shortTitle } from "../assistant";

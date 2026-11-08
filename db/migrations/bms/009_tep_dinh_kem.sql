@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE TABLE core.attachment (
     tenant_id     uuid NOT NULL REFERENCES core.tenant,
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),

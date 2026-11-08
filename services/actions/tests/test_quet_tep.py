@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import io
 import struct
 import zipfile
@@ -237,7 +233,7 @@ def test_decode_text_va_loai_tep_duoc_nhan():
     from app import search, storage
 
     assert search.decode_text("Tụ điện".encode("utf-16")) == "Tụ điện"
-    raw = "Tu điên Viêt".encode("cp1258")  # byte 0xD0 (đ) không hợp lệ UTF-8
+    raw = "Tu điên Viêt".encode("cp1258")
     assert search.decode_text(raw) == "Tu điên Viêt"
     assert search.extract_text("http://khong-dung", b"a,b\n1,2", "text/csv") == "a,b 1,2"
     assert PPTX in storage.ALLOWED_TYPES and PPTX in search.TEXT_TYPES

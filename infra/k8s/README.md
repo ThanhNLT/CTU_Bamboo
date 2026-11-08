@@ -12,7 +12,7 @@ Khi chuyển sang k3s, cấu hình đặt ở đây, tách theo cùng nhóm vớ
 
 | Thư mục dự kiến | Nội dung |
 |---|---|
-| `base/` | Kustomize cho từng nhóm dịch vụ (core, data, ai, scan), dùng chung image `ghcr.io/thanhnlt/bamboo-*` |
+| `base/` | Kustomize cho từng nhóm dịch vụ (core, data, ai, scan), dùng chung image `ghcr.io/ctubamboo/bamboo-*` |
 | `overlays/<môi-trường>/` | Khác biệt theo môi trường (tài nguyên, tên miền, số bản sao) |
 | `argocd/` | Ứng dụng ArgoCD trỏ vào overlay; Git là nguồn duy nhất, như cấu hình cổng APISIX standalone (ADR #34) |
 

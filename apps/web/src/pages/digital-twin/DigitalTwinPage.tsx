@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Input, Spin } from "antd";
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";

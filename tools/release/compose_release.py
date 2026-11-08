@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import os
 import pathlib
@@ -48,7 +45,6 @@ def build(version: str) -> dict:
 def main() -> None:
     version = sys.argv[1]
     out = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "compose.release.yml"
-    # REUSE-IgnoreStart
     header = (
         "# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors\n"
         "# SPDX-License-Identifier: Apache-2.0\n"
@@ -56,7 +52,6 @@ def main() -> None:
         "#   docker compose -f compose.release.yml up -d\n"
         "# Sinh tự động bằng tools/release/compose_release.py; đừng sửa tay.\n"
     )
-    # REUSE-IgnoreEnd
     body = yaml.safe_dump(build(version), allow_unicode=True, sort_keys=False, width=120)
     out.write_text(header + body, encoding="utf-8")
     print(f"đã ghi {out}")

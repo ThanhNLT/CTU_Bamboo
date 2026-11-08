@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Gỡ nội dung chủ động và dựng lại tệp (CDR, Content Disarm and Reconstruction).
 
 Chạy sau khi bộ quét kết luận tệp sạch (ADR #70): bộ quét chặn thứ chắc chắn nguy hiểm, CDR bỏ những thứ bộ quét chỉ cảnh
@@ -58,9 +54,6 @@ def _attr(tag: bytes, name: bytes) -> bytes:
     return m.group(1) if m else b""
 
 
-# --- Ảnh ---------------------------------------------------------------------------------------------------------
-
-
 def _image(content_type: str, data: bytes) -> Result:
     from PIL import Image, ImageOps
 
@@ -91,9 +84,6 @@ def _image(content_type: str, data: bytes) -> Result:
     if frames > 1:
         actions.append(f"chỉ giữ khung hình đầu (ảnh có {frames} khung)")
     return Result(buf.getvalue(), actions)
-
-
-# --- OOXML -------------------------------------------------------------------------------------------------------
 
 
 def _clean_rels(body: bytes, dropped: set[str], base: str) -> tuple[bytes, int]:
@@ -153,7 +143,6 @@ def _ooxml(data: bytes) -> Result:
                     body, n = _DOCTYPE.subn(b"", body)
                     doctype += n
                 if name.endswith(".rels"):
-                    # _rels/x.xml.rels mô tả quan hệ của x.xml, đích tương đối tính từ thư mục chứa x.xml
                     folder = name.rsplit("_rels/", 1)[0]
                     body, n = _clean_rels(body, dropped, folder)
                     rel_removed += n
@@ -177,9 +166,6 @@ def _ooxml(data: bytes) -> Result:
         actions.append("bỏ khai báo DTD")
     actions.append("dựng lại gói zip (bỏ chú thích zip, dữ liệu thừa, mục ẩn)")
     return Result(out.getvalue(), actions)
-
-
-# --- PDF ---------------------------------------------------------------------------------------------------------
 
 
 def _bad_action(action) -> bool:
@@ -248,13 +234,10 @@ def _pdf(data: bytes) -> Result:
         writer.write(buf)
     except CdrError:
         raise
-    except (PyPdfError, Exception) as exc:  # noqa: BLE001 - pypdf ném nhiều loại lỗi với tệp hỏng
+    except (PyPdfError, Exception) as exc:  # noqa: BLE001
         raise CdrError(f"Không dựng lại được PDF ({type(exc).__name__})") from exc
     actions.append("ghi lại PDF chỉ với đối tượng còn dùng (bỏ bản cập nhật ẩn, dữ liệu sau %%EOF)")
     return Result(buf.getvalue(), actions)
-
-
-# --- Văn bản -----------------------------------------------------------------------------------------------------
 
 
 def _text(data: bytes) -> Result:

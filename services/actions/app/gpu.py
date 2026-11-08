@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Điều phối bộ nhớ (VRAM, hoặc RAM khi không có GPU) cho mô hình chính (ADR #52).
 
 Mô hình chỉ nạp khi có việc: Ollama tự gỡ mô hình sau AI_KEEP_ALIVE, dịch vụ OCR sau OCR_IDLE_SECONDS nhàn rỗi.
@@ -73,7 +70,7 @@ class Gpu:
             try:
                 self.ocr.unload()
             except OcrUnavailable:
-                pass  # dịch vụ OCR không chạy thì không giữ bộ nhớ
+                pass
         for m in running:
             if model_name(m["name"]) not in self.cpu_models:
                 self.ai.unload(m["name"])
@@ -89,7 +86,7 @@ class Gpu:
                     log.info("gỡ %s để chạy OCR", m["name"])
                     self.ai.unload(m["name"])
         except OllamaUnavailable:
-            pass  # Ollama không chạy thì không giữ bộ nhớ
+            pass
 
     def recognize(self, image: bytes) -> dict:
         """OCR một trang; hết bộ nhớ thì gỡ mô hình sinh nhàn rỗi rồi thử lại một lần."""

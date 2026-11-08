@@ -1,14 +1,9 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import httpx
 
 
 class FlowableClient:
     def __init__(self, base_url: str, user: str, password: str, timeout: float = 15.0):
         self.http = httpx.Client(base_url=base_url.rstrip("/") + "/", auth=(user, password), timeout=timeout)
-        # API tác vụ ngoài (external worker) nằm cạnh /service trong ứng dụng REST
         external = base_url.rstrip("/").removesuffix("/service") + "/external-job-api/"
         self.ext = httpx.Client(base_url=external, auth=(user, password), timeout=timeout)
 

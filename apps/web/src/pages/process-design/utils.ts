@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export const downloadText = (fileName: string, text: string) => {
   const url = URL.createObjectURL(new Blob([text], { type: "application/xml;charset=utf-8" }));
   const a = document.createElement("a");

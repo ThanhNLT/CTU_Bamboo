@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 
 import psycopg
@@ -53,7 +49,6 @@ def test_neo_ky_cong_bo_va_phat_hien_viet_lai(cur, database, s3):
         or (anchoring.verify_tenant(cur, signer, s3, i["TDX"])["ok"])
     )
 
-    # Bản công bố bên ngoài bị thay: phát hiện
     s3.put_document(
         anchoring.object_key(i["TDX"], first["seq"]), b'{"statement": "x", "signature": {}}', "application/json"
     )
@@ -66,7 +61,6 @@ def test_neo_ky_cong_bo_va_phat_hien_viet_lai(cur, database, s3):
     )
     assert anchoring.verify_tenant(cur, signer, s3, i["TDX"])["ok"]
 
-    # Kẻ có quyền CSDL viết lại một bản ghi đã neo: bị lộ (thử trong giao dịch rồi hoàn tác để không làm hỏng dữ liệu test)
     with psycopg.connect(database, row_factory=dict_row) as tx:
         tx.execute("ALTER TABLE audit.log DISABLE TRIGGER USER")
         tx.execute(
@@ -77,7 +71,6 @@ def test_neo_ky_cong_bo_va_phat_hien_viet_lai(cur, database, s3):
         assert not result["ok"] and {"seq": first["seq"], "problem": "LOG_REWRITTEN"} in result["problems"]
         tx.rollback()
 
-    # Sửa cả bản neo trong CSDL (đổi mã băm đầu chuỗi và văn bản): chữ ký không còn khớp
     with psycopg.connect(database, row_factory=dict_row) as tx:
         tx.execute("ALTER TABLE audit.anchor DISABLE TRIGGER anchor_guard")
         forged = anchoring.statement_text(i["TDX"], second["seq"], "cd" * 32, "2026-01-01T00:00:00+00:00")
@@ -130,7 +123,7 @@ def test_hanh_dong_can_quyen_audit_read(cur, database, s3):
             )
             pr(cur, "neo_hd", "c", "P_NV_MH_DT", 10_000_000)
             pool = ConnectionPool(database, min_size=1, max_size=2, open=True)
-            try:  # đúng đường của Hasura: hành động chạy trong giao dịch, không được tự cam kết
+            try:
                 assert run_action(pool, "audit_anchor_now", {"session_variables": employee}, ctx)["anchored"] is True
             finally:
                 pool.close()

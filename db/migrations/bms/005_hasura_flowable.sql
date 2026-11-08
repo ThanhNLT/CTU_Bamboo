@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE FUNCTION core.session_person(p_session json) RETURNS uuid
 LANGUAGE sql IMMUTABLE AS $$ SELECT nullif(p_session ->> 'x-hasura-user-id', '')::uuid $$;
 

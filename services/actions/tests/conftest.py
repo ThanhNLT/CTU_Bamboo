@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import os
 import pathlib
@@ -52,7 +48,6 @@ def database() -> str:
             INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
             SELECT r.tenant_id, r.id, test.id('P_NV_MH_DT'), 'UNIT' FROM core.role r WHERE r.code = 'MUA_HANG';
         """)
-        # mọi mô-đun đã cài và đã bật cho mọi tenant thử nghiệm, như hệ thống demo (ADR #56)
         conn.execute(
             "INSERT INTO core.module_install (module) SELECT unnest(%s::text[])", ([m.code for m in modules.CATALOG],)
         )

@@ -1,7 +1,4 @@
 #!/bin/sh
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-# SPDX-License-Identifier: Apache-2.0
-
 set -eu
 out=/tmp/bamboo/config.js
 mkdir -p "$(dirname "$out")"

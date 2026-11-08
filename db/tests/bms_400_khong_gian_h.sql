@@ -1,11 +1,5 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Không gian H (ADR #65): kênh đơn vị tự đồng bộ theo phân công, tin nhắn, lịch công tác.
 SELECT test.fixture();
 
--- Mỗi đơn vị có một kênh; thành viên là người trong cây con
 SELECT test.ok(EXISTS (SELECT FROM chat.conversation WHERE org_unit_id = test.id('DT_MH') AND kind = 'UNIT'),
                'phòng có kênh riêng');
 SELECT test.eq((SELECT array_agg(test.key(person_id) ORDER BY test.key(person_id)) FROM chat.member m
@@ -17,7 +11,6 @@ SELECT test.ok((SELECT chat.is_member(c.id, test.id('c')) FROM chat.conversation
 SELECT test.ok(NOT (SELECT chat.is_member(c.id, test.id('a')) FROM chat.conversation c WHERE c.org_unit_id = test.id('DT_MH')),
                'người phòng khác không thuộc kênh');
 
--- Hết phân công thì rời kênh, phân công mới thì vào kênh mới
 SELECT test.end_assignment('d', 'P_NV2_MH_DT');
 SELECT test.ok(NOT (SELECT chat.is_member(c.id, test.id('d')) FROM chat.conversation c WHERE c.org_unit_id = test.id('DT_MH')),
                'hết phân công thì rời kênh');
@@ -26,7 +19,6 @@ SELECT test.assign('TDX', 'd', 'P_NV2_KD_CHIP', 'CONCURRENT');
 SELECT test.ok((SELECT chat.is_member(c.id, test.id('d')) FROM chat.conversation c WHERE c.org_unit_id = test.id('CHIP_KD')),
                'phân công mới thì vào kênh của phòng mới');
 
--- Tin nhắn: chỉ thành viên gửi được; tin trả lời cùng cuộc; nhắc tên lọc người ngoài
 DO $$
 DECLARE
     v_conv uuid;
@@ -53,7 +45,6 @@ BEGIN
     PERFORM test.eq((SELECT last_read_id FROM chat.member WHERE conversation_id = v_conv AND person_id = test.id('tp_mh_dt')),
                     v_msg, 'đánh dấu đã đọc không lùi');
 
-    -- Sửa trong 24 giờ, thu hồi xóa nội dung
     UPDATE chat.message SET body = 'Chào cả phòng' WHERE id = v_msg;
     PERFORM test.ok((SELECT edited_at IS NOT NULL FROM chat.message WHERE id = v_msg), 'sửa tin ghi thời điểm sửa');
     UPDATE chat.message SET deleted_at = now() WHERE id = v_msg;
@@ -69,7 +60,6 @@ SELECT test.throws($$ INSERT INTO chat.message (tenant_id, conversation_id, send
                       VALUES (test.id('TDX'), test.id('KENH_MH'), test.id('c'), '   ') $$,
                    '%check%', 'không gửi tin rỗng');
 
--- Tin riêng: người nhận không trực tuyến thì có một thông báo cho cả loạt tin chưa đọc
 INSERT INTO chat.conversation (tenant_id, kind, direct_key, created_by)
 VALUES (test.id('TDX'), 'DIRECT', least(test.id('c')::text, test.id('a')::text) || ':' ||
                                   greatest(test.id('c')::text, test.id('a')::text), test.id('c'));
@@ -93,7 +83,6 @@ SELECT test.ok(wf.entity_can_read('proc.purchase_request', gen_random_uuid(), te
 SELECT test.eq((SELECT count(*)::int FROM pg_publication_tables WHERE pubname = 'bms_cdc' AND schemaname IN ('chat', 'cal')),
                0, 'chat, cal không vào CDC');
 
--- Lịch: lịch đơn vị mọi người trong cây con thấy; sự kiện cá nhân chỉ người tổ chức và người được mời
 INSERT INTO cal.event (tenant_id, id, title, starts_at, ends_at, scope, org_unit_id, organizer_id)
 VALUES (test.id('TDX'), test.put('EV_DT', gen_random_uuid()), 'Giao ban Điện thoại X', now() + interval '1 day',
         now() + interval '1 day 1 hour', 'UNIT', test.id('DT'), test.id('gd_dt'));
@@ -117,7 +106,6 @@ SELECT test.throws($$ INSERT INTO cal.event (tenant_id, title, starts_at, ends_a
                       VALUES (test.id('TDX'), 'x', now(), now(), test.id('c'), 'DAILY') $$,
                    '%check%', 'lặp phải có ngày cuối');
 
--- Cả ngày: chuẩn hóa về nửa đêm giờ Việt Nam
 INSERT INTO cal.event (tenant_id, id, title, starts_at, ends_at, all_day, organizer_id, kind)
 VALUES (test.id('TDX'), test.put('EV_NGHI', gen_random_uuid()), 'Nghỉ phép', '2026-11-10 15:00+07', '2026-11-11 09:00+07',
         true, test.id('c'), 'LEAVE');

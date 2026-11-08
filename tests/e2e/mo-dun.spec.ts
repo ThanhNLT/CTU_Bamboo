@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { expect, test, type Page } from "@playwright/test";
 
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
@@ -17,7 +13,6 @@ async function login(page: Page, username: string, tenant: string) {
 const card = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
 const nav = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
 
-// Bật/tắt áp dụng cho cả công ty: chạy ở Bệnh viện X để không đụng các bài E2E khác (chủ yếu ở Tập đoàn X) chạy song song
 test("quản trị viên tắt rồi bật lại một chức năng, menu và trang đổi theo", async ({ page }) => {
   await login(page, "tp.khth.benhvien", "Bệnh viện X");
   await page.goto("/admin/modules");
@@ -25,7 +20,6 @@ test("quản trị viên tắt rồi bật lại một chức năng, menu và tr
   await expect(card(page, "Sổ cái").getByText("Đang bật")).toBeVisible();
   await expect(nav(page).getByText("Sổ cái")).toBeVisible();
 
-  // chức năng đang có chức năng khác dựa vào thì không tắt được
   await card(page, "Phê duyệt").getByRole("button", { name: "Tắt" }).click();
   await page.getByRole("button", { name: "Tắt", exact: true }).last().click();
   await expect(page.getByText(/Không tắt được Phê duyệt: mô-đun .* đang bật và dựa vào nó/)).toBeVisible();
@@ -39,7 +33,6 @@ test("quản trị viên tắt rồi bật lại một chức năng, menu và tr
 
   await page.goto("/d/ledger");
   await expect(page.getByText("Chức năng Sổ cái chưa được bật")).toBeVisible();
-  // trang không kịp gọi API của mô-đun đã tắt trước khi biết trạng thái
   await expect(page.getByText(/Không tải được/)).toHaveCount(0);
   await page.getByRole("button", { name: "Mở Quản lý chức năng" }).click();
 

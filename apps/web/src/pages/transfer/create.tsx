@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useEffect, useState } from "react";
 import { Create } from "@refinedev/antd";
 import { useGo } from "@refinedev/core";
@@ -38,7 +34,6 @@ type FormValues = {
   reason: string;
 };
 
-// Kế hoạch điều chuyển phải lập trước ít nhất 14 ngày
 const LEAD_DAYS = 14;
 
 export const TransferCreate = () => {
@@ -73,7 +68,6 @@ export const TransferCreate = () => {
       .catch((e: Error) => message.error(e.message));
   }, [crossTenant, targetTenant, message]);
 
-  // Chỉ bổ nhiệm đang hiệu lực mới điều chuyển được
   const current = (options?.core_assignment ?? []).filter((a) => {
     const end = rangeEnd(a.valid_period);
     return end === null || end.isAfter(dayjs());

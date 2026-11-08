@@ -1,13 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/* Trang đăng nhập Bamboo: tên và biểu tượng ứng dụng, ô đăng nhập dạng cửa sổ nổi kiểu kính mờ của macOS.
-   Chế độ sáng nền xanh nhạt, chế độ tối nền xanh đậm; chuyển bằng nút mặt trăng/mặt trời (js/bamboo-theme.js).
-   Màu lấy từ --color-bamboo-* của apps/web (src/styles/tailwind.css). */
-
 :root {
     --bb-green-300: #98c9a0;
     --bb-green-400: #63ab70;
@@ -64,7 +54,6 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Nền sáng: xanh nhạt, hai quầng xanh mềm tạo chiều sâu */
 body#keycloak-bg {
     background:
         radial-gradient(60rem 40rem at 15% 10%, rgba(152, 201, 160, 0.55), transparent 60%),
@@ -73,7 +62,6 @@ body#keycloak-bg {
     background-attachment: fixed;
 }
 
-/* Nền tối: xanh đậm, hai quầng sáng mềm */
 .pf-v5-theme-dark body#keycloak-bg {
     background:
         radial-gradient(60rem 40rem at 15% 10%, rgba(99, 171, 112, 0.42), transparent 60%),
@@ -89,7 +77,6 @@ body#keycloak-bg {
     min-height: 100dvh;
 }
 
-/* Logo và ô đăng nhập sát nhau, đệm trên dưới vừa phải: vừa một màn hình laptop, không hiện thanh cuộn */
 .pf-v5-c-login__container {
     grid-template-columns: minmax(0, 26rem);
     justify-content: center;
@@ -98,7 +85,6 @@ body#keycloak-bg {
     padding: 1.25rem 1rem;
 }
 
-/* Tên và biểu tượng ứng dụng */
 .pf-v5-c-login__header {
     display: flex;
     flex-direction: column;
@@ -112,7 +98,6 @@ body#keycloak-bg {
     flex-direction: column;
     align-items: center;
     gap: 0.625rem;
-    /* styles.css của keycloak.v2 ép chữ trắng bằng !important: cần !important để chế độ sáng có chữ tối */
     color: var(--bb-brand) !important;
     font-family: var(--bb-font);
     font-size: 1.5rem;
@@ -129,7 +114,6 @@ body#keycloak-bg {
     filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
 }
 
-/* Ô đăng nhập: cửa sổ nổi, kính mờ */
 .pf-v5-c-login__main {
     color: var(--bb-text);
     background: var(--bb-glass);
@@ -172,7 +156,6 @@ body#keycloak-bg {
     letter-spacing: -0.01em;
 }
 
-/* Ô chọn ngôn ngữ: viên nhỏ, căn giữa dưới tiêu đề; nút sáng/tối nằm ngay bên phải */
 .pf-v5-c-login__main-header-utilities {
     width: 11rem;
     margin: 0.875rem auto 0;
@@ -191,7 +174,6 @@ body#keycloak-bg {
     flex: 0 0 auto;
 }
 
-/* Chọn ngôn ngữ VI | EN (thay ô chọn thả xuống), cùng kiểu với trang đăng ký của ứng dụng */
 .bb-locale {
     display: inline-flex;
     flex: 0 0 auto;
@@ -240,7 +222,6 @@ body#keycloak-bg {
     outline-offset: 1px;
 }
 
-/* Nút sáng/tối: ô vuông bo góc như ô ngôn ngữ; ở chế độ tối sáng lên lớp kính xanh */
 .bb-theme-toggle {
     display: grid;
     flex: 0 0 auto;
@@ -305,7 +286,6 @@ body#keycloak-bg {
     font-weight: 500;
 }
 
-/* Hai vùng chân thẻ luôn được dựng, kể cả khi rỗng: bỏ đệm để không thừa khoảng trắng */
 .pf-v5-c-login__main-footer {
     padding: 0;
 }
@@ -324,7 +304,6 @@ body#keycloak-bg {
     border-top: 1px solid var(--bb-line);
 }
 
-/* Ô nhập: một đường viền liền, bo đủ bốn góc, vòng sáng xanh khi focus như macOS */
 .pf-v5-c-form-control {
     min-height: 2.75rem;
     align-items: center;
@@ -342,7 +321,7 @@ body#keycloak-bg {
 }
 
 .pf-v5-c-form-control::after {
-    display: none; /* gạch chân của PatternFly */
+    display: none;
 }
 
 .pf-v5-c-form-control:hover::before {
@@ -372,14 +351,13 @@ body#keycloak-bg {
     font-family: var(--bb-font);
     font-size: 0.9375rem;
     background: transparent;
-    outline: none; /* vòng focus nằm ở khung ngoài */
+    outline: none;
 }
 
 .pf-v5-c-form-control > ::placeholder {
     color: var(--bb-text-2);
 }
 
-/* Trình duyệt tự điền: giữ nền và chữ của ô, không để lộ góc vuông */
 .pf-v5-c-form-control > input:-webkit-autofill,
 .pf-v5-c-form-control > input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--bb-text);
@@ -392,8 +370,6 @@ body#keycloak-bg {
     --bb-autofill: #26352b;
 }
 
-/* Menu chọn ngôn ngữ theo chế độ sáng/tối.
-   Trình duyệt chưa hỗ trợ base-select (Firefox, Safari): menu gốc của hệ thống, đổi tông theo color-scheme. */
 .pf-v5-c-form-control > select {
     color-scheme: light;
 }
@@ -407,14 +383,12 @@ body#keycloak-bg {
     background: var(--bb-menu-bg);
 }
 
-/* Chrome/Edge 135+: tự vẽ toàn bộ menu (nền kính, bo góc, mục đang trỏ màu xanh Tre) thay cho menu hệ thống */
 @supports (appearance: base-select) {
     .pf-v5-c-form-control > select,
     .pf-v5-c-form-control > select::picker(select) {
         appearance: base-select;
     }
 
-    /* Ô chọn dạng base-select là một nút: căn chữ giữa theo chiều dọc như ô cũ */
     .pf-v5-c-form-control > select {
         display: flex;
         align-items: center;
@@ -423,7 +397,6 @@ body#keycloak-bg {
         cursor: pointer;
     }
 
-    /* Mũi tên đã có sẵn trong khung của PatternFly */
     .pf-v5-c-form-control > select::picker-icon {
         display: none;
     }
@@ -499,12 +472,10 @@ body#keycloak-bg {
     }
 }
 
-/* Ô chỉ đọc (tên đăng nhập đã nhập ở bước sau) */
 .pf-v5-c-form-control.pf-m-readonly {
     background: transparent;
 }
 
-/* Ô mật khẩu: ô nhập và nút hiện mật khẩu là một khối bo tròn duy nhất */
 .pf-v5-c-input-group {
     position: relative;
     align-items: stretch;
@@ -583,7 +554,6 @@ body#keycloak-bg {
     border-radius: var(--bb-radius-field);
 }
 
-/* Nút: mọi viền ::after theo đúng bán kính của nút, không để lòi góc vuông */
 .pf-v5-c-button:not(.pf-m-control) {
     min-height: 2.75rem;
     font-family: var(--bb-font);
@@ -672,7 +642,6 @@ a,
     --pf-v5-global--link--Color--hover: #fff;
 }
 
-/* Hộp thông báo: bo tròn, thanh màu bên trái bị cắt theo góc */
 .pf-v5-c-alert {
     margin: 0 0 1rem;
     overflow: hidden;
@@ -686,7 +655,6 @@ a,
     background: rgba(214, 69, 69, 0.12);
 }
 
-/* Hộp chọn: ô vuông bo góc, dấu tích vẽ bằng SVG */
 .pf-v5-c-check__input {
     width: 1.125rem;
     height: 1.125rem;
@@ -715,7 +683,6 @@ a,
     outline-offset: 2px;
 }
 
-/* Thanh cuộn kiểu macOS như ứng dụng web: mảnh, bo tròn, không có nút mũi tên */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -779,7 +746,6 @@ a,
     }
 }
 
-/* Máy không hỗ trợ backdrop-filter: dùng nền đặc để chữ vẫn đọc được */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .pf-v5-c-login__main {
         background: #f6f9f6;
@@ -790,7 +756,6 @@ a,
     }
 }
 
-/* ----- Bố cục hai nửa (ADR #62): ô đăng nhập bên trái, lời chào cắt chéo bên phải, như trang /login của web ----- */
 .bb-greeting {
     display: flex;
     flex-direction: column;
@@ -866,7 +831,6 @@ a,
 
     .bb-split .pf-v5-c-login__main > :not(.bb-greeting) {
         grid-column: 1;
-        /* Mép chéo của nửa lời chào lấn 3rem vào cột trái: chừa chỗ để ô nhập và nút không bị cắt */
         padding-right: 4.5rem;
     }
 

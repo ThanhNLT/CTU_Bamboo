@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type AgentStatus = "active" | "inactive";
 
 export type GuardKey = "scope_guard" | "pii_guard" | "prompt_guard" | "think";

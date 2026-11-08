@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { request } from "../../api/client";
 import type { OcrDocument, RecentImport } from "./types";
 import { trf } from "../../i18n";
@@ -22,7 +18,6 @@ export const loadOptions = (person: string) =>
     { person },
   );
 
-// Tệp đính kèm phải thuộc một chứng từ: tạo đề nghị mua sắm nháp làm nơi chứa bản quét, điền xong thì người dùng gửi duyệt
 export const createDraft = async (positionId: string, title: string): Promise<string> =>
   (
     await request<{ insert_proc_purchase_request_one: { id: string } }>(

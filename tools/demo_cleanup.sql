@@ -1,12 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Xóa đề nghị mua sắm do người dùng lập qua ứng dụng (không phải dữ liệu seed) cùng mọi thứ đi kèm, và tài khoản,
--- đơn vị, vị trí do kiểm thử E2E tạo (phần cuối).
--- Dữ liệu seed được lập khi CSDL không có phiên người dùng nên dòng INSERT trong audit.log không có actor_id;
--- đề nghị lập qua giao diện thì có. Nhật ký kiểm toán chỉ cho ghi thêm nên được giữ nguyên (trigger sẽ ghi thêm
--- các dòng DELETE, chuỗi băm vẫn hợp lệ). Chạy bằng tools/demo_cleanup.sh, không chạy tay.
 \set ON_ERROR_STOP on
 BEGIN;
 
@@ -26,7 +17,6 @@ SELECT o.ic_order_id FROM proc.purchase_order o JOIN test_pr t ON t.id = o.reque
 SELECT t.code AS tenant, p.doc_no, p.status, p.title
 FROM test_pr p JOIN core.tenant t ON t.id = p.tenant_id ORDER BY t.code, p.doc_no;
 
--- Lệnh nội bộ có thể gộp nhiều đề nghị: không xóa nếu còn đề nghị của dữ liệu seed trỏ vào
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM test_ic i JOIN proc.purchase_request r ON r.ic_order_id = i.id
@@ -38,7 +28,6 @@ END $$;
 CREATE TEMP TABLE test_step ON COMMIT DROP AS
 SELECT s.id FROM wf.approval_step s WHERE s.entity_type = 'proc.purchase_request' AND s.entity_id IN (SELECT id FROM test_pr);
 
--- Các lệnh DELETE theo thứ tự khóa ngoại; \gset không dùng nên đếm bằng CTE
 \echo === Số dòng bị xóa ===
 WITH
  d1 AS (DELETE FROM proc.purchase_order WHERE request_id IN (SELECT id FROM test_pr) RETURNING 1),
@@ -64,7 +53,6 @@ DELETE FROM core.attachment WHERE entity_type = 'proc.purchase_request' AND enti
 DELETE FROM proc.purchase_request WHERE id IN (SELECT id FROM test_pr);
 DELETE FROM ic.ic_order_item WHERE order_id IN (SELECT id FROM test_ic);
 DELETE FROM ic.ic_order WHERE id IN (SELECT id FROM test_ic);
--- Số chứng từ lập tiếp theo quay về sau số lớn nhất còn lại (đề nghị, đơn hàng, lệnh nội bộ)
 UPDATE core.doc_sequence s SET last_no = d.mx
 FROM (
     SELECT tenant_id, split_part(doc_no, '-', 1) AS prefix, split_part(doc_no, '-', 2)::int AS year,
@@ -79,9 +67,6 @@ WHERE s.tenant_id = d.tenant_id AND s.prefix = d.prefix AND s.year = d.year AND 
   AND s.last_no > d.mx;
 SELECT kpi.refresh();
 
--- Tài khoản, đơn vị và vị trí do kiểm thử E2E tạo trên CSDL demo: người "Người Thử …" (trưởng các "Nhóm Thử …"), "Trần
--- Thị Thử …" (hồ sơ tiếp nhận thử), đơn vị mã E2E_<số>, vị trí có hậu tố ngẫu nhiên kiểu "mvynp2kk". Hồ sơ tiếp nhận thử
--- giữ lại nhưng bỏ liên kết tới người bị xóa; tài khoản Keycloak tương ứng do demo_cleanup.sh xóa (dòng NOTICE KEYCLOAK).
 CREATE TEMP TABLE test_unit ON COMMIT DROP AS
 SELECT id FROM core.org_unit WHERE code ~ '^E2E_[0-9]+';
 CREATE TEMP TABLE test_pos ON COMMIT DROP AS
@@ -116,8 +101,6 @@ DELETE FROM core.team_member WHERE person_id IN (SELECT id FROM test_person);
 DELETE FROM core.role_grant WHERE person_id IN (SELECT id FROM test_person) OR position_id IN (SELECT id FROM test_pos)
     OR scope_unit_id IN (SELECT id FROM test_unit) OR org_unit_id IN (SELECT id FROM test_unit);
 DELETE FROM core.assignment WHERE person_id IN (SELECT id FROM test_person) OR position_id IN (SELECT id FROM test_pos);
--- Quyết định nhân sự chỉ ghi thêm (giá trị pháp lý): vị trí, người, đơn vị còn được quyết định nhắc tới thì giữ lại,
--- kết thúc hiệu lực và gỡ tài khoản thay vì xóa
 CREATE TEMP TABLE keep_pos ON COMMIT DROP AS
 SELECT DISTINCT x AS id FROM hr.personnel_decision d,
     unnest(ARRAY[d.issuer_position_id, d.source_position_id, d.target_position_id]) x

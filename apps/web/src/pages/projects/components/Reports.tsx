@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Button, DatePicker, Empty, Form, Input, Modal, Radio } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { FileDown, Plus } from "lucide-react";

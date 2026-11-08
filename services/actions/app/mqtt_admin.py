@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Quản trị Mosquitto qua plugin dynamic-security (ADR #74).
 
 - `dynsec_config`: cấu hình ban đầu do openbao-init ghi một lần: tài khoản `bamboo-admin` (chỉ kênh điều khiển

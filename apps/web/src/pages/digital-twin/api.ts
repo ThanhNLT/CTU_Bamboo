@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
@@ -186,7 +182,6 @@ export const useTwinEntities = () => {
     const id = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(id);
   }, [load]);
-  // Số đo hoặc sự cố mới (do thiết bị hay người khác ghi nhận) cập nhật ngay, không chờ chu kỳ (ADR #64)
   const live = useLiveTopics(["iot"], load);
   return { ...state, reload: load, live };
 };

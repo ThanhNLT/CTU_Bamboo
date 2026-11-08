@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { DatePicker, Form, Input, InputNumber, Radio, Select, Switch, TreeSelect } from "antd";
 import type { Dayjs } from "dayjs";
 
