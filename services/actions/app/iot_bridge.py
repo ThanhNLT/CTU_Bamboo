@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Cầu nối MQTT → bản sao số (ADR #74): `python -m app.iot_bridge`.
 
 Đăng nhập Mosquitto bằng tài khoản `bamboo-bridge` (chỉ đọc `bamboo/+/+/attrs`), mỗi bản tin

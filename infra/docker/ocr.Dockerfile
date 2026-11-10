@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 # OCR tiếng Việt (ADR #52, #80): PyTorch bản CPU trên python:3.11-slim, mọi thành phần đều giấy phép nguồn mở được OSI
 # phê duyệt, không có CUDA/cuDNN. Máy có GPU NVIDIA: sleeper chạy `python -m app.accel` (nhãn bamboo.gpu.prepare) một lần
 # để tải PyTorch bản CUDA từ kho của PyTorch vào volume /opt/accel (app.accelpath đưa lên đầu sys.path) rồi chuyển OCR sang GPU.

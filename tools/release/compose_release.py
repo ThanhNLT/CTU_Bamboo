@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 import json
 import os
 import pathlib
@@ -46,8 +53,13 @@ def main() -> None:
     version = sys.argv[1]
     out = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "compose.release.yml"
     header = (
-        "# SPDX-FileCopyrightText: 2026 Bamboo\n"
-        "# SPDX-License-Identifier: Apache-2.0\n"
+        "# Bamboo - DX-OS Open-Core\n"
+        f"# @version {version}\n"
+        "# @author CTUBamboo\n"
+        "# @copyright Copyright 2026 Bamboo\n"
+        "# @license Apache-2.0\n"
+        "# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n"
+        "\n"
         f"# Bamboo DX-OS {version}: toàn bộ hệ thống từ image dựng sẵn, không cần mã nguồn.\n"
         "#   docker compose -f compose.release.yml up -d\n"
         "# Sinh tự động bằng tools/release/compose_release.py; đừng sửa tay.\n"

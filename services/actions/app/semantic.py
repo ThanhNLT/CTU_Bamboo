@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Lớp ngữ nghĩa trên Lakehouse: người dùng chọn chỉ số, chiều và bộ lọc theo tên nghiệp vụ, hệ thống sinh câu truy vấn.
 
 Chỉ tên trong danh mục dưới đây mới vào được câu SQL; giá trị lọc được kiểm định dạng chặt, nên không có cách đưa SQL tự do

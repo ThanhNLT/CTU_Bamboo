@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 import { App, Input, Modal, Radio, Segmented, Select, Spin } from "antd";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";

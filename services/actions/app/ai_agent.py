@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Tác tử AI và Trợ lý RAG (ADR #51).
 
 Quản trị (cần core.ai.manage, kiểm qua core.v_ai_admin): ai_agent_register, ai_agent_update,

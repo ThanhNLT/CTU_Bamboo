@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Worker trả lời lượt hỏi Trợ lý RAG (ADR #51): `python -m app.ai_worker`.
 
 Mỗi lần lấy một lượt `queued` (FIFO, SKIP LOCKED), tìm đoạn trong `documents_kb_chunk`, lọc theo quyền

@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """OCR tệp đính kèm quét (ADR #52): chọn trang, gọi dịch vụ `ocr`, ghi từng trang vào core.attachment_ocr.
 
 Ảnh luôn OCR; PDF chỉ OCR trang không có chữ (dưới MIN_PAGE_CHARS ký tự), tối đa MAX_PAGES trang.

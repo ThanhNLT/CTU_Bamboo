@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Nhập liệu từ bản quét (ADR #52): trả chữ đã đọc của một tệp đính kèm cùng các trường rút ra và gợi ý khớp danh mục.
 
 Tệp là ảnh, hoặc PDF quét, đã được OCR xếp hàng khi tải lên; PDF đã có chữ thì lấy thẳng lớp chữ. Hành động chỉ đọc: việc

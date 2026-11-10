@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Tải PyTorch bản CUDA cho OCR trên máy có GPU NVIDIA (ADR #80): `python -m app.accel`.
 
 Image `bamboo-ocr` chỉ có PyTorch bản CPU (toàn bộ là phần mềm nguồn mở). Khi `sleeper` thấy máy có GPU NVIDIA, nó chạy

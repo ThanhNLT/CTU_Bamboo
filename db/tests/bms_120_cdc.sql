@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 SELECT test.ok(EXISTS (SELECT FROM pg_publication_tables WHERE pubname = 'bms_cdc'
                        AND schemaname = 'proc' AND tablename = 'purchase_request'), 'Đề nghị mua sắm có trong publication');
 SELECT test.ok(EXISTS (SELECT FROM pg_publication_tables WHERE pubname = 'bms_cdc'

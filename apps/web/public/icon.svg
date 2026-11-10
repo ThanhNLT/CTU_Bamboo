@@ -1,6 +1,13 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- SPDX-FileCopyrightText: 2026 Bamboo -->
-  <!-- SPDX-License-Identifier: Apache-2.0 -->
   <rect width="512" height="512" rx="112" fill="#f1f8f2"/>
   <g transform="translate(64 64) scale(12)">
     <path d="M15.5 30C15.6 23 16 15 17.2 6" fill="none" stroke="#276533" stroke-width="1.8" stroke-linecap="round"/>
