@@ -85,6 +85,8 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [77](#adr-77) | 06/11/2026 | Phả hệ và kiểm tra CDC thu tự động theo lịch, không đánh thức Trino (bổ sung ADR #64) |
 | [78](#adr-78) | 07/11/2026 | Healthcheck kiểm dày lúc khởi động, thưa khi đã chạy (`start_interval`); Kafka bỏ JVM trong healthcheck |
 | [79](#adr-79) | 07/11/2026 | `sleeper` tự chuyển Ollama, OCR sang GPU NVIDIA khi máy có, chỉ với `docker compose up` |
+| [80](#adr-80) | 10/11/2026 | Image OCR mặc định dùng PyTorch bản CPU, không có CUDA/cuDNN; bản CUDA chỉ dựng tại máy khi bật |
+| [81](#adr-81) | 10/11/2026 | Lớp BPMN tự viết trên diagram-js và bpmn-moddle (MIT) thay bpmn-js (giấy phép bpmn.io chưa được OSI phê duyệt) |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -483,6 +485,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** BPMN XML là định dạng Flowable deploy được trực tiếp và bpmn-js đã có trong giao diện (trang sơ đồ quy trình của đề nghị mua sắm), nên trình soạn và máy chạy dùng cùng một tệp, không có bước chuyển đổi. Chạy thử bằng deployment tạm với khóa riêng cho kết quả thật của engine (biểu thức điều kiện, cổng rẽ, lỗi parse) mà không đụng tiến trình phản chiếu luồng duyệt (ADR #31); xóa deployment xong thì Flowable không giữ rác. Kiểm tra ở máy chủ để luật là một cho giao diện, lưu và phát hành
 - **Đã loại:** Mô hình nút / cạnh tự định nghĩa rồi sinh BPMN (bản minh họa trước đây: mất thông tin khi đọc lại BPMN có sẵn); `bpmn-js-properties-panel` (thêm gói lớn cho vài thuộc tính); mô phỏng trên trình duyệt (không phát hiện lỗi thật của engine); tự deploy phiên bản phát hành thành quy trình nghiệp vụ (luồng duyệt vẫn ở CSDL theo ADR #31; phát hành là phiên bản có kiểm soát để đưa vào Git / CI)
 - **Giới hạn hiện tại:** Chạy thử chỉ đi được qua tác vụ người dùng (sự kiện hẹn giờ, tin nhắn thì dừng và báo); mọi tác vụ trong một lần chạy cùng một quyết định; biểu mẫu tác vụ mới là định nghĩa trường, chưa sinh form nhập liệu; `candidateGroups` ghi mã tự do, chưa đối chiếu với vai trò
+- **Bổ sung:** [ADR #81](#adr-81) (10/11/2026): thư viện `bpmn-js` được thay bằng lớp BPMN tự viết trên diagram-js và bpmn-moddle (MIT)
 
 (adr-48)=
 ## ADR #48: Thư viện tri thức: tài liệu vào thư viện qua đề xuất là loại chứng từ mới đi chung chuỗi duyệt; phạm vi đọc tập đoàn / công ty; tìm toàn văn bằng chỉ mục Meilisearch có sẵn
@@ -844,6 +847,24 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Người dùng phổ thông chỉ chạy `docker compose up`. Compose không có điều kiện theo phần cứng: khai `deploy.resources.reservations.devices` với driver `nvidia` trên máy không có toolkit thì container không tạo được, nên không thể để mặc định. Dò lúc chạy bằng chính thao tác Docker sẽ làm (container thử xin GPU) đúng cho cả Docker Desktop WSL2 (không liệt kê runtime `nvidia`) lẫn Linux có toolkit, và lỗi GPU không bao giờ làm AI ngừng chạy. Giữ nguyên nhãn compose nên `docker compose up`, `down`, `ps`, `logs` vẫn coi container là của nó; compose tạo lại (đổi cấu hình, image) thì sleeper chuyển lại.
 - **Đã loại:** `make up` dò rồi ghi `COMPOSE_FILE` vào `.env` (bản đầu của ADR này, cùng ngày: `docker compose up` trên bản clone mới vẫn chạy CPU, và sửa `.env` của người dùng); đọc `docker info` tìm runtime `nvidia` (Docker Desktop không liệt kê); container Ollama, OCR thứ hai ngoài compose (`docker compose down` không dọn được mạng).
 - **Giới hạn hiện tại:** Mấy phút đầu sau `docker compose up` (tới khi `ai-worker` chạy) AI chạy CPU; lúc chuyển, lượt hỏi đang chờ phải đợi container mới lên (vài giây). `docker compose up` gắn log (không `-d`) không theo log container mới tạo, xem bằng `docker compose logs -f ollama-core`. Chỉ NVIDIA.
+
+(adr-80)=
+## ADR #80: Image OCR mặc định dùng PyTorch bản CPU, không có CUDA/cuDNN; bản CUDA chỉ dựng tại máy khi bật
+
+- **Ngày:** 10/11/2026
+- **Quyết định:** `infra/docker/ocr.Dockerfile` có hai bản theo build arg `OCR_VARIANT`. Mặc định `cpu`: `python:3.11-slim-bookworm` cộng `torch`, `torchvision` bản CPU từ `download.pytorch.org/whl/cpu` (BSD-3-Clause), không có thành phần NVIDIA; image mang nhãn `bamboo.gpu=false` nên `sleeper` không chuyển OCR sang GPU ([ADR #79](#adr-79) vẫn áp dụng cho Ollama). Bản `cuda` (nền `pytorch/pytorch:*-cuda*-cudnn*-runtime`, như trước) chỉ dựng khi người dùng đặt `BAMBOO_OCR_VARIANT=cuda` trong `.env`, nhãn `bamboo.gpu=true`, nhãn giấy phép ghi rõ `LicenseRef-NVIDIA-CUDA-EULA`, `LicenseRef-NVIDIA-cuDNN-SLA`. Image `bamboo-ocr` không có trong workflow phát hành image (`images.yml`) và không đưa lên GHCR ở bản nào. `NOTICE` liệt kê giấy phép của dịch vụ OCR và thư viện NVIDIA trong image Ollama chính thức. Bổ sung [ADR #52](#adr-52), [ADR #79](#adr-79).
+- **Lý do:** Image cũ dựng sẵn trên `pytorch/pytorch` CUDA nên mọi bản dựng đều mang CUDA/cuDNN theo giấy phép NVIDIA, không phải nguồn mở, trong khi image lại mang tên `ghcr.io/ctubamboo/bamboo-ocr` và nhãn `Apache-2.0` như thể là bản phát hành của dự án. Bản CPU đủ dùng cho khối lượng OCR của một doanh nghiệp (đo `tools/ocr_smoke.py` trên bản CPU: CER 3,1–3,7 %, 3–7 giây mỗi trang), image nhỏ hơn nhiều (khoảng 1,3 GB thư viện so với khoảng 14 GB), và người cần GPU vẫn bật được bằng một biến.
+- **Đã loại:** Giữ CUDA, chỉ chặn phát hành (image dựng tại máy vẫn chứa phần mềm không nguồn mở theo mặc định); cài CUDA vào volume lúc chạy khi `sleeper` thấy GPU (tải vài GB lúc chạy, khó kiểm, vẫn là phần mềm NVIDIA trong hệ thống mặc định); ONNX Runtime thay PyTorch (phải chuyển đổi và kiểm lại mô hình VietOCR, PaddleOCR).
+- **Giới hạn hiện tại:** OCR mặc định chạy CPU nên chậm hơn GPU; muốn OCR trên GPU phải đặt `BAMBOO_OCR_VARIANT=cuda` rồi dựng lại (`docker compose up -d --build ocr-core`). Ollama vẫn dùng image chính thức có kèm thư viện CUDA runtime (kéo thẳng từ Docker Hub, dự án không phân phối lại).
+
+(adr-81)=
+## ADR #81: Lớp BPMN tự viết trên diagram-js và bpmn-moddle (MIT) thay bpmn-js
+
+- **Ngày:** 10/11/2026
+- **Quyết định:** Bỏ `bpmn-js`. Trình thiết kế (`/p/process`) và trang sơ đồ của đề nghị (`/p/process/:id`) dùng lớp BPMN của dự án ở `apps/web/src/bpmn`, dựng trên `diagram-js` (canvas, kéo thả, nối, hoàn tác, bảng công cụ, menu ngữ cảnh), `diagram-js-direct-editing` (sửa nhãn) và `bpmn-moddle` (đọc/ghi XML BPMN 2.0), đều MIT. Lớp này gồm: bộ vẽ SVG cho sự kiện (bắt đầu, trung gian, biên, kết thúc và các loại định nghĩa sự kiện), tác vụ (mọi loại tác vụ, gọi quy trình, quy trình con thu gọn và mở rộng, đánh dấu lặp), cổng (một nhánh, song song, nhiều nhánh, phức hợp, theo sự kiện), luồng tuần tự (mặc định, có điều kiện, nhãn); nhập/xuất giữ nguyên mọi phần tử không vẽ (làn, ghi chú, dữ liệu, thuộc tính mở rộng `flowable:`, `bamboo:`), vị trí nhãn lưu trong tệp; bố cục đường nối vuông góc; quy tắc nối (không vào sự kiện bắt đầu, không ra từ sự kiện kết thúc, không trùng luồng); bảng công cụ và menu ngữ cảnh với các phần tử Bamboo dùng; cập nhật thuộc tính qua lệnh hoàn tác được. API `BpmnEditorHandle` và các trang không đổi. `tools/ci/check_licenses.mjs` bỏ cơ chế ngoại lệ: mọi phụ thuộc production của `apps/web` phải dùng giấy phép trong danh sách OSI. Thay phần thư viện của [ADR #47](#adr-47).
+- **Lý do:** Giấy phép bpmn.io của `bpmn-js` là MIT cộng điều kiện bắt buộc giữ và không che watermark, chưa được OSI phê duyệt, nên là ngoại lệ duy nhất với cam kết toàn bộ thành phần dùng giấy phép OSI. Chỉ riêng lớp `bpmn-js` mang điều kiện đó; các thư viện nền của nó đều MIT, nên tự viết lớp mỏng cho đúng tập phần tử Bamboo dùng là đủ, không phải đổi định dạng (BPMN XML vẫn là nguồn sự thật cho Flowable).
+- **Đã loại:** Giữ `bpmn-js` và ghi ngoại lệ (vẫn trái cam kết OSI); `bpmn-visualization` (Apache-2.0) cho trang xem (chỉ xem, trình thiết kế vẫn phải tự viết, thêm một thư viện); mô hình nút/cạnh tự định nghĩa rồi sinh BPMN (đã loại ở ADR #47 vì mất thông tin khi đọc lại BPMN có sẵn).
+- **Giới hạn hiện tại:** Không có bể bơi/làn (pool, lane), ghi chú, đối tượng dữ liệu trên bảng công cụ và chúng không được vẽ (vẫn giữ nguyên trong tệp khi lưu); không đổi loại phần tử tại chỗ (xóa rồi tạo lại); di chuyển phần tử thì đường nối của nó được vẽ lại theo bố cục vuông góc (điểm gấp đặt tay bị bỏ); chưa có sao chép/dán.
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
