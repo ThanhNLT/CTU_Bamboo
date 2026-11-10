@@ -296,10 +296,10 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
 - **`make up` và `docker compose up` phải chạy trên cùng một bản clone:** hai lệnh dùng chung tên dự án `bamboo` (chung
   image, volume), nên chạy `make up` ở một bản clone cũ (ví dụ trong WSL) sẽ dựng lại giao diện cũ đè lên.
 - **GPU NVIDIA:** không cần cấu hình gì. Máy có card NVIDIA (Docker Desktop WSL2, hoặc Linux có `nvidia-container-toolkit`)
-  thì vài phút sau khi hệ thống lên, AI (Ollama) tự chuyển sang GPU; không có card hoặc GPU lỗi thì chạy trên CPU/RAM
-  (`docker compose logs sleeper` ghi đã chọn gì). `BAMBOO_GPU=false` trong `.env` để luôn chạy CPU. OCR mặc định là bản
-  CPU, chỉ gồm phần mềm nguồn mở; muốn OCR chạy GPU thì đặt `BAMBOO_OCR_VARIANT=cuda` rồi `docker compose up -d --build`
-  (dựng tại máy bản có CUDA/cuDNN theo giấy phép NVIDIA, không phải nguồn mở).
+  thì vài phút sau khi hệ thống lên, AI và OCR tự chuyển sang GPU; không có card hoặc GPU lỗi thì chạy trên CPU/RAM
+  (`docker compose logs sleeper` ghi đã chọn gì). `BAMBOO_GPU=false` trong `.env` để luôn chạy CPU. Image OCR chỉ gồm phần
+  mềm nguồn mở (PyTorch bản CPU); lần đầu trên máy có GPU, hệ thống tự tải PyTorch bản CUDA (khoảng 6,6 GB, kèm thư viện CUDA/cuDNN
+  theo giấy phép NVIDIA) vào volume `ocr-accel` rồi mới chuyển OCR sang GPU, cần Internet.
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
   hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.
 - **Bật thêm:** ClamAV `docker compose --profile scan up -d` (đặt `CLAMAV_HOST=clamav`), gom log container
