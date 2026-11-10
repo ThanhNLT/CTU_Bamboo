@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Kịch bản do người dùng viết trong quy trình tự động (ADR #73).
 
 Ngôn ngữ là một tập con của Python, chạy bằng trình thông dịch duyệt cây cú pháp ở đây, không bao giờ dùng exec/eval:

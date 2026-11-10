@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Phả hệ dữ liệu thu tự động (ADR #64): đồ thị dựng từ publication CDC, Lakehouse, lớp ngữ nghĩa."""
 
 import psycopg

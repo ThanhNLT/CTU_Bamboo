@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 export type ProjectStatus = "PLANNING" | "ACTIVE" | "ON_HOLD" | "DONE" | "CANCELLED";
 export type Role = "MANAGER" | "MEMBER" | "VIEWER";
 export type Health = "GREEN" | "AMBER" | "RED";

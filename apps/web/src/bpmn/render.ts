@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Vẽ phần tử BPMN bằng SVG (ADR #81). Phần tử đầu tiên trong nhóm vẽ luôn là hình chính để CSS tô trạng thái
 // (`.marker .djs-visual > :nth-child(1)`) dùng được cho mọi loại.

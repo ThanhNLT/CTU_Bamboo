@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 import { App, Alert, Drawer, Input, InputNumber, Segmented, Select, Table, Tag, Upload } from "antd";
 import { FileSearch, History, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";

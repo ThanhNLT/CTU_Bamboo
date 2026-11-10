@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Smoke test Trợ lý RAG với Ollama thật (ADR #51, #52): chạy `./tools/ai_smoke.sh [--cold]`.
 
 Hỏi bằng tác tử "Trợ lý quy chế" của Tập đoàn X dưới danh tính người tạo tác tử, gọi thẳng dịch vụ actions,

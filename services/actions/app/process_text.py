@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Văn bản quy định quy trình ⇄ sơ đồ BPMN.
 
 Một mẫu văn bản chung cho hai chiều: đọc văn bản trong thư viện tri thức để dựng sơ đồ (`parse` → `build_bpmn`) và đọc

@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Hội tụ IT/OT (ADR #74): số đo thiết bị theo NGSI-LD, qua MQTT (iot-bridge) hoặc REST (cổng API).
 
 - `parse_attrs`: nhận thân NGSI-LD dạng chuẩn (`{"temperature": {"type": "Property", "value": 21.3, "observedAt": …}}`)

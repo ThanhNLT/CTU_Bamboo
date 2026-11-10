@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Sinh văn bản từ mẫu: quyết định nhân sự và báo cáo KPI đã đóng băng.
 
 Dùng chung đường ống với phiếu đề nghị mua sắm (`forms`): mẫu Jinja2 (tự escape) → Gotenberg/Chromium → PDF lưu trong kho

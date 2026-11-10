@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Bộ quét tệp nội bộ: luôn chạy trước khi một tệp được coi là sạch.
 
 Bộ quét không thay ClamAV (không có cơ sở dữ liệu mẫu virus); nó kiểm tra những gì kiểm tra được ngay trong tiến trình:

@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 from conftest import ids, open_task, pr, status
 
 PR_QUERY = "query($id: uuid!) { proc_purchase_request_by_pk(id: $id) { id status requester_id } }"

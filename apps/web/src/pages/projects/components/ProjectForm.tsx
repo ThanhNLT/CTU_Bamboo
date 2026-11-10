@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 import { App, DatePicker, Form, Input, InputNumber, Modal, Select, TreeSelect } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useMemo, useState } from "react";
