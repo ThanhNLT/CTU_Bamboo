@@ -46,7 +46,7 @@ def main() -> None:
     version = sys.argv[1]
     out = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "compose.release.yml"
     header = (
-        "# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors\n"
+        "# SPDX-FileCopyrightText: 2026 Bamboo\n"
         "# SPDX-License-Identifier: Apache-2.0\n"
         f"# Bamboo DX-OS {version}: toàn bộ hệ thống từ image dựng sẵn, không cần mã nguồn.\n"
         "#   docker compose -f compose.release.yml up -d\n"
