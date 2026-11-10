@@ -124,6 +124,15 @@ class GpuTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse([x for x in e.log if "create bamboo-ollama" in x], "không đụng tới container thật")
         self.assertTrue(all(i["State"]["Running"] for i in e.c.values()))
 
+    async def test_bo_qua_image_khong_co_cuda(self):
+        e = FakeEngine(gpu_ok=True)
+        e.add("ai-worker")
+        e.add("ollama-core")
+        ocr = e.add("ocr-core")
+        e.c[ocr]["Config"]["Labels"]["bamboo.gpu"] = "false"
+        self.assertEqual(await self.gpu(e).reconcile(), ["ollama-core"])
+        self.assertFalse(has_gpu(await e.inspect("bamboo-ocr-core-1")), "OCR bản cpu giữ nguyên")
+
     async def test_cho_compose_xong_moi_doi(self):
         e = FakeEngine(gpu_ok=True)
         e.add("ollama-core")

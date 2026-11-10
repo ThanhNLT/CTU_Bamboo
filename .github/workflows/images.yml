@@ -36,6 +36,7 @@ jobs:
           - { name: sleeper, context: ., file: infra/docker/sleeper.Dockerfile, args: "" }
           - { name: kafka, context: infra/platform/kafka, file: infra/platform/kafka/Dockerfile, args: "" }
           - { name: web, context: ., file: infra/docker/web.Dockerfile, args: "" }
+          # Không phát hành ocr: bản cuda chứa CUDA/cuDNN (giấy phép NVIDIA), image chỉ dựng tại máy (ADR #80)
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
