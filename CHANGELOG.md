@@ -4,6 +4,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Sửa `docker compose up` trên bản clone Windows không đăng nhập được tài khoản demo:** Git for Windows mặc định `core.autocrlf=true` nên script `.sh` mang CRLF; chép vào image, `migrate` thoát ngay (`env: 'bash\r'`), kéo theo Keycloak, Hasura, actions, cổng API không chạy. Thêm `.gitattributes` buộc checkout LF trên mọi hệ điều hành; image `migrate`, `web`, `gateway`, `kafka`, `trino` bỏ CRLF khỏi script và cấu hình lúc dựng, nên cả bản clone cũ vẫn chạy được bằng một lệnh.
+
 **Kho mã chuyển sang [CTUBamboo/Bamboo](https://github.com/CTUBamboo/Bamboo):** link cũ `github.com/ThanhNLT/Bamboo` tự chuyển hướng; máy đang có bản clone chạy `git remote set-url origin https://github.com/CTUBamboo/Bamboo`. Image dựng sẵn đổi tiền tố mặc định thành `ghcr.io/ctubamboo/bamboo` (`BAMBOO_IMAGE_PREFIX`); ai đã đặt tiền tố cũ trong `.env` thì sửa theo. Image dựng tại máy mang tên mới nên lần `docker compose up` đầu tiên dựng lại (dùng lại cache, nhanh); image tên cũ xóa bằng `docker images 'ghcr.io/thanhnlt/*' -q | xargs -r docker rmi`. Namespace BPMN `https://github.com/ThanhNLT/Bamboo/bpmn` giữ nguyên vì là định danh của quy trình đã triển khai, không phải link.
 
 **Nâng cấp (hoàn thiện Tầng 1 và các nguyên lý, ADR #70–#77):** chạy `make up` (image `actions`, `web` đổi; dịch vụ mới `mosquitto`, `iot-bridge`; nhóm `observability` mới). Migration `056`–`058`.

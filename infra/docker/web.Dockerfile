@@ -13,6 +13,8 @@ ARG VITE_HASURA_URL=http://localhost:8081/v1/graphql
 ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
     VITE_KEYCLOAK_CLIENT=$VITE_KEYCLOAK_CLIENT VITE_HASURA_URL=$VITE_HASURA_URL
 RUN pnpm --filter @bamboo/web build
+# Bản clone Windows (core.autocrlf=true) mang CRLF: script entrypoint của nginx lỗi `set -eu\r`, container web không lên
+RUN sed -i 's/\r$//' apps/web/docker/40-bamboo-config.sh apps/web/nginx.conf
 WORKDIR /repo/apps/web
 RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \
       -size +1k -exec sh -c 'gzip -9 -c "$1" > "$1.gz"' _ {} \;
@@ -23,7 +25,7 @@ LABEL org.opencontainers.image.title="bamboo-web" \
       org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --chmod=0755 apps/web/docker/40-bamboo-config.sh /docker-entrypoint.d/40-bamboo-config.sh
+COPY --from=build /repo/apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build --chmod=0755 /repo/apps/web/docker/40-bamboo-config.sh /docker-entrypoint.d/40-bamboo-config.sh
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080

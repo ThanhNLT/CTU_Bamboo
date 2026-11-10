@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Luôn checkout văn bản với LF trên mọi hệ điều hành, kể cả Windows có core.autocrlf=true (mặc định của Git for
+# Windows). Script .sh mang CRLF chép vào image làm `docker compose up` hỏng: migrate thoát ngay vì `bash\r`, kéo theo
+# Keycloak, Hasura, actions, cổng API không chạy và tài khoản demo không đăng nhập được.
+* text=auto eol=lf
+
+# Script chỉ chạy trên Windows
+*.ps1 text eol=crlf
+
+# CSV do csv.writer sinh (dòng CRLF theo RFC 4180): giữ nguyên byte
+*.csv -text
+
+# Nhị phân
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.wasm binary
