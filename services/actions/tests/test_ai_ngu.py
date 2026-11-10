@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from app.gpu import OCR_SERVICE, OLLAMA_SERVICE, Gpu, sleeper_awake
+from app.gpu import OCR_SERVICE, OLLAMA_SERVICE, Gpu, placement, sleeper_awake
 
 
 class FakeOllama:
@@ -78,3 +78,16 @@ def test_free_for_ocr_skips_sleeping_ollama():
     assert ai.unloaded == []
     Gpu(ai, FakeOcr()).free_for_ocr()
     assert ai.unloaded == ["qwen3:4b"]
+
+
+def test_placement_reports_where_the_model_runs():
+    gb = 2**30
+    running = [
+        {"name": "qwen3:4b", "size": 4 * gb, "size_vram": 4 * gb},
+        {"name": "big:latest", "size": 10 * gb, "size_vram": 6 * gb},
+        {"name": "bge-m3:latest", "size": gb, "size_vram": 0},
+    ]
+    assert placement(running, "qwen3:4b") == "GPU"
+    assert placement(running, "big") == "60% trên GPU, phần còn lại trên CPU (thiếu VRAM)"
+    assert placement(running, "bge-m3") == "CPU"
+    assert placement(running, "khong-nap") == "chưa rõ"

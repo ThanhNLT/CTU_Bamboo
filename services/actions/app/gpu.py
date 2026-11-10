@@ -29,6 +29,20 @@ def model_name(name: str) -> str:
     return name if ":" in name else f"{name}:latest"
 
 
+def placement(running: list[dict], model: str) -> str:
+    """Mô hình đang nằm ở đâu theo `/api/ps`: trọn trên GPU, chia GPU/CPU (thiếu VRAM) hay CPU."""
+    for m in running:
+        if model_name(m["name"]) != model_name(model):
+            continue
+        size, vram = m.get("size") or 0, m.get("size_vram") or 0
+        if not vram:
+            return "CPU"
+        if vram >= size:
+            return "GPU"
+        return f"{round(100 * vram / size)}% trên GPU, phần còn lại trên CPU (thiếu VRAM)"
+    return "chưa rõ"
+
+
 def sleeper_awake(url: str) -> Callable[[str], bool]:
     """Hàm hỏi `GET /status` của sleeper xem container có đang chạy; không hỏi được thì coi như đang chạy."""
 

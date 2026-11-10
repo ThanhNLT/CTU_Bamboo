@@ -52,7 +52,6 @@ test("tìm thấy đề nghị vừa gửi, in phiếu, xem sơ đồ quy trình
   await expect(page).toHaveURL(/\/p\/process\//);
   await expect(page.locator(".bamboo-bpmn svg").first()).toBeVisible();
   await expect(page.locator('.bamboo-active[data-element-id="approveStep"]')).toBeVisible();
-  await expect(page.locator(".bjs-powered-by")).toBeVisible();
   await expect(page.getByText("Các bước duyệt")).toBeVisible();
   await expect(page.getByText(/Trưởng phòng/).first()).toBeVisible();
 });

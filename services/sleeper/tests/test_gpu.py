@@ -124,6 +124,42 @@ class GpuTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse([x for x in e.log if "create bamboo-ollama" in x], "không đụng tới container thật")
         self.assertTrue(all(i["State"]["Running"] for i in e.c.values()))
 
+    async def test_image_can_chuan_bi_thi_chay_lenh_truoc_khi_doi(self):
+        e = FakeEngine(gpu_ok=True)
+        e.add("ai-worker")
+        e.add("ollama-core")
+        ocr = e.add("ocr-core")
+        e.c[ocr]["Config"]["Labels"]["bamboo.gpu.prepare"] = "python -m app.accel"
+        e.c[ocr]["HostConfig"]["Binds"] = ["bamboo_ocr-accel:/opt/accel"]
+        gpu = self.gpu(e)
+        self.assertEqual(await gpu.reconcile(), ["ollama-core"], "OCR chờ chuẩn bị xong")
+        job = await e.inspect("bamboo-ocr-core-gpu-prepare")
+        self.assertEqual(job["Config"]["Cmd"], ["python", "-m", "app.accel"])
+        self.assertEqual(job["Config"]["Labels"], {"bamboo.sleeper": "gpu-prepare"}, "không mang nhãn compose")
+        self.assertEqual(job["HostConfig"]["Binds"], ["bamboo_ocr-accel:/opt/accel"], "cùng volume")
+        self.assertFalse(has_gpu(job))
+        self.assertEqual(job["NetworkSettings"]["Networks"], {"bamboo_default": {}}, "không mang alias dịch vụ")
+        self.assertEqual(await gpu.reconcile(), [], "đang tải thì chưa đổi")
+        self.assertFalse(has_gpu(await e.inspect("bamboo-ocr-core-1")))
+        job["State"] = {"Running": False, "ExitCode": 0}
+        self.assertEqual(await gpu.reconcile(), ["ocr-core"])
+        self.assertTrue(has_gpu(await e.inspect("bamboo-ocr-core-1")))
+        self.assertNotIn("/bamboo-ocr-core-gpu-prepare", [i["Name"] for i in e.c.values()], "xóa container chuẩn bị")
+
+    async def test_chuan_bi_loi_thi_giu_cpu(self):
+        e = FakeEngine(gpu_ok=True)
+        e.add("ai-worker")
+        ocr = e.add("ocr-core")
+        e.c[ocr]["Config"]["Labels"]["bamboo.gpu.prepare"] = "python -m app.accel"
+        gpu = Gpu(e, ["ocr-core"], [])
+        self.assertEqual(await gpu.reconcile(), [])
+        (await e.inspect("bamboo-ocr-core-gpu-prepare"))["State"] = {"Running": False, "ExitCode": 1}
+        self.assertEqual(await gpu.reconcile(), [])
+        self.assertEqual(await gpu.reconcile(), [], "không thử lại cho tới khi sleeper khởi động lại")
+        self.assertFalse(has_gpu(await e.inspect("bamboo-ocr-core-1")))
+        self.assertTrue((await e.inspect("bamboo-ocr-core-1"))["State"]["Running"])
+        self.assertEqual(len(e.c), 2, "không để lại container thừa")
+
     async def test_cho_compose_xong_moi_doi(self):
         e = FakeEngine(gpu_ok=True)
         e.add("ollama-core")

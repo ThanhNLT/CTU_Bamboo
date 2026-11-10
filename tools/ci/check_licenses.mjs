@@ -13,8 +13,6 @@ const ALLOWED = new Set([
   "MIT OR CC0-1.0",
 ]);
 
-const EXCEPTIONS = new Set(["bpmn-js"]);
-
 function stripParens(expr) {
   let s = expr.trim();
   while (s.startsWith("(") && s.endsWith(")")) {
@@ -73,15 +71,10 @@ const byLicense = JSON.parse(raw);
 
 const summary = new Map();
 const rejected = [];
-const skipped = [];
 for (const [license, pkgs] of Object.entries(byLicense)) {
   for (const pkg of pkgs) {
     for (const version of pkg.versions) {
       const id = `${pkg.name}@${version}`;
-      if (EXCEPTIONS.has(pkg.name)) {
-        skipped.push(`${id} (${license})`);
-        continue;
-      }
       summary.set(license, (summary.get(license) ?? 0) + 1);
       if (!isAllowed(license)) rejected.push(`${id}: ${license}`);
     }
@@ -89,7 +82,6 @@ for (const [license, pkgs] of Object.entries(byLicense)) {
 }
 
 for (const [license, count] of [...summary].sort((a, b) => b[1] - a[1])) console.log(`${license}: ${count}`);
-for (const s of skipped) console.log(`bỏ qua (ngoại lệ đã duyệt): ${s}`);
 if (rejected.length) {
   console.error(`\nGiấy phép không nằm trong danh sách cho phép (${rejected.length}):`);
   for (const r of rejected) console.error(`  ${r}`);
