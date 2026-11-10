@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Không gian H (ADR #65): nhắn tin cá nhân/nhóm/phòng ban và lịch công tác qua GraphQL."""
 
 import datetime as dt

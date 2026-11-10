@@ -1,3 +1,12 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 # Triển khai production
 
 Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ. Trang này dành cho môi trường có người dùng thật: những gì **bắt buộc** đổi, cách đặt sau tên miền HTTPS, nâng cấp, sao lưu.

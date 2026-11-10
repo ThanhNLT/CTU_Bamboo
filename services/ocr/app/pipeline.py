@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Một trang ảnh → các dòng chữ: xoay hướng trang, phát hiện dòng (PaddleOCR), xoay dòng, nhận dạng (VietOCR).
 
 Mọi mô hình chạy bằng PyTorch trên `device` (CUDA hoặc CPU). Thứ tự đọc: trên xuống, trái sang phải; các ô cùng hàng

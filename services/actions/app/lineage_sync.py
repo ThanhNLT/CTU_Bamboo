@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Phả hệ dữ liệu thu tự động từ hệ thống đang chạy (ADR #64), thay cho phả hệ chỉ có ở tệp mẫu (ADR #50).
 
 Đồ thị `auto` dựng lại từ chính cấu hình hệ thống, không khai tay:

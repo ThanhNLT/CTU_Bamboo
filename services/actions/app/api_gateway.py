@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Cổng dịch vụ API cho hệ thống bên ngoài (ADR #64).
 
 - **Khóa API của công ty** (`api.api_key`): quản trị viên công ty tạo, chọn phạm vi, hạn dùng (tối đa 1 năm), dải IP được

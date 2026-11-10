@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Giao thông báo ra ngoài ứng dụng (email, SMS, webhook) từ hàng đợi `msg.queue`.
 
 Worker nhận tin theo hợp đồng thuê (lease), gửi, rồi ghi biên nhận có chữ ký; lỗi tạm thì lùi dần và thử lại, lỗi

@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Quản lý dự án và kế hoạch (ADR #66), mô-đun `project`.
 
 - **Dự án** (`pm.project`): thông tin chung và văn bản kế hoạch chi tiết (mục tiêu, phạm vi, sản phẩm bàn giao, cách triển
