@@ -955,7 +955,7 @@ def build(conn: psycopg.Connection) -> dict:
                 [("request_id", "uuid!")],
                 "ProcessState",
                 [ROLE, ADMIN_ROLE],
-                "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho bpmn-js)",
+                "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho trình xem sơ đồ)",
             ),
             _action(
                 "verify_audit_chain",

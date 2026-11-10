@@ -1,13 +1,8 @@
-import Modeler from "bpmn-js/lib/Modeler";
-import NavigatedViewer from "bpmn-js/lib/NavigatedViewer";
-import "bpmn-js/dist/assets/diagram-js.css";
-import "bpmn-js/dist/assets/bpmn-js.css";
-import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
 import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
+import { createModeler, createViewer, updateProperties, type BpmnDiagram } from "../../../bpmn";
 import "../editor.css";
-import { vietnameseModule } from "../bpmn-translate";
 import { bambooModdle, flowableModdle } from "../flowable-moddle";
 import type { SelectedElement } from "../types";
 import { tr, trf } from "../../../i18n";
@@ -46,7 +41,7 @@ type Canvas = {
   removeMarker: (id: string, c: string) => void;
   scrollToElement: (e: Element) => void;
 };
-type Viewer = Modeler | NavigatedViewer;
+type Viewer = BpmnDiagram;
 
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 1.2;
@@ -118,9 +113,8 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
     const options = {
       container: container.current!,
       moddleExtensions: { flowable: flowableModdle, bamboo: bambooModdle },
-      additionalModules: [vietnameseModule],
     };
-    const v: Viewer = readOnly ? new NavigatedViewer(options) : new Modeler(options);
+    const v: Viewer = readOnly ? createViewer(options) : createModeler(options);
     viewer.current = v;
     if (readOnly) {
       v.on("element.click", (e: { element: Element }) => {
@@ -206,12 +200,9 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
       },
       update: (id: string, patch: Partial<SelectedElement>) => {
         const v = viewer.current;
-        if (!v || !(v instanceof Modeler)) return;
+        if (!v || !v.editable) return;
         const el = (v.get("elementRegistry") as { get: (id: string) => Element | undefined }).get(id);
         if (!el) return;
-        const modeling = v.get("modeling") as {
-          updateProperties: (e: Element, props: Record<string, unknown>) => void;
-        };
         const props: Record<string, unknown> = {};
         if (patch.name !== undefined) props.name = patch.name;
         const attrs: Array<[keyof SelectedElement, string]> = [
@@ -249,7 +240,7 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
               ]
             : [];
         }
-        modeling.updateProperties(el, props);
+        updateProperties(v, el, props);
       },
       highlight: (ids: string[]) => {
         const canvas = canvasOf();

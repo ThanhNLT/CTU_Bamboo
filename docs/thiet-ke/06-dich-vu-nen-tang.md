@@ -130,7 +130,7 @@ CSDL quyết định toàn bộ luồng duyệt: chuỗi duyệt chốt theo v�
 
 ### Quy trình `purchaseRequestApproval`
 
-File `infra/platform/flowable/purchase_request.bpmn20.xml` (có sơ đồ DI cho bpmn-js):
+File `infra/platform/flowable/purchase_request.bpmn20.xml` (có sơ đồ DI để giao diện vẽ):
 
 ```text
 Gửi duyệt ─► [Duyệt bước i/n] ─► ◇ Quyết định?

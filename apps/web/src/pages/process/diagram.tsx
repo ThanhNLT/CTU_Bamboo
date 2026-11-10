@@ -3,12 +3,10 @@ import { useGo } from "@refinedev/core";
 import { Alert, Button, Card, Col, Descriptions, Row, Space, Spin, Tag, Typography } from "antd";
 import { ArrowLeftOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useParams } from "react-router";
-import NavigatedViewer from "bpmn-js/lib/NavigatedViewer";
-import "bpmn-js/dist/assets/diagram-js.css";
-import "bpmn-js/dist/assets/bpmn-js.css";
 
 import "./diagram.css";
 import { request } from "../../api/client";
+import { createViewer } from "../../bpmn";
 import { StatusTag } from "../../components/StatusTag";
 import { formatDate, STEP_STATUS } from "../../utils/format";
 import { tr, trf } from "../../i18n";
@@ -98,7 +96,7 @@ export const ProcessDiagram = () => {
 
   useEffect(() => {
     if (!data || !container.current) return;
-    const viewer = new NavigatedViewer({ container: container.current });
+    const viewer = createViewer({ container: container.current });
     let alive = true;
     const steps = data.pr?.approval_steps.filter((x) => x.round === data.state.round) ?? [];
     viewer

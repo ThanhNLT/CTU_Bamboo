@@ -94,7 +94,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Dữ liệu phi cấu trúc | Lưu trữ đối tượng, hồ sơ phê duyệt | SeaweedFS S3, tệp gắn với chứng từ, giữ tệp làm chứng cứ ([ADR #26](#adr-26)) | Có |
 | | Chỉ mục toàn văn | Tika + Meilisearch, lọc lại theo quyền ([ADR #36](#adr-36)) | Có |
 | | Trộn mẫu sinh biểu mẫu | Jinja2 + Gotenberg: phiếu đề nghị, quyết định nhân sự, báo cáo KPI ([ADR #37](#adr-37)) | Có |
-| Quy trình, tự động hóa | BPMN | Flowable REST 8; thiết kế bằng bpmn-js, chạy thử sandbox, phát hành ([ADR #47](#adr-47)) | Có |
+| Quy trình, tự động hóa | BPMN | Flowable REST 8; thiết kế bằng lớp BPMN tự viết trên diagram-js ([ADR #81](#adr-81)), chạy thử sandbox, phát hành ([ADR #47](#adr-47)) | Có |
 | | Kịch bản ngầm | Quy trình tự động: hẹn giờ, webhook, sự kiện nghiệp vụ; hành động có sẵn và **kịch bản người dùng tự viết** (tập con Python chạy bằng trình thông dịch an toàn, chạy thử ngay trong trang thiết kế, [ADR #73](#adr-73)) | Có |
 | | Nạp dữ liệu theo lô | `/ingest/*` NDJSON/CSV, chạy thử, nguyên tử | Có |
 | Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); truy vết OpenTelemetry (Collector → Jaeger), số liệu Prometheus (actions, APISIX, Keycloak), Grafana có bảng điều khiển và cảnh báo dựng sẵn ([ADR #75](#adr-75)) | Có |

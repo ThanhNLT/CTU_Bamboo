@@ -130,7 +130,8 @@ class Gpu:
     CPU. Sau khi `gate` (ai-worker, chạy sau ollama-init và ocr-core) đã chạy, sleeper thử một container nhỏ xin GPU từ
     chính image đó; được thì tạo lại từng dịch vụ với cùng cấu hình cộng GPU, kiểm container mới khởi động được rồi mới
     xóa bản CPU. Tạo, khởi động lỗi thì trả lại bản CPU và không thử nữa cho tới lần sleeper khởi động sau. Container
-    GPU về sau không start được (đổi driver, tháo card) thì tự đổi về CPU. mode: auto | true | false (BAMBOO_GPU)."""
+    GPU về sau không start được (đổi driver, tháo card) thì tự đổi về CPU. Bỏ qua dịch vụ có nhãn `bamboo.gpu=false`
+    (image không có CUDA). mode: auto | true | false (BAMBOO_GPU)."""
 
     def __init__(
         self,
@@ -195,6 +196,8 @@ class Gpu:
                 continue
             if self.mode == "false" or service in self.failed or self.usable is False:
                 continue
+            if (info["Config"].get("Labels") or {}).get("bamboo.gpu") == "false":
+                continue  # image không có CUDA (OCR bản cpu, ADR #80): xin GPU cũng không dùng được
             target = self.targets.get(service)
             if state.get("Running") and (not await self._gate_open() or (target and target.writers)):
                 continue

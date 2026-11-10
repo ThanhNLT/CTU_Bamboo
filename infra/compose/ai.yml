@@ -58,6 +58,8 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/ocr.Dockerfile
+      args:
+        OCR_VARIANT: ${BAMBOO_OCR_VARIANT:-cpu}
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-ocr:${BAMBOO_TAG:-dev}
     depends_on:
       ocr-init:
@@ -83,6 +85,8 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/ocr.Dockerfile
+      args:
+        OCR_VARIANT: ${BAMBOO_OCR_VARIANT:-cpu}
     volumes:
       - ocr-models:/models
     command: ["python", "-m", "app.download"]
