@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+# SPDX-FileCopyrightText: 2026 Bamboo
 # SPDX-License-Identifier: Apache-2.0
 
 # Luôn checkout văn bản với LF trên mọi hệ điều hành, kể cả Windows có core.autocrlf=true (mặc định của Git for
