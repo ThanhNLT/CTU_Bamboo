@@ -58,7 +58,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=bamboo-${{ matrix.name }}
             org.opencontainers.image.licenses=Apache-2.0
-            org.opencontainers.image.vendor=DX-OS Open-Core contributors
+            org.opencontainers.image.vendor=Bamboo
       - uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
