@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 const OUT = process.env.DEMO_SHOTS ?? "demo-shots";

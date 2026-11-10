@@ -53,7 +53,7 @@ Giao diện quản trị đi kèm một số dịch vụ (Hasura Console, Keyclo
 
 Mỗi dịch vụ có volume secret riêng chỉ mount vào đúng dịch vụ đó: `openbao-init` ghi file AppRole (role-id + secret-id, quyền 0400) vào `actions-secrets`, `bootstrap-secrets` và `search-secrets`, cấu hình S3 vào `seaweedfs-config`, cấu hình Meilisearch (quyền 0600) vào `meilisearch-config`. Dịch vụ nào cũng thấy `/run/bms/approle.json` của riêng mình, không thấy secret của dịch vụ kia. Mô hình giống Vault Agent / External Secrets Operator sẽ dùng trên Kubernetes.
 
-Dịch vụ Python đọc secret lúc khởi động (`config.load()`): có `BAO_ADDR` và `BAO_APPROLE_FILE` thì đăng nhập AppRole và thay giá trị env bằng secret đọc được (`SECRET_FIELDS` trong `config.py`); đường dẫn bị policy chặn thì giữ giá trị env. Chạy ngoài compose (kiểm thử native) không đặt hai biến này thì dùng env.
+Dịch vụ Python đọc secret lúc khởi động (`config.load()`): có `BAO_ADDR` và `BAO_APPROLE_FILE` thì đăng nhập AppRole và thay giá trị env bằng secret đọc được (`SECRET_FIELDS` trong `config.py`); đường dẫn bị policy chặn thì giữ giá trị env. OpenBao chưa sẵn sàng (đang khởi động, đang khóa chờ `openbao-unseal` mở) thì chờ tối đa `BAO_WAIT_SECONDS` (120 giây) rồi mới thoát; sai AppRole (lỗi 4xx) thì thoát ngay. Chạy ngoài compose (kiểm thử native) không đặt hai biến này thì dùng env.
 
 Dịch vụ hạ tầng (PostgreSQL, Keycloak, Hasura, Flowable) vẫn nhận mật khẩu qua biến môi trường vì Docker Compose không có cơ chế inject secret từ OpenBao; trên k3s dùng External Secrets Operator đọc từ OpenBao.
 
@@ -534,8 +534,7 @@ Giao diện ──ai_ask──▶ actions: kiểm tác tử, prompt_guard, che P
 Chạy CPU mất vài chục giây mỗi lượt; một lượt một lúc nên người sau phải chờ. Hàng đợi chung cho mọi tenant (một mô hình), nên vị trí chờ người hỏi thấy gồm cả lượt của tenant khác (chỉ là con số, không lộ nội dung). Chỉ chạy một `ai-worker`. Mô hình 4B có thể trả lời thiếu ý hoặc trích sai số đoạn; smoke test `tools/ai_smoke.sh` dùng để kiểm bằng mắt. Chỉ lấy tài liệu thư viện đang hiệu lực, không lấy tệp chứng từ hay Ổ đĩa.
 
 ```bash
-make up                                           # AI chạy cùng hệ thống (CPU)
-make up-gpu                                       # kèm GPU NVIDIA (docs/van-hanh/trien-khai.md)
+make up                                           # AI chạy cùng hệ thống, tự dùng GPU NVIDIA khi có
 make test-actions T=tests/test_tro_ly_ai.py       # chia đoạn, guardrail, worker với Ollama giả
 tools/ai_smoke.sh                                 # hỏi thật 5 câu mẫu khi đã tải xong mô hình
 ```
@@ -558,7 +557,7 @@ Dịch vụ `ocr` không trạng thái (`POST /ocr` một trang ảnh, `POST /un
 VietOCR nhận dạng, chạy trên PyTorch (CUDA nếu có, không thì CPU). `ai-worker` giữ một hàng đợi chung với lượt hỏi AI, OCR ảnh
 và trang PDF không có lớp chữ, lưu kết quả ở `core.attachment_ocr` và đưa văn bản vào chỉ mục tìm kiếm. Job `ocr-init` tải
 trọng số lần đầu (kiểm sha256). Trang Nhập liệu OCR (`/i/ocr`, Action `ocr_document`) rút nhà cung cấp, mã số thuế, dòng hàng
-và số tiền bằng quy tắc (`ocr_fields.py`), không dùng mô hình. Chỉ chạy ở mức RAM 16 (ADR #54).
+và số tiền bằng quy tắc (`ocr_fields.py`), không dùng mô hình. Chạy ở mọi mức RAM (ADR #69).
 
 ## 14. Dịch vụ tự ngủ – `sleeper` (ADR #53)
 
@@ -692,6 +691,7 @@ Phần lõi luôn bật (gồm cả nhắn tin và lịch công tác, [ADR #65](
 | `SIGNATURE_TRUST_DIR` | `/repo/infra/platform/trust` | Thư mục chứng thư gốc tin cậy |
 | `SIGNATURE_ONLINE` | `true` | Kiểm thu hồi chứng thư qua OCSP/CRL (chặt) |
 | `SETUP_ALLOW_UNVERIFIED` | `true` | Cho tạo công ty chưa xác thực, ký bổ sung sau |
+| `SETUP_OPEN_SIGNUP` | `false` (compose: theo `SEED_DEMO`) | Mở trang đăng ký cả khi máy đã có công ty, không cần mã thiết lập; công ty đăng ký thêm không quản lý mô-đun trên máy |
 
 
 ## 24. Thời gian thực, phả hệ tự động, cổng dịch vụ API (migration 052, ADR #64)
@@ -778,3 +778,45 @@ Mô-đun **phải** kiểm chữ ký và độ lệch thời gian (ví dụ dùn
 | `POST /ext-api/v1/notifications` `{person_id, title, body?}` | `notify.send` | `{ok: true}`; thông báo loại `EXTERNAL`, tiêu đề có tiền tố `[tên mô-đun]` |
 
 Lỗi trả `{message, code}`: `unauthorized` (401, sai khóa), `module-disabled` (403), `forbidden` (403, thiếu phạm vi), `not-found` (404).
+
+## 26. CDR, P.A.R.A, tác tử tự hành động, kịch bản (migration 056, 057, ADR #70–#73)
+
+- **CDR** (`cdr.py`): `confirm_upload` → quét → `attachments.disarm` → bản dựng lại vào `bms-documents`. `scan_report.cdr` = `{engine, actions, skipped, original_sha256, original_size, size}`; PDF có `/ByteRange` (đã ký số) giữ nguyên.
+- **P.A.R.A** (`core.para_of`, computed field `core_attachment.para`): `PROJECTS | AREAS | RESOURCES | ARCHIVES` theo trạng thái chứng từ; loại chứng từ mới `pm.project` nhận tệp.
+- **Tác tử tự hành động** (`ai_agent_runner.py`): `wf.emit_event` sinh `core.ai_agent_run` (chống trùng theo `agent_id, dedup_key`) → `ai-worker` (`run_agent`, sau lượt hỏi) → kế hoạch JSON → kiểm → thực hiện. Action `ai_agent_automation(id, triggers, instructions, allowed_actions, autonomy, webhook_url)`, `ai_agent_trigger_options`; Hasura cho quản trị AI đọc `core_ai_agent_run`.
+- **Kịch bản** (`script_sandbox.py`): hành động `script` của tác vụ dịch vụ (`bamboo:script`), external task `bamboo.script`; `process_script_test(model_id, script, variables)` chạy thử.
+
+```bash
+make test-actions T="tests/test_cdr.py tests/test_tac_tu_tu_hanh_dong.py tests/test_kich_ban.py"
+make test-db T=para    # và T=tac_tu
+```
+
+## 27. Hội tụ IT/OT: MQTT, NGSI-LD (migration 058, ADR #74, #76)
+
+| Service | Mô-đun | Việc |
+|---|---|---|
+| `mosquitto` | `data` | `eclipse-mosquitto:2.0.21`, plugin dynamic-security (`/mosquitto/data/dynamic-security.json` do `openbao-init` ghi lần đầu); cổng 1883 (127.0.0.1), 8883 TLS (`MQTT_BIND`), 8884 mTLS nội bộ |
+| `iot-bridge` | `data` | `python -m app.iot_bridge`: nghe `bamboo/+/+/attrs`, gọi `iot.ingest`; mỗi phút `iot.mark_offline(15)` |
+
+- Chủ đề: `bamboo/<mã công ty>/<mã thiết bị hoặc URN NGSI-LD>/attrs`; thân NGSI-LD dạng chuẩn hoặc gọn, tối đa 64 KB, 50 thuộc tính.
+- Tài khoản thiết bị: `iot_mqtt_account_create(label)` → `{username, password, topic}` (mật khẩu hiện một lần), `iot_mqtt_account_revoke(username)`; vai trò `tenant-<mã>` chỉ `publishClientSend bamboo/<mã>/#`.
+- REST: `GET /api/v1/ngsi-ld/v1/entities`, `GET …/{id}`, `POST …/{id}/attrs` (khóa API phạm vi `iot.read`, `iot.write`; người tạo khóa cần `iot.ingest`).
+- Chứng chỉ mTLS: `openbao-init` (`SERVICE_CERT_OUTPUTS`) cấp `mosquitto`, `bamboo-bridge`, `bamboo-admin` từ vai trò PKI `service`, 90 ngày, tự cấp lại khi còn dưới 30 ngày; `MQTT_TLS_DIR=/run/bms/mqtt`.
+
+Gửi thử từ máy chủ (tài khoản tạo ở Cổng dịch vụ API → Thiết bị MQTT):
+
+```bash
+mosquitto_pub -h localhost -p 1883 -u <tài khoản> -P <mật khẩu> -t bamboo/TDX/CR-01/attrs \
+  -m '{"temperature": {"type": "Property", "value": 21.4}}'
+```
+
+## 28. Giám sát (ADR #75)
+
+| Service | Profile | Việc |
+|---|---|---|
+| `otel-collector` | `observability` | OTLP gRPC 4317 / HTTP 4318 → Jaeger; số liệu của chính nó ở `:8888` |
+| `jaeger` | `observability` | Lưu span trong bộ nhớ, giao diện `127.0.0.1:16686` |
+| `prometheus` | `observability` | Thu `actions:8000/metrics`, `gateway:9091/apisix/prometheus/metrics`, `keycloak:9000/metrics`, `otel-collector:8888`; luật cảnh báo `infra/platform/observability/alerts.yml`; `127.0.0.1:9090` |
+| `grafana` | `observability` | Nguồn Prometheus + Jaeger, bảng điều khiển **Bamboo tổng quan** (`infra/platform/observability/grafana/`); `127.0.0.1:3001`, tài khoản `admin` / `GRAFANA_ADMIN_PASSWORD` |
+
+Số liệu của `actions`: `bamboo_http_requests_total{method,route,status}`, `bamboo_http_request_duration_seconds`, `bamboo_action_calls_total{action,outcome}`, `bamboo_action_duration_seconds`, `bamboo_message_queue{status}`, `bamboo_ai_questions{status}`, `bamboo_ai_agent_runs{status}`, `bamboo_attachments_pending`, `bamboo_ocr_pending`, `bamboo_iot_live_devices{state}`. Truy vết bật khi `OTEL_EXPORTER_OTLP_ENDPOINT` có giá trị (`make up` mức 16 đặt `http://otel-collector:4318`); phản hồi có `X-Trace-Id`, span có `bamboo.request_id`.

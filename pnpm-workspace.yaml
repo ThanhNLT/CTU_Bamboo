@@ -1,17 +1,9 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 packages:
   - "apps/*"
   - "tests/e2e"
 
-# Giữ cây phụ thuộc như thời npm (`legacy-peer-deps=true` trong apps/web/.npmrc cũ):
-# không tự cài peer dependency, xung đột peer chỉ cảnh báo.
 autoInstallPeers: false
 strictPeerDependencies: false
 
-# Không chạy install script của phụ thuộc (như npm 12 trước đây): esbuild dùng binary trong
-# optional dependency theo nền tảng nên không cần postinstall.
 allowBuilds:
   esbuild: false

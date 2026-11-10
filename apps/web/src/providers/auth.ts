@@ -1,29 +1,21 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { AuthProvider } from "@refinedev/core";
 
 import { setTenant, setToken } from "../api/client";
 import { keycloak } from "../auth/keycloak";
 import { getLocale } from "../i18n";
 
-// Dấu lần tự chuyển tới trang đăng nhập gần nhất (chống vòng lặp, xem pages/login.tsx); đăng nhập thành công hay đăng xuất thì xóa
 export const LOGIN_ATTEMPT_KEY = "bamboo.login-attempt";
 
 const clearLoginAttempt = () => {
   try {
     sessionStorage.removeItem(LOGIN_ATTEMPT_KEY);
-  } catch {
-    // trình duyệt chặn sessionStorage: không có dấu để xóa
-  }
+  } catch {}
 };
 
 export const authProvider: AuthProvider = {
   login: async () => {
     const to = new URLSearchParams(window.location.search).get("to");
     const path = to && /^\/(?![/\\])/.test(to) ? to : "";
-    // Trang đăng nhập Keycloak mở đúng ngôn ngữ đang chọn trong ứng dụng (ui_locales)
     await keycloak.login({ redirectUri: `${window.location.origin}${path}`, locale: getLocale() });
     return { success: true };
   },

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Chạy tự động quy trình đã phát hành.
 
 Người thiết kế bật chạy tự động cho một phiên bản đã phát hành: sơ đồ được chuyển thành định nghĩa Flowable chỉ gồm
@@ -25,7 +21,7 @@ from psycopg.rows import dict_row
 
 from bamboo_common.flowable import FlowableClient
 
-from . import config, delivery
+from . import config, delivery, script_sandbox
 from .common import ActionError, Context
 from .process_design import (
     AUTOMATION_ACTIONS,
@@ -216,7 +212,6 @@ def process_automation_enable(conn: psycopg.Connection, session: dict, args: dic
         "WHERE model_id = %s AND status = 'ACTIVE'",
         (m["id"],),
     ).fetchone()
-    # Không nêu sự kiện thì giữ đăng ký của bản đang chạy khi áp dụng phiên bản mới
     events = _events(args["events"]) if args.get("events") is not None else (list(previous[2]) if previous else [])
     definition_key = f"auto_{str(tenant)[:8]}_{m['process_key']}"
     xml, actions, problems = automation_xml(latest["bpmn_xml"], definition_key)
@@ -404,9 +399,6 @@ def automation_overview(conn: psycopg.Connection, model_id: str) -> dict | None:
     }
 
 
-# --- Tiến trình nền ---------------------------------------------------------------------------------------------
-
-
 def render(template: str, variables: dict, quote: bool = False) -> str:
     """Thay {tên_biến} bằng giá trị của biến quy trình; biến không có thì giữ nguyên."""
 
@@ -466,7 +458,23 @@ def exec_http(conn, settings, run: str, job: dict, params: dict, variables: dict
     }
 
 
-EXECUTORS = {"notify": exec_notify, "http": exec_http, "setvar": exec_setvar}
+def exec_script(conn, settings, run: str, job: dict, params: dict, variables: dict) -> dict:
+    """Kịch bản của người dùng (ADR #73): lỗi kịch bản là lỗi vĩnh viễn (không thử lại), ghi vào nhật ký lần chạy."""
+    inputs = {k: v for k, v in variables.items() if k != "initiator"}
+    try:
+        result = script_sandbox.run(params["script"], inputs)
+    except script_sandbox.ScriptError as exc:
+        raise delivery.DeliveryError(f"Kịch bản {job['elementId']}: {exc}", permanent=True) from exc
+    if result.log:
+        conn.execute(
+            """UPDATE wf.automation_run SET variables = variables || jsonb_build_object(%s, %s::jsonb)
+               WHERE id = %s""",
+            (f"{job['elementId']}_log", json.dumps(result.log, ensure_ascii=False), run),
+        )
+    return {**result.outputs, f"{job['elementId']}_ok": True}
+
+
+EXECUTORS = {"notify": exec_notify, "http": exec_http, "setvar": exec_setvar, "script": exec_script}
 
 
 def _run_for_job(conn: psycopg.Connection, job: dict, automation: dict) -> str:

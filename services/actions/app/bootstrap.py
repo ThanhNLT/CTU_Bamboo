@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import json
 import logging
@@ -106,8 +102,6 @@ def main() -> int:
         settings.keycloak_admin_password,
         os.environ.get("DEMO_PASSWORD", ""),
     )
-    # Tài khoản demo lệch id thì tạo lại đúng id và chuyển liên kết người trong CSDL (đăng nhập không còn "chưa thuộc
-    # tenant nào"); người chưa gắn tài khoản thì seed gắn lại (Seeder.ensure_demo_accounts)
     fixed = keycloak_sync.fix_demo_user_ids(
         settings.keycloak_url,
         settings.keycloak_admin_user,

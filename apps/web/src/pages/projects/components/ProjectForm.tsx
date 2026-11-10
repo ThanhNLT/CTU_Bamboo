@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, DatePicker, Form, Input, InputNumber, Modal, Select, TreeSelect } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useMemo, useState } from "react";
@@ -84,7 +80,6 @@ export const ProjectForm = ({
       form.resetFields();
       form.setFieldsValue({ status: "PLANNING", manager_id: me.id, range: [dayjs(), dayjs().add(3, "month")] });
       setPeople([{ value: me.id, label: me.name }]);
-      // Đơn vị chủ trì mặc định: đơn vị nơi người lập đang công tác
       void request<{ core_assignment: { position: { org_unit_id: string } }[] }>(
         `query($p: uuid!) { core_assignment(where: {person_id: {_eq: $p}}, limit: 1) { position { org_unit_id } } }`,
         { p: me.id },

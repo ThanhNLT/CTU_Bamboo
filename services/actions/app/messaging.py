@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Hành động cho kênh thông báo ngoài ứng dụng và hàng đợi tin nhắn."""
 
 import json
@@ -34,6 +30,7 @@ KINDS = {
     "CALENDAR_CHANGED": "Lịch tôi tham dự đổi giờ hoặc bị hủy",
     "PROJECT_TASK": "Được giao việc hoặc thêm vào dự án",
     "PROJECT_REPORT": "Có báo cáo tiến độ dự án mới",
+    "AI_AGENT": "Tác tử AI báo về chứng từ liên quan đến tôi",
 }
 
 

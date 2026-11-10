@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Button, Modal, Popconfirm, Segmented, Tag } from "antd";
 import dayjs from "dayjs";
 import { Bell, CalendarDays, Download, FolderKanban, MapPin, Repeat, Users } from "lucide-react";

@@ -1,11 +1,6 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { expect, test, type Page } from "@playwright/test";
 
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
-// Tài khoản chủ sở hữu đã cài xong OTP thì không đăng nhập tự động được: chỉ chạy khi chỉ định tài khoản thử
 const OWNER = process.env.E2E_OWNER_USER ?? "";
 const OWNER_PASSWORD = process.env.E2E_OWNER_PASSWORD ?? PASSWORD;
 const STAMP = Date.now().toString().slice(-5);

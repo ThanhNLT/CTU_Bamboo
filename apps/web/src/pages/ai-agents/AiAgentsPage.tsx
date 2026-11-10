@@ -1,18 +1,26 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { HttpError } from "@refinedev/core";
 import { App } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchAgents, fetchModels, fetchStats, registerAgent, removeAgent, updateAgent } from "./api";
+import {
+  fetchAgents,
+  fetchModels,
+  fetchRuns,
+  fetchStats,
+  fetchTriggerOptions,
+  registerAgent,
+  removeAgent,
+  setAutomation,
+  updateAgent,
+} from "./api";
 import { AgentModal } from "./components/AgentModal";
+import { AgentRunsPanel } from "./components/AgentRunsPanel";
+import { AutomationModal } from "./components/AutomationModal";
 import { AiAgentsHeader } from "./components/AiAgentsHeader";
 import { AiAgentsTable } from "./components/AiAgentsTable";
 import { AiKpiCards } from "./components/AiKpiCards";
 import { AiResourcePanel } from "./components/AiResourcePanel";
-import type { Agent, AgentStats, AiModel, LoadedModel } from "./types";
+import type { Agent, AgentRun, AgentStats, AiModel, LoadedModel, TriggerOptions } from "./types";
 import { STATS_DAYS, totals } from "./utils";
 import { tr, trf } from "../../i18n";
 
@@ -29,10 +37,21 @@ export const AiAgentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Editing>();
   const [saving, setSaving] = useState(false);
+  const [runs, setRuns] = useState<AgentRun[]>([]);
+  const [options, setOptions] = useState<TriggerOptions | null>(null);
+  const [automating, setAutomating] = useState<Agent>();
 
   const load = useCallback(async () => {
     try {
-      const [m, a, s] = await Promise.all([fetchModels(), fetchAgents(), fetchStats(STATS_DAYS)]);
+      const [m, a, s, r, o] = await Promise.all([
+        fetchModels(),
+        fetchAgents(),
+        fetchStats(STATS_DAYS),
+        fetchRuns(),
+        fetchTriggerOptions(),
+      ]);
+      setRuns(r);
+      setOptions(o);
       setModels(m.models);
       setLoaded(m.loaded ?? []);
       setAiEnabled(m.ai_enabled);
@@ -58,6 +77,7 @@ export const AiAgentsPage = () => {
       await action();
       message.success(done);
       setEditing(undefined);
+      setAutomating(undefined);
       await load();
     } catch (e) {
       message.error((e as Error).message);
@@ -117,7 +137,7 @@ export const AiAgentsPage = () => {
 
       {!loading && !aiEnabled && (
         <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-900">
-          {tr("Ollama không phản hồi (AI bị tắt ở mức RAM 8, hoặc dịch vụ ")}{" "}
+          {tr("Ollama không phản hồi (dịch vụ đang khởi động, chưa tải xong mô hình, hoặc ")}{" "}
           <span className="font-mono">ollama-core</span>{" "}
           {tr("lỗi): vẫn sửa được cấu hình, nhưng người dùng chưa hỏi được và chưa kiểm tra được tên mô hình.")}
         </p>
@@ -132,8 +152,24 @@ export const AiAgentsPage = () => {
         stats={stats}
         loading={loading}
         onEdit={(agent) => setEditing({ agent })}
+        onAutomate={setAutomating}
         onToggle={toggle}
         onRemove={remove}
+      />
+
+      <AgentRunsPanel runs={runs} agents={agents} events={options?.events ?? []} />
+
+      <AutomationModal
+        open={automating != null}
+        agent={automating}
+        options={options}
+        saving={saving}
+        onCancel={() => setAutomating(undefined)}
+        onSubmit={(v) => {
+          const agent = automating;
+          if (agent)
+            void run(() => setAutomation(agent.id, v), trf("Đã lưu cấu hình tự hành động của {0}.", [agent.name]));
+        }}
       />
 
       <AgentModal

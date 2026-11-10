@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Input, Modal, Radio, Segmented, Select, Spin } from "antd";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
@@ -273,7 +269,6 @@ export const ProcessDesignPage = () => {
 
   const openPublish = () => {
     if (!detail) return;
-    // Quy trình thuộc một đơn vị: mặc định báo trong đơn vị; quy trình toàn tập đoàn: mặc định báo tất cả
     setPublishing({ audience: detail.audience ?? (detail.ownerUnit ? "UNIT" : "GROUP"), note: "" });
   };
 
@@ -472,6 +467,7 @@ export const ProcessDesignPage = () => {
           </div>
           {access !== "view" && (
             <PropertiesPanel
+              modelId={detail?.id}
               showChecks={canDesign}
               element={selected}
               forms={forms}

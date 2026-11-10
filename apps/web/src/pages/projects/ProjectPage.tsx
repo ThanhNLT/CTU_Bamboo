@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Button, Dropdown, Segmented, Spin, Switch, Tooltip } from "antd";
 import dayjs from "dayjs";
 import {
@@ -37,12 +33,13 @@ import {
 } from "./api";
 import { Gantt, type Zoom } from "./components/Gantt";
 import { MembersModal } from "./components/MembersModal";
+import { ProjectFiles } from "./components/ProjectFiles";
 import { ProjectForm } from "./components/ProjectForm";
 import { Reports } from "./components/Reports";
 import { TaskDrawer } from "./components/TaskDrawer";
 import type { Detail, Task } from "./types";
 
-type Tab = "gantt" | "plan" | "reports";
+type Tab = "gantt" | "plan" | "reports" | "files";
 
 const pct = (n: number | null | undefined) =>
   n == null ? "—" : `${Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
@@ -270,6 +267,7 @@ export const ProjectPage = () => {
             { value: "gantt", label: tr("Sơ đồ Gantt") },
             { value: "plan", label: tr("Văn bản kế hoạch") },
             { value: "reports", label: trf("Báo cáo tiến độ ({0})", [detail.reports.length]) },
+            { value: "files", label: tr("Tệp dự án") },
           ]}
         />
       </div>
@@ -418,6 +416,8 @@ export const ProjectPage = () => {
           onCreated={() => void load()}
         />
       )}
+
+      {tab === "files" && <ProjectFiles projectId={p.id} closed={["DONE", "CANCELLED"].includes(p.status)} me={me} />}
 
       <TaskDrawer
         open={!!drawer}

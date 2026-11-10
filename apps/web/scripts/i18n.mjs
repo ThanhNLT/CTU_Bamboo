@@ -1,12 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
-// Kiểm và bọc chuỗi giao diện tiếng Việt để chuyển ngôn ngữ được trọn vẹn.
-//   node scripts/i18n.mjs check   báo câu tiếng Việt chưa bọc tr()/trf() và câu đã bọc chưa có bản dịch tiếng Anh
-//   node scripts/i18n.mjs wrap    tự bọc câu tiếng Việt chưa bọc (chạy hai lần nếu có câu lồng trong câu), rồi thêm bản dịch
-//                                 vào src/i18n/catalog-pages.ts
-// Bỏ qua chỗ không được đổi chuỗi: so sánh (===, case), khóa đối tượng, kiểu, import, đối số của includes/replace…
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -55,7 +46,6 @@ const walk = (d) => {
 walk(SRC);
 
 const jsxText = (raw) => {
-  // Quy tắc khoảng trắng của JSX: bỏ dòng trống, cắt khoảng trắng đầu/cuối mỗi dòng có xuống dòng, nối bằng một dấu cách
   const lines = raw.split(/\r?\n/);
   const out = [];
   lines.forEach((l, i) => {
@@ -87,7 +77,6 @@ const inTypeOrSkipCtx = (node) => {
   return false;
 };
 
-// Chuỗi cố ý giữ nguyên (giá trị dữ liệu có kiểu literal…): ghi chú "i18n-ignore" ở cùng dòng hoặc dòng trên
 const ignored = (node) => {
   const sf = node.getSourceFile();
   const line = sf.getLineAndCharacterOfPosition(node.getStart()).line;
@@ -174,7 +163,6 @@ for (const file of files) {
           key += `{${i}}` + s.literal.text;
         });
         const args = node.templateSpans.map((s) => s.expression.getText(sf));
-        // biểu thức lồng có chuỗi tiếng Việt: bọc đệ quy bằng cách xử lý riêng (hiếm) — ghi lại để soát tay
         if (node.templateSpans.some((s) => VI.test(s.expression.getText(sf))))
           skipped.push(`${file}:NESTED ${key.slice(0, 60)}`);
         edits.push([node.getStart(), node.end, `trf(${JSON.stringify(key)}, [${args.join(", ")}])`]);
@@ -191,7 +179,6 @@ for (const file of files) {
   let out = text;
   for (const [s, e, r] of edits) out = out.slice(0, s) + r + out.slice(e);
 
-  // nhập tr/trf
   const rel = path.relative(path.dirname(file), I18N).split(path.sep).join("/");
   const spec = rel.startsWith(".") ? rel : `./${rel}`;
   const names = [needTr && "tr", needTrf && "trf"].filter(Boolean);
@@ -205,7 +192,6 @@ for (const file of files) {
     const all = [...new Set([...have, ...names])].sort((a, b) => a.localeCompare(b));
     out = out.replace(re, `import { ${all.join(", ")} } from "${spec}";`);
   } else {
-    // sau dòng import cuối cùng
     const imports = [...out.matchAll(/^import [\s\S]*?;$/gm)];
     const last = imports.length ? imports[imports.length - 1] : null;
     const line = `import { ${names.join(", ")} } from "${spec}";`;
@@ -213,7 +199,6 @@ for (const file of files) {
       const at = last.index + last[0].length;
       out = out.slice(0, at) + "\n" + line + out.slice(at);
     } else {
-      // sau khối chú thích đầu tệp (SPDX)
       const header = out.match(/^(?:\/\/.*\n)+\n?/);
       const at = header ? header[0].length : 0;
       out = out.slice(0, at) + line + "\n\n" + out.slice(at);
@@ -227,7 +212,6 @@ for (const file of files) {
     );
 }
 
-// Khóa đã bọc trong mã: đối số đầu là chuỗi của tr()/trl()/trf()/t()
 const used = new Set();
 for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
@@ -262,7 +246,6 @@ for (const name of ["catalog.ts", "catalog-pages.ts"]) {
   };
   visit(sf);
 }
-// Mẫu dữ liệu (manifest JSON, sơ đồ BPMN mặc định) giữ nguyên, không cần bản dịch
 const untranslated = [...used].filter((k) => !catalogKeys.has(k) && !/^\s*[{<]/.test(k)).sort();
 
 if (MODE === "wrap") {

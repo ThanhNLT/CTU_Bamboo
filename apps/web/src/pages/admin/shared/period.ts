@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import dayjs from "dayjs";
 
 import { parsePgTimestamp } from "../../../utils/format";

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type Tone = "success" | "warning" | "danger" | "neutral";
 
 export const TONE_DOT: Record<Tone, string> = {

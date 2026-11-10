@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
@@ -16,7 +12,7 @@ const RECENT_MINUTES = 60;
 
 const ENTITIES = `query TwinEntities {
   iot_entity(order_by: {code: asc}) {
-    id code urn type name site_code connection_state last_seen_at state
+    id code urn type name site_code connection_state last_seen_at live_source state
     site { name province }
     type_model { kind category grade attributes }
     incidents(order_by: {started_at: desc}, limit: 20) {
@@ -65,6 +61,7 @@ type EntityRow = {
   site_code: string;
   connection_state: "online" | "offline";
   last_seen_at: string | null;
+  live_source: "mqtt" | "api" | null;
   state: Record<string, { value: number; observed_at: string }>;
   site: { name: string; province: string | null } | null;
   type_model: { kind: string; category: EntityCategory; grade: string; attributes: Attr[] };
@@ -155,6 +152,7 @@ export const toEntity = (r: EntityRow, now: number): TwinEntity => {
     grade: r.type_model.grade,
     offlineMinutes,
     lastSeenAt: r.last_seen_at,
+    liveSource: r.live_source,
     status,
     subtitle: offlineMinutes
       ? trf("Mất tín hiệu {0} phút", [offlineMinutes])
@@ -184,7 +182,6 @@ export const useTwinEntities = () => {
     const id = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(id);
   }, [load]);
-  // Số đo hoặc sự cố mới (do thiết bị hay người khác ghi nhận) cập nhật ngay, không chờ chu kỳ (ADR #64)
   const live = useLiveTopics(["iot"], load);
   return { ...state, reload: load, live };
 };

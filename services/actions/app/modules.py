@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Mô-đun chức năng (ADR #56).
 
 Danh mục mô-đun dựng sẵn nằm ở đây; CSDL chỉ giữ trạng thái hai tầng (migration 042):
@@ -95,7 +92,6 @@ CORE_ACTIONS = frozenset(
         "api_key_revoke",
         "ext_rotate_key",
         "ext_launch",
-        # Nhắn tin và lịch công tác (ADR #65): cộng tác hằng ngày thuộc phần lõi, luôn bật
         "chat_open_direct",
         "chat_create_group",
         "chat_update_group",
@@ -198,6 +194,7 @@ CATALOG: tuple[Module, ...] = (
                 "process_regulation_draft",
                 "process_version_get",
                 "process_sandbox_run",
+                "process_script_test",
                 "process_change_request_create",
                 "process_change_request_resolve",
                 "process_automation_enable",
@@ -247,7 +244,7 @@ CATALOG: tuple[Module, ...] = (
         "data",
         "Dữ liệu số",
         "Trung tâm điều hành, bản sao số, KPI, Lakehouse và dịch vụ dữ liệu (Kafka, Debezium, Trino)",
-        services=("kafka", "debezium", "lakehouse-sink", "trino-core"),
+        services=("kafka", "debezium", "lakehouse-sink", "trino-core", "mosquitto", "iot-bridge"),
         actions=frozenset(
             {
                 "lakehouse_datasets",
@@ -258,6 +255,10 @@ CATALOG: tuple[Module, ...] = (
                 "lineage_graph",
                 "ops_dashboard",
                 "iot_acknowledge",
+                "iot_entities",
+                "iot_ingest",
+                "iot_mqtt_account_create",
+                "iot_mqtt_account_revoke",
                 "kpi_snapshots",
                 "get_kpi_report_pdf",
             }
@@ -303,6 +304,8 @@ CATALOG: tuple[Module, ...] = (
                 "ai_agent_register",
                 "ai_agent_update",
                 "ai_agent_unregister",
+                "ai_agent_automation",
+                "ai_agent_trigger_options",
                 "ocr_retry",
                 "ocr_document",
             }
@@ -312,7 +315,7 @@ CATALOG: tuple[Module, ...] = (
 
 BY_CODE = {m.code: m for m in CATALOG}
 ACTION_MODULE = {action: m.code for m in CATALOG for action in m.actions}
-MANAGED_SERVICES = tuple(dict.fromkeys(s for m in CATALOG for s in m.services))  # thứ tự khởi động theo danh mục
+MANAGED_SERVICES = tuple(dict.fromkeys(s for m in CATALOG for s in m.services))
 
 
 def closure(codes, edges) -> list[str]:
@@ -414,7 +417,6 @@ class Manager:
         if not self.person or not self.tenant:
             raise ActionError("Thiếu x-hasura-user-id hoặc x-hasura-tenant-id", "unauthorized", 401)
         self.catalog = load_catalog(conn)
-        # chủ sở hữu công ty khởi tạo máy chủ tự cài (ADR #57) cài/gỡ mô-đun trên máy như quản trị nền tảng
         self.platform = (
             session.get("x-hasura-role") == "platform_admin"
             or conn.execute(
@@ -484,7 +486,7 @@ class Manager:
         }
 
     def _check_services(self, codes: list[str]) -> None:
-        """Mô-đun cần container mà máy chưa tạo (ví dụ AI ở mức RAM 8) thì không cài được."""
+        """Mô-đun cần container mà máy chưa tạo (ví dụ dựng bằng compose cũ thiếu dịch vụ) thì không cài được."""
         status = _service_status(self.ctx)
         if status is None:
             return
@@ -493,8 +495,8 @@ class Manager:
         ]
         if missing:
             raise ActionError(
-                f"Máy chủ chưa có container {', '.join(sorted(set(missing)))}: chạy lại `make up` "
-                "(mô-đun Trí tuệ số cần mức RAM 16, ADR #54) rồi cài lại",
+                f"Máy chủ chưa có container {', '.join(sorted(set(missing)))}: chạy lại `docker compose up -d` "
+                "(hoặc `make up`) rồi cài lại",
                 "service-missing",
                 409,
             )

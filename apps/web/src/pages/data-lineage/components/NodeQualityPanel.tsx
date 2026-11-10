@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Bell, Check, X } from "lucide-react";
 import { Link } from "react-router";
 
@@ -63,7 +59,7 @@ export const NodeQualityPanel = ({
       <h2 className="mt-1 text-[18px] font-semibold leading-snug tracking-[-0.01em] text-ink">{node.title}</h2>
       <span
         className={cn(
-          "mt-2 inline-flex h-6 items-center gap-1.5 self-start rounded-ui px-2.5 text-[12px] font-medium",
+          "mt-2 inline-flex h-6 items-center gap-1.5 self-start rounded-full px-2.5 text-[12px] font-medium",
           TAG_CLASS[status],
         )}
       >

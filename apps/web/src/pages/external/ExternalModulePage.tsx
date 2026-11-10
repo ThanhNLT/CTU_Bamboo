@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
@@ -45,7 +41,7 @@ const Frame = ({ code, path }: { code: string; path: string }) => {
       src={src}
       sandbox="allow-scripts allow-forms allow-popups allow-downloads allow-modals"
       referrerPolicy="no-referrer"
-      className="h-[calc(100vh-112px)] w-full rounded-2xl border border-line bg-white"
+      className="h-[calc(100vh-112px)] w-full rounded-2xl border border-line bg-surface"
     />
   );
 };

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Biên nhận giao tin và chứng cứ neo có chữ ký của hệ thống (chống chối bỏ).
 
 Chữ ký chính là Ed25519 của khóa transit trong OpenBao (khóa riêng không rời két). Khi chưa có OpenBao (môi trường
