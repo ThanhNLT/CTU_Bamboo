@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Dịch vụ ngủ (ADR #53): `python -m app.sleeper`.
 
 Đứng trước các dịch vụ dùng thưa (Trino, Tika, Gotenberg; Ollama và OCR của AI) dưới đúng tên mạng cũ. Có yêu cầu đến thì dựng

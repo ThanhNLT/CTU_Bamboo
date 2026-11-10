@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 ALTER TABLE core.tenant
     ADD COLUMN tax_code text UNIQUE CHECK (tax_code ~ '^[0-9]{10}(-[0-9]{3})?$'),
     ADD COLUMN legal_name text CHECK (length(btrim(legal_name)) BETWEEN 1 AND 300),

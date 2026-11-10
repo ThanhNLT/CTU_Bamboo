@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Job ocr-init (ADR #52): tải trọng số PaddleOCR và VietOCR vào volume lần đầu: `python -m app.download`.
 
 Sau lần đầu dịch vụ OCR chạy không cần Internet. Nạp thử bộ mô hình (GPU nếu có, không thì CPU) để kiểm tệp

@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Trình xem và trình thiết kế sơ đồ BPMN của Bamboo (ADR #81), dựng trên diagram-js và bpmn-moddle (MIT).
 // Thay cho bpmn-js (giấy phép bpmn.io chưa được OSI phê duyệt).
