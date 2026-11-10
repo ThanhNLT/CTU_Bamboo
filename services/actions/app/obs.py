@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Gom nhật ký và mã truy vết tập trung vào `obs.log_event`.
 
 Mọi bản ghi log của dịch vụ được gắn trace_id (lấy từ X-Request-Id do cổng API cấp), tenant và người dùng đang xử lý,

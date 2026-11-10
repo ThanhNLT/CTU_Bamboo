@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Rút các trường của báo giá, hóa đơn, phiếu giao nhận từ chữ OCR (ADR #52).
 
 Chữ OCR sai được, nên mọi trường đều kèm độ tin cậy và dòng nguồn, và số tiền được tự kiểm: số lượng × đơn giá phải bằng

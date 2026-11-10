@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Dùng PyTorch bản CUDA trong volume tăng tốc khi nó khớp phiên bản PyTorch của image (ADR #80).
 
 `app.accel` (do sleeper chạy trên máy có GPU NVIDIA) tải torch, torchvision bản CUDA vào `OCR_ACCEL_DIR` và ghi tệp đánh

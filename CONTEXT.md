@@ -1,3 +1,12 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 # DX-OS – Tập đoàn X
 
 Ngôn ngữ chung của nền tảng DX-OS và kịch bản demo Tập đoàn X: cơ cấu tổ chức, phân quyền, phê duyệt.

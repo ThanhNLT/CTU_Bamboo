@@ -1,3 +1,12 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 # Khởi tạo cho một công ty mới
 
 Trang này dành cho người muốn dùng Bamboo để quản lý **công ty hoặc tập đoàn của chính mình**, bắt đầu từ một hệ thống trống (không có dữ liệu demo Tập đoàn X). Làm theo thứ tự:

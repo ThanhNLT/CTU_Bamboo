@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 ALTER TABLE proc.purchase_request
     ADD COLUMN proposed_partner_name text
         CHECK (proposed_partner_name IS NULL OR length(btrim(proposed_partner_name)) BETWEEN 2 AND 200),

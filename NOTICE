@@ -2,7 +2,7 @@ Bamboo – DX-OS Open-Core
 Copyright 2026 Bamboo
 
 Sản phẩm này phát hành theo Apache License 2.0 (tệp LICENSE). Mỗi tệp mã nguồn ghi giấy phép
-bằng header SPDX; ngoại lệ liệt kê trong REUSE.toml.
+trong header của dự án (`@license Apache-2.0`); REUSE.toml khai báo giấy phép cho toàn bộ kho mã.
 
 Mục đích giấy phép: Apache-2.0 cho phép mọi tổ chức, doanh nghiệp tự do dùng, sửa đổi, phân phối
 lại và tích hợp nền tảng (kể cả vào sản phẩm thương mại), với điều kiện giữ thông báo bản quyền,

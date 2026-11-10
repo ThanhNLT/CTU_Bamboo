@@ -1,3 +1,12 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 # Yêu cầu đề thi và kiến trúc 3 tầng
 
 Trang này tóm tắt yêu cầu của đề thi và thể lệ OLP Phần mềm nguồn mở 2026, rồi đối chiếu từng yêu cầu với hiện trạng của
@@ -44,7 +53,7 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | Tiêu chí | Đáp ứng trong kho mã |
 |---|---|
 | Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `CTUBamboo/Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
-| Giấy phép OSI ghi trong từng tệp mã | Header SPDX theo chuẩn REUSE 3.3; ngoại lệ (tệp không ghi được header) khai báo trong `REUSE.toml`; kiểm bằng `reuse lint` |
+| Giấy phép OSI ghi trong từng tệp mã | Header dự án ở đầu mỗi tệp (`@license Apache-2.0`, gắn bằng `tools/header.py` từ `docs/Header.txt`); `REUSE.toml` khai báo giấy phép toàn kho theo chuẩn REUSE 3.3, kể cả tệp không ghi được header; kiểm bằng `reuse lint` |
 | Không có giấy phép không tương thích | Mã của dự án Apache-2.0; thành phần bên thứ ba và giấy phép liệt kê trong `NOTICE` |
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |

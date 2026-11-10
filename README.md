@@ -1,3 +1,12 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 # Bamboo
 
 Bài thi OLP Phần mềm nguồn mở 2026, chủ đề *Xây dựng Hệ điều hành Chuyển đổi số bằng Công nghệ Lõi nguồn mở (DX-OS Open-Core)*.
@@ -15,8 +24,9 @@ Mã nguồn của Bamboo phát hành theo **[Apache License 2.0](LICENSE)**, m�
 - **Mục đích:** mọi tổ chức, doanh nghiệp được tự do dùng, sửa đổi, phân phối lại và tích hợp Bamboo (kể cả vào sản phẩm
   thương mại), với điều kiện giữ thông báo bản quyền, tệp [NOTICE](NOTICE) và ghi rõ phần đã thay đổi; người đóng góp cấp kèm
   quyền sáng chế.
-- **Trong từng tệp:** mỗi tệp mã ghi giấy phép bằng header SPDX theo chuẩn [REUSE 3.3](https://reuse.software); tệp không ghi
-  được header (JSON, ảnh...) khai báo trong [REUSE.toml](REUSE.toml). Biểu tượng mẫu của Refine theo MIT
+- **Trong từng tệp:** mỗi tệp mã mang header của dự án (lấy từ [`docs/Header.txt`](docs/Header.txt), gắn bằng
+  `python tools/header.py`) ghi bản quyền và giấy phép `@license Apache-2.0`; [REUSE.toml](REUSE.toml) khai báo giấy phép cho
+  toàn bộ kho mã theo chuẩn [REUSE 3.3](https://reuse.software), kể cả tệp không ghi được header (JSON, ảnh...). Biểu tượng mẫu của Refine theo MIT
   ([`LICENSES/MIT.txt`](LICENSES/MIT.txt)). Kiểm tra: `reuse lint`.
 - **Thành phần bên thứ ba:** đều là phần mềm nguồn mở, dùng như dịch vụ hoặc thư viện không sửa đổi, không đóng gói kèm mã
   nguồn của dự án phụ thuộc. Danh sách và giấy phép từng thành phần: [NOTICE](NOTICE).
