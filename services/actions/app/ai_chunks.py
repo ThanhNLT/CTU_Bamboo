@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Chia tài liệu thư viện thành đoạn và nạp vào chỉ mục vector (ADR #51).
 
 Mỗi đoạn ~800 token, gối ~100, mang tiêu đề gần nhất để trích dẫn dễ đọc. Vector do actions

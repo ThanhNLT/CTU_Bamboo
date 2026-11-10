@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 CREATE FUNCTION core.session_person(p_session json) RETURNS uuid
 LANGUAGE sql IMMUTABLE AS $$ SELECT nullif(p_session ->> 'x-hasura-user-id', '')::uuid $$;
 

@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 ALTER TABLE iot.entity ADD COLUMN live_source text CHECK (live_source IN ('mqtt', 'api'));
 COMMENT ON COLUMN iot.entity.live_source IS 'Nguồn số đo trực tiếp gần nhất; NULL = chỉ có dữ liệu mẫu (ADR #50)';
 

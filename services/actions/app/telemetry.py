@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Số liệu Prometheus và truy vết OpenTelemetry (ADR #75).
 
 - `/metrics` (chỉ mạng nội bộ, cổng API không định tuyến): lượt gọi và thời gian theo route HTTP và theo Action, cùng

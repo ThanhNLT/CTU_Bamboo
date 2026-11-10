@@ -1,8 +1,19 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 # Lịch sử thay đổi
 
 Mọi thay đổi đáng kể của dự án được ghi ở đây. Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ## [Chưa phát hành]
+
+**Header thống nhất cho mọi tệp:** mỗi tệp mã nguồn, cấu hình, tài liệu mang header của dự án (tên, phiên bản, tác giả, bản quyền, giấy phép, link kho mã) lấy từ `docs/Header.txt`; `python tools/header.py` gắn hoặc cập nhật (chạy lại sau khi đổi phiên bản), `--check` để kiểm. Chủ bản quyền ghi thống nhất là **Bamboo** (trước đây "DX-OS Open-Core contributors") trong `NOTICE`, `REUSE.toml` và các header SPDX.
 
 **Bỏ thành phần không dùng giấy phép nguồn mở được OSI phê duyệt (ADR #80, #81):**
 - **Sơ đồ quy trình không còn dùng bpmn-js** (giấy phép bpmn.io kèm điều kiện watermark, chưa được OSI phê duyệt). Trình thiết kế `/p/process` và trang **Sơ đồ quy trình** của đề nghị dùng lớp BPMN của dự án dựng trên diagram-js và bpmn-moddle (MIT): kéo thả, nối, sửa nhãn trực tiếp, hoàn tác như trước; tệp BPMN cũ mở và lưu lại giữ nguyên làn, ghi chú, thuộc tính `flowable:`/`bamboo:`. Bảng công cụ gọn hơn (sự kiện, hẹn giờ, cổng, tác vụ người dùng/tự động/kịch bản, quy trình con); không còn watermark bpmn.io. `tools/ci/check_licenses.mjs` không còn ngoại lệ.

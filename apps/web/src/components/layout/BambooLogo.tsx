@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 export const BambooLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
     <path d="M15.5 30C15.6 23 16 15 17.2 6" fill="none" stroke="#276533" strokeWidth="1.8" strokeLinecap="round" />

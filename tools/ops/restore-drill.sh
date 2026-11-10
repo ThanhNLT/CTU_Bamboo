@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 set -uo pipefail
 
 dir="${1:?cần thư mục sao lưu, ví dụ /backups/db-20261025-020000}"
