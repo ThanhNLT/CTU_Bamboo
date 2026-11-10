@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Môi trường kịch bản ngầm: quy trình tự động bắt đầu được bằng hẹn giờ, khởi chạy tay, webhook (mã bí mật chỉ lưu dạng băm)
--- hoặc sự kiện nghiệp vụ. Sự kiện được ghi vào hàng đợi msg.queue (chủ đề event.*) rồi worker khởi chạy các quy trình đã đăng ký.
-
 ALTER TABLE wf.process_automation
     ADD COLUMN webhook_sha256 text,
     ADD COLUMN events text[] NOT NULL DEFAULT '{}';
@@ -13,7 +6,6 @@ CREATE UNIQUE INDEX process_automation_webhook ON wf.process_automation (webhook
 ALTER TABLE wf.automation_run DROP CONSTRAINT automation_run_trigger_check,
     ADD CHECK (trigger IN ('MANUAL', 'TIMER', 'WEBHOOK', 'EVENT'));
 
--- Thông báo của tác vụ tự động nhận nội dung đã thay biến ({doc_no}...) do worker tính
 DROP FUNCTION wf.automation_notify(uuid, text);
 CREATE FUNCTION wf.automation_notify(p_run uuid, p_activity text, p_message text DEFAULT NULL) RETURNS int
 LANGUAGE plpgsql AS $$
@@ -51,7 +43,6 @@ BEGIN
     RETURN v_count;
 END $$;
 
--- Phát sự kiện nghiệp vụ vào hàng đợi (khóa chống trùng theo đối tượng và trạng thái)
 CREATE FUNCTION wf.emit_event(p_tenant uuid, p_name text, p_key text, p_payload jsonb) RETURNS void
 LANGUAGE sql AS $$
     SELECT msg.enqueue(p_tenant, 'event.' || p_name, p_payload, 'ev:' || p_name || ':' || p_key)

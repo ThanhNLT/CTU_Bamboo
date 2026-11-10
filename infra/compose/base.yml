@@ -1,10 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# Cấu hình gốc dùng chung qua `extends` (anchor YAML không đi xuyên các tệp `include`).
-# Tệp này KHÔNG được include: actions-base, hasura-base không phải dịch vụ chạy thật.
-
 services:
   actions-base:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
@@ -13,9 +6,12 @@ services:
       dockerfile: infra/docker/python.Dockerfile
       args:
         APP_DIR: services/actions
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-actions:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-actions:${BAMBOO_TAG:-dev}
     environment:
       BAMBOO_ENV: ${BAMBOO_ENV:-development}
+      MALLOC_ARENA_MAX: "2"
+      HASURA_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana-dev}
       DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms
       ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
       FLOWABLE_URL: http://flowable:8080/flowable-rest/service
@@ -43,13 +39,17 @@ services:
       SIGNATURE_ONLINE: ${SIGNATURE_ONLINE:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
       SETUP_ALLOW_UNVERIFIED: ${SETUP_ALLOW_UNVERIFIED:-true}
+      SETUP_OPEN_SIGNUP: ${SETUP_OPEN_SIGNUP:-${SEED_DEMO:-true}}
       TRINO_URL: https://trino:8443
       TRINO_CA_FILE: /run/bms/trino-ca.pem
-      OLLAMA_URL: ${OLLAMA_URL-http://ollama:11434}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
       AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
       AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
       AI_CPU_MODELS: ${AI_CPU_MODELS:-bge-m3}
+      MQTT_HOST: ${MQTT_HOST-mosquitto}
+      MQTT_TLS_DIR: /run/bms/mqtt
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
 
   hasura-base:
     image: hasura/graphql-engine:v2.51.0-ce

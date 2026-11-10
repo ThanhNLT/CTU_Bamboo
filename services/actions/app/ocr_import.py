@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Nhập liệu từ bản quét (ADR #52): trả chữ đã đọc của một tệp đính kèm cùng các trường rút ra và gợi ý khớp danh mục.
 
 Tệp là ảnh, hoặc PDF quét, đã được OCR xếp hàng khi tải lên; PDF đã có chữ thì lấy thẳng lớp chữ. Hành động chỉ đọc: việc
@@ -110,7 +106,7 @@ def ocr_document(conn: psycopg.Connection, session: dict, args: dict, ctx: Conte
         }
     if ocr["status"] == "DONE":
         text = "\n".join(ocr["page_texts"])
-    else:  # PDF đã có chữ: lấy lớp chữ sẵn có
+    else:
         if ctx.storage is None:
             raise ActionError("Chưa cấu hình kho tệp", "unavailable", 503)
         data = ctx.storage.read_stored(att["storage_key"])

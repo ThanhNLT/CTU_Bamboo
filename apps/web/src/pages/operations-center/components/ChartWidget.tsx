@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Popover } from "antd";
 import type { ReactNode } from "react";
 
@@ -24,7 +20,7 @@ export const ChipButton = ({
     onClick={onClick}
     aria-pressed={pressed}
     className={cn(
-      "inline-flex h-7 items-center gap-1.5 rounded-ui px-3 text-[11.5px] font-medium transition-colors",
+      "inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[11.5px] font-medium transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
       pressed ? "bg-bamboo-100 text-bamboo-800" : "bg-canvas text-ink hover:bg-gray-200/70",
       className,

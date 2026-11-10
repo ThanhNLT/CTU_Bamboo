@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Input, Modal, Segmented, Select } from "antd";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";

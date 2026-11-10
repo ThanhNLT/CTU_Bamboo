@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Biểu đồ BI đã lưu (ADR #63): của mình thì sửa, xóa được; chia sẻ thì người cùng công ty chỉ xem."""
 
 from conftest import ids

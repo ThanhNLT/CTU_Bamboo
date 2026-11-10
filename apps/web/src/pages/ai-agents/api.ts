@@ -1,11 +1,17 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { request } from "../../api/client";
-import type { Agent, AgentInput, AgentStats, AiModel, LoadedModel } from "./types";
+import type {
+  Agent,
+  AgentInput,
+  AgentRun,
+  AgentStats,
+  AiModel,
+  AutomationInput,
+  LoadedModel,
+  TriggerOptions,
+} from "./types";
 
-const AGENT = "id name model status guardrail_config tool_list";
+const AGENT =
+  "id name model status guardrail_config tool_list triggers instructions allowed_actions autonomy webhook_url";
 
 export const fetchAgents = async () => {
   const { core_ai_agent } = await request<{ core_ai_agent: Agent[] }>(
@@ -51,4 +57,28 @@ export const removeAgent = async (id: string) => {
     { id },
   );
   return ai_agent_unregister;
+};
+
+export const fetchTriggerOptions = async () => {
+  const { ai_agent_trigger_options } = await request<{ ai_agent_trigger_options: TriggerOptions }>(
+    `query { ai_agent_trigger_options { events actions autonomy } }`,
+  );
+  return ai_agent_trigger_options;
+};
+
+export const setAutomation = (id: string, v: AutomationInput) =>
+  request(
+    `mutation($id: uuid!, $t: jsonb!, $i: String, $a: jsonb!, $m: String, $w: String) {
+      ai_agent_automation(id: $id, triggers: $t, instructions: $i, allowed_actions: $a, autonomy: $m, webhook_url: $w)
+      { id } }`,
+    { id, t: v.triggers, i: v.instructions, a: v.allowed_actions, m: v.autonomy, w: v.webhook_url || null },
+  );
+
+export const fetchRuns = async (limit = 30) => {
+  const { core_ai_agent_run } = await request<{ core_ai_agent_run: AgentRun[] }>(
+    `query($l: Int!) { core_ai_agent_run(order_by: {created_at: desc}, limit: $l) {
+       id agent_id event entity_type entity_id payload status assessment risk plan actions error created_at finished_at } }`,
+    { l: limit },
+  );
+  return core_ai_agent_run;
 };

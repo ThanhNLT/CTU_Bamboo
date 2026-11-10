@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import dayjs from "dayjs";
 
 import type { Kpi } from "./types";
@@ -28,6 +24,5 @@ export const fmtBucket = (iso: string, days: number) =>
 
 export const kpi = (k: Omit<Kpi, "freshness">, at?: Date): Kpi => ({
   ...k,
-  // i18n-ignore: mức độ tươi là giá trị dữ liệu (kiểu literal), dịch lúc hiển thị (KpiCard)
   freshness: { tier: "Nóng", at: at ? dayjs(at).format("HH:mm") : "—" },
 });

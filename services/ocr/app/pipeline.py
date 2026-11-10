@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Một trang ảnh → các dòng chữ: xoay hướng trang, phát hiện dòng (PaddleOCR), xoay dòng, nhận dạng (VietOCR).
 
 Mọi mô hình chạy bằng PyTorch trên `device` (CUDA hoặc CPU). Thứ tự đọc: trên xuống, trái sang phải; các ô cùng hàng
@@ -25,13 +22,10 @@ VIETOCR_FILES = {
     "vgg_transformer.pth": "vgg_transformer.pth",
 }
 REC_MAX_WIDTH = 1600
-# VietOCR học trên đoạn ngắn: dòng dài hơn SEGMENT_RATIO lần chiều cao bị cắt cụt hoặc bịa phần đuôi,
-# nên chia tại khoảng trắng giữa các từ rồi ghép lại.
 SEGMENT_RATIO = 14
 PAD_RATIO = 0.5
 REC_BATCH = 32
 DOC_ORI_MIN_SCORE = 0.6
-# Nhãn của bộ xoay trang là góc cần xoay ngược chiều kim đồng hồ để trang đứng thẳng (như PaddleX rotate_image).
 _ROTATE = {"90": cv2.ROTATE_90_COUNTERCLOCKWISE, "180": cv2.ROTATE_180, "270": cv2.ROTATE_90_CLOCKWISE}
 
 

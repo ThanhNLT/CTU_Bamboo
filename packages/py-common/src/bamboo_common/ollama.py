@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Gọi Ollama cục bộ (ADR #51): danh mục mô hình, embedding, sinh câu trả lời qua API tương thích OpenAI."""
 
 import json
@@ -9,7 +6,6 @@ from dataclasses import dataclass
 
 import httpx
 
-# Ollama ngủ khi nhàn rỗi (sleeper, ADR #53): lần gọi đầu chờ container dậy; dưới thời gian chờ 30 giây của Action Hasura
 WAKE_SECONDS = 25.0
 
 
@@ -86,7 +82,9 @@ class Ollama:
             raise OllamaUnavailable(f"Ollama trả {len(vectors)} vector cho {len(texts)} đoạn")
         return vectors
 
-    def chat(self, model: str, messages: list[dict], *, think: bool = False, max_tokens: int = 1024) -> Iterator[Delta]:
+    def chat(
+        self, model: str, messages: list[dict], *, think: bool = False, max_tokens: int = 1024, json_mode: bool = False
+    ) -> Iterator[Delta]:
         body = {
             "model": model,
             "messages": messages,
@@ -97,6 +95,8 @@ class Ollama:
         }
         if not think:
             body["reasoning_effort"] = "none"
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
         try:
             with self.http.stream("POST", "/v1/chat/completions", json=body) as resp:
                 if resp.status_code >= 400:

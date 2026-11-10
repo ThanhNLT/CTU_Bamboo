@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Quản lý dự án và kế hoạch (ADR #66), mô-đun `project`.
 
 - **Dự án** (`pm.project`): thông tin chung và văn bản kế hoạch chi tiết (mục tiêu, phạm vi, sản phẩm bàn giao, cách triển
@@ -107,9 +104,6 @@ def _manageable(conn, tenant: str, person: str, project_id) -> dict:
     if not _can(conn, "can_manage", project["id"], person):
         raise ActionError("Chỉ người quản lý dự án sửa được kế hoạch", "forbidden", 403)
     return project
-
-
-# --- Tính toán kế hoạch -------------------------------------------------------------------------------------------
 
 
 def duration(t: dict) -> int:
@@ -234,7 +228,7 @@ def analyze(tasks: dict[str, dict], deps: list[dict], at: dt.date) -> None:
     def lf(tid: str) -> dt.date:
         if tid in late_finish:
             return late_finish[tid]
-        if tid in visiting:  # phòng thủ: không xảy ra khi CSDL đã chặn vòng
+        if tid in visiting:
             return finish
         visiting.add(tid)
         t = tasks[tid]
@@ -326,9 +320,6 @@ def suggest_health(s: dict) -> str:
     if spi >= 0.95 and not s.get("late_tasks"):
         return "GREEN"
     return "RED" if spi < 0.8 else "AMBER"
-
-
-# --- Hành động ------------------------------------------------------------------------------------------------------
 
 
 def pm_project_detail(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
@@ -580,7 +571,6 @@ def pm_task_save(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
         project = _readable(conn, tenant, person, data.get("project_id"), lock=True)
     manager = _can(conn, "can_manage", project["id"], person)
     if not manager:
-        # Người phụ trách chỉ cập nhật % hoàn thành của việc mình
         own = old is not None and str(old["assignee_id"]) == person
         allowed = {"id", "progress", "project_id"}
         if not own or set(data) - allowed:
@@ -815,9 +805,6 @@ def pm_report_create(conn: psycopg.Connection, session: dict, args: dict, _ctx: 
             ),
         )
     return {"id": str(rid), "health": health, **{k: s[k] for k in ("planned_pct", "actual_pct", "spi", "late_tasks")}}
-
-
-# --- Văn bản PDF ----------------------------------------------------------------------------------------------------
 
 
 def gantt_rows(tasks: list[dict], start: dt.date, end: dt.date) -> list[dict]:

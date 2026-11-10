@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -17,6 +13,7 @@ if TYPE_CHECKING:
     from bamboo_common.pii import PiiCipher
 
     from .hr_account import KeycloakUsers
+    from .mqtt_admin import Dynsec
     from .receipts import Signer
     from .search import Meili
     from .trino import Trino
@@ -45,6 +42,7 @@ class Context:
     signature_trust_dir: str = ""
     signature_online: bool = True
     actions_secret: str = ""
+    mqtt: "Dynsec | None" = None
 
 
 class ActionError(Exception):

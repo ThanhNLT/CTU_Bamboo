@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, Button, Card, Form, Input, Layout, Steps, Typography, Upload } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router";

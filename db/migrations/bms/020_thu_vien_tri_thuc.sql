@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 INSERT INTO core.permission (code, description) VALUES
     ('kb.document.create', 'Đề xuất tài liệu vào thư viện tri thức'),
     ('kb.document.manage', 'Quản lý thư viện tri thức: xem mọi đề xuất, ngừng hiệu lực, nạp lại chỉ mục');

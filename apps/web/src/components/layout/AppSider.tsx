@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useList } from "@refinedev/core";
 import { Tooltip } from "antd";
 import gql from "graphql-tag";
@@ -51,12 +47,10 @@ const SiderItem = ({ item, active, collapsed, onNavigate }: { item: NavItem; act
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? t(item.label) : undefined}
       className={cn(
-        // Chuyển màu mượt kiểu macOS; cần ! vì CSS của Ant Design gắn "transition: color 0.3s" cho mọi thẻ <a>
         "group relative flex h-9 items-center gap-3 rounded-xl text-[13.5px]",
         "transition-[background-color,box-shadow,color,transform]! duration-300! ease-[cubic-bezier(0.22,1,0.36,1)]!",
         "motion-safe:active:scale-[0.98]",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-400",
-        // Di chuột và đang chọn cùng một màu tương phản (Tre 600, chữ trắng 5,3:1); đang chọn thêm lớp kính bóng
         "hover:bg-bamboo-600! hover:text-white!",
         active
           ? "bg-[linear-gradient(180deg,#3e8a4f_0%,#2f7a3e_55%,#1f5e2e_100%)] font-semibold text-white! shadow-glass-active"
@@ -114,7 +108,6 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   const badgeOf = (item: NavItem) =>
     item.key === "inbox" ? inboxCount : item.key === "chat" ? unread || undefined : item.badge;
   const { enabled, overview } = useModules();
-  // mô-đun ngoài đã bật: nhóm menu "Mở rộng", mỗi mục menu manifest khai là một trang trong khung nhúng (ADR #58)
   const external: NavGroup = {
     code: "E",
     label: tr("Mở rộng"),
@@ -161,7 +154,6 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         {groups.map((group) => (
           <NavGate key={group.code} access={group.access}>
             <div className="mt-3 first:mt-1 [&:first-child>[role=separator]]:hidden">
-              {/* Các nhóm ngăn bằng đường kẻ 2px thay cho tiêu đề nhóm (kiểu sidebar macOS) */}
               <div role="separator" className={cn("mb-3 h-px bg-line", collapsed ? "mx-2" : "mx-2.5")} />
               <ul className="m-0 list-none space-y-0.5 p-0" aria-label={t(group.label)}>
                 {group.items.map((item) => (
@@ -211,7 +203,6 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
   );
 };
 
-// Thanh bên nổi kiểu macOS: tấm kính tách khỏi mép màn hình, bo góc rộng
 export const AppSider = ({ collapsed = false }: { collapsed?: boolean }) => (
   <div className={cn("sticky top-0 hidden h-screen shrink-0 p-3 pr-4 md:block", collapsed ? "w-[92px]" : "w-[264px]")}>
     <aside

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App } from "antd";
 import { ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -18,7 +14,7 @@ import { FileTable } from "./components/FileTable";
 import { FolderGrid } from "./components/FolderCard";
 import { StorageCard } from "./components/StorageCard";
 import { UploadProgress } from "./components/UploadProgress";
-import { DRIVE_NAV } from "./nav";
+import { DRIVE_NAV, PARA_NAV } from "./nav";
 import type { DriveFile, DriveSection, SortKey } from "./types";
 import { useDrive } from "./useDrive";
 import { useUploadQueue } from "./useUploadQueue";
@@ -39,7 +35,9 @@ export const DocumentDrivePage = () => {
   const folderId = params.get("folder") ?? undefined;
   const drive = useDrive(section, tenant.person_id, folderId);
   const files = useMemo(() => sortFiles(drive.files, sort), [drive.files, sort]);
-  const sectionLabel = DRIVE_NAV.find((n) => n.key === section)?.label ?? "";
+  const sectionItem = [...DRIVE_NAV, ...PARA_NAV].find((n) => n.key === section);
+  const sectionLabel = sectionItem?.label ?? "";
+  const paraNav = PARA_NAV.map((n) => ({ ...n, badge: drive.paraCounts[n.key] }));
 
   const openFolder = (id?: string) =>
     setParams((p) => {
@@ -119,6 +117,15 @@ export const DocumentDrivePage = () => {
               openFolder();
             }}
           />
+          <DriveSidebar
+            title={tr("P.A.R.A")}
+            items={paraNav}
+            active={section}
+            onChange={(key) => {
+              setSection(key);
+              openFolder();
+            }}
+          />
           <StorageCard segments={drive.storage} usage={usage.data} onChanged={() => void usage.reload()} />
         </aside>
 
@@ -131,6 +138,7 @@ export const DocumentDrivePage = () => {
             sort={sort}
             onSortChange={setSort}
           />
+          {!drive.folder && sectionItem?.hint && <p className="-mt-1 text-[12.5px] text-muted">{sectionItem.hint}</p>}
           {drive.folder ? (
             <p className="-mt-1 flex flex-wrap items-center gap-x-3 text-[12.5px] text-muted">
               {drive.folderHint}

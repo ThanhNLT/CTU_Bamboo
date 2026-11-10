@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { expect, test } from "@playwright/test";
 
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
@@ -24,7 +20,6 @@ test("đổi sang tiếng Anh cho menu và giữ lựa chọn sau khi tải lạ
   await page.reload();
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
 
-  // nội dung trang cũng đổi ngôn ngữ, không chỉ menu
   await english.getByRole("link", { name: "Records" }).click();
   await expect(page.getByRole("heading", { name: "Records", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /Create record/ })).toBeVisible();

@@ -1,14 +1,10 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import itertools
 import uuid
 import xml.etree.ElementTree as ET
 
 import pytest
 from test_tep_dinh_kem import CONFIRM, upload
-from test_thiet_ke_quy_trinh import call, client, designer  # noqa: F401  (fixture)
+from test_thiet_ke_quy_trinh import call, client, designer  # noqa: F401
 
 from app import forms, process_design, process_regulation, process_text
 from conftest import SETTINGS  # noqa: F401
@@ -86,7 +82,6 @@ def check_layout(nodes, edges, result):
                 x, y, w, h = result.shapes[n.id]
                 inside = min(x1, x2) < x + w and max(x1, x2) > x and min(y1, y2) < y + h and max(y1, y2) > y
                 assert not inside, f"{eid} xuyên qua {n.id}"
-        # đầu nối nằm trên biên phần tử
         sx, sy, sw, sh = result.shapes[e.src]
         px, py = path[0]
         assert sx <= px <= sx + sw and sy <= py <= sy + sh
@@ -94,7 +89,6 @@ def check_layout(nodes, edges, result):
         for sa in segments(pa):
             for sb in segments(pb):
                 assert not overlaps(sa, sb), f"{ea} và {eb} nằm đè lên nhau: {sa} {sb}"
-    # mọi đường, kể cả tự thân, không có đoạn chồng lên chính nó
     for eid, path in result.routes.items():
         for sa, sb in itertools.combinations(segments(path), 2):
             assert not overlaps(sa, sb), f"{eid} tự chồng lên mình"
@@ -227,9 +221,9 @@ def regulator(conn, designer):  # noqa: F811
     )
     conn.execute(
         """INSERT INTO core.role_grant (tenant_id, role_id, position_id, scope)
-           SELECT test.id('TDX'), id, test.id('P_GD'), 'TENANT' FROM core.role
+           SELECT test.id('TDX'), id, test.id(%s), 'TENANT' FROM core.role
            WHERE tenant_id = test.id('TDX') AND code = %s""",
-        (role,),
+        (designer["k"]("P_GD"), role),
     )
     if not conn.execute(
         "SELECT 1 FROM wf.approval_rule WHERE tenant_id = test.id('TDX') AND process_code = 'KB_DOCUMENT'"
@@ -247,10 +241,12 @@ def test_hai_chieu_van_ban_va_so_do(hasura, client, conn, s3, regulator):  # noq
     i = {"TDX": tenant, "c": gd}
     doc_id = conn.execute(
         """INSERT INTO collab.kb_document (tenant_id, title, category, scope, requester_id, requester_position_id)
-           VALUES (test.id('TDX'), %s, 'sop', 'company', %s, test.id('P_GD')) RETURNING id""",
-        (f"Quy chế mua sắm {uuid.uuid4().hex[:6]}", gd),
-    ).fetchone()[0]
-    att = upload(hasura, i, str(doc_id), MUA_SAM.encode(), name="mua-sam.txt", ctype="text/plain")
+           VALUES (test.id('TDX'), %s, 'sop', 'company', %s, test.id(%s)) RETURNING id""",
+        (f"Quy chế mua sắm {uuid.uuid4().hex[:6]}", gd, k("P_GD")),
+    ).fetchone()["id"]
+    att = upload(
+        hasura, i, str(doc_id), MUA_SAM.encode(), name="mua-sam.txt", ctype="text/plain", entity="collab.kb_document"
+    )
     confirm = hasura(CONFIRM, {"a": att}, person=gd, tenant=tenant)
     assert confirm["data"]["confirm_upload"]["status"] == "CLEAN", confirm
 
@@ -285,4 +281,4 @@ def test_hai_chieu_van_ban_va_so_do(hasura, client, conn, s3, regulator):  # noq
     text = conn.execute(
         "SELECT file_name FROM core.attachment WHERE entity_id = %s AND status = 'CLEAN'", (out["document_id"],)
     ).fetchall()
-    assert out["files"][0] in {t[0] for t in text}
+    assert out["files"][0] in {t["file_name"] for t in text}

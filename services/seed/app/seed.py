@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import datetime as dt
 import hashlib
 import json
@@ -50,8 +46,6 @@ def _form(key: str, name: str) -> dict:
     }
 
 
-# Quy trình thiết kế sẵn ở Tập đoàn X: (mã, tên, mô tả, trạng thái, ghi chú phát hành, yêu cầu sửa, biểu mẫu).
-# Trạng thái: PUBLISHED (đã phát hành), CHANGE_REQUESTED (đã phát hành, giám sát đang yêu cầu sửa), DRAFT (bản nháp).
 PROCESS_CATALOG = [
     (
         "onboardingApproval",
@@ -146,7 +140,6 @@ ITEMS = [
     ("BVX", "TBYT-SIEUAM", "Máy siêu âm 4D", "máy", "TBYT", 200_000_000),
 ]
 
-# Mô-đun dựng sẵn (ADR #56); mã khớp services/actions/app/modules.py, kiểm bởi test của actions
 DEMO_MODULES = (
     "approval",
     "procurement",
@@ -455,7 +448,7 @@ class Seeder:
             "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read", "audit.read"]),
             "QUAN_TRI_TO_CHUC": (
                 "Quản trị tổ chức",
-                ["core.org.manage", "core.permission.manage", "core.module.manage"],
+                ["core.org.manage", "core.permission.manage", "core.module.manage", "core.ai.manage"],
             ),
         }
         for code, (name, perms) in roles.items():
@@ -990,7 +983,6 @@ class Seeder:
                 owner[0],
                 owner[0],
             )
-            # Quy trình mẫu đã phát hành toàn tập đoàn để nhân viên, quản lý xem được ngay
             self.x(
                 """INSERT INTO wf.process_version (tenant_id, model_id, version, bpmn_xml, forms, sha256, note,
                                                    published_by, audience)
@@ -1548,7 +1540,7 @@ class Seeder:
         self.modules()
 
 
-FAILED: list[str] = []  # phần demo phụ lỗi ở lần chạy gần nhất (main trả mã lỗi để `make up` thấy)
+FAILED: list[str] = []
 
 
 def seed(conn: psycopg.Connection) -> bool:
@@ -1599,7 +1591,6 @@ def main() -> int:
     with psycopg.connect(url) as conn:
         log.info("đã nạp dữ liệu demo" if seed(conn) else "đã có dữ liệu demo: chỉ bổ sung phần mới")
     if FAILED:
-        # Tổ chức, người và tài khoản demo đã nạp (đăng nhập được); chỉ các phần sau bị bỏ, xem log phía trên
         log.error("một số phần demo lỗi: %s", ", ".join(FAILED))
         return 1
     return 0

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import {
   Activity,
   ArrowLeftRight,
@@ -60,8 +56,6 @@ export type NavGroup = {
   access?: { resource: string; action: string };
 };
 
-// Nhóm theo kiểu sidebar macOS: việc dùng hằng ngày ở trên cùng, quản trị và hệ thống ở cuối.
-// Nhãn nhóm không hiện trên sidebar (các nhóm ngăn bằng đường kẻ), chỉ dùng cho breadcrumb và bảng ứng dụng.
 export const NAV_GROUPS: NavGroup[] = [
   {
     code: "daily",
@@ -93,7 +87,14 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "drive", label: tr("Ổ đĩa tài liệu"), to: "/h/drive", icon: FolderClosed, module: "files" },
       { key: "library", label: tr("Thư viện tri thức"), to: "/h/library", icon: LibraryBig, module: "knowledge" },
       { key: "ocr", label: tr("Nhập liệu OCR"), to: "/i/ocr", icon: ScanText, module: "ai" },
-      { key: "agents", label: tr("Tác tử AI"), to: "/i/agents", icon: Bot, module: "ai" },
+      {
+        key: "agents",
+        label: tr("Tác tử AI"),
+        to: "/i/agents",
+        icon: Bot,
+        module: "ai",
+        access: { resource: "ai_agents", action: "list" },
+      },
     ],
   },
   {

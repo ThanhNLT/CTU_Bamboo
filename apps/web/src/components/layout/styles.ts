@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export const iconButtonClass =
   "relative grid h-9 w-9 place-items-center rounded-full text-body transition-colors hover:bg-bamboo-100 " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500";

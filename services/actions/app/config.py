@@ -1,13 +1,15 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
+import logging
 import os
 import pathlib
+import time
 from dataclasses import dataclass, replace
 from urllib.parse import quote, urlparse, urlunparse
 
+import httpx
+
 from bamboo_common.openbao import Bao, BaoError
+
+log = logging.getLogger("config")
 
 SECRET_FIELDS = {
     "bms/actions": {"secret": "actions_secret"},
@@ -24,6 +26,7 @@ SECRET_FIELDS = {
     "bms/meilisearch-indexer": {"key": "meili_indexer_key"},
     "bms/kafka-lakehouse": {"username": "kafka_username", "password": "kafka_password"},
     "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
+    "bms/mosquitto": {"admin_password": "mqtt_admin_password", "bridge_password": "mqtt_bridge_password"},
 }
 
 
@@ -100,6 +103,13 @@ class Settings:
     signature_trust_dir: str = "/repo/infra/platform/trust"
     signature_online: bool = True
     setup_allow_unverified: bool = True
+    setup_open_signup: bool = False
+    mqtt_host: str = ""
+    mqtt_port: int = 1883
+    mqtt_admin_password: str = ""
+    mqtt_bridge_password: str = ""
+    mqtt_tls_dir: str = ""
+    mqtt_tls_port: int = 8884
 
 
 DEV_DEFAULTS = {
@@ -117,12 +127,20 @@ DEV_DEFAULTS = {
     "KEYCLOAK_ADMIN_PASSWORD": "kcadmin-dev",
     "FLOWABLE_ADMIN_PASSWORD": "test",
     "DEMO_PASSWORD": "demo-password",
+    "GRAFANA_ADMIN_PASSWORD": "grafana-dev",
 }
+
+PRODUCTION_OFF = {"HASURA_ENABLE_CONSOLE": "true"}
+
+
+def _enabled(value: str) -> bool:
+    return value.strip().lower() not in ("", "0", "false", "no", "off")
 
 
 def production_problems(env: dict[str, str] | None = None) -> list[str]:
     env = os.environ if env is None else env
-    return [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
+    problems = [name for name, dev in DEV_DEFAULTS.items() if env.get(name, dev) in ("", dev)]
+    return problems + [name for name, dev in PRODUCTION_OFF.items() if _enabled(env.get(name, dev))]
 
 
 def assert_production_ready(env: dict[str, str] | None = None) -> None:
@@ -134,7 +152,7 @@ def assert_production_ready(env: dict[str, str] | None = None) -> None:
         raise SystemExit(
             "BAMBOO_ENV=production nhưng còn giá trị mặc định của môi trường dev: "
             + ", ".join(problems)
-            + ". Đặt giá trị riêng trong .env (xem .env.example)."
+            + ". Đặt giá trị riêng trong .env (xem .env.example); HASURA_ENABLE_CONSOLE phải là false."
         )
 
 
@@ -178,11 +196,25 @@ def _with_credentials(url: str, username: str, password: str) -> str:
     return urlunparse(parsed._replace(netloc=netloc))
 
 
+def _login(addr: str, approle: str, wait: float) -> Bao:
+    """Đăng nhập AppRole, chờ tối đa `wait` giây khi OpenBao chưa sẵn sàng (đang khởi động, đang khóa chờ
+    `openbao-unseal`) thay vì thoát ngay để Docker khởi động lại liên tục."""
+    deadline = time.monotonic() + wait
+    while True:
+        try:
+            return Bao.from_approle_file(addr, approle)
+        except (httpx.HTTPError, BaoError) as exc:
+            if time.monotonic() >= deadline or (isinstance(exc, BaoError) and exc.status < 500):
+                raise
+            log.warning("chờ OpenBao sẵn sàng: %s", exc)
+            time.sleep(3)
+
+
 def load() -> Settings:
     settings = _from_env()
     addr, approle = os.environ.get("BAO_ADDR"), os.environ.get("BAO_APPROLE_FILE")
     if addr and approle:
-        settings = with_openbao(settings, Bao.from_approle_file(addr, approle))
+        settings = with_openbao(settings, _login(addr, approle, float(os.environ.get("BAO_WAIT_SECONDS", "120"))))
     return settings
 
 
@@ -267,4 +299,11 @@ def _from_env() -> Settings:
         ),
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
+        mqtt_host=env("MQTT_HOST", ""),
+        mqtt_port=int(env("MQTT_PORT", "1883")),
+        mqtt_admin_password=env("MQTT_ADMIN_PASSWORD", ""),
+        mqtt_bridge_password=env("MQTT_BRIDGE_PASSWORD", ""),
+        mqtt_tls_dir=env("MQTT_TLS_DIR", ""),
+        mqtt_tls_port=int(env("MQTT_TLS_PORT", "8884")),
+        setup_open_signup=env("SETUP_OPEN_SIGNUP", "false").lower() in ("1", "true", "yes"),
     )

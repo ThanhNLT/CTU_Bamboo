@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Smoke test Trợ lý RAG với Ollama thật (ADR #51, #52): chạy `./tools/ai_smoke.sh [--cold]`.
 
 Hỏi bằng tác tử "Trợ lý quy chế" của Tập đoàn X dưới danh tính người tạo tác tử, gọi thẳng dịch vụ actions,
@@ -61,7 +58,7 @@ def unload_models() -> None:
                 post(f"{OLLAMA}/api/generate", {"model": model, "keep_alive": 0, "stream": False})
         except OSError as exc:
             print(f"không gỡ được {model}: {exc}")
-    for _ in range(40):  # Ollama gỡ bất đồng bộ: chờ tới khi không còn mô hình nào nạp
+    for _ in range(40):
         with urllib.request.urlopen(f"{OLLAMA}/api/ps", timeout=10) as resp:
             if not json.loads(resp.read()).get("models"):
                 return

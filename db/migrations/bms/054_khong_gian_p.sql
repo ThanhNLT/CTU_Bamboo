@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- 054: Không gian P (ADR #66): quản lý dự án và kế hoạch: văn bản kế hoạch chi tiết, cấu trúc phân rã công việc (WBS),
--- phụ thuộc kết thúc→bắt đầu, đường cơ sở, báo cáo tiến độ theo kỳ, sơ đồ Gantt. Schema `pm` thuộc mô-đun `project`.
-
 CREATE SCHEMA pm;
 
 ALTER TABLE collab.notification
@@ -26,8 +19,6 @@ SELECT DISTINCT tenant_id, role_id, p
 FROM core.role_permission, unnest(ARRAY['pm.project.read', 'pm.project.manage']) p
 WHERE permission_code = 'core.org.manage';
 
--- Dự án: thông tin chung và văn bản kế hoạch chi tiết (mục tiêu, phạm vi, sản phẩm bàn giao, cách triển khai, rủi ro,
--- các bên liên quan). Mỗi dự án có một nhóm nhắn tin riêng (ADR #65) đồng bộ theo thành viên.
 CREATE TABLE pm.project (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
     id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -74,8 +65,6 @@ CREATE TABLE pm.member (
 CREATE INDEX member_person ON pm.member (tenant_id, person_id);
 CALL audit.enable('pm.member', 'project_id', 'person_id');
 
--- Công việc (WBS): cây theo parent_id, thứ tự anh em theo seq. Ngày lưu cho mọi công việc; công việc có con là công việc
--- tổng hợp, ngày và % hoàn thành tính từ con (actions/app/projects.py). Đường cơ sở: ngày đã chốt để so lệch kế hoạch.
 CREATE TABLE pm.task (
     tenant_id       uuid NOT NULL,
     id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -106,7 +95,6 @@ CREATE INDEX task_project ON pm.task (project_id, parent_id, seq);
 CREATE INDEX task_assignee ON pm.task (tenant_id, assignee_id, end_date);
 CALL audit.enable('pm.task');
 
--- Phụ thuộc kết thúc→bắt đầu (FS): công việc sau bắt đầu sớm nhất một ngày sau khi công việc trước kết thúc, cộng độ trễ
 CREATE TABLE pm.dependency (
     tenant_id       uuid NOT NULL,
     project_id      uuid NOT NULL,
@@ -134,7 +122,6 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'Phụ thuộc tạo vòng lặp giữa các công việc' USING ERRCODE = 'data_exception';
     END IF;
-    -- Công việc tổng hợp và công việc con của nó không phụ thuộc nhau (ngày của cha suy từ con)
     IF EXISTS (
         WITH RECURSIVE up(id) AS (
             SELECT parent_id FROM pm.task WHERE id = NEW.successor_id
@@ -154,7 +141,6 @@ END $$;
 CREATE TRIGGER dependency_no_cycle BEFORE INSERT OR UPDATE ON pm.dependency
     FOR EACH ROW EXECUTE FUNCTION pm.dependency_no_cycle();
 
--- Cây công việc không được có vòng (đổi cha thành con cháu của chính nó)
 CREATE FUNCTION pm.task_before_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -171,7 +157,6 @@ BEGIN
 END $$;
 CREATE TRIGGER task_before_write BEFORE INSERT OR UPDATE ON pm.task FOR EACH ROW EXECUTE FUNCTION pm.task_before_write();
 
--- Báo cáo tiến độ theo kỳ: chụp số liệu lúc lập (kế hoạch %, thực hiện %, SPI, việc trễ), không sửa sau khi lập
 CREATE TABLE pm.report (
     tenant_id        uuid NOT NULL,
     id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -204,8 +189,6 @@ BEGIN
 END $$;
 CREATE TRIGGER report_immutable BEFORE UPDATE ON pm.report FOR EACH ROW EXECUTE FUNCTION pm.report_immutable();
 
--- Quyền: thành viên (mọi vai trò) xem; người quản lý dự án sửa. Người có pm.project.read / pm.project.manage trên đơn vị
--- chủ trì (hoặc đơn vị cấp trên) xem / quản lý mọi dự án của đơn vị.
 CREATE FUNCTION pm.can_read(p_project uuid, p_person uuid) RETURNS boolean
 LANGUAGE sql STABLE AS $$
     SELECT EXISTS (
@@ -233,12 +216,6 @@ LANGUAGE sql STABLE AS $$ SELECT pm.can_read(p_row.id, core.session_person(hasur
 CREATE FUNCTION pm.project_can_manage(p_row pm.project, hasura_session json) RETURNS boolean
 LANGUAGE sql STABLE AS $$ SELECT pm.can_manage(p_row.id, core.session_person(hasura_session)) $$;
 
--- Số liệu tiến độ của dự án tại một ngày, tính trên công việc lá (không có con), trọng số = số ngày của công việc
--- (mốc: trọng số 0, chỉ tính khi cả dự án toàn mốc):
---   thực hiện % = Σ(trọng số × % hoàn thành) / Σ trọng số
---   kế hoạch % = Σ(trọng số × phần thời gian đã trôi qua của công việc) / Σ trọng số
---   SPI = thực hiện / kế hoạch (chỉ số tiến độ; < 1 là chậm)
---   việc trễ = công việc lá chưa xong mà ngày kết thúc đã qua
 CREATE FUNCTION pm.stats(p_project uuid, p_at date DEFAULT (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)
 RETURNS TABLE (actual_pct numeric, planned_pct numeric, spi numeric, late_tasks int, total_tasks int, done_tasks int)
 LANGUAGE sql STABLE AS $$
@@ -278,14 +255,12 @@ LANGUAGE sql STABLE AS $$ SELECT planned_pct FROM pm.stats(p_row.id) $$;
 CREATE FUNCTION pm.project_late_tasks(p_row pm.project) RETURNS integer
 LANGUAGE sql STABLE AS $$ SELECT late_tasks FROM pm.stats(p_row.id) $$;
 
--- Thay đổi dự án báo cho trình duyệt đang mở (ADR #64)
 CALL live.track('pm.project', 'project');
 CALL live.track('pm.task', 'project');
 CALL live.track('pm.dependency', 'project');
 CALL live.track('pm.member', 'project');
 CALL live.track('pm.report', 'project');
 
--- Hệ thống đang chạy: mô-đun quản lý dự án coi như đã cài và bật cho các công ty hiện có (như migration 042)
 INSERT INTO core.module_install (module, installed_by)
 SELECT 'project', 'migration 054' WHERE EXISTS (SELECT FROM core.tenant)
 ON CONFLICT DO NOTHING;

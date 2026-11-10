@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -170,7 +166,7 @@ export const SearchPage = () => {
                   setText(ex);
                   setUrl({ q: ex });
                 }}
-                className="h-8 rounded-ui bg-black/[0.045] px-3.5 text-[12.5px] font-medium text-ink hover:bg-bamboo-50"
+                className="h-8 rounded-full bg-black/[0.045] px-3.5 text-[12.5px] font-medium text-ink hover:bg-bamboo-50"
               >
                 {ex}
               </button>

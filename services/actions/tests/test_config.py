@@ -1,12 +1,8 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import pytest
 
 from app import config
 
-STRONG = {name: f"bi-mat-rieng-{i}" for i, name in enumerate(config.DEV_DEFAULTS)}
+STRONG = {name: f"bi-mat-rieng-{i}" for i, name in enumerate(config.DEV_DEFAULTS)} | {"HASURA_ENABLE_CONSOLE": "false"}
 
 
 def test_moi_truong_dev_khong_chan():
@@ -32,3 +28,14 @@ def test_production_thieu_bien_coi_nhu_mac_dinh():
     assert config.production_problems(env) == ["ACTIONS_SECRET", "DEMO_PASSWORD"]
     with pytest.raises(SystemExit):
         config.assert_production_ready(env)
+
+
+@pytest.mark.parametrize("value", ["true", "1", "", None])
+def test_production_bat_buoc_tat_hasura_console(value):
+    env = {"BAMBOO_ENV": "production", **STRONG}
+    if value is None:
+        del env["HASURA_ENABLE_CONSOLE"]
+    else:
+        env["HASURA_ENABLE_CONSOLE"] = value
+    expected = ["HASURA_ENABLE_CONSOLE"] if value in ("true", "1", None) else []
+    assert config.production_problems(env) == expected

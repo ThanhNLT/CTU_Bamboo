@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router";
 
@@ -51,7 +47,7 @@ export const TaskDetailHeader = ({
         <h2 className="text-[18px] font-semibold leading-snug text-ink">{task.title}</h2>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 whitespace-nowrap rounded-ui px-2.5 py-0.5 text-[11.5px] font-medium",
+            "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11.5px] font-medium",
             SLA_PILL[task.sla.level],
           )}
         >

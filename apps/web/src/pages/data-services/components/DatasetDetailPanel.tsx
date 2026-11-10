@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { ArrowRight, CheckCircle2, Database, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -202,7 +198,7 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
       <div
         role="tablist"
         aria-label={tr("Nội dung tập dữ liệu")}
-        className="mt-5 inline-flex max-w-full flex-wrap gap-0.5 rounded-ui bg-black/[0.045] p-1"
+        className="mt-5 inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.045] p-1"
       >
         {TABS.map((t) => (
           <button
@@ -212,7 +208,7 @@ export const DatasetDetailPanel = ({ dataset, className }: { dataset?: Dataset; 
             aria-selected={t.key === tab}
             onClick={() => setTab(t.key)}
             className={cn(
-              "h-7 rounded-ui px-3 text-[12px] transition-colors",
+              "h-7 rounded-full px-3 text-[12px] transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
               t.key === tab ? "bg-segment font-semibold text-ink shadow-card" : "text-body hover:text-ink",
             )}

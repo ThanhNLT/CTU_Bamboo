@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { cn } from "../../../utils/cn";
 import type { DriveNavItem, DriveSection } from "../types";
 import { tr } from "../../../i18n";
@@ -10,20 +6,26 @@ export const DriveSidebar = ({
   items,
   active,
   onChange,
+  title,
 }: {
   items: DriveNavItem[];
   active: DriveSection;
   onChange: (key: DriveSection) => void;
+  title?: string;
 }) => (
-  <nav aria-label={tr("Vùng lưu trữ")} className="rounded-2xl border border-line bg-surface p-2 shadow-card">
+  <nav aria-label={title ?? tr("Vùng lưu trữ")} className="rounded-2xl border border-line bg-surface p-2 shadow-card">
+    {title && (
+      <p className="m-0 px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{title}</p>
+    )}
     <ul className="m-0 list-none space-y-0.5 p-0">
-      {items.map(({ key, label, icon: Icon, badge }) => {
+      {items.map(({ key, label, icon: Icon, badge, hint }) => {
         const selected = key === active;
         return (
           <li key={key}>
             <button
               type="button"
               onClick={() => onChange(key)}
+              title={hint}
               aria-current={selected ? "page" : undefined}
               className={cn(
                 "flex h-9 w-full items-center gap-2.5 rounded-ui px-2.5 text-left text-[13px] transition-colors",

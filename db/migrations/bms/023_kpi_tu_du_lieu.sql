@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE FUNCTION kpi.on_time_rate(p_tenant uuid, p_from timestamptz, p_to timestamptz,
                                  p_sla interval DEFAULT interval '48 hours')
 RETURNS double precision

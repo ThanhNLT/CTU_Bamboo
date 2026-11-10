@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { AccessControlProvider } from "@refinedev/core";
 
 import { getTenant, request } from "../api/client";
@@ -34,6 +30,7 @@ const RULES: Record<string, Partial<Record<string, string | string[]>>> = {
   audit_log: { list: "audit.read" },
   admin_area: { list: ["core.org.manage", "core.permission.manage", "core.module.manage", "mdm.manage", "audit.read"] },
   admin_modules: { list: "core.module.manage" },
+  ai_agents: { list: "core.ai.manage" },
   admin_company: { list: ["core.org.manage", "core.permission.manage", "core.module.manage"] },
   admin_org: { list: "core.org.manage" },
   admin_people: { list: "core.org.manage" },

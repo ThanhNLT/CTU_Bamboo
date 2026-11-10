@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 [project]
 name = "bamboo-actions"
 version = "0.0.0"
@@ -25,10 +21,17 @@ dependencies = [
     "pypdfium2",
     "pillow",
     "pyhanko",
+    "pypdf>=7",
+    "paho-mqtt>=2",
+    "prometheus-client",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-http",
+    "opentelemetry-instrumentation-fastapi",
+    "opentelemetry-instrumentation-httpx",
+    "opentelemetry-instrumentation-psycopg",
 ]
 
 [dependency-groups]
-# Image bamboo-lakehouse (dịch vụ lakehouse-sink).
 lakehouse = ["pyiceberg[pyarrow]", "sqlalchemy", "kafka-python"]
 dev = [{ include-group = "lakehouse" }, "pytest", "pyyaml"]
 

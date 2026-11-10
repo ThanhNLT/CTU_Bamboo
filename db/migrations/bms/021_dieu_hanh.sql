@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 ALTER TABLE core.org_unit
     ADD COLUMN province text CHECK (province IS NULL OR length(btrim(province)) BETWEEN 2 AND 100),
     ADD COLUMN lat numeric(8, 5) CHECK (lat BETWEEN -90 AND 90),

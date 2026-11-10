@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import uuid
 
@@ -91,7 +87,7 @@ def test_doc_ban_quet_da_ocr_va_khop_danh_muc(cur, app_conn):
     assert out["partner"]["id"] == str(partner) and out["partner"]["by"] == "tax_code"
     assert out["item_matches"][0]["id"] == str(item) and out["item_matches"][1] is None
 
-    with pytest.raises(ActionError) as err:  # người không xem được chứng từ thì không đọc được chữ
+    with pytest.raises(ActionError) as err:
         ocr_import.ocr_document(app_conn, sess(i["a"], i["TDX"]), {"attachment_id": aid}, Context())
     assert err.value.status == 404
 

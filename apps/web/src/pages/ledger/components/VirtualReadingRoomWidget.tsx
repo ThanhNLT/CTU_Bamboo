@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { ArchiveDoc } from "../types";
 import { READING_ROOM_RULES } from "../utils";
 import { ArchiveDocRow } from "./ArchiveDocRow";
@@ -19,7 +15,7 @@ export const VirtualReadingRoomWidget = ({
   <section className="rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label={tr("Phòng đọc ảo")}>
     <div className="flex items-center justify-between gap-3">
       <h2 className="text-[15px] font-semibold text-ink">{tr("Phòng đọc ảo")}</h2>
-      <span className="inline-flex h-6 items-center rounded-ui border border-line px-2.5 text-[11.5px] font-medium text-body">
+      <span className="inline-flex h-6 items-center rounded-full border border-line px-2.5 text-[11.5px] font-medium text-body">
         {tr("Chỉ đọc")}
       </span>
     </div>

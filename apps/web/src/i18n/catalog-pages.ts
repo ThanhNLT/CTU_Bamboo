@@ -1,11 +1,4 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
-// Bản dịch tiếng Anh cho nội dung các trang. Khóa là câu tiếng Việt gốc trong mã (bọc bằng tr()/trf()); câu có chỗ trống
-// dùng {0}, {1}… theo thứ tự đối số của trf(). Thêm câu mới thì thêm vào đây (kiểm thử i18n báo câu chưa có bản dịch).
 export const EN_PAGES: Record<string, string> = {
-  // Danh mục mô-đun dựng sẵn (services/actions/app/modules.py), dịch lúc nhận về (modules/api.ts)
   "Nghiệp vụ nhân sự": "HR operations",
   "Thiết kế & tự động hóa quy trình": "Process design & automation",
   "Ổ đĩa & tệp đính kèm": "Drive & attachments",
@@ -1527,8 +1520,8 @@ export const EN_PAGES: Record<string, string> = {
   "OCR không đọc được tệp.": "OCR could not read the file.",
   "OCR lỗi": "OCR error",
   "Ollama chưa chạy nên chưa lấy được danh mục mô hình.": "Ollama is not running, so the model list is not available.",
-  "Ollama không phản hồi (AI bị tắt ở mức RAM 8, hoặc dịch vụ ":
-    "Ollama is not responding (AI is turned off at the 8 GB RAM level, or the service ",
+  "Ollama không phản hồi (dịch vụ đang khởi động, chưa tải xong mô hình, hoặc ":
+    "Ollama is not responding (the service is starting, models are still downloading, or ",
   "PDF quét, PNG, JPEG · tối đa 25 MB · mỗi tệp tạo một đề nghị mua sắm nháp":
     "Scanned PDF, PNG, JPEG · up to 25 MB · each file creates a draft purchase request",
   "PII đã che": "PII masked",
@@ -2744,7 +2737,6 @@ export const EN_PAGES: Record<string, string> = {
   "＋ Dùng nhà cung cấp mới “{0}”": "＋ Use new supplier “{0}”",
   "＋ Ghi vật tư ngoài danh mục “{0}”": "＋ Record off-catalog item “{0}”",
   "＋ Thêm nhóm hàng “{0}”": "＋ Add item group “{0}”",
-  // Không gian I: Trợ lý AI, tài nguyên AI, Phân tích BI
   " (vai trò Phân tích dữ liệu). Liên hệ quản trị tổ chức của công ty để được cấp.":
     " (Data analyst role). Ask your company's organization admin to grant it.",
   "(trống)": "(empty)",
@@ -2829,7 +2821,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đang nằm trong bộ nhớ": "Currently in memory",
   "dùng lại câu trả lời đã có cho cùng câu hỏi và tài liệu":
     "reused an earlier answer to the same question on the same documents",
-  // Không gian D: thời gian thực, phả hệ tự động, cổng dịch vụ API
   "300 lượt mỗi phút cho mỗi khóa (vượt thì trả 429), thân yêu cầu tối đa 1 MB, khóa hết hạn sau tối đa một năm.":
     "300 calls per minute per key (429 when exceeded), request body up to 1 MB, keys expire after at most one year.",
   "Chưa có dữ liệu phả hệ mẫu (chạy python -m app.demo_load).":
@@ -2907,7 +2898,6 @@ export const EN_PAGES: Record<string, string> = {
     "IP address or CIDR range, e.g. 203.0.113.10 or 10.0.0.0/8; leave empty to allow calls from anywhere.",
   "Địa chỉ gốc": "Base URL",
   "đổi lúc {0}": "changed at {0}",
-  // Không gian H (ADR #65): nhắn tin, lịch công tác
   "Không tải được tin nhắn": "Could not load messages",
   "Không tìm thấy cuộc trò chuyện": "Conversation not found",
   "Chọn một cuộc trò chuyện": "Choose a conversation",
@@ -3048,16 +3038,13 @@ export const EN_PAGES: Record<string, string> = {
   "Trưởng đơn vị hoặc người được giao quyền đặt lịch chung mới lưu được":
     "Only the unit head or someone granted the shared-calendar permission can save",
   "Lịch công tác": "Work calendar",
-  // Ứng dụng web cho thiết bị di động (ADR #65)
   "Bamboo – tin nhắn mới": "Bamboo – new message",
   "Bạn có {0} tin nhắn chưa đọc": "You have {0} unread messages",
   "Bật thông báo trên thiết bị này": "Turn on notifications on this device",
   "Cài ứng dụng lên thiết bị": "Install the app on this device",
   "Điều hướng nhanh": "Quick navigation",
-  // Không gian H (ADR #65): bộ lọc tin nhắn, thông báo tạo lịch
   "Lọc cuộc trò chuyện": "Filter conversations",
   "Đã tạo lịch": "Event created",
-  // Không gian P (ADR #66): quản lý dự án, Gantt
   "Không mở được dự án": "Could not open the project",
   "Đã tự dời {0} công việc phụ thuộc": "{0} dependent tasks were moved automatically",
   "Đang dựng văn bản kế hoạch…": "Building the plan document…",
@@ -3194,4 +3181,105 @@ export const EN_PAGES: Record<string, string> = {
   "Đã lưu thành viên": "Members saved",
   "Thành viên dự án": "Project members",
   "Bỏ khỏi dự án": "Remove from project",
+  "Dự án": "Projects",
+  "Lưu trữ": "Archives",
+  "Lĩnh vực phụ trách": "Areas",
+  "Tệp dự án": "Project files",
+  "kế hoạch, biên bản, sản phẩm bàn giao": "plans, minutes, deliverables",
+  "Tài nguyên": "Resources",
+  "Việc có đích và có hạn đang làm: dự án, chứng từ đang soạn hoặc chờ duyệt":
+    "Goal-driven work with a deadline: projects, documents being drafted or awaiting approval",
+  "Trách nhiệm thường xuyên: kênh phòng ban, nhóm trao đổi": "Ongoing responsibilities: department channels, groups",
+  "Tài liệu tham khảo dùng chung: thư viện tri thức đang hiệu lực":
+    "Shared reference material: knowledge library documents in effect",
+  "Đã xong: dự án đã đóng, chứng từ đã có kết quả, tài liệu hết hiệu lực":
+    "Finished: closed projects, decided documents, documents no longer in effect",
+  "Bình luận": "Comment",
+  "Chưa có lần chạy. Bấm biểu tượng tia sét ở một tác tử để chọn sự kiện kích hoạt.":
+    "No runs yet. Click the lightning icon on an agent to choose the events that trigger it.",
+  "Chọn sự kiện": "Choose events",
+  "Căn cứ: {0}": "Grounds: {0}",
+  "Ghi nhiệm vụ cho tác tử": "Write the agent's task",
+  "Hành động được phép": "Allowed actions",
+  "Khi sự kiện xảy ra, tác tử đọc chứng từ bằng quyền của người phụ trách (người đăng ký tác tử), tra quy chế nếu có công cụ search_docs, rồi chỉ làm những hành động được chọn dưới đây. Bỏ hết sự kiện là tắt tự hành động.":
+    "When an event happens, the agent reads the document with the permissions of its owner (the person who registered it), looks up regulations if it has the search_docs tool, then performs only the actions selected below. Remove all events to turn autonomous actions off.",
+  "Lần chạy gần đây khi có sự kiện nghiệp vụ: nhận xét của tác tử và hành động đã làm.":
+    "Recent runs on business events: the agent's assessment and the actions it took.",
+  "Mô hình chỉ đề xuất; hệ thống kiểm từng hành động (đúng loại, tối đa 3, đích thông báo chỉ là người lập, người đang duyệt hoặc người phụ trách, che dữ liệu cá nhân) rồi mới làm. Mọi lần chạy được ghi nhật ký kiểm toán.":
+    "The model only proposes; the system checks every action (allowed type, at most 3, notifications only to the requester, current approvers or the owner, personal data masked) before performing it. Every run is written to the audit log.",
+  "Mức tự chủ": "Autonomy",
+  "Nhiệm vụ": "Task",
+  "Nhập địa chỉ https://": "Enter an https:// address",
+  "Rủi ro cao": "High risk",
+  "Rủi ro thấp": "Low risk",
+  "Rủi ro trung bình": "Medium risk",
+  "Sự kiện kích hoạt": "Trigger events",
+  "Tác tử tự hành động": "Autonomous agents",
+  "Tự hành động của {0}": "Autonomous actions of {0}",
+  "Tự hành động khi có sự kiện": "Act autonomously on events",
+  "Tự hành động khi có {0} sự kiện": "Acts on {0} events",
+  "Tự hành động: “{0}”": "Autonomous actions: “{0}”",
+  "người lập": "requester",
+  "người phụ trách": "owner",
+  "người đang duyệt": "current approvers",
+  "Đã lưu cấu hình tự hành động của {0}.": "Saved the autonomous action settings of {0}.",
+  "Đã xong": "Done",
+  "Đề xuất khi có {0} sự kiện": "Proposes on {0} events",
+  "Địa chỉ webhook": "Webhook address",
+  "Đối chiếu đề nghị mua sắm với Quy chế mua sắm: từ 50 triệu đồng phải có đủ 3 báo giá và nhà cung cấp đề xuất. Thiếu thì bình luận nêu rõ phần thiếu và nhắc người lập; đủ thì không làm gì.":
+    "Check purchase requests against the Procurement regulation: from 50 million VND there must be 3 quotes and a proposed supplier. If anything is missing, comment on what is missing and remind the requester; otherwise do nothing.",
+  "đề xuất": "proposed",
+  "Bình luận vào chứng từ (đứng tên người phụ trách tác tử)":
+    "Comment on the document (in the name of the agent's owner)",
+  "Gửi thông báo cho người lập, người đang duyệt hoặc người phụ trách tác tử":
+    "Notify the requester, the current approvers or the agent's owner",
+  "Gửi kết quả đánh giá tới webhook HTTPS đã khai": "Send the assessment to the configured HTTPS webhook",
+  "Tự thực hiện": "Act on its own",
+  "Chỉ đề xuất, không thực hiện": "Propose only, do not act",
+  "Tác tử AI báo về chứng từ liên quan đến tôi": "An AI agent reports on a document involving me",
+  "Đề nghị mua sắm được gửi duyệt": "Purchase request submitted for approval",
+  "Đề nghị mua sắm được duyệt xong": "Purchase request fully approved",
+  "Đề nghị mua sắm bị từ chối": "Purchase request rejected",
+  "Hồ sơ tiếp nhận nhân sự được gửi duyệt": "Onboarding file submitted for approval",
+  "Hồ sơ tiếp nhận nhân sự được duyệt": "Onboarding file approved",
+  "Hồ sơ tiếp nhận nhân sự bị từ chối": "Onboarding file rejected",
+  "Đơn hàng nội bộ được xác nhận": "Internal order confirmed",
+  "Đơn hàng nội bộ được đối trừ công nợ": "Internal order settled against receivables",
+  "Quyết định nhân sự được ban hành": "Personnel decision issued",
+  "Biến kiểu đơn được gán thành biến quy trình; {0}_ok báo đã chạy xong.":
+    "Simple-typed variables you assign become process variables; {0}_ok signals the step finished.",
+  "Biến mẫu": "Sample variables",
+  "Biến mẫu không phải JSON hợp lệ": "Sample variables are not valid JSON",
+  "Chạy kịch bản tự viết": "Run a custom script",
+  "Chạy thử với biến mẫu (JSON)": "Test run with sample variables (JSON)",
+  "Chạy được. Biến sau bước:": "Ran successfully. Variables after the step:",
+  "Cú pháp Python rút gọn: gán, if, for, while, f-string, list/dict. Hàm: len, min, max, sum, round, sorted, today(), now(), add_days(), days_between(), log(). Không import, không truy cập tệp hay mạng; tối đa 2 giây.":
+    "A reduced Python syntax: assignment, if, for, while, f-strings, lists/dicts. Functions: len, min, max, sum, round, sorted, today(), now(), add_days(), days_between(), log(). No imports, no file or network access; at most 2 seconds.",
+  "Kịch bản": "Script",
+  '# Biến của quy trình dùng trực tiếp theo tên, ví dụ amount, doc_no\nmuc = "cao" if amount >= 50_000_000 else "thuong"\ncan_bao_gia = amount >= 50_000_000\nhan = add_days(today(), 7)\nlog("muc duyet", muc)':
+    '# Process variables are used directly by name, e.g. amount, doc_no\nlevel = "high" if amount >= 50_000_000 else "normal"\nneeds_quotes = amount >= 50_000_000\ndue = add_days(today(), 7)\nlog("approval level", level)',
+  "Chưa có số đo trực tiếp: đang hiện dữ liệu mẫu": "No live readings yet: showing sample data",
+  "Chưa có tài khoản thiết bị.": "No device accounts yet.",
+  "Chủ đề": "Topic",
+  "Lưu mật khẩu ngay: hệ thống không hiện lại": "Save the password now: it will not be shown again",
+  "Mật khẩu": "Password",
+  "Ngày tạo": "Created",
+  "Nhập tên gợi nhớ (tối đa 80 ký tự)": "Enter a label (up to 80 characters)",
+  "Sao chép mật khẩu": "Copy password",
+  "Số đo nhận trực tiếp từ thiết bị (NGSI-LD)": "Readings received live from the device (NGSI-LD)",
+  "Thiết bị MQTT": "MQTT devices",
+  "Thiết bị hoặc cổng OT gửi số đo vào Bản sao số qua broker MQTT của hệ thống. Mỗi tài khoản chỉ được gửi vào nhánh chủ đề của công ty; thân bản tin theo NGSI-LD. Hệ thống ngoài không dùng MQTT thì gửi qua REST NGSI-LD bằng khóa API phạm vi iot.write.":
+    "Devices or OT gateways send readings to the Digital twin through the system's MQTT broker. Each account can only publish under the company's topic branch; payloads follow NGSI-LD. Systems that do not use MQTT send through the NGSI-LD REST API with an API key scoped iot.write.",
+  "Thiết bị đang dùng tài khoản này bị ngắt kết nối ngay và không gửi được số đo nữa.":
+    "Devices using this account are disconnected immediately and can no longer send readings.",
+  "Thu hồi tài khoản “{0}”?": "Revoke account “{0}”?",
+  "Trực tiếp · API": "Live · API",
+  "Trực tiếp · MQTT": "Live · MQTT",
+  "Tài khoản thiết bị đã tạo": "Device account created",
+  "Tên gợi nhớ": "Label",
+  "Tạo tài khoản thiết bị MQTT": "Create an MQTT device account",
+  "Ví dụ: Cổng OT nhà máy Bắc Ninh": "For example: Bac Ninh plant OT gateway",
+  "Thực thể bản sao số dạng NGSI-LD và giá trị đo mới nhất": "Digital twin entities as NGSI-LD with latest readings",
+  "Gửi số đo thiết bị dạng NGSI-LD (người tạo khóa cần quyền iot.ingest)":
+    "Send device readings as NGSI-LD (the key creator needs the iot.ingest permission)",
 };
