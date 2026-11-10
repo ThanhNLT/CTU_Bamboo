@@ -140,7 +140,7 @@ Mức: **Có** = đã hiện thực, có kiểm thử; **Một phần** = có nh
 | Định danh, SSO, MFA | Keycloak 26 | Apache-2.0 | Đăng nhập OIDC + PKCE, một tài khoản nhiều tenant, OTP bắt buộc cho quản trị nền tảng | Có |
 | API dữ liệu | Hasura GraphQL Engine v2 CE | Apache-2.0 | Tự sinh GraphQL từ CSDL, phân quyền theo dòng, subscription thời gian thực, 99 Action nghiệp vụ | Có |
 | Dữ liệu có cấu trúc | PostgreSQL 17 + PostGIS 3.5 | PostgreSQL, GPL-2.0-or-later (PostGIS) | Nguồn sự thật, ràng buộc nghiệp vụ, nhật ký kiểm toán chuỗi hash, KPI đóng băng | Có |
-| Quy trình | Flowable REST 8; bpmn-js | Apache-2.0; giấy phép bpmn.io | Luồng duyệt BPMN, thiết kế quy trình trên giao diện, chạy thử sandbox, quy trình tự động (hẹn giờ, webhook, sự kiện) | Có |
+| Quy trình | Flowable REST 8; diagram-js, bpmn-moddle (lớp BPMN tự viết) | Apache-2.0; MIT | Luồng duyệt BPMN, thiết kế quy trình trên giao diện, chạy thử sandbox, quy trình tự động (hẹn giờ, webhook, sự kiện) | Có |
 | Lưu trữ đối tượng | SeaweedFS 4 | Apache-2.0 | Tệp đính kèm, ổ đĩa, Lakehouse; bucket kiểm dịch, link có chữ ký | Có |
 | Két bí mật, ký số | OpenBao 2 | MPL-2.0 | Secret, AppRole riêng từng dịch vụ, mã hóa dữ liệu nhạy cảm, chữ ký Ed25519 cho biên nhận và bản neo | Có |
 | Quét tệp, CDR | Bộ quét nội bộ Bamboo, CDR (Pillow, pypdf); ClamAV 1.4 (bật ở mức RAM 16) | Apache-2.0, MIT-CMU, BSD-3-Clause; GPL-2.0-only | Kiểm cấu trúc, macro, mã chủ động, tệp nhúng, bom nén; dựng lại ảnh, Office, PDF bỏ nội dung chủ động; ClamAV quét theo mẫu virus | Có |
@@ -296,8 +296,10 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
 - **`make up` và `docker compose up` phải chạy trên cùng một bản clone:** hai lệnh dùng chung tên dự án `bamboo` (chung
   image, volume), nên chạy `make up` ở một bản clone cũ (ví dụ trong WSL) sẽ dựng lại giao diện cũ đè lên.
 - **GPU NVIDIA:** không cần cấu hình gì. Máy có card NVIDIA (Docker Desktop WSL2, hoặc Linux có `nvidia-container-toolkit`)
-  thì vài phút sau khi hệ thống lên, AI và OCR tự chuyển sang GPU; không có card hoặc GPU lỗi thì chạy trên CPU/RAM
-  (`docker compose logs sleeper` ghi đã chọn gì). `BAMBOO_GPU=false` trong `.env` để luôn chạy CPU.
+  thì vài phút sau khi hệ thống lên, AI (Ollama) tự chuyển sang GPU; không có card hoặc GPU lỗi thì chạy trên CPU/RAM
+  (`docker compose logs sleeper` ghi đã chọn gì). `BAMBOO_GPU=false` trong `.env` để luôn chạy CPU. OCR mặc định là bản
+  CPU, chỉ gồm phần mềm nguồn mở; muốn OCR chạy GPU thì đặt `BAMBOO_OCR_VARIANT=cuda` rồi `docker compose up -d --build`
+  (dựng tại máy bản có CUDA/cuDNN theo giấy phép NVIDIA, không phải nguồn mở).
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
   hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.
 - **Bật thêm:** ClamAV `docker compose --profile scan up -d` (đặt `CLAMAV_HOST=clamav`), gom log container

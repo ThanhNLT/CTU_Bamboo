@@ -3282,4 +3282,11 @@ export const EN_PAGES: Record<string, string> = {
   "Thực thể bản sao số dạng NGSI-LD và giá trị đo mới nhất": "Digital twin entities as NGSI-LD with latest readings",
   "Gửi số đo thiết bị dạng NGSI-LD (người tạo khóa cần quyền iot.ingest)":
     "Send device readings as NGSI-LD (the key creator needs the iot.ingest permission)",
+  "Kéo sơ đồ": "Pan the diagram",
+  "Chờ hẹn giờ": "Timer wait",
+  "Tác vụ tự động": "Automated task",
+  "Tác vụ kịch bản": "Script task",
+  "Quy trình con": "Subprocess",
+  "Nối thêm tác vụ người dùng": "Append user task",
+  "Nối thêm tác vụ tự động": "Append automated task",
 };
