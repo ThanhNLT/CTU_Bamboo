@@ -22,7 +22,7 @@ from fastapi.responses import JSONResponse
 from PIL import Image
 from starlette.concurrency import run_in_threadpool
 
-from . import pipeline
+from . import pipeline, tuning
 
 log = logging.getLogger("ocr")
 
@@ -51,6 +51,7 @@ class Engine:
         self.lock = threading.Lock()
         self.models: pipeline.Models | None = None
         self.last_used = time.monotonic()
+        self.half = tuning.half_precision(dev)
 
     def _ensure(self) -> pipeline.Models:
         if self.models is None:
@@ -68,6 +69,15 @@ class Engine:
             try:
                 models = self._ensure()
                 with torch.inference_mode():
+                    if self.half:
+                        try:
+                            with torch.autocast("cuda", dtype=torch.float16):
+                                return pipeline.recognize(models, image)
+                        except Exception as exc:
+                            if _out_of_memory(exc):
+                                raise
+                            log.warning("float16 trên GPU lỗi (%s): chuyển về float32", exc)
+                            self.half = False
                     return pipeline.recognize(models, image)
             finally:
                 self.last_used = time.monotonic()
@@ -134,6 +144,7 @@ def warm_page_cache(models_dir: str) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     dev = device()
+    tuning.apply(dev)
     app.state.device = device_name(dev)
     app.state.engine = Engine(
         os.environ.get("OCR_MODELS_DIR", "/models"), dev, float(os.environ.get("OCR_IDLE_SECONDS", "300"))

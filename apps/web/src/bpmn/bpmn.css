@@ -1,0 +1,66 @@
+.bamboo-diagram .djs-palette {
+  background: #fff;
+  border: 1px solid #e4e9e5;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgb(16 24 20 / 0.08);
+  padding: 2px 0;
+}
+
+.bamboo-diagram .djs-palette .entry {
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.bamboo-diagram .djs-palette .entry img {
+  width: 26px;
+  height: 26px;
+}
+
+.bamboo-diagram .djs-palette .entry:hover,
+.bamboo-diagram .djs-palette .highlighted-entry {
+  background: #f0f7f1;
+}
+
+.bamboo-diagram .djs-palette .separator {
+  margin: 3px 8px;
+  padding-top: 2px;
+  border-bottom: 1px solid #e4e9e5;
+}
+
+.bamboo-diagram .djs-context-pad {
+  width: 78px;
+}
+
+.bamboo-diagram .djs-context-pad .entry {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border: 1px solid #e4e9e5;
+  box-shadow: 0 1px 2px rgb(16 24 20 / 0.08);
+}
+
+.bamboo-diagram .djs-context-pad .entry img {
+  width: 20px;
+  height: 20px;
+}
+
+.bamboo-diagram .djs-context-pad .entry:hover {
+  background: #f0f7f1;
+}
+
+.bamboo-diagram .bamboo-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+.bamboo-diagram .djs-direct-editing-parent {
+  background: #fff;
+  border: 1px solid #63ab70;
+  border-radius: 4px;
+  color: #22242a;
+  text-align: center;
+  overflow-wrap: break-word;
+}
