@@ -58,8 +58,6 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/ocr.Dockerfile
-      args:
-        OCR_VARIANT: ${BAMBOO_OCR_VARIANT:-cpu}
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-ocr:${BAMBOO_TAG:-dev}
     depends_on:
       ocr-init:
@@ -67,8 +65,12 @@ services:
     environment:
       HF_HUB_OFFLINE: "1"
       OCR_IDLE_SECONDS: ${OCR_IDLE_SECONDS:-300}
+      OCR_THREADS: ${OCR_THREADS:-}
+      OCR_GPU_PRECISION: ${OCR_GPU_PRECISION:-auto}
     volumes:
       - ocr-models:/models
+      # PyTorch bản CUDA, chỉ được tải vào khi máy có GPU NVIDIA (sleeper chạy app.accel, ADR #80)
+      - ocr-accel:/opt/accel
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
@@ -85,8 +87,6 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/ocr.Dockerfile
-      args:
-        OCR_VARIANT: ${BAMBOO_OCR_VARIANT:-cpu}
     volumes:
       - ocr-models:/models
     command: ["python", "-m", "app.download"]
@@ -118,3 +118,4 @@ services:
 volumes:
   ollama-models:
   ocr-models:
+  ocr-accel:
