@@ -5,7 +5,7 @@ path = ["**.json", "pnpm-lock.yaml", "**/uv.lock", "**.md", "**.MD", "**/.gitkee
         "services/seed/data/**", "infra/platform/keycloak/themes/dxos-login/login/resources/img/bamboo-icon.svg",
         "apps/web/public/*.png", "apps/web/public/manifest.webmanifest"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 DX-OS Open-Core contributors"
+SPDX-FileCopyrightText = "2026 Bamboo"
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]

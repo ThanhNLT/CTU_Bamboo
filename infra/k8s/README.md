@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
+SPDX-FileCopyrightText: 2026 Bamboo
 SPDX-License-Identifier: Apache-2.0
 -->
 
