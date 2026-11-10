@@ -28,7 +28,7 @@ from bamboo_common.ollama import Ollama, OllamaUnavailable
 
 from . import ai_agent, ai_agent_runner, ai_chunks, config, ocr, pii_guard, search
 from .common import bind_session
-from .gpu import Gpu, sleeper_awake
+from .gpu import Gpu, placement, sleeper_awake
 from .storage import Storage
 
 log = logging.getLogger("ai_worker")
@@ -101,6 +101,7 @@ def prewarm(ai: Ollama, model: str) -> None:
     def load() -> None:
         try:
             ai.warm(model)
+            log.info("%s đã nạp: %s", model, placement(ai.running(), model))
         except OllamaUnavailable as exc:
             log.info("nạp trước %s không thành: %s", model, exc)
 

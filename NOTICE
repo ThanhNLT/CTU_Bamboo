@@ -9,8 +9,9 @@ lại và tích hợp nền tảng (kể cả vào sản phẩm thương mại),
 tệp NOTICE này và ghi rõ thay đổi; đồng thời cấp quyền sáng chế từ những người đóng góp. Mọi
 thành phần bên thứ ba bên dưới đều dùng giấy phép được OSI phê duyệt và tương thích khi dùng như
 dịch vụ hoặc thư viện không sửa đổi (không đóng gói kèm mã nguồn của dự án phụ thuộc). Thành phần
-không phải nguồn mở duy nhất là thư viện GPU của NVIDIA (CUDA, cuDNN): dự án không phân phối chúng, chỉ
-image chính thức của Ollama và bản OCR CUDA tùy chọn kéo về lúc chạy trên máy người dùng, xem bên dưới.
+không phải nguồn mở duy nhất là thư viện GPU của NVIDIA (CUDA, cuDNN): mã nguồn và image của dự án không
+chứa và không phân phối chúng; chỉ trên máy có GPU NVIDIA chúng mới được tải về lúc chạy từ nguồn chính
+thức (image Ollama trên Docker Hub, gói PyTorch CUDA cho OCR), xem bên dưới.
 
 ------------------------------------------------------------------------------------------------
 Thành phần chạy dưới dạng dịch vụ (image Docker chính thức, không sửa đổi)
@@ -65,13 +66,10 @@ Dịch vụ OCR (services/ocr, image bamboo-ocr chỉ dựng tại máy, không 
 PyTorch, torchvision (bản CPU, download.pytorch.org/whl/cpu)  BSD-3-Clause
 PaddleOCR, PaddleX, VietOCR, transformers, OpenCV           Apache-2.0
 Python 3.11 (python:3.11-slim-bookworm)                     PSF-2.0
-Bản CUDA tùy chọn (BAMBOO_OCR_VARIANT=cuda): dựng trên pytorch/pytorch:*-cuda*-cudnn*-runtime, chứa
-CUDA (NVIDIA CUDA Toolkit EULA) và cuDNN (NVIDIA cuDNN Software License Agreement), không phải giấy
-phép nguồn mở. Người dùng tự bật và tự kéo image nền từ Docker Hub; dự án không phát hành bản này.
-phonenumbers, requests-file                                 Apache-2.0
-regex                                                       Apache-2.0 AND CNRI-Python
-Faker (chỉ service seed)                                    MIT
-pytest, PyYAML (chỉ kiểm thử)                               MIT
+Không nằm trong image, chỉ tải lúc chạy trên máy có GPU NVIDIA (sleeper chạy `python -m app.accel`, vào
+volume ocr-accel, từ download.pytorch.org/whl/cu128): PyTorch, torchvision bản CUDA (BSD-3-Clause), Triton
+(MIT) và các gói nvidia-* gồm CUDA runtime, cuDNN… (NVIDIA Software License Agreement, không phải giấy phép
+nguồn mở). `BAMBOO_GPU=false` để không tải và không dùng.
 
 ------------------------------------------------------------------------------------------------
 Thư viện JavaScript (apps/web và tests/e2e, phiên bản khóa trong pnpm-lock.yaml, cài từ npm registry)

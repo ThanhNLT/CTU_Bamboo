@@ -17,6 +17,7 @@ import asyncio
 import json
 import logging
 import os
+import shlex
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -130,8 +131,9 @@ class Gpu:
     CPU. Sau khi `gate` (ai-worker, chạy sau ollama-init và ocr-core) đã chạy, sleeper thử một container nhỏ xin GPU từ
     chính image đó; được thì tạo lại từng dịch vụ với cùng cấu hình cộng GPU, kiểm container mới khởi động được rồi mới
     xóa bản CPU. Tạo, khởi động lỗi thì trả lại bản CPU và không thử nữa cho tới lần sleeper khởi động sau. Container
-    GPU về sau không start được (đổi driver, tháo card) thì tự đổi về CPU. Bỏ qua dịch vụ có nhãn `bamboo.gpu=false`
-    (image không có CUDA). mode: auto | true | false (BAMBOO_GPU)."""
+    GPU về sau không start được (đổi driver, tháo card) thì tự đổi về CPU. Image có nhãn `bamboo.gpu.prepare` (OCR,
+    ADR #80) cần chuẩn bị trước: chạy lệnh đó một lần trong container phụ từ chính image (cùng volume, mạng, không alias)
+    rồi mới chuyển; lỗi thì giữ CPU. mode: auto | true | false (BAMBOO_GPU)."""
 
     def __init__(
         self,
@@ -150,6 +152,8 @@ class Gpu:
         self.verify_timeout = verify_timeout
         self.usable: bool | None = None
         self.failed: set[str] = set()
+        self.preparing: dict[str, str] = {}
+        self.prepared: dict[str, str] = {}
 
     async def probe(self, image: str) -> bool:
         name = f"{self.docker.project}-gpu-probe"
@@ -196,8 +200,6 @@ class Gpu:
                 continue
             if self.mode == "false" or service in self.failed or self.usable is False:
                 continue
-            if (info["Config"].get("Labels") or {}).get("bamboo.gpu") == "false":
-                continue  # image không có CUDA (OCR bản cpu, ADR #80): xin GPU cũng không dùng được
             target = self.targets.get(service)
             if state.get("Running") and (not await self._gate_open() or (target and target.writers)):
                 continue
@@ -206,11 +208,60 @@ class Gpu:
                 if not self.usable:
                     continue
                 log.info("thấy GPU NVIDIA: chuyển %s sang GPU", ", ".join(self.services))
+            prepare = (info["Config"].get("Labels") or {}).get("bamboo.gpu.prepare")
+            image = info.get("Image") or info["Config"]["Image"]
+            if prepare and self.prepared.get(service) != image:  # image mới (dựng lại) thì chuẩn bị lại
+                ready = await self._prepare(service, info, prepare)
+                if ready is None:
+                    continue
+                if not ready:
+                    self.failed.add(service)
+                    continue
+                self.prepared[service] = image
             if await self._swap(service, info, gpu=True):
                 done.append(service)
             else:
                 self.failed.add(service)
         return done
+
+    async def _prepare(self, service: str, info: dict, command: str) -> bool | None:
+        """Chạy lệnh chuẩn bị GPU của image trong container phụ; None khi còn đang chạy (xem lại ở lượt sau)."""
+        cid = self.preparing.get(service)
+        if cid is None:
+            name = f"{self.docker.project}-{service}-gpu-prepare"
+            await self.docker.remove(name)
+            body = clone_body(info, gpu=False)
+            body["Labels"] = {"bamboo.sleeper": "gpu-prepare"}
+            body["Cmd"] = shlex.split(command)
+            body["Healthcheck"] = {"Test": ["NONE"]}
+            body["HostConfig"] = {**body["HostConfig"], "RestartPolicy": {"Name": "no"}}
+            # không mang alias của dịch vụ để không nhận nhầm yêu cầu gửi tới nó
+            body["NetworkingConfig"] = {"EndpointsConfig": {n: {} for n in body["NetworkingConfig"]["EndpointsConfig"]}}
+            try:
+                cid = await self.docker.create(name, body)
+                await self.docker.start(cid)
+            except DockerError as exc:
+                log.warning("không chuẩn bị được GPU cho %s: %s", service, exc)
+                if cid:
+                    await self.docker.remove(cid)
+                return False
+            self.preparing[service] = cid
+            log.info("chuẩn bị GPU cho %s (%s), chỉ một lần", service, command)
+            return None
+        try:
+            state = await self.docker.state(cid)
+        except DockerError as exc:
+            log.warning("mất container chuẩn bị GPU của %s: %s", service, exc)
+            del self.preparing[service]
+            return False
+        if state.get("Running"):
+            return None
+        del self.preparing[service]
+        await self.docker.remove(cid)
+        if state.get("ExitCode") == 0:
+            return True
+        log.warning("chuẩn bị GPU cho %s lỗi (mã %s): giữ CPU", service, state.get("ExitCode"))
+        return False
 
     async def _swap(self, service: str, info: dict, gpu: bool) -> bool:
         target = self.targets.get(service)
