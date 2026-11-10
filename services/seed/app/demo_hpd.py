@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Dữ liệu demo cho Không gian H, P, D (ADR #65, #66, #64): tin nhắn, lịch công tác, dự án, khóa cổng dịch vụ API.
 
 Bám đúng các tài khoản và tình huống mô tả ở mục "Cơ sở dữ liệu demo" của README: `gd.chip` đang đi công tác và đã ủy quyền
@@ -26,7 +23,6 @@ class HpdDemo:
         self.today = dt.datetime.now(VN).date()
         self.monday = self.today - dt.timedelta(days=self.today.weekday())
 
-    # --- tra cứu -----------------------------------------------------------------------------------------------
     def who(self, username: str, tenant: str | None = None):
         for seat in SEATS[username]:
             if tenant is None or seat.tenant == tenant:
@@ -53,7 +49,6 @@ class HpdDemo:
         self.calendar()
         self.api_keys()
 
-    # --- tin nhắn ------------------------------------------------------------------------------------------------
     def _group(self, tenant: str, key: str, title: str, owner: str, members: list[str]):
         conv = uid(tenant, "conversation", key)
         if not self.exists("chat.conversation", conv):
@@ -119,7 +114,6 @@ class HpdDemo:
                 mentions,
             ).fetchone()[0]
             stamped.append((msg, minutes_ago))
-        # Giờ gửi do trigger đặt bằng now(); demo cần một cuộc trò chuyện trải qua vài ngày
         self.x("ALTER TABLE chat.message DISABLE TRIGGER message_before_write")
         for msg, minutes_ago in stamped:
             self.x(
@@ -287,7 +281,6 @@ class HpdDemo:
             ],
         )
 
-    # --- lịch công tác -----------------------------------------------------------------------------------------
     def _event(self, tenant: str, key: str, **f):
         eid = uid(tenant, "cal", key)
         if self.exists("cal.event", eid):
@@ -526,7 +519,6 @@ class HpdDemo:
             organizer="bs.cdha.benhvien",
         )
 
-    # --- dự án -----------------------------------------------------------------------------------------------------
     def _project(self, tenant: str, code: str, spec: dict, plan: list[tuple], reports: list[dict]):
         """plan: (khóa, cha, tên, ngày bắt đầu sau đầu dự án, số ngày, mốc, %, phụ trách, [việc trước])."""
         pid = uid(tenant, "project", code)
@@ -623,7 +615,7 @@ class HpdDemo:
                          AND parent_id IS NOT NULL GROUP BY parent_id) c WHERE g.id = c.parent_id""",
                 pid,
             )
-            for key, days in spec.get("slips", {}).items():  # trễ so với đường cơ sở
+            for key, days in spec.get("slips", {}).items():
                 self.x("UPDATE pm.task SET end_date = end_date + %s WHERE id = %s", days, ids[key])
             self.x("UPDATE pm.project SET baseline_at = now() - interval '20 days' WHERE id = %s", pid)
         for r in reports:
@@ -681,7 +673,7 @@ class HpdDemo:
         )
 
     def projects(self):
-        monday_offset = -(self.today.weekday() + 28)  # thứ Hai, bốn tuần trước
+        monday_offset = -(self.today.weekday() + 28)
         self._project(
             "TDX",
             "DX-2027",
@@ -863,7 +855,6 @@ class HpdDemo:
             ],
         )
 
-    # --- cổng dịch vụ API ------------------------------------------------------------------------------------------
     def api_keys(self):
         """Hai khóa mẫu của Tập đoàn X do `cdo` tạo (chỉ lưu SHA-256 của chuỗi ngẫu nhiên, không dùng được để gọi)."""
         creator = self.who("cdo")

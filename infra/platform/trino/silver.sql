@@ -1,6 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE SCHEMA IF NOT EXISTS lakehouse.bronze;
 CREATE SCHEMA IF NOT EXISTS lakehouse.silver;
 
@@ -174,11 +171,61 @@ SELECT
     CAST(json_extract_scalar(after, '$["created_by"]') AS uuid) AS "created_by",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    CAST(json_extract(after, '$["triggers"]') AS array(varchar)) AS "triggers",
+    json_extract_scalar(after, '$["instructions"]') AS "instructions",
+    CAST(json_extract(after, '$["allowed_actions"]') AS array(varchar)) AS "allowed_actions",
+    json_extract_scalar(after, '$["autonomy"]') AS "autonomy",
+    json_extract_scalar(after, '$["webhook_url"]') AS "webhook_url",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
     SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
     FROM lakehouse.bronze.core_ai_agent
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_ai_agent_run (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.core_ai_agent_run COMMENT 'Trạng thái hiện tại của core.ai_agent_run, dựng từ bronze.core_ai_agent_run' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["agent_id"]') AS uuid) AS "agent_id",
+    json_extract_scalar(after, '$["event"]') AS "event",
+    json_extract_scalar(after, '$["entity_type"]') AS "entity_type",
+    CAST(json_extract_scalar(after, '$["entity_id"]') AS uuid) AS "entity_id",
+    json_extract_scalar(after, '$["payload"]') AS "payload",
+    json_extract_scalar(after, '$["dedup_key"]') AS "dedup_key",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    CAST(json_extract_scalar(after, '$["attempts"]') AS integer) AS "attempts",
+    json_extract_scalar(after, '$["assessment"]') AS "assessment",
+    json_extract_scalar(after, '$["risk"]') AS "risk",
+    json_extract_scalar(after, '$["plan"]') AS "plan",
+    json_extract_scalar(after, '$["actions"]') AS "actions",
+    json_extract_scalar(after, '$["error"]') AS "error",
+    json_extract_scalar(after, '$["model"]') AS "model",
+    CAST(json_extract_scalar(after, '$["prompt_tokens"]') AS integer) AS "prompt_tokens",
+    CAST(json_extract_scalar(after, '$["completion_tokens"]') AS integer) AS "completion_tokens",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.core_ai_agent_run
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 

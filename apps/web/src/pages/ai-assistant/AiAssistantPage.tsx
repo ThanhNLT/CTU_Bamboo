@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App } from "antd";
 import { Bot, History, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";

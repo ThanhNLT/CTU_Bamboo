@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Alert, Drawer, Input, InputNumber, Segmented, Select, Table, Tag, Upload } from "antd";
 import { FileSearch, History, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";

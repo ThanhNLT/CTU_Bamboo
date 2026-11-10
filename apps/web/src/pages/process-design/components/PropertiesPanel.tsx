@@ -1,12 +1,9 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Input, Select } from "antd";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
 import type { FormDef, Issue, SelectedElement } from "../types";
+import { ScriptField } from "./ScriptField";
 import { tr } from "../../../i18n";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -36,9 +33,11 @@ export const PropertiesPanel = ({
   issues,
   readOnly,
   showChecks = true,
+  modelId,
   onChange,
   onFocus,
 }: {
+  modelId?: string;
   element?: SelectedElement;
   forms: FormDef[];
   issues: Issue[];
@@ -134,6 +133,7 @@ export const PropertiesPanel = ({
                       { value: "notify", label: tr("Gửi thông báo") },
                       { value: "http", label: tr("Gọi API ngoài (https)") },
                       { value: "setvar", label: tr("Đặt giá trị biến") },
+                      { value: "script", label: tr("Chạy kịch bản tự viết") },
                     ]}
                     onChange={(v?: string) => onChange({ automationAction: v ?? "" })}
                   />
@@ -188,6 +188,15 @@ export const PropertiesPanel = ({
                       <span className="font-mono">{element.id}_body</span> {tr(" để cổng rẽ nhánh dùng.")}
                     </p>
                   </>
+                )}
+                {element.automationAction === "script" && (
+                  <ScriptField
+                    value={element.automationScript ?? ""}
+                    readOnly={readOnly}
+                    modelId={modelId}
+                    elementId={element.id}
+                    onChange={(v) => onChange({ automationScript: v })}
+                  />
                 )}
                 {element.automationAction === "setvar" && (
                   <>

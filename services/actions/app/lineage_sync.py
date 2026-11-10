@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Phả hệ dữ liệu thu tự động từ hệ thống đang chạy (ADR #64), thay cho phả hệ chỉ có ở tệp mẫu (ADR #50).
 
 Đồ thị `auto` dựng lại từ chính cấu hình hệ thống, không khai tay:
@@ -8,7 +5,12 @@ PostgreSQL (bảng trong publication `bms_cdc`) → Debezium/Kafka (topic `bms.<
 view silver nếu `lakehouse-sink` nhận topic đó) → lớp ngữ nghĩa (`semantic.SOURCES`) → nơi dùng (Phân tích BI, Trung tâm
 điều hành, Dịch vụ dữ liệu, API). Chỉ đưa vào các bảng có nơi dùng, để đồ thị đọc được.
 
-Kiểm tra chất lượng chạy khi người dùng bấm thu thập (không chạy theo lịch để Trino được ngủ, ADR #53):
+Thu thập định kỳ (ADR #77, flow-sync gọi `auto_collect` mỗi LINEAGE_AUTO_MINUTES phút): dựng lại đồ thị và kiểm tra mức
+nền tảng không cần Trino (replication slot), ghi một lần chạy `lineage.auto`; nhờ vậy trang Phả hệ luôn có số liệu thu từ
+pipeline đang chạy mà không ai phải bấm. Đối chiếu theo công ty cần Trino nên vẫn chạy theo yêu cầu.
+
+Kiểm tra chất lượng chạy khi người dùng bấm thu thập (đối chiếu số dòng cần Trino, không chạy theo lịch để Trino được
+ngủ, ADR #53):
 - mức nền tảng: replication slot của Debezium còn hoạt động và lượng WAL chưa đọc;
 - theo công ty: số dòng PostgreSQL của công ty so với view silver đọc bằng tài khoản Trino của công ty (row filter), lệch
   trong phạm vi các dòng vừa đổi 5 phút gần đây coi là đang đồng bộ. Mỗi lần đối chiếu ghi một lần chạy.
@@ -27,12 +29,11 @@ from .trino import TrinoError
 
 log = logging.getLogger("lineage_sync")
 
-LOCK_KEY = 0x6C696E65  # "line"
+LOCK_KEY = 0x6C696E65
 SYNC_WINDOW_MINUTES = 5
 WAL_WARN_BYTES = 64 * 1024 * 1024
 OWNER = "Nền tảng Bamboo"
 
-# Bảng Trung tâm điều hành đọc thẳng từ PostgreSQL (ADR #49)
 OPS_TABLES = ("wf.task", "wf.approval_history", "proc.purchase_request", "ic.ic_order", "mfg.lot", "core.org_unit")
 CONSUMERS = {
     "app:bi": ("Phân tích BI", "Trang · Phân tích BI, API /api/v1/metrics", "/i/bi"),
@@ -136,7 +137,6 @@ def save_graph(conn: psycopg.Connection, nodes: list[dict], edges: list[dict]) -
     conn.execute("SELECT pg_advisory_xact_lock(%s)", (LOCK_KEY,))
     ids = [n["id"] for n in nodes]
     conn.execute("DELETE FROM meta.lineage_edge WHERE origin = 'auto'")
-    # Nút có sự cố dữ liệu đã báo thì giữ lại (khóa ngoại), chỉ bỏ nút không còn trong đồ thị
     conn.execute(
         """DELETE FROM meta.lineage_node n WHERE origin = 'auto' AND NOT (id = ANY(%s))
              AND NOT EXISTS (SELECT 1 FROM meta.data_issue i WHERE i.node_id = n.id)""",
@@ -262,13 +262,33 @@ def check_tenant(conn: psycopg.Connection, session: dict, ctx: Context, lake_tab
             (f"đối chiếu postgres ↔ silver.{silver_name(t)}", node, duration, "success" if passed else "check_failed",
              tenant),
         )  # fmt: skip
-    # Giữ 200 lần chạy gần nhất của công ty
     conn.execute(
         """DELETE FROM meta.pipeline_run WHERE tenant_id = %s AND id NOT IN (
                SELECT id FROM meta.pipeline_run WHERE tenant_id = %s ORDER BY started_at DESC LIMIT 200)""",
         (tenant, tenant),
     )
     return out, ""
+
+
+def auto_collect(conn: psycopg.Connection) -> dict:
+    """Thu thập phả hệ và kiểm tra mức nền tảng theo lịch (không cần Trino); ghi một lần chạy cho mỗi luồng CDC."""
+    started = time.monotonic()
+    nodes, edges = build_graph(published_tables(conn))
+    save_graph(conn, nodes, edges)
+    streams = [n["id"] for n in nodes if n["layer"] == "stream"]
+    checks = check_slot(conn, streams)
+    failed = sum(not c["passed"] for c in checks)
+    for node in streams[:1]:
+        conn.execute(
+            """INSERT INTO meta.pipeline_run (id, task, engine, node_id, started_at, duration_s, result, tenant_id)
+               VALUES (gen_random_uuid()::text, 'lineage.auto', 'PostgreSQL', %s, now(), %s, %s, NULL)""",
+            (node, max(0, round(time.monotonic() - started)), "check_failed" if failed else "success"),
+        )
+    conn.execute(
+        """DELETE FROM meta.pipeline_run WHERE task = 'lineage.auto'
+             AND started_at < now() - interval '7 days'"""
+    )
+    return {"nodes": len(nodes), "edges": len(edges), "checks": len(checks), "failed": failed}
 
 
 def lineage_refresh(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> dict:

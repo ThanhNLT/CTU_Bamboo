@@ -1,12 +1,8 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { formatClock } from "../utils";
 import { tr } from "../../../i18n";
 
 const LiveBadge = ({ updatedAt }: { updatedAt: number }) => (
-  <span className="inline-flex h-8 shrink-0 items-center gap-2 self-start rounded-ui bg-black/[0.045] px-3 text-[12.5px] text-body sm:self-auto">
+  <span className="inline-flex h-8 shrink-0 items-center gap-2 self-start rounded-full bg-black/[0.045] px-3 text-[12.5px] text-body sm:self-auto">
     <span className="relative flex h-2 w-2" aria-hidden>
       <span className="absolute inline-flex h-full w-full rounded-ui bg-bamboo-500 opacity-60 motion-safe:animate-ping" />
       <span className="relative inline-flex h-2 w-2 rounded-ui bg-bamboo-500" />

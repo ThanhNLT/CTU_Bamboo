@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { DriveFile, SortKey } from "./types";
 
 const num = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App } from "antd";
 import { Copy, FileJson, KeyRound, Timer } from "lucide-react";
 
@@ -130,7 +126,7 @@ export const ApiDocs = ({ catalog }: { catalog: Catalog }) => {
                     type="button"
                     onClick={() => void copy(curlOf(e))}
                     aria-label={trf("Sao chép ví dụ {0}", [e.path])}
-                    className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-ui text-muted hover:bg-black/[0.06] hover:text-ink"
+                    className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full text-muted hover:bg-black/[0.06] hover:text-ink"
                   >
                     <Copy className="h-3.5 w-3.5" aria-hidden />
                   </button>

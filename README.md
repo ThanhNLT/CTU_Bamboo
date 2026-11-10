@@ -67,8 +67,8 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 
 | | |
 |---|---|
-| Mã nguồn | <https://github.com/ThanhNLT/Bamboo> |
-| Báo lỗi, đề xuất | [GitHub Issues](https://github.com/ThanhNLT/Bamboo/issues) (có mẫu báo lỗi và đề xuất); lỗ hổng bảo mật: [SECURITY.md](SECURITY.md) |
+| Mã nguồn | <https://github.com/CTUBamboo/Bamboo> |
+| Báo lỗi, đề xuất | [GitHub Issues](https://github.com/CTUBamboo/Bamboo/issues) (có mẫu báo lỗi và đề xuất); lỗ hổng bảo mật: [SECURITY.md](SECURITY.md) |
 | Lịch sử thay đổi | [CHANGELOG.md](CHANGELOG.md) theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo [Semantic Versioning](https://semver.org/lang/vi/) |
 | Giấy phép | [Apache-2.0](LICENSE) |
 | Tài liệu kỹ thuật | [`docs/`](docs/) (Sphinx, build bằng `make -C docs html`): [yêu cầu đề thi và đối chiếu](docs/tong-quan/01-yeu-cau-va-kien-truc.md), [thiết kế CSDL](docs/thiet-ke/03-thiet-ke-csdl.md), [dịch vụ nền tảng](docs/thiet-ke/06-dich-vu-nen-tang.md), [API](docs/thiet-ke/08-api-giao-dien.md), [nhật ký quyết định kiến trúc (ADR)](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md), [triển khai production](docs/van-hanh/trien-khai.md), [khởi tạo cho công ty mới](docs/van-hanh/cong-ty-moi.md) |
@@ -76,16 +76,16 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 
 ### Các phiên bản đã phát hành
 
-Bản phát hành ở [GitHub Releases](https://github.com/ThanhNLT/Bamboo/releases), mỗi bản gồm mã nguồn `bamboo-<phiên bản>.tar.gz`
+Bản phát hành ở [GitHub Releases](https://github.com/CTUBamboo/Bamboo/releases), mỗi bản gồm mã nguồn `bamboo-<phiên bản>.tar.gz`
 và `SHA256SUMS`; bản 0.1.0–0.3.0 có thêm `compose.release.yml` và image dựng sẵn trên GitHub Container Registry. Định dạng
 phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗi bản).
 
 | Phiên bản | Ngày | Nội dung chính |
 |---|---|---|
-| [0.4.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
-| [0.3.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
-| [0.2.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
-| [0.1.0](https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
+| [0.4.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
+| [0.3.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
+| [0.2.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
+| [0.1.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
 
 ### Cấu trúc mã nguồn
 
@@ -143,19 +143,20 @@ Mức: **Có** = đã hiện thực, có kiểm thử; **Một phần** = có nh
 | Quy trình | Flowable REST 8; bpmn-js | Apache-2.0; giấy phép bpmn.io | Luồng duyệt BPMN, thiết kế quy trình trên giao diện, chạy thử sandbox, quy trình tự động (hẹn giờ, webhook, sự kiện) | Có |
 | Lưu trữ đối tượng | SeaweedFS 4 | Apache-2.0 | Tệp đính kèm, ổ đĩa, Lakehouse; bucket kiểm dịch, link có chữ ký | Có |
 | Két bí mật, ký số | OpenBao 2 | MPL-2.0 | Secret, AppRole riêng từng dịch vụ, mã hóa dữ liệu nhạy cảm, chữ ký Ed25519 cho biên nhận và bản neo | Có |
-| Quét tệp | Bộ quét nội bộ Bamboo; ClamAV 1.4 (tùy chọn) | Apache-2.0; GPL-2.0-only | Kiểm cấu trúc, macro, mã chủ động, tệp nhúng, bom nén; ClamAV quét theo mẫu virus | Một phần (chưa có CDR) |
+| Quét tệp, CDR | Bộ quét nội bộ Bamboo, CDR (Pillow, pypdf); ClamAV 1.4 (bật ở mức RAM 16) | Apache-2.0, MIT-CMU, BSD-3-Clause; GPL-2.0-only | Kiểm cấu trúc, macro, mã chủ động, tệp nhúng, bom nén; dựng lại ảnh, Office, PDF bỏ nội dung chủ động; ClamAV quét theo mẫu virus | Có |
 | Tìm kiếm | Meilisearch 1 Community, Apache Tika 4 | MIT, Apache-2.0 | Tìm toàn văn có dấu/không dấu trong chứng từ và nội dung tệp, lọc lại theo quyền; tìm ngữ nghĩa bằng vector | Có |
 | Sinh văn bản PDF | Gotenberg 8 (Chromium), Jinja2 | MIT, BSD-3-Clause | Phiếu đề nghị, quyết định nhân sự, báo cáo KPI; mã kiểm tra là mã băm nội dung | Có |
 | CDC, trục sự kiện | Debezium Server 3, Apache Kafka 4 (KRaft) | Apache-2.0 | Đẩy mọi thay đổi của CSDL vào Kafka, SCRAM + ACL | Có |
 | Lakehouse | Apache Iceberg (pyiceberg, pyarrow), Trino 483 | Apache-2.0 | Lịch sử thay đổi (bronze), trạng thái hiện tại có kiểu (silver), lớp ngữ nghĩa, lọc theo tenant | Có |
 | AI cục bộ | Ollama 0.35, Qwen3-4B (chat), bge-m3 (vector) | MIT, Apache-2.0, MIT | Trợ lý RAG có trích dẫn, guardrail, tìm ngữ nghĩa; chạy CPU hoặc GPU | Có |
 | OCR tiếng Việt | PaddleOCR + VietOCR trên PyTorch | Apache-2.0, BSD-3-Clause | Đọc bản quét, rút nhà cung cấp, mã số thuế, dòng hàng, số tiền để điền chứng từ | Có |
+| IT/OT | Eclipse Mosquitto 2 (dynamic-security), paho-mqtt; NGSI-LD | EPL-2.0/EDL-1.0 | Thiết bị gửi số đo qua MQTT (TLS, tài khoản theo công ty) hoặc REST NGSI-LD vào bản sao số | Có |
 | Che dữ liệu cá nhân | Microsoft Presidio | MIT | Nhận diện CCCD, điện thoại, tài khoản, email theo mẫu Việt Nam; bản che trong nhật ký và ô trao đổi | Có |
 | Thông báo đa kênh | Hàng đợi `msg.queue` trong PostgreSQL; Mailpit (hộp thư thử) | –; MIT | Email, SMS, webhook có thử lại, hàng chết, biên nhận có chữ ký chống chối bỏ | Có |
-| Nhật ký tập trung | Vector 0.46 (tùy chọn), bảng `obs.log_event` | MPL-2.0 | Gom log dịch vụ và container kèm mã truy vết `X-Request-Id`, đã che dữ liệu cá nhân | Một phần (chưa có OpenTelemetry, Prometheus, Grafana) |
+| Nhật ký, truy vết, giám sát | Vector 0.46 (tùy chọn), bảng `obs.log_event`; OpenTelemetry Collector, Jaeger 2, Prometheus 3, Grafana 13 (nhóm `observability`) | MPL-2.0; Apache-2.0; AGPL-3.0-only (Grafana, chạy riêng, không sửa) | Log kèm `X-Request-Id`, đã che dữ liệu cá nhân; span theo yêu cầu và câu lệnh SQL; số liệu, bảng điều khiển, cảnh báo | Có |
 | Sao lưu, GitOps | Script `tools/ops`, `tools/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu cấu hình với kho mã | Một phần (không dùng Argo CD, Kubernetes) |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI, psycopg | MIT, LGPL-3.0 (psycopg, dùng như thư viện) | Hasura Actions, xác thực, đồng bộ, worker nền, job khởi tạo | Có |
-| Giao diện | Refine 5, React 19, Ant Design 5 | MIT | Ứng dụng web Tầng 2, đa ngôn ngữ phần khung (Việt, Anh) | Có |
+| Giao diện | Refine 5, React 19, Ant Design 5 | MIT | Ứng dụng web Tầng 2, đầy đủ tiếng Việt và tiếng Anh | Có |
 
 Danh sách đầy đủ thư viện Python, JavaScript và giấy phép: [NOTICE](NOTICE). Lý do chọn từng công nghệ và phương án đã loại:
 [nhật ký quyết định kiến trúc](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md).
@@ -164,12 +165,11 @@ Danh sách đầy đủ thư viện Python, JavaScript và giấy phép: [NOTICE
 
 Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp theo:
 
-- **Hội tụ IT/OT thật:** thu dữ liệu cảm biến qua MQTT và context broker NGSI-LD (bản sao số, phả hệ, chất lượng dữ liệu hiện
-  đọc từ dữ liệu demo nạp sẵn).
-- **Bảo mật:** mTLS giữa các dịch vụ, chữ ký số bằng chứng thư công cộng (PKI), làm sạch tệp (CDR).
-- **Giám sát:** OpenTelemetry, Prometheus, Grafana.
-- **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; giao diện cho lớp
-  ngữ nghĩa và báo cáo KPI; kịch bản tự động do người dùng viết mã; dịch toàn bộ trang nghiệp vụ sang tiếng Anh.
+- **Bảo mật:** mTLS cho các chặng HTTP nội bộ còn lại (APISIX, Hasura, Keycloak, Flowable: cần sidecar hoặc service mesh),
+  ký số bằng chứng thư công cộng và HSM (cần thiết bị hoặc dịch vụ ký số từ xa của CA).
+- **Vận hành:** chuyển sang Kubernetes (k3s) và Argo CD; span của APISIX, Hasura.
+- **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; dịch thông báo
+  lỗi do máy chủ trả về sang tiếng Anh.
 - **Lakehouse:** chính sách vòng đời và xóa dữ liệu.
 - **Tầng 3:** ứng dụng ngành (OMS, WMS, MES/SCADA, EMR, CRM) cắm vào nền tảng.
 
@@ -250,19 +250,19 @@ flowchart LR
 | Vận hành | Hàng đợi tin nhắn (đưa lại tin chết, xác minh biên nhận) | `/admin/queue` |
 | | Vận hành hệ thống: nhật ký tập trung, neo kiểm toán, sao lưu | `/admin/ops` |
 
-Trang AI và OCR chỉ có ở mức RAM 16 GB (xem mục dưới).
+Trang AI và OCR chạy ở mọi cấu hình (cả máy 8 GB, chậm hơn khi đổi mô hình; xem mục dưới).
 
 ## Yêu cầu cấu hình máy tính
 
 | | Tối thiểu | Khuyến nghị |
 |---|---|---|
 | CPU | 4 nhân (vCPU) | 8 nhân |
-| RAM Docker thấy được | 8 GB (chức năng cơ bản, không AI, không OCR) | 16 GB (đầy đủ, gồm AI và OCR); thêm 2 GB nếu bật ClamAV |
+| RAM Docker thấy được | 8 GB (đầy đủ gồm AI và OCR; mỗi lúc một mô hình AI, lượt hỏi đầu sau khi nhàn rỗi chậm hơn) | 16 GB (đầy đủ, mô hình hỏi đáp và mô hình nhúng cùng nằm trên RAM); thêm 2 GB nếu bật ClamAV |
 | Ổ đĩa | 20 GB SSD trống | 50 GB SSD (image OCR khoảng 14 GB, mô hình AI khoảng 3,7 GB) |
 | GPU | Không cần | NVIDIA 8 GB VRAM trở lên để AI, OCR nhanh hơn (đã kiểm trên RTX 4060) |
 | Hệ điều hành | Linux, macOS, Windows 10/11 với WSL2 | Linux |
 | Kiến trúc | amd64 hoặc arm64 (image PostGIS chạy qua giả lập trên arm64) | amd64 |
-| Phần mềm | Docker Engine 24+ với Docker Compose v2 | Docker Compose 2.40.2+ (chạy image dựng sẵn từ OCI) |
+| Phần mềm | Docker Engine 25+ với Docker Compose v2 | Docker Compose 2.40.2+ (chạy image dựng sẵn từ OCI) |
 
 Trên Windows, đặt mã nguồn trong hệ thống tệp của WSL2 ([ADR #12](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)). WSL2 mặc định
 chỉ cấp một nửa RAM máy: máy 16 GB muốn chạy đầy đủ thì đặt `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`.
@@ -271,12 +271,12 @@ Lần đầu cần Internet để tải image và mô hình; sau đó chạy đ�
 ## Chạy bằng một lệnh với Docker
 
 ```bash
-git clone https://github.com/ThanhNLT/Bamboo.git
+git clone https://github.com/CTUBamboo/Bamboo.git
 cd Bamboo
-make up        # tự chọn mức RAM: 8 GB chỉ chức năng cơ bản, 16 GB đầy đủ gồm AI (BAMBOO_RAM=8 hoặc 16 để chọn tay)
+make up        # đầy đủ gồm AI ở mọi mức RAM; máy 8 GB tự tiết kiệm RAM hơn (BAMBOO_RAM=8 hoặc 16 để chọn tay)
 ```
 
-Không có `make` thì dùng `docker compose up -d` (chạy đầy đủ, gồm AI). Không cần tạo `.env` hay chạy migration tay: lệnh build
+Không có `make` thì dùng `docker compose up -d` (cũng chạy đầy đủ, gồm AI). Không cần tạo `.env` hay chạy migration tay: lệnh build
 image từ mã nguồn rồi tự chạy theo thứ tự migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp
 metadata Hasura. Lần đầu mất khoảng 5–10 phút. Theo dõi:
 
@@ -295,11 +295,13 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
   `env: 'bash\r': No such file or directory`, các dịch vụ còn lại không lên và trang đăng nhập không mở được.
 - **`make up` và `docker compose up` phải chạy trên cùng một bản clone:** hai lệnh dùng chung tên dự án `bamboo` (chung
   image, volume), nên chạy `make up` ở một bản clone cũ (ví dụ trong WSL) sẽ dựng lại giao diện cũ đè lên.
-- **GPU NVIDIA:** cài `nvidia-container-toolkit` rồi chạy `make up-gpu`.
+- **GPU NVIDIA:** không cần cấu hình gì. Máy có card NVIDIA (Docker Desktop WSL2, hoặc Linux có `nvidia-container-toolkit`)
+  thì vài phút sau khi hệ thống lên, AI và OCR tự chuyển sang GPU; không có card hoặc GPU lỗi thì chạy trên CPU/RAM
+  (`docker compose logs sleeper` ghi đã chọn gì). `BAMBOO_GPU=false` trong `.env` để luôn chạy CPU.
 - **Dịch vụ dùng thưa** (Trino, Tika, Gotenberg, Ollama, OCR) ngủ sau 5 phút nhàn rỗi và tự dậy khi được gọi; lần gọi đầu chậm
   hơn. Trước buổi demo chạy `tools/demo_prepare.sh` để làm nóng.
 - **Bật thêm:** ClamAV `docker compose --profile scan up -d` (đặt `CLAMAV_HOST=clamav`), gom log container
-  `COMPOSE_PROFILES=ai,logs`.
+  `COMPOSE_PROFILES=logs`.
 - **Dừng:** `docker compose down` (giữ dữ liệu), `docker compose down -v` (xóa sạch, kể cả khóa OpenBao).
 - **Cấu hình:** mọi biến có giá trị mặc định cho máy dev; muốn đổi thì `cp .env.example .env` rồi sửa. Triển khai thật (tên miền
   HTTPS, `BAMBOO_ENV=production`, sao lưu, nâng cấp): [Triển khai production](docs/van-hanh/trien-khai.md).
@@ -308,7 +310,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
 hiện có tới bản 0.3.0; bản 0.4.0 chạy từ mã nguồn bằng lệnh ở trên.
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y
 ```
 
 Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -f compose.release.yml up -d`.
@@ -323,6 +325,9 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 | Flowable REST | <http://localhost:8082/flowable-rest> | `rest-admin` / `test` |
 | Trino | <https://localhost:8085> | `bms-admin`, mật khẩu in bằng `make trino-password` |
 | Hộp thư thử (Mailpit) | <http://localhost:8025> | không cần |
+| Grafana (nhóm `observability`) | <http://localhost:3001> | `admin` / `grafana-dev` |
+| Jaeger, Prometheus | <http://localhost:16686>, <http://localhost:9090> | không cần |
+| MQTT (Mosquitto) | `localhost:1883`, TLS `localhost:8883` | tài khoản thiết bị tạo ở Cổng dịch vụ API |
 | PostgreSQL | `localhost:5432` | `bms` / `bms-dev` (`make psql`) |
 
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
@@ -497,6 +502,12 @@ và realm Keycloak.
 
 Mật khẩu chung **`demo-password`** (biến `DEMO_PASSWORD`). Đổi người dùng bằng **Đăng xuất** ở thanh bên trái.
 
+**Đăng ký doanh nghiệp mới** dùng được cùng lúc với dữ liệu demo: ở trang đăng nhập bấm **Tạo tài khoản →** (hoặc mở
+<http://localhost:8000/khoi-tao>), khai chủ sở hữu, doanh nghiệp, quy mô, thành viên và công cụ cần bật; hệ thống tạo công ty
+mới cùng tài khoản với mật khẩu tạm (đổi ở lần đăng nhập đầu, chủ sở hữu cài thêm OTP). Biến `SETUP_OPEN_SIGNUP` (bỏ trống thì
+theo `SEED_DEMO`) quyết định trang này có mở khi máy đã có công ty hay không; production đặt `SEED_DEMO=false` nên trang chỉ
+mở khi máy chưa có công ty (ADR #62, #68).
+
 Đăng nhập được nhưng báo **"Tài khoản chưa thuộc tenant nào"** nghĩa là id tài khoản trong Keycloak không khớp người nào
 trong CSDL. Thường do chạy image cũ (bản dựng trước, hoặc kéo từ GHCR) chưa có migration và seed mới: `docker compose up -d`
 và `make up` đều dựng lại image từ mã đang có (`pull_policy: build`; đặt `BAMBOO_PULL_POLICY=missing` trong `.env` để dùng
@@ -508,6 +519,11 @@ ghế nếu bị gỡ. Một phần dữ liệu demo lỗi không còn kéo đ�
 Báo **"Không lấy được danh sách tenant"** kèm mã 503 (hoặc 403 ở bản cũ) nghĩa là cổng API chưa gọi được dịch vụ `actions`
 (đang khởi động, hoặc đã dừng). Trang tự thử lại khoảng một phút; nếu vẫn lỗi, xem `docker compose ps actions` và
 `docker compose logs --tail 80 actions`.
+
+Báo **502 Bad Gateway** và `flow-sync`, `actions` tự khởi động lại liên tục sau khi khởi động lại máy hoặc Docker: OpenBao bị
+khóa (sealed) mỗi lần container khởi động lại. Dịch vụ `openbao-unseal` tự mở khóa trong vài giây và các dịch vụ chờ OpenBao
+tối đa 2 phút (`BAO_WAIT_SECONDS`) thay vì thoát; bản cũ chưa có dịch vụ này thì chạy lại `docker compose up -d`. Kiểm bằng
+`docker compose logs --tail 20 openbao-unseal`.
 
 **Tập đoàn X – công ty mẹ**
 

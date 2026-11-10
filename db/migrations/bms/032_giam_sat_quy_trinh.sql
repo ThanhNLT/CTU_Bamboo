@@ -1,15 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- Thiết kế và giám sát quy trình theo phạm vi đơn vị:
---  * Quy trình thuộc một đơn vị sở hữu; người có wf.process.design tại đơn vị đó (trưởng phòng, giám đốc... theo
---    vai trò) vẽ và phát hành được.
---  * Khi phát hành, người thiết kế chọn đối tượng: UNIT (đơn vị và đơn vị con), COMPANY (cả công ty chứa đơn vị),
---    GROUP (toàn tập đoàn: công ty mẹ và các công ty con). Mọi người đang có bổ nhiệm trong phạm vi đó được thông báo
---    và xem được sơ đồ.
---  * Người có wf.process.review (quản lý, giám đốc) yêu cầu sửa chữa hoặc chạy demo; còn lại chỉ xem sơ đồ.
-
 INSERT INTO core.permission (code, description) VALUES
     ('wf.process.review', 'Giám sát quy trình đã phát hành: yêu cầu sửa chữa và chạy demo (không sửa được sơ đồ)');
 
@@ -52,7 +40,6 @@ CREATE INDEX ON wf.process_change_request (tenant_id, model_id, created_at DESC)
 CREATE INDEX ON wf.process_change_request (tenant_id, requested_by);
 CALL audit.enable('wf.process_change_request');
 
--- Đơn vị gốc của tenant
 CREATE FUNCTION wf.root_unit(p_tenant uuid, p_at timestamptz DEFAULT now()) RETURNS uuid
 LANGUAGE sql STABLE AS $$
     SELECT u.id FROM core.org_unit u
@@ -60,7 +47,6 @@ LANGUAGE sql STABLE AS $$
     ORDER BY u.created_at LIMIT 1
 $$;
 
--- Đơn vị gốc của phạm vi đối tượng: UNIT = chính đơn vị; COMPANY = pháp nhân gần nhất chứa đơn vị; GROUP = gốc tenant
 CREATE FUNCTION wf.audience_scope(p_tenant uuid, p_unit uuid, p_audience text, p_at timestamptz DEFAULT now())
 RETURNS uuid
 LANGUAGE sql STABLE AS $$
@@ -73,7 +59,6 @@ LANGUAGE sql STABLE AS $$
     END
 $$;
 
--- Người đang có bổ nhiệm hiệu lực trong cây con của p_scope
 CREATE FUNCTION wf.people_under(p_scope uuid, p_at timestamptz DEFAULT now()) RETURNS SETOF uuid
 LANGUAGE sql STABLE AS $$
     SELECT DISTINCT a.person_id
@@ -84,14 +69,12 @@ LANGUAGE sql STABLE AS $$
     WHERE s.id = p_scope
 $$;
 
--- Đối tượng nhận của một phiên bản đã phát hành
 CREATE FUNCTION wf.audience_people(p_model uuid, p_audience text, p_at timestamptz DEFAULT now()) RETURNS SETOF uuid
 LANGUAGE sql STABLE AS $$
     SELECT wf.people_under(wf.audience_scope(m.tenant_id, m.owner_unit_id, p_audience, p_at), p_at)
     FROM wf.process_model m WHERE m.id = p_model
 $$;
 
--- Mức truy cập của một người với một quy trình: design | review | view | NULL (không thấy)
 CREATE FUNCTION wf.process_access(p_person uuid, p_model uuid, p_at timestamptz DEFAULT now()) RETURNS text
 LANGUAGE plpgsql STABLE AS $$
 DECLARE
@@ -119,7 +102,6 @@ BEGIN
     RETURN 'view';
 END $$;
 
--- Người có quyền p_permission tại đơn vị p_unit trong số những người đang có bổ nhiệm
 CREATE FUNCTION wf.people_with(p_tenant uuid, p_permission text, p_unit uuid, p_at timestamptz DEFAULT now())
 RETURNS SETOF uuid
 LANGUAGE sql STABLE AS $$
@@ -127,7 +109,6 @@ LANGUAGE sql STABLE AS $$
     WHERE core.has_permission(x, p_permission, coalesce(p_unit, wf.root_unit(p_tenant, p_at)), p_at)
 $$;
 
--- Thông báo phát hành cho mọi người trong đối tượng, trừ người phát hành. Trả về số người được báo.
 CREATE FUNCTION wf.notify_process_published(p_model uuid, p_version int, p_actor uuid, p_note text DEFAULT NULL)
 RETURNS int
 LANGUAGE plpgsql AS $$

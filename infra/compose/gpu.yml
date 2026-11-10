@@ -1,12 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# Cho Ollama và dịch vụ OCR dùng GPU NVIDIA (cần nvidia-container-toolkit, xem docs/van-hanh/trien-khai.md):
-#   make up-gpu   (= docker compose -f compose.yaml -f infra/compose/gpu.yml up -d), hoặc
-#   cp infra/compose/gpu.yml docker-compose.override.yml && docker compose up -d
-# Đây là tệp ghi đè (merge), không phải tệp include: đường dẫn tương đối (nếu thêm) tính từ gốc repo.
-# Mô hình vẫn chỉ nạp lên GPU khi có việc và tự gỡ khi nhàn rỗi (ADR #52).
 x-gpu: &gpu
   deploy:
     resources:

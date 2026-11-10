@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type IssueLevel = "error" | "warning";
 export type Issue = { level: IssueLevel; message: string; elementId: string | null };
 
@@ -115,6 +111,7 @@ export type SelectedElement = {
   automationBody?: string;
   automationName?: string;
   automationValue?: string;
+  automationScript?: string;
   timerCycle?: string;
 };
 

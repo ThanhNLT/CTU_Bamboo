@@ -1,13 +1,7 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { writeFileSync } from "node:fs";
 
 import { expect, test, type Page } from "@playwright/test";
 
-// Cần: tài khoản cài được mô-đun trên máy (chủ sở hữu công ty khởi tạo máy chủ, không bắt OTP), mô-đun mẫu
-// examples/mo-dun-mau đang chạy ở E2E_EXT_BASE_URL và đọc khóa từ tệp E2E_EXT_KEY_FILE (MODULE_KEY_FILE)
 const USER = process.env.E2E_PLATFORM_USER ?? "";
 const PASSWORD = process.env.E2E_PLATFORM_PASSWORD ?? process.env.DEMO_PASSWORD ?? "demo-password";
 const BASE_URL = process.env.E2E_EXT_BASE_URL ?? "";
@@ -57,7 +51,6 @@ test("đăng ký mô-đun ngoài, bật cho công ty, dùng trong khung nhúng r
   await frame.getByRole("button", { name: "Gửi lời nhắc" }).click();
   await expect(frame.getByText("Đã gửi lời nhắc.")).toBeVisible();
 
-  // khung chạy ở origin riêng: không đọc được bộ nhớ của Bamboo
   const isolated = await page
     .frames()
     .find((f) => f.url().includes("/ext/x_nhac_viec/"))

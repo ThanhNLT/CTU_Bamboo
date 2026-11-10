@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import Modeler from "bpmn-js/lib/Modeler";
 import NavigatedViewer from "bpmn-js/lib/NavigatedViewer";
 import "bpmn-js/dist/assets/diagram-js.css";
@@ -80,11 +76,11 @@ const describe = (el: Element | undefined): SelectedElement | undefined => {
     automationBody: str("bamboo:body"),
     automationName: str("bamboo:name"),
     automationValue: str("bamboo:value"),
+    automationScript: str("bamboo:script"),
     timerCycle: bo.eventDefinitions?.find((d) => d.$type === "bpmn:TimerEventDefinition")?.timeCycle?.body,
   };
 };
 
-// Đặt sơ đồ vừa khung nhìn, chừa chỗ cho bảng công cụ ở bên trái khi đang sửa.
 const fit = (canvas: Canvas, leftInset: number) => {
   canvas.resized();
   const { inner, outer } = canvas.viewbox();
@@ -127,7 +123,6 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
     const v: Viewer = readOnly ? new NavigatedViewer(options) : new Modeler(options);
     viewer.current = v;
     if (readOnly) {
-      // Chế độ xem không có dịch vụ chọn phần tử: tự đánh dấu phần tử được bấm
       v.on("element.click", (e: { element: Element }) => {
         const canvas = v.get("canvas") as Canvas;
         if (picked.current) canvas.removeMarker(picked.current, "bamboo-picked");
@@ -190,7 +185,6 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
     return () => {
       alive = false;
     };
-    // refit và canvasOf chỉ đọc ref; kích thước bảng công cụ đổi theo readOnly đã nằm trong danh sách phụ thuộc
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [xml, readOnly]);
 
@@ -234,6 +228,7 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
           ["automationBody", "bamboo:body"],
           ["automationName", "bamboo:name"],
           ["automationValue", "bamboo:value"],
+          ["automationScript", "bamboo:script"],
         ];
         for (const [key, attr] of attrs) {
           if (patch[key] !== undefined) props[attr] = (patch[key] as string) || undefined;

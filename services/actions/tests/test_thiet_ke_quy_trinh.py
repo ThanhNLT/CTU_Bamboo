@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import pathlib
 import uuid
 
@@ -141,7 +137,6 @@ def test_luu_phat_hanh_chay_thu(client, designer, flowable):
 def test_chay_thu_loi_deploy_duoc_ghi_lai(client, designer, flowable):
     k = designer["k"]
     gd, tenant = designer[k("gd")], designer["TDX"]
-    # Qua được bước kiểm tra nhưng lỗi khi chạy: điều kiện dùng biến không tồn tại
     broken = bpmn(
         '<startEvent id="s"/><exclusiveGateway id="g" default="d"/><endEvent id="e1"/><endEvent id="e2"/>'
         '<sequenceFlow id="a" sourceRef="s" targetRef="g"/>'

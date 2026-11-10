@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import type { Tone } from "../../components/ui";
 import { fold } from "../../utils/text";
 import type { CategoryFilter, EntityCategory, EntityStatus, MetricStatus, Threshold, TwinEntity } from "./types";

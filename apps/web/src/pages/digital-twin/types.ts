@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export type EntityCategory = "smt" | "cleanroom" | "medical";
 export type CategoryFilter = "all" | EntityCategory;
 
@@ -61,6 +57,8 @@ export type TwinEntity = {
   grade: string;
   offlineMinutes?: number;
   lastSeenAt: string | null;
+  /** Nguồn số đo trực tiếp (ADR #74); null = dữ liệu mẫu */
+  liveSource: "mqtt" | "api" | null;
   status: EntityStatus;
   subtitle: string;
   metrics: Metric[];

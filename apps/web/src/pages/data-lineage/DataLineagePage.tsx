@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, Spin } from "antd";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
@@ -19,7 +15,6 @@ import type { Direction, LineageNode } from "./types";
 import { LiveBadge } from "../../live/LiveBadge";
 import { tr, trf } from "../../i18n";
 
-// Nút chọn sẵn khi mở trang: bảng tổng hợp duyệt (dữ liệu mẫu) hoặc chỉ số đề nghị mua sắm (phả hệ thật)
 const PREFERRED = ["gold-approval-daily", "semantic:proc_purchase_request"];
 const SEVERITY = { wrong: "high", missing: "high", late: "medium", other: "low" } as const;
 const KIND_LABEL: Record<string, string> = {

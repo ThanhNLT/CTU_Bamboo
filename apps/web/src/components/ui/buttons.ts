@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 const base =
   "inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-[18px] text-[13.5px] transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bamboo-500 disabled:opacity-50";

@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import socket
 import struct
 import time
@@ -16,8 +12,13 @@ from . import config
 MAX_BYTES = 25 * 1024 * 1024
 UPLOAD_TTL = 900
 DOWNLOAD_TTL = 300
-ENTITY_TYPES = {"proc.purchase_request", "hr.onboarding_request", "collab.kb_document", "chat.conversation"}
-# Loại chứng từ có trạng thái duyệt: tệp của chứng từ đã kết thúc được giữ làm bằng chứng
+ENTITY_TYPES = {
+    "proc.purchase_request",
+    "hr.onboarding_request",
+    "collab.kb_document",
+    "chat.conversation",
+    "pm.project",
+}
 STATUS_ENTITY_TYPES = {"proc.purchase_request", "hr.onboarding_request", "collab.kb_document"}
 
 _ZIP = (b"PK\x03\x04",)
@@ -122,6 +123,11 @@ class Storage:
             ContentType=content_type,
             MetadataDirective="REPLACE",
         )
+        self.s3.delete_object(Bucket=self.quarantine, Key=key)
+
+    def replace_from_quarantine(self, key: str, data: bytes, content_type: str) -> None:
+        """Ghi bản đã dựng lại (CDR) vào kho chính thay cho bản gốc, rồi xóa bản gốc trong bucket kiểm dịch."""
+        self.s3.put_object(Bucket=self.documents, Key=key, Body=data, ContentType=content_type)
         self.s3.delete_object(Bucket=self.quarantine, Key=key)
 
     def document_exists(self, key: str) -> bool:

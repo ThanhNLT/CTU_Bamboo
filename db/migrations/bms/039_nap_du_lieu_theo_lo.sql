@@ -1,10 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
--- API nạp dữ liệu theo lô (NDJSON hoặc CSV, tới 200.000 dòng): mỗi lần nạp là một công việc có khóa chống nạp trùng,
--- tiến độ, số dòng nhận và từ chối, lỗi từng dòng. Có chế độ chạy thử (không ghi) và chế độ nguyên tử (có lỗi thì hoàn tác hết).
-
 CREATE TABLE core.ingest_job (
     tenant_id        uuid NOT NULL REFERENCES core.tenant,
     id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),

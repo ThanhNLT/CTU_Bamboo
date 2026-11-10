@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { lazy, Suspense, type ComponentType } from "react";
 import { Authenticated, Refine } from "@refinedev/core";
 import { RefineKbarProvider } from "@refinedev/kbar";
@@ -43,13 +39,10 @@ import { dataProvider, liveProvider } from "./providers/data";
 import { getLocale, tr } from "./i18n";
 import { i18nProvider } from "./providers/i18n";
 
-// Ngôn ngữ của Ant Design (lịch, phân trang, bảng trống…) và dayjs theo lựa chọn của người dùng; đổi ngôn ngữ thì trang tải lại
 const LOCALE = getLocale();
 dayjs.locale(LOCALE === "en" ? "en" : "vi");
 
-// Trang tải lười: mỗi trang (hoặc nhóm trang cùng thư mục) một chunk riêng, tải khi mở lần đầu (ADR #67). Trang chủ và
-// đăng nhập tải ngay. Màn hình điện thoại chỉ tải phần đang dùng thay vì cả ứng dụng.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- giữ nguyên kiểu props của từng trang
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lazyNamed = <M extends Record<K, ComponentType<any>>, K extends string>(load: () => Promise<M>, name: K) =>
   lazy(() => load().then((m) => ({ default: m[name] })));
 const loadAuditList = () => import("./pages/audit/list");

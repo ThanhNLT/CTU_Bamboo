@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
 """Việc chỉ chủ sở hữu công ty làm được (ADR #57): chuyển quyền chủ sở hữu, tạo công ty thành viên."""
 
 import logging
@@ -141,7 +138,7 @@ def create_subsidiary(conn: psycopg.Connection, session: dict, args: dict, ctx: 
         if created:
             try:
                 ctx.users.disable(created)
-            except Exception as exc:  # noqa: BLE001 - dọn tài khoản thừa, lỗi không che lỗi gốc
+            except Exception as exc:  # noqa: BLE001
                 log.warning("không vô hiệu hóa được tài khoản %s: %s", created, exc)
         raise
     log.info("công ty %s tạo công ty thành viên %s", parent_code, company["code"])

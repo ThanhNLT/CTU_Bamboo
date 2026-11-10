@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import json
 import uuid
 
@@ -94,7 +90,6 @@ def test_action_cua_mo_dun_tat_bi_chan(client, conn, admin):
     r = call(client, "ledger_overview", {}, gd, tdx)
     assert r.status_code == 403 and r.json()["extensions"]["code"] == "module-disabled"
     assert "Sổ cái" in r.json()["message"]
-    # Action lõi vẫn chạy
     assert call(client, "modules", {}, gd, tdx).status_code == 200
 
 
@@ -111,7 +106,6 @@ def test_bat_can_quyen_va_keo_theo_phu_thuoc(client, conn, admin):
     assert body["changed"] == ["files", "search", "knowledge"]
     assert state(body)["knowledge"] == (True, True) and state(body)["search"] == (True, True)
     assert body["can_manage"] and not body["can_install"]
-    # bật lại không đổi gì
     assert call(client, "module_enable", {"code": "knowledge"}, gd, tdx).json()["changed"] == []
 
 
@@ -121,7 +115,6 @@ def test_chua_cai_tren_may_thi_quan_tri_cong_ty_khong_bat_duoc(client, conn, adm
     conn.execute("DELETE FROM core.module_install WHERE module = 'ledger'")
     r = call(client, "module_enable", {"code": "ledger"}, gd, tdx)
     assert r.status_code == 409 and r.json()["extensions"]["code"] == "module-not-installed"
-    # quản trị nền tảng bật thì cài luôn
     r = call(client, "module_enable", {"code": "ledger"}, gd, tdx, role="platform_admin")
     assert r.status_code == 200, r.text
     assert state(r.json())["ledger"] == (True, True)
@@ -162,7 +155,6 @@ def test_container_can_chay_theo_mo_dun_da_cai(client, conn, admin):
     assert "ollama-core" in desired["stop"] and "kafka" in desired["stop"]
     assert "flowable" in desired["run"] and "meilisearch" in desired["run"]
     assert set(desired["run"]) | set(desired["stop"]) == set(modules.MANAGED_SERVICES)
-    # Flowable dùng chung cho Mua sắm và Thiết kế quy trình: còn một mô-đun cần thì vẫn chạy
     conn.execute("DELETE FROM core.tenant_module WHERE module IN ('ic', 'procurement')")
     conn.execute("DELETE FROM core.module_install WHERE module IN ('ic', 'procurement')")
     assert "flowable" in client.get("/modules/services").json()["run"]
@@ -171,7 +163,6 @@ def test_container_can_chay_theo_mo_dun_da_cai(client, conn, admin):
 def test_sleeper_quan_ly_dung_container_cua_mo_dun():
     import yaml
 
-    # compose.yaml ở gốc chỉ include các tệp trong infra/compose/: gộp dịch vụ của chúng
     root = yaml.safe_load((ROOT / "compose.yaml").read_text(encoding="utf-8"))
     services = {}
     for path in root["include"]:
@@ -189,7 +180,6 @@ def test_du_lieu_demo_bat_du_moi_mo_dun():
     assert sorted(re.findall(r'"([a-z_]+)"', demo)) == sorted(modules.BY_CODE)
     migration = (ROOT / "db/migrations/bms/042_mo_dun.sql").read_text(encoding="utf-8")
     upgrade = re.findall(r"'([a-z_]+)'", re.search(r"unnest\(ARRAY\[([^\]]*)\]\)", migration).group(1))
-    # Mô-đun thêm sau 042 được cài cho hệ thống đang chạy ở migration của chính nó (vd 054: project)
     for later in sorted((ROOT / "db/migrations/bms").glob("*.sql")):
         upgrade += re.findall(r"SELECT '([a-z_]+)', 'migration \d+'", later.read_text(encoding="utf-8"))
     assert sorted(upgrade) == sorted(modules.BY_CODE)

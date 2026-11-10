@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import json
 import logging
@@ -14,7 +10,7 @@ import psycopg
 
 from bamboo_common import scanner
 
-from . import storage
+from . import cdr, storage
 from .common import ActionError, Context, bind_session, require_read, session_identity
 
 log = logging.getLogger("attachments")
@@ -188,8 +184,35 @@ def confirm_upload(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     if verdict != "CLEAN":
         s3.delete(key)
         return _finish(conn, attachment_id, verdict, detail, digest, engines, report)
-    s3.promote(key, att["content_type"])
-    return _finish(conn, attachment_id, "CLEAN", detail, digest, engines, report)
+    try:
+        clean = disarm(att["content_type"], data, digest, report)
+    except cdr.CdrError as exc:
+        s3.delete(key)
+        return _finish(conn, attachment_id, "REJECTED", str(exc), digest, engines, report)
+    if clean is None:
+        s3.promote(key, att["content_type"])
+    else:
+        s3.replace_from_quarantine(key, clean, att["content_type"])
+        conn.execute("UPDATE core.attachment SET size_bytes = %s WHERE id = %s", (len(clean), attachment_id))
+        digest = hashlib.sha256(clean).hexdigest()
+        detail = f"{detail}; đã gỡ nội dung chủ động và dựng lại tệp (CDR)"[:500]
+    return _finish(conn, attachment_id, "CLEAN", detail, digest, [*engines, cdr.ENGINE], report)
+
+
+def disarm(content_type: str, data: bytes, digest: str, report: dict) -> bytes | None:
+    """CDR sau khi quét sạch (ADR #70). Trả bản dựng lại, hoặc None khi giữ nguyên bản gốc; ghi kết quả vào báo cáo.
+
+    Bản dựng lại được quét lại: bộ dựng lại hỏng hay sinh nội dung lạ thì không nhận tệp.
+    """
+    result = cdr.sanitize(content_type, data)
+    report["cdr"] = result.as_dict() | {"original_sha256": digest, "original_size": len(data)}
+    if not result.changed or result.data == data:
+        return None
+    again = scanner.scan_file(content_type, result.data)
+    if again.verdict != "CLEAN":
+        raise cdr.CdrError(f"Bản dựng lại không qua kiểm tra: {again.summary()}"[:300])
+    report["cdr"]["size"] = len(result.data)
+    return result.data
 
 
 def rescan_unscanned(

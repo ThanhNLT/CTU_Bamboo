@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Card, Space, Steps, Tag, Timeline, Typography } from "antd";
 
 import type { ApprovalHistory, ApprovalStep } from "../document/types";

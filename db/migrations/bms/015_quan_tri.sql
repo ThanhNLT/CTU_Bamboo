@@ -1,7 +1,3 @@
--- SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
---
--- SPDX-License-Identifier: Apache-2.0
-
 CREATE VIEW core.v_admin AS
 SELECT DISTINCT tenant_id, person_id
 FROM core.v_permission_grant
