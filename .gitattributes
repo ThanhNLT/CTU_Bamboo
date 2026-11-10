@@ -1,5 +1,9 @@
-# SPDX-FileCopyrightText: 2026 Bamboo
-# SPDX-License-Identifier: Apache-2.0
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
 
 # Luôn checkout văn bản với LF trên mọi hệ điều hành, kể cả Windows có core.autocrlf=true (mặc định của Git for
 # Windows). Script .sh mang CRLF chép vào image làm `docker compose up` hỏng: migrate thoát ngay vì `bash\r`, kéo theo

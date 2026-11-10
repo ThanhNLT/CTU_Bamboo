@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Tác tử AI tự hành động khi có sự kiện nghiệp vụ (ADR #72), chạy trong hàng đợi của ai-worker.
 
 Một lần chạy (`core.ai_agent_run`) sinh ra khi sự kiện khớp `triggers` của tác tử đang hoạt động. Worker:

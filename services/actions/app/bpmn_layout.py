@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Bố cục tự động cho sơ đồ BPMN: xếp phần tử theo cột (thứ tự luồng) và làn (người thực hiện), rồi vẽ đường nối vuông góc.
 
 Mọi tọa độ nằm trên lưới 10 px nên hai đường nối chỉ trùng nhau khi cùng một tọa độ. Đường nối được tìm bằng Dijkstra

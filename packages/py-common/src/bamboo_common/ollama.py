@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Gọi Ollama cục bộ (ADR #51): danh mục mô hình, embedding, sinh câu trả lời qua API tương thích OpenAI."""
 
 import json

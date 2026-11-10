@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 CREATE FUNCTION kpi.on_time_rate(p_tenant uuid, p_from timestamptz, p_to timestamptz,
                                  p_sla interval DEFAULT interval '48 hours')
 RETURNS double precision

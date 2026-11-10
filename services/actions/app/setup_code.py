@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Mở cửa sổ đăng ký 24 giờ trên hệ thống trống (ADR #57, #62): `python -m app.setup_code` (`make setup-code`).
 
 `bootstrap` tự gọi mỗi lần khởi động khi hệ thống chưa có công ty; mã cũ chưa dùng bị hủy. Trong khi còn mã hiệu lực, trang

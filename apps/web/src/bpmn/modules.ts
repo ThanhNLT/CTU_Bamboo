@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Các module diagram-js của trình thiết kế quy trình Bamboo (ADR #81): tạo phần tử kèm đối tượng BPMN, bố cục đường
 // nối vuông góc, quy tắc nối, bảng công cụ, menu ngữ cảnh, sửa nhãn trực tiếp, cập nhật thuộc tính có hoàn tác.

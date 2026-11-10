@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 ALTER TABLE core.org_unit
     ADD COLUMN province text CHECK (province IS NULL OR length(btrim(province)) BETWEEN 2 AND 100),
     ADD COLUMN lat numeric(8, 5) CHECK (lat BETWEEN -90 AND 90),

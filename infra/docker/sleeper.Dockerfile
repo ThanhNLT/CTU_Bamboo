@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 FROM python:3.13-slim
 LABEL org.opencontainers.image.title="bamboo-sleeper" \
       org.opencontainers.image.description="Bamboo DX-OS: đánh thức dịch vụ dùng thưa (Tầng 1, AI) khi có yêu cầu, cho ngủ khi nhàn rỗi" \

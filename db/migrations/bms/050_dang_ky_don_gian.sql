@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 ALTER TABLE core.tenant
     ADD COLUMN industry text CHECK (length(btrim(industry)) BETWEEN 1 AND 100),
     ADD COLUMN size_band text CHECK (size_band IN ('1-10', '11-50', '51-200', '200+'));

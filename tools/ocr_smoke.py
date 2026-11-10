@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Đo tỉ lệ lỗi ký tự (CER) của dịch vụ OCR thật (ADR #52); chạy trong container `ocr` qua tools/ocr_smoke.sh.
 
 Mẫu tổng hợp: một báo giá tiếng Việt in rõ, bản "quét" nghiêng và nhiễu, bản lật 180° và xoay 90°.

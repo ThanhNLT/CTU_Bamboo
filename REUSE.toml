@@ -1,9 +1,14 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 version = 1
 
 [[annotations]]
-path = ["**.json", "pnpm-lock.yaml", "**/uv.lock", "**.md", "**.MD", "**/.gitkeep", "NOTICE", "infra/platform/trino/jvm.config",
-        "services/seed/data/**", "infra/platform/keycloak/themes/dxos-login/login/resources/img/bamboo-icon.svg",
-        "apps/web/public/*.png", "apps/web/public/manifest.webmanifest"]
+path = ["**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Bamboo"
 SPDX-License-Identifier = "Apache-2.0"

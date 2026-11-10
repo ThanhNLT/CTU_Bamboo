@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Kiểm đơn đăng ký đã ký bằng chữ ký số doanh nghiệp (ADR #57).
 
 Đơn hợp lệ khi: tệp bắt đầu đúng bằng các byte của đơn hệ thống đã sinh (ký kiểu cập nhật nối tiếp, không sửa nội dung),

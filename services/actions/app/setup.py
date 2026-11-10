@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Đăng ký sử dụng: khởi tạo công ty lần đầu trên máy chủ tự cài (ADR #57, đơn giản hóa ở ADR #62).
 
 Luồng đăng ký (công khai qua cổng API `/setup/*`, chỉ mở khi hệ thống chưa có công ty nào):

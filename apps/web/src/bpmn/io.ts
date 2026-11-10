@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Nhập sơ đồ từ XML BPMN 2.0 vào diagram-js và ghi ngược lại (ADR #81). Chỉ phần tử vẽ được (sự kiện, tác vụ, cổng,
 // quy trình con, luồng tuần tự) đi qua diagram-js; mọi thứ khác trong tệp được giữ nguyên khi ghi.
