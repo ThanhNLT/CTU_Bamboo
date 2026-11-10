@@ -15286,7 +15286,7 @@
           "role": "platform_admin"
         }
       ],
-      "comment": "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho bpmn-js)"
+      "comment": "Sơ đồ BPMN và bước hiện tại của lần gửi duyệt gần nhất (cho trình xem sơ đồ)"
     },
     {
       "name": "verify_audit_chain",

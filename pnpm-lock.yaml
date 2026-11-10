@@ -196,12 +196,18 @@ importers:
       antd:
         specifier: ^5.23.0
         version: 5.29.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      bpmn-js:
-        specifier: ^18.31.0
-        version: 18.31.0
+      bpmn-moddle:
+        specifier: ^10.3.1
+        version: 10.3.1
       dayjs:
         specifier: ^1.11.23
         version: 1.11.23
+      diagram-js:
+        specifier: ^15.28.0
+        version: 15.28.0
+      diagram-js-direct-editing:
+        specifier: ^3.6.0
+        version: 3.6.0(diagram-js@15.28.0)
       graphql:
         specifier: ^15.6.1
         version: 15.10.3
@@ -217,6 +223,12 @@ importers:
       lucide-react:
         specifier: ^1.53.0
         version: 1.53.0(@types/react@19.3.0)(react@19.3.0)
+      min-dash:
+        specifier: ^5.1.0
+        version: 5.1.0
+      min-dom:
+        specifier: ^5.3.0
+        version: 5.3.0
       react:
         specifier: ^19.1.0
         version: 19.3.0
@@ -229,6 +241,9 @@ importers:
       recharts:
         specifier: ^3.10.1
         version: 3.10.1(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react-is@18.3.1)(react@19.3.0)(redux@5.0.1)
+      tiny-svg:
+        specifier: ^4.1.4
+        version: 4.1.4
     devDependencies:
       '@eslint/js':
         specifier: ^9.25.0
@@ -1638,9 +1653,6 @@ packages:
     resolution: {integrity: sha512-9gYgQKXx+1nP8mP7CzFyaUARhg7D3n1dF/FnErWmu9l6JvGpNUN278h0aSb+QjoiKSWG+iZ3uHrcqk0qrY9RQQ==}
     engines: {node: '>=10'}
 
-  bpmn-js@18.31.0:
-    resolution: {integrity: sha512-tGc6spNXC81858FXhk0NI9+CjfsPYDmKWSyiq0u2Rhk9J8l+DJtzZK1CYj4fqcek026PQDEwwUQwsr2Opfec/w==}
-
   bpmn-moddle@10.3.1:
     resolution: {integrity: sha512-xjJ8GzseRkjjM0MX/rODVB6iv+rhGLt8FCHJIovLAjJsDEAUjITfyiJZYczJ4pp3wmesbY3sQR7eRT+q5uroVA==}
 
@@ -2432,10 +2444,6 @@ packages:
     resolution: {integrity: sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==}
     engines: {node: '>=0.10.0'}
 
-  ids@3.0.2:
-    resolution: {integrity: sha512-t6YJP4mdC+GHF96Nbis/4FEANhP/8VWmYMvUuYpXvSdrhg5hpIVbq2XZlOA3UWTbtdwPCi0q7jEXOdHkAnqOnw==}
-    engines: {node: '>= 20.12'}
-
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
@@ -2951,8 +2959,8 @@ packages:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
     hasBin: true
 
-  moddle-xml@12.3.1:
-    resolution: {integrity: sha512-XbAQDWCG2ZRch3odmQigJ4GwTqrOVBx0+JHEAgdw0U3MkBsWa9LAbO//S5RPdYMcRO87E63r/R/I3CoMef6ncA==}
+  moddle-xml@12.3.2:
+    resolution: {integrity: sha512-fo6DSZdLr7Lr4ydgpHbEQEXu63QxxRPNmu5k2n3B/+oRTT9ybBLrcxo/hIK6Bo16ORVtw8FoZbwRCwZRr5l19g==}
     engines: {node: '>= 18'}
     peerDependencies:
       moddle: '>= 6.2.0'
@@ -5601,24 +5609,11 @@ snapshots:
       widest-line: 3.1.0
       wrap-ansi: 7.0.0
 
-  bpmn-js@18.31.0:
-    dependencies:
-      bpmn-moddle: 10.3.1
-      diagram-js: 15.28.0
-      diagram-js-direct-editing: 3.6.0(diagram-js@15.28.0)
-      ids: 3.0.2
-      inherits-browser: 0.1.0
-      min-dash: 5.1.0
-      min-dom: 5.3.0
-      tiny-svg: 4.1.4
-    transitivePeerDependencies:
-      - preact-render-to-string
-
   bpmn-moddle@10.3.1:
     dependencies:
       min-dash: 5.1.0
       moddle: 8.2.1
-      moddle-xml: 12.3.1(moddle@8.2.1)
+      moddle-xml: 12.3.2(moddle@8.2.1)
 
   brace-expansion@1.1.21:
     dependencies:
@@ -6457,8 +6452,6 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  ids@3.0.2: {}
-
   ieee754@1.2.1: {}
 
   ignore@5.3.2: {}
@@ -6978,7 +6971,7 @@ snapshots:
     dependencies:
       minimist: 1.2.8
 
-  moddle-xml@12.3.1(moddle@8.2.1):
+  moddle-xml@12.3.2(moddle@8.2.1):
     dependencies:
       min-dash: 5.1.0
       moddle: 8.2.1
