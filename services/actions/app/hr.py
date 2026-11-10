@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import re
 
 import psycopg
@@ -257,7 +253,6 @@ def transfer_target_units(conn: psycopg.Connection, session: dict, args: dict, _
 
 
 def _leg_person(conn: psycopg.Connection, table: str, leg_id: str, session: dict) -> str:
-    # Chứng từ tenant đích: người gọi phải là người đang đăng nhập ở tenant đó
     row = conn.execute(f"SELECT tenant_id FROM {table} WHERE id = %s", (leg_id,)).fetchone()
     return session_identity(session, row[0] if row else None)
 

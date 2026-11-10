@@ -1,10 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-// SPDX-License-Identifier: Apache-2.0
-
-// Service worker của ứng dụng web cho thiết bị di động (ADR #65). Chỉ lưu đệm phần vỏ ứng dụng, không bao giờ lưu dữ liệu:
-// - /assets/* (tên tệp có mã băm, không đổi nội dung): lấy từ bộ đệm trước, chưa có thì tải rồi lưu;
-// - trang (điều hướng): luôn tải mạng (bản mới nhất); mất mạng thì hiện trang báo ngoại tuyến có nút thử lại;
-// - GraphQL, đăng nhập, tệp, cấu hình và mọi yêu cầu khác: đi thẳng ra mạng (dữ liệu nghiệp vụ không nằm trên máy).
 const SHELL = "bamboo-shell-v1";
 const ASSETS = "bamboo-assets-v1";
 const PRECACHE = ["/manifest.webmanifest", "/icon.svg", "/icon-192.png", "/icon-512.png"];
@@ -36,7 +29,6 @@ self.addEventListener("activate", (event) => {
 const trimAssets = async () => {
   const cache = await caches.open(ASSETS);
   const keys = await cache.keys();
-  // Giữ tối đa 300 tệp (vài bản phát hành gần nhất), bỏ tệp cũ nhất
   for (const key of keys.slice(0, Math.max(0, keys.length - 300))) await cache.delete(key);
 };
 
@@ -84,7 +76,6 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
-// Bấm thông báo trên thiết bị: mở (hoặc chuyển tới) cửa sổ ứng dụng ở đúng trang
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = new URL(event.notification.data?.url ?? "/", self.location.origin).href;

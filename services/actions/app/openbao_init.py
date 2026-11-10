@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import datetime as dt
 import hashlib
 import hmac
@@ -17,7 +13,7 @@ import httpx
 
 from bamboo_common.openbao import Bao, BaoError
 
-from . import config, search, storage
+from . import config, mqtt_admin, search, storage
 
 log = logging.getLogger("openbao_init")
 
@@ -30,6 +26,7 @@ path "secret/data/bms/actions"   { capabilities = ["read"] }
 path "secret/data/bms/meilisearch-search" { capabilities = ["read"] }
 path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 path "secret/data/bms/trino-actions" { capabilities = ["read"] }
+path "secret/data/bms/mosquitto" { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
 path "transit/sign/receipt"      { capabilities = ["update"] }
@@ -59,6 +56,8 @@ path "secret/data/bms/kafka-lakehouse"     { capabilities = ["read"] }
 
 
 INTERNAL_HOSTS = ["trino"]
+SERVICE_IDENTITIES = ["mosquitto", "bamboo-bridge", "bamboo-admin"]
+SERVICE_CERT_TTL = "2160h"
 TRINO_USERS = {"bms-admin": "bms/trino-admin", "bms-actions": "bms/trino-actions"}
 TRINO_PBKDF2_ITERATIONS = 10000
 CERT_RENEW_BEFORE = dt.timedelta(days=30)
@@ -138,7 +137,7 @@ def configure(root: Bao) -> None:
         root.request("POST", "sys/mounts/transit", {"type": "transit"})
     if root.request("GET", "transit/keys/pii", ok404=True) is None:
         root.request("POST", "transit/keys/pii", {"type": "aes256-gcm96"})
-    for key in ("receipt", "anchor"):  # chữ ký biên nhận giao tin và neo chuỗi kiểm toán
+    for key in ("receipt", "anchor"):
         if root.request("GET", f"transit/keys/{key}", ok404=True) is None:
             root.request("POST", f"transit/keys/{key}", {"type": "ed25519"})
     if "pki/" not in mounts:
@@ -160,6 +159,22 @@ def configure(root: Bao) -> None:
             "allow_ip_sans": True,
             "key_type": "rsa",
             "key_bits": 2048,
+            "max_ttl": "8760h",
+        },
+    )
+    root.request(
+        "POST",
+        "pki/roles/service",
+        {
+            "allowed_domains": SERVICE_IDENTITIES,
+            "allow_bare_domains": True,
+            "allow_subdomains": False,
+            "allow_localhost": True,
+            "allow_ip_sans": True,
+            "server_flag": True,
+            "client_flag": True,
+            "key_type": "ec",
+            "key_bits": 256,
             "max_ttl": "8760h",
         },
     )
@@ -194,6 +209,12 @@ def sync_secrets(root: Bao) -> None:
             log.info("đã sinh mật khẩu Trino secret/%s", path)
     if root.read("bms/trino-internal") is None:
         root.write("bms/trino-internal", {"shared_secret": secrets.token_urlsafe(48)})
+    if root.read("bms/mosquitto") is None:
+        root.write(
+            "bms/mosquitto",
+            {"admin_password": secrets.token_urlsafe(32), "bridge_password": secrets.token_urlsafe(32)},
+        )
+        log.info("đã sinh mật khẩu Mosquitto secret/bms/mosquitto")
     if root.read("bms/keycloak-provisioner") is None:
         root.write("bms/keycloak-provisioner", {"client_secret": secrets.token_urlsafe(32)})
         log.info("đã sinh secret client bms-provisioner")
@@ -232,6 +253,16 @@ def write_approle(root: Bao, addr: str, role: str, path: pathlib.Path, uid: int 
 
 def parse_outputs(spec: str) -> dict[str, pathlib.Path]:
     return {k.strip(): pathlib.Path(v.strip()) for k, v in (item.split("=", 1) for item in spec.split(",") if item)}
+
+
+def parse_cert_outputs(spec: str) -> dict[str, tuple[pathlib.Path, int | None]]:
+    """`danh-tính=thư-mục[@uid],...` → {danh tính: (thư mục, uid chủ sở hữu tệp)}."""
+    out: dict[str, tuple[pathlib.Path, int | None]] = {}
+    for item in filter(None, (p.strip() for p in spec.split(","))):
+        identity, _, rest = item.partition("=")
+        path, _, owner = rest.partition("@")
+        out[identity] = (pathlib.Path(path), int(owner) if owner else None)
+    return out
 
 
 def _write_if_changed(path: pathlib.Path, text: str, mode: int) -> bool:
@@ -341,11 +372,62 @@ def trino_secrets(root: Bao, directory: pathlib.Path, uid: int | None) -> None:
                 os.chown(path, uid, uid)
 
 
+def service_certs(root: Bao, outputs: dict[str, pathlib.Path], uid: int | None = None) -> None:
+    """Cấp (hoặc gia hạn khi còn dưới 30 ngày) chứng chỉ mTLS cho từng danh tính dịch vụ (ADR #76).
+
+    Mỗi thư mục nhận `<danh tính>.crt` (kèm CA trung gian), `<danh tính>.key`, `ca.crt`.
+    """
+    ca_pem = root.request("GET", "pki/cert/ca")["data"]["certificate"].strip() + "\n"
+    for identity, directory in outputs.items():
+        if identity not in SERVICE_IDENTITIES:
+            raise ValueError(f"Không có danh tính dịch vụ {identity}")
+        directory.mkdir(parents=True, exist_ok=True)
+        crt, key = directory / f"{identity}.crt", directory / f"{identity}.key"
+        if _cert_needs_renewal(crt, ca_pem) or not key.exists():
+            issued = root.request(
+                "POST",
+                "pki/issue/service",
+                {"common_name": identity, "alt_names": "localhost", "ip_sans": "127.0.0.1", "ttl": SERVICE_CERT_TTL},
+            )["data"]
+            _write_if_changed(key, issued["private_key"] + "\n", 0o600)
+            _write_if_changed(crt, issued["certificate"] + "\n" + issued["issuing_ca"] + "\n", 0o644)
+            log.info("đã cấp chứng chỉ mTLS cho %s", identity)
+        _write_if_changed(directory / "ca.crt", ca_pem, 0o644)
+        if uid is not None:
+            for path in (crt, key, directory / "ca.crt"):
+                os.chown(path, uid, uid)
+
+
 def write_internal_ca(root: Bao, paths: list[pathlib.Path]) -> None:
     ca_pem = root.request("GET", "pki/cert/ca")["data"]["certificate"].strip() + "\n"
     for path in paths:
         if _write_if_changed(path, ca_pem, 0o644):
             log.info("đã ghi CA nội bộ %s", path)
+
+
+def unseal_if_sealed(addr: str, keys_file: pathlib.Path) -> bool:
+    """Mở khóa OpenBao đã khởi tạo nhưng đang khóa (sau khi container `openbao` khởi động lại). Trả True nếu vừa mở."""
+    bao = Bao(addr)
+    status = bao.request("GET", "sys/seal-status")
+    if not status["initialized"] or not status["sealed"] or not keys_file.exists():
+        return False
+    for key in json.loads(keys_file.read_text(encoding="utf-8"))["unseal_keys_b64"]:
+        bao.request("PUT", "sys/unseal", {"key": key})
+    return True
+
+
+def watch_unseal(addr: str, keys_file: pathlib.Path, interval: float = 5.0) -> None:
+    """Dịch vụ `openbao-unseal`: OpenBao dùng khóa Shamir nên mỗi lần khởi động lại (khởi động lại máy, Docker) đều
+    bị khóa; `openbao-init` chỉ chạy một lần khi `docker compose up`. Không có vòng này, `actions`, `flow-sync`... không
+    đăng nhập AppRole được, chết rồi bị khởi động lại liên tục và cổng API trả 502."""
+    log.info("theo dõi trạng thái khóa của OpenBao mỗi %.0f giây", interval)
+    while True:
+        try:
+            if unseal_if_sealed(addr, keys_file):
+                log.warning("OpenBao vừa khởi động lại và bị khóa: đã unseal")
+        except (httpx.HTTPError, BaoError, OSError, ValueError, KeyError) as exc:
+            log.info("chưa kiểm được OpenBao: %s", exc)
+        time.sleep(interval)
 
 
 def run(
@@ -359,6 +441,8 @@ def run(
     trino_uid: int | None = None,
     trino_secrets_dir: pathlib.Path | None = None,
     ca_outputs: list[pathlib.Path] | None = None,
+    mqtt_dynsec_path: pathlib.Path | None = None,
+    cert_outputs: dict[str, tuple[pathlib.Path, int | None]] | None = None,
 ) -> None:
     wait_reachable(addr)
     root = Bao(addr, init_and_unseal(addr, keys_file))
@@ -389,6 +473,16 @@ def run(
         trino_secrets(root, trino_secrets_dir, trino_uid)
     if ca_outputs:
         write_internal_ca(root, ca_outputs)
+    for identity, (directory, owner) in (cert_outputs or {}).items():
+        service_certs(root, {identity: directory}, owner)
+    if mqtt_dynsec_path and not mqtt_dynsec_path.exists():
+        creds = root.read("bms/mosquitto")
+        text = json.dumps(mqtt_admin.dynsec_config(creds["admin_password"], creds["bridge_password"]), indent=2)
+        _write_if_changed(mqtt_dynsec_path, text, 0o600)
+        mqtt_uid = os.environ.get("MQTT_UID")
+        if mqtt_uid:
+            os.chown(mqtt_dynsec_path, int(mqtt_uid), int(mqtt_uid))
+        log.info("đã ghi cấu hình dynamic-security Mosquitto %s", mqtt_dynsec_path)
     for role, path in approle_outputs.items():
         if role not in POLICIES:
             raise ValueError(f"Không có AppRole {role}")
@@ -398,8 +492,13 @@ def run(
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    config.assert_production_ready()
     env = os.environ.get
+    if "--watch" in sys.argv[1:]:
+        watch_unseal(
+            env("BAO_ADDR", "http://openbao:8200"), pathlib.Path(env("BAO_KEYS_FILE", "/openbao/keys/init.json"))
+        )
+        return 0
+    config.assert_production_ready()
     s3_path = env("S3_CONFIG_PATH")
     meili_path = env("MEILI_CONFIG_PATH")
     trino_path = env("TRINO_CATALOG_PATH")
@@ -417,6 +516,8 @@ def main() -> int:
         int(trino_uid) if trino_uid else None,
         pathlib.Path(trino_secrets_dir) if trino_secrets_dir else None,
         [pathlib.Path(p) for p in env("INTERNAL_CA_OUTPUTS", "").split(",") if p],
+        pathlib.Path(env("MQTT_DYNSEC_PATH")) if env("MQTT_DYNSEC_PATH") else None,
+        parse_cert_outputs(env("SERVICE_CERT_OUTPUTS", "")),
     )
     return 0
 

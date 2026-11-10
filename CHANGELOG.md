@@ -6,6 +6,32 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 **Sửa `docker compose up` trên bản clone Windows không đăng nhập được tài khoản demo:** Git for Windows mặc định `core.autocrlf=true` nên script `.sh` mang CRLF; chép vào image, `migrate` thoát ngay (`env: 'bash\r'`), kéo theo Keycloak, Hasura, actions, cổng API không chạy. Thêm `.gitattributes` buộc checkout LF trên mọi hệ điều hành; image `migrate`, `web`, `gateway`, `kafka`, `trino` bỏ CRLF khỏi script và cấu hình lúc dựng, nên cả bản clone cũ vẫn chạy được bằng một lệnh.
 
+**Kho mã chuyển sang [CTUBamboo/Bamboo](https://github.com/CTUBamboo/Bamboo):** link cũ `github.com/ThanhNLT/Bamboo` tự chuyển hướng; máy đang có bản clone chạy `git remote set-url origin https://github.com/CTUBamboo/Bamboo`. Image dựng sẵn đổi tiền tố mặc định thành `ghcr.io/ctubamboo/bamboo` (`BAMBOO_IMAGE_PREFIX`); ai đã đặt tiền tố cũ trong `.env` thì sửa theo. Image dựng tại máy mang tên mới nên lần `docker compose up` đầu tiên dựng lại (dùng lại cache, nhanh); image tên cũ xóa bằng `docker images 'ghcr.io/thanhnlt/*' -q | xargs -r docker rmi`. Namespace BPMN `https://github.com/ThanhNLT/Bamboo/bpmn` giữ nguyên vì là định danh của quy trình đã triển khai, không phải link.
+
+**Nâng cấp (hoàn thiện Tầng 1 và các nguyên lý, ADR #70–#77):** chạy `make up` (image `actions`, `web` đổi; dịch vụ mới `mosquitto`, `iot-bridge`; nhóm `observability` mới). Migration `056`–`058`.
+- **CDR cho tệp tải lên (ADR #70):** sau khi quét sạch, ảnh được mã hóa lại (bỏ EXIF, dữ liệu thừa), tệp Office dựng lại gói zip (bỏ liên kết ngoài, sổ tính liên kết, DTD), PDF ghi lại chỉ với đối tượng còn dùng (bỏ hành động tự chạy, JavaScript, tệp nhúng, XFA, dữ liệu sau `%%EOF`); PDF đã ký số giữ nguyên. Người dùng tải về bản đã dựng lại; mã băm bản gốc lưu trong báo cáo quét. `make up` ở mức RAM 16 bật ClamAV (`BAMBOO_CLAMAV`).
+- **Ổ đĩa theo P.A.R.A (ADR #71):** tệp tự vào **Dự án / Lĩnh vực phụ trách / Tài nguyên / Lưu trữ** theo trạng thái chứng từ; dự án nhận tệp đính kèm (thẻ **Tệp dự án**).
+- **Tác tử AI tự hành động (ADR #72):** ở trang Tác tử AI, chọn sự kiện kích hoạt (ví dụ đề nghị mua sắm gửi duyệt), viết nhiệm vụ, chọn hành động được phép (bình luận, thông báo, webhook) và mức tự chủ; tác tử đọc chứng từ, tra quy chế, tự làm và ghi từng lần chạy.
+- **Kịch bản tự viết trong quy trình tự động (ADR #73):** hành động **Chạy kịch bản tự viết** (cú pháp Python rút gọn, chạy bằng trình thông dịch an toàn, giới hạn bước, thời gian, bộ nhớ), chạy thử ngay trong bảng thuộc tính.
+- **IT/OT qua MQTT và NGSI-LD (ADR #74):** broker Mosquitto, tài khoản thiết bị theo công ty (Cổng dịch vụ API → **Thiết bị MQTT**), REST `/api/v1/ngsi-ld/v1/entities`; số đo vào Bản sao số ngay, sự cố tự mở/đóng theo ngưỡng, thiết bị im lặng 15 phút chuyển ngoại tuyến; trang ghi rõ **Trực tiếp** hay **Dữ liệu mẫu**.
+- **Giám sát (ADR #75):** OpenTelemetry (Collector → Jaeger), Prometheus, Grafana với bảng điều khiển và cảnh báo dựng sẵn; `actions` có `/metrics`, phản hồi có `X-Trace-Id`. `make up` mức 16 bật (`BAMBOO_OBSERVABILITY`).
+- **mTLS nội bộ (ADR #76):** CA nội bộ OpenBao cấp chứng chỉ dịch vụ, tự gia hạn; `iot-bridge` và `actions` vào Mosquitto qua cổng mTLS 8884, thiết bị dùng TLS 8883. Production từ chối khởi động khi Hasura Console còn bật hoặc `GRAFANA_ADMIN_PASSWORD` còn mặc định.
+- **Phả hệ thu tự động theo lịch (ADR #77):** `flow-sync` dựng lại phả hệ và kiểm slot CDC mỗi 15 phút (`LINEAGE_AUTO_MINUTES`) mà không đánh thức Trino.
+
+**Sửa "Bạn cần quyền quản trị tác tử AI (core.ai.manage)":** menu Tác tử AI chỉ hiện với người có quyền `core.ai.manage` (trước đây hiện cho mọi người rồi báo thiếu quyền). Vai trò Quản trị tổ chức nay có sẵn quyền này, nên chủ công ty mới tạo qua trang đăng ký quản trị được tác tử AI; migration `059` bổ sung cho các công ty đang chạy. Dữ liệu demo: thêm `TDX_NS.HEAD` ngoài `cdo` (Tập đoàn X) và `BVX_KHTH.HEAD` (Bệnh viện X).
+
+**AI tự nhận card rời (ADR #79):** chỉ cần `docker compose up`: máy có card NVIDIA (Docker Desktop WSL2, hoặc Linux có `nvidia-container-toolkit`) thì sau khi hệ thống lên, `sleeper` thử xin GPU rồi chuyển Ollama và OCR sang GPU; không có card hoặc GPU lỗi thì chạy CPU/RAM, không còn lỗi container xin GPU trên máy không có card. `BAMBOO_GPU=false` để luôn chạy CPU. `make up-gpu` và `docker-compose.override.yml` chép từ `gpu.yml` không còn cần (xóa override để sleeper tự quyết).
+
+**Giảm CPU lúc nhàn rỗi (ADR #78):** healthcheck kiểm mỗi 1–2 giây lúc khởi động rồi chỉ mỗi 30 giây khi đã chạy (trước đây mỗi 2–10 giây suốt đời container); Kafka không còn khởi một JVM mỗi 10 giây để tự kiểm. Khởi động và đánh thức dịch vụ ngủ nhanh hơn. Các tiến trình Python đặt `MALLOC_ARENA_MAX=2`. Cần **Docker Engine 25+**.
+
+**Sửa 502 Bad Gateway và `flow-sync` khởi động lại liên tục sau khi khởi động lại máy hoặc Docker:** OpenBao dùng khóa Shamir nên bị khóa mỗi lần container khởi động lại, còn `openbao-init` chỉ chạy khi `docker compose up`; `actions`, `flow-sync` không đăng nhập AppRole được nên chết ngay và bị khởi động lại liên tục. Dịch vụ mới `openbao-unseal` (`python -m app.openbao_init --watch`) tự unseal lại; các dịch vụ chờ OpenBao sẵn sàng tối đa 120 giây (`BAO_WAIT_SECONDS`) thay vì thoát ngay, sai AppRole (4xx) vẫn báo lỗi ngay. Một lần làm mới số liệu định kỳ lỗi của `flow-sync` chỉ ghi log rồi thử lại vòng sau, không làm chết tiến trình.
+
+**AI chạy mặc định ở mọi cấu hình (ADR #69):** `make up` ở mức RAM 8 không còn dừng Ollama, OCR, `ai-worker`; mức 8 chỉ tiết kiệm bộ nhớ (một mô hình AI trên RAM mỗi lúc, gỡ mô hình sau 2 phút và cho OCR ngủ sau 120 giây nhàn rỗi, heap JVM nhỏ). `OLLAMA_URL` để trống trong `.env` cũ không còn tắt AI. Biến mới `OLLAMA_MAX_LOADED_MODELS` (mặc định 2).
+
+**Trang đăng ký dùng được cùng dữ liệu demo:** trước đây trang đăng ký chỉ mở khi máy chưa có công ty, nên `docker compose up` (nạp sẵn dữ liệu demo) không có nút **Tạo tài khoản**. Biến mới `SETUP_OPEN_SIGNUP` (compose: theo `SEED_DEMO`, mặc định bật) mở đăng ký cả khi đã có công ty, không cần mã thiết lập 24 giờ; trang Keycloak hiện nút **Tạo tài khoản →**, `/khoi-tao` mở trình hướng dẫn. Công ty đăng ký thêm không được quản lý mô-đun trên máy (chỉ công ty khởi tạo máy chủ trống). `/setup/status` thêm trường `empty`; trang `/login` chỉ dừng ở màn hình chọn khi máy chưa có công ty. Production (`SEED_DEMO=false`) giữ cách cũ.
+
+**Sửa ô bo tròn nửa trên sau tiêu đề hộp thoại (Bamboo Glass):** tiêu đề hộp thoại bị tô thêm một lớp kính chồng lên thân hộp thoại, thành ô sáng hơn bo hai góc trên ở mọi hộp thoại có tiêu đề (rõ nhất ở chế độ sáng); tiêu đề nay trong suốt, dùng chung nền kính của hộp thoại.
+
 **Chuyển tiếng Việt / tiếng Anh ở trang đăng nhập và đăng ký:** nút **VI | EN** cạnh nút sáng/tối ở trang đăng ký, khôi phục tài khoản chủ sở hữu, trang chào đăng nhập của ứng dụng và trang nhập tài khoản Keycloak (thay ô chọn thả xuống). Ứng dụng mở Keycloak đúng ngôn ngữ đang chọn (`ui_locales`); chọn trên Keycloak thì ứng dụng theo (cùng khóa `bamboo.locale`, qua cổng API cùng origin).
 
 **Dọn tài khoản thử E2E trên CSDL demo:** `tools/demo_cleanup.sh --apply` xóa thêm người, tài khoản Keycloak (`e2e.*`), đơn vị "Nhóm Thử …" và vị trí có hậu tố ngẫu nhiên do kiểm thử E2E tạo; vị trí, người còn được quyết định nhân sự nhắc tới thì kết thúc hiệu lực và gỡ tài khoản (quyết định chỉ ghi thêm).
@@ -178,7 +204,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 Tìm kiếm toàn văn, mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, đăng nhập được sau khi nâng cấp. Gồm cả các sửa lỗi ghi ở mục 0.2.1 trước đây (chưa từng phát hành riêng).
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y   # mở http://localhost:8000
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y   # mở http://localhost:8000
 ```
 
 **Nâng cấp từ 0.1.0 hoặc 0.2.0:** sao lưu (`scripts/ops/backup.sh` hoặc `scripts\ops\backup.ps1`), rồi chạy lệnh trên (hoặc `git pull && docker compose up -d --build` khi chạy từ mã nguồn). Dữ liệu demo giữ nguyên:
@@ -204,7 +230,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y   # mở http://l
 Cổng API Apache APISIX trở thành điểm vào duy nhất của hệ thống.
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
 ```
 
 **Nâng cấp từ 0.1.0:** địa chỉ ứng dụng đổi từ `http://localhost:5173` sang `http://localhost:8000`. Keycloak chỉ import realm ở lần chạy đầu, nên máy đã chạy 0.1.0 cần thêm `http://localhost:8000/*` vào *Valid redirect URIs* và `http://localhost:8000` vào *Web origins* của client `bms-web` trong Keycloak (từ 0.3.0 việc này tự động, xem trên). Triển khai thật: một tên miền trỏ vào cổng và đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó.
@@ -220,7 +246,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y   # mở http://l
 Bản phát hành đầu tiên: nền tảng lõi (Keycloak, Hasura, PostgreSQL, Flowable, SeaweedFS, OpenBao) và ứng dụng Đề nghị mua sắm cho kịch bản Tập đoàn X, chạy bằng một lệnh.
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
 ```
 
 ### Thêm
@@ -238,7 +264,7 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 - Kiểm thử đầu–cuối bằng Playwright (`npm run test:e2e`) trên stack thật.
 - Toàn bộ hệ thống chạy bằng một lệnh `docker compose up -d`: healthcheck cho mọi dịch vụ chạy lâu, khởi động theo trạng thái healthy, tự khởi động lại (ADR #13).
 - README, NOTICE, `.env.example`, header SPDX cho mọi tệp (chuẩn REUSE 3.3).
-- Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
+- Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/ctubamboo/bamboo:<phiên bản> up -d -y` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
 
 - Sẵn sàng production: `BAMBOO_ENV=production` từ chối khởi động khi còn mật khẩu mặc định; container Python chạy bằng uid 10001; image `web` đọc địa chỉ Keycloak/Hasura lúc khởi động (`/config.js`); nginx nén gzip, header bảo mật, không cache `index.html`; xoay vòng log mọi container; Hasura Console và CORS, địa chỉ và chế độ chạy Keycloak cấu hình được; nhãn OCI cho mọi image.
 - Tài liệu triển khai production (tên miền TLS, sao lưu/khôi phục, nâng cấp, khóa OpenBao), SECURITY.md, mẫu báo lỗi và đề xuất trên GitHub Issues.
@@ -251,8 +277,8 @@ docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/ThanhNLT/Bamboo/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/ThanhNLT/Bamboo/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/ThanhNLT/Bamboo/releases/tag/v0.1.0
+[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/CTUBamboo/Bamboo/releases/tag/v0.1.0

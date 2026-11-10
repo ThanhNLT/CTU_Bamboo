@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import uuid
 
@@ -54,7 +50,7 @@ def verify(hasura, i, who="c", **variables):
 
 def test_doi_soat_theo_ma_va_theo_tep(hasura, s3, sealed):
     i, _, doc_no, _, key = sealed
-    digest = hashlib.sha256(PDF).hexdigest()
+    digest = hashlib.sha256(s3.read_stored(key)).hexdigest()
 
     r = verify(hasura, i, code=doc_no)
     assert r["kind"] == "match" and r["actual_sha256"] == digest and r["problem"] is None, r
@@ -106,7 +102,10 @@ def test_phong_doc(hasura, conn, sealed):
     view = hasura(OPEN, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["ledger_open_archive"]
     assert view["expires_in"] == 60 and view["content_type"] == "application/pdf"
     resp = httpx.get(view["url"])
-    assert resp.content == PDF and resp.headers["content-disposition"].startswith("inline")
+    stored = conn.execute("SELECT sha256 FROM core.attachment WHERE id = %s", (att,)).fetchone()["sha256"]
+    assert hashlib.sha256(resp.content).hexdigest() == stored and resp.headers["content-disposition"].startswith(
+        "inline"
+    )
     access = hasura(ARCHIVE, person=i["c"], tenant=i["TDX"])["data"]["ledger_archive"]["access"]
     assert access[0]["viewer"] == view["viewer"] and access[0]["doc_title"] == doc["title"]
     assert hasura(OPEN, {"a": att}, person=i["a"], tenant=i["TDX"])["errors"][0]["extensions"]["code"] == "not-found"

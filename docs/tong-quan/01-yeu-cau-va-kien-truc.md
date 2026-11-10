@@ -43,12 +43,12 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 
 | Tiêu chí | Đáp ứng trong kho mã |
 |---|---|
-| Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `ThanhNLT/Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
+| Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `CTUBamboo/Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
 | Giấy phép OSI ghi trong từng tệp mã | Header SPDX theo chuẩn REUSE 3.3; ngoại lệ (tệp không ghi được header) khai báo trong `REUSE.toml`; kiểm bằng `reuse lint` |
 | Không có giấy phép không tương thích | Mã của dự án Apache-2.0; thành phần bên thứ ba và giấy phép liệt kê trong `NOTICE` |
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |
-| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` và `compose.release.yml`; [CHANGELOG](https://github.com/ThanhNLT/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
+| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` và `compose.release.yml`; [CHANGELOG](https://github.com/CTUBamboo/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
 | Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | README: chạy bằng một lệnh (`make up`) và build từng thành phần không dùng Docker; cấu hình bằng biến môi trường (`.env.example`); Docker Engine, Compose, make, pnpm, pip |
 | Chạy được ngoài thư mục mã nguồn | `compose.release.yml` chạy bằng image phát hành, không cần thư mục mã |
 | Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`uv.lock`, `pnpm-lock.yaml`); dịch vụ dùng image chính thức của upstream, không vá mã |
@@ -81,12 +81,12 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 |---|---|---|---|
 | Định danh, bảo mật | SSO, MFA | Keycloak 26: OIDC + PKCE, một tài khoản nhiều tenant ([ADR #30](#adr-30)), OTP bắt buộc cho quản trị nền tảng | Có |
 | | Két sắt mật mã | OpenBao: secret, AppRole riêng từng dịch vụ, transit mã hóa dữ liệu nhạy cảm ([ADR #25](#adr-25)) | Có |
-| | Kiểm dịch tệp | Bucket kiểm dịch + bộ quét nội bộ luôn chạy; ClamAV tùy chọn; chưa có CDR | Một phần |
-| | Chữ ký số, PKI, HSM | Ký Ed25519 bằng OpenBao cho biên nhận và bản neo kiểm toán; CA nội bộ cho Trino; chưa có chứng thư công cộng, HSM | Một phần |
-| Đa thuê ước, biên mạng | Cửa ngõ API zero-trust | APISIX là điểm vào duy nhất, kiểm token tại biên, WAF ([ADR #34](#adr-34)); chưa có mTLS giữa dịch vụ | Một phần |
+| | Kiểm dịch tệp | Bucket kiểm dịch, bộ quét nội bộ luôn chạy, ClamAV bật mặc định ở mức RAM 16; **CDR** gỡ nội dung chủ động và dựng lại ảnh, Office, PDF trước khi nhận ([ADR #70](#adr-70)) | Có |
+| | Chữ ký số, PKI, HSM | Ký Ed25519 bằng OpenBao cho biên nhận và bản neo kiểm toán; xác minh chữ ký số PDF theo chứng thư của CA công cộng ([ADR #57](#adr-57)); CA nội bộ OpenBao cấp chứng chỉ TLS và chứng chỉ dịch vụ cho mTLS ([ADR #76](#adr-76)); chưa ký bằng chứng thư công cộng, chưa có HSM (cần thiết bị hoặc dịch vụ ký số từ xa của CA) | Một phần |
+| Đa thuê ước, biên mạng | Cửa ngõ API zero-trust | APISIX là điểm vào duy nhất, kiểm token tại biên, WAF ([ADR #34](#adr-34)); mTLS nội bộ bằng chứng chỉ dịch vụ do CA OpenBao cấp, bắt đầu ở chặng MQTT ([ADR #76](#adr-76)); các chặng HTTP nội bộ còn lại chưa mTLS | Một phần |
 | | Che PII | Presidio với bộ nhận diện theo mẫu cho Việt Nam, bản che trong nhật ký và ô trao đổi ([ADR #43](#adr-43)) | Có |
 | | Đa thuê ước | `tenant_id` + khóa kép + phân quyền theo dòng; Bệnh viện X là tenant riêng ([ADR #14](#adr-14)) | Có |
-| | Bản địa hóa | Danh mục chuỗi i18n; tiếng Anh mới có ở phần khung giao diện | Một phần |
+| | Bản địa hóa | Danh mục chuỗi i18n: toàn bộ giao diện có tiếng Anh (gần 3.000 câu, `pnpm lint` chặn câu chưa dịch); thông báo lỗi do máy chủ trả về và dữ liệu vẫn bằng tiếng Việt | Có |
 | Dữ liệu có cấu trúc | OLTP, API tự sinh, phân quyền theo dòng | PostgreSQL 17 + Hasura v2 CE (62 bảng/view, 99 Action) | Có |
 | | Phiên bản, lịch sử dữ liệu | Nhật ký kiểm toán chuỗi hash; CDC vào Iceberg bronze | Có |
 | | Đóng băng số liệu theo kỳ | `kpi.snapshot`, `kpi.freeze` | Có |
@@ -95,12 +95,12 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | | Chỉ mục toàn văn | Tika + Meilisearch, lọc lại theo quyền ([ADR #36](#adr-36)) | Có |
 | | Trộn mẫu sinh biểu mẫu | Jinja2 + Gotenberg: phiếu đề nghị, quyết định nhân sự, báo cáo KPI ([ADR #37](#adr-37)) | Có |
 | Quy trình, tự động hóa | BPMN | Flowable REST 8; thiết kế bằng bpmn-js, chạy thử sandbox, phát hành ([ADR #47](#adr-47)) | Có |
-| | Kịch bản ngầm | Quy trình tự động: hẹn giờ, webhook, sự kiện nghiệp vụ; hành động có sẵn, chưa cho người dùng viết mã | Một phần |
+| | Kịch bản ngầm | Quy trình tự động: hẹn giờ, webhook, sự kiện nghiệp vụ; hành động có sẵn và **kịch bản người dùng tự viết** (tập con Python chạy bằng trình thông dịch an toàn, chạy thử ngay trong trang thiết kế, [ADR #73](#adr-73)) | Có |
 | | Nạp dữ liệu theo lô | `/ingest/*` NDJSON/CSV, chạy thử, nguyên tử | Có |
-| Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); chưa có OpenTelemetry, Prometheus, Grafana | Một phần |
+| Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); truy vết OpenTelemetry (Collector → Jaeger), số liệu Prometheus (actions, APISIX, Keycloak), Grafana có bảng điều khiển và cảnh báo dựng sẵn ([ADR #75](#adr-75)) | Có |
 | | Kiểm toán bất biến | Chuỗi hash theo tenant, neo có chữ ký công bố ra ngoài CSDL ([ADR #33](#adr-33), [ADR #46](#adr-46)) | Có |
 | | Trục sự kiện | Debezium Server + Kafka KRaft ([ADR #38](#adr-38)) | Có |
-| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh`; không dùng Argo CD, Kubernetes | Một phần |
+| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh` (Git là nguồn sự thật, tự đưa hệ thống Compose về đúng cấu hình); chưa dùng Argo CD, Kubernetes | Một phần |
 | | Sao lưu, khôi phục | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash | Có |
 | Truyền thông | Định tuyến đa kênh | Email, SMS, webhook theo lựa chọn từng người | Có |
 | | Thời gian thực | Subscription GraphQL qua websocket | Có |
@@ -111,18 +111,25 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Nguyên lý | Hiện thực | Mức |
 |---|---|---|
 | Phân tách theo vòng đời dữ liệu | OLTP trên PostgreSQL; CDC → Kafka → Iceberg bronze → view silver trên Trino ([ADR #39](#adr-39), [ADR #40](#adr-40)) | Có |
-| Hội tụ IT/OT | Trang Bản sao số phòng sạch, chuỗi đo, ngưỡng, sự cố, ghi nhận sự cố; dữ liệu cảm biến nạp từ tệp demo, chưa có MQTT hay NGSI-LD ([ADR #50](#adr-50)) | Một phần |
-| Quản trị dữ liệu thế hệ mới | Trang Phả hệ và chất lượng dữ liệu, báo sự cố dữ liệu; phả hệ dựng từ cấu hình CDC/Lakehouse/lớp ngữ nghĩa đang chạy, đối chiếu số dòng PostgreSQL ↔ silver theo công ty và độ trễ slot CDC; chưa theo cột chi tiết | Có |
-| Zero-Trust + GitOps | WAF và kiểm token tại biên, bucket kiểm dịch, mỗi dịch vụ một tài khoản CSDL và AppRole riêng ([ADR #35](#adr-35)), healthcheck và tự khởi động lại, script đối chiếu cấu hình; chưa có mTLS | Một phần |
+| Hội tụ IT/OT | Bản sao số nhận số đo thật qua **MQTT** (Mosquitto, tài khoản thiết bị tách theo công ty, TLS/mTLS) và **REST NGSI-LD**, tự mở/đóng sự cố theo ngưỡng, tự chuyển ngoại tuyến; dữ liệu mẫu vẫn còn cho thiết bị chưa nối ([ADR #74](#adr-74)) | Có |
+| Quản trị dữ liệu thế hệ mới | Trang Phả hệ và chất lượng dữ liệu, báo sự cố dữ liệu; phả hệ dựng từ cấu hình CDC/Lakehouse/lớp ngữ nghĩa đang chạy, **thu tự động mỗi 15 phút** kèm kiểm tra slot CDC ([ADR #77](#adr-77)), đối chiếu số dòng PostgreSQL ↔ silver theo công ty khi bấm; chưa theo cột chi tiết | Có |
+| Zero-Trust + GitOps | WAF và kiểm token tại biên, bucket kiểm dịch + CDR, mỗi dịch vụ một tài khoản CSDL và AppRole riêng ([ADR #35](#adr-35)), chứng chỉ dịch vụ và mTLS nội bộ ở chặng MQTT ([ADR #76](#adr-76)), healthcheck và tự khởi động lại, script đối chiếu cấu hình; các chặng HTTP nội bộ còn lại chưa mTLS | Một phần |
 
 ## 6. Tầng 2: không gian H-P-D-I
 
 | Không gian | Trang trong ứng dụng |
 |---|---|
-| [H] Con người số | Hộp việc (`/p/tasks`, `/p/inbox`), Tin nhắn cá nhân/nhóm/phòng ban (`/h/chat`), Lịch công tác ngày/tuần/tháng/quý (`/h/calendar`), Ổ đĩa tài liệu (`/h/drive`), Thư viện tri thức (`/h/library`), Tiếp nhận nhân sự (`/h/onboarding`), Điều chuyển (`/h/transfer`), Quyết định nhân sự (`/h/decisions`), kênh nhận thông báo (`/settings/notifications`); cài được lên điện thoại như ứng dụng ([ADR #65](#adr-65)) |
+| [H] Con người số | Hộp việc (`/p/tasks`, `/p/inbox`), Tin nhắn cá nhân/nhóm/phòng ban (`/h/chat`), Lịch công tác ngày/tuần/tháng/quý (`/h/calendar`), Ổ đĩa tài liệu xếp theo P.A.R.A (`/h/drive`, [ADR #71](#adr-71)), Thư viện tri thức (`/h/library`), Tiếp nhận nhân sự (`/h/onboarding`), Điều chuyển (`/h/transfer`), Quyết định nhân sự (`/h/decisions`), kênh nhận thông báo (`/settings/notifications`); cài được lên điện thoại như ứng dụng ([ADR #65](#adr-65)) |
 | [P] Quy trình số | **Đề nghị mua sắm** (`/p/documents`, ứng dụng chính), Đơn hàng nội bộ (`/p/ic-orders`), Hồ sơ (`/p/records`), Thiết kế quy trình (`/p/process`), Dự án và kế hoạch: WBS, Gantt, báo cáo tiến độ (`/p/projects`, [ADR #66](#adr-66)), Quản trị tổ chức, người dùng, phân quyền, danh mục (`/admin/*`) |
 | [D] Dữ liệu số | Trung tâm điều hành thời gian thực kèm bản đồ (`/d/ops`), Dịch vụ dữ liệu trên Lakehouse (`/d/services`), Bản sao số (`/d/twin`), Phả hệ dữ liệu thu tự động (`/d/lineage`), Cổng dịch vụ API (`/d/api`), Sổ cái (`/d/ledger`), Kiểm toán (`/admin/audit-logs`); dữ liệu tự cập nhật giữa các tài khoản, thiết bị ([ADR #64](#adr-64)) |
-| [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa (`/i/search`), Trợ lý RAG trích nguồn theo tên văn bản (`/i/assistant`), Phân tích BI (`/i/bi`), Nhập liệu OCR (`/i/ocr`), Tác tử AI (`/i/agents`); mô hình chạy cục bộ ([ADR #51](#adr-51), [ADR #63](#adr-63)) |
+| [I] Trí tuệ số | Tìm kiếm toàn văn và ngữ nghĩa (`/i/search`), Trợ lý RAG trích nguồn theo tên văn bản (`/i/assistant`), Phân tích BI (`/i/bi`), Nhập liệu OCR (`/i/ocr`), Tác tử AI tự hành động khi có sự kiện nghiệp vụ (`/i/agents`, [ADR #72](#adr-72)); mô hình chạy cục bộ ([ADR #51](#adr-51), [ADR #63](#adr-63)) |
+
+### Nguyên tắc của mô hình DX-OS
+
+| Nguyên tắc | Hiện thực | Mức |
+|---|---|---|
+| Agentic AI: tác tử tự thực thi hành động cấu hình sẵn | Tác tử đăng ký sự kiện nghiệp vụ, đọc chứng từ và quy chế bằng quyền của người phụ trách, tự bình luận, gửi thông báo, gọi webhook theo nhiệm vụ; hệ thống kiểm từng hành động trước khi làm, có chế độ chỉ đề xuất và nhật ký từng lần chạy ([ADR #72](#adr-72)) | Có |
+| Lưu trữ tệp theo P.A.R.A; cổng thông tin nội bộ | Ổ đĩa tự xếp tệp vào Dự án / Lĩnh vực / Tài nguyên / Lưu trữ theo trạng thái chứng từ; dự án nhận tệp; Thư viện tri thức là cổng tài liệu nội bộ ([ADR #71](#adr-71)) | Có |
 
 ## 7. Tầng 3: định hướng
 

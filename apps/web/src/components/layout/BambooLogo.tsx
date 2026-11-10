@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 export const BambooLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
     <path d="M15.5 30C15.6 23 16 15 17.2 6" fill="none" stroke="#276533" strokeWidth="1.8" strokeLinecap="round" />

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useLogin } from "@refinedev/core";
 import { Spin } from "antd";
 import { ArrowRight, LogIn } from "lucide-react";
@@ -13,10 +9,8 @@ import { LOGIN_ATTEMPT_KEY } from "../providers/auth";
 import { setupStatus } from "./setup/api";
 import { AuthGreeting, AuthShell } from "./setup/AuthShell";
 
-// Hai lần tự chuyển trong khoảng này coi như vòng lặp (Keycloak báo lỗi rồi quay về): dừng và cho bấm tay
 const LOOP_WINDOW_MS = 8000;
 
-// Keycloak trả `login_required` khi chỉ hỏi "đã đăng nhập chưa" (chưa có phiên): đó là câu trả lời bình thường, không phải lỗi
 const cameBackWithError = () =>
   /error=/.test(window.location.hash) && !/error=login_required/.test(window.location.hash);
 
@@ -30,18 +24,16 @@ const recentlyTried = () => {
   }
 };
 
-// Vào thẳng trang nhập tên đăng nhập và mật khẩu của Keycloak, không qua bước bấm nút trung gian
 export const Login: React.FC = () => {
   const { mutate: login } = useLogin();
   const { t } = useLocale();
   const navigate = useNavigate();
   const started = useRef(false);
   const [manual] = useState(recentlyTried);
-  // Máy chủ chưa có công ty nào thì cho chọn "Tạo công ty mới" thay vì chuyển thẳng tới trang đăng nhập (ADR #57)
   const [setupOpen, setSetupOpen] = useState<boolean>();
 
   useEffect(() => {
-    void setupStatus().then((s) => setSetupOpen(s.open));
+    void setupStatus().then((s) => setSetupOpen(s.open && s.empty));
   }, []);
 
   useEffect(() => {
@@ -49,9 +41,7 @@ export const Login: React.FC = () => {
     started.current = true;
     try {
       sessionStorage.setItem(LOGIN_ATTEMPT_KEY, String(Date.now()));
-    } catch {
-      // trình duyệt chặn sessionStorage: vẫn chuyển, chỉ mất khả năng chống lặp
-    }
+    } catch {}
     login({});
   }, [login, manual, setupOpen]);
 

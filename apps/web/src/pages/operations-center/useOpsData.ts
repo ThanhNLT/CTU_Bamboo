@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useList } from "@refinedev/core";
 import dayjs from "dayjs";
 import gql from "graphql-tag";
@@ -220,7 +216,6 @@ export const useOpsData = (period: Period) => {
     meta: { gqlQuery: COUNT_FILES },
   });
 
-  // Danh sách không theo subscription riêng thì tải lại theo tín hiệu thay đổi chung của trang (ADR #64)
   const tick = useOpsLiveTick();
   useEffect(() => {
     if (!tick) return;
@@ -347,7 +342,6 @@ export const useOpsData = (period: Period) => {
       return !d.isBefore(prevSince) && d.isBefore(since);
     }).length;
     const change = prevPeriod ? Math.round(((inPeriod - prevPeriod) / prevPeriod) * 100) : null;
-    // i18n-ignore: giá trị dữ liệu kiểu literal, dịch lúc hiển thị
     const hot = { tier: "Nóng" as const, at };
     const kpis: Kpi[] = [
       {

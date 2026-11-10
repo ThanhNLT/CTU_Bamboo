@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import json
 import pathlib
@@ -100,14 +96,11 @@ CAN_READ = {
     ("ic", "ic_order"): ("ic", "ic_order_can_read"),
     ("proc", "purchase_order"): ("proc", "purchase_order_can_read"),
     ("collab", "kb_document"): ("collab", "kb_document_can_read"),
-    # Nhắn tin, lịch công tác (ADR #65): thành viên cuộc trò chuyện; người tổ chức, người được mời, người trong đơn vị
     ("chat", "conversation"): ("chat", "conversation_can_read"),
     ("cal", "event"): ("cal", "event_can_read"),
-    # Dự án (ADR #66): thành viên, người quản lý, người có pm.project.read/manage trên đơn vị chủ trì
     ("pm", "project"): ("pm", "project_can_read"),
 }
 
-# Computed field chỉ nhận dòng (không cần phiên)
 ROW_COMPUTED = {
     ("pm", "project"): [
         (
@@ -116,7 +109,9 @@ ROW_COMPUTED = {
             "Số liệu tiến độ: actual_pct, planned_pct, spi, late_tasks, total_tasks, done_tasks (một lần tính, ADR #67)",
         ),
     ],
-    # Lần dùng khóa API đọc từ dòng đếm theo ngày (ADR #67)
+    ("core", "attachment"): [
+        ("para", ("core", "attachment_para"), "PROJECTS | AREAS | RESOURCES | ARCHIVES theo trạng thái chứng từ"),
+    ],
     ("api", "api_key"): [
         ("last_used_at", ("api", "api_key_last_used_at"), "Lần gọi gần nhất"),
         ("last_ip", ("api", "api_key_last_ip"), "IP của lần gọi gần nhất"),
@@ -152,7 +147,6 @@ EXTRA_COMPUTED = {
 
 HIDDEN_COLUMNS = {
     ("core", "attachment"): {"storage_key"},
-    # Năm sinh khai lúc đăng ký (ADR #62): chỉ quản trị xem, đồng nghiệp chỉ thấy điện thoại, email
     ("core", "person"): {"birth_year"},
     ("core", "attachment_ocr"): {"page_texts", "pages", "attempts", "next_attempt_at"},
     ("core", "ai_question"): {"context_key", "attempts"},
@@ -181,15 +175,11 @@ SELECT_FILTER = {
     ("meta", "lineage_node"): {},
     ("meta", "lineage_edge"): {},
     ("kpi", "pin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
-    # Thời gian thực (ADR #64): tín hiệu thay đổi và người đang trực tuyến của công ty; nhịp hiện diện của chính mình
     ("live", "presence"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
-    # Phả hệ: kiểm tra và lần chạy mức nền tảng (tenant NULL) hoặc của công ty trong phiên
     ("meta", "quality_check"): {"_or": [{"tenant_id": {"_is_null": True}}, TENANT]},
     ("meta", "pipeline_run"): {"_or": [{"tenant_id": {"_is_null": True}}, TENANT]},
-    # Cổng dịch vụ API: chỉ quản trị viên công ty xem khóa và lượt gọi
     ("api", "api_key"): {"_and": [TENANT, IS_ADMIN]},
     ("api", "usage"): {"key": {"_and": [TENANT, IS_ADMIN]}},
-    # Biểu đồ BI: của mình hoặc được chia sẻ trong công ty
     ("kpi", "chart"): {"_and": [TENANT, {"_or": [{"person_id": {"_eq": ME}}, {"shared": {"_eq": True}}]}]},
     ("core", "v_ai_admin"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("chat", "member"): {"_and": [TENANT, {"conversation": {"can_read": {"_eq": True}}}]},
@@ -200,6 +190,8 @@ SELECT_FILTER = {
         for t in ("member", "task", "dependency", "report")
     },
     ("core", "ai_agent"): {"_and": [TENANT, IS_AI_ADMIN]},
+    ("core", "ai_agent_run"): {"_and": [TENANT, IS_AI_ADMIN]},
+    ("iot", "mqtt_account"): {"_and": [TENANT, IS_ADMIN]},
     ("core", "ai_question"): {"_and": [TENANT, {"person_id": {"_eq": ME}}]},
     ("core", "attachment_ocr"): {"_and": [TENANT, {"attachment": {"can_read": {"_eq": True}}}]},
     **{key: {"_and": [TENANT, IS_ADMIN]} for key in ADMIN_READ},
@@ -208,8 +200,6 @@ SELECT_FILTER = {
     ("proc", "purchase_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
 }
 
-# Bảng thuộc riêng một mô-đun (ADR #56): mô-đun chưa bật cho tenant trong phiên thì không đọc, không ghi được qua GraphQL.
-# Bảng dùng chung (người, đơn vị, tệp đính kèm, việc duyệt...) thuộc phần lõi.
 MODULE_TABLES = {
     **{
         ("proc", t): "procurement"
@@ -222,10 +212,10 @@ MODULE_TABLES = {
     },
     **{("wf", t): "process" for t in ("process_model", "process_version", "sandbox_run")},
     ("collab", "kb_document"): "knowledge",
-    **{("iot", t): "data" for t in ("entity", "incident", "measurement", "model", "site")},
+    **{("iot", t): "data" for t in ("entity", "incident", "measurement", "model", "site", "mqtt_account")},
     **{("kpi", t): "data" for t in ("chart", "definition", "pin", "value")},
     **{("meta", t): "data" for t in ("data_issue", "lineage_edge", "lineage_node", "pipeline_run", "quality_check")},
-    **{("core", t): "ai" for t in ("ai_agent", "ai_question", "attachment_ocr")},
+    **{("core", t): "ai" for t in ("ai_agent", "ai_agent_run", "ai_question", "attachment_ocr")},
     **{("pm", t): "project" for t in ("project", "member", "task", "dependency", "report")},
 }
 
@@ -240,7 +230,7 @@ def module_on(code: str) -> dict:
 
 
 def _gate_modules(entries: dict) -> None:
-    done = set()  # một quyền có thể dùng chung cho nhiều role
+    done = set()
     for key, code in MODULE_TABLES.items():
         entry = entries[key]
         for kind, field in (
@@ -285,7 +275,6 @@ MANUAL_RELATIONSHIPS = [
     ("array", ("hr", "transfer_request"), "approval_steps", ("wf", "approval_step"), {"id": "entity_id"}),
     ("array", ("hr", "transfer_request"), "approval_history", ("wf", "approval_history"), {"id": "entity_id"}),
     ("object", ("wf", "v_inbox"), "transfer_request", ("hr", "transfer_request"), {"entity_id": "id"}),
-    # Chứng từ điều chuyển liên tập đoàn: cùng bộ quan hệ như chứng từ nội bộ, tên theo loại
     *[
         rel
         for leg in ("transfer_out", "transfer_in", "transfer_group")
@@ -576,11 +565,9 @@ def build(conn: psycopg.Connection) -> dict:
     for s, t, ts, tt, *_ in fks:
         fk_count[(s, t, ts, tt)] += 1
 
-    # Schema mới xử lý sau cùng: trùng tên quan hệ mảng thì schema mới nhận tiền tố, tên cũ của API giữ nguyên
     late = ("chat", "cal", "pm")
     for s, t, ts, tt, _name, src_cols, dst_cols in sorted(fks, key=lambda f: f[0] in late):
         own = [c for c in src_cols if c != "tenant_id"] or list(src_cols)
-        # Khóa ngoại ghép (dự án, công việc) đặt tên theo cột cuối: parent, predecessor, successor
         obj_name = _strip(own[-1])
         if obj_name in columns[(s, t)]:
             obj_name = f"{obj_name}_{tt}"
@@ -596,7 +583,7 @@ def build(conn: psycopg.Connection) -> dict:
             for k in ("object_relationships", "array_relationships")
             for r in entries.get((ts, tt), {}).get(k, [])
         }
-        if arr in taken:  # bảng cùng tên ở hai schema (wf.task, pm.task): thêm tiền tố schema
+        if arr in taken:
             arr = f"{s}_{arr}"
         add_rel("array", (ts, tt), arr, (s, t), {v: k for k, v in mapping.items()})
 
@@ -752,8 +739,6 @@ def build(conn: psycopg.Connection) -> dict:
     ]
     presence["delete_permissions"] = [{"role": r, "permission": {"filter": own_presence}} for r in (ROLE, ADMIN_ROLE)]
 
-    # Tin nhắn (ADR #65): thành viên gửi thẳng qua GraphQL; người gửi sửa nội dung (24 giờ) hoặc thu hồi tin của mình.
-    # Trigger chat.message_before_write kiểm lại thành viên, tệp, tin trả lời và giữ nguyên các cột không được đổi.
     in_conversation = {"conversation": {"can_read": {"_eq": True}}}
     message = entries[("chat", "message")]
     message["insert_permissions"] = [
@@ -1202,6 +1187,38 @@ def build(conn: psycopg.Connection) -> dict:
                 "Ghi nhận một sự cố thiết bị của Bản sao số kèm hướng xử lý (ADR #50)",
             ),
             _action(
+                "iot_entities",
+                "query",
+                [("type", "String"), ("id", "String"), ("limit", "Int")],
+                "IotEntities!",
+                [ROLE, ADMIN_ROLE],
+                "Thực thể bản sao số dạng NGSI-LD chuẩn, kèm giá trị đo mới nhất (ADR #74)",
+            ),
+            _action(
+                "iot_ingest",
+                "mutation",
+                [("entity", "String!"), ("attrs", "jsonb!")],
+                "IotIngestResult!",
+                [ROLE, ADMIN_ROLE],
+                "Ghi số đo NGSI-LD của một thiết bị (cần iot.ingest ở đơn vị của thiết bị, ADR #74)",
+            ),
+            _action(
+                "iot_mqtt_account_create",
+                "mutation",
+                [("label", "String!")],
+                "IotMqttAccount!",
+                [ROLE, ADMIN_ROLE],
+                "Tạo tài khoản MQTT cho thiết bị / cổng OT, mật khẩu hiện một lần (quản trị viên công ty)",
+            ),
+            _action(
+                "iot_mqtt_account_revoke",
+                "mutation",
+                [("username", "String!")],
+                "IotMqttRevoked!",
+                [ROLE, ADMIN_ROLE],
+                "Thu hồi tài khoản MQTT, ngắt kết nối ngay (quản trị viên công ty)",
+            ),
+            _action(
                 "process_models",
                 "query",
                 [],
@@ -1386,6 +1403,14 @@ def build(conn: psycopg.Connection) -> dict:
                 "QueueVerify!",
                 [ROLE, ADMIN_ROLE],
                 "Xác minh chữ ký biên nhận và mã băm nội dung của một tin đã giao (cần core.org.manage)",
+            ),
+            _action(
+                "process_script_test",
+                "mutation",
+                [("model_id", "uuid!"), ("script", "String!"), ("variables", "jsonb")],
+                "ProcessScriptTest!",
+                [ROLE, ADMIN_ROLE],
+                "Chạy thử kịch bản của tác vụ tự động với biến mẫu, không đụng dữ liệu (ADR #73, người thiết kế)",
             ),
             _action(
                 "process_automation_enable",
@@ -1948,6 +1973,29 @@ def build(conn: psycopg.Connection) -> dict:
                 "AiAgent!",
                 [ROLE, ADMIN_ROLE],
                 "Sửa tác tử AI (cần core.ai.manage)",
+            ),
+            _action(
+                "ai_agent_automation",
+                "mutation",
+                [
+                    ("id", "uuid!"),
+                    ("triggers", "jsonb!"),
+                    ("instructions", "String"),
+                    ("allowed_actions", "jsonb!"),
+                    ("autonomy", "String"),
+                    ("webhook_url", "String"),
+                ],
+                "AiAgentAutomation!",
+                [ROLE, ADMIN_ROLE],
+                "Đặt sự kiện kích hoạt, nhiệm vụ, hành động được phép để tác tử tự hành động (ADR #72, cần core.ai.manage)",
+            ),
+            _action(
+                "ai_agent_trigger_options",
+                "query",
+                [],
+                "AiAgentTriggerOptions!",
+                [ROLE, ADMIN_ROLE],
+                "Danh mục sự kiện, hành động và mức tự chủ cho tác tử tự hành động (cần core.ai.manage)",
             ),
             _action(
                 "ai_agent_unregister",
@@ -2671,6 +2719,24 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "documents", "type": "[KbDocument!]!"},
                     ],
                 },
+                {"name": "IotEntities", "fields": [{"name": "entities", "type": "jsonb!"}]},
+                {
+                    "name": "IotIngestResult",
+                    "fields": [{"name": "entity", "type": "String!"}, {"name": "written", "type": "Int!"}],
+                },
+                {
+                    "name": "IotMqttAccount",
+                    "fields": [
+                        {"name": "username", "type": "String!"},
+                        {"name": "password", "type": "String!"},
+                        {"name": "topic", "type": "String!"},
+                        {"name": "message", "type": "String!"},
+                    ],
+                },
+                {
+                    "name": "IotMqttRevoked",
+                    "fields": [{"name": "username", "type": "String!"}, {"name": "revoked", "type": "Boolean!"}],
+                },
                 {
                     "name": "IotAckResult",
                     "fields": [
@@ -3144,6 +3210,36 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "status", "type": "String!"},
                         {"name": "guardrail_config", "type": "jsonb!"},
                         {"name": "tool_list", "type": "jsonb!"},
+                    ],
+                },
+                {
+                    "name": "AiAgentAutomation",
+                    "fields": [
+                        {"name": "id", "type": "uuid!"},
+                        {"name": "triggers", "type": "jsonb!"},
+                        {"name": "instructions", "type": "String"},
+                        {"name": "allowed_actions", "type": "jsonb!"},
+                        {"name": "autonomy", "type": "String!"},
+                        {"name": "webhook_url", "type": "String"},
+                    ],
+                },
+                {
+                    "name": "AiAgentTriggerOptions",
+                    "fields": [
+                        {"name": "events", "type": "jsonb!"},
+                        {"name": "actions", "type": "jsonb!"},
+                        {"name": "autonomy", "type": "jsonb!"},
+                    ],
+                },
+                {
+                    "name": "ProcessScriptTest",
+                    "fields": [
+                        {"name": "ok", "type": "Boolean!"},
+                        {"name": "error", "type": "String"},
+                        {"name": "line", "type": "Int"},
+                        {"name": "outputs", "type": "jsonb!"},
+                        {"name": "log", "type": "jsonb!"},
+                        {"name": "steps", "type": "Int!"},
                     ],
                 },
                 {

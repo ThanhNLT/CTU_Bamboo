@@ -1,23 +1,13 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 .PHONY: check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 DEMO_PASSWORD ?= demo-password
-# pnpm ghim ở package.json (packageManager); cài: npm install -g --allow-scripts=pnpm pnpm@12.16.1
 PNPM ?= pnpm
 UV_LINT := uv run --frozen --only-group lint
 
-AI_SERVICES := ollama-core ollama-init ocr-core ocr-init ai-worker
-
 up:
-	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans $$BAMBOO_SERVICES \
-		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
+	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans
 
-up-gpu:
-	eval "$$(tools/ram_profile.sh)"; docker compose -f compose.yaml -f infra/compose/gpu.yml up -d --build --remove-orphans $$BAMBOO_SERVICES \
-		&& { [ "$$BAMBOO_RAM_MODE" != 8 ] || docker compose stop $(AI_SERVICES); }
+up-gpu: up
 
 down:
 	docker compose down
@@ -73,7 +63,6 @@ bao-token:
 setup-code:
 	docker compose run --rm actions python -m app.setup_code
 
-# Kiểm tra tĩnh toàn repo, giống job `lint` của CI (.github/workflows/ci.yml).
 check: check-py check-web check-docs
 
 check-py:

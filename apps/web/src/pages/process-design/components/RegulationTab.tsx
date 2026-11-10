@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Checkbox, Tag } from "antd";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -42,7 +38,7 @@ export const RegulationTab = ({
 
   return (
     <section
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card"
+      className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4 shadow-card"
       aria-label={tr("Quy định")}
     >
       <div>

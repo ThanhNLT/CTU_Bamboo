@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { App, Form, Modal, type FormInstance } from "antd";
 import { useEffect, useId, useState, type ReactNode } from "react";
 

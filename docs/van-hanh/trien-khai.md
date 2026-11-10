@@ -9,7 +9,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | CPU | 4 vCPU | 8 vCPU |
 | RAM | 8 GB | 16 GB (thêm 2 GB nếu bật ClamAV) |
 | Đĩa | 20 GB SSD | 50 GB SSD, tách volume dữ liệu |
-| Phần mềm | Docker Engine 24+, Docker Compose 2.40.2+ (chạy từ artifact OCI; các bản 2.34.0–2.40.1 có lỗ hổng CVE-2025-62725) | |
+| Phần mềm | Docker Engine 25+, Docker Compose 2.40.2+ (chạy từ artifact OCI; các bản 2.34.0–2.40.1 có lỗ hổng CVE-2025-62725) | |
 | Kiến trúc | amd64 hoặc arm64 (image PostGIS chạy qua giả lập trên arm64) | amd64 |
 
 ## 2. Danh sách kiểm tra trước khi mở cho người dùng
@@ -18,16 +18,18 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 |---|---|---|
 | 1 | Bật chế độ production | `BAMBOO_ENV=production` trong `.env`. `openbao-init` từ chối chạy (và không dịch vụ nào khởi động) nếu còn bất kỳ mật khẩu mặc định nào |
 | 2 | Đổi mọi secret | Các biến đánh dấu `[BẮT BUỘC]` trong `.env.example`; dùng chuỗi ngẫu nhiên dài (`openssl rand -base64 32`) |
-| 3 | Tắt dữ liệu demo | `SEED_DEMO=false`; xóa hoặc vô hiệu hóa tài khoản demo trong Keycloak sau lần import đầu (realm có sẵn tài khoản demo). Tạo công ty và quản trị viên đầu tiên: [Khởi tạo cho một công ty mới](cong-ty-moi.md) |
+| 3 | Tắt dữ liệu demo | `SEED_DEMO=false` (kéo theo `SETUP_OPEN_SIGNUP=false`: trang đăng ký chỉ mở khi máy chưa có công ty); xóa hoặc vô hiệu hóa tài khoản demo trong Keycloak sau lần import đầu (realm có sẵn tài khoản demo). Tạo công ty và quản trị viên đầu tiên: [Khởi tạo cho một công ty mới](cong-ty-moi.md) |
 | 4 | Tên miền HTTPS | Một tên miền trỏ vào cổng API; đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó (mục 3) |
 | 5 | Keycloak chế độ production | `KEYCLOAK_MODE=start` (bắt buộc đi sau reverse proxy TLS) |
 | 6 | Redirect URI của ứng dụng | Job `bootstrap` tự bổ sung `WEB_ORIGIN` vào client `bms-web` mỗi lần khởi động (cả khi đổi tên miền sau lần import đầu). Giá trị cũ không bị xóa: gỡ `http://localhost:5173` (chỉ dùng cho `pnpm dev`) và tên miền cũ trong Keycloak → realm `bms` → Clients → `bms-web` |
-| 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp) |
-| 8 | Quét virus bằng ClamAV (bộ quét nội bộ luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus) | `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
+| 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp). Với `BAMBOO_ENV=production`, `openbao-init` từ chối chạy nếu Console còn bật (ADR #76) |
+| 8 | Quét virus bằng ClamAV (bộ quét nội bộ và CDR luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus, ADR #70) | `make up` ở mức RAM 16 tự bật (`BAMBOO_CLAMAV=true` để bật ở mức 8); chạy tay: `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
 | 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`, `CDC_DB_PASSWORD` (Debezium), `LAKEHOUSE_DB_PASSWORD` (catalog Iceberg); superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
 | 12 | Trục dữ liệu (ADR #45) | Mật khẩu Kafka `DEBEZIUM_KAFKA_PASSWORD`, `LAKEHOUSE_KAFKA_PASSWORD` (Kafka từ chối client không có tài khoản, ACL theo tiền tố topic). Trino chỉ nhận đăng nhập qua HTTPS bằng chứng chỉ của CA nội bộ OpenBao; mật khẩu `bms-admin`, `bms-actions` do OpenBao sinh; người dùng tenant chỉ thấy dữ liệu của tenant mình (row filter). Không mở cổng 8085 của Trino ra ngoài máy chủ |
+| 13 | Giám sát (ADR #75) | `GRAFANA_ADMIN_PASSWORD` riêng (bắt buộc với `BAMBOO_ENV=production`). Grafana `:3001`, Jaeger `:16686`, Prometheus `:9090` chỉ nghe 127.0.0.1: xem qua đường hầm SSH, không mở ra Internet. Mức RAM 8 bật bằng `BAMBOO_OBSERVABILITY=true` |
+| 14 | Thiết bị OT qua MQTT (ADR #74, #76) | Thiết bị trong mạng OT dùng cổng TLS 8883: đặt `MQTT_BIND` bằng IP của mạng OT (không phải 0.0.0.0 trên máy có Internet), mở tường lửa chỉ cho dải thiết bị; phát CA nội bộ (`/mosquitto/tls/ca.crt`) cho thiết bị để kiểm chứng chỉ máy chủ. Tài khoản thiết bị tạo ở Cổng dịch vụ API → Thiết bị MQTT; sao lưu volume `mosquitto-data` (giữ tài khoản thiết bị) |
 
 ## 3. Tên miền và TLS
 
@@ -49,7 +51,7 @@ Cổng API đã lo phần còn lại: chặn đường dẫn không khai báo, k
 Chạy bằng image dựng sẵn (không cần mã nguồn), trong thư mục có `.env`:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y
 ```
 
 Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura, deploy BPMN khi nội dung đổi và bổ sung `WEB_ORIGIN` vào redirect URI của client `bms-web` trong Keycloak nếu còn thiếu (đổi tên miền không cần import lại realm; giá trị cũ được giữ, gỡ thủ công trong trang quản trị nếu muốn). Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
@@ -102,7 +104,7 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 
 ## 6. Khóa OpenBao
 
-`openbao-init` khởi tạo OpenBao với một khóa unseal và lưu khóa cùng root token trong volume `openbao-keys` để tự unseal mỗi lần khởi động. Cách này phù hợp demo và máy chủ một node; ai đọc được volume này thì đọc được mọi secret. Giảm rủi ro:
+`openbao-init` khởi tạo OpenBao với một khóa unseal và lưu khóa cùng root token trong volume `openbao-keys` để tự unseal mỗi lần khởi động; dịch vụ `openbao-unseal` (chạy liên tục, đọc cùng volume, chỉ đọc) kiểm mỗi 5 giây và unseal lại khi container `openbao` khởi động lại ngoài `docker compose up` (khởi động lại máy, Docker). Cách này phù hợp demo và máy chủ một node; ai đọc được volume này thì đọc được mọi secret. Giảm rủi ro:
 
 - chỉ quản trị viên được truy cập máy chủ và Docker (nhóm `docker` tương đương root);
 - sao lưu `openbao-keys` tách khỏi `openbao-data`, mã hóa bản sao lưu;
@@ -148,7 +150,7 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 | `trino-core` | `infra/platform/trino/jvm.config` | `-Xmx1G` |
 | `flowable` | `FLOWABLE_JAVA_OPTS` | `-Xms64m -Xmx512m` |
 
-**Mức RAM 8 / 16** ([ADR #54](#adr-54)): máy 8 GB chạy chức năng cơ bản, không AI; máy 16 GB chạy đầy đủ. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 không chạy Ollama, `ocr`, `ai-worker` và hạ heap JVM; chuyển từ 16 xuống 8 thì `make up` dừng luôn các container AI. Chạy `docker compose up -d` trực tiếp thì mức 16 khi `.env` có `COMPOSE_PROFILES=ai`; mức 8 đặt `COMPOSE_PROFILES=` và `OLLAMA_URL=` (để trống).
+**Mức RAM 8 / 16** ([ADR #54](#adr-54), sửa ở [ADR #69](#adr-69)): cả hai mức chạy đầy đủ, gồm AI và OCR. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 hạ heap JVM, Ollama chỉ giữ một mô hình trên RAM (`OLLAMA_MAX_LOADED_MODELS=1`, gỡ sau 2 phút nhàn rỗi), OCR và dịch vụ dùng thưa ngủ sau 120 giây. Chạy `docker compose up -d` trực tiếp dùng giá trị mặc định của mức 16; `OLLAMA_URL` để trống (cấu hình cũ) vẫn dùng Ollama trong compose.
 
 **Dịch vụ dùng thưa tự ngủ** ([ADR #53](#adr-53)): `trino-core`, `tika-core`, `gotenberg-core` chỉ chạy khi có yêu cầu; `sleeper` giữ tên mạng và cổng cũ (`trino`, `tika`, `gotenberg`), đánh thức khi có byte đầu tiên và cho ngủ sau `SLEEPER_IDLE_SECONDS` (mặc định 300) không có lưu lượng. Lần gọi đầu sau khi ngủ chậm thêm thời gian khởi động container. Xem trạng thái bằng `docker compose ps` hoặc `docker compose exec sleeper python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:9000/status').read().decode())"`. `sleeper` gắn `/var/run/docker.sock`; môi trường không cho phép thì bỏ `sleeper` và đặt lại tên ba dịch vụ thật như ADR #53 mô tả.
 
@@ -212,21 +214,20 @@ sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart doc
 docker run --rm --gpus all ubuntu nvidia-smi   # thấy GPU là được
 ```
 
-Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chép tệp bổ sung một lần thành `docker-compose.override.yml` (Compose tự nạp, tệp này không đưa lên git), từ đó chỉ cần lệnh thường:
+Docker Desktop cho Windows chỉ cần bật WSL2 backend, không cài gì thêm. Sau đó chạy như thường (`docker compose up -d` hoặc `make up`), không cần tệp compose bổ sung (ADR #79): compose luôn tạo Ollama và OCR bản CPU (máy nào cũng tạo được), rồi khi `ai-worker` đã chạy, `sleeper` thử một container nhỏ xin GPU từ image Ollama. Được thì nó tạo lại `ollama-core`, `ocr-core` với đúng cấu hình cộng GPU (giữ nhãn compose nên `docker compose up` lần sau không tạo lại), kiểm container mới lên được rồi mới xóa bản CPU; không được thì giữ CPU. Container GPU về sau không start được (đổi driver, tháo card) thì tự về CPU.
 
 ```bash
-cp infra/compose/gpu.yml docker-compose.override.yml
-docker compose up -d
-docker compose exec ollama ollama ps        # cột PROCESSOR ghi "100% GPU" khi đang trả lời
+docker compose logs sleeper | grep -i gpu   # "thấy GPU NVIDIA: chuyển ..." hoặc "không dùng được GPU NVIDIA (...)"
+docker compose exec ollama-core ollama ps   # cột PROCESSOR ghi "100% GPU" khi đang trả lời
 curl 127.0.0.1:8866/health                  # "device" là tên GPU
 ```
 
-Máy không có GPU thì đừng chép: Docker không tạo được container xin GPU mà máy không có, Compose cũng không tự dò được GPU. Không muốn chép thì dùng `make up-gpu`.
+`BAMBOO_GPU=false` trong `.env` để luôn chạy CPU. Lắp card hoặc cài toolkit sau khi đã chạy thì `docker compose restart sleeper` để thử lại. `infra/compose/gpu.yml` vẫn dùng được để ép GPU ngay từ đầu (`docker compose -f compose.yaml -f infra/compose/gpu.yml up -d`), nhưng khi đó máy không có card thì container không tạo được.
 
 **Dựng máy demo (RTX 5060 Laptop + Ryzen 9840HS).** Số đo trong tài liệu này là của RTX 4060; số chính thức của buổi demo là số đo trên máy demo. Làm trước ngày 27/10, không để đến sáng ngày demo vì tải khoảng 18 GB (mô hình ~3,7 GB, image `ocr` ~14 GB):
 
 1. Cài NVIDIA Container Toolkit như trên; GPU Blackwell cần driver đủ mới, image `ocr` dùng CUDA 12.8 và Ollama 0.35.1 đều hỗ trợ, nhưng chưa chạy thử trên máy này nên kiểm bằng `docker run --rm --gpus all ubuntu nvidia-smi`.
-2. Chạy `BAMBOO_RAM=16 make up-gpu`, không để tự dò. WSL2 mặc định chỉ cấp một nửa RAM máy: máy 16 GB sẽ bị tự chọn mức 8 và tắt AI mà không báo trên giao diện. Dùng WSL2 thì đặt `memory=12GB` (hoặc hơn) trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`. `BAMBOO_RAM=16` đặt trong `.env` cũng có hiệu lực với `make up`.
+2. Chạy `BAMBOO_RAM=16 make up`, không để tự dò mức RAM; GPU tự dò, kiểm bằng `docker compose logs sleeper | grep -i gpu`. WSL2 mặc định chỉ cấp một nửa RAM máy: máy 16 GB sẽ bị tự chọn mức 8 (AI vẫn chạy nhưng mỗi lúc một mô hình, lượt hỏi đầu chậm). Dùng WSL2 thì đặt `memory=12GB` (hoặc hơn) trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`. `BAMBOO_RAM=16` đặt trong `.env` cũng có hiệu lực với `make up`.
 3. Chạy `tools/ai_smoke.sh --cold` rồi `tools/ai_smoke.sh`; ghi số đo vào mục Bổ sung của [ADR #52](#adr-52). Có nhóm câu nào trượt hoặc điểm của nhóm ngoài phạm vi chạm 0,7 thì hiệu chỉnh `AI_MIN_SCORE` như trên. Câu nào bị `error` do hết token thì tắt `think` cho tác tử demo ở trang Tác tử AI.
 4. Đính kèm sẵn một báo giá quét vào một đề nghị mua sắm, chờ nhãn "Đã OCR" (không OCR trực tiếp trên sân khấu: OCR và mô hình sinh không nạp cùng lúc nên lượt hỏi ngay sau đó phải nạp lạnh).
 5. Ngay trước buổi demo chạy `tools/demo_prepare.sh`: kiểm AI đang bật, giữ qwen3 và bge-m3 trong bộ nhớ 2 giờ, kiểm đã có tệp "Đã OCR".

@@ -1,12 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# Dữ liệu: tìm kiếm toàn văn, trích văn bản, dựng PDF, CDC → Kafka → Lakehouse/Trino, dịch vụ ngủ (sleeper, ADR #53).
-# Được compose.yaml ở gốc repo nạp bằng `include:`; đường dẫn tương đối tính từ thư mục infra/compose/.
-# Biến môi trường lấy từ shell và tệp .env ở gốc repo. Phần cấu hình dùng chung của image actions và Hasura
-# nằm ở base.yml (nạp qua `extends`), vì anchor YAML không đi xuyên tệp.
-
 x-logging: &logging
   driver: json-file
   options:
@@ -31,11 +22,12 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7700/health"]
-      interval: 3s
+      interval: 30s
       timeout: 3s
-      retries: 40
+      retries: 3
+      start_period: 120s
+      start_interval: 1s
 
-  # Ba dịch vụ -core dùng thưa nên ngủ khi nhàn rỗi; tên mạng cũ (tika, gotenberg, trino) và cổng công bố thuộc `sleeper` (ADR #53)
   tika-core:
     logging: *logging
     image: apache/tika:4.1.0-1
@@ -45,10 +37,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9998 && printf 'GET /version HTTP/1.0\r\n\r\n' >&3 && grep -q Tika <&3"]
-      interval: 5s
+      interval: 30s
       timeout: 5s
-      retries: 30
-      start_period: 10s
+      retries: 3
+      start_period: 160s
+      start_interval: 2s
 
   gotenberg-core:
     logging: *logging
@@ -58,9 +51,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/health"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
-      retries: 30
+      retries: 3
+      start_period: 150s
+      start_interval: 2s
 
   search-sync:
     logging: *logging
@@ -82,7 +77,7 @@ services:
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/kafka
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-kafka:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-kafka:${BAMBOO_TAG:-dev}
     environment:
       CLUSTER_ID: b5T4hzPsQrOmfv9Kr38lIg
       KAFKA_NODE_ID: 1
@@ -115,11 +110,12 @@ services:
       - "127.0.0.1:19092:19092"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "test -f /tmp/bamboo-kafka-ready && /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9094 > /dev/null 2>&1"]
-      interval: 10s
-      timeout: 15s
-      retries: 30
-      start_period: 15s
+      test: ["CMD", "bash", "-c", "test -f /tmp/bamboo-kafka-ready && exec 3<>/dev/tcp/127.0.0.1/9094"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 315s
+      start_interval: 2s
 
   debezium:
     logging: *logging
@@ -157,7 +153,6 @@ services:
       DEBEZIUM_SOURCE_HEARTBEAT_INTERVAL_MS: 10000
       DEBEZIUM_SOURCE_HEARTBEAT_ACTION_QUERY: UPDATE cdc.heartbeat SET beat_at = now() WHERE id = 1
       DEBEZIUM_SOURCE_DECIMAL_HANDLING_MODE: string
-      # mô-đun Dữ liệu số tắt lâu làm mất slot (max_slot_wal_keep_size): bật lại thì chụp lại toàn bộ (ADR #56)
       DEBEZIUM_SOURCE_SNAPSHOT_MODE: when_needed
       DEBEZIUM_FORMAT_KEY: json
       DEBEZIUM_FORMAT_VALUE: json
@@ -172,10 +167,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health HTTP/1.0\r\n\r\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
-      retries: 30
-      start_period: 20s
+      retries: 3
+      start_period: 320s
+      start_interval: 2s
 
   lakehouse-sink:
     logging: *logging
@@ -186,7 +182,7 @@ services:
     build:
       args:
         DEP_GROUPS: lakehouse
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-lakehouse:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-lakehouse:${BAMBOO_TAG:-dev}
     depends_on:
       bootstrap:
         condition: service_completed_successfully
@@ -199,12 +195,106 @@ services:
     command: ["python", "-m", "app.lakehouse_sink"]
     restart: unless-stopped
 
+  mosquitto:
+    logging: *logging
+    image: eclipse-mosquitto:2.0.21
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:1883:1883"
+      - "${MQTT_BIND:-127.0.0.1}:8883:8883"
+    volumes:
+      - ../platform/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-tls:/mosquitto/tls:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 1883"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 100s
+      start_interval: 2s
+    restart: unless-stopped
+
+  iot-bridge:
+    logging: *logging
+    extends:
+      file: base.yml
+      service: actions-base
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      mosquitto:
+        condition: service_healthy
+    volumes:
+      - actions-secrets:/run/bms:ro
+    command: ["python", "-m", "app.iot_bridge"]
+    restart: unless-stopped
+
+  otel-collector:
+    logging: *logging
+    profiles: [observability]
+    image: otel/opentelemetry-collector:0.164.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ../platform/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    mem_limit: 160m
+    restart: unless-stopped
+
+  jaeger:
+    logging: *logging
+    profiles: [observability]
+    image: jaegertracing/jaeger:2.23.0
+    ports:
+      - "127.0.0.1:16686:16686"
+    mem_limit: 256m
+    restart: unless-stopped
+
+  prometheus:
+    logging: *logging
+    profiles: [observability]
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-7d}
+    volumes:
+      - ../platform/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../platform/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    mem_limit: 384m
+    restart: unless-stopped
+
+  grafana:
+    logging: *logging
+    profiles: [observability]
+    image: grafana/grafana-oss:13.0.1
+    depends_on: [prometheus, jaeger]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana-dev}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/bamboo.json
+    volumes:
+      - ../platform/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../platform/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3001:3000"
+    mem_limit: 256m
+    restart: unless-stopped
+
   trino-core:
     logging: *logging
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/trino
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-trino:${BAMBOO_TAG:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -220,17 +310,18 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "/usr/lib/trino/bin/health-check"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
-      retries: 30
-      start_period: 20s
+      retries: 3
+      start_period: 320s
+      start_interval: 2s
 
   trino-init:
     logging: *logging
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/trino
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-trino:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-trino:${BAMBOO_TAG:-dev}
     depends_on:
       sleeper:
         condition: service_healthy
@@ -245,7 +336,7 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/sleeper.Dockerfile
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-sleeper:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-sleeper:${BAMBOO_TAG:-dev}
     depends_on:
       trino-core:
         condition: service_started
@@ -257,15 +348,14 @@ services:
       SLEEPER_PROJECT: bamboo
       SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
       SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000,11434=ollama-core:11434,8000=ocr-core:8000
-      # Mô-đun chức năng (ADR #56): dừng container của mô-đun chưa cài, chạy container của mô-đun đã cài.
-      # Danh sách phải khớp services/actions/app/modules.py (MANAGED_SERVICES; kiểm bởi test_mo_dun.py)
       SLEEPER_MODULES_URL: http://actions:8000/modules/services
       SLEEPER_HOLD_UNTIL: bootstrap
-      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
+      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
+      SLEEPER_GPU: ${BAMBOO_GPU:-auto}
+      SLEEPER_GPU_SERVICES: ollama-core,ocr-core
     networks:
       default:
         aliases: [trino, tika, gotenberg, ollama, ocr]
-    # Docker API tương đương quyền root trên máy chủ: chỉ sleeper được gắn, và nó chỉ start/stop container thuộc SLEEPER_TARGETS
     user: "0"
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
@@ -281,12 +371,17 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/healthz', timeout=2)"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
-      retries: 20
+      retries: 3
+      start_period: 100s
+      start_interval: 2s
 
 
 volumes:
+  mosquitto-data:
   meilisearch-data:
   kafka-data:
   debezium-data:
+  prometheus-data:
+  grafana-data:

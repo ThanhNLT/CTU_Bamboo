@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useState } from "react";
 
 import type { Seal } from "../types";
@@ -18,7 +14,7 @@ const ResultTag = ({ result }: { result: Seal["lastResult"] }) =>
       {tr("Khớp")}
     </span>
   ) : (
-    <span className="inline-flex h-6 items-center gap-1.5 rounded-ui bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[12px] font-medium text-red-700">
       <span className="h-1.5 w-1.5 rounded-ui bg-red-500" aria-hidden />
       {tr("Không khớp")}
     </span>

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Alert, App, ConfigProvider, Form, Input, Segmented, Spin, Table } from "antd";
 import { FileSpreadsheet, Plus, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";

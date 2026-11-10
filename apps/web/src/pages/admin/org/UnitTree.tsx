@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { Checkbox, ConfigProvider, Tree } from "antd";
 import { Building2, Folder } from "lucide-react";
 import { useMemo, useState, type Key, type ReactNode } from "react";

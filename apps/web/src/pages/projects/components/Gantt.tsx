@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import dayjs, { type Dayjs } from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 import { ChevronDown, ChevronRight, Diamond } from "lucide-react";
@@ -11,7 +7,6 @@ import { tr, trf } from "../../../i18n";
 import { cn } from "../../../utils/cn";
 import type { Dependency, Task } from "../types";
 
-// Trang dự án là một chunk riêng: tự nạp plugin, không dựa vào trang lịch đã nạp trước (ADR #67)
 dayjs.extend(isoWeek);
 
 export type Zoom = "day" | "week" | "month";
@@ -70,7 +65,6 @@ export const Gantt = ({
   const days = end.diff(start, "day") + 1;
   const width = days * px;
 
-  // Ẩn con của công việc đang thu gọn
   const visible = useMemo(() => {
     const hidden = new Set<string>();
     const out: Task[] = [];
@@ -97,7 +91,6 @@ export const Gantt = ({
   };
 
   useEffect(() => {
-    // Mở lần đầu: cuộn tới hôm nay (hoặc đầu dự án nếu hôm nay ngoài khung)
     const el = scroller.current;
     if (!el) return;
     const today = dayjs();
@@ -127,7 +120,6 @@ export const Gantt = ({
     else onOpen(t);
   };
 
-  // Vạch chia trục thời gian: ngày (mỗi ngày), tuần (đầu tuần), tháng (đầu tháng)
   const ticks = useMemo(() => {
     const out: { d: Dayjs; major: boolean; label: string }[] = [];
     for (let i = 0; i < days; i++) {
@@ -188,7 +180,6 @@ export const Gantt = ({
       aria-label={tr("Sơ đồ Gantt")}
     >
       <div className="relative flex" style={{ width: `calc(var(--gantt-left) + ${width}px)` }}>
-        {/* Bảng WBS dính trái */}
         <div className="sticky left-0 z-20 w-[var(--gantt-left)] shrink-0 border-r border-line bg-[var(--surface-solid)]">
           <div
             className="sticky top-0 z-10 grid grid-cols-[52px_1fr_44px] items-end border-b border-line bg-[var(--surface-solid)] px-2 pb-1.5 text-[11.5px] font-semibold text-muted md:grid-cols-[52px_1fr_120px_44px]"
@@ -248,7 +239,6 @@ export const Gantt = ({
           ))}
         </div>
 
-        {/* Trục thời gian */}
         <div className="relative shrink-0" style={{ width, height: HEAD + visible.length * ROW }}>
           <div className="sticky top-0 z-10 border-b border-line bg-[var(--surface-solid)]" style={{ height: HEAD }}>
             {months.map((m) => (
@@ -277,7 +267,6 @@ export const Gantt = ({
               </div>
             ))}
           </div>
-          {/* Nền: cuối tuần (xem ngày), vạch tuần/tháng, hôm nay */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ top: HEAD }} aria-hidden>
             {zoom === "day" &&
               Array.from({ length: days }, (_, i) => start.add(i, "day"))
@@ -303,7 +292,6 @@ export const Gantt = ({
               />
             )}
           </div>
-          {/* Phụ thuộc */}
           <svg
             className="pointer-events-none absolute left-0 z-[6]"
             style={{ top: HEAD }}
@@ -336,7 +324,6 @@ export const Gantt = ({
               />
             ))}
           </svg>
-          {/* Thanh công việc */}
           <div className="absolute inset-x-0 z-[7]" style={{ top: HEAD }}>
             {visible.map((t, i) => {
               const { s, e } = shown(t);

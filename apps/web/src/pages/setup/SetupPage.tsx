@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import {
   Alert,
   App,
@@ -66,23 +62,18 @@ const EMPTY: Registration = {
   modules: [],
 };
 
-// Bản nháp giữ trong phiên trình duyệt: tải lại trang không mất những gì đã khai (không có mật khẩu)
 const readDraft = (): Registration => {
   try {
     const raw = sessionStorage.getItem(DRAFT_KEY);
     if (raw) return { ...EMPTY, ...(JSON.parse(raw) as Registration) };
-  } catch {
-    // trình duyệt chặn sessionStorage: bắt đầu từ đầu
-  }
+  } catch {}
   return EMPTY;
 };
 const saveDraft = (d: Registration | null) => {
   try {
     if (d) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
     else sessionStorage.removeItem(DRAFT_KEY);
-  } catch {
-    // không lưu được bản nháp thì thôi
-  }
+  } catch {}
 };
 
 const newKey = () => `u${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -107,8 +98,6 @@ const STEP_INFO: Record<StepKey, { title: string; subtitle: string; icon: Lucide
   tools: { title: tr("Công cụ"), subtitle: tr("Bật những gì bạn dùng; bật thêm bất cứ lúc nào."), icon: Boxes },
   review: { title: tr("Xác nhận"), subtitle: tr("Xem lại rồi tạo tài khoản doanh nghiệp."), icon: Check },
 };
-
-/* ---------------- Các bước ---------------- */
 
 const ProfileStep = ({ form, draft }: { form: FormInstance; draft: Registration }) => (
   <Form form={form} layout="vertical" requiredMark={false} className="auth-form" initialValues={draft.owner}>
@@ -260,7 +249,6 @@ const UnitsStep = ({ form, draft }: { form: FormInstance; draft: Registration })
     );
   useEffect(() => {
     if (!form.getFieldValue("units")?.length) applyPreset();
-    // chỉ điền gợi ý lần đầu mở bước
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
@@ -517,7 +505,6 @@ const ToolsStep = ({
     const next = new Set(selected);
     if (next.has(code)) {
       next.delete(code);
-      // tắt một công cụ thì tắt luôn công cụ đang dựa vào nó
       let changed = true;
       while (changed) {
         changed = false;
@@ -879,8 +866,6 @@ const DoneView = ({ result }: { result: SetupResult }) => {
   );
 };
 
-/* ---------------- Trình hướng dẫn ---------------- */
-
 const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: SetupResult) => void }) => {
   const [draft, setDraft] = useState<Registration>(readDraft);
   const [step, setStep] = useState<StepKey>("profile");
@@ -905,9 +890,7 @@ const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: Set
   const update = (patch: Partial<Registration>) =>
     setDraft((d) => {
       const next = { ...d, ...patch };
-      // Chuyển sang luồng nhanh thì thành viên không còn thuộc phòng ban nào
       if (patch.flow === "quick") next.members = next.members.map((m) => ({ ...m, unit: null }));
-      // Gợi ý công cụ theo lĩnh vực khi người dùng chưa tự chọn
       if (patch.company?.industry && d.modules.length === 0) {
         next.modules = (industryOf(patch.company.industry)?.modules ?? []).flatMap((c) => {
           const m = status.modules.find((x) => x.code === c);
@@ -919,7 +902,6 @@ const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: Set
       return next;
     });
 
-  // Lưu những gì đang gõ ở bước hiện tại (không kiểm) để quay lại không mất
   const capture = (): Partial<Registration> => {
     switch (step) {
       case "profile":
@@ -944,7 +926,6 @@ const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: Set
         case "units": {
           const units = (await unitsForm.validateFields()).units as Registration["units"];
           const keys = new Set(units.map((u) => u.key));
-          // Bỏ phòng ban nào thì thành viên của nó về Ban giám đốc
           return {
             units,
             members: draft.members.map((m) => (m.unit && !keys.has(m.unit) ? { ...m, unit: null } : m)),
@@ -969,14 +950,12 @@ const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: Set
     const patch = await validate();
     if (!patch) return;
     update(patch);
-    // Bước "Quy mô" đổi luồng ngay khi chọn nên `steps` đã đúng thứ tự của luồng hiện tại
     setStep(steps[index + 1] ?? step);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="auth-card md:grid-cols-[260px_minmax(0,1fr)]">
-      {/* Thanh bước bên trái, kiểu trợ lý cài đặt của macOS */}
       <nav
         aria-label={tr("Các bước đăng ký")}
         className="hidden flex-col gap-1 border-r border-white/50 bg-white/25 px-4 py-8 md:flex dark:border-white/[0.06] dark:bg-[rgb(0_0_0_/_0.18)]"
@@ -1027,7 +1006,6 @@ const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: Set
       </nav>
 
       <section className="flex min-h-[560px] flex-col px-6 py-8 sm:px-10">
-        {/* Tiến độ trên màn hình hẹp */}
         <div className="mb-6 md:hidden">
           <div className="mb-2 text-[12px] font-medium text-muted">
             {tr("Bước ")} {index + 1}/{steps.length}

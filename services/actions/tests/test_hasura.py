@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
 from conftest import ids, open_task, pr, status
 
 PR_QUERY = "query($id: uuid!) { proc_purchase_request_by_pk(id: $id) { id status requester_id } }"

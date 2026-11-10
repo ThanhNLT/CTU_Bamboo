@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { useInvalidate, useList } from "@refinedev/core";
 import dayjs from "dayjs";
 import gql from "graphql-tag";

@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2026 DX-OS Open-Core contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 import { BookOpen, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 
@@ -78,7 +74,7 @@ export const ChatArea = ({
           </span>
         )}
         {current && (
-          <span className="inline-flex h-6 shrink-0 items-center rounded-ui border border-line px-2.5 text-[11.5px] text-body">
+          <span className="inline-flex h-6 shrink-0 items-center rounded-full border border-line px-2.5 text-[11.5px] text-body">
             Ollama · {current.model}
           </span>
         )}
@@ -86,7 +82,7 @@ export const ChatArea = ({
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-3 sm:px-5">
         {docLabel && (
-          <span className="inline-flex h-7 items-center gap-1.5 rounded-ui border border-bamboo-200 bg-surface pl-1.5 pr-3 text-[12px] font-semibold text-bamboo-800">
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-bamboo-200 bg-surface pl-1.5 pr-3 text-[12px] font-semibold text-bamboo-800">
             <button
               type="button"
               onClick={onClearDoc}
@@ -130,7 +126,7 @@ export const ChatArea = ({
                 type="button"
                 onClick={() => onSuggestion(s)}
                 disabled={!canAsk}
-                className="h-7 shrink-0 whitespace-nowrap rounded-ui bg-black/[0.045] px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 hover:text-bamboo-800 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500"
+                className="h-7 shrink-0 whitespace-nowrap rounded-full bg-black/[0.045] px-3 text-[12px] font-medium text-ink transition-colors hover:bg-bamboo-50 hover:text-bamboo-800 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500"
               >
                 {s}
               </button>
