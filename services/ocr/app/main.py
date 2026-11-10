@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Dịch vụ OCR tiếng Việt (ADR #52): `uvicorn app.main:app`.
 
 Không trạng thái: `POST /ocr` nhận ảnh một trang, trả các dòng chữ theo thứ tự đọc; `POST /unload` gỡ mô hình

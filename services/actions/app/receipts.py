@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Biên nhận giao tin và chứng cứ neo có chữ ký của hệ thống (chống chối bỏ).
 
 Chữ ký chính là Ed25519 của khóa transit trong OpenBao (khóa riêng không rời két). Khi chưa có OpenBao (môi trường

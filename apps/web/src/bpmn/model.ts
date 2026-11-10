@@ -1,3 +1,12 @@
+/**
+ * Bamboo - DX-OS Open-Core
+ * @version 0.4.0
+ * @author CTUBamboo
+ * @copyright Copyright 2026 Bamboo
+ * @license Apache-2.0
+ * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Mô hình BPMN của Bamboo (ADR #81): đọc, ghi XML bằng bpmn-moddle (MIT), phân loại phần tử và kích thước mặc định.
 import { BpmnModdle } from "bpmn-moddle";

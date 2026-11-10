@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 SELECT format('CREATE ROLE %I', r)
 FROM unnest(ARRAY['bamboo_app', 'bamboo_hasura', 'bamboo_actions', 'bamboo_keycloak', 'bamboo_flowable',
                    'bamboo_cdc', 'bamboo_lakehouse']) r

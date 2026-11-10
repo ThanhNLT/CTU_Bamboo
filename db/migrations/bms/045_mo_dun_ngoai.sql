@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 CREATE TABLE core.external_module (
     module         text PRIMARY KEY REFERENCES core.module_install ON DELETE CASCADE
                    CHECK (module ~ '^x_[a-z0-9_]{2,30}$'),

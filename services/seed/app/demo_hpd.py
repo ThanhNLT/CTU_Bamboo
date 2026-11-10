@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Dữ liệu demo cho Không gian H, P, D (ADR #65, #66, #64): tin nhắn, lịch công tác, dự án, khóa cổng dịch vụ API.
 
 Bám đúng các tài khoản và tình huống mô tả ở mục "Cơ sở dữ liệu demo" của README: `gd.chip` đang đi công tác và đã ủy quyền

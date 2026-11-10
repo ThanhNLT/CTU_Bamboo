@@ -1,3 +1,12 @@
+<!--
+  Bamboo - DX-OS Open-Core
+  @version 0.4.0
+  @author CTUBamboo
+  @copyright Copyright 2026 Bamboo
+  @license Apache-2.0
+  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+-->
+
 # Thiết kế cơ sở dữ liệu
 
 Một database PostgreSQL 17 + PostGIS 3.5 tên `bms`. Migration ở `db/migrations/bms/`, chạy theo thứ tự tên tệp, tự chạy

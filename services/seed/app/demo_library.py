@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Tài liệu thư viện tri thức mô tả đúng các quy tắc đã nạp vào CSDL (hạn mức duyệt, nhóm hàng, luồng duyệt, ràng buộc).
 
 Mỗi mục: (tenant, ghế người ban hành, tiêu đề, loại, phạm vi, nội dung tóm tắt, mục lục). Nội dung phải khớp dữ liệu seed

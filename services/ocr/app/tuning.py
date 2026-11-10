@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Chỉnh PyTorch theo thiết bị để OCR nhanh nhất mà kết quả không đổi (ADR #80).
 
 CPU: số luồng tính toán bằng số nhân vật lý được cấp, tối đa 8, tôn trọng giới hạn CPU của container. PyTorch mặc

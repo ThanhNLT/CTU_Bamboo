@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 SELECT test.fixture();
 
 SELECT test.eq((SELECT count(*)::int FROM core.module_install), 0, 'hệ thống mới chỉ có phần lõi');

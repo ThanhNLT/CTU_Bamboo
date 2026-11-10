@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Cổng dịch vụ API (ADR #64): khóa của công ty, phạm vi, hạn dùng, dải IP, thu hồi, đếm lượt gọi."""
 
 import uuid

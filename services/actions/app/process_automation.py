@@ -1,3 +1,10 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.4.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 """Chạy tự động quy trình đã phát hành.
 
 Người thiết kế bật chạy tự động cho một phiên bản đã phát hành: sơ đồ được chuyển thành định nghĩa Flowable chỉ gồm

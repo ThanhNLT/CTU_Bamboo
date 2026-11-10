@@ -1,3 +1,10 @@
+-- Bamboo - DX-OS Open-Core
+-- @version 0.4.0
+-- @author CTUBamboo
+-- @copyright Copyright 2026 Bamboo
+-- @license Apache-2.0
+-- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
 INSERT INTO core.permission (code, description) VALUES
     ('kb.document.create', 'Đề xuất tài liệu vào thư viện tri thức'),
     ('kb.document.manage', 'Quản lý thư viện tri thức: xem mọi đề xuất, ngừng hiệu lực, nạp lại chỉ mục');
