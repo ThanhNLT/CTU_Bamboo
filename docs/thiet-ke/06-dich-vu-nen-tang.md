@@ -816,7 +816,7 @@ make test-db T=para    # và T=tac_tu
 
 | Service | Mô-đun | Việc |
 |---|---|---|
-| `mosquitto` | `data` | `eclipse-mosquitto:2.0.21`, plugin dynamic-security (`/mosquitto/data/dynamic-security.json` do `openbao-init` ghi lần đầu); cổng 1883 (127.0.0.1), 8883 TLS (`MQTT_BIND`), 8884 mTLS nội bộ |
+| `mosquitto` | `data` | Image `bamboo-mosquitto` (`eclipse-mosquitto:2.0.21` kèm `mosquitto.conf`), plugin dynamic-security (`/mosquitto/data/dynamic-security.json` do `openbao-init` ghi lần đầu); cổng 1883 (127.0.0.1), 8883 TLS (`MQTT_BIND`), 8884 mTLS nội bộ |
 | `iot-bridge` | `data` | `python -m app.iot_bridge`: nghe `bamboo/+/+/attrs`, gọi `iot.ingest`; mỗi phút `iot.mark_offline(15)` |
 
 - Chủ đề: `bamboo/<mã công ty>/<mã thiết bị hoặc URN NGSI-LD>/attrs`; thân NGSI-LD dạng chuẩn hoặc gọn, tối đa 64 KB, 50 thuộc tính.

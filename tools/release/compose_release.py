@@ -27,6 +27,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TAG_VAR = "${BAMBOO_TAG:-dev}"
+PULL_VAR = "${BAMBOO_PULL_POLICY:-build}"
 DOCKER_SOCK = "/var/run/docker.sock"
 
 
@@ -45,6 +46,8 @@ def build(version: str) -> dict:
         if "test" in svc.get("profiles", []):
             continue
         svc.pop("build", None)
+        if svc.get("pull_policy") == PULL_VAR:
+            svc["pull_policy"] = "${BAMBOO_PULL_POLICY:-missing}"
         svc["image"] = svc["image"].replace(TAG_VAR, "${BAMBOO_TAG:-%s}" % version)
         binds = [
             v.get("source")
