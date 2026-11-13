@@ -366,7 +366,7 @@ export const OcrInputPage = () => {
   const busy = stage === "creating" || stage === "uploading" || stage === "waiting";
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-4">
+    <div className="mx-auto flex max-w-[1200px] flex-col gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="m-0 text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">
