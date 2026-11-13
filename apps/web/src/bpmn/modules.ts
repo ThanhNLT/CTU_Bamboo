@@ -1,15 +1,25 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Các module diagram-js của trình thiết kế quy trình Bamboo (ADR #81): tạo phần tử kèm đối tượng BPMN, bố cục đường
-// nối vuông góc, quy tắc nối, bảng công cụ, menu ngữ cảnh, sửa nhãn trực tiếp, cập nhật thuộc tính có hoàn tác.
 import ElementFactoryBase from "diagram-js/lib/core/ElementFactory";
 import BaseLayouter from "diagram-js/lib/layout/BaseLayouter";
 import CroppingConnectionDocking from "diagram-js/lib/layout/CroppingConnectionDocking";
@@ -20,8 +30,6 @@ import RuleProvider from "diagram-js/lib/features/rules/RuleProvider";
 import { boOf, is, isAny, isExpanded, kindOf, sizeOf, type DiagramElement } from "./model";
 import { BambooRenderer, flowLabel, FONT, shapeLabel } from "./render";
 import { tr } from "../i18n";
-
-// ---- tạo phần tử ---------------------------------------------------------------------------------------------
 
 export type ShapeSpec = { type: string; eventDefinition?: string; isExpanded?: boolean };
 
@@ -74,8 +82,6 @@ class BambooElementFactory extends ElementFactory {
   }
 }
 
-// ---- bố cục đường nối ------------------------------------------------------------------------------------------
-
 class BambooLayouter extends BaseLayouter {
   static $inject = ["connectionDocking"];
   private docking: any;
@@ -89,7 +95,7 @@ class BambooLayouter extends BaseLayouter {
     const source = hints.source ?? connection.source;
     const target = hints.target ?? connection.target;
     if (!source || !target) return super.layoutConnection(connection, hints);
-    connection.labelHint = undefined; // đường nối vẽ lại thì nhãn về vị trí mặc định
+    connection.labelHint = undefined;
     const start = getMid(source);
     const end = getMid(target);
     const s = boOf(source),
@@ -110,8 +116,6 @@ class BambooLayouter extends BaseLayouter {
     }));
   }
 }
-
-// ---- quy tắc ---------------------------------------------------------------------------------------------------
 
 const isContainer = (element: DiagramElement) => !!element && (!element.parent || isExpanded(element));
 
@@ -160,8 +164,6 @@ class BambooRules extends RuleProvider {
   }
 }
 
-// ---- tự đặt vị trí khi nối thêm --------------------------------------------------------------------------------
-
 class BambooAutoPlace {
   static $inject = ["eventBus", "elementRegistry"];
 
@@ -188,8 +190,6 @@ class BambooAutoPlace {
     });
   }
 }
-
-// ---- cập nhật thuộc tính (hoàn tác được) -----------------------------------------------------------------------
 
 class UpdatePropertiesHandler {
   static $inject = ["elementRegistry"];
@@ -233,8 +233,6 @@ class PropertiesSupport {
 
 export const updateProperties = (injector: any, element: DiagramElement, properties: Record<string, unknown>) =>
   injector.get("commandStack").execute("bamboo.updateProperties", { element, properties });
-
-// ---- sửa nhãn trực tiếp ----------------------------------------------------------------------------------------
 
 class LabelEditing {
   static $inject = ["eventBus", "canvas", "directEditing", "commandStack"];
@@ -289,8 +287,6 @@ class LabelEditing {
     this.commandStack.execute("bamboo.updateProperties", { element, properties: { name: text || undefined } });
   }
 }
-
-// ---- bảng công cụ và menu ngữ cảnh -----------------------------------------------------------------------------
 
 const icon = (body: string, w = 28, h = 28) =>
   `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
@@ -469,8 +465,6 @@ class BambooContextPad {
     return entries;
   }
 }
-
-// ---- khai báo module -------------------------------------------------------------------------------------------
 
 export const coreModule = {
   __init__: ["bambooRenderer"],

@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Alert, App, Input, Modal, Typography } from "antd";
@@ -18,7 +30,6 @@ const TEMPLATE = tr(
   '{\n  "code": "x_nhac_viec",\n  "name": "Nhắc việc",\n  "description": "Gửi lời nhắc tới đồng nghiệp qua thông báo của Bamboo",\n  "vendor": "Công ty phát triển",\n  "version": "1.0.0",\n  "base_url": "http://nhac-viec:8080",\n  "entry_path": "/",\n  "health_path": "/healthz",\n  "depends": [],\n  "scopes": ["people.read", "notify.send"],\n  "menu": [{ "label": "Nhắc việc", "path": "/" }]\n}',
 );
 
-/** Đăng ký hoặc cập nhật mô-đun ngoài bằng manifest JSON (ADR #58). */
 export const RegisterExternal = ({
   open,
   onClose,

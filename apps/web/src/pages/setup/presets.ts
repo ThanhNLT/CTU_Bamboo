@@ -1,16 +1,27 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import type { MemberRole, SizeBand } from "./api";
 import { tr } from "../../i18n";
 
-/** Gợi ý theo lĩnh vực kinh doanh khi đăng ký (ADR #62): phòng ban cho luồng chi tiết và công cụ nên bật. */
 export type Industry = {
   label: string;
   units: { name: string; type: string }[];
@@ -136,7 +147,6 @@ export const UNIT_TYPES: { value: string; label: string }[] = [
   { value: "KHOA", label: "Khoa" },
 ];
 
-/** Đến 50 người gợi ý luồng nhanh (doanh nghiệp nhỏ ngành thương mại, dịch vụ theo NĐ 80/2021). */
 export const SIZES: { value: SizeBand; label: string; hint: string; flow: "quick" | "detailed" }[] = [
   { value: "1-10", label: tr("1–10 người"), hint: tr("Hộ kinh doanh, công ty một thành viên"), flow: "quick" },
   { value: "11-50", label: tr("11–50 người"), hint: tr("Doanh nghiệp nhỏ"), flow: "quick" },
@@ -159,7 +169,6 @@ export const ROLES: { value: MemberRole; label: string; description: string }[] 
   },
 ];
 
-/** Công cụ cần máy chủ nhiều tài nguyên: nhắc người đăng ký trước khi bật. */
 export const HEAVY_MODULES = new Set(["data", "ai"]);
 
 const ascii = (s: string) =>
@@ -171,7 +180,6 @@ const ascii = (s: string) =>
     .replace(/[^a-z0-9 ]/g, " ")
     .trim();
 
-/** Tên đăng nhập gợi ý từ họ tên: "Đỗ Văn Nam" → "nam.do"; trùng thì thêm số. */
 export const suggestUsername = (fullName: string, taken: Set<string>) => {
   const words = ascii(fullName).split(/\s+/).filter(Boolean);
   if (words.length === 0) return "";

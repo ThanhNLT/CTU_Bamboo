@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { App } from "antd";
@@ -25,7 +37,7 @@ import { useEffect, useState } from "react";
 import { request } from "../../../api/client";
 import { cn } from "../../../utils/cn";
 import type { Attachment, DocPreview } from "../types";
-import { tr } from "../../../i18n";
+import { tr, trf } from "../../../i18n";
 
 const ZOOM_STEPS = [50, 75, 100, 125, 150];
 
@@ -50,7 +62,7 @@ const PaperPage = ({ preview, page }: { preview: DocPreview; page: number }) => 
       </>
     ) : (
       <>
-        <div className="text-[10px] font-semibold text-ink">Trang {page}</div>
+        <div className="text-[10px] font-semibold text-ink">{trf("Trang {0}", [page])}</div>
         {["w-full", "w-11/12", "w-10/12", "w-full", "w-9/12", "w-11/12", "w-6/12"].map((w, i) => (
           <Line key={i} w={w} />
         ))}
@@ -240,14 +252,14 @@ export const DocumentViewer = ({
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
             <span className="whitespace-nowrap text-[12px] tabular-nums text-ink">
-              Trang {page} / {file?.pages ?? 1}
+              {trf("Trang {0} / {1}", [page, file?.pages ?? 1])}
             </span>
             <button
               type="button"
               className={toolBtn}
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= (file?.pages ?? 1)}
-              aria-label="Trang sau"
+              aria-label={tr("Trang sau")}
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </button>

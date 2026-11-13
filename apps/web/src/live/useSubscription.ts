@@ -1,20 +1,29 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { useEffect, useRef, useState } from "react";
 
 import { wsClient } from "../api/client";
+import { trServer } from "../i18n/server";
 
-/**
- * Một subscription GraphQL (Hasura live query) qua kết nối WebSocket dùng chung của ứng dụng. Trả dữ liệu mới nhất,
- * lỗi và trạng thái kết nối; đổi `variables` thì đăng ký lại. `skip` để chưa đăng ký (chưa có tham số).
- */
 export const useSubscription = <T>(query: string, variables: Record<string, unknown> = {}, skip = false) => {
   const [state, setState] = useState<{ data?: T; error?: string; connected: boolean }>({ connected: false });
   const key = JSON.stringify(variables);
@@ -29,7 +38,7 @@ export const useSubscription = <T>(query: string, variables: Record<string, unkn
       {
         next: ({ data, errors }) => {
           if (!alive) return;
-          if (errors?.length) setState((s) => ({ ...s, error: errors[0].message }));
+          if (errors?.length) setState((s) => ({ ...s, error: trServer(errors[0].message) }));
           else if (data) setState({ data, connected: true });
         },
         error: (e) => alive && setState((s) => ({ ...s, connected: false, error: (e as Error)?.message })),

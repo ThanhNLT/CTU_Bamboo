@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { request, wsClient } from "../../api/client";
@@ -45,7 +57,6 @@ export const ask = async (agentId: string, question: string, kbDocumentId?: stri
   return ai_ask;
 };
 
-/** Theo dõi một lượt hỏi qua subscription Hasura; trả hàm hủy. */
 export const watchQuestion = (id: string, onData: (q: Question) => void, onError: (e: unknown) => void) =>
   wsClient.subscribe<{ core_ai_question_by_pk: Question | null }>(
     { query: `subscription($id: uuid!) { core_ai_question_by_pk(id: $id) { ${FIELDS} } }`, variables: { id } },
@@ -72,7 +83,6 @@ export const parseRich = (text: string): RichPart[] =>
       return cite?.[1] ? { type: "cite", n: Number(cite[1]) } : { type: "text", value: s };
     });
 
-/** Nguồn trích bằng tên văn bản: "Quy chế mua sắm (TL-0003) · Điều 2, Điều 5". */
 export const citationLabel = (c: Citation) => {
   const sections = c.sections?.length ? c.sections : c.heading ? [c.heading] : [];
   const name = c.title ? (c.doc_no ? `${c.title} (${c.doc_no})` : c.title) : (c.doc_no ?? c.file_name ?? "");
@@ -84,13 +94,11 @@ export const shortTitle = (c: Citation, max = 36) => {
   return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
 };
 
-/** Câu trả lời đã nêu tên văn bản ngay trước số trích dẫn thì chỉ hiện số, chưa nêu thì hiện tên văn bản. */
 export const namedBefore = (before: string, c: Citation) =>
   !!c.title && fold(before.slice(-160)).includes(fold(c.title));
 
 export const citationLink = (c: Citation) => `/h/library?doc=${encodeURIComponent(c.kb_document_id)}`;
 
-/** Bản sao chép: số trích dẫn kèm tên văn bản khi câu chưa nêu tên, cuối có danh sách nguồn. */
 export const plainText = (q: Question) =>
   [
     q.answer.replace(/\*\*/g, "").replace(/\[(\d+)\]/g, (m, n: string, offset: number, all: string) => {

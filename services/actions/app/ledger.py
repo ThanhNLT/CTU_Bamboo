@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import hashlib
 import re
@@ -47,10 +59,10 @@ seals AS (
 _SEAL_COLUMNS = """
     s.attachment_id, s.entity_type, s.entity_id, s.file_name, s.content_type, s.size_bytes, s.sha256, s.storage_key,
     s.version, s.doc_no, s.title, s.status, s.unit,
-    to_char(s.scanned_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS sealed_at,
+    to_char(s.scanned_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS sealed_at,
     seal.id AS log_id, seal.seq AS block, encode(seal.hash, 'hex') AS tx_id, seal.new_data ->> 'sha256' AS sealed_sha256,
     last.result AS last_result,
-    to_char(last.checked_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS last_checked_at
+    to_char(last.checked_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS last_checked_at
 """
 _SEAL_JOINS = """
     LEFT JOIN LATERAL audit.attachment_seal(s.attachment_id) seal ON true
@@ -200,7 +212,7 @@ def ledger_verify(conn: psycopg.Connection, session: dict, args: dict, ctx: Cont
         "SELECT audit.add_ledger_check(%s, %s, %s, %s, %s, %s, %s, %s)",
         (tenant, seal["attachment_id"] if seal else None, via, query, result, expected, actual, person),
     )
-    checked_at = conn.execute("SELECT to_char(now() AT TIME ZONE %s, 'DD/MM/YYYY HH24:MI')", (TZ,)).fetchone()[0]
+    checked_at = conn.execute("SELECT to_char(now() AT TIME ZONE %s, 'DD-Mon-YYYY HH24:MI')", (TZ,)).fetchone()[0]
     return {
         "kind": result,
         "via": via,
@@ -228,7 +240,7 @@ def ledger_archive(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
     access = cur.execute(
         f"""{_DOCS}
             SELECT x.id, s.title AS doc_title, s.file_name, p.full_name AS viewer,
-                   to_char(x.opened_at AT TIME ZONE %(tz)s, 'DD/MM/YYYY HH24:MI') AS opened_at
+                   to_char(x.opened_at AT TIME ZONE %(tz)s, 'DD-Mon-YYYY HH24:MI') AS opened_at
             FROM audit.archive_access x
             JOIN seals s ON s.attachment_id = x.attachment_id
             JOIN core.person p ON p.id = x.person_id
@@ -257,7 +269,7 @@ def ledger_open_archive(conn: psycopg.Connection, session: dict, args: dict, ctx
         raise ActionError("Không tìm thấy hồ sơ lưu trữ", "not-found", 404)
     conn.execute("SELECT audit.add_archive_access(%s, %s, %s)", (tenant, doc["attachment_id"], person))
     row = conn.execute(
-        """SELECT p.full_name, to_char(now() AT TIME ZONE %s, 'DD/MM/YYYY HH24:MI')
+        """SELECT p.full_name, to_char(now() AT TIME ZONE %s, 'DD-Mon-YYYY HH24:MI')
            FROM core.person p WHERE p.id = %s""",
         (TZ, person),
     ).fetchone()

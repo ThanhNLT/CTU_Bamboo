@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Alert, App, Button, Dropdown, Segmented, Spin, Switch, Tooltip } from "antd";
@@ -51,7 +63,7 @@ import type { Detail, Task } from "./types";
 type Tab = "gantt" | "plan" | "reports" | "files";
 
 const pct = (n: number | null | undefined) =>
-  n == null ? "—" : `${Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
+  n == null ? "—" : `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
 
 const Stat = ({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: string }) => (
   <div className="min-w-0 rounded-2xl border bg-surface px-4 py-3 shadow-card">
@@ -61,7 +73,6 @@ const Stat = ({ label, value, hint, tone }: { label: string; value: string; hint
   </div>
 );
 
-/** Chi tiết dự án (ADR #66): chỉ số tiến độ, sơ đồ Gantt, văn bản kế hoạch, báo cáo tiến độ; tự cập nhật giữa các thiết bị. */
 export const ProjectPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -178,8 +189,8 @@ export const ProjectPage = () => {
           <p className="m-0 text-[12.5px] text-muted">
             {trf("Quản lý: {0} · {1} – {2}", [
               p.manager_name,
-              dayjs(p.start_date).format("DD/MM/YYYY"),
-              dayjs(p.end_date).format("DD/MM/YYYY"),
+              dayjs(p.start_date).format("DD-MMM-YYYY"),
+              dayjs(p.end_date).format("DD-MMM-YYYY"),
             ])}
             {p.budget != null && ` · ${trf("Ngân sách {0}", [formatMoney(p.budget)])}`}
           </p>
@@ -262,7 +273,7 @@ export const ProjectPage = () => {
           value={daysLeft >= 0 ? trf("{0} ngày", [daysLeft]) : trf("Quá {0} ngày", [-daysLeft])}
           hint={
             p.baseline_at
-              ? trf("Đường cơ sở chốt {0}", [dayjs(p.baseline_at).format("DD/MM/YYYY")])
+              ? trf("Đường cơ sở chốt {0}", [dayjs(p.baseline_at).format("DD-MMM-YYYY")])
               : tr("Chưa chốt đường cơ sở")
           }
         />
@@ -403,7 +414,7 @@ export const ProjectPage = () => {
                           t.progress === 100 ? "text-bamboo-700" : t.late ? "text-red-600" : "text-muted",
                         )}
                       >
-                        {dayjs(t.start_date).format("DD/MM/YYYY")}
+                        {dayjs(t.start_date).format("DD-MMM-YYYY")}
                       </span>
                     </li>
                   ))}

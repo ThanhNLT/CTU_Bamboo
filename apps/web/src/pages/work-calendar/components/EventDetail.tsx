@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { App, Button, Modal, Popconfirm, Segmented, Tag } from "antd";
@@ -28,11 +40,13 @@ const when = (e: CalEvent) => {
   const f = dayjs(e.ends_at);
   if (e.all_day) {
     const last = f.subtract(1, "day");
-    return last.isSame(s, "day") ? s.format("dddd, DD/MM/YYYY") : `${s.format("DD/MM")} – ${last.format("DD/MM/YYYY")}`;
+    return last.isSame(s, "day")
+      ? s.format("dddd, DD-MMM-YYYY")
+      : `${s.format("DD-MMM")} – ${last.format("DD-MMM-YYYY")}`;
   }
   return s.isSame(f, "day")
-    ? `${s.format("dddd, DD/MM/YYYY")} · ${s.format("HH:mm")}–${f.format("HH:mm")}`
-    : `${s.format("HH:mm DD/MM")} – ${f.format("HH:mm DD/MM/YYYY")}`;
+    ? `${s.format("dddd, DD-MMM-YYYY")} · ${s.format("HH:mm")}–${f.format("HH:mm")}`
+    : `${s.format("HH:mm DD-MMM")} – ${f.format("HH:mm DD-MMM-YYYY")}`;
 };
 
 export const EventDetail = ({
@@ -79,7 +93,7 @@ export const EventDetail = ({
           <p className="m-0 flex items-center gap-2 text-[13.5px] text-body">
             <Repeat className="h-4 w-4 shrink-0 text-muted" aria-hidden />
             {REPEAT[event.recurrence]}
-            {event.recur_until && ` · ${trf("đến {0}", [dayjs(event.recur_until).format("DD/MM/YYYY")])}`}
+            {event.recur_until && ` · ${trf("đến {0}", [dayjs(event.recur_until).format("DD-MMM-YYYY")])}`}
           </p>
         )}
         {event.location && (

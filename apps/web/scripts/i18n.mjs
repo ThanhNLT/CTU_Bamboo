@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import fs from "node:fs";
@@ -42,6 +54,7 @@ const write = MODE === "wrap";
 const keys = new Map();
 const skipped = [];
 const unwrapped = [];
+const manual = [];
 
 const files = [];
 const walk = (d) => {
@@ -141,7 +154,7 @@ for (const file of files) {
     if (ts.isJsxText(node) && VI.test(node.text)) {
       const raw = node.getFullText();
       if (raw.includes("&") || /[{}]/.test(raw)) {
-        skipped.push(`${file}:${raw.trim().slice(0, 60)}`);
+        manual.push(`${path.relative(WEB, file)}:${sf.getLineAndCharacterOfPosition(node.getStart()).line + 1}`);
         return;
       }
       const core = jsxText(raw);
@@ -238,7 +251,8 @@ for (const file of files) {
       ["t", "tr", "trl", "trf", "trs"].includes(node.expression.text)
     ) {
       const a = node.arguments[0];
-      if (a && (ts.isStringLiteral(a) || ts.isNoSubstitutionTemplateLiteral(a)) && VI.test(a.text)) used.add(a.text);
+      if (a && (ts.isStringLiteral(a) || ts.isNoSubstitutionTemplateLiteral(a)) && /\p{L}/u.test(a.text))
+        used.add(a.text);
     }
     ts.forEachChild(node, visit);
   };
@@ -255,7 +269,7 @@ for (const name of ["catalog.ts", "catalog-pages.ts"]) {
   };
   visit(sf);
 }
-const untranslated = [...used].filter((k) => !catalogKeys.has(k) && !/^\s*[{<]/.test(k)).sort();
+const untranslated = [...used].filter((k) => !catalogKeys.has(k) && !/^\s*\{\s*"/.test(k)).sort();
 
 if (MODE === "wrap") {
   console.log(`Đã bọc chuỗi trong ${changedFiles} tệp. Câu chưa có bản dịch (${untranslated.length}):`);
@@ -271,6 +285,10 @@ if (MODE === "wrap") {
     console.error(`Có ${untranslated.length} câu chưa có bản dịch tiếng Anh trong src/i18n/catalog-pages.ts:`);
     for (const k of untranslated.slice(0, 50)) console.error(`  ${JSON.stringify(k)}`);
   }
-  if (unwrapped.length || untranslated.length) process.exit(1);
+  if (manual.length) {
+    console.error(`Có ${manual.length} đoạn JSX tiếng Việt chứa & hoặc ngoặc nhọn, cần bọc tr() bằng tay:`);
+    for (const u of manual.slice(0, 50)) console.error(`  ${u}`);
+  }
+  if (unwrapped.length || untranslated.length || manual.length) process.exit(1);
   console.log(`i18n: ${used.size} câu đã bọc, đều có bản dịch tiếng Anh.`);
 }
