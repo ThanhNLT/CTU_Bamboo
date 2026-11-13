@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import hashlib
 import json
@@ -427,7 +439,7 @@ def process_models(conn: psycopg.Connection, session: dict, _args: dict, _ctx: C
         .execute(
             """SELECT * FROM (
                  SELECT m.id, m.process_key, m.name, m.description, m.owner_unit_id, u.name AS owner_unit,
-                    to_char(m.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS updated_at,
+                    to_char(m.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS updated_at,
                     (SELECT max(v.version) FROM wf.process_version v WHERE v.model_id = m.id) AS published_version,
                     (SELECT v.audience FROM wf.process_version v WHERE v.model_id = m.id
                      ORDER BY v.version DESC LIMIT 1) AS audience,
@@ -463,9 +475,9 @@ def _change_requests(conn: psycopg.Connection, model_id: str, only: str | None) 
         conn.cursor(row_factory=dict_row)
         .execute(
             """SELECT c.id, c.version, c.message, c.status, c.resolution_note, p.full_name AS requested_by,
-                      to_char(c.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS requested_at,
+                      to_char(c.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS requested_at,
                       r.full_name AS resolved_by,
-                      to_char(c.resolved_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS resolved_at
+                      to_char(c.resolved_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS resolved_at
                FROM wf.process_change_request c
                JOIN core.person p ON p.id = c.requested_by LEFT JOIN core.person r ON r.id = c.resolved_by
                WHERE c.model_id = %s AND (%s::uuid IS NULL OR c.requested_by = %s::uuid)
@@ -520,14 +532,14 @@ def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx:
 
     versions = cur.execute(
         """SELECT v.version, v.sha256, v.note, v.audience, p.full_name AS published_by,
-                  to_char(v.published_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS published_at
+                  to_char(v.published_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS published_at
            FROM wf.process_version v JOIN core.person p ON p.id = v.published_by
            WHERE v.model_id = %s ORDER BY v.version DESC""",
         (m["id"],),
     ).fetchall()
     runs = cur.execute(
         """SELECT r.id, r.status, r.steps, r.variables, r.error, r.version, p.full_name AS started_by,
-                  to_char(r.started_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS started_at
+                  to_char(r.started_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS started_at
            FROM wf.sandbox_run r JOIN core.person p ON p.id = r.started_by
            WHERE r.model_id = %s ORDER BY r.started_at DESC LIMIT 10""",
         (m["id"],),

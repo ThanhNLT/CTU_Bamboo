@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 export const EN_PAGES: Record<string, string> = {
@@ -3298,4 +3310,27 @@ export const EN_PAGES: Record<string, string> = {
   "Quy trình con": "Subprocess",
   "Nối thêm tác vụ người dùng": "Append user task",
   "Nối thêm tác vụ tự động": "Append automated task",
+  "tệp không có phần sơ đồ (BPMNDiagram)": "the file has no diagram section (BPMNDiagram)",
+  "tệp không có quy trình (process)": "the file has no process",
+  "sự kiện biên {0} không có tác vụ chứa trên sơ đồ": "boundary event {0} has no host task on the diagram",
+  "luồng {0} thiếu phần tử nguồn hoặc đích trên sơ đồ":
+    "flow {0} is missing its source or target element on the diagram",
+  "chưa có sơ đồ": "no diagram loaded",
+  "{0} người đang trực tuyến, kể cả bạn": "{0} people online, including you",
+  "{0} người đang trực tuyến, {1} người cùng trang": "{0} people online, {1} on this page",
+  "{0} hành động bị chặn": "{0} actions blocked",
+  "{0} dải IP": "{0} IP ranges",
+  "{0} lỗi": "{0} errors",
+  "{0} theo {1}": "{0} by {1}",
+  "Chia theo": "Split by",
+  nay: "now",
+  "Trang {0}": "Page {0}",
+  "Trang {0} / {1}": "Page {0} / {1}",
+  "Trang sau": "Next page",
+  Xong: "Done",
+  "Neo ngay": "Anchor now",
+  "In PDF": "Print PDF",
+  "MST {0}": "Tax code {0}",
+  "Chức năng Ổ đĩa & tệp đính kèm chưa được bật cho công ty; quản trị viên bật ở trang Quản lý chức năng.":
+    "The Drive & attachments feature is not enabled for this company; an administrator can enable it on the Feature management page.",
 };

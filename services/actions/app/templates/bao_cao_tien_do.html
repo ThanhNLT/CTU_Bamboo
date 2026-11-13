@@ -1,17 +1,29 @@
 <!doctype html>
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<title>Báo cáo tiến độ {{ p.code }}</title>
+<title>{{ _("Báo cáo tiến độ") }} {{ p.code }}</title>
 <style>
   @page { size: A4; margin: 16mm 14mm 18mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -41,44 +53,44 @@
 <body>
 <div class="head">
   <div>{{ tenant_name }}<strong>{{ p.org_unit_name }}</strong></div>
-  <div style="text-align:right">Dự án: <b>{{ p.code }}</b><br>Lập ngày {{ r.created_at[8:10] }}/{{ r.created_at[5:7] }}/{{ r.created_at[:4] }}</div>
+  <div style="text-align:right">{{ _("Dự án:") }} <b>{{ p.code }}</b><br>{{ _("Lập ngày") }} {{ r.created_at | date }}</div>
 </div>
 
-<h1>Báo cáo tiến độ dự án</h1>
-<div class="sub">{{ p.name }}<br>Kỳ báo cáo: {{ r.period_from[8:10] }}/{{ r.period_from[5:7] }}/{{ r.period_from[:4] }} – {{ r.period_to[8:10] }}/{{ r.period_to[5:7] }}/{{ r.period_to[:4] }}</div>
+<h1>{{ _("Báo cáo tiến độ dự án") }}</h1>
+<div class="sub">{{ p.name }}<br>{{ _("Kỳ báo cáo:") }} {{ r.period_from | date }} – {{ r.period_to | date }}</div>
 
-<h2>1. Tình trạng chung: <span class="health {{ r.health }}">{{ health }}</span></h2>
+<h2>{{ _("1. Tình trạng chung:") }} <span class="health {{ r.health }}">{{ health }}</span></h2>
 <div class="kpi">
-  <div>Kế hoạch<b>{{ r.planned_pct | number(1) }}%</b></div>
-  <div>Thực hiện<b>{{ r.actual_pct | number(1) }}%</b></div>
-  <div>Chỉ số tiến độ (SPI)<b>{{ r.spi | number(2) if r.spi is not none else '—' }}</b></div>
-  <div>Công việc trễ<b>{{ r.late_tasks }}</b></div>
+  <div>{{ _("Kế hoạch") }}<b>{{ r.planned_pct | number(1) }}%</b></div>
+  <div>{{ _("Thực hiện") }}<b>{{ r.actual_pct | number(1) }}%</b></div>
+  <div>{{ _("Chỉ số tiến độ (SPI)") }}<b>{{ r.spi | number(2) if r.spi is not none else '—' }}</b></div>
+  <div>{{ _("Công việc trễ") }}<b>{{ r.late_tasks }}</b></div>
 </div>
 <div class="pre" style="margin-top:8px">{{ r.summary }}</div>
 
 {% set ns = namespace(n=2) %}
-{% for title, body in [("Kết quả đạt được trong kỳ", r.accomplishments), ("Vướng mắc, rủi ro và đề xuất", r.issues), ("Kế hoạch kỳ tới", r.next_steps)] if body %}
+{% for title, body in [(_("Kết quả đạt được trong kỳ"), r.accomplishments), (_("Vướng mắc, rủi ro và đề xuất"), r.issues), (_("Kế hoạch kỳ tới"), r.next_steps)] if body %}
 <h2>{{ ns.n }}. {{ title }}</h2>
 <div class="pre">{{ body }}</div>
 {% set ns.n = ns.n + 1 %}
 {% endfor %}
 
-<h2>{{ ns.n }}. Chi tiết công việc tại ngày lập</h2>
+<h2>{{ ns.n }}{{ _(". Chi tiết công việc tại ngày lập") }}</h2>
 <table>
-  <thead><tr><th style="width:44px">WBS</th><th>Công việc</th><th>Phụ trách</th><th style="width:62px">Kết thúc</th><th class="num" style="width:34px">%</th></tr></thead>
+  <thead><tr><th style="width:44px">{{ _("WBS") }}</th><th>{{ _("Công việc") }}</th><th>{{ _("Phụ trách") }}</th><th style="width:62px">{{ _("Kết thúc") }}</th><th class="num" style="width:34px">%</th></tr></thead>
   <tbody>
   {% for t in tasks %}
     <tr>
       <td>{{ t.wbs }}</td>
-      <td style="padding-left: {{ 5 + t.level * 10 }}px">{% if t.milestone %}◆ {% endif %}{{ t.name }}{% if t.late %} <span class="late">(trễ)</span>{% endif %}</td>
+      <td style="padding-left: {{ 5 + t.level * 10 }}px">{% if t.milestone %}◆ {% endif %}{{ t.name }}{% if t.late %} <span class="late">{{ _("(trễ)") }}</span>{% endif %}</td>
       <td>{{ t.assignee or '' }}</td>
-      <td>{{ t.end_date[8:10] }}/{{ t.end_date[5:7] }}/{{ t.end_date[:4] }}</td>
+      <td>{{ t.end_date | date }}</td>
       <td class="num">{{ t.progress }}</td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
 
-<div class="sign"><div><b>Người lập báo cáo</b><br><br><br><br>{{ r.created_by_name }}</div></div>
+<div class="sign"><div><b>{{ _("Người lập báo cáo") }}</b><br><br><br><br>{{ r.created_by_name }}</div></div>
 </body>
 </html>

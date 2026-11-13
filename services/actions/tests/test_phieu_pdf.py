@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import threading
 from decimal import Decimal
@@ -46,10 +58,10 @@ def test_so_tien_bang_chu(amount, words):
 
 
 def test_dinh_dang_so():
-    assert forms.number(Decimal("1234567.00")) == "1.234.567"
-    assert forms.number(Decimal("1000.000"), 3) == "1.000"
-    assert forms.number(Decimal("2.500"), 3) == "2,5"
-    assert forms.number(Decimal("0.125"), 3) == "0,125"
+    assert forms.number(Decimal("1234567.00")) == "1,234,567"
+    assert forms.number(Decimal("1000.000"), 3) == "1,000"
+    assert forms.number(Decimal("2.500"), 3) == "2.5"
+    assert forms.number(Decimal("0.125"), 3) == "0.125"
 
 
 def _sample(**over) -> dict:
@@ -97,7 +109,7 @@ def test_mau_escape_du_lieu_nguoi_dung():
     )
     assert "<script>" not in html and '<img src="http://evil' not in html
     assert "&lt;script&gt;" in html and "A &amp; B" in html
-    assert "Ba trăm nghìn đồng" in html and "1.000" in html and "300.000" in html
+    assert "Ba trăm nghìn đồng" in html and "1,000" in html and "300,000" in html
     assert "Chờ duyệt" in html, "chưa duyệt thì có chữ chìm trạng thái"
     assert 'class="watermark"' not in forms.render_purchase_request(_sample(status="APPROVED"))
     assert "Đề nghị chưa gửi duyệt" in forms.render_purchase_request(_sample(status="DRAFT"))

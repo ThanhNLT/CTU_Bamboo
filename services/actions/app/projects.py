@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Quản lý dự án và kế hoạch (ADR #66), mô-đun `project`.
 
@@ -27,7 +39,7 @@ from decimal import Decimal
 import psycopg
 from psycopg.rows import dict_row
 
-from . import documents, forms
+from . import documents, forms, i18n
 from .common import ActionError, Context, bind_session, session_identity
 
 STATUSES = ("PLANNING", "ACTIVE", "ON_HOLD", "DONE", "CANCELLED")
@@ -360,7 +372,7 @@ def pm_project_detail(conn: psycopg.Connection, session: dict, args: dict, _ctx:
         last = max(t["end_date"] for t in tasks.values())
         if last > project["end_date"]:
             warnings.append(
-                f"Kế hoạch kết thúc {last:%d/%m/%Y}, sau ngày kết thúc dự án {project['end_date']:%d/%m/%Y}"
+                f"Kế hoạch kết thúc {i18n.date(last)}, sau ngày kết thúc dự án {i18n.date(project['end_date'])}"
             )
     s = stats(conn, project["id"], at)
     return {
@@ -650,7 +662,7 @@ def pm_task_save(conn: psycopg.Connection, session: dict, args: dict, _ctx: Cont
                 assignee,
                 project["id"],
                 f"Việc mới trong dự án {project['code']}: {fields['name']}",
-                f"{fields['start_date']:%d/%m/%Y} – {fields['end_date']:%d/%m/%Y}",
+                f"{i18n.date(fields['start_date'])} – {i18n.date(fields['end_date'])}",
                 person,
             ),
         )
@@ -806,7 +818,7 @@ def pm_report_create(conn: psycopg.Connection, session: dict, args: dict, _ctx: 
                 tenant,
                 pid,
                 project["id"],
-                f"Báo cáo tiến độ {project['code']} kỳ {start:%d/%m}–{end:%d/%m/%Y}",
+                f"Báo cáo tiến độ {project['code']} kỳ {i18n.date(start)} – {i18n.date(end)}",
                 f"{HEALTH_LABEL[health]} · thực hiện {s['actual_pct']}% / kế hoạch {s['planned_pct']}%",
                 person,
             ),
@@ -831,13 +843,14 @@ def _months(start: dt.date, end: dt.date) -> list[dict]:
     while cur <= end:
         nxt = (cur.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
         a, b = max(cur, start), min(nxt - dt.timedelta(days=1), end)
-        out.append({"label": f"{cur:%m/%Y}", "width": round(((b - a).days + 1) * 100 / span, 3)})
+        out.append({"label": i18n.month(cur), "width": round(((b - a).days + 1) * 100 / span, 3)})
         cur = nxt
     return out
 
 
 def pm_plan_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     documents._need_pdf(ctx)
+    i18n.for_session(conn, session)
     detail = pm_project_detail(conn, session, {"id": args.get("project_id")}, ctx)
     p = detail["project"]
     tasks = [
@@ -850,8 +863,8 @@ def pm_plan_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Contex
     html = forms._env.get_template("ke_hoach_du_an.html").render(
         p=p,
         tenant_name=tenant,
-        status=STATUS_LABEL[p["status"]],
-        members=[{**m, "role_label": ROLE_LABEL[m["role"]]} for m in detail["members"]],
+        status=i18n.t(STATUS_LABEL[p["status"]]),
+        members=[{**m, "role_label": i18n.t(ROLE_LABEL[m["role"]])} for m in detail["members"]],
         tasks=gantt_rows(tasks, start, end),
         milestones=[t for t in tasks if t["milestone"]],
         months=_months(start, end),
@@ -870,6 +883,7 @@ def pm_plan_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Contex
 
 def pm_report_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     documents._need_pdf(ctx)
+    i18n.for_session(conn, session)
     person, tenant = _who(conn, session)
     report = (
         conn.cursor(row_factory=dict_row)
@@ -890,7 +904,7 @@ def pm_report_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Cont
         r=_clean(report),
         p={**_clean(project), "org_unit_name": unit, "manager_name": manager},
         tenant_name=tenant_name,
-        health=HEALTH_LABEL[report["health"]],
+        health=i18n.t(HEALTH_LABEL[report["health"]]),
         tasks=report["snapshot"],
     )
     digest = documents._digest(html)

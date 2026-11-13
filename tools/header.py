@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Gắn header của dự án (docs/Header.txt) vào đầu mọi tệp mã nguồn, cấu hình, tài liệu.
 
@@ -12,7 +24,8 @@
 
 Chỉ xử lý tệp Git đang theo dõi. Header viết bằng chú thích của từng loại tệp, đặt sau dòng `#!`, `<?xml ...?>`,
 `<!doctype ...>` nếu có. Bỏ qua tệp không chứa được chú thích hoặc không phải của dự án: JSON, tệp khóa, dữ liệu mẫu,
-ảnh, toàn văn giấy phép, NOTICE.
+ảnh, toàn văn giấy phép, NOTICE. Header gồm phần thông tin dự án và thông báo giấy phép Apache-2.0; ở tệp dùng chú thích
+`#` hoặc `--`, header kết thúc ở dòng trống đầu tiên.
 
 Hai tệp sinh tự động mang header do chính bộ sinh ghi: sửa docs/Header.txt thì sửa cả header trong
 `services/actions/app/lakehouse_silver.py` (hàm build, tệp infra/platform/trino/silver.sql) và
@@ -44,7 +57,7 @@ PREAMBLES = ("#!", "<?xml", "<!doctype")
 
 
 def header_lines() -> list[str]:
-    return [line.rstrip() for line in SOURCE.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [line.rstrip() for line in SOURCE.read_text(encoding="utf-8").strip("\n").splitlines()]
 
 
 def style_of(path: str) -> str | None:
@@ -56,12 +69,12 @@ def style_of(path: str) -> str | None:
 
 def render(lines: list[str], style: str) -> list[str]:
     if style == HASH:
-        return [f"# {x}" for x in lines]
+        return [f"# {x}".rstrip() for x in lines]
     if style == DASH:
-        return [f"-- {x}" for x in lines]
+        return [f"-- {x}".rstrip() for x in lines]
     if style == BLOCK:
-        return ["/**", *(f" * {x}" for x in lines), " */"]
-    return ["<!--", *(f"  {x}" for x in lines), "-->"]
+        return ["/**", *(f" * {x}".rstrip() for x in lines), " */"]
+    return ["<!--", *(f"  {x}".rstrip() for x in lines), "-->"]
 
 
 def content(line: str) -> str:
@@ -82,8 +95,8 @@ def strip_existing(body: list[str], style: str) -> list[str]:
             end += 1
         end += 1
     else:
-        prefix = "# " if style == HASH else "-- "
-        while end < len(body) and body[end].startswith(prefix + "@"):
+        prefix = "#" if style == HASH else "--"
+        while end < len(body) and body[end].startswith(prefix):
             end += 1
     rest = body[end:]
     return rest[1:] if rest[:1] == [""] else rest

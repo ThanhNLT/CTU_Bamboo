@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import {
@@ -38,6 +50,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import dayjs from "dayjs";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 
@@ -661,7 +674,7 @@ const ReviewStep = ({
           {draft.owner.full_name} · {draft.owner.title} · <span className="font-mono">{draft.owner.username}</span>
         </Summary>
         <Summary label={tr("Doanh nghiệp")} onEdit={() => goTo("company")}>
-          {draft.company.legal_name} · MST {draft.company.tax_code}
+          {draft.company.legal_name} · {trf("MST {0}", [draft.company.tax_code])}
           {draft.company.industry && ` · ${draft.company.industry}`}
         </Summary>
         <Summary label={tr("Quy mô")} onEdit={() => goTo("size")}>
@@ -732,7 +745,7 @@ const ReviewStep = ({
                       {tr("Tải đơn đăng ký (PDF)")}
                     </a>{" "}
                     {tr("· mã đơn ")} <span className="font-mono">{application.nonce}</span>
-                    {tr(", hết hạn lúc")} {new Date(application.expires_at).toLocaleTimeString("vi-VN")}
+                    {tr(", hết hạn lúc")} {dayjs(application.expires_at).format("HH:mm:ss")}
                   </li>
                   <li>{tr("Ký số tệp bằng phần mềm ký của nhà cung cấp hoặc Adobe Acrobat Reader; không sửa tệp.")}</li>
                   <li>{tr("Tải tệp đã ký lên dưới đây.")}</li>
@@ -1087,7 +1100,6 @@ const Notice = ({ title, children }: { title: string; children: ReactNode }) => 
   </div>
 );
 
-/** Đăng ký sử dụng: tạo tài khoản doanh nghiệp lần đầu trên máy chủ tự cài (ADR #57, ADR #62). */
 export const SetupPage = () => {
   const [status, setStatus] = useState<SetupStatus>();
   const [result, setResult] = useState<SetupResult>();

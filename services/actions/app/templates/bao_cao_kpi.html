@@ -1,17 +1,29 @@
 <!doctype html>
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<title>Báo cáo KPI {{ r.period_label }}</title>
+<title>{{ _("Báo cáo KPI") }} {{ r.period_label }}</title>
 <style>
   @page { size: A4; }
   body { font-family: "Noto Sans", "DejaVu Sans", "Liberation Sans", sans-serif; font-size: 10pt; color: #111; line-height: 1.4; }
@@ -31,22 +43,22 @@
 </head>
 <body>
 <p style="margin:0">{{ r.tenant_name }}</p>
-<h1>Báo cáo chỉ số KPI</h1>
-<div class="sub">{{ r.period_label }} · số liệu đã đóng băng, không sửa được</div>
+<h1>{{ _("Báo cáo chỉ số KPI") }}</h1>
+<div class="sub">{{ r.period_label }} {{ _("· số liệu đã đóng băng, không sửa được") }}</div>
 {% for k in r.kpis %}
 <h2>{{ k.label }} ({{ k.unit }})</h2>
 <p class="def">{{ k.definition }}</p>
 <table>
-  <thead><tr><th>Kỳ</th><th class="num">Giá trị</th><th>Đánh giá</th><th>Mã băm</th></tr></thead>
+  <thead><tr><th>{{ _("Kỳ") }}</th><th class="num">{{ _("Giá trị") }}</th><th>{{ _("Đánh giá") }}</th><th>{{ _("Mã băm") }}</th></tr></thead>
   <tbody>
   {% for s in k.rows %}
     <tr><td>{{ s.period }}</td><td class="num">{{ s.value | number(2) }}</td><td>{{ s.assessment }}</td>
-        <td class="hash">{{ s.sha256[:16] }}{% if not s.valid %} <span class="bad">SAI</span>{% endif %}</td></tr>
+        <td class="hash">{{ s.sha256[:16] }}{% if not s.valid %} <span class="bad">{{ _("SAI") }}</span>{% endif %}</td></tr>
   {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p>Chưa có kỳ nào được đóng băng trong khoảng thời gian này.</p>
+<p>{{ _("Chưa có kỳ nào được đóng băng trong khoảng thời gian này.") }}</p>
 {% endfor %}
 </body>
 </html>

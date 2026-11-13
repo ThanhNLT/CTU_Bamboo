@@ -1,15 +1,25 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Vẽ phần tử BPMN bằng SVG (ADR #81). Phần tử đầu tiên trong nhóm vẽ luôn là hình chính để CSS tô trạng thái
-// (`.marker .djs-visual > :nth-child(1)`) dùng được cho mọi loại.
 import BaseRenderer from "diagram-js/lib/draw/BaseRenderer";
 import { append, attr, create } from "tiny-svg";
 
@@ -34,7 +44,6 @@ const textWidth = (text: string) => {
   return measureCtx ? measureCtx.measureText(text).width : text.length * FONT.size * 0.55;
 };
 
-/** Chia nhãn thành các dòng vừa `width`; từ quá dài thì cắt theo ký tự. */
 export const wrapText = (text: string, width: number, maxLines = 8): string[] => {
   const lines: string[] = [];
   for (const paragraph of text.split(/\r?\n/)) {
@@ -63,7 +72,6 @@ export const wrapText = (text: string, width: number, maxLines = 8): string[] =>
   return lines;
 };
 
-/** Khung nhãn ngoài hình (sự kiện, cổng, luồng): giữa theo `center.x`, bắt đầu từ `top`. */
 export const externalLabelBox = (text: string, center: Point, top: number): Box => {
   const lines = wrapText(text, 90, 4);
   const width = Math.max(...lines.map(textWidth), 10);
@@ -100,8 +108,6 @@ const text = (parent: SVGElement, lines: string[], x: number, y: number, anchor:
     append(el, span);
   });
 };
-
-// ---- biểu tượng ----------------------------------------------------------------------------------------------
 
 const userIcon = (g: SVGElement) => {
   svg(g, "circle", { cx: 15, cy: 12, r: 4, ...lineStyle(1.5) });
@@ -248,8 +254,6 @@ const eventIcon = (g: SVGElement, def: string | undefined, throwing: boolean) =>
   }
 };
 
-// ---- hình ----------------------------------------------------------------------------------------------------
-
 const drawEvent = (g: SVGElement, bo: Bo) => {
   const end = is(bo, "bpmn:EndEvent");
   const intermediate = isAny(bo, ["bpmn:IntermediateCatchEvent", "bpmn:IntermediateThrowEvent", "bpmn:BoundaryEvent"]);
@@ -337,8 +341,6 @@ const drawActivity = (g: SVGElement, element: DiagramElement, bo: Bo, box: Box) 
   return main;
 };
 
-// ---- luồng ---------------------------------------------------------------------------------------------------
-
 export const connectionPath = (waypoints: Point[]) =>
   waypoints.map((p, i) => `${i ? "L" : "M"}${p.x},${p.y}`).join(" ");
 
@@ -353,18 +355,15 @@ export const longestSegmentMid = (waypoints: Point[]): Point => {
   return best.mid;
 };
 
-/** Khung nhãn của luồng: phía trên trung điểm đoạn dài nhất. */
 export const flowLabelBox = (name: string, waypoints: Point[]): Box => {
   const mid = longestSegmentMid(waypoints);
   const box = externalLabelBox(name, mid, 0);
   return { ...box, y: mid.y - box.height - 4 };
 };
 
-/** Khung nhãn của sự kiện, cổng: dưới hình. */
 export const shapeLabelBox = (name: string, shape: Box): Box =>
   externalLabelBox(name, { x: shape.x + shape.width / 2, y: 0 }, shape.y + shape.height + 5);
 
-/** Vị trí nhãn lưu trong tệp (BPMNLabel) lúc nhập: nhãn đi theo hình hoặc theo đoạn dài nhất của luồng. */
 export type LabelHint = { dx: number; dy: number; width: number };
 
 const placed = (name: string, x: number, y: number, width: number): Box => {
@@ -372,13 +371,11 @@ const placed = (name: string, x: number, y: number, width: number): Box => {
   return box;
 };
 
-/** Khung nhãn (tọa độ sơ đồ) của sự kiện, cổng. */
 export const shapeLabel = (element: DiagramElement, name = boOf(element)?.name ?? ""): Box => {
   const hint: LabelHint | undefined = element.labelHint;
   return hint ? placed(name, element.x + hint.dx, element.y + hint.dy, hint.width) : shapeLabelBox(name, element);
 };
 
-/** Khung nhãn (tọa độ sơ đồ) của luồng. */
 export const flowLabel = (connection: DiagramElement, name = boOf(connection)?.name ?? ""): Box => {
   const hint: LabelHint | undefined = connection.labelHint;
   const wps: Point[] = connection.waypoints ?? [];
@@ -432,8 +429,6 @@ const drawFlow = (g: SVGElement, connection: DiagramElement) => {
   }
   return main;
 };
-
-// ---- đường bao (để cắt đường nối ở mép hình) ----------------------------------------------------------------
 
 const rectPath = (s: Box) => `M${s.x},${s.y} h${s.width} v${s.height} h${-s.width} Z`;
 const circlePath = (s: Box) => {

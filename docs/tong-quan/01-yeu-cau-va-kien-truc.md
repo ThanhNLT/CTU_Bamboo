@@ -1,10 +1,22 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 # Yêu cầu đề thi và kiến trúc 3 tầng
@@ -53,13 +65,13 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | Tiêu chí | Đáp ứng trong kho mã |
 |---|---|
 | Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `CTUBamboo/Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
-| Giấy phép OSI ghi trong từng tệp mã | Header dự án ở đầu mỗi tệp (`@license Apache-2.0`, gắn bằng `tools/header.py` từ `docs/Header.txt`); `REUSE.toml` khai báo giấy phép toàn kho theo chuẩn REUSE 3.3, kể cả tệp không ghi được header; kiểm bằng `reuse lint` |
+| Giấy phép OSI ghi trong từng tệp mã | Header dự án ở đầu mỗi tệp (`@license Apache-2.0` kèm thông báo giấy phép Apache-2.0, gắn bằng `tools/header.py` từ `docs/Header.txt`); `REUSE.toml` khai báo giấy phép toàn kho theo chuẩn REUSE 3.3, kể cả tệp không ghi được header; kiểm bằng `reuse lint` |
 | Không có giấy phép không tương thích | Mã của dự án Apache-2.0; thành phần bên thứ ba và giấy phép liệt kê trong `NOTICE` |
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |
-| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` và `compose.release.yml`; [CHANGELOG](https://github.com/CTUBamboo/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
+| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` (bản 0.1.0–0.3.0 có thêm `compose.release.yml`); [CHANGELOG](https://github.com/CTUBamboo/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
 | Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | README: chạy bằng một lệnh (`make up`) và build từng thành phần không dùng Docker; cấu hình bằng biến môi trường (`.env.example`); Docker Engine, Compose, make, pnpm, pip |
-| Chạy được ngoài thư mục mã nguồn | `compose.release.yml` chạy bằng image phát hành, không cần thư mục mã |
+| Chạy được ngoài thư mục mã nguồn | `compose.release.yml` chạy bằng image phát hành, không cần thư mục mã (image dựng sẵn hiện có tới bản 0.3.0; bản sau chạy từ mã nguồn) |
 | Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`uv.lock`, `pnpm-lock.yaml`); dịch vụ dùng image chính thức của upstream, không vá mã |
 | Bug tracker, changelog, readme | GitHub Issues (có mẫu báo lỗi, đề xuất), `CHANGELOG.md`, `README.md`, tài liệu Sphinx (`make -C docs html`), `SECURITY.md` |
 

@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Alert, Empty, Segmented, Spin } from "antd";
@@ -35,7 +47,6 @@ const health = (p: ProjectRow) => {
 };
 const HEALTH_BAR = { GREEN: "bg-bamboo-500", AMBER: "bg-amber-500", RED: "bg-red-500" } as const;
 
-/** Danh sách dự án người dùng xem được (ADR #66): tiến độ thực hiện so với kế hoạch, việc trễ. */
 export const ProjectListPage = () => {
   const { tenant } = useSession();
   const navigate = useNavigate();
@@ -156,7 +167,7 @@ export const ProjectListPage = () => {
                     {trf("Thực hiện {0}% · kế hoạch {1}%", [Math.round(p.progress ?? 0), Math.round(p.planned ?? 0)])}
                   </span>
                   <span>
-                    {dayjs(p.start_date).format("DD/MM/YY")} – {dayjs(p.end_date).format("DD/MM/YY")}
+                    {dayjs(p.start_date).format("DD-MMM-YY")} – {dayjs(p.end_date).format("DD-MMM-YY")}
                     {p.status !== "DONE" && left >= 0 && ` · ${trf("còn {0} ngày", [left])}`}
                   </span>
                 </div>

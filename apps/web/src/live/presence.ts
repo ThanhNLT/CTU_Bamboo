@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { useEffect, useState } from "react";
@@ -23,10 +35,8 @@ const ONLINE = `subscription Online { live_v_online(order_by: {full_name: asc}) 
 
 export type OnlinePerson = { person_id: string; full_name: string; path: string };
 
-/** Đường dẫn gửi đi: chỉ phần path, không kèm chuỗi truy vấn hay mã băm (có thể chứa dữ liệu). */
 export const presencePath = (pathname: string) => (pathname.split(/[?#]/)[0] || "/").slice(0, 200);
 
-/** Gửi nhịp hiện diện 30 giây một lần và khi đổi trang; tab ẩn thì ngừng để không tính là đang xem. */
 export const usePresenceBeat = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -44,7 +54,6 @@ export const usePresenceBeat = () => {
   }, [pathname]);
 };
 
-/** Người cùng công ty đang trực tuyến (nhịp trong 75 giây). */
 export const useOnline = () => {
   const [people, setPeople] = useState<OnlinePerson[]>([]);
   useEffect(

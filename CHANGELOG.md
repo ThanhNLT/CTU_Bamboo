@@ -1,10 +1,22 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 # Lịch sử thay đổi
@@ -13,7 +25,13 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
-**Header thống nhất cho mọi tệp:** mỗi tệp mã nguồn, cấu hình, tài liệu mang header của dự án (tên, phiên bản, tác giả, bản quyền, giấy phép, link kho mã) lấy từ `docs/Header.txt`; `python tools/header.py` gắn hoặc cập nhật (chạy lại sau khi đổi phiên bản), `--check` để kiểm. Chủ bản quyền ghi thống nhất là **Bamboo** (trước đây "DX-OS Open-Core contributors") trong `NOTICE`, `REUSE.toml` và các header SPDX.
+## [0.5.0] - 2026-11-13
+
+**Nâng cấp:** chạy `make up` (image `actions`, `web` đổi). Migration `059`–`060`.
+
+**Thông báo theo ngôn ngữ đang chọn, ngày và số theo định dạng quốc tế:** khi giao diện ở tiếng Anh, thông báo lỗi, nhãn và thông báo do máy chủ trả về cũng hiện bằng tiếng Anh (bản dịch ở `apps/web/src/i18n/server.en.json`; `python3 tools/i18n_server.py check` trong `make check-py` chặn câu lỗi chưa dịch). Văn bản PDF, email, SMS và tệp Excel mẫu sinh theo ngôn ngữ của từng người, lưu ở `collab.person_locale` (migration `060`, Action `set_my_locale`). Ngày hiển thị dạng `DD-MMM-YYYY` (ví dụ `13-Nov-2026`), số theo `1,234.5` ở cả hai ngôn ngữ. Văn bản quy định sinh từ quy trình vẫn bằng tiếng Việt.
+
+**Giấy phép ghi trong từng tệp:** mỗi tệp mã nguồn, cấu hình, tài liệu mang header của dự án (tên, phiên bản, tác giả, bản quyền, giấy phép, link kho mã) kèm thông báo giấy phép Apache-2.0 đầy đủ ("Licensed under the Apache License, Version 2.0…"), lấy từ `docs/Header.txt`; `python tools/header.py` gắn hoặc cập nhật (chạy lại sau khi đổi phiên bản), `--check` để kiểm. Chủ bản quyền ghi thống nhất là **Bamboo** (trước đây "DX-OS Open-Core contributors") trong `NOTICE`, `REUSE.toml` và các header SPDX.
 
 **Bỏ thành phần không dùng giấy phép nguồn mở được OSI phê duyệt (ADR #80, #81):**
 - **Sơ đồ quy trình không còn dùng bpmn-js** (giấy phép bpmn.io kèm điều kiện watermark, chưa được OSI phê duyệt). Trình thiết kế `/p/process` và trang **Sơ đồ quy trình** của đề nghị dùng lớp BPMN của dự án dựng trên diagram-js và bpmn-moddle (MIT): kéo thả, nối, sửa nhãn trực tiếp, hoàn tác như trước; tệp BPMN cũ mở và lưu lại giữ nguyên làn, ghi chú, thuộc tính `flowable:`/`bamboo:`. Bảng công cụ gọn hơn (sự kiện, hẹn giờ, cổng, tác vụ người dùng/tự động/kịch bản, quy trình con); không còn watermark bpmn.io. `tools/ci/check_licenses.mjs` không còn ngoại lệ.
@@ -293,7 +311,8 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.4.0...HEAD
+[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.1.0...v0.2.0
