@@ -48,7 +48,7 @@ export const MonthGrid = ({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="grid grid-cols-7 border-b border-line">
         {WEEKDAYS.map((w) => (
-          <div key={w} className="py-1.5 text-center text-[12px] font-medium text-muted">
+          <div key={w} className="border-l border-line py-1.5 text-center text-[12px] font-medium text-muted">
             {w}
           </div>
         ))}

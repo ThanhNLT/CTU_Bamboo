@@ -29,6 +29,7 @@ import { KIND_STYLE, layoutDay, onDay, type CalEvent } from "../model";
 
 const HOUR_PX = 48;
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
+const GUTTER = "overflow-y-hidden [scrollbar-gutter:stable]";
 
 const Chip = ({ e, onOpen }: { e: CalEvent; onOpen: (e: CalEvent) => void }) => (
   <button
@@ -70,12 +71,12 @@ export const TimeGrid = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="grid border-b border-line" style={{ gridTemplateColumns: cols }}>
+      <div className={cn("grid border-b border-line", GUTTER)} style={{ gridTemplateColumns: cols }}>
         <div />
         {days.map((d) => {
           const today = d.isSame(now, "day");
           return (
-            <div key={d.toString()} className="flex flex-col items-center py-1.5 text-[12px]">
+            <div key={d.toString()} className="flex flex-col items-center border-l border-line py-1.5 text-[12px]">
               <span className="font-medium capitalize text-muted">{d.format("ddd")}</span>
               <span
                 className={cn(
@@ -89,7 +90,7 @@ export const TimeGrid = ({
           );
         })}
       </div>
-      <div className="grid border-b border-line" style={{ gridTemplateColumns: cols }}>
+      <div className={cn("grid border-b border-line", GUTTER)} style={{ gridTemplateColumns: cols }}>
         <div className="px-1 py-1 text-right text-[10.5px] text-muted">{tr("Cả ngày")}</div>
         {days.map((d) => (
           <div
@@ -105,7 +106,7 @@ export const TimeGrid = ({
           </div>
         ))}
       </div>
-      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
         <div className="relative grid" style={{ gridTemplateColumns: cols, height: 24 * HOUR_PX }}>
           <div className="relative">
             {HOURS.map((h) => (
