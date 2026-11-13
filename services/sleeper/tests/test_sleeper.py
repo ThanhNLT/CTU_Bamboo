@@ -1,5 +1,5 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.5.0
+# @version 0.5.1
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
@@ -228,6 +228,38 @@ class ModulesTest(unittest.IsolatedAsyncioTestCase):
     async def test_waits_while_bootstrap_not_created(self):
         modules = self.make({"run": [], "stop": ["kafka"]}, {"kafka": True}, hold_until="bootstrap")
         self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+
+    async def test_waits_for_seed_too(self):
+        """Bootstrap xong trước seed (seed mới cài mô-đun demo): chưa dừng dịch vụ cho tới khi seed cũng xong."""
+        ai = {"Running": True, "StartedAt": "2026-10-30T08:00:00Z"}
+        bootstrap = {"Running": False, "Status": "exited", "ExitCode": 0, "FinishedAt": "2026-10-30T08:05:00Z"}
+        seed = {"Running": True, "Status": "running"}
+        modules = self.make(
+            {"run": [], "stop": ["kafka"]},
+            {"kafka": ai, "bootstrap": bootstrap, "seed": seed},
+            hold_until="bootstrap, seed",
+        )
+        self.assertTrue(await modules.starting())
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": []})
+        seed.update(Running=False, Status="exited", ExitCode=0, FinishedAt="2026-10-30T08:06:00Z")
+        self.assertFalse(await modules.starting())
+        self.assertEqual(await modules.reconcile(), {"started": [], "stopped": ["kafka"]})
+
+    async def test_idle_targets_do_not_sleep_during_startup(self):
+        docker = FakeDocker(free_port())
+        await docker.start("cid")
+        target = Target(free_port(), "127.0.0.1", docker.upstream_port, idle_seconds=0)
+        jobs = ManyDocker({"bootstrap": {"Running": True, "Status": "running"}})
+        modules = Modules(jobs, "http://actions:8000/modules/services", {"kafka"}, [], hold_until="bootstrap")
+        sleeper = Sleeper(docker, [target], wake_timeout=5, check_every=0.05, modules=modules)
+        watcher = asyncio.create_task(sleeper.watch())
+        await asyncio.sleep(0.3)
+        self.assertEqual(docker.stopped, 0)
+        jobs.running["bootstrap"] = {"Running": False, "Status": "exited", "ExitCode": 0}
+        await asyncio.sleep(0.3)
+        watcher.cancel()
+        docker.server.close()
+        self.assertEqual(docker.stopped, 1)
 
     async def test_service_started_by_sleeper_stops_without_waiting(self):
         desired = {"run": ["flowable"], "stop": []}

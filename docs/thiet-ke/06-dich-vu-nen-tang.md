@@ -1,6 +1,6 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.5.0
+  @version 0.5.1
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
@@ -695,7 +695,7 @@ Phần lõi luôn bật (gồm cả nhắn tin và lịch công tác, [ADR #65](
 - **Hai tầng:** cài trên máy (`core.module_install`, chỉ `platform_admin`; container chạy) và bật cho công ty (`core.tenant_module`, quyền `core.module.manage`). Quản trị nền tảng bấm **Bật** với mô-đun chưa cài thì cài luôn.
 - **Chặn khi chưa bật:** Action trả `module-disabled` (403); bảng thuộc riêng mô-đun (`hasura_metadata.MODULE_TABLES`) không đọc, không ghi được qua GraphQL; menu ẩn, trang hiện thông báo "chưa bật".
 - **Không tắt được** khi mô-đun đang bật khác dựa vào nó (`module-in-use`) hoặc còn việc dở (`module-busy`: đề nghị chờ duyệt/bị trả về, việc duyệt đang mở, đơn hàng nội bộ chờ xác nhận, quy trình tự động đang bật). **Không gỡ được** khi còn công ty bật.
-- **Container:** `sleeper` hỏi `actions` `GET /modules/services` mỗi `SLEEPER_MODULES_EVERY` giây (mặc định 15), start container của mô-đun đã cài, stop container của mô-đun chưa cài; chỉ đụng tới dịch vụ trong `SLEEPER_MANAGED`. Container do compose vừa chạy chỉ bị dừng sau khi `bootstrap` chạy xong (`SLEEPER_HOLD_UNTIL`), vì `bootstrap` chờ Flowable, Meilisearch healthy kể cả khi chưa cài mô-đun nào. Dịch vụ ngủ (`trino-core`, `tika-core`, `ollama-core`, `ocr-core`) của mô-đun chưa cài không được đánh thức. Trạng thái container hiện trên trang Quản lý chức năng (với `platform_admin`).
+- **Container:** `sleeper` hỏi `actions` `GET /modules/services` mỗi `SLEEPER_MODULES_EVERY` giây (mặc định 15), start container của mô-đun đã cài, stop container của mô-đun chưa cài; chỉ đụng tới dịch vụ trong `SLEEPER_MANAGED`. Container do compose vừa chạy chỉ bị dừng sau khi `bootstrap` và `seed` chạy xong (`SLEEPER_HOLD_UNTIL=bootstrap,seed`), vì `bootstrap` chờ Flowable, Meilisearch healthy kể cả khi chưa cài mô-đun nào, còn `seed` mới cài mô-đun của dữ liệu demo (dừng trước đó thì tắt nhầm `ai-worker`, Flowable...). Trong lúc hai job này còn chạy, dịch vụ ngủ cũng chưa bị cho ngủ. Dịch vụ ngủ (`trino-core`, `tika-core`, `ollama-core`, `ocr-core`) của mô-đun chưa cài không được đánh thức. Trạng thái container hiện trên trang Quản lý chức năng (với `platform_admin`).
 - **Thêm mô-đun dựng sẵn mới:** khai `Module(...)` trong `modules.py` (mã, tên, phụ thuộc, container, Action, việc dở), thêm bảng riêng vào `MODULE_TABLES`, thêm container vào `SLEEPER_MANAGED`, mã vào migration nâng cấp và `DEMO_MODULES` của seed, gắn `module` cho mục menu (`nav.ts`) và `RequireModule` cho route (`App.tsx`). `test_mo_dun.py` báo lỗi nếu thiếu bước nào ở phía máy chủ.
 
 ## 23. Đăng ký sử dụng, khởi tạo công ty và chủ sở hữu (`setup.py`, `legal_sign.py`, migration 043, 050, ADR #57, #62)
