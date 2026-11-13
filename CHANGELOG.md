@@ -1,6 +1,6 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.5.0
+  @version 0.5.1
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
@@ -24,6 +24,16 @@
 Mọi thay đổi đáng kể của dự án được ghi ở đây. Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ## [Chưa phát hành]
+
+## [0.5.1] - 2026-11-13
+
+**Nâng cấp:** `git pull` rồi `docker compose up -d --build` (hoặc `make up`); image `gateway`, `sleeper` đổi. Ai có dòng `COMPOSE_FILE=compose.yaml:infra/compose/gpu.yml` trong `.env` thì xóa dòng đó (xem mục dưới). Không có migration mới.
+
+**Sửa `docker compose up` không vào được trang đăng nhập (`{"error_msg":"404 Route Not Found"}`):** đợt xóa chú thích ở 0.5.0 xóa luôn dòng `#END` cuối `infra/platform/apisix/apisix.yaml`, dấu kết thúc mà APISIX chế độ standalone bắt buộc; thiếu nó APISIX bỏ qua cả tệp nên cổng API không có route nào và mọi đường dẫn trả 404 (riêng `/healthz` của image vẫn trả lời nên container vẫn healthy). Thêm lại dòng `#END`; image `gateway` tự gắn dấu này lúc dựng nên tệp cấu hình mất dòng cuối cũng không hỏng nữa.
+
+**Sửa dịch vụ tự tắt lúc khởi động và `ai-worker` không lên:**
+- `sleeper` dừng dịch vụ của mô-đun chưa cài ngay khi `bootstrap` xong, nhưng mô-đun của dữ liệu demo do `seed` cài; `seed` xong sau thì Flowable, Meilisearch, Kafka, Ollama, OCR, `ai-worker`... bị tắt rồi bật lại. Nay `sleeper` chờ cả `bootstrap` lẫn `seed` (`SLEEPER_HOLD_UNTIL=bootstrap,seed`), và trong lúc hai job này còn chạy cũng không cho Trino, Tika, Gotenberg, Ollama, OCR ngủ.
+- Dòng `COMPOSE_FILE=compose.yaml:infra/compose/gpu.yml` trong `.env` (còn sót từ bản thử đầu của ADR #79, không có trong `.env.example`) ép Ollama, OCR xin GPU từ đầu: Docker không cấp được GPU thì hai dịch vụ này không chạy, `ollama-init` không bao giờ chạy nên `ai-worker` chờ mãi; có GPU thì `sleeper` lại bỏ qua bước tải PyTorch CUDA nên OCR vẫn chạy CPU. Xóa dòng này, `sleeper` tự dò GPU; `make up` cảnh báo khi còn gặp.
 
 **Tầng 1 không bật giao diện web (ADR #82):** giao diện web của OpenBao tắt (`ui = false`), Hasura Console tắt mặc định (`HASURA_ENABLE_CONSOLE=false`, trước đây chỉ bắt buộc tắt ở production). Khi gỡ lỗi bật lại Console bằng `HASURA_ENABLE_CONSOLE=true` trong `.env`; OpenBao dùng CLI `bao` hoặc API. Nâng cấp: `make up` (image `openbao` đổi; ai đang đặt `HASURA_ENABLE_CONSOLE=true` trong `.env` thì giữ nguyên hành vi cũ).
 
