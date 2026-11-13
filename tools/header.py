@@ -43,6 +43,7 @@ HASH, DASH, BLOCK, HTML = "hash", "dash", "block", "html"
 BY_SUFFIX = {
     ".py": HASH, ".sh": HASH, ".yml": HASH, ".yaml": HASH, ".toml": HASH, ".properties": HASH, ".ini": HASH,
     ".hcl": HASH, ".ps1": HASH, ".example": HASH, ".development": HASH, ".Dockerfile": HASH, ".dockerignore": HASH,
+    ".in": HASH, ".mk": HASH,
     ".sql": DASH,
     ".ts": BLOCK, ".tsx": BLOCK, ".js": BLOCK, ".mjs": BLOCK, ".css": BLOCK,
     ".html": HTML, ".xml": HTML, ".svg": HTML, ".md": HTML, ".MD": HTML,
@@ -51,7 +52,7 @@ BY_NAME = {
     "Dockerfile": HASH, "Makefile": HASH, ".gitignore": HASH, ".gitattributes": HASH, ".dockerignore": HASH,
     ".prettierignore": HASH, "nginx.conf": HASH, "mosquitto.conf": HASH, "kafka_server_jaas.conf": BLOCK,
 }  # fmt: skip
-SKIP_NAMES = {"pnpm-lock.yaml", "Header.txt"}
+SKIP_NAMES = {"pnpm-lock.yaml", "Header.txt", "PULL_REQUEST_TEMPLATE.md"}
 SKIP_PREFIXES = ("services/seed/data/", "LICENSES/")
 PREAMBLES = ("#!", "<?xml", "<!doctype")
 

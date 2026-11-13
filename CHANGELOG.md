@@ -25,6 +25,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Dịch và cài đặt từ mã nguồn bằng `make`:** `make build` dịch dịch vụ Python (`actions`, `seed`) và giao diện bằng `uv`, `pnpm`; `make install PREFIX=...` (hỗ trợ `DESTDIR`) cài ra ngoài thư mục mã nguồn và tạo lệnh `bamboo` chạy từng thành phần (`bamboo migrate`, `seed`, `openbao-init`, `bootstrap`, `actions`, `flow-sync`, `search-sync`, `web`...); `make uninstall`, `make dist` (mã nguồn `.tar.gz` kèm `SHA256SUMS`), `make clean`, `make help` (in tùy chọn cấu hình). Tùy chọn truyền trên dòng lệnh hoặc ghi vào `config.mk`. Tài liệu mới: [Dịch và cài đặt từ mã nguồn](docs/van-hanh/dich-tu-ma-nguon.md).
+
+**Container không còn đọc tệp từ thư mục mã nguồn:** cấu hình Mosquitto nằm trong image mới `bamboo-mosquitto`; dịch vụ `backup` dùng image `bamboo-migrate` (đã kèm `tools/ops`) thay cho image PostGIS gắn thư mục `tools/ops`. Nhờ đó `make release-compose` lại sinh được `compose.release.yml` (trước đó dừng vì hai dịch vụ này còn bind mount), tệp sinh ra dùng `pull_policy` mặc định `missing` thay cho `build`, và lệnh tự lo PyYAML qua `uv`. Nâng cấp: `make up` (image `migrate` đổi, image `mosquitto` mới).
+
+**Tài liệu và kênh trao đổi cho người đóng góp:** thêm [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [SUPPORT.md](SUPPORT.md), mẫu pull request; mở GitHub Discussions cho hỏi đáp và thêm liên kết ở trang tạo issue.
+
 ## [0.5.0] - 2026-11-13
 
 **Nâng cấp:** chạy `make up` (image `actions`, `web` đổi). Migration `059`–`060`.

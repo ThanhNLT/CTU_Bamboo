@@ -1,0 +1,134 @@
+#!/bin/sh
+# Bamboo - DX-OS Open-Core
+# @version 0.5.0
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -eu
+
+VERSION='@VERSION@'
+LIBDIR="${BAMBOO_LIBDIR:-@libdir@}"
+DATADIR="${BAMBOO_DATADIR:-@datadir@}"
+SYSCONFDIR="${BAMBOO_SYSCONFDIR:-@sysconfdir@}"
+ENV_FILE="${BAMBOO_ENV_FILE:-$SYSCONFDIR/bamboo.env}"
+
+usage() {
+    cat << EOF
+Bamboo DX-OS $VERSION: chạy các thành phần đã cài, không cần thư mục mã nguồn.
+
+Cách dùng: bamboo <lệnh> [tham số]
+
+  migrate          tạo database, chạy migration và tài khoản CSDL (cần psql; đọc PGHOST, PGUSER, PGPASSWORD)
+  seed             nạp dữ liệu demo
+  openbao-init     khởi tạo, unseal OpenBao, sinh secret và AppRole
+  bootstrap        tạo bucket, deploy BPMN, nạp metadata Hasura, client Keycloak
+  actions          Hasura Actions và webhook xác thực (ACTIONS_HOST, ACTIONS_PORT; mặc định 127.0.0.1:8090)
+  flow-sync        đồng bộ Flowable, thông báo, neo kiểm toán, quy trình tự động
+  search-sync      đánh chỉ mục tìm kiếm
+  ai-worker        tác tử và trợ lý AI (cần Ollama)
+  iot-bridge       cầu nối MQTT vào Bản sao số
+  lakehouse-sink   ghi sự kiện CDC vào Iceberg (cần dịch với WITH_LAKEHOUSE=1)
+  web              phục vụ giao diện tĩnh để chạy thử (--host, --port; mặc định 127.0.0.1:5173)
+  python <dịch vụ> chạy Python của một dịch vụ (actions, seed) với tham số tùy ý
+  env              in các đường dẫn cài đặt
+  version          in phiên bản
+
+Cấu hình bằng biến môi trường. Nếu có tệp $ENV_FILE (mẫu: bamboo.env.example cùng thư mục)
+thì các biến trong tệp được nạp trước khi chạy; biến đã đặt sẵn trong môi trường được ưu tiên hơn tệp.
+Đổi tệp bằng BAMBOO_ENV_FILE.
+EOF
+}
+
+load_env() {
+    [ -f "$ENV_FILE" ] || return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        key="${line%%=*}"
+        case "$key" in
+            "" | *[!A-Za-z0-9_]* | [0-9]*) continue ;;
+        esac
+        eval "preset=\${$key+x}"
+        [ -z "$preset" ] || continue
+        eval "export $line"
+    done < "$ENV_FILE"
+}
+
+run_python() {
+    service="$1"
+    shift
+    if [ ! -x "$LIBDIR/$service/bin/python" ]; then
+        echo "bamboo: chưa cài thành phần $service ở $LIBDIR" >&2
+        exit 1
+    fi
+    load_env
+    cd "$DATADIR/services/$service"
+    exec "$LIBDIR/$service/bin/python" "$@"
+}
+
+command="${1:-help}"
+[ $# -gt 0 ] && shift
+
+case "$command" in
+    version | --version | -V)
+        echo "bamboo $VERSION"
+        ;;
+    env)
+        echo "BAMBOO_LIBDIR=$LIBDIR"
+        echo "BAMBOO_DATADIR=$DATADIR"
+        echo "BAMBOO_SYSCONFDIR=$SYSCONFDIR"
+        echo "BAMBOO_ENV_FILE=$ENV_FILE"
+        ;;
+    migrate)
+        if ! command -v psql > /dev/null 2>&1; then
+            echo "bamboo: cần lệnh psql (gói postgresql-client) để chạy migration" >&2
+            exit 1
+        fi
+        load_env
+        exec "$DATADIR/tools/db/up.sh" "$@"
+        ;;
+    seed)
+        run_python seed -m app.seed "$@"
+        ;;
+    actions)
+        load_env
+        run_python actions -m uvicorn app.main:app --host "${ACTIONS_HOST:-127.0.0.1}" --port "${ACTIONS_PORT:-8090}" \
+            --no-access-log "$@"
+        ;;
+    openbao-init | bootstrap | flow-sync | search-sync | ai-worker | iot-bridge | lakehouse-sink)
+        run_python actions -m "app.$(echo "$command" | tr - _)" "$@"
+        ;;
+    web)
+        load_env
+        exec "$LIBDIR/actions/bin/python" "$DATADIR/tools/install/web.py" --root "$DATADIR/web" "$@"
+        ;;
+    python)
+        if [ $# -eq 0 ]; then
+            usage >&2
+            exit 2
+        fi
+        service="$1"
+        shift
+        run_python "$service" "$@"
+        ;;
+    help | --help | -h)
+        usage
+        ;;
+    *)
+        echo "bamboo: không có lệnh '$command'" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

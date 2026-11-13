@@ -32,6 +32,7 @@ exclude_patterns = [
     "**/node_modules",
     "README.md",
     "agents",
+    "chuyen-repo",
     "Thumbs.db",
     ".DS_Store",
 ]
