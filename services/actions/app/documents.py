@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Sinh văn bản từ mẫu: quyết định nhân sự và báo cáo KPI đã đóng băng.
 
@@ -18,7 +30,7 @@ import re
 import psycopg
 from psycopg.rows import dict_row
 
-from . import forms, storage
+from . import forms, i18n, storage
 from .common import ActionError, Context, bind_session, session_identity
 
 TEMPLATE_VERSION = "1"
@@ -97,28 +109,26 @@ def _decision(conn: psycopg.Connection, session: dict, decision_id: str) -> dict
 
 
 def decision_article(d: dict) -> str:
-    who = f"{d['person']}" + (f" (mã nhân sự {d['employee_code']})" if d["employee_code"] else "")
+    who = f"{d['person']}" + (i18n.t(" (mã nhân sự {0})", d["employee_code"]) if d["employee_code"] else "")
     target = f"{d['target_position']} – {d['target_unit']}" if d["target_position"] else ""
     source = f"{d['source_position']} – {d['source_unit']}" if d["source_position"] else ""
     if d["decision_type"] == "APPOINT":
-        return f"Bổ nhiệm {who} giữ chức danh {target} ({ASSIGNMENT[d['assignment_type']]})."
+        return i18n.t("Bổ nhiệm {0} giữ chức danh {1} ({2}).", who, target, i18n.t(ASSIGNMENT[d["assignment_type"]]))
     if d["decision_type"] == "TRANSFER":
-        return f"Điều động {who} từ chức danh {source} sang chức danh {target}."
-    return f"Miễn nhiệm {who} khỏi chức danh {source}."
+        return i18n.t("Điều động {0} từ chức danh {1} sang chức danh {2}.", who, source, target)
+    return i18n.t("Miễn nhiệm {0} khỏi chức danh {1}.", who, source)
 
 
 def render_decision(d: dict) -> str:
     at = d["created_at"].astimezone(dt.timezone(dt.timedelta(hours=7)))
     view = {
         **d,
-        "title": TITLES[d["decision_type"]],
+        "title": i18n.t(TITLES[d["decision_type"]]),
         "article1": decision_article(d),
-        "effective": d["effective_date"].strftime("%d/%m/%Y"),
-        "place": "Hà Nội",
-        "day": f"{at.day:02d}",
-        "month": f"{at.month:02d}",
-        "year": at.year,
-        "company": d["company"] or "Đơn vị",
+        "effective": i18n.date(d["effective_date"]),
+        "place": i18n.t("Hà Nội"),
+        "dated": i18n.date(at),
+        "company": d["company"] or i18n.t("Đơn vị"),
         "check_code": "{check_code}",
     }
     return forms._env.get_template("quyet_dinh_nhan_su.html").render(d=view)
@@ -126,6 +136,7 @@ def render_decision(d: dict) -> str:
 
 def get_personnel_decision_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     _need_pdf(ctx)
+    i18n.for_session(conn, session)
     d = _decision(conn, session, args["decision_id"])
     html = render_decision(d)
     digest = _digest(html)
@@ -139,19 +150,19 @@ def get_personnel_decision_pdf(conn: psycopg.Connection, session: dict, args: di
 def period_label(grain: str, start: dt.datetime) -> str:
     local = start.astimezone(dt.timezone(dt.timedelta(hours=7)))
     if grain == "hour":
-        return local.strftime("%d/%m/%Y %H:00")
+        return f"{i18n.date(local)} {local.hour:02d}:00"
     if grain == "day":
-        return local.strftime("%d/%m/%Y")
+        return i18n.date(local)
     if grain == "week":
-        return "Tuần từ " + local.strftime("%d/%m/%Y")
-    return f"Tháng {local.month:02d}/{local.year}"
+        return i18n.t("Tuần từ {0}", i18n.date(local))
+    return i18n.month(local)
 
 
 def assess(value: float, direction: str, threshold: float | None) -> str:
     if threshold is None or direction == "neutral":
         return "–"
     ok = value >= threshold if direction == "up" else value <= threshold
-    return "Đạt ngưỡng" if ok else "Chưa đạt ngưỡng"
+    return i18n.t("Đạt ngưỡng") if ok else i18n.t("Chưa đạt ngưỡng")
 
 
 def kpi_snapshots(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> list[dict]:
@@ -166,7 +177,7 @@ def kpi_snapshots(conn: psycopg.Connection, session: dict, args: dict, _ctx: Con
         conn.cursor(row_factory=dict_row)
         .execute(
             """SELECT s.kpi_key, d.label, d.unit, s.grain, s.period_start, s.value, s.sha256,
-                  to_char(s.frozen_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS frozen_at
+                  to_char(s.frozen_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS frozen_at
            FROM kpi.snapshot s JOIN kpi.definition d ON d.tenant_id = s.tenant_id AND d.key = s.kpi_key
            WHERE s.tenant_id = %s AND s.kpi_key = %s ORDER BY s.period_start DESC LIMIT %s""",
             (tenant, args["kpi_key"], limit),
@@ -192,14 +203,14 @@ def kpi_snapshots(conn: psycopg.Connection, session: dict, args: dict, _ctx: Con
 def _kpi_report(conn: psycopg.Connection, tenant: str, month: str | None) -> dict:
     cur = conn.cursor(row_factory=dict_row)
     clauses, params = "", [tenant]
-    label = "Toàn bộ các kỳ đã đóng băng (tối đa 12 kỳ gần nhất mỗi chỉ số)"
+    label = i18n.t("Toàn bộ các kỳ đã đóng băng (tối đa 12 kỳ gần nhất mỗi chỉ số)")
     if month:
         if not MONTH.match(month):
             raise ActionError("Tháng báo cáo có dạng YYYY-MM")
         clauses = """AND s.period_start >= (%s || '-01')::date AT TIME ZONE 'Asia/Ho_Chi_Minh'
                      AND s.period_start < ((%s || '-01')::date + interval '1 month') AT TIME ZONE 'Asia/Ho_Chi_Minh'"""
         params += [month, month]
-        label = f"Tháng {month[5:]}/{month[:4]}"
+        label = i18n.month(dt.date(int(month[:4]), int(month[5:]), 1))
     broken = {
         (r[0], r[1]) for r in conn.execute("SELECT kpi_key, period_start FROM kpi.verify_snapshots(%s)", (tenant,))
     }
@@ -213,7 +224,13 @@ def _kpi_report(conn: psycopg.Connection, tenant: str, month: str | None) -> dic
     grouped: dict[str, dict] = {}
     for r in rows:
         k = grouped.setdefault(
-            r["key"], {"label": r["label"], "unit": r["unit"], "definition": r["definition"], "rows": []}
+            r["key"],
+            {
+                "label": i18n.message(r["label"]),
+                "unit": i18n.message(r["unit"]),
+                "definition": i18n.message(r["definition"]),
+                "rows": [],
+            },
         )
         if len(k["rows"]) < (500 if month else 12):
             k["rows"].append(
@@ -234,6 +251,7 @@ def get_kpi_report_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx:
     tenant = session.get("x-hasura-tenant-id")
     session_identity(session, tenant)
     month = args.get("month")
+    i18n.for_session(conn, session)
     report = _kpi_report(conn, tenant, month)
     html = forms._env.get_template("bao_cao_kpi.html").render(r=report)
     digest = _digest(html)

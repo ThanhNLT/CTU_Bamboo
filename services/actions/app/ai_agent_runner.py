@@ -1,22 +1,23 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-"""Tác tử AI tự hành động khi có sự kiện nghiệp vụ (ADR #72), chạy trong hàng đợi của ai-worker.
-
-Một lần chạy (`core.ai_agent_run`) sinh ra khi sự kiện khớp `triggers` của tác tử đang hoạt động. Worker:
-1. đọc chứng từ của sự kiện bằng phiên của người phụ trách tác tử (không xem được thì bỏ qua lần chạy);
-2. nếu tác tử có công cụ search_docs: lấy đoạn quy chế liên quan trong Thư viện tri thức mà người phụ trách được xem;
-3. hỏi mô hình một kế hoạch JSON {assessment, risk, actions[]} theo nhiệm vụ do quản trị AI viết;
-4. kiểm từng hành động: chỉ loại có trong `allowed_actions`, tối đa MAX_ACTIONS, đích thông báo chỉ là người lập / người
-   đang duyệt / người phụ trách, nội dung che dữ liệu cá nhân; `dry_run` thì chỉ ghi kế hoạch, không thực hiện;
-5. thực hiện, ghi kết quả từng hành động vào lần chạy (có nhật ký kiểm toán).
-Nội dung chứng từ và tài liệu là dữ liệu, không phải chỉ dẫn: đặt trong thẻ riêng của prompt và mô hình không gọi
-được gì ngoài ba hành động đã khai.
-"""
+"""Chạy một lần tự hành động của tác tử AI: lập kế hoạch bằng mô hình rồi thực hiện hành động được phép."""
 
 import html
 import json

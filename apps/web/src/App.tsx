@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { lazy, Suspense, type ComponentType } from "react";
@@ -31,6 +43,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
+import updateLocale from "dayjs/plugin/updateLocale";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
 import { useKeycloak } from "@react-keycloak/web";
 
@@ -49,7 +62,24 @@ import { getLocale, tr } from "./i18n";
 import { i18nProvider } from "./providers/i18n";
 
 const LOCALE = getLocale();
+dayjs.extend(updateLocale);
+dayjs.updateLocale("vi", { monthsShort: "Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec".split("_") });
 dayjs.locale(LOCALE === "en" ? "en" : "vi");
+
+const BASE_LOCALE = LOCALE === "en" ? enUS : viVN;
+const ANTD_LOCALE = {
+  ...BASE_LOCALE,
+  DatePicker: BASE_LOCALE.DatePicker && {
+    ...BASE_LOCALE.DatePicker,
+    lang: {
+      ...BASE_LOCALE.DatePicker.lang,
+      fieldDateFormat: "DD-MMM-YYYY",
+      fieldDateTimeFormat: "DD-MMM-YYYY HH:mm:ss",
+      dateFormat: "DD-MMM-YYYY",
+      dateTimeFormat: "DD-MMM-YYYY HH:mm:ss",
+    },
+  },
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lazyNamed = <M extends Record<K, ComponentType<any>>, K extends string>(load: () => Promise<M>, name: K) =>
@@ -147,7 +177,7 @@ function App() {
     <BrowserRouter>
       <RefineKbarProvider>
         <ColorModeContextProvider>
-          <ConfigProvider locale={LOCALE === "en" ? enUS : viVN}>
+          <ConfigProvider locale={ANTD_LOCALE}>
             <AntdApp>
               <Refine
                 dataProvider={dataProvider}

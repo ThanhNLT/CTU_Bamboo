@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Hành động cho kênh thông báo ngoài ứng dụng và hàng đợi tin nhắn."""
 
@@ -13,7 +25,7 @@ import uuid
 import psycopg
 from psycopg.rows import dict_row
 
-from . import delivery, receipts
+from . import delivery, i18n, receipts
 from .common import ActionError, Context, bind_session, session_identity
 
 CHANNELS = ("EMAIL", "SMS", "WEBHOOK")
@@ -63,6 +75,12 @@ def _channel(value: str) -> str:
     if channel not in CHANNELS:
         raise ActionError("Kênh chỉ gồm EMAIL, SMS hoặc WEBHOOK")
     return channel
+
+
+def set_my_locale(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+    """Ghi ngôn ngữ giao diện người gọi đang chọn; văn bản in và tin gửi ra ngoài cho người này theo ngôn ngữ đó."""
+    person, tenant = _who(conn, session)
+    return {"locale": i18n.save_person_locale(conn, tenant, person, args.get("locale"))}
 
 
 def notification_prefs(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> dict:
@@ -177,10 +195,10 @@ def my_deliveries(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Co
         conn.cursor(row_factory=dict_row)
         .execute(
             """SELECT id, topic, status, attempts, last_error, payload ->> 'title' AS title, payload ->> 'address' AS address,
-                  to_char(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS created_at,
-                  to_char(delivered_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS delivered_at
-           FROM msg.queue WHERE tenant_id = %s AND payload ->> 'recipient_id' = %s
-           ORDER BY created_at DESC LIMIT 20""",
+                  to_char(q.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS created_at,
+                  to_char(delivered_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS delivered_at
+           FROM msg.queue q WHERE tenant_id = %s AND payload ->> 'recipient_id' = %s
+           ORDER BY q.created_at DESC LIMIT 20""",
             (tenant, person),
         )
         .fetchall()
@@ -206,8 +224,8 @@ def queue_overview(conn: psycopg.Connection, session: dict, _args: dict, _ctx: C
     rows = cur.execute(
         """SELECT id, topic, status, attempts, max_attempts, last_error, payload ->> 'title' AS title,
                   payload ->> 'address' AS address, receipt ->> 'alg' AS alg,
-                  to_char(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS created_at,
-                  to_char(delivered_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS delivered_at
+                  to_char(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS created_at,
+                  to_char(delivered_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS delivered_at
            FROM msg.queue WHERE tenant_id = %s
            ORDER BY (status = 'DEAD') DESC, (status IN ('PENDING', 'LEASED')) DESC, created_at DESC LIMIT 60""",
         (tenant,),
@@ -262,6 +280,7 @@ def queue_verify(conn: psycopg.Connection, session: dict, args: dict, ctx: Conte
 
 
 HANDLERS = {
+    "set_my_locale": set_my_locale,
     "notification_prefs": notification_prefs,
     "save_notification_pref": save_notification_pref,
     "delete_notification_pref": delete_notification_pref,

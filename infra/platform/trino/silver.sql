@@ -1,9 +1,21 @@
 -- Bamboo - DX-OS Open-Core
--- @version 0.4.0
+-- @version 0.5.0
 -- @author CTUBamboo
 -- @copyright Copyright 2026 Bamboo
 -- @license Apache-2.0
 -- @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 
 CREATE SCHEMA IF NOT EXISTS lakehouse.bronze;
 CREATE SCHEMA IF NOT EXISTS lakehouse.silver;
@@ -149,6 +161,34 @@ SELECT
 FROM (
     SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
     FROM lakehouse.bronze.collab_notification_pref
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.collab_person_locale (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.collab_person_locale COMMENT 'Trạng thái hiện tại của collab.person_locale, dựng từ bronze.collab_person_locale' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["person_id"]') AS uuid) AS "person_id",
+    json_extract_scalar(after, '$["locale"]') AS "locale",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["updated_at"]')) AS timestamp(6) with time zone) AS "updated_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.collab_person_locale
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 

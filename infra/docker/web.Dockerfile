@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 RUN npm install -g --no-audit --no-fund pnpm@12.16.1
@@ -20,7 +32,6 @@ ARG VITE_HASURA_URL=http://localhost:8081/v1/graphql
 ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
     VITE_KEYCLOAK_CLIENT=$VITE_KEYCLOAK_CLIENT VITE_HASURA_URL=$VITE_HASURA_URL
 RUN pnpm --filter @bamboo/web build
-# Bản clone Windows (core.autocrlf=true) mang CRLF: script entrypoint của nginx lỗi `set -eu\r`, container web không lên
 RUN sed -i 's/\r$//' apps/web/docker/40-bamboo-config.sh apps/web/nginx.conf
 WORKDIR /repo/apps/web
 RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \

@@ -1,11 +1,23 @@
 <!doctype html>
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 <html lang="vi">
@@ -61,32 +73,32 @@
     {{ pr.unit_name }}
   </div>
   <div class="doc">
-    Số: <span class="no">{{ pr.doc_no }}</span><br>
-    Ngày lập: {{ pr.created_on }}
+    {{ _("Số:") }} <span class="no">{{ pr.doc_no }}</span><br>
+    {{ _("Ngày lập:") }} {{ pr.created_on }}
   </div>
 </header>
 
-<h1>PHIẾU ĐỀ NGHỊ MUA SẮM</h1>
+<h1>{{ _("PHIẾU ĐỀ NGHỊ MUA SẮM") }}</h1>
 <div class="subtitle">{{ pr.title }} &nbsp; <span class="status">{{ status_label }}</span></div>
 
 <dl>
-  <dt>Người đề nghị</dt><dd>{{ pr.requester }}{% if pr.employee_code %} ({{ pr.employee_code }}){% endif %}</dd>
-  <dt>Chức danh</dt><dd>{{ pr.position_name }}</dd>
-  <dt>Đơn vị</dt><dd>{{ pr.unit_name }}</dd>
-  <dt>Cần trước ngày</dt><dd>{{ pr.needed_by or "—" }}</dd>
-  <dt>Nhà cung cấp</dt>
+  <dt>{{ _("Người đề nghị") }}</dt><dd>{{ pr.requester }}{% if pr.employee_code %} ({{ pr.employee_code }}){% endif %}</dd>
+  <dt>{{ _("Chức danh") }}</dt><dd>{{ pr.position_name }}</dd>
+  <dt>{{ _("Đơn vị") }}</dt><dd>{{ pr.unit_name }}</dd>
+  <dt>{{ _("Cần trước ngày") }}</dt><dd>{{ pr.needed_by or "—" }}</dd>
+  <dt>{{ _("Nhà cung cấp") }}</dt>
   <dd class="wide">
-    {% if pr.partner_name %}{{ pr.partner_name }}{% if pr.partner_tax_code %} – MST {{ pr.partner_tax_code }}{% endif %}{% if pr.partner_address %}<br><span class="note">{{ pr.partner_address }}</span>{% endif %}{% else %}—{% endif %}
+    {% if pr.partner_name %}{{ pr.partner_name }}{% if pr.partner_tax_code %} {{ _("– MST") }} {{ pr.partner_tax_code }}{% endif %}{% if pr.partner_address %}<br><span class="note">{{ pr.partner_address }}</span>{% endif %}{% else %}—{% endif %}
   </dd>
-  {% if pr.category %}<dt>Nhóm hàng</dt><dd class="wide">{{ pr.category }}</dd>{% endif %}
-  {% if pr.description %}<dt>Lý do, mô tả</dt><dd class="wide">{{ pr.description }}</dd>{% endif %}
+  {% if pr.category %}<dt>{{ _("Nhóm hàng") }}</dt><dd class="wide">{{ pr.category }}</dd>{% endif %}
+  {% if pr.description %}<dt>{{ _("Lý do, mô tả") }}</dt><dd class="wide">{{ pr.description }}</dd>{% endif %}
 </dl>
 
-<h2>Hàng hóa, dịch vụ đề nghị</h2>
+<h2>{{ _("Hàng hóa, dịch vụ đề nghị") }}</h2>
 <table>
   <thead>
-    <tr><th style="width:8mm">TT</th><th>Tên hàng hóa, dịch vụ</th><th style="width:16mm">ĐVT</th>
-        <th style="width:22mm">Số lượng</th><th style="width:28mm">Đơn giá (₫)</th><th style="width:32mm">Thành tiền (₫)</th></tr>
+    <tr><th style="width:8mm">{{ _("TT") }}</th><th>{{ _("Tên hàng hóa, dịch vụ") }}</th><th style="width:16mm">{{ _("ĐVT") }}</th>
+        <th style="width:22mm">{{ _("Số lượng") }}</th><th style="width:28mm">{{ _("Đơn giá (₫)") }}</th><th style="width:32mm">{{ _("Thành tiền (₫)") }}</th></tr>
   </thead>
   <tbody>
     {% for i in pr["items"] %}
@@ -99,26 +111,26 @@
       <td class="num">{{ i.amount | number }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="6" class="empty">Không có dòng hàng</td></tr>
+    <tr><td colspan="6" class="empty">{{ _("Không có dòng hàng") }}</td></tr>
     {% endfor %}
-    <tr class="total"><td colspan="5" class="num">Tổng cộng</td><td class="num">{{ pr.total_amount | number }}</td></tr>
+    <tr class="total"><td colspan="5" class="num">{{ _("Tổng cộng") }}</td><td class="num">{{ pr.total_amount | number }}</td></tr>
   </tbody>
 </table>
-<p class="words">Bằng chữ: {{ amount_words }}.</p>
+<p class="words">{{ _("Bằng chữ:") }} {{ amount_words }}.</p>
 
-<h2>Phê duyệt{% if pr.approval_round > 1 %} (lần gửi thứ {{ pr.approval_round }}){% endif %}</h2>
+<h2>{{ _("Phê duyệt") }}{% if pr.approval_round > 1 %} {{ _("(lần gửi thứ") }} {{ pr.approval_round }}){% endif %}</h2>
 {% if pr.steps %}
 <table class="steps">
   <thead>
-    <tr><th style="width:8mm">Bước</th><th>Vị trí duyệt</th><th>Người thực hiện</th>
-        <th style="width:24mm">Kết quả</th><th style="width:30mm">Thời điểm</th></tr>
+    <tr><th style="width:8mm">{{ _("Bước") }}</th><th>{{ _("Vị trí duyệt") }}</th><th>{{ _("Người thực hiện") }}</th>
+        <th style="width:24mm">{{ _("Kết quả") }}</th><th style="width:30mm">{{ _("Thời điểm") }}</th></tr>
   </thead>
   <tbody>
     {% for s in pr.steps %}
     <tr>
       <td class="center">{{ s.step_order }}</td>
       <td>{{ s.position_name }}</td>
-      <td>{% if s.acted_by %}{{ s.acted_by }}{% if s.on_behalf_of %} <span class="note">(thay {{ s.on_behalf_of }})</span>{% endif %}{% else %}—{% endif %}{% if s.note %}<br><span class="note">Ý kiến: {{ s.note }}</span>{% endif %}</td>
+      <td>{% if s.acted_by %}{{ s.acted_by }}{% if s.on_behalf_of %} <span class="note">{{ _("(thay") }} {{ s.on_behalf_of }})</span>{% endif %}{% else %}—{% endif %}{% if s.note %}<br><span class="note">{{ _("Ý kiến:") }} {{ s.note }}</span>{% endif %}</td>
       <td class="result">{{ step_labels.get(s.status, s.status) }}</td>
       <td class="result">{{ s.acted_at or "" }}</td>
     </tr>
@@ -126,10 +138,9 @@
   </tbody>
 </table>
 {% else %}
-<p class="empty">Đề nghị chưa gửi duyệt.</p>
+<p class="empty">{{ _("Đề nghị chưa gửi duyệt.") }}</p>
 {% endif %}
 
-<p class="sign">Phê duyệt điện tử trên hệ thống Bamboo DX-OS; mỗi thao tác duyệt được ghi vào nhật ký kiểm toán nối chuỗi hash.
-Đối chiếu phiếu với hệ thống bằng số chứng từ và mã kiểm tra ở chân trang.</p>
+<p class="sign">{{ _("Phê duyệt điện tử trên hệ thống Bamboo DX-OS; mỗi thao tác duyệt được ghi vào nhật ký kiểm toán nối chuỗi hash. Đối chiếu phiếu với hệ thống bằng số chứng từ và mã kiểm tra ở chân trang.") }}</p>
 </body>
 </html>

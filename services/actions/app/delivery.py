@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Giao thông báo ra ngoài ứng dụng (email, SMS, webhook) từ hàng đợi `msg.queue`.
 
@@ -28,7 +40,7 @@ import httpx
 import psycopg
 from psycopg.rows import dict_row
 
-from . import config, receipts
+from . import config, i18n, receipts
 
 log = logging.getLogger("delivery")
 
@@ -76,7 +88,7 @@ def send_email(settings: config.Settings, payload: dict) -> str:
     msg["Subject"] = payload["title"][:200]
     link = link_for(settings, payload)
     body = (payload.get("body") or "").strip()
-    msg.set_content("\n\n".join(filter(None, [payload["title"], body, f"Mở trong Bamboo DX-OS: {link}"])))
+    msg.set_content("\n\n".join(filter(None, [payload["title"], body, i18n.t("Mở trong Bamboo DX-OS: {0}", link)])))
     try:
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as smtp:
             if settings.smtp_starttls:
@@ -183,13 +195,27 @@ def send_webhook(settings: config.Settings, payload: dict) -> str:
 SENDERS = {"email": send_email, "sms": send_sms, "webhook": send_webhook}
 
 
+def localized(conn: psycopg.Connection, message: dict) -> tuple[str, dict]:
+    """Nội dung tin theo ngôn ngữ người nhận đã chọn (mặc định tiếng Việt); ngày trong tin về dạng dd-MMM-yyyy."""
+    payload = message["payload"]
+    locale = i18n.person_locale(conn, message.get("tenant_id"), payload.get("recipient_id"))
+    conn.commit()
+    return locale, {
+        **payload,
+        "title": i18n.message(payload.get("title"), locale),
+        "body": i18n.message(payload.get("body"), locale) or None,
+    }
+
+
 def deliver_one(conn: psycopg.Connection, settings: config.Settings, signer: receipts.Signer, message: dict) -> str:
     channel = message["topic"].removeprefix("notify.")
     sender = SENDERS.get(channel)
     try:
         if sender is None:
             raise DeliveryError(f"Chưa hỗ trợ kênh {channel}", permanent=True)
-        provider_id = sender(settings, message["payload"])
+        locale, payload = localized(conn, message)
+        with i18n.use(locale):
+            provider_id = sender(settings, payload)
     except DeliveryError as exc:
         status = conn.execute("SELECT msg.fail(%s, %s, %s) AS s", (message["id"], str(exc), exc.permanent)).fetchone()[
             "s"

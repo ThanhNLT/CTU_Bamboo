@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
@@ -13,7 +25,7 @@ import { BankOutlined, MedicineBoxOutlined } from "@ant-design/icons";
 
 import { getTenant, request, setTenant } from "../api/client";
 import { SessionContext, type AccountTenant } from "./useSession";
-import { tr } from "../i18n";
+import { getLocale, tr } from "../i18n";
 
 const RETRIES = 20;
 const MY_TENANTS = `query MyTenants { my_tenants { tenant_id tenant_code tenant_name person_id full_name } }`;
@@ -24,6 +36,13 @@ export const TenantGate = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!selected || !tenants?.some((t) => t.tenant_id === selected)) return;
+    void request(`mutation SetMyLocale($l: String!) { set_my_locale(locale: $l) { locale } }`, {
+      l: getLocale(),
+    }).catch(() => undefined);
+  }, [selected, tenants]);
 
   useEffect(() => {
     let alive = true;

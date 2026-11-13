@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { App, DatePicker, Form, Input, Modal, Radio, Select, Switch, TreeSelect } from "antd";
@@ -39,7 +51,6 @@ const REMINDERS = [
   { value: 1440, label: tr("Trước 1 ngày") },
 ];
 
-/** Cây đơn vị từ đường dẫn ltree (mỗi nhãn là một cấp). */
 const unitTree = (units: Unit[]) => {
   type Node = { value: string; title: string; children: Node[] };
   const byLabel = new Map<string, Node>();
@@ -157,7 +168,7 @@ export const EventForm = ({
         <ul className="m-0 mt-2 pl-4 text-[13px]">
           {list.map((c) => (
             <li key={`${c.person_id}-${c.event_id}`}>
-              <b>{c.name}</b>: {c.title} ({dayjs(c.starts_at).format("HH:mm DD/MM")})
+              <b>{c.name}</b>: {c.title} ({dayjs(c.starts_at).format("HH:mm DD-MMM")})
             </li>
           ))}
         </ul>
@@ -197,7 +208,7 @@ export const EventForm = ({
           <DatePicker.RangePicker
             className="w-full"
             showTime={allDay ? false : { format: "HH:mm", minuteStep: 5 }}
-            format={allDay ? "DD/MM/YYYY" : "DD/MM/YYYY HH:mm"}
+            format={allDay ? "DD-MMM-YYYY" : "DD-MMM-YYYY HH:mm"}
           />
         </Form.Item>
         <div className="grid gap-x-4 sm:grid-cols-2">
@@ -217,7 +228,7 @@ export const EventForm = ({
               label={tr("Lặp đến ngày")}
               rules={[{ required: true, message: tr("Chọn ngày cuối") }]}
             >
-              <DatePicker className="w-full" format="DD/MM/YYYY" />
+              <DatePicker className="w-full" format="DD-MMM-YYYY" />
             </Form.Item>
           ) : (
             <Form.Item name="reminder_minutes" label={tr("Nhắc lịch")}>
