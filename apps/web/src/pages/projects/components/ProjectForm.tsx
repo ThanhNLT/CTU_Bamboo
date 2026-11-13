@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { App, DatePicker, Form, Input, InputNumber, Modal, Select, TreeSelect } from "antd";
@@ -48,7 +60,6 @@ const unitTree = (units: Unit[]) => {
   return roots;
 };
 
-/** Lập / sửa dự án và văn bản kế hoạch chi tiết (mục tiêu, phạm vi, sản phẩm, cách làm, rủi ro, các bên liên quan). */
 export const ProjectForm = ({
   open,
   me,
@@ -189,7 +200,7 @@ export const ProjectForm = ({
             label={tr("Thời gian thực hiện")}
             rules={[{ required: true, message: tr("Chọn thời gian") }]}
           >
-            <DatePicker.RangePicker className="w-full" format="DD/MM/YYYY" />
+            <DatePicker.RangePicker className="w-full" format="DD-MMM-YYYY" />
           </Form.Item>
           <div className="grid grid-cols-2 gap-x-4">
             <Form.Item name="status" label={tr("Trạng thái")}>
@@ -205,8 +216,8 @@ export const ProjectForm = ({
                 className="w-full"
                 min={0}
                 step={1000000}
-                formatter={(v) => (v == null ? "" : String(v).replace(/\B(?=(\d{3})+(?!\d))/g, "."))}
-                parser={(v) => Number((v ?? "").replace(/\./g, "")) || 0}
+                formatter={(v) => (v == null ? "" : String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ","))}
+                parser={(v) => Number((v ?? "").replace(/,/g, "")) || 0}
               />
             </Form.Item>
           </div>

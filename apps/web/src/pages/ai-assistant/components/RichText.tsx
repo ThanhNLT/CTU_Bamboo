@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Link } from "react-router";
@@ -16,7 +28,6 @@ const cite =
   "mx-0.5 inline-flex max-w-[16rem] items-baseline gap-1 truncate rounded-md bg-bamboo-50 px-1.5 align-baseline " +
   "text-[11.5px] font-semibold text-bamboo-800 no-underline hover:bg-bamboo-100";
 
-/** Câu trả lời có in đậm và trích dẫn; trích dẫn mang tên văn bản (chỉ hiện số khi câu vừa nêu tên văn bản đó). */
 export const RichText = ({ text, citations = [] }: { text: string; citations?: Citation[] }) => {
   let before = "";
   return (

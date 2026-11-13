@@ -1,17 +1,29 @@
 <!doctype html>
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<title>Kế hoạch dự án {{ p.code }}</title>
+<title>{{ _("Kế hoạch dự án") }} {{ p.code }}</title>
 <style>
   @page { size: A4; margin: 16mm 14mm 18mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -52,23 +64,23 @@
 <body>
 <div class="head">
   <div>{{ tenant_name }}<strong>{{ p.org_unit_name }}</strong></div>
-  <div style="text-align:right">Mã dự án: <b>{{ p.code }}</b><br>Ngày in: {{ printed.strftime('%d/%m/%Y') }}</div>
+  <div style="text-align:right">{{ _("Mã dự án:") }} <b>{{ p.code }}</b><br>{{ _("Ngày in:") }} {{ printed | date }}</div>
 </div>
 
-<h1>Kế hoạch dự án</h1>
+<h1>{{ _("Kế hoạch dự án") }}</h1>
 <div class="sub">{{ p.name }}</div>
 
-<h2>1. Thông tin chung</h2>
+<h2>{{ _("1. Thông tin chung") }}</h2>
 <table class="info">
-  <tr><td>Đơn vị chủ trì</td><td>{{ p.org_unit_name }}</td></tr>
-  <tr><td>Người quản lý dự án</td><td>{{ p.manager_name }}</td></tr>
-  <tr><td>Thời gian thực hiện</td><td>{{ p.start_date[8:10] }}/{{ p.start_date[5:7] }}/{{ p.start_date[:4] }} – {{ p.end_date[8:10] }}/{{ p.end_date[5:7] }}/{{ p.end_date[:4] }}</td></tr>
-  <tr><td>Trạng thái</td><td>{{ status }}</td></tr>
-  {% if p.budget is not none %}<tr><td>Ngân sách dự kiến</td><td>{{ p.budget | number(0) }} đồng</td></tr>{% endif %}
-  <tr><td>Tiến độ tại ngày in</td><td>Thực hiện {{ stats.actual_pct | number(1) }}% · kế hoạch {{ stats.planned_pct | number(1) }}%{% if stats.spi is not none %} · SPI {{ stats.spi | number(2) }}{% endif %} · {{ stats.done_tasks }}/{{ stats.total_tasks }} công việc xong{% if stats.late_tasks %} · {{ stats.late_tasks }} việc trễ{% endif %}</td></tr>
+  <tr><td>{{ _("Đơn vị chủ trì") }}</td><td>{{ p.org_unit_name }}</td></tr>
+  <tr><td>{{ _("Người quản lý dự án") }}</td><td>{{ p.manager_name }}</td></tr>
+  <tr><td>{{ _("Thời gian thực hiện") }}</td><td>{{ p.start_date | date }} – {{ p.end_date | date }}</td></tr>
+  <tr><td>{{ _("Trạng thái") }}</td><td>{{ status }}</td></tr>
+  {% if p.budget is not none %}<tr><td>{{ _("Ngân sách dự kiến") }}</td><td>{{ p.budget | number(0) }} {{ _("đồng") }}</td></tr>{% endif %}
+  <tr><td>{{ _("Tiến độ tại ngày in") }}</td><td>{{ _("Thực hiện") }} {{ stats.actual_pct | number(1) }}{{ _("% · kế hoạch") }} {{ stats.planned_pct | number(1) }}%{% if stats.spi is not none %} {{ _("· SPI") }} {{ stats.spi | number(2) }}{% endif %} · {{ stats.done_tasks }}/{{ stats.total_tasks }} {{ _("công việc xong") }}{% if stats.late_tasks %} · {{ stats.late_tasks }} {{ _("việc trễ") }}{% endif %}</td></tr>
 </table>
 
-{% set sections = [("Mục tiêu", p.objective), ("Phạm vi", p.scope), ("Sản phẩm bàn giao", p.deliverables), ("Phương pháp triển khai", p.approach), ("Rủi ro và biện pháp", p.risks), ("Các bên liên quan", p.stakeholders)] %}
+{% set sections = [(_("Mục tiêu"), p.objective), (_("Phạm vi"), p.scope), (_("Sản phẩm bàn giao"), p.deliverables), (_("Phương pháp triển khai"), p.approach), (_("Rủi ro và biện pháp"), p.risks), (_("Các bên liên quan"), p.stakeholders)] %}
 {% set ns = namespace(n=2) %}
 {% for title, body in sections if body %}
 <h2>{{ ns.n }}. {{ title }}</h2>
@@ -76,51 +88,51 @@
 {% set ns.n = ns.n + 1 %}
 {% endfor %}
 
-<h2>{{ ns.n }}. Nhân sự dự án</h2>
+<h2>{{ ns.n }}{{ _(". Nhân sự dự án") }}</h2>
 <table>
-  <thead><tr><th style="width:36px">TT</th><th>Họ và tên</th><th>Vai trò</th></tr></thead>
+  <thead><tr><th style="width:36px">{{ _("TT") }}</th><th>{{ _("Họ và tên") }}</th><th>{{ _("Vai trò") }}</th></tr></thead>
   <tbody>
   {% for m in members %}<tr><td class="num">{{ loop.index }}</td><td>{{ m.full_name }}</td><td>{{ m.role_label }}</td></tr>{% endfor %}
   </tbody>
 </table>
 {% set ns.n = ns.n + 1 %}
 
-<h2>{{ ns.n }}. Cấu trúc phân rã công việc</h2>
+<h2>{{ ns.n }}{{ _(". Cấu trúc phân rã công việc") }}</h2>
 <table>
-  <thead><tr><th style="width:44px">WBS</th><th>Công việc</th><th>Phụ trách</th><th style="width:62px">Bắt đầu</th><th style="width:62px">Kết thúc</th><th class="num" style="width:34px">Ngày</th><th class="num" style="width:34px">%</th></tr></thead>
+  <thead><tr><th style="width:44px">{{ _("WBS") }}</th><th>{{ _("Công việc") }}</th><th>{{ _("Phụ trách") }}</th><th style="width:62px">{{ _("Bắt đầu") }}</th><th style="width:62px">{{ _("Kết thúc") }}</th><th class="num" style="width:34px">{{ _("Ngày") }}</th><th class="num" style="width:34px">%</th></tr></thead>
   <tbody>
   {% for t in tasks %}
     <tr class="{{ 'sum' if t.has_children else '' }}">
       <td>{{ t.wbs }}</td>
       <td style="padding-left: {{ 5 + t.level * 10 }}px">{% if t.milestone %}◆ {% endif %}{{ t.name }}</td>
       <td>{{ t.assignee_name or '' }}</td>
-      <td>{{ t.start_date.strftime('%d/%m/%Y') }}</td>
-      <td>{{ t.end_date.strftime('%d/%m/%Y') }}</td>
+      <td>{{ t.start_date | date }}</td>
+      <td>{{ t.end_date | date }}</td>
       <td class="num">{{ 0 if t.milestone else (t.end_date - t.start_date).days + 1 }}</td>
       <td class="num">{{ t.progress }}</td>
     </tr>
   {% else %}
-    <tr><td colspan="7">Chưa lập công việc.</td></tr>
+    <tr><td colspan="7">{{ _("Chưa lập công việc.") }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
 {% set ns.n = ns.n + 1 %}
 
 {% if milestones %}
-<h2>{{ ns.n }}. Các mốc chính</h2>
+<h2>{{ ns.n }}{{ _(". Các mốc chính") }}</h2>
 <table>
-  <thead><tr><th style="width:44px">WBS</th><th>Mốc</th><th style="width:80px">Ngày</th><th style="width:80px">Trạng thái</th></tr></thead>
+  <thead><tr><th style="width:44px">{{ _("WBS") }}</th><th>{{ _("Mốc") }}</th><th style="width:80px">{{ _("Ngày") }}</th><th style="width:80px">{{ _("Trạng thái") }}</th></tr></thead>
   <tbody>
-  {% for t in milestones %}<tr><td>{{ t.wbs }}</td><td>{{ t.name }}</td><td>{{ t.start_date.strftime('%d/%m/%Y') }}</td><td>{{ 'Đạt' if t.progress == 100 else ('Trễ' if t.late else 'Chưa đến') }}</td></tr>{% endfor %}
+  {% for t in milestones %}<tr><td>{{ t.wbs }}</td><td>{{ t.name }}</td><td>{{ t.start_date | date }}</td><td>{{ _('Đạt') if t.progress == 100 else (_('Trễ') if t.late else _('Chưa đến')) }}</td></tr>{% endfor %}
   </tbody>
 </table>
 {% set ns.n = ns.n + 1 %}
 {% endif %}
 
 {% if tasks %}
-<h2>{{ ns.n }}. Sơ đồ Gantt</h2>
+<h2>{{ ns.n }}{{ _(". Sơ đồ Gantt") }}</h2>
 <table class="gantt">
-  <thead><tr><th class="name">Công việc</th><th><div class="months">{% for m in months %}<div style="width: {{ m.width }}%">{{ m.label }}</div>{% endfor %}</div></th></tr></thead>
+  <thead><tr><th class="name">{{ _("Công việc") }}</th><th><div class="months">{% for m in months %}<div style="width: {{ m.width }}%">{{ m.label }}</div>{% endfor %}</div></th></tr></thead>
   <tbody>
   {% for t in tasks %}
     <tr>
@@ -135,9 +147,9 @@
   {% endfor %}
   </tbody>
 </table>
-<div class="legend">Thanh xanh: công việc (phần đậm là phần đã làm) · thanh đỏ: công việc trên đường găng · thanh đen: công việc tổng hợp · ◆: mốc · nét đứt đỏ: ngày in.</div>
+<div class="legend">{{ _("Thanh xanh: công việc (phần đậm là phần đã làm) · thanh đỏ: công việc trên đường găng · thanh đen: công việc tổng hợp · ◆: mốc · nét đứt đỏ: ngày in.") }}</div>
 {% endif %}
 
-<div class="sign"><div><b>Người quản lý dự án</b><br><br><br><br>{{ p.manager_name }}</div></div>
+<div class="sign"><div><b>{{ _("Người quản lý dự án") }}</b><br><br><br><br>{{ p.manager_name }}</div></div>
 </body>
 </html>

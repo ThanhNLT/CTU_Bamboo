@@ -1,15 +1,27 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import dayjs from "dayjs";
 
-import { getLocale, tr, trf } from "../../i18n";
+import { tr, trf } from "../../i18n";
 import { IC_STATUS_LABEL, PR_STATUS_LABEL } from "../../utils/status";
 import type { Catalog, ChartSpec, Pivot, QueryResult, Source } from "./types";
 
@@ -30,10 +42,8 @@ export const PALETTE = [
   "#4a6fa5",
 ];
 
-const numberFormat = () =>
-  new Intl.NumberFormat(getLocale() === "en" ? "en-US" : "vi-VN", { maximumFractionDigits: 2 });
-const compactFormat = () =>
-  new Intl.NumberFormat(getLocale() === "en" ? "en-US" : "vi-VN", { notation: "compact", maximumFractionDigits: 1 });
+const numberFormat = () => new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+const compactFormat = () => new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
 
 export const fmt = (v: number) => numberFormat().format(v);
 export const fmtCompact = (v: number) => compactFormat().format(v);
@@ -41,9 +51,8 @@ export const fmtCompact = (v: number) => compactFormat().format(v);
 export const sourceOf = (catalog: Catalog | null, name?: string): Source | undefined =>
   catalog?.sources.find((s) => s.name === name);
 
-const GRAIN_FORMAT: Record<string, string> = { day: "DD/MM/YYYY", week: "DD/MM/YYYY", month: "MM/YYYY" };
+const GRAIN_FORMAT: Record<string, string> = { day: "DD-MMM-YYYY", week: "DD-MMM-YYYY", month: "MMM-YYYY" };
 
-/** Nhãn hiển thị của một giá trị chiều: mã trạng thái thành chữ, kỳ thời gian theo chu kỳ đã chọn. */
 export const valueLabel = (column: string, value: unknown, grain?: string | null): string => {
   if (value == null || value === "") return tr("(trống)");
   const text = String(value);
@@ -61,10 +70,6 @@ const toNumber = (v: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-/**
- * Xoay kết quả thành dữ liệu biểu đồ: trục là kỳ thời gian (nếu có) hoặc chiều đầu tiên; các chiều còn lại và
- * (khi chọn nhiều chỉ số) từng chỉ số thành chuỗi. Giữ MAX_SERIES chuỗi có tổng lớn nhất.
- */
 export const pivot = (result: QueryResult, spec: ChartSpec, catalog: Catalog | null): Pivot => {
   const source = sourceOf(catalog, result.source);
   const dimLabel = (d: string) =>
@@ -114,7 +119,6 @@ const csvCell = (v: unknown) => {
   return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
-/** Bảng CSV (UTF-8 có BOM để Excel đọc đúng tiếng Việt) theo đúng cột của kết quả, tiêu đề là tên nghiệp vụ. */
 export const toCsv = (result: QueryResult, catalog: Catalog | null) => {
   const source = sourceOf(catalog, result.source);
   const header = result.columns.map((c) => {
@@ -146,7 +150,6 @@ export const fileName = (title: string, ext: string) =>
       .toLowerCase() || "bieu-do"
   }.${ext}`;
 
-/** Tên gợi ý cho biểu đồ mới: chỉ số theo chiều. */
 export const suggestName = (spec: ChartSpec, catalog: Catalog | null) => {
   const source = sourceOf(catalog, spec.source);
   const metrics = spec.metrics.map((m) => source?.measures.find((x) => x.name === m)?.label ?? m).join(", ");

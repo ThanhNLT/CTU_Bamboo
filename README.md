@@ -1,10 +1,22 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 # Bamboo
@@ -25,7 +37,7 @@ Mã nguồn của Bamboo phát hành theo **[Apache License 2.0](LICENSE)**, m�
   thương mại), với điều kiện giữ thông báo bản quyền, tệp [NOTICE](NOTICE) và ghi rõ phần đã thay đổi; người đóng góp cấp kèm
   quyền sáng chế.
 - **Trong từng tệp:** mỗi tệp mã mang header của dự án (lấy từ [`docs/Header.txt`](docs/Header.txt), gắn bằng
-  `python tools/header.py`) ghi bản quyền và giấy phép `@license Apache-2.0`; [REUSE.toml](REUSE.toml) khai báo giấy phép cho
+  `python tools/header.py`) ghi bản quyền, `@license Apache-2.0` và thông báo giấy phép Apache-2.0; [REUSE.toml](REUSE.toml) khai báo giấy phép cho
   toàn bộ kho mã theo chuẩn [REUSE 3.3](https://reuse.software), kể cả tệp không ghi được header (JSON, ảnh...). Biểu tượng mẫu của Refine theo MIT
   ([`LICENSES/MIT.txt`](LICENSES/MIT.txt)). Kiểm tra: `reuse lint`.
 - **Thành phần bên thứ ba:** đều là phần mềm nguồn mở, dùng như dịch vụ hoặc thư viện không sửa đổi, không đóng gói kèm mã
@@ -92,6 +104,7 @@ phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗ
 
 | Phiên bản | Ngày | Nội dung chính |
 |---|---|---|
+| [0.5.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.0) | 13/11/2026 | Thông báo giấy phép Apache-2.0 trong từng tệp, bỏ thành phần chưa được OSI phê duyệt (bpmn-js, CUDA trong image OCR), hoàn thiện Tầng 1 (CDR, MQTT/NGSI-LD, giám sát, mTLS nội bộ, kịch bản tự viết, tác tử AI tự hành động), AI tự nhận GPU, thông báo theo ngôn ngữ đang chọn, ngày và số theo định dạng quốc tế |
 | [0.4.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
 | [0.3.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
 | [0.2.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
@@ -319,7 +332,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
   HTTPS, `BAMBOO_ENV=production`, sao lưu, nâng cấp): [Triển khai production](docs/van-hanh/trien-khai.md).
 
 **Chạy bằng image dựng sẵn**, không cần mã nguồn (Docker Compose 2.40.2+; kho và gói GHCR phải ở chế độ công khai). Image dựng sẵn
-hiện có tới bản 0.3.0; bản 0.4.0 chạy từ mã nguồn bằng lệnh ở trên.
+hiện có tới bản 0.3.0; bản 0.4.0 và 0.5.0 chạy từ mã nguồn bằng lệnh ở trên.
 
 ```bash
 docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y

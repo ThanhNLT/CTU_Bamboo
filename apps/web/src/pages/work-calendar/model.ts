@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import dayjs, { type Dayjs } from "dayjs";
@@ -57,7 +69,6 @@ export const KIND_LABEL: Record<Kind, string> = {
   OTHER: tr("Khác"),
 };
 
-/** Màu theo loại lịch: nền nhạt + viền đậm, đọc được ở cả nền sáng và tối. */
 export const KIND_STYLE: Record<Kind, string> = {
   MEETING: "border-l-bamboo-600 bg-bamboo-50 text-bamboo-900",
   WORK: "border-l-sky-600 bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-100",
@@ -83,7 +94,6 @@ export const RESPONSE_LABEL: Record<Response, string> = {
   TENTATIVE: tr("Chưa chắc"),
 };
 
-/** Khoảng thời gian cần tải cho một chế độ xem: tuần bắt đầu thứ Hai, tháng phủ đủ 6 hàng tuần. */
 export const rangeOf = (mode: Mode, cursor: Dayjs): { from: Dayjs; to: Dayjs } => {
   switch (mode) {
     case "day":
@@ -107,10 +117,10 @@ export const step = (mode: Mode, cursor: Dayjs, dir: 1 | -1) =>
 export const titleOf = (mode: Mode, cursor: Dayjs) => {
   switch (mode) {
     case "day":
-      return cursor.format("dddd, DD/MM/YYYY");
+      return cursor.format("dddd, DD-MMM-YYYY");
     case "week": {
       const from = cursor.startOf("isoWeek");
-      return `${tr("Tuần")} ${from.isoWeek()} · ${from.format("DD/MM")} – ${from.add(6, "day").format("DD/MM/YYYY")}`;
+      return `${tr("Tuần")} ${from.isoWeek()} · ${from.format("DD-MMM")} – ${from.add(6, "day").format("DD-MMM-YYYY")}`;
     }
     case "month":
       return cursor.format("MMMM YYYY");
@@ -119,7 +129,6 @@ export const titleOf = (mode: Mode, cursor: Dayjs) => {
   }
 };
 
-/** Sự kiện có phủ ngày `d` không (giờ địa phương, ngày kết thúc loại trừ). */
 export const onDay = (e: CalEvent, d: Dayjs) => {
   const start = dayjs(e.starts_at);
   const end = dayjs(e.ends_at);
@@ -130,10 +139,6 @@ export const onDay = (e: CalEvent, d: Dayjs) => {
 
 export type Placed = { event: CalEvent; top: number; height: number; col: number; cols: number };
 
-/**
- * Xếp sự kiện có giờ trong một ngày thành cột không chồng nhau (kiểu lịch Outlook): các sự kiện giao nhau thành một cụm,
- * mỗi sự kiện vào cột trống đầu tiên, độ rộng chia đều theo số cột của cụm. `top`, `height` tính bằng phút từ 00:00.
- */
 export const layoutDay = (events: CalEvent[], day: Dayjs): Placed[] => {
   const dayStart = day.startOf("day");
   const items = events
@@ -178,7 +183,6 @@ const icsText = (s: string) =>
     .replace(/([,;])/g, "\\$1");
 const RRULE: Record<Recurrence, string> = { NONE: "", DAILY: "DAILY", WEEKLY: "WEEKLY", MONTHLY: "MONTHLY" };
 
-/** Tệp iCalendar (RFC 5545) để thêm vào lịch điện thoại, Outlook, Google Calendar. Lịch lặp xuất một lần kèm RRULE. */
 export const toIcs = (events: CalEvent[]) => {
   const seen = new Set<string>();
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bamboo DX-OS//Lich cong tac//VI", "CALSCALE:GREGORIAN"];

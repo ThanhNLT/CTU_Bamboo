@@ -1,24 +1,34 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { config } from "../../config";
 import { localizeModule } from "../../modules/api";
-import { tr, trf } from "../../i18n";
+import { getLocale, tr, trf } from "../../i18n";
+import { trServer } from "../../i18n/server";
 
 export type ModuleInfo = { code: string; name: string; description: string; depends: string[] };
 
 export type SetupStatus = {
-  /** Máy chủ chưa có công ty nào */
   empty: boolean;
-  /** Nhận đăng ký: máy trống, hoặc máy chủ mở đăng ký cả khi đã có công ty (SETUP_OPEN_SIGNUP, bản demo) */
   open: boolean;
-  /** Còn trong 24 giờ sau khi cài: đăng ký không cần mã thiết lập (ADR #62) */
   window_open: boolean;
   signature_ready: boolean;
   allow_unverified: boolean;
@@ -83,12 +93,13 @@ export type SetupResult = {
 };
 
 const call = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const resp = await fetch(`${config.setupUrl}${path}`, {
+  const resp = await fetch(`${config.setupUrl}${path}${path.includes("?") ? "&" : "?"}lang=${getLocale()}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
   const body = await resp.json().catch(() => ({}));
-  if (!resp.ok) throw new Error(body.message ?? trf("Máy chủ trả lỗi {0}", [resp.status]));
+  if (!resp.ok)
+    throw new Error((body.message ? trServer(body.message) : undefined) ?? trf("Máy chủ trả lỗi {0}", [resp.status]));
   return body as T;
 };
 
@@ -101,18 +112,16 @@ const CLOSED: SetupStatus = {
   modules: [],
 };
 
-/** Trang đăng ký mở khi máy chủ chưa có công ty nào (ADR #57) hoặc bật SETUP_OPEN_SIGNUP; không hỏi được thì coi như đóng. */
 export const setupStatus = (): Promise<SetupStatus> =>
   call<SetupStatus>("/status")
     .then((s) => ({ ...CLOSED, ...s, modules: (s.modules ?? []).map(localizeModule) }))
     .catch(() => CLOSED);
 
-/** Gửi toàn bộ dữ liệu trình hướng dẫn đăng ký (ADR #62); trả đơn để tùy chọn ký số trước khi tạo công ty. */
 export const createApplication = (body: Registration) =>
   call<Application>("/applications", { method: "POST", body: JSON.stringify(body) });
 
 export const applicationPdfUrl = (a: Application) =>
-  `${config.setupUrl}/applications/${a.application_id}/pdf?token=${encodeURIComponent(a.token)}`;
+  `${config.setupUrl}/applications/${a.application_id}/pdf?token=${encodeURIComponent(a.token)}&lang=${getLocale()}`;
 
 export const finishSetup = (a: Application, signedPdfBase64?: string) =>
   call<SetupResult>(`/applications/${a.application_id}/finish`, {
@@ -140,7 +149,7 @@ export const startRecovery = (taxCode: string) =>
   call<Recovery>("/recovery", { method: "POST", body: JSON.stringify({ tax_code: taxCode }) });
 
 export const recoveryPdfUrl = (r: Recovery) =>
-  `${config.setupUrl}/applications/${r.application_id}/pdf?token=${encodeURIComponent(r.token)}`;
+  `${config.setupUrl}/applications/${r.application_id}/pdf?token=${encodeURIComponent(r.token)}&lang=${getLocale()}`;
 
 export const finishRecovery = (r: Recovery, signedPdfBase64: string) =>
   call<{ tenant_name: string; username: string; password: string }>(`/recovery/${r.application_id}/finish`, {
