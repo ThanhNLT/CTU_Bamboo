@@ -1,17 +1,28 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { useEffect, useRef, useState } from "react";
 
 import { wsClient } from "../api/client";
 
-/** Chủ đề tín hiệu thay đổi (trigger `live.track` ở migration 052, ADR #64; lịch 053, dự án 054). */
 export type LiveTopic =
   | "approval"
   | "procurement"
@@ -31,11 +42,6 @@ const LATEST = `subscription Live($t: [String!]) {
   live_event(where: {topic: {_in: $t}}, order_by: {id: desc}, limit: 1) { id at }
 }`;
 
-/**
- * Gọi `onChange` khi dữ liệu thuộc các chủ đề đổi (do bất kỳ ai, ở bất kỳ thiết bị nào trong công ty), gộp các thay đổi
- * dồn dập trong `debounceMs`. Một subscription Hasura duy nhất cho mỗi lần dùng; Hasura gộp truy vấn giống nhau của mọi
- * người dùng thành một lần đọc mỗi giây. Trả thời điểm thay đổi gần nhất và trạng thái kết nối để hiện "Trực tiếp".
- */
 export const useLiveTopics = (topics: readonly LiveTopic[], onChange: () => void, debounceMs = 1500) => {
   const [state, setState] = useState<{ connected: boolean; changedAt?: Date }>({ connected: false });
   const callback = useRef(onChange);

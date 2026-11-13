@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import hashlib
 import pathlib
@@ -14,7 +26,7 @@ import jinja2
 import psycopg
 from psycopg.rows import dict_row
 
-from . import storage
+from . import i18n, storage
 from .common import ActionError, Context, require_read, session_identity
 
 TEMPLATES = pathlib.Path(__file__).resolve().parent / "templates"
@@ -98,30 +110,58 @@ def amount_in_words(amount) -> str:
     n = int(Decimal(amount).quantize(Decimal(1), rounding=ROUND_HALF_UP))
     if n < 0:
         raise ValueError("Số tiền âm")
+    if i18n.get_locale() == "en":
+        return _english(n).capitalize() + " dong"
     text = " ".join(_words(n)) if n else "không"
     return text[0].upper() + text[1:] + " đồng"
 
 
-def number(value, decimals: int = 0) -> str:
-    d = Decimal(value)
-    whole = int(d.quantize(Decimal(1), rounding=ROUND_HALF_UP)) if decimals == 0 else int(d)
-    text = f"{whole:,}".replace(",", ".")
-    if decimals:
-        frac = str(abs(d) % 1)[2 : 2 + decimals].rstrip("0")
-        if frac:
-            text += "," + frac
-    return text
+_ONES = (
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
+    "seventeen eighteen nineteen"
+).split()
+_TENS = "twenty thirty forty fifty sixty seventy eighty ninety".split()
+_SCALES = ("", " thousand", " million", " billion", " trillion", " quadrillion")
 
 
-_env.filters["number"] = number
+def _english_group(n: int) -> str:
+    parts = []
+    if n >= 100:
+        parts.append(f"{_ONES[n // 100]} hundred")
+        n %= 100
+    if n >= 20:
+        parts.append(_TENS[n // 10 - 2] + (f"-{_ONES[n % 10]}" if n % 10 else ""))
+    elif n or not parts:
+        parts.append(_ONES[n])
+    return " ".join(parts)
+
+
+def _english(n: int) -> str:
+    if n == 0:
+        return "zero"
+    groups = []
+    for scale in _SCALES:
+        n, rest = divmod(n, 1000)
+        if rest:
+            groups.append(_english_group(rest) + scale)
+        if not n:
+            break
+    return " ".join(reversed(groups))
+
+
+number = i18n.number
+
+_env.filters["number"] = i18n.number
+_env.filters["date"] = i18n.date
+_env.globals["_"] = i18n.t
 
 
 def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
     cur = conn.cursor(row_factory=dict_row)
     pr = cur.execute(
         """SELECT r.id, r.tenant_id, r.doc_no, r.title, r.description, r.status, r.approval_round, r.total_amount,
-                  to_char(r.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY') AS created_on,
-                  to_char(r.needed_by, 'DD/MM/YYYY') AS needed_by,
+                  to_char(r.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY') AS created_on,
+                  to_char(r.needed_by, 'DD-Mon-YYYY') AS needed_by,
                   t.name AS tenant_name, u.name AS unit_name, p.full_name AS requester, p.employee_code,
                   pos.name AS position_name, cat.name AS category,
                   coalesce(pa.name, r.proposed_partner_name) AS partner_name,
@@ -149,7 +189,7 @@ def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
     pr["steps"] = cur.execute(
         """SELECT s.step_order, s.status, pos.name AS position_name, actor.full_name AS acted_by,
                   principal.full_name AS on_behalf_of, s.note,
-                  to_char(s.acted_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS acted_at
+                  to_char(s.acted_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS acted_at
            FROM wf.approval_step s
            JOIN core.position pos ON pos.id = s.position_id
            LEFT JOIN core.person actor ON actor.id = s.acted_by
@@ -164,8 +204,8 @@ def _purchase_request(conn: psycopg.Connection, request_id: str) -> dict:
 def render_purchase_request(pr: dict) -> str:
     return _env.get_template("phieu_de_nghi_mua_sam.html").render(
         pr=pr,
-        status_label=STATUS_LABELS.get(pr["status"], pr["status"]),
-        step_labels=STEP_LABELS,
+        status_label=i18n.t(STATUS_LABELS.get(pr["status"], pr["status"])),
+        step_labels={k: i18n.t(v) for k, v in STEP_LABELS.items()},
         amount_words=amount_in_words(pr["total_amount"]),
     )
 
@@ -202,6 +242,7 @@ def get_purchase_request_pdf(conn: psycopg.Connection, session: dict, args: dict
     if ctx.storage is None or not ctx.gotenberg_url:
         raise ActionError("Chưa cấu hình in phiếu", "unavailable", 503)
 
+    i18n.for_session(conn, session)
     pr = _purchase_request(conn, request_id)
     content = hashlib.sha256(f"{FORM_VERSION}\n".encode())
     html = render_purchase_request(pr)

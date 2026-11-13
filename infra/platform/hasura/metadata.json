@@ -17025,6 +17025,37 @@
       "comment": "Lịch sử sao lưu theo lịch và diễn tập khôi phục (cần audit.read)"
     },
     {
+      "name": "set_my_locale",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/set_my_locale",
+        "arguments": [
+          {
+            "name": "locale",
+            "type": "String!"
+          }
+        ],
+        "output_type": "LocaleResult!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Ghi ngôn ngữ giao diện (vi, en) của người gọi để văn bản in và tin gửi ra ngoài theo đúng ngôn ngữ"
+    },
+    {
       "name": "notification_prefs",
       "definition": {
         "kind": "synchronous",
@@ -22138,6 +22169,15 @@
         "fields": [
           {
             "name": "channel",
+            "type": "String!"
+          }
+        ]
+      },
+      {
+        "name": "LocaleResult",
+        "fields": [
+          {
+            "name": "locale",
             "type": "String!"
           }
         ]

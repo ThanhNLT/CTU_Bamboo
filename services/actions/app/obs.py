@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Gom nhật ký và mã truy vết tập trung vào `obs.log_event`.
 
@@ -231,7 +243,7 @@ def obs_logs(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context)
         params["q"] = "%" + str(args["q"]).replace("%", r"\%").replace("_", r"\_") + "%"
     params["limit"] = min(max(int(args.get("limit") or 100), 1), 500)
     rows = conn.execute(
-        f"""SELECT id, to_char(ts AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM HH24:MI:SS.MS'), service, level, logger,
+        f"""SELECT id, to_char(ts AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon HH24:MI:SS.MS'), service, level, logger,
                    message, trace_id, fields
             FROM obs.log_event WHERE {" AND ".join(clauses)}
             ORDER BY {"ts ASC" if args.get("trace_id") else "ts DESC"}, id DESC LIMIT %(limit)s""",
@@ -262,8 +274,8 @@ def backup_runs(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Cont
     _reader(conn, session)
     rows = conn.execute(
         """SELECT id, kind, status, location, size_bytes, detail,
-                  to_char(started_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS'),
-                  to_char(finished_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS')
+                  to_char(started_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS'),
+                  to_char(finished_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS')
            FROM audit.backup_run ORDER BY id DESC LIMIT 30"""
     ).fetchall()
     keys = ("id", "kind", "status", "location", "size_bytes", "detail", "started_at", "finished_at")

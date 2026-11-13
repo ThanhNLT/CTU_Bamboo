@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { useList } from "@refinedev/core";
@@ -163,7 +175,7 @@ const span = (ms: number) => {
   return h ? trf("{0} giờ", [h]) : trf("{0} phút", [Math.max(1, Math.floor(ms / 60_000))]);
 };
 
-const pct = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
+const pct = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 
 export const useOpsData = (period: Period) => {
   const days = PERIOD_DAYS[period];
@@ -276,7 +288,7 @@ export const useOpsData = (period: Period) => {
     const company = Object.fromEntries(companies.map((c) => [c.key, c])) as Record<CompanyKey, Company>;
 
     const daily: DailyPoint[] = Array.from({ length: days }, (_, i) => {
-      const point: DailyPoint = { day: since.add(i, "day").format("DD/MM") };
+      const point: DailyPoint = { day: since.add(i, "day").format("DD-MMM") };
       for (const c of companies) point[c.key] = 0;
       return point;
     });
@@ -351,7 +363,7 @@ export const useOpsData = (period: Period) => {
       return !d.isBefore(prevSince) && d.isBefore(since);
     }).length;
     const change = prevPeriod ? Math.round(((inPeriod - prevPeriod) / prevPeriod) * 100) : null;
-    const hot = { tier: "Nóng" as const, at };
+    const hot = { tier: "hot" as const, at };
     const kpis: Kpi[] = [
       {
         key: "pending",
@@ -423,7 +435,7 @@ export const useOpsData = (period: Period) => {
       overdue: overdueAll.slice(0, 5),
       kpis,
       updatedAt: at,
-      rangeLabel: `${since.format("DD/MM")} – ${today.format("DD/MM")}`,
+      rangeLabel: `${since.format("DD-MMM")} – ${today.format("DD-MMM")}`,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

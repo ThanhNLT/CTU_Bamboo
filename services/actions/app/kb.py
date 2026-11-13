@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import psycopg
 from psycopg.rows import dict_row
@@ -69,14 +81,14 @@ def kb_library(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Conte
     cur = conn.cursor(row_factory=dict_row)
     docs = cur.execute(
         """SELECT d.id, d.doc_no, d.title, d.category, d.scope, d.summary, d.toc, d.version, d.supersedes_id,
-                  to_char(d.effective_date, 'DD/MM/YYYY') AS effective_date,
-                  to_char(d.published_at AT TIME ZONE %(tz)s, 'DD/MM/YYYY HH24:MI') AS published_at,
+                  to_char(d.effective_date, 'DD-Mon-YYYY') AS effective_date,
+                  to_char(d.published_at AT TIME ZONE %(tz)s, 'DD-Mon-YYYY HH24:MI') AS published_at,
                   u.name AS unit, coalesce(c.name, u.name) AS issuer, p.full_name AS requester,
                   core.company_of(d.org_unit_id) = ANY(%(companies)s) AS my_company,
                   CASE WHEN sp.entity_id IS NULL THEN 'missing'
                        WHEN sp.dirty AND sp.attempts > 0 THEN 'error'
                        WHEN sp.dirty THEN 'indexing' ELSE 'indexed' END AS index_status,
-                  to_char(sp.indexed_at AT TIME ZONE %(tz)s, 'DD/MM/YYYY HH24:MI') AS indexed_at,
+                  to_char(sp.indexed_at AT TIME ZONE %(tz)s, 'DD-Mon-YYYY HH24:MI') AS indexed_at,
                   sp.last_error AS index_error,
                   core.has_permission(%(person)s, 'kb.document.manage', d.org_unit_id) AS can_manage,
                   coalesce((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'file_name', a.file_name,
