@@ -31,6 +31,14 @@ cd "$REPO" || exit 2
 log() { echo "$(date -u +%FT%TZ) $*"; }
 dc() { docker compose -p "$PROJECT" "$@"; }
 
+if command -v flock > /dev/null 2>&1; then
+    exec 9> "$REPO/.gitops.lock"
+    if ! flock -n 9; then
+        log "đang có lượt đối chiếu khác chạy, bỏ qua lượt này"
+        exit 0
+    fi
+fi
+
 write_state() {
     printf '{"at": "%s", "status": "%s", "commit": "%s", "config_hash": "%s", "note": "%s"}\n' \
         "$(date -u +%FT%TZ)" "$1" "$(git rev-parse --short HEAD 2> /dev/null)" "${state_hash:-}" "${2//\"/\'}" > "$STATE_FILE"
@@ -40,21 +48,33 @@ previous_hash=""
 [ -f "$STATE_FILE" ] && previous_hash="$(sed -n 's/.*"config_hash": "\([^"]*\)".*/\1/p' "$STATE_FILE")"
 state_hash="$previous_hash"
 
-if ! git fetch --quiet origin "$BRANCH"; then
-    write_state error "git fetch thất bại"
-    log "git fetch thất bại"
-    exit 1
-fi
-if [ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/$BRANCH")" ]; then
-    if git merge-base --is-ancestor HEAD "origin/$BRANCH"; then
-        log "kéo cập nhật từ origin/$BRANCH"
-        [ "$DRY" = 1 ] || git merge --ff-only --quiet "origin/$BRANCH" || { write_state error "không fast-forward được"; exit 1; }
-    else
-        write_state error "lịch sử origin/$BRANCH không phải kế thừa của bản đang chạy"
-        log "dừng: lịch sử bị viết lại hoặc có thay đổi cục bộ chưa đẩy"
+current="$(git symbolic-ref --quiet --short HEAD || true)"
+if [ "$current" != "$BRANCH" ]; then
+    log "bản đang chạy ở ${current:-một commit hoặc thẻ cố định}, không phải nhánh $BRANCH: chỉ đối chiếu, không kéo mã mới"
+else
+    if ! git fetch --quiet origin "$BRANCH"; then
+        write_state error "git fetch thất bại"
+        log "git fetch thất bại"
         exit 1
     fi
+    if [ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/$BRANCH")" ]; then
+        if git merge-base --is-ancestor HEAD "origin/$BRANCH"; then
+            log "kéo cập nhật từ origin/$BRANCH"
+            [ "$DRY" = 1 ] || git merge --ff-only --quiet "origin/$BRANCH" || { write_state error "không fast-forward được"; exit 1; }
+        else
+            write_state error "lịch sử origin/$BRANCH không phải kế thừa của bản đang chạy"
+            log "dừng: lịch sử bị viết lại hoặc có thay đổi cục bộ chưa đẩy"
+            exit 1
+        fi
+    fi
 fi
+
+if ! profile="$("$REPO/tools/ram_profile.sh" 2> /dev/null)"; then
+    write_state error "không xác định được mức RAM (BAMBOO_RAM phải là 8 hoặc 16)"
+    log "tools/ram_profile.sh lỗi"
+    exit 1
+fi
+eval "$profile"
 
 cfg_hash="$(dc config --hash '*' 2> /dev/null | sort | sha256sum | cut -c1-16)"
 if [ -z "$cfg_hash" ]; then
