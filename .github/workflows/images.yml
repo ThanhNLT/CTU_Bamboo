@@ -54,6 +54,7 @@ jobs:
           - { name: trino, context: infra/platform/trino, file: infra/platform/trino/Dockerfile, args: "" }
           - { name: sleeper, context: ., file: infra/docker/sleeper.Dockerfile, args: "" }
           - { name: kafka, context: infra/platform/kafka, file: infra/platform/kafka/Dockerfile, args: "" }
+          - { name: mosquitto, context: infra/platform/mosquitto, file: infra/platform/mosquitto/Dockerfile, args: "" }
           - { name: web, context: ., file: infra/docker/web.Dockerfile, args: "" }
     steps:
       - uses: actions/checkout@v7

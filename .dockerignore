@@ -26,3 +26,5 @@ db
 **/.pytest_cache
 **/*.pyc
 .env
+build
+config.mk

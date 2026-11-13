@@ -311,9 +311,12 @@ services:
 
   backup:
     logging: *logging
-    image: postgis/postgis:17-3.5
-    platform: linux/amd64
-    entrypoint: ["bash", "/ops/backup-scheduler.sh"]
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
+    build:
+      context: ../..
+      dockerfile: infra/docker/migrate.Dockerfile
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-migrate:${BAMBOO_TAG:-dev}
+    entrypoint: ["bash", "/repo/tools/ops/backup-scheduler.sh"]
     environment:
       PGHOST: db
       PGUSER: bms
@@ -323,7 +326,6 @@ services:
       BACKUP_KEEP: ${BACKUP_KEEP:-7}
       BACKUP_FIRST_DELAY: ${BACKUP_FIRST_DELAY:-600}
     volumes:
-      - ../../tools/ops:/ops:ro
       - backups:/backups
     depends_on:
       migrate:
