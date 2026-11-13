@@ -149,7 +149,7 @@ DEV_DEFAULTS = {
     "GRAFANA_ADMIN_PASSWORD": "grafana-dev",
 }
 
-PRODUCTION_OFF = {"HASURA_ENABLE_CONSOLE": "true"}
+PRODUCTION_OFF = {"HASURA_ENABLE_CONSOLE": "false"}
 
 
 def _enabled(value: str) -> bool:

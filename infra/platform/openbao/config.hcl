@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ui            = true
+ui            = false
 disable_mlock = true
 
 storage "raft" {
