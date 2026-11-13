@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import dayjs, { type Dayjs } from "dayjs";
@@ -54,7 +66,7 @@ const MiniMonth = ({
                     ? "bg-bamboo-50 font-semibold text-ink"
                     : "text-body hover:bg-bamboo-50",
               )}
-              aria-label={trf("{0}: {1} lịch", [d.format("DD/MM"), list.length])}
+              aria-label={trf("{0}: {1} lịch", [d.format("DD-MMM"), list.length])}
             >
               {d.date()}
               <span className="flex h-1.5 gap-0.5">
@@ -70,7 +82,6 @@ const MiniMonth = ({
   );
 };
 
-/** Xem quý: ba tháng thu nhỏ (chấm màu theo loại lịch) và danh sách lịch của quý theo tháng. */
 export const QuarterView = ({
   start,
   events,
@@ -117,7 +128,7 @@ export const QuarterView = ({
                     >
                       <span className={cn("h-2 w-2 shrink-0 rounded-full", KIND_DOT[e.kind])} aria-hidden />
                       <span className="w-[88px] shrink-0 text-[12px] text-muted">
-                        {dayjs(e.starts_at).format(e.all_day ? "DD/MM" : "DD/MM HH:mm")}
+                        {dayjs(e.starts_at).format(e.all_day ? "DD-MMM" : "DD-MMM HH:mm")}
                       </span>
                       <span
                         className={cn(

@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import dayjs, { type Dayjs } from "dayjs";
@@ -15,7 +27,6 @@ import { KIND_DOT, KIND_STYLE, onDay, type CalEvent } from "../model";
 
 const WEEKDAYS = [tr("T2"), tr("T3"), tr("T4"), tr("T5"), tr("T6"), tr("T7"), tr("CN")];
 
-/** Lưới tháng 6 tuần × 7 ngày, mỗi ô tối đa 3 sự kiện rồi "+n". */
 export const MonthGrid = ({
   month,
   from,
@@ -66,7 +77,7 @@ export const MonthGrid = ({
                       ? "text-ink"
                       : "text-muted",
                 )}
-                aria-label={d.format("DD/MM/YYYY")}
+                aria-label={d.format("DD-MMM-YYYY")}
               >
                 {d.date()}
               </button>

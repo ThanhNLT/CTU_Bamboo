@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { request } from "../../api/client";
@@ -15,7 +27,6 @@ import type { Member, Message, Person } from "./types";
 const MESSAGE = `id sender_id body created_at edited_at deleted_at reply_to_id mentions
   sender { full_name } attachment { id file_name content_type size_bytes status }`;
 
-/** Danh sách cuộc trò chuyện của người gọi, mới nhất trước, kèm số tin chưa đọc (live query). */
 export const CONVERSATIONS = `subscription Conversations($me: uuid!) {
   chat_conversation(order_by: [{last_message_at: desc_nulls_last}, {created_at: desc}], limit: 300) {
     id kind title display_name unread last_preview last_message_at org_unit_id
@@ -24,14 +35,12 @@ export const CONVERSATIONS = `subscription Conversations($me: uuid!) {
   }
 }`;
 
-/** Tổng tin chưa đọc cho huy hiệu trên menu (bỏ cuộc đã tắt thông báo). */
 export const UNREAD = `subscription Unread($me: uuid!) {
   chat_conversation(where: {members: {person_id: {_eq: $me}, muted: {_eq: false}, left_at: {_is_null: true}}}) {
     id unread
   }
 }`;
 
-/** 100 tin gần nhất của cuộc đang mở (live query: tin mới, sửa, thu hồi đều hiện ngay). */
 export const LATEST = `subscription Latest($c: uuid!) {
   chat_message(where: {conversation_id: {_eq: $c}}, order_by: {id: desc}, limit: 100) { ${MESSAGE} }
 }`;
@@ -71,7 +80,6 @@ export const searchPeople = async (text: string, except: string) => {
   return core_person;
 };
 
-/** Mảng uuid của PostgreSQL gửi qua GraphQL dưới dạng chuỗi `{a,b}`. */
 const pgArray = (ids: string[]) => `{${ids.join(",")}}`;
 
 export const sendMessage = async (input: {
@@ -154,7 +162,6 @@ export const leave = async (conversation: string) => {
 
 const MAX_BYTES = 25 * 1024 * 1024;
 
-/** Tải tệp lên kho tệp đính kèm (quét virus), trả mã tệp để gắn vào tin nhắn. */
 export const uploadFile = async (conversation: string, file: File) => {
   if (file.size > MAX_BYTES) throw new Error(tr("Tệp phải nhỏ hơn 25 MB"));
   const { get_upload_url: t } = await request<{

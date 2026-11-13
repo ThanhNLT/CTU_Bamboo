@@ -1,21 +1,31 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Nhập sơ đồ từ XML BPMN 2.0 vào diagram-js và ghi ngược lại (ADR #81). Chỉ phần tử vẽ được (sự kiện, tác vụ, cổng,
-// quy trình con, luồng tuần tự) đi qua diagram-js; mọi thứ khác trong tệp được giữ nguyên khi ghi.
 import { boOf, is, isDrawable, kindOf, type Bo, type DiagramElement } from "./model";
 import { flowLabel, longestSegmentMid, shapeLabel } from "./render";
+import { tr, trf } from "../i18n";
 
 export type ImportResult = { warnings: string[] };
 
-/** Trạng thái tài liệu đang mở: definitions gốc và các phần tử đã từng có trên sơ đồ (để biết phần tử nào bị xóa). */
 export class DocumentState {
   definitions: Bo = null;
   plane: Bo = null;
@@ -33,7 +43,6 @@ const containerShape = (bo: Bo, shapes: Map<Bo, DiagramElement>, root: DiagramEl
   return root;
 };
 
-/** Con của quy trình con thu gọn nằm cùng mặt phẳng: không vẽ (giữ nguyên trong tệp). */
 const insideCollapsed = (bo: Bo, shapes: Map<Bo, DiagramElement>) => {
   for (let p = bo.$parent; p; p = p.$parent) if (shapes.get(p)?.collapsed) return true;
   return false;
@@ -53,14 +62,14 @@ export const importXml = async (injector: any, state: DocumentState, xml: string
 
   const { rootElement: definitions, warnings, elementsById } = await moddle.fromXML(xml, "bpmn:Definitions");
   const plane = definitions.diagrams?.[0]?.plane;
-  if (!plane) throw new Error("tệp không có phần sơ đồ (BPMNDiagram)");
+  if (!plane) throw new Error(tr("tệp không có phần sơ đồ (BPMNDiagram)"));
   let process = plane.bpmnElement;
   if (!process || !is(process, "bpmn:Process")) {
     process =
       (is(process, "bpmn:Collaboration") && process.participants?.find((p: Bo) => p.processRef)?.processRef) ||
       definitions.rootElements?.find((e: Bo) => is(e, "bpmn:Process"));
   }
-  if (!process) throw new Error("tệp không có quy trình (process)");
+  if (!process) throw new Error(tr("tệp không có quy trình (process)"));
 
   ids.reset(Object.keys(elementsById ?? {}));
   state.definitions = definitions;
@@ -79,7 +88,6 @@ export const importXml = async (injector: any, state: DocumentState, xml: string
   const shapeDis = (plane.planeElement ?? []).filter(
     (di: Bo) => is(di, "bpmndi:BPMNShape") && di.bpmnElement && isDrawable(di.bpmnElement) && di.bounds,
   );
-  // cha (quy trình con mở rộng) trước con, sự kiện biên sau tác vụ chứa nó
   shapeDis.sort(
     (a: Bo, b: Bo) =>
       depth(a.bpmnElement) - depth(b.bpmnElement) ||
@@ -107,7 +115,7 @@ export const importXml = async (injector: any, state: DocumentState, xml: string
     if (is(bo, "bpmn:BoundaryEvent")) {
       const host = shapes.get(bo.attachedToRef);
       if (!host) {
-        warnings.push(`sự kiện biên ${bo.id} không có tác vụ chứa trên sơ đồ`);
+        warnings.push(trf("sự kiện biên {0} không có tác vụ chứa trên sơ đồ", [bo.id]));
         continue;
       }
       shape.host = host;
@@ -124,7 +132,7 @@ export const importXml = async (injector: any, state: DocumentState, xml: string
     const target = shapes.get(bo.targetRef);
     if (insideCollapsed(bo, shapes)) continue;
     if (!source || !target) {
-      warnings.push(`luồng ${bo.id} thiếu phần tử nguồn hoặc đích trên sơ đồ`);
+      warnings.push(trf("luồng {0} thiếu phần tử nguồn hoặc đích trên sơ đồ", [bo.id]));
       continue;
     }
     const waypoints = (di.waypoint ?? []).map((p: Bo) => ({ x: round(p.x), y: round(p.y) }));
@@ -171,9 +179,8 @@ const labelFor = (moddle: any, box: { x: number; y: number; width: number; heigh
     }),
   });
 
-/** Đồng bộ sơ đồ về definitions rồi ghi XML. */
 export const exportXml = async (injector: any, state: DocumentState, format: boolean): Promise<string> => {
-  if (!state.definitions) throw new Error("chưa có sơ đồ");
+  if (!state.definitions) throw new Error(tr("chưa có sơ đồ"));
   const moddle = injector.get("moddle");
   const registry = injector.get("elementRegistry");
   const canvas = injector.get("canvas");
@@ -183,7 +190,6 @@ export const exportXml = async (injector: any, state: DocumentState, format: boo
   const plane = state.plane;
   plane.planeElement = plane.planeElement ?? [];
 
-  // phần tử đã xóa khỏi sơ đồ
   for (const bo of state.tracked) {
     if (present.has(bo)) continue;
     remove(bo.$parent?.flowElements, bo);

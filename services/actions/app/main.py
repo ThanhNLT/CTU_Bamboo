@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import hmac
 import json
@@ -41,6 +53,7 @@ from . import (
     forms,
     hr,
     hr_account,
+    i18n,
     ic,
     ingest,
     iot,
@@ -425,6 +438,7 @@ def create_app(
     async def trace(request: Request, call_next):
         """Gắn mã truy vết (X-Request-Id do cổng cấp) vào mọi log của yêu cầu và ghi tóm tắt mỗi yêu cầu."""
         request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+        i18n.set_locale(request.query_params.get("lang"))
         obs.bind(trace_id=request_id[:100])
         started = time.perf_counter()
         trace_id = telemetry.tag_request(request_id[:100])

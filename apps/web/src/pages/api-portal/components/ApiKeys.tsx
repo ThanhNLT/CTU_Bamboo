@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Alert, App, Checkbox, Form, Input, Modal, Select, Table, Tag } from "antd";
@@ -28,7 +40,6 @@ const EXPIRY = [30, 90, 180, 365];
 
 const sum = (k: ApiKey, f: "calls" | "errors") => k.usages.reduce((s, u) => s + u[f], 0);
 
-/** Khóa API của công ty: tạo (hiện khóa một lần), xem phạm vi, hạn, lần dùng cuối, lượt gọi 30 ngày; thu hồi. */
 export const ApiKeys = ({ keys, scopes, onChanged }: { keys: ApiKey[]; scopes: Scope[]; onChanged: () => void }) => {
   const { message, modal } = App.useApp();
   const [form] = Form.useForm<KeyInput>();
@@ -143,7 +154,7 @@ export const ApiKeys = ({ keys, scopes, onChanged }: { keys: ApiKey[]; scopes: S
             align: "right",
             render: (_, k) => (
               <span className="tabular-nums">
-                {sum(k, "calls").toLocaleString("vi-VN")}
+                {sum(k, "calls").toLocaleString("en-US")}
                 {sum(k, "errors") > 0 && (
                   <span className="block text-[11px] text-red-700">{trf("{0} lỗi", [sum(k, "errors")])}</span>
                 )}

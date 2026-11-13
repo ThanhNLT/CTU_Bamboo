@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { useGo } from "@refinedev/core";
@@ -25,7 +37,7 @@ const greeting = (hour: number) =>
         : tr("Chào buổi tối");
 
 const formatToday = (d: dayjs.Dayjs) =>
-  d.format("dddd, DD/MM/YYYY").replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
+  d.format("dddd, DD-MMM-YYYY").replace(/(^|\s)(\p{L})/gu, (_, sp: string, ch: string) => sp + ch.toUpperCase());
 
 const Chip = ({ children }: { children: string }) => (
   <span className="inline-flex items-center rounded-full border border-[var(--glass-card-edge)] bg-[var(--glass-card)] px-3 py-1 text-[12.5px] text-body backdrop-blur-xl">

@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import dayjs, { type Dayjs } from "dayjs";
@@ -26,13 +38,8 @@ const HEAD = 48;
 
 type Drag = { id: string; mode: "move" | "end"; x0: number; delta: number };
 
-const fmt = (d: Dayjs) => d.format("DD/MM/YYYY");
+const fmt = (d: Dayjs) => d.format("DD-MMM-YYYY");
 
-/**
- * Sơ đồ Gantt: bảng WBS dính bên trái, trục thời gian bên phải (ngày/tuần/tháng). Thanh công việc lá kéo để dời, kéo mép phải
- * để đổi ngày kết thúc (người quản lý); công việc tổng hợp là thanh mảnh có ngoặc, mốc là hình thoi. Mũi tên là phụ thuộc
- * kết thúc→bắt đầu; tô đỏ đường găng; vạch mờ dưới thanh là đường cơ sở; vạch đỏ dọc là hôm nay.
- */
 export const Gantt = ({
   tasks,
   deps,
@@ -134,8 +141,9 @@ export const Gantt = ({
     for (let i = 0; i < days; i++) {
       const d = start.add(i, "day");
       if (zoom === "day") out.push({ d, major: d.date() === 1 || i === 0, label: String(d.date()) });
-      else if (zoom === "week" && d.isoWeekday() === 1) out.push({ d, major: d.date() <= 7, label: d.format("DD/MM") });
-      else if (zoom === "month" && d.date() === 1) out.push({ d, major: d.month() === 0, label: d.format("MM/YYYY") });
+      else if (zoom === "week" && d.isoWeekday() === 1)
+        out.push({ d, major: d.date() <= 7, label: d.format("DD-MMM") });
+      else if (zoom === "month" && d.date() === 1) out.push({ d, major: d.month() === 0, label: d.format("MMM-YYYY") });
     }
     return out;
   }, [start, days, zoom]);
@@ -147,7 +155,7 @@ export const Gantt = ({
       const nxt = cur.add(1, "month");
       const b = nxt.isAfter(end) ? end : nxt;
       out.push({
-        label: zoom === "month" ? cur.format("YYYY") : cur.format("MM/YYYY"),
+        label: zoom === "month" ? cur.format("YYYY") : cur.format("MMM-YYYY"),
         left: a.diff(start, "day") * px,
         width: b.diff(a, "day") * px,
       });

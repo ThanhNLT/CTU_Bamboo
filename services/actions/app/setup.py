@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Đăng ký sử dụng: khởi tạo công ty lần đầu trên máy chủ tự cài (ADR #57, đơn giản hóa ở ADR #62).
 
@@ -36,7 +48,7 @@ from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 from starlette.concurrency import run_in_threadpool
 
-from . import config, forms, legal_sign, modules
+from . import config, forms, i18n, legal_sign, modules
 from .common import ActionError, Context
 from .hr_account import AccountConflict, KeycloakUsers, temporary_password
 
@@ -190,13 +202,15 @@ def render_pdf(ctx: Context, application: dict) -> bytes:
     today = dt.datetime.now(TZ)
     html = forms._env.get_template("don_dang_ky_su_dung.html").render(
         a=application,
-        title={
-            "SETUP": "Đơn đăng ký sử dụng hệ thống",
-            "VERIFY": "Đơn xác thực thông tin doanh nghiệp",
-            "RECOVER": "Đơn khôi phục tài khoản chủ sở hữu",
-        }[application["purpose"]],
-        expires=expires.strftime("%H:%M ngày %d/%m/%Y"),
-        place_date=f"Ngày {today.day} tháng {today.month} năm {today.year}",
+        title=i18n.t(
+            {
+                "SETUP": "Đơn đăng ký sử dụng hệ thống",
+                "VERIFY": "Đơn xác thực thông tin doanh nghiệp",
+                "RECOVER": "Đơn khôi phục tài khoản chủ sở hữu",
+            }[application["purpose"]]
+        ),
+        expires=f"{expires:%H:%M} {i18n.date(expires)}",
+        place_date=i18n.date(today),
     )
     try:
         return forms.html_to_pdf(
@@ -944,9 +958,10 @@ def _require_owner(t: dict) -> None:
 def legal_application(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> dict:
     t = _owner_tenant(conn, session)
     _require_owner(t)
+    i18n.for_session(conn, session)
     company = {k: t[k] for k in ("tax_code", "legal_name", "address", "legal_rep_name")} | {
         "code": t["code"],
-        "legal_rep_title": "Người đại diện theo pháp luật",
+        "legal_rep_title": i18n.t("Người đại diện theo pháp luật"),
     }
     application, _token, pdf = _new_application(conn, ctx, "VERIFY", {"company": company}, t["id"])
     return {

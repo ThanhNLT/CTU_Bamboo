@@ -1,11 +1,23 @@
 <!doctype html>
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 <html lang="vi">
@@ -30,50 +42,43 @@
 </head>
 <body>
 <h1>{{ title }}</h1>
-<div class="to">Kính gửi: Bộ phận quản trị hệ thống Bamboo DX-OS cài đặt tại doanh nghiệp</div>
+<div class="to">{{ _("Kính gửi: Bộ phận quản trị hệ thống Bamboo DX-OS cài đặt tại doanh nghiệp") }}</div>
 
-<h2>1. Thông tin doanh nghiệp</h2>
+<h2>{{ _("1. Thông tin doanh nghiệp") }}</h2>
 <table>
-  <tr><td>Tên doanh nghiệp</td><td>{{ a.company.legal_name }}</td></tr>
-  <tr><td>Mã số thuế / mã số doanh nghiệp</td><td>{{ a.company.tax_code }}</td></tr>
-  <tr><td>Địa chỉ trụ sở chính</td><td>{{ a.company.address or "" }}</td></tr>
-  <tr><td>Người đại diện theo pháp luật</td><td>{{ a.company.legal_rep_name }} — {{ a.company.legal_rep_title }}</td></tr>
-  {% if a.purpose == 'SETUP' %}<tr><td>Mã công ty trên hệ thống</td><td>{{ a.company.code }}</td></tr>{% endif %}
+  <tr><td>{{ _("Tên doanh nghiệp") }}</td><td>{{ a.company.legal_name }}</td></tr>
+  <tr><td>{{ _("Mã số thuế / mã số doanh nghiệp") }}</td><td>{{ a.company.tax_code }}</td></tr>
+  <tr><td>{{ _("Địa chỉ trụ sở chính") }}</td><td>{{ a.company.address or "" }}</td></tr>
+  <tr><td>{{ _("Người đại diện theo pháp luật") }}</td><td>{{ a.company.legal_rep_name }} — {{ a.company.legal_rep_title }}</td></tr>
+  {% if a.purpose == 'SETUP' %}<tr><td>{{ _("Mã công ty trên hệ thống") }}</td><td>{{ a.company.code }}</td></tr>{% endif %}
 </table>
 
 {% if a.purpose == 'SETUP' %}
-<h2>2. Tài khoản đề nghị cấp</h2>
+<h2>{{ _("2. Tài khoản đề nghị cấp") }}</h2>
 <table>
-  <tr><td>Chủ sở hữu (người đại diện)</td><td>{{ a.owner.username }}{% if a.owner.email %} · {{ a.owner.email }}{% endif %}</td></tr>
-  {% if a.admin %}<tr><td>Quản trị viên</td><td>{{ a.admin.full_name }} · {{ a.admin.username }}{% if a.admin.email %} · {{ a.admin.email }}{% endif %}</td></tr>{% endif %}
+  <tr><td>{{ _("Chủ sở hữu (người đại diện)") }}</td><td>{{ a.owner.username }}{% if a.owner.email %} · {{ a.owner.email }}{% endif %}</td></tr>
+  {% if a.admin %}<tr><td>{{ _("Quản trị viên") }}</td><td>{{ a.admin.full_name }} · {{ a.admin.username }}{% if a.admin.email %} · {{ a.admin.email }}{% endif %}</td></tr>{% endif %}
 </table>
-<h2>3. Cam kết</h2>
-<p>Doanh nghiệp đề nghị khởi tạo công ty trên hệ thống Bamboo DX-OS với các thông tin trên và cam kết các thông tin là đúng
-với đăng ký doanh nghiệp. Chủ sở hữu là người duy nhất được trao, thu hồi quyền quản trị; tài khoản chủ sở hữu và quản trị
-viên bắt buộc đăng nhập hai lớp. Doanh nghiệp chịu trách nhiệm quản lý các tài khoản này.</p>
+<h2>{{ _("3. Cam kết") }}</h2>
+<p>{{ _("Doanh nghiệp đề nghị khởi tạo công ty trên hệ thống Bamboo DX-OS với các thông tin trên và cam kết các thông tin là đúng với đăng ký doanh nghiệp. Chủ sở hữu là người duy nhất được trao, thu hồi quyền quản trị; tài khoản chủ sở hữu và quản trị viên bắt buộc đăng nhập hai lớp. Doanh nghiệp chịu trách nhiệm quản lý các tài khoản này.") }}</p>
 {% elif a.purpose == 'RECOVER' %}
-<h2>2. Đề nghị</h2>
-<p>Doanh nghiệp đề nghị đặt lại mật khẩu và mã xác thực hai lớp của tài khoản chủ sở hữu công ty trên hệ thống Bamboo
-DX-OS. Mật khẩu tạm mới chỉ hiện một lần cho người tải lên đơn đã ký; lần đăng nhập tới phải đổi mật khẩu và cài lại mã
-xác thực hai lớp. Mọi quản trị viên của công ty được thông báo về việc khôi phục.</p>
+<h2>{{ _("2. Đề nghị") }}</h2>
+<p>{{ _("Doanh nghiệp đề nghị đặt lại mật khẩu và mã xác thực hai lớp của tài khoản chủ sở hữu công ty trên hệ thống Bamboo DX-OS. Mật khẩu tạm mới chỉ hiện một lần cho người tải lên đơn đã ký; lần đăng nhập tới phải đổi mật khẩu và cài lại mã xác thực hai lớp. Mọi quản trị viên của công ty được thông báo về việc khôi phục.") }}</p>
 {% else %}
-<h2>2. Đề nghị</h2>
-<p>Doanh nghiệp đề nghị xác thực thông tin pháp lý của công ty trên hệ thống Bamboo DX-OS bằng chữ ký số của doanh nghiệp và
-cam kết các thông tin trên là đúng với đăng ký doanh nghiệp.</p>
+<h2>{{ _("2. Đề nghị") }}</h2>
+<p>{{ _("Doanh nghiệp đề nghị xác thực thông tin pháp lý của công ty trên hệ thống Bamboo DX-OS bằng chữ ký số của doanh nghiệp và cam kết các thông tin trên là đúng với đăng ký doanh nghiệp.") }}</p>
 {% endif %}
 
-<p>Mã đơn: <span class="code">{{ a.nonce }}</span> — đơn hết hiệu lực lúc {{ expires }}.</p>
+<p>{{ _("Mã đơn:") }} <span class="code">{{ a.nonce }}</span> {{ _("— đơn hết hiệu lực lúc") }} {{ expires }}.</p>
 
 <div class="sign">
   <em>{{ place_date }}</em><br>
-  <strong>Người đại diện theo pháp luật</strong><br>
-  <em>(Ký số bằng chữ ký số của doanh nghiệp)</em>
+  <strong>{{ _("Người đại diện theo pháp luật") }}</strong><br>
+  <em>{{ _("(Ký số bằng chữ ký số của doanh nghiệp)") }}</em>
   <div class="space"></div>
   <strong>{{ a.company.legal_rep_name }}</strong>
 </div>
 
-<p class="note">Hướng dẫn: ký số tệp PDF này bằng chữ ký số (USB token) của doanh nghiệp mang mã số thuế {{ a.company.tax_code }},
-dùng phần mềm ký của nhà cung cấp dịch vụ chứng thực hoặc Adobe Acrobat Reader, rồi tải tệp đã ký lên lại hệ thống. Không
-chỉnh sửa, không in rồi quét lại tệp.</p>
+<p class="note">{{ _("Hướng dẫn: ký số tệp PDF này bằng chữ ký số (USB token) của doanh nghiệp mang mã số thuế") }} {{ a.company.tax_code }}{{ _(", dùng phần mềm ký của nhà cung cấp dịch vụ chứng thực hoặc Adobe Acrobat Reader, rồi tải tệp đã ký lên lại hệ thống. Không chỉnh sửa, không in rồi quét lại tệp.") }}</p>
 </body>
 </html>

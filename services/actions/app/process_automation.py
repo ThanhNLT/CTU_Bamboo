@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Chạy tự động quy trình đã phát hành.
 
@@ -373,7 +385,7 @@ def automation_overview(conn: psycopg.Connection, model_id: str) -> dict | None:
     cur = conn.cursor(row_factory=dict_row)
     a = cur.execute(
         """SELECT a.id, a.status, a.version, a.actions, a.events, (a.webhook_sha256 IS NOT NULL) AS webhook,
-                  to_char(a.activated_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI') AS activated_at,
+                  to_char(a.activated_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI') AS activated_at,
                   p.full_name AS activated_by
            FROM wf.process_automation a JOIN core.person p ON p.id = a.activated_by
            WHERE a.model_id = %s ORDER BY a.activated_at DESC LIMIT 1""",
@@ -385,8 +397,8 @@ def automation_overview(conn: psycopg.Connection, model_id: str) -> dict | None:
         """SELECT r.id, r.trigger, r.status, r.notified, r.error, r.steps, r.variables,
                   coalesce(p.full_name, CASE r.trigger WHEN 'TIMER' THEN 'Hẹn giờ' WHEN 'WEBHOOK' THEN 'Webhook' ELSE 'Sự kiện' END)
                       AS started_by,
-                  to_char(r.started_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS started_at,
-                  to_char(r.ended_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS ended_at
+                  to_char(r.started_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS started_at,
+                  to_char(r.ended_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS ended_at
            FROM wf.automation_run r JOIN wf.process_automation x ON x.id = r.automation_id
            LEFT JOIN core.person p ON p.id = r.started_by
            WHERE x.model_id = %s ORDER BY r.started_at DESC LIMIT 15""",
