@@ -33,6 +33,7 @@ Nền tảng trung lập ngành; đặc thù ngành chỉ nằm ở Tầng 3.
 | Cấu hình các dịch vụ lõi Tầng 1 | [Dịch vụ nền tảng](thiet-ke/06-dich-vu-nen-tang.md) |
 | Gọi API của nền tảng từ ứng dụng | [API của nền tảng](thiet-ke/08-api-giao-dien.md) |
 | Biết vì sao chọn công nghệ X | [Nhật ký quyết định kiến trúc](quan-ly-du-an/05-quyet-dinh-kien-truc.md) |
+| Dịch từ mã nguồn, cài ra ngoài thư mục mã | [Dịch và cài đặt từ mã nguồn](van-hanh/dich-tu-ma-nguon.md) |
 | Triển khai thật, sao lưu, nâng cấp | [Triển khai production](van-hanh/trien-khai.md) |
 | Dùng cho công ty của mình, bắt đầu từ hệ thống trống | [Khởi tạo cho một công ty mới](van-hanh/cong-ty-moi.md) |
 

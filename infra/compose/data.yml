@@ -216,7 +216,10 @@ services:
 
   mosquitto:
     logging: *logging
-    image: eclipse-mosquitto:2.0.21
+    pull_policy: ${BAMBOO_PULL_POLICY:-build}
+    build:
+      context: ../platform/mosquitto
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-mosquitto:${BAMBOO_TAG:-dev}
     depends_on:
       openbao-init:
         condition: service_completed_successfully
@@ -224,7 +227,6 @@ services:
       - "127.0.0.1:1883:1883"
       - "${MQTT_BIND:-127.0.0.1}:8883:8883"
     volumes:
-      - ../platform/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto-data:/mosquitto/data
       - mosquitto-tls:/mosquitto/tls:ro
     healthcheck:
