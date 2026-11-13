@@ -24,8 +24,9 @@
 Cấu hình và hoạt động của các dịch vụ lõi Tầng 1 ngoài CSDL. Tầng 1 không có giao diện người dùng cuối: ứng dụng chỉ gọi
 qua cổng API (mục 4). Mọi dịch vụ tự khởi tạo khi `docker compose up -d` (hoặc `make up`) bằng các job trong
 `services/actions/app/` (`openbao_init.py`, `bootstrap.py`); image Python dùng chung là `infra/docker/python.Dockerfile`.
-Giao diện quản trị đi kèm một số dịch vụ (Hasura Console, Keycloak Admin, OpenBao UI, SeaweedFS, Mailpit) chỉ nghe
-`127.0.0.1` trên máy chủ và dành cho người vận hành.
+Giao diện web của OpenBao (`ui = false`) và Hasura Console (`HASURA_ENABLE_CONSOLE=false`) tắt mặc định
+([ADR #82](#adr-82)); công cụ quản trị có sẵn trong các sản phẩm upstream còn lại (Keycloak Admin, SeaweedFS, Mailpit, Trino)
+chỉ nghe `127.0.0.1` trên máy chủ, không đi qua cổng API và dành cho người vận hành.
 
 | Mục | Dịch vụ | Cụm dịch vụ trong đề thi |
 |---|---|---|
@@ -627,9 +628,12 @@ viết lại hay cắt bớt mà không bị phát hiện (`audit.check_anchors`
   (mặc định 24, giữ `BACKUP_KEEP` = 7 bản) vào volume `backups`; `tools/ops/restore-drill.sh` khôi phục vào CSDL tạm rồi đối
   chiếu số dòng, chuỗi hash và bản neo. Mỗi lần ghi `audit.backup_run`. Sao lưu volume và khôi phục thủ công:
   [Triển khai production](../van-hanh/trien-khai.md).
-- **GitOps** (`tools/gitops/reconcile.sh`): so cấu hình trong kho mã với trạng thái đang chạy, chỉ chạy `docker compose up -d`
-  khi có thay đổi; đặt vào cron hoặc systemd timer. Không dùng Argo CD hay Kubernetes. Dịch vụ có healthcheck và
-  `restart: unless-stopped` để tự khởi động lại khi lỗi.
+- **GitOps** (`tools/gitops/reconcile.sh`, [ADR #83](#adr-83)): kéo nhánh `GITOPS_BRANCH`, so cấu hình trong kho mã với trạng
+  thái đang chạy, chỉ chạy `docker compose up -d` khi cấu hình đổi hoặc có dịch vụ dừng, lỗi; dùng cùng mức RAM và nhóm dịch vụ
+  như `make up` (`tools/ram_profile.sh`), có khóa chống chạy chồng. `tools/gitops/schedule.sh` lên lịch chạy mỗi
+  `GITOPS_INTERVAL_MINUTES` phút bằng systemd timer hoặc cron (`make gitops-enable`); `make up` tự bật khi
+  `BAMBOO_ENV=production`. Không dùng Argo CD hay Kubernetes. Dịch vụ có healthcheck và `restart: unless-stopped` để tự khởi
+  động lại khi lỗi.
 
 ## 18. Quy trình tự động và kịch bản ngầm (`process_automation.py`, migration 033, 040)
 

@@ -79,7 +79,7 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 
 | Tầng trong khung DX-OS | Trong Bamboo |
 |---|---|
-| Tầng 1: Nền tảng Dịch vụ Lõi số (headless) | Các dịch vụ trong `compose.yaml` (include `infra/compose/*.yml`), chỉ phục vụ qua cổng API APISIX `:8000`; không có giao diện người dùng cuối. Giao diện quản trị đi kèm một số dịch vụ chỉ nghe `127.0.0.1` |
+| Tầng 1: Nền tảng Dịch vụ Lõi số (headless) | Các dịch vụ trong `compose.yaml` (include `infra/compose/*.yml`), chỉ phục vụ qua cổng API APISIX `:8000`; không có giao diện. Giao diện web của OpenBao và Hasura Console tắt mặc định ([ADR #82](#adr-82)); công cụ quản trị có sẵn trong các sản phẩm upstream còn lại (Keycloak Admin, Trino, Mailpit) chỉ nghe `127.0.0.1`, không đi qua cổng API |
 | Tầng 2: Không gian Năng lực số (H-P-D-I) | Ứng dụng Refine `apps/web`, gọi Tầng 1 qua `/graphql` ([API của nền tảng](../thiet-ke/08-api-giao-dien.md)) |
 | Tầng 3: Nền tảng Kinh doanh số | Chưa làm; kịch bản Tập đoàn X dùng để nêu định hướng ([Kịch bản nghiệp vụ](02-kich-ban-nghiep-vu.md)) |
 
@@ -121,7 +121,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); truy vết OpenTelemetry (Collector → Jaeger), số liệu Prometheus (actions, APISIX, Keycloak), Grafana có bảng điều khiển và cảnh báo dựng sẵn ([ADR #75](#adr-75)) | Có |
 | | Kiểm toán bất biến | Chuỗi hash theo tenant, neo có chữ ký công bố ra ngoài CSDL ([ADR #33](#adr-33), [ADR #46](#adr-46)) | Có |
 | | Trục sự kiện | Debezium Server + Kafka KRaft ([ADR #38](#adr-38)) | Có |
-| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh` (Git là nguồn sự thật, tự đưa hệ thống Compose về đúng cấu hình); chưa dùng Argo CD, Kubernetes | Một phần |
+| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh` (Git là nguồn sự thật: kéo nhánh triển khai, tự đưa hệ thống Compose về đúng cấu hình khi cấu hình đổi hoặc dịch vụ dừng), chạy mỗi 5 phút bằng systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production` ([ADR #83](#adr-83)); chưa dùng Argo CD, Kubernetes | Một phần |
 | | Sao lưu, khôi phục | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash | Có |
 | Truyền thông | Định tuyến đa kênh | Email, SMS, webhook theo lựa chọn từng người | Có |
 | | Thời gian thực | Subscription GraphQL qua websocket | Có |
@@ -134,7 +134,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Phân tách theo vòng đời dữ liệu | OLTP trên PostgreSQL; CDC → Kafka → Iceberg bronze → view silver trên Trino ([ADR #39](#adr-39), [ADR #40](#adr-40)) | Có |
 | Hội tụ IT/OT | Bản sao số nhận số đo thật qua **MQTT** (Mosquitto, tài khoản thiết bị tách theo công ty, TLS/mTLS) và **REST NGSI-LD**, tự mở/đóng sự cố theo ngưỡng, tự chuyển ngoại tuyến; dữ liệu mẫu vẫn còn cho thiết bị chưa nối ([ADR #74](#adr-74)) | Có |
 | Quản trị dữ liệu thế hệ mới | Trang Phả hệ và chất lượng dữ liệu, báo sự cố dữ liệu; phả hệ dựng từ cấu hình CDC/Lakehouse/lớp ngữ nghĩa đang chạy, **thu tự động mỗi 15 phút** kèm kiểm tra slot CDC ([ADR #77](#adr-77)), đối chiếu số dòng PostgreSQL ↔ silver theo công ty khi bấm; chưa theo cột chi tiết | Có |
-| Zero-Trust + GitOps | WAF và kiểm token tại biên, bucket kiểm dịch + CDR, mỗi dịch vụ một tài khoản CSDL và AppRole riêng ([ADR #35](#adr-35)), chứng chỉ dịch vụ và mTLS nội bộ ở chặng MQTT ([ADR #76](#adr-76)), healthcheck và tự khởi động lại, script đối chiếu cấu hình; các chặng HTTP nội bộ còn lại chưa mTLS | Một phần |
+| Zero-Trust + GitOps | WAF và kiểm token tại biên, bucket kiểm dịch + CDR, mỗi dịch vụ một tài khoản CSDL và AppRole riêng ([ADR #35](#adr-35)), chứng chỉ dịch vụ và mTLS nội bộ ở chặng MQTT ([ADR #76](#adr-76)), healthcheck và tự khởi động lại, script đối chiếu cấu hình chạy theo chu kỳ ([ADR #83](#adr-83)); các chặng HTTP nội bộ còn lại chưa mTLS | Một phần |
 
 ## 6. Tầng 2: không gian H-P-D-I
 
