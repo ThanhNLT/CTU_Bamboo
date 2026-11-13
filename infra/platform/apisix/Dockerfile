@@ -1,5 +1,5 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.5.0
+# @version 0.5.1
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
@@ -28,7 +28,10 @@ RUN url="https://github.com/corazawaf/coraza-proxy-wasm/releases/download/${CORA
  && unzip -q /tmp/coraza.zip -d /tmp/coraza \
  && test -f /tmp/coraza/coraza-proxy-wasm.wasm
 COPY config.yaml apisix.yaml /tmp/conf/
-RUN sed -i 's/\r$//' /tmp/conf/config.yaml /tmp/conf/apisix.yaml
+RUN sed -i 's/\r$//' /tmp/conf/config.yaml /tmp/conf/apisix.yaml \
+ && sed -i '/^#END[[:space:]]*$/d' /tmp/conf/apisix.yaml \
+ && printf '\n#END\n' >> /tmp/conf/apisix.yaml \
+ && grep -q '^routes:' /tmp/conf/apisix.yaml
 
 FROM apache/apisix:3.19.0-debian
 LABEL org.opencontainers.image.title="bamboo-gateway" \
