@@ -34,4 +34,4 @@ Khi chuyển sang k3s, cấu hình đặt ở đây, tách theo cùng nhóm vớ
 
 Nguyên tắc giữ nguyên khi chuyển: mỗi dịch vụ một danh tính riêng (CSDL, OpenBao AppRole, S3, Kafka), bí mật chỉ lấy từ
 OpenBao, tệp tải lên vào `bms-quarantine` trước khi quét. Vòng đối soát hiện tại cho Compose là
-`tools/gitops/reconcile.sh`.
+`tools/gitops/reconcile.sh`, chạy theo chu kỳ bằng `make gitops-enable`.

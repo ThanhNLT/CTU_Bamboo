@@ -27,8 +27,8 @@ cho máy gọi máy: nạp dữ liệu theo lô `/ingest/*` và webhook khởi c
 ([Dịch vụ nền tảng mục 18–19](06-dich-vu-nen-tang.md)), cùng API công khai `/setup/*` của trang khởi tạo công ty lần đầu
 (mục 23).
 
-Schema đầy đủ: introspection qua `/graphql` (sinh type bằng graphql-codegen) hoặc Hasura Console
-(`http://localhost:8081/console`, chỉ trên máy chủ). Trang này mô tả cách kết nối, các nhóm API và lưu ý khi dùng.
+Schema đầy đủ: introspection qua `/graphql` (sinh type bằng graphql-codegen); khi gỡ lỗi có thể bật Hasura Console
+(`HASURA_ENABLE_CONSOLE=true`, `http://localhost:8081/console`, chỉ trên máy chủ). Trang này mô tả cách kết nối, các nhóm API và lưu ý khi dùng.
 
 ## 1. Kết nối và phiên
 

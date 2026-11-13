@@ -152,8 +152,9 @@ Tiến trình nền: flow-sync (CSDL ↔ Flowable, thông báo đa kênh, neo ki
 Két bí mật: OpenBao (secret, khóa S3, mã hóa dữ liệu nhạy cảm, ký Ed25519)
 ```
 
-Tầng 1 không có giao diện người dùng cuối: ứng dụng chỉ gọi qua cổng API. Giao diện quản trị đi kèm một số dịch vụ (Hasura
-Console, Keycloak Admin, OpenBao UI...) chỉ nghe `127.0.0.1` trên máy chủ, dành cho người vận hành.
+Tầng 1 không có giao diện: ứng dụng chỉ gọi qua cổng API. Giao diện web của OpenBao và Hasura Console tắt mặc định
+([ADR #82](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)). Công cụ quản trị có sẵn trong các sản phẩm upstream còn lại
+(Keycloak Admin, Trino, Mailpit...) chỉ nghe `127.0.0.1` trên máy chủ, không đi qua cổng API, dành cho người vận hành.
 
 ### Thành phần, thư viện và giấy phép
 
@@ -179,7 +180,7 @@ Mức: **Có** = đã hiện thực, có kiểm thử; **Một phần** = có nh
 | Che dữ liệu cá nhân | Microsoft Presidio | MIT | Nhận diện CCCD, điện thoại, tài khoản, email theo mẫu Việt Nam; bản che trong nhật ký và ô trao đổi | Có |
 | Thông báo đa kênh | Hàng đợi `msg.queue` trong PostgreSQL; Mailpit (hộp thư thử) | –; MIT | Email, SMS, webhook có thử lại, hàng chết, biên nhận có chữ ký chống chối bỏ | Có |
 | Nhật ký, truy vết, giám sát | Vector 0.46 (tùy chọn), bảng `obs.log_event`; OpenTelemetry Collector, Jaeger 2, Prometheus 3, Grafana 13 (nhóm `observability`) | MPL-2.0; Apache-2.0; AGPL-3.0-only (Grafana, chạy riêng, không sửa) | Log kèm `X-Request-Id`, đã che dữ liệu cá nhân; span theo yêu cầu và câu lệnh SQL; số liệu, bảng điều khiển, cảnh báo | Có |
-| Sao lưu, GitOps | Script `tools/ops`, `tools/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu cấu hình với kho mã | Một phần (không dùng Argo CD, Kubernetes) |
+| Sao lưu, GitOps | Script `tools/ops`, `tools/gitops` | Apache-2.0 | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash; đối chiếu hệ thống với cấu hình trong Git theo chu kỳ (systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production`) | Một phần (không dùng Argo CD, Kubernetes) |
 | Dịch vụ nghiệp vụ | Python 3.13, FastAPI, psycopg | MIT, LGPL-3.0 (psycopg, dùng như thư viện) | Hasura Actions, xác thực, đồng bộ, worker nền, job khởi tạo | Có |
 | Giao diện | Refine 5, React 19, Ant Design 5 | MIT | Ứng dụng web Tầng 2, đầy đủ tiếng Việt và tiếng Anh | Có |
 
@@ -342,13 +343,13 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y
 
 Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -f compose.release.yml up -d`.
 
-**Trang quản trị** (giá trị mặc định cho máy dev, chỉ nghe `127.0.0.1`):
+**Công cụ vận hành** (giá trị mặc định cho máy dev; chỉ nghe `127.0.0.1`, không đi qua cổng API):
 
 | Thành phần | Địa chỉ | Đăng nhập |
 |---|---|---|
 | Keycloak | <http://localhost:8080/admin> | `kcadmin` / `kcadmin-dev` |
-| Hasura Console | <http://localhost:8081/console> | admin secret `dev-admin-secret` |
-| OpenBao UI | <http://localhost:8200> | root token in bằng `make bao-token` |
+| Hasura (API metadata; Console tắt mặc định) | <http://localhost:8081> | admin secret `dev-admin-secret`; bật Console khi gỡ lỗi: `HASURA_ENABLE_CONSOLE=true` trong `.env` |
+| OpenBao (API, không có giao diện web) | <http://localhost:8200> | CLI `bao` hoặc API; root token in bằng `make bao-token` |
 | Flowable REST | <http://localhost:8082/flowable-rest> | `rest-admin` / `test` |
 | Trino | <https://localhost:8085> | `bms-admin`, mật khẩu in bằng `make trino-password` |
 | Hộp thư thử (Mailpit) | <http://localhost:8025> | không cần |
@@ -463,7 +464,7 @@ HASURA_GRAPHQL_METADATA_DATABASE_URL=postgres://bamboo_hasura:hasura-db-dev@127.
 BMS_DATABASE_URL=postgres://bamboo_hasura:hasura-db-dev@127.0.0.1:5432/bms \
 HASURA_GRAPHQL_ADMIN_SECRET=dev-admin-secret ACTIONS_SECRET=dev-actions-secret ACTIONS_URL=http://127.0.0.1:8090 \
 HASURA_GRAPHQL_AUTH_HOOK=http://127.0.0.1:8090/auth/hasura HASURA_GRAPHQL_AUTH_HOOK_MODE=GET \
-HASURA_GRAPHQL_CORS_DOMAIN=http://localhost:5173 HASURA_GRAPHQL_ENABLE_CONSOLE=true \
+HASURA_GRAPHQL_CORS_DOMAIN=http://localhost:5173 HASURA_GRAPHQL_ENABLE_CONSOLE=false \
 graphql-engine serve --server-port 8081 &
 ```
 
