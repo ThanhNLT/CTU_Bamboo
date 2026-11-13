@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bamboo - DX-OS Open-Core
-# @version 0.5.0
+# @version 0.5.1
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
@@ -58,6 +58,11 @@ VARS
     *)
         echo "BAMBOO_RAM phải là 8 hoặc 16 (đang là '$mode')" >&2
         exit 1
+        ;;
+esac
+case "${COMPOSE_FILE:-$(env_value COMPOSE_FILE)}" in
+    *gpu.yml*)
+        echo "CẢNH BÁO: COMPOSE_FILE ép GPU (infra/compose/gpu.yml): Docker không cấp được GPU thì Ollama, OCR không chạy và ai-worker chờ mãi; OCR cũng không tự tải PyTorch CUDA. Xóa dòng COMPOSE_FILE trong .env, sleeper tự dò GPU (ADR #79)" >&2
         ;;
 esac
 profiles=${COMPOSE_PROFILES:-$(env_value COMPOSE_PROFILES)}

@@ -1,6 +1,6 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.5.0
+  @version 0.5.1
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
@@ -106,6 +106,7 @@ phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗ
 
 | Phiên bản | Ngày | Nội dung chính |
 |---|---|---|
+| 0.5.1 | 13/11/2026 | Dịch và cài đặt từ mã nguồn bằng `make`, GitOps tự chạy theo chu kỳ, tắt giao diện web của OpenBao và Hasura Console, tài liệu cho người đóng góp; sửa cổng API trả 404 và dịch vụ tự tắt khi `docker compose up` |
 | [0.5.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.0) | 13/11/2026 | Thông báo giấy phép Apache-2.0 trong từng tệp, bỏ thành phần chưa được OSI phê duyệt (bpmn-js, CUDA trong image OCR), hoàn thiện Tầng 1 (CDR, MQTT/NGSI-LD, giám sát, mTLS nội bộ, kịch bản tự viết, tác tử AI tự hành động), AI tự nhận GPU, thông báo theo ngôn ngữ đang chọn, ngày và số theo định dạng quốc tế |
 | [0.4.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
 | [0.3.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
@@ -335,7 +336,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
   HTTPS, `BAMBOO_ENV=production`, sao lưu, nâng cấp): [Triển khai production](docs/van-hanh/trien-khai.md).
 
 **Chạy bằng image dựng sẵn**, không cần mã nguồn (Docker Compose 2.40.2+; kho và gói GHCR phải ở chế độ công khai). Image dựng sẵn
-hiện có tới bản 0.3.0; bản 0.4.0 và 0.5.0 chạy từ mã nguồn bằng lệnh ở trên.
+hiện có tới bản 0.3.0; bản 0.4.0–0.5.1 chạy từ mã nguồn bằng lệnh ở trên.
 
 ```bash
 docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y

@@ -1,5 +1,5 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.5.0
+# @version 0.5.1
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
@@ -370,7 +370,7 @@ services:
       SLEEPER_IDLE_SECONDS: ${SLEEPER_IDLE_SECONDS:-300}
       SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000,11434=ollama-core:11434,8000=ocr-core:8000
       SLEEPER_MODULES_URL: http://actions:8000/modules/services
-      SLEEPER_HOLD_UNTIL: bootstrap
+      SLEEPER_HOLD_UNTIL: bootstrap,seed
       SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
       SLEEPER_GPU: ${BAMBOO_GPU:-auto}
       SLEEPER_GPU_SERVICES: ollama-core,ocr-core

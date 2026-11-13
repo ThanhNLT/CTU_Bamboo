@@ -1,5 +1,5 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.5.0
+# @version 0.5.1
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
@@ -28,8 +28,9 @@ SLEEPER_TARGETS: danh sách `cổng_nghe=dịch_vụ:cổng[@giây_nhàn_rỗi]`
 
 Mô-đun chức năng (ADR #56): định kỳ hỏi `SLEEPER_MODULES_URL` (actions `/modules/services`) container nào phải chạy, phải
 dừng theo các mô-đun đã cài, rồi start/stop cho khớp. Chỉ chạm dịch vụ có tên trong SLEEPER_MANAGED. Dịch vụ ngủ (có trong
-SLEEPER_TARGETS) của mô-đun chưa cài thì bị khóa: có yêu cầu đến cũng không đánh thức. SLEEPER_HOLD_UNTIL (bootstrap): chưa
-dừng container compose vừa chạy cho tới khi dịch vụ này chạy xong sau lần khởi động đó.
+SLEEPER_TARGETS) của mô-đun chưa cài thì bị khóa: có yêu cầu đến cũng không đánh thức. SLEEPER_HOLD_UNTIL (bootstrap,seed):
+chưa dừng container compose vừa chạy (theo mô-đun hay vì nhàn rỗi) cho tới khi các job này chạy xong sau lần khởi động đó;
+seed là job cài mô-đun của dữ liệu demo, dừng trước khi seed xong thì tắt nhầm dịch vụ của mô-đun sắp được cài.
 """
 
 import asyncio
@@ -514,22 +515,40 @@ class Modules:
         self.managed = managed
         self.targets = {t.service: t for t in targets}
         self.fetch = fetch
-        self.hold_until = hold_until
+        self.hold_until = [j.strip() for j in hold_until.split(",") if j.strip()]
         self.containers: dict[str, str] = {}
         self.started_by_us: set[str] = set()
 
+    async def _job(self, job: str) -> dict | None:
+        try:
+            return await self.docker.state(await self.docker.find(job))
+        except DockerError:
+            return None
+
+    @staticmethod
+    def _unfinished(done: dict | None) -> bool:
+        return done is None or bool(done.get("Running")) or done.get("Status") in ("created", "restarting")
+
+    async def starting(self) -> bool:
+        """Còn job khởi động (`hold_until`) chưa tạo hoặc đang chạy: `docker compose up` chưa xong."""
+        for job in self.hold_until:
+            if self._unfinished(await self._job(job)):
+                return True
+        return False
+
     async def _held(self, service: str, state: dict) -> bool:
-        """Chưa dừng dịch vụ compose vừa chạy khi `hold_until` (bootstrap) chưa chạy xong sau lần khởi động đó:
-        bootstrap chờ Flowable, Meilisearch healthy để dựng BPMN, chỉ mục, nên dừng sớm làm `docker compose up` hỏng."""
+        """Chưa dừng dịch vụ compose vừa chạy khi các job `hold_until` (bootstrap, seed) chưa chạy xong sau lần khởi động
+        đó: bootstrap chờ Flowable, Meilisearch healthy để dựng BPMN, chỉ mục; seed cài mô-đun của dữ liệu demo. Dừng
+        sớm làm `docker compose up` hỏng hoặc tắt nhầm dịch vụ của mô-đun sắp được cài."""
         if not self.hold_until or service in self.started_by_us:
             return False
-        try:
-            done = await self.docker.state(await self.docker.find(self.hold_until))
-        except DockerError:
-            return True
-        if done.get("Running") or done.get("Status") in ("created", "restarting") or done.get("ExitCode"):
-            return True
-        return started_at(done, "FinishedAt") < started_at(state)
+        for job in self.hold_until:
+            done = await self._job(job)
+            if self._unfinished(done) or done.get("ExitCode"):
+                return True
+            if started_at(done, "FinishedAt") < started_at(state):
+                return True
+        return False
 
     async def _state(self, service: str) -> dict:
         container = self.containers.get(service) or await self.docker.find(service)
@@ -560,7 +579,7 @@ class Modules:
                 state = await self._state(service)
                 if service in stop and state.get("Running"):
                     if await self._held(service, state):
-                        log.info("chưa dừng %s: chờ %s chạy xong", service, self.hold_until)
+                        log.info("chưa dừng %s: chờ %s chạy xong", service, ", ".join(self.hold_until))
                         continue
                     log.info("dừng %s: mô-đun chưa cài", service)
                     await self.docker.stop(self.containers[service])
@@ -614,6 +633,8 @@ class Sleeper:
     async def watch(self) -> None:
         while True:
             await asyncio.sleep(self.check_every)
+            if self.modules is not None and await self.modules.starting():
+                continue
             for target in self.targets:
                 try:
                     await target.sleep_if_idle(self.docker)
