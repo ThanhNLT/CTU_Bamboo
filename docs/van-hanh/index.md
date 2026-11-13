@@ -21,11 +21,13 @@
 
 # Vận hành
 
-Triển khai môi trường thật, nâng cấp, sao lưu và khôi phục; khởi tạo hệ thống trống cho một công ty mới.
+Dịch và cài đặt từ mã nguồn; triển khai môi trường thật, nâng cấp, sao lưu và khôi phục; khởi tạo hệ thống trống cho một
+công ty mới.
 
 ```{toctree}
 :maxdepth: 2
 
+dich-tu-ma-nguon
 trien-khai
 cong-ty-moi
 ```
