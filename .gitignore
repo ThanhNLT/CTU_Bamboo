@@ -30,3 +30,6 @@ entities.json
 mempalace.yaml
 node_modules/
 .turbo/
+
+/build/
+config.mk

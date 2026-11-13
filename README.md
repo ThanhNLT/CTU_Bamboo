@@ -91,6 +91,8 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 |---|---|
 | Mã nguồn | <https://github.com/CTUBamboo/Bamboo> |
 | Báo lỗi, đề xuất | [GitHub Issues](https://github.com/CTUBamboo/Bamboo/issues) (có mẫu báo lỗi và đề xuất); lỗ hổng bảo mật: [SECURITY.md](SECURITY.md) |
+| Hỏi đáp, trao đổi | [GitHub Discussions](https://github.com/CTUBamboo/Bamboo/discussions); các kênh hỗ trợ: [SUPPORT.md](SUPPORT.md) |
+| Đóng góp | [CONTRIBUTING.md](CONTRIBUTING.md), [Quy tắc ứng xử](CODE_OF_CONDUCT.md) |
 | Lịch sử thay đổi | [CHANGELOG.md](CHANGELOG.md) theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo [Semantic Versioning](https://semver.org/lang/vi/) |
 | Giấy phép | [Apache-2.0](LICENSE) |
 | Tài liệu kỹ thuật | [`docs/`](docs/) (Sphinx, build bằng `make -C docs html`): [yêu cầu đề thi và đối chiếu](docs/tong-quan/01-yeu-cau-va-kien-truc.md), [thiết kế CSDL](docs/thiet-ke/03-thiet-ke-csdl.md), [dịch vụ nền tảng](docs/thiet-ke/06-dich-vu-nen-tang.md), [API](docs/thiet-ke/08-api-giao-dien.md), [nhật ký quyết định kiến trúc (ADR)](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md), [triển khai production](docs/van-hanh/trien-khai.md), [khởi tạo cho công ty mới](docs/van-hanh/cong-ty-moi.md) |
@@ -124,7 +126,7 @@ infra/docker/        Dockerfile của mọi image Bamboo
 infra/platform/      Cấu hình dịch vụ bên thứ ba: APISIX, Flowable, Hasura, Kafka, Keycloak, OpenBao, Trino, Vector
 infra/k8s/           Chỗ dành sẵn cho k3s/GitOps (chưa có manifest)
 db/                  Migration, vai trò CSDL, kiểm thử SQL
-tools/               Script CI, CSDL, vận hành, sao lưu, GitOps, phát hành, smoke AI/OCR
+tools/               Script CI, CSDL, vận hành, sao lưu, GitOps, phát hành, cài đặt, smoke AI/OCR
 tests/e2e/           Kiểm thử đầu–cuối Playwright (package pnpm @bamboo/e2e)
 examples/            Ví dụ cho bên thứ ba: mô-đun ngoài mẫu mo-dun-mau (ADR #58)
 docs/                Tài liệu kỹ thuật (Sphinx)
@@ -358,6 +360,22 @@ Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -
 **Kiểm thử:** `make test-db` (SQL), `make test-seed`, `make test-actions` (với Hasura, Flowable, SeaweedFS, OpenBao, Kafka, Trino
 thật), `make test-auth` (đăng nhập thật mọi tài khoản demo), `make test-gateway`, `make test-all`; kiểm tra tĩnh toàn repo `make check`; giao diện `pnpm check` ở gốc repo
 (Turborepo: lint, format:check, build), `pnpm --filter @bamboo/e2e test:e2e`; AI và OCR `tools/ai_smoke.sh`, `tools/ocr_smoke.sh`.
+
+## Dịch và cài đặt từ mã nguồn
+
+Ngoài Docker Compose, Bamboo dịch và cài vào hệ thống bằng GNU Make cùng hai công cụ nguồn mở `uv` và `pnpm`:
+
+```bash
+make help                             # mọi tùy chọn cấu hình và giá trị đang có hiệu lực
+make build                            # dịch dịch vụ Python (actions, seed) và giao diện
+make install PREFIX=/opt/bamboo       # cài ra ngoài thư mục mã nguồn
+/opt/bamboo/bin/bamboo help           # chạy từng thành phần của bản đã cài
+```
+
+Tùy chọn (`PREFIX`, `DESTDIR`, `WITH_LAKEHOUSE`, `VITE_*`...) truyền trên dòng lệnh hoặc ghi vào `config.mk`, không sửa tệp mã.
+Sau khi cài, hệ thống chạy bằng lệnh `bamboo` mà không cần thư mục mã nguồn; `make uninstall` gỡ bản cài, `make dist` đóng gói
+mã nguồn thành `.tar.gz` kèm `SHA256SUMS`. Với Docker Compose, `make release-compose` sinh `compose.release.yml` chỉ tham chiếu
+image vừa dịch để chạy từ thư mục bất kỳ. Hướng dẫn đầy đủ: [Dịch và cài đặt từ mã nguồn](docs/van-hanh/dich-tu-ma-nguon.md).
 
 ## Chạy native (không dùng Docker)
 

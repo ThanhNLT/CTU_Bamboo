@@ -19,6 +19,9 @@
 
 blank_issues_enabled: false
 contact_links:
+  - name: Hỏi đáp và trao đổi
+    url: https://github.com/CTUBamboo/Bamboo/discussions
+    about: Câu hỏi về cài đặt, cách dùng và ý tưởng chưa thành đề xuất cụ thể
   - name: Báo lỗ hổng bảo mật
     url: https://github.com/CTUBamboo/Bamboo/security/advisories/new
     about: Không báo lỗ hổng qua issue công khai; xem SECURITY.md
