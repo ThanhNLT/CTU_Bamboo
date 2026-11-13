@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Moon, Sun } from "lucide-react";
@@ -16,7 +28,6 @@ import { ColorModeContext } from "../../contexts/color-mode/context";
 import { useLocale } from "../../i18n";
 import { cn } from "../../utils/cn";
 
-/** Nền và khung chung của trang đăng nhập, đăng ký, khôi phục (ADR #62): tấm kính trên nền xanh Tre. */
 export const AuthShell = ({ children, wide = false }: { children: ReactNode; wide?: boolean }) => {
   const { mode, setMode } = useContext(ColorModeContext);
   const { t } = useLocale();
@@ -63,7 +74,6 @@ export const AuthShell = ({ children, wide = false }: { children: ReactNode; wid
   );
 };
 
-/** Nửa lời chào bên phải tấm kính (mẫu "Hello, friend!"). */
 export const AuthGreeting = ({ title, text, children }: { title: string; text: string; children?: ReactNode }) => (
   <section className="auth-greeting flex flex-col justify-center gap-4 px-8 py-10 sm:px-12 md:py-16">
     <h2 className="text-[30px] font-bold uppercase leading-[1.05] tracking-[-0.02em] text-ink sm:text-[34px]">

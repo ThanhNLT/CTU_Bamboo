@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { App, Button, DatePicker, Empty, Form, Input, Modal, Radio } from "antd";
@@ -19,7 +31,7 @@ import { createReport, HEALTH_LABEL, HEALTH_STYLE, reportPdf } from "../api";
 import type { Health, Report, Stats } from "../types";
 
 const pct = (n: number | null | undefined) =>
-  n == null ? "—" : `${Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
+  n == null ? "—" : `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
 
 type Values = {
   period: [Dayjs, Dayjs];
@@ -30,7 +42,6 @@ type Values = {
   next_steps?: string;
 };
 
-/** Báo cáo tiến độ theo kỳ: lập (chụp số liệu lúc lập, không sửa), xem lịch sử, in PDF. */
 export const Reports = ({
   projectId,
   reports,
@@ -107,7 +118,10 @@ export const Reports = ({
             <li key={r.id} className="rounded-xl border border-line p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[14px] font-semibold text-ink">
-                  {trf("Kỳ {0} – {1}", [dayjs(r.period_from).format("DD/MM"), dayjs(r.period_to).format("DD/MM/YYYY")])}
+                  {trf("Kỳ {0} – {1}", [
+                    dayjs(r.period_from).format("DD-MMM"),
+                    dayjs(r.period_to).format("DD-MMM-YYYY"),
+                  ])}
                 </span>
                 <span className={cn("rounded-full px-2.5 py-0.5 text-[12px] font-semibold", HEALTH_STYLE[r.health])}>
                   {HEALTH_LABEL[r.health]}
@@ -140,7 +154,7 @@ export const Reports = ({
                   </div>
                 ))}
               <p className="mb-0 mt-2 text-[11.5px] text-muted">
-                {trf("{0} lập lúc {1}", [r.created_by_name, dayjs(r.created_at).format("HH:mm DD/MM/YYYY")])}
+                {trf("{0} lập lúc {1}", [r.created_by_name, dayjs(r.created_at).format("HH:mm DD-MMM-YYYY")])}
               </p>
             </li>
           ))}
@@ -166,7 +180,7 @@ export const Reports = ({
         </p>
         <Form form={form} layout="vertical" requiredMark={false}>
           <Form.Item name="period" label={tr("Kỳ báo cáo")} rules={[{ required: true }]}>
-            <DatePicker.RangePicker className="w-full" format="DD/MM/YYYY" />
+            <DatePicker.RangePicker className="w-full" format="DD-MMM-YYYY" />
           </Form.Item>
           <Form.Item name="health" label={tr("Tình trạng (gợi ý theo SPI và việc trễ)")}>
             <Radio.Group

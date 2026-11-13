@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import type { Agent, AgentStats, AgentStatus, GuardKey } from "./types";
@@ -38,7 +50,7 @@ export const GUARDS = Object.keys(GUARD_INFO) as GuardKey[];
 export const guardOn = (a: Agent, g: GuardKey) => a.guardrail_config[g] ?? g !== "think";
 
 export const num = (n: number, decimals = 0) =>
-  n.toLocaleString("vi-VN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
 export const seconds = (n: number | null) => (n == null ? "—" : trf("{0} giây", [num(n, 1)]));
 
@@ -69,7 +81,6 @@ const EMPTY: Omit<AgentStats, "agent_id"> = {
 export const statsOf = (stats: AgentStats[], id: string): AgentStats =>
   stats.find((s) => s.agent_id === id) ?? { agent_id: id, ...EMPTY };
 
-/** Trung bình có trọng số của một chỉ số theo từng tác tử (bỏ tác tử chưa có số liệu). */
 const weightedBy = (
   rows: AgentStats[],
   key: "tokens_per_second" | "avg_context_tokens",

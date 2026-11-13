@@ -1,11 +1,23 @@
 <!doctype html>
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.4.0
+  @version 0.5.0
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
   @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
 <html lang="vi">
@@ -31,29 +43,29 @@
 </head>
 <body>
 <div class="head">
-  <div>{{ d.company }}<strong>{{ d.issuer_position }}</strong><span>Số: {{ d.doc_no }}</span></div>
-  <div><em>{{ d.place }}, ngày {{ d.day }} tháng {{ d.month }} năm {{ d.year }}</em></div>
+  <div>{{ d.company }}<strong>{{ d.issuer_position }}</strong><span>{{ _("Số:") }} {{ d.doc_no }}</span></div>
+  <div><em>{{ d.place }}, {{ d.dated }}</em></div>
 </div>
 
-<h1>Quyết định</h1>
+<h1>{{ _("Quyết định") }}</h1>
 <div class="sub">{{ d.title }}</div>
 
-<p class="basis">Căn cứ Điều lệ tổ chức và hoạt động của {{ d.company }};</p>
-<p class="basis">Căn cứ nhu cầu công tác và năng lực, phẩm chất của cán bộ, nhân viên;</p>
-<p class="basis">Xét đề nghị của người có thẩm quyền,</p>
-<p style="text-align:center;font-weight:700;text-transform:uppercase;margin:12px 0">Quyết định:</p>
+<p class="basis">{{ _("Căn cứ Điều lệ tổ chức và hoạt động của") }} {{ d.company }};</p>
+<p class="basis">{{ _("Căn cứ nhu cầu công tác và năng lực, phẩm chất của cán bộ, nhân viên;") }}</p>
+<p class="basis">{{ _("Xét đề nghị của người có thẩm quyền,") }}</p>
+<p style="text-align:center;font-weight:700;text-transform:uppercase;margin:12px 0">{{ _("Quyết định:") }}</p>
 
-<h2>Điều 1.</h2>
+<h2>{{ _("Điều 1.") }}</h2>
 <p>{{ d.article1 }}</p>
-{% if d.reason %}<p>Lý do: {{ d.reason }}</p>{% endif %}
-<h2>Điều 2.</h2>
-<p>Quyết định này có hiệu lực kể từ ngày {{ d.effective }}.</p>
-<h2>Điều 3.</h2>
-<p>Các đơn vị, cá nhân có tên tại Điều 1 và những đơn vị liên quan chịu trách nhiệm thi hành quyết định này.</p>
+{% if d.reason %}<p>{{ _("Lý do:") }} {{ d.reason }}</p>{% endif %}
+<h2>{{ _("Điều 2.") }}</h2>
+<p>{{ _("Quyết định này có hiệu lực kể từ ngày") }} {{ d.effective }}.</p>
+<h2>{{ _("Điều 3.") }}</h2>
+<p>{{ _("Các đơn vị, cá nhân có tên tại Điều 1 và những đơn vị liên quan chịu trách nhiệm thi hành quyết định này.") }}</p>
 
 <div class="foot">
-  <div class="to"><strong><em>Nơi nhận:</em></strong><br>– Như Điều 3;<br>– Phòng Nhân sự;<br>– Lưu: VT.<br>
-    <span>Mã kiểm tra: {{ d.check_code }}</span></div>
+  <div class="to"><strong><em>{{ _("Nơi nhận:") }}</em></strong><br>{{ _("– Như Điều 3;") }}<br>{{ _("– Phòng Nhân sự;") }}<br>{{ _("– Lưu: VT.") }}<br>
+    <span>{{ _("Mã kiểm tra:") }} {{ d.check_code }}</span></div>
   <div class="sign"><strong>{{ d.issuer_position }}</strong><div class="space"></div><strong>{{ d.issuer }}</strong></div>
 </div>
 </body>

@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import base64
 import csv
@@ -15,6 +27,7 @@ from datetime import date, datetime
 import psycopg
 from psycopg import Rollback
 
+from . import i18n
 from .common import ActionError, Context, bind_session
 
 log = logging.getLogger("admin")
@@ -108,13 +121,13 @@ def _date(value, label: str) -> date | None:
         return value.date()
     if isinstance(value, date):
         return value
-    text = str(value).strip()[:10]
-    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+    text = str(value).strip()
+    for fmt, size in (("%Y-%m-%d", 10), ("%d/%m/%Y", 10), ("%d-%b-%Y", 11)):
         try:
-            return datetime.strptime(text, fmt).date()
+            return datetime.strptime(text[:size], fmt).date()
         except ValueError:
             continue
-    raise ActionError(f"{label} không đúng dạng ngày (dd/mm/yyyy): {value}")
+    raise ActionError(f"{label} không đúng dạng ngày (dd-mmm-yyyy): {value}")
 
 
 def _period(data: dict, end_required: bool = False) -> tuple[date | None, date | None]:
@@ -381,7 +394,16 @@ def save_assignment(a: Admin, data: dict) -> str:
     )
 
 
-ASSIGNMENT_LABELS = {"giữ chính": "PRIMARY", "kiêm nhiệm": "CONCURRENT", "quyền": "ACTING", "hợp đồng": "CONTRACT"}
+ASSIGNMENT_LABELS = {
+    "giữ chính": "PRIMARY",
+    "kiêm nhiệm": "CONCURRENT",
+    "quyền": "ACTING",
+    "hợp đồng": "CONTRACT",
+    "primary": "PRIMARY",
+    "concurrent": "CONCURRENT",
+    "acting": "ACTING",
+    "contract": "CONTRACT",
+}
 
 
 def close_assignment(a: Admin, assignment_id, end: date | None) -> str:
@@ -495,6 +517,10 @@ SCOPE_LABELS = {
     "đơn vị": "UNIT",
     "một đơn vị": "UNIT",
     "bản thân": "SELF",
+    "whole tenant": "TENANT",
+    "branch": "SUBTREE",
+    "unit": "UNIT",
+    "self": "SELF",
 }
 
 
@@ -676,7 +702,7 @@ def proposed_partners(conn: psycopg.Connection, session: dict, _args: dict, _ctx
     a.require(MDM)
     rows = conn.execute(
         """SELECT r.id, r.doc_no, r.title, r.status, r.proposed_partner_name, r.proposed_partner_tax_code,
-                  p.full_name, to_char(r.created_at AT TIME ZONE %s, 'DD/MM/YYYY')
+                  p.full_name, to_char(r.created_at AT TIME ZONE %s, 'DD-Mon-YYYY')
            FROM proc.purchase_request r JOIN core.person p ON p.id = r.requester_id
            WHERE r.tenant_id = %s AND r.proposed_partner_name IS NOT NULL
            ORDER BY r.created_at DESC LIMIT 200""",
@@ -846,8 +872,8 @@ COLUMNS: dict[str, list[tuple[str, str, bool, str]]] = {
         ("full_name", "Họ tên", True, "Nguyễn Văn An"),
         ("position", "Vị trí (MÃ_ĐƠN_VỊ/Tên vị trí)", False, "PHONG_KT/Trưởng phòng"),
         ("assignment_type", "Loại bổ nhiệm (Giữ chính/Kiêm nhiệm/Quyền/Hợp đồng)", False, "Giữ chính"),
-        ("valid_from", "Từ ngày (dd/mm/yyyy)", False, ""),
-        ("valid_to", "Đến ngày (dd/mm/yyyy)", False, ""),
+        ("valid_from", "Từ ngày (dd-mmm-yyyy)", False, ""),
+        ("valid_to", "Đến ngày (dd-mmm-yyyy)", False, ""),
         ("contract_no", "Số hợp đồng", False, ""),
         ("username", "Tên đăng nhập", False, "an.nv"),
         ("email", "Email", False, "an.nv@congty.vn"),
@@ -858,8 +884,8 @@ COLUMNS: dict[str, list[tuple[str, str, bool, str]]] = {
         ("unit_code", "Hoặc mã đơn vị (cả đơn vị nhận)", False, ""),
         ("scope", "Phạm vi (Cả tenant/Nhánh/Đơn vị)", False, "Nhánh"),
         ("scope_unit_code", "Mã đơn vị neo phạm vi", False, ""),
-        ("valid_from", "Từ ngày (dd/mm/yyyy)", False, ""),
-        ("valid_to", "Đến ngày (dd/mm/yyyy)", False, ""),
+        ("valid_from", "Từ ngày (dd-mmm-yyyy)", False, ""),
+        ("valid_to", "Đến ngày (dd-mmm-yyyy)", False, ""),
     ],
     "catalog_item": [
         ("catalog", "Danh mục (UNIT_TYPE/JOB_TITLE/ITEM_CATEGORY)", True, "JOB_TITLE"),
@@ -892,6 +918,7 @@ TITLES = {
     "partner": "nha-cung-cap",
     "item": "vat-tu",
 }
+EXAMPLE_WORDS = {"Có", "Không", "Giữ chính", "Nhánh"}
 MAX_IMPORT_BYTES = 2 * 1024 * 1024
 MAX_IMPORT_ROWS = 5000
 
@@ -928,10 +955,10 @@ def _read_rows(kind: str, file_name: str, content: bytes) -> list[dict]:
         raise ActionError("Tệp trống")
     header = {}
     for col in COLUMNS[kind]:
-        header[_fold(col[0])] = col[0]
-        header[_fold(col[1])] = col[0]
+        for title in (col[0], col[1], col[1].replace("dd-mmm-yyyy", "dd/mm/yyyy"), i18n.english(col[1])):
+            header[_fold(title)] = col[0]
     keys = [header.get(_fold(h)) for h in table[0]]
-    missing = [title for key, title, required, _ in COLUMNS[kind] if required and key not in keys]
+    missing = [i18n.t(title) for key, title, required, _ in COLUMNS[kind] if required and key not in keys]
     if missing:
         raise ActionError(f"Thiếu cột: {', '.join(missing)} (dùng tệp mẫu)")
     rows = []
@@ -1051,24 +1078,25 @@ def admin_import_template(conn: psycopg.Connection, session: dict, args: dict, _
     if kind not in COLUMNS:
         raise ActionError(f"Không có mẫu cho {kind}")
     Admin(conn, session)
+    i18n.for_session(conn, session)
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill
 
     wb = Workbook()
     data = wb.active
-    data.title = "Dữ liệu"
-    example = wb.create_sheet("Ví dụ")
-    header = [title + (" *" if required else "") for _, title, required, _ in COLUMNS[kind]]
+    data.title = i18n.t("Dữ liệu")
+    example = wb.create_sheet(i18n.t("Ví dụ"))
+    header = [i18n.t(title) + (" *" if required else "") for _, title, required, _ in COLUMNS[kind]]
     data.append(header)
     example.append(header)
-    example.append([value for *_, value in COLUMNS[kind]])
+    example.append([i18n.t(value) if value in EXAMPLE_WORDS else value for *_, value in COLUMNS[kind]])
     example.append([])
-    example.append(["Cột có dấu * là bắt buộc. Điền dữ liệu ở trang “Dữ liệu”; trang này không được nhập."])
+    example.append([i18n.t("Cột có dấu * là bắt buộc. Điền dữ liệu ở trang “Dữ liệu”; trang này không được nhập.")])
     for ws in (data, example):
         for cell in ws[1]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = PatternFill("solid", fgColor="2F7A3E")
-        for i, (_, title, *_rest) in enumerate(COLUMNS[kind], start=1):
+        for i, title in enumerate(header, start=1):
             ws.column_dimensions[ws.cell(1, i).column_letter].width = max(14, min(42, len(title) + 4))
         ws.freeze_panes = "A2"
     out = io.BytesIO()

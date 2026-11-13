@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import dayjs from "dayjs";
@@ -17,7 +29,6 @@ export const fetchCatalog = async () => {
   return api_catalog;
 };
 
-/** Quản trị viên công ty (core.v_admin) mới quản lý được khóa API. */
 export const fetchIsAdmin = async () => {
   const { core_v_admin } = await request<{ core_v_admin: { person_id: string }[] }>(
     `query { core_v_admin(limit: 1) { person_id } }`,
@@ -57,7 +68,6 @@ export const statusOf = (k: ApiKey, now = Date.now()): KeyStatus =>
 
 export const baseUrl = () => `${window.location.origin}/api/v1`;
 
-/** Ví dụ curl cho một endpoint, khóa để chỗ trống `$BAMBOO_API_KEY`. */
 export const curlOf = (e: {
   method: string;
   path: string;
@@ -80,7 +90,6 @@ export const curlOf = (e: {
   return lines.join("\n");
 };
 
-/** Tài khoản MQTT của thiết bị / cổng OT (ADR #74) */
 export type MqttAccount = {
   username: string;
   label: string;
