@@ -1,14 +1,25 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Mô hình BPMN của Bamboo (ADR #81): đọc, ghi XML bằng bpmn-moddle (MIT), phân loại phần tử và kích thước mặc định.
 import { BpmnModdle } from "bpmn-moddle";
 
 export type Bo = any;
@@ -16,7 +27,6 @@ export type DiagramElement = any;
 
 export const createModdle = (extensions: Record<string, unknown> = {}) => new BpmnModdle(extensions as any);
 
-/** `bpmn:UserTask` có phải (hoặc kế thừa) `bpmn:Task`… */
 export const is = (bo: Bo, type: string): boolean =>
   !!bo && typeof bo.$instanceOf === "function" && bo.$instanceOf(type);
 
@@ -35,7 +45,6 @@ export const kindOf = (bo: Bo): Kind => {
   return "other";
 };
 
-/** Phần tử Bamboo vẽ được; phần còn lại của tệp (làn, ghi chú, dữ liệu…) được giữ nguyên khi lưu. */
 export const isDrawable = (bo: Bo) => kindOf(bo) !== "other";
 
 export const isExpanded = (element: DiagramElement) => {
@@ -66,7 +75,6 @@ const PREFIX: Record<Kind, string> = {
   other: "Element",
 };
 
-/** Mã phần tử mới, không trùng với mã đã có trong tệp. */
 export class Ids {
   private used = new Set<string>();
 

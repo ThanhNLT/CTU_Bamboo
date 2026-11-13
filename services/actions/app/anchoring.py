@@ -1,9 +1,21 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Neo chuỗi băm kiểm toán ra ngoài CSDL.
 
@@ -208,7 +220,7 @@ def audit_anchors(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Co
         conn.cursor(row_factory=dict_row)
         .execute(
             """SELECT id, seq, encode(head_hash, 'hex') AS head_hash, signature ->> 'alg' AS alg, published,
-                  to_char(anchored_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY HH24:MI:SS') AS anchored_at
+                  to_char(anchored_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD-Mon-YYYY HH24:MI:SS') AS anchored_at
            FROM audit.anchor WHERE tenant_id = %s ORDER BY seq DESC LIMIT 20""",
             (tenant,),
         )

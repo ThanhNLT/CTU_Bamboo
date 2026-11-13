@@ -1,17 +1,23 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.4.0
+# @version 0.5.0
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
 # @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-"""Bộ quét tệp nội bộ: luôn chạy trước khi một tệp được coi là sạch.
-
-Bộ quét không thay ClamAV (không có cơ sở dữ liệu mẫu virus); nó kiểm tra những gì kiểm tra được ngay trong tiến trình:
-chữ ký thử nghiệm (EICAR), tệp thực thi nhúng, cấu trúc đúng chuẩn của từng định dạng, dữ liệu thừa sau ảnh, mã chủ động
-trong PDF, macro / đối tượng nhúng / liên kết ngoài trong DOCX và XLSX, bom nén, đường dẫn nguy hiểm, DTD (XXE).
-Nguyên tắc: không quét hết được (hết thời gian, bị mã hóa, nén quá mức) thì không phải là sạch.
-"""
+"""Bộ quét tệp nội bộ: phát hiện nội dung chủ động và tệp ngụy trang trong PDF, ảnh, Office."""
 
 import io
 import re
@@ -349,7 +355,6 @@ def _ooxml(report: Report, data: bytes, content_type: str, clock: _Clock) -> Non
 
 
 def scan_file(content_type: str, data: bytes, budget: float = TIME_BUDGET) -> Report:
-    """Quét một tệp; chỉ trả CLEAN khi mọi kiểm tra đã chạy xong."""
     report = Report()
     clock = _Clock(budget)
     try:

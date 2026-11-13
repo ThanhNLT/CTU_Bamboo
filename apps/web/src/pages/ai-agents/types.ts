@@ -1,10 +1,22 @@
 /**
  * Bamboo - DX-OS Open-Core
- * @version 0.4.0
+ * @version 0.5.0
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
  * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 export type AgentStatus = "active" | "inactive";
@@ -26,7 +38,6 @@ export type Agent = {
   webhook_url: string | null;
 };
 
-/** Tự hành động khi có sự kiện (ADR #72) */
 export type AgentAction = "comment" | "notify" | "webhook";
 export type Autonomy = "act" | "dry_run";
 export type Option = { code: string; label: string };
@@ -90,7 +101,6 @@ export type AgentStats = {
 
 export type AiModel = { name: string; size_bytes: number | null; family: string | null };
 
-/** Mô hình đang nạp trong Ollama: tổng dung lượng bộ nhớ và phần nằm trên VRAM (byte). */
 export type LoadedModel = { name: string; size: number; size_vram: number };
 
 export type AgentInput = {
