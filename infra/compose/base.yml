@@ -29,7 +29,7 @@ services:
     environment:
       BAMBOO_ENV: ${BAMBOO_ENV:-development}
       MALLOC_ARENA_MAX: "2"
-      HASURA_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
+      HASURA_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-false}
       GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana-dev}
       DATABASE_URL: postgresql://bamboo_actions:${ACTIONS_DB_PASSWORD:-actions-db-dev}@db:5432/bms
       ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
@@ -74,7 +74,7 @@ services:
     image: hasura/graphql-engine:v2.51.0-ce
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-dev-admin-secret}
-      HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-true}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_ENABLE_CONSOLE:-false}
       HASURA_GRAPHQL_CORS_DOMAIN: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log
       ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}

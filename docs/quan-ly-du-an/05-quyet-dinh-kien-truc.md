@@ -108,6 +108,8 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [79](#adr-79) | 07/11/2026 | `sleeper` tự chuyển Ollama, OCR sang GPU NVIDIA khi máy có, chỉ với `docker compose up` |
 | [80](#adr-80) | 10/11/2026 | Image OCR chỉ có PyTorch bản CPU (không CUDA/cuDNN); máy có GPU NVIDIA thì `sleeper` tự tải bản CUDA vào volume và chuyển OCR sang GPU |
 | [81](#adr-81) | 10/11/2026 | Lớp BPMN tự viết trên diagram-js và bpmn-moddle (MIT) thay bpmn-js (giấy phép bpmn.io chưa được OSI phê duyệt) |
+| [82](#adr-82) | 13/11/2026 | Tầng 1 không bật giao diện web: OpenBao `ui = false`, Hasura Console tắt mặc định |
+| [83](#adr-83) | 13/11/2026 | GitOps chạy theo chu kỳ bằng systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production` |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -886,6 +888,24 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Giấy phép bpmn.io của `bpmn-js` là MIT cộng điều kiện bắt buộc giữ và không che watermark, chưa được OSI phê duyệt, nên là ngoại lệ duy nhất với cam kết toàn bộ thành phần dùng giấy phép OSI. Chỉ riêng lớp `bpmn-js` mang điều kiện đó; các thư viện nền của nó đều MIT, nên tự viết lớp mỏng cho đúng tập phần tử Bamboo dùng là đủ, không phải đổi định dạng (BPMN XML vẫn là nguồn sự thật cho Flowable).
 - **Đã loại:** Giữ `bpmn-js` và ghi ngoại lệ (vẫn trái cam kết OSI); `bpmn-visualization` (Apache-2.0) cho trang xem (chỉ xem, trình thiết kế vẫn phải tự viết, thêm một thư viện); mô hình nút/cạnh tự định nghĩa rồi sinh BPMN (đã loại ở ADR #47 vì mất thông tin khi đọc lại BPMN có sẵn).
 - **Giới hạn hiện tại:** Không có bể bơi/làn (pool, lane), ghi chú, đối tượng dữ liệu trên bảng công cụ và chúng không được vẽ (vẫn giữ nguyên trong tệp khi lưu); không đổi loại phần tử tại chỗ (xóa rồi tạo lại); di chuyển phần tử thì đường nối của nó được vẽ lại theo bố cục vuông góc (điểm gấp đặt tay bị bỏ); chưa có sao chép/dán.
+
+(adr-82)=
+## ADR #82: Tầng 1 không bật giao diện web: OpenBao `ui = false`, Hasura Console tắt mặc định
+
+- **Ngày:** 13/11/2026
+- **Quyết định:** `infra/platform/openbao/config.hcl` đặt `ui = false`; `HASURA_ENABLE_CONSOLE` mặc định là `false` ở `infra/compose/base.yml`, `.env.example` và phép kiểm production (`config.PRODUCTION_OFF`). Người vận hành dùng CLI `bao`, API của OpenBao và API metadata của Hasura; khi gỡ lỗi bật lại Console bằng `HASURA_ENABLE_CONSOLE=true` trong `.env`.
+- **Lý do:** Đề yêu cầu nền tảng lõi "hoàn toàn không cung cấp giao diện UI mà chỉ hoạt động như một PaaS". Hai giao diện này là thứ dự án chủ động bật bằng cấu hình của mình, trong khi mọi việc chúng làm đã tự động hóa: `openbao-init` khởi tạo két và cấp AppRole, `bootstrap` nạp metadata Hasura từ Git. Tắt mặc định cũng thu hẹp bề mặt tấn công ở máy dev, không chỉ ở production như ADR #76.
+- **Đã loại:** Giữ bật ở máy dev và chỉ tắt ở production (hiện trạng trước đó: bản chạy bằng một lệnh mà ban giám khảo thấy vẫn có giao diện của Tầng 1); gỡ cả Keycloak Admin Console (quản trị realm, người dùng, OTP vẫn cần công cụ này khi vận hành; nó thuộc sản phẩm upstream, chỉ nghe `127.0.0.1` và cổng API chặn `/realms/master`).
+- **Giới hạn hiện tại:** Công cụ quản trị có sẵn của Keycloak, SeaweedFS, Trino, Mailpit, Grafana, Jaeger, Prometheus vẫn chạy, chỉ nghe `127.0.0.1` và không đi qua cổng API. Trang đăng nhập của Keycloak vẫn đi qua cổng API vì luồng OIDC cần nó. Bật lại giao diện OpenBao phải sửa `config.hcl` rồi dựng lại image `openbao`.
+
+(adr-83)=
+## ADR #83: GitOps chạy theo chu kỳ bằng systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production`
+
+- **Ngày:** 13/11/2026
+- **Quyết định:** `tools/gitops/schedule.sh` lên lịch chạy `tools/gitops/reconcile.sh` mỗi `GITOPS_INTERVAL_MINUTES` phút (mặc định 5) bằng systemd timer của người dùng (`bamboo-gitops.timer`), máy không có systemd thì dùng một dòng cron. `make up` gọi `schedule.sh auto`: khi `BAMBOO_ENV=production`, bản clone đang ở nhánh `GITOPS_BRANCH` và `BAMBOO_GITOPS` không phải `false` thì tự bật. `make gitops-enable`, `gitops-disable`, `gitops-status` để bật, tắt, xem tay. `reconcile.sh` chỉ kéo mã khi bản clone đang ở nhánh `GITOPS_BRANCH`, áp cùng mức RAM và nhóm dịch vụ như `make up` (`tools/ram_profile.sh`), và giữ khóa `.gitops.lock` để hai lượt không chạy chồng.
+- **Lý do:** Đề yêu cầu "cơ chế triển khai hạ tầng tự động bằng mã (GitOps)" và khả năng tự phục hồi. Trước đó script đối chiếu đã có nhưng người vận hành phải tự viết cron, nên mặc định không có gì chạy. Lên lịch ở máy chủ (không phải trong container) để script dùng đúng `docker compose`, đường dẫn và quyền Git của người đã chạy `make up`, nhờ vậy cấu hình tính ra giống hệt và không dựng lại container vô cớ. Thiếu bước áp mức RAM, lượt đối chiếu sẽ tính ra cấu hình khác với `make up` và dựng lại dịch vụ với tham số sai.
+- **Đã loại:** Một container tác tử gắn `docker.sock` và thư mục mã (đường dẫn trong container khác máy chủ nên Compose coi là cấu hình đổi và dựng lại mọi dịch vụ; cần thêm một bind mount thư mục mã, trái với việc đóng gói mọi thứ vào image); tự bật ở cả máy dev (tự kéo `main` vào bản clone đang làm việc của lập trình viên); Argo CD trên k3s (đúng công cụ tham chiếu của đề nhưng đòi chuyển toàn bộ hệ thống sang Kubernetes, vẫn là lộ trình ở `infra/k8s/`).
+- **Giới hạn hiện tại:** Chỉ cho Docker Compose trên một máy; chưa có Argo CD, Kubernetes. Trên Windows và macOS (không có systemd, thường không có cron) phải tự lên lịch. Chu kỳ ngắn nhất 1 phút; container chết giữa hai lượt do `restart: unless-stopped` của Docker khởi động lại. Bản clone có thay đổi cục bộ hoặc lịch sử nhánh bị viết lại thì lượt đối chiếu dừng và ghi lỗi vào `.gitops-state.json`, không tự ghi đè.
 
 (adr-mau)=
 ## Mẫu cho quyết định mới

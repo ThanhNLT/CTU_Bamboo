@@ -56,5 +56,5 @@ def test_production_bat_buoc_tat_hasura_console(value):
         del env["HASURA_ENABLE_CONSOLE"]
     else:
         env["HASURA_ENABLE_CONSOLE"] = value
-    expected = ["HASURA_ENABLE_CONSOLE"] if value in ("true", "1", None) else []
+    expected = ["HASURA_ENABLE_CONSOLE"] if value in ("true", "1") else []
     assert config.production_problems(env) == expected

@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: help build build-py build-web install uninstall dist clean check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
+.PHONY: help build build-py build-web install uninstall dist clean gitops-enable gitops-disable gitops-status check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 -include config.mk
 
@@ -45,6 +45,7 @@ UV_LINT := uv run --frozen --only-group lint
 
 up:
 	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans
+	@tools/gitops/schedule.sh auto
 
 up-gpu: up
 
@@ -96,6 +97,15 @@ release-compose:
 	$(UV) run --quiet --no-project --with pyyaml python tools/release/compose_release.py \
 		$(if $(filter command% environment%,$(origin VERSION)),$(VERSION),dev)
 
+gitops-enable:
+	tools/gitops/schedule.sh enable
+
+gitops-disable:
+	tools/gitops/schedule.sh disable
+
+gitops-status:
+	@tools/gitops/schedule.sh status
+
 bao-token:
 	@docker compose run --rm --no-deps -v bamboo_openbao-keys:/openbao/keys:ro --entrypoint python openbao-init \
 		-c "import json; print(json.load(open('/openbao/keys/init.json'))['root_token'])"
@@ -132,6 +142,7 @@ help:
 	@echo "  make dist        đóng gói mã nguồn bamboo-$(VERSION).tar.gz kèm SHA256SUMS vào $(BUILD_DIR)/dist/"
 	@echo "  make clean       xóa $(BUILD_DIR)/ và apps/web/dist/"
 	@echo "  make up          dịch image và chạy toàn bộ hệ thống bằng Docker Compose"
+	@echo "  make gitops-enable   tự đối chiếu hệ thống với cấu hình trong Git theo chu kỳ (gitops-disable, gitops-status)"
 	@echo "  make check       kiểm tra tĩnh toàn kho mã"
 	@echo
 	@echo "Cấu hình trước khi dịch: truyền trên dòng lệnh (make build WITH_LAKEHOUSE=1) hoặc ghi vào config.mk"

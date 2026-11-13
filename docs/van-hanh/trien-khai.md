@@ -43,7 +43,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 4 | Tên miền HTTPS | Một tên miền trỏ vào cổng API; đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó (mục 3) |
 | 5 | Keycloak chế độ production | `KEYCLOAK_MODE=start` (bắt buộc đi sau reverse proxy TLS) |
 | 6 | Redirect URI của ứng dụng | Job `bootstrap` tự bổ sung `WEB_ORIGIN` vào client `bms-web` mỗi lần khởi động (cả khi đổi tên miền sau lần import đầu). Giá trị cũ không bị xóa: gỡ `http://localhost:5173` (chỉ dùng cho `pnpm dev`) và tên miền cũ trong Keycloak → realm `bms` → Clients → `bms-web` |
-| 7 | Tắt Hasura Console | `HASURA_ENABLE_CONSOLE=false` (metadata quản lý trong Git, job `bootstrap` nạp). Với `BAMBOO_ENV=production`, `openbao-init` từ chối chạy nếu Console còn bật (ADR #76) |
+| 7 | Giữ Hasura Console tắt | `HASURA_ENABLE_CONSOLE=false` là mặc định (metadata quản lý trong Git, job `bootstrap` nạp). Với `BAMBOO_ENV=production`, `openbao-init` từ chối chạy nếu Console còn bật (ADR #76) |
 | 8 | Quét virus bằng ClamAV (bộ quét nội bộ và CDR luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus, ADR #70) | `make up` ở mức RAM 16 tự bật (`BAMBOO_CLAMAV=true` để bật ở mức 8); chạy tay: `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
@@ -119,7 +119,7 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 
 - Dịch vụ `backup` chạy `tools/ops/backup-db.sh` theo chu kỳ `BACKUP_INTERVAL_HOURS` (mặc định 24 giờ, giữ `BACKUP_KEEP` bản) vào volume `backups`, ghi kết quả vào `audit.backup_run` (xem ở `/admin/ops`, tab Sao lưu).
 - `tools/ops/restore-drill.sh` khôi phục bản sao lưu mới nhất vào CSDL tạm rồi đối chiếu số dòng và chuỗi băm kiểm toán; nên chạy định kỳ để biết bản sao lưu còn dùng được.
-- `tools/gitops/reconcile.sh` so cấu hình trong kho mã với trạng thái đang chạy và chỉ chạy `docker compose up -d` khi có thay đổi. Đặt vào cron hoặc systemd timer. Đây là đối chiếu bằng script, không phải Argo CD hay k3s.
+- **GitOps:** `tools/gitops/reconcile.sh` kéo nhánh `GITOPS_BRANCH` (mặc định `main`), so cấu hình trong kho mã với trạng thái đang chạy và chỉ chạy `docker compose up -d` khi cấu hình đổi hoặc có dịch vụ dừng, lỗi. Với `BAMBOO_ENV=production`, `make up` tự lên lịch chạy script này mỗi `GITOPS_INTERVAL_MINUTES` phút (mặc định 5) bằng systemd timer của người dùng, máy không có systemd thì dùng cron; đặt `BAMBOO_GITOPS=false` để không tự bật. Bật, tắt, xem tay: `make gitops-enable`, `make gitops-disable`, `make gitops-status` (kết quả lượt gần nhất nằm ở `.gitops-state.json`). Bản đang chạy ở một thẻ hoặc nhánh khác `GITOPS_BRANCH` thì script không kéo mã mới, chỉ đưa dịch vụ về đúng cấu hình đang có. Đây là đối chiếu bằng script trên Docker Compose, không phải Argo CD hay k3s ([ADR #83](#adr-83)).
 - Thư mục thử mail: `mailpit` (cổng 8025 trên máy chủ) nhận thư khi chưa cấu hình `SMTP_HOST` thật.
 - Gom log container: `COMPOSE_PROFILES=ai,logs` bật `vector`; log vào `obs.log_event`, xem ở `/admin/ops`, tab Nhật ký.
 
@@ -138,7 +138,7 @@ Khôi phục trên máy mới: tạo volume và giải nén từng tệp `.tgz` 
 | `gateway` | 8000 (`GATEWAY_PORT`) | **Có, điểm vào duy nhất** | Cổng API APISIX: định tuyến, WAF, token tại biên, giới hạn tần suất |
 | `web` | 8088, chỉ 127.0.0.1 | Qua cổng (`/`) | Ứng dụng Refine (nginx); cổng 8088 chỉ để kiểm tra bản build |
 | `keycloak` | 8080, chỉ 127.0.0.1 | Qua cổng (`/realms`, `/resources`) | Đăng nhập; cổng 8080 chỉ cho trang quản trị |
-| `hasura` | 8081, chỉ 127.0.0.1 | Qua cổng (`/graphql`) | API GraphQL; cổng 8081 chỉ cho Console (tắt ở production) |
+| `hasura` | 8081, chỉ 127.0.0.1 | Qua cổng (`/graphql`) | API GraphQL; cổng 8081 cho API metadata và Console (Console tắt mặc định) |
 | `seaweedfs` | 8333 (S3), 9333 (master), 8888 (filer), chỉ 127.0.0.1 | Qua cổng (`/bms-quarantine`, `/bms-documents`) | Lưu tệp, link có chữ ký |
 | `flowable` | 8082, chỉ 127.0.0.1 | Không | Động cơ BPMN, chỉ dịch vụ `actions` gọi |
 | `openbao` | 8200, chỉ 127.0.0.1 | Không | Két secret |
