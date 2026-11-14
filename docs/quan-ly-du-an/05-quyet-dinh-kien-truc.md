@@ -907,6 +907,14 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Đã loại:** Một container tác tử gắn `docker.sock` và thư mục mã (đường dẫn trong container khác máy chủ nên Compose coi là cấu hình đổi và dựng lại mọi dịch vụ; cần thêm một bind mount thư mục mã, trái với việc đóng gói mọi thứ vào image); tự bật ở cả máy dev (tự kéo `main` vào bản clone đang làm việc của lập trình viên); Argo CD trên k3s (đúng công cụ tham chiếu của đề nhưng đòi chuyển toàn bộ hệ thống sang Kubernetes, vẫn là lộ trình ở `infra/k8s/`).
 - **Giới hạn hiện tại:** Chỉ cho Docker Compose trên một máy; chưa có Argo CD, Kubernetes. Trên Windows và macOS (không có systemd, thường không có cron) phải tự lên lịch. Chu kỳ ngắn nhất 1 phút; container chết giữa hai lượt do `restart: unless-stopped` của Docker khởi động lại. Bản clone có thay đổi cục bộ hoặc lịch sử nhánh bị viết lại thì lượt đối chiếu dừng và ghi lỗi vào `.gitops-state.json`, không tự ghi đè.
 
+(adr-84)=
+## ADR #84: Dịch vụ nặng dùng tối đa ba phần tư số lõi; giao diện ngừng hỏi định kỳ khi tab ẩn
+
+- **Ngày:** 14/11/2026
+- **Quyết định:** `tools/ram_profile.sh` (chạy trong `make up` và GitOps) đặt `BAMBOO_CPU_LIMIT` bằng số lõi Docker thấy (`docker info`, không có thì `nproc`) trừ một phần tư (ít nhất một lõi); `db`, `keycloak`, `flowable`, `kafka`, `debezium`, `tika-core`, `gotenberg-core`, `trino-core`, `ollama-core`, `ocr-core`, `clamav` khai báo `cpus: ${BAMBOO_CPU_LIMIT:-0}`. Đặt `BAMBOO_CPU_LIMIT` trong `.env` để chọn tay, `0` là không giới hạn; `docker compose up` trực tiếp không giới hạn như trước. Ở giao diện web, mọi vòng hỏi định kỳ (`setInterval`) đi qua `usePolling` (`apps/web/src/live/usePolling.ts`): tab ẩn thì không gửi yêu cầu, tab hiện lại thì hỏi bù ngay nếu đã quá chu kỳ.
+- **Lý do:** Ollama, OCR, Trino, Gotenberg và lúc khởi động cả cụm JVM đều ăn hết mọi lõi; trên WSL2 điều đó làm cả Windows đơ, chuột và bàn phím giật. Chừa một phần tư số lõi giữ máy dùng được mà không đổi kết quả. Ollama chạy số luồng bằng số lõi vật lý, thường không quá ba phần tư số lõi logic nên không bị nghẽn hạn mức; OCR và JVM đọc hạn mức cgroup để chọn số luồng. `sleeper` tạo lại container theo cấu hình cũ nên bản GPU giữ nguyên giới hạn. Tab bị bỏ quên trước đây vẫn hỏi máy chủ mỗi 3–60 giây suốt ngày đêm, giữ các dịch vụ dùng thưa không ngủ được (ADR #53).
+- **Đã loại:** `cpu_shares` (chỉ chia CPU giữa các container trong máy ảo WSL, Windows vẫn thấy máy ảo dùng 100%); giới hạn riêng từng dịch vụ (thêm hàng chục biến mà không đổi kết quả); bắt người dùng sửa `.wslconfig` (`processors=`) (không tự động, vẫn ghi trong hướng dẫn cho ai muốn chặn chặt hơn).
+
 (adr-mau)=
 ## Mẫu cho quyết định mới
 

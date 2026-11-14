@@ -49,6 +49,7 @@ services:
 
   tika-core:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     image: apache/tika:4.1.0-1
     environment:
       JAVA_TOOL_OPTIONS: ${TIKA_JAVA_OPTS:--Xmx512m}
@@ -64,6 +65,7 @@ services:
 
   gotenberg-core:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     image: gotenberg/gotenberg:8.37.0-chromium
     command: ["gotenberg", "--chromium-auto-start", "--chromium-disable-javascript", "--chromium-deny-private-ips",
               "--chromium-deny-public-ips", "--api-disable-download-from", "--webhook-disable", "--api-timeout=60s"]
@@ -93,6 +95,7 @@ services:
 
   kafka:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/kafka
@@ -138,6 +141,7 @@ services:
 
   debezium:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     image: quay.io/debezium/server:3.7.0.Final
     depends_on:
       migrate:
@@ -312,6 +316,7 @@ services:
 
   trino-core:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/trino
