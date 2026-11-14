@@ -33,6 +33,7 @@ import secrets
 import threading
 import time
 import urllib.parse
+import uuid
 import xml.etree.ElementTree as ET
 
 import psycopg
@@ -40,9 +41,10 @@ from psycopg.rows import dict_row
 
 from bamboo_common.flowable import FlowableClient
 
-from . import config, delivery, script_sandbox
+from . import ai_agent, config, delivery, script_sandbox
 from .common import ActionError, Context
 from .process_design import (
+    AI_TASK_MAX,
     AUTOMATION_ACTIONS,
     BAMBOO,
     BPMN,
@@ -57,7 +59,7 @@ from .process_design import (
     _steps,
     _who,
     action_params,
-    lint,
+    lint_db,
     strip_listeners,
     unsafe_expression,
     with_process_id,
@@ -94,6 +96,21 @@ CYCLE = re.compile(
 )
 DURATION_PARTS = (365 * 86400, 30 * 86400, 7 * 86400, 86400, 3600, 60, 1)
 FLOWABLE_ATTRS = ("class", "delegateExpression", "expression", "type", "resultVariableName", "async", "exclusive")
+LOCK = "PT2M"
+AI_LOCK = "PT30S"
+AI_POLL_SECONDS = 5.0
+_ai_polled = 0.0
+AI_STEP_EVENT = "process.ai_step"
+EVENT_ENTITY = {
+    "purchase_request": "proc.purchase_request",
+    "onboarding": "hr.onboarding_request",
+    "ic_order": "ic.ic_order",
+    "personnel_decision": "hr.personnel_decision",
+}
+
+
+class Pending(Exception):
+    """Tác vụ chưa có kết quả: không báo hoàn thành, không báo lỗi; trả việc về Flowable để lần hỏi sau nhận lại."""
 
 
 def cycle_seconds(text: str) -> int | None:
@@ -223,7 +240,7 @@ def process_automation_enable(conn: psycopg.Connection, session: dict, args: dic
     latest = _latest(conn, args["id"])
     if latest is None:
         raise ActionError("Cần phát hành quy trình trước khi bật chạy tự động", "rejected")
-    errors = [i for i in lint(latest["bpmn_xml"], latest["forms"]) if i["level"] == "error"]
+    errors = [i for i in lint_db(conn, tenant, latest["bpmn_xml"], latest["forms"]) if i["level"] == "error"]
     if errors:
         raise ActionError(f"Phiên bản đã phát hành còn lỗi: {errors[0]['message']}", "rejected")
     previous = conn.execute(
@@ -493,7 +510,104 @@ def exec_script(conn, settings, run: str, job: dict, params: dict, variables: di
     return {**result.outputs, f"{job['elementId']}_ok": True}
 
 
-EXECUTORS = {"notify": exec_notify, "http": exec_http, "setvar": exec_setvar, "script": exec_script}
+def _ai_result(element: str, risk: str, assessment: str, ok: bool) -> dict:
+    return {f"{element}_risk": risk, f"{element}_assessment": assessment[:1500], f"{element}_ok": ok}
+
+
+def _ai_entity(variables: dict) -> tuple[str | None, str | None]:
+    """Chứng từ của lần chạy khởi động theo sự kiện nghiệp vụ (biến `event` + `entity_id`)."""
+    kind = EVENT_ENTITY.get(str(variables.get("event") or "").split(".", 1)[0])
+    try:
+        entity = str(uuid.UUID(str(variables.get("entity_id"))))
+    except ValueError:
+        return None, None
+    return (kind, entity) if kind else (None, None)
+
+
+def _ai_record(conn, run: str, element: str, result: dict, agent_run: str | None) -> dict:
+    """Ghi kết quả bước AI vào nhật ký lần chạy quy trình rồi trả biến cho Flowable."""
+    log_vars = {**result, f"{element}_ai_run": agent_run}
+    conn.execute(
+        "UPDATE wf.automation_run SET variables = variables || %s::jsonb WHERE id = %s",
+        (json.dumps(log_vars, ensure_ascii=False), run),
+    )
+    return result
+
+
+def exec_ai(conn, settings, run: str, job: dict, params: dict, variables: dict) -> dict:
+    """Bước AI (ADR #84): xếp một lần chạy cho tác tử rồi chờ ai-worker; luồng này không bao giờ gọi mô hình.
+
+    Lần đầu: tạo `core.ai_agent_run` và báo ai-worker, rồi `Pending` (không hoàn thành, trả việc về Flowable). Các lần
+    nhận lại việc: đọc trạng thái lần chạy, xong thì trả biến, quá `AI_STEP_TIMEOUT` thì trả `unknown`.
+    """
+    element = job["elementId"]
+    unknown = _ai_result(element, "unknown", "", False)
+    dedup = f"step:{job['processInstanceId']}:{element}"
+    row = conn.execute(
+        """SELECT r.tenant_id, a.id AS agent_id, a.status, core.module_enabled(r.tenant_id, 'ai') AS ai_on
+           FROM wf.automation_run r LEFT JOIN core.ai_agent a ON a.id = %s::uuid AND a.tenant_id = r.tenant_id
+           WHERE r.id = %s::uuid""",
+        (params["agent"], run),
+    ).fetchone()
+    if row["agent_id"] is None:
+        return _ai_record(conn, run, element, unknown, None)
+    found = conn.execute(
+        """SELECT id, status, risk, assessment, created_at < now() - make_interval(secs => %s) AS expired
+           FROM core.ai_agent_run WHERE agent_id = %s AND dedup_key = %s""",
+        (settings.ai_step_timeout, row["agent_id"], dedup),
+    ).fetchone()
+    if found is None:
+        if row["status"] != "active" or not row["ai_on"]:
+            return _ai_record(conn, run, element, unknown, None)
+        task = render(params["task"], variables)[: AI_TASK_MAX * 2]
+        if ai_agent.is_injection(task):
+            task = params["task"]
+        entity_type, entity_id = _ai_entity(variables)
+        payload = {
+            "step_task": task,
+            "variables": _scalar_variables(variables),
+            "element_id": element,
+            "process_instance_id": job["processInstanceId"],
+            **({"entity_id": entity_id} if entity_id else {}),
+        }
+        conn.execute(
+            """INSERT INTO core.ai_agent_run (tenant_id, agent_id, event, entity_type, entity_id, payload, dedup_key,
+                                              automation_run_id, element_id)
+               VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s) ON CONFLICT (agent_id, dedup_key) DO NOTHING""",
+            (
+                row["tenant_id"],
+                row["agent_id"],
+                AI_STEP_EVENT,
+                entity_type,
+                entity_id,
+                json.dumps(payload, ensure_ascii=False),
+                dedup,
+                run,
+                element,
+            ),
+        )
+        conn.execute("SELECT pg_notify('ai_question', 'agent')")
+        raise Pending
+    if found["status"] == "done":
+        result = _ai_result(element, found["risk"] or "unknown", found["assessment"] or "", True)
+        return _ai_record(conn, run, element, result, str(found["id"]))
+    stopped = row["status"] != "active" or not row["ai_on"]
+    if found["status"] == "running" and not found["expired"]:
+        raise Pending
+    if found["status"] == "queued" and not found["expired"] and not stopped:
+        raise Pending
+    if found["status"] == "queued":
+        # Tác tử ngừng / mô-đun AI tắt sau khi xếp hàng: không bắt quy trình chờ hết AI_STEP_TIMEOUT.
+        reason = "Tác tử đã ngừng hoặc mô-đun AI đã tắt" if stopped else "Quá thời gian chờ của bước quy trình"
+        conn.execute(
+            """UPDATE core.ai_agent_run SET status = 'skipped', error = %s,
+                      finished_at = now() WHERE id = %s AND status = 'queued'""",
+            (reason, found["id"]),
+        )
+    return _ai_record(conn, run, element, unknown, str(found["id"]))
+
+
+EXECUTORS = {"notify": exec_notify, "http": exec_http, "setvar": exec_setvar, "script": exec_script, "ai": exec_ai}
 
 
 def _run_for_job(conn: psycopg.Connection, job: dict, automation: dict) -> str:
@@ -517,10 +631,22 @@ def _run_for_job(conn: psycopg.Connection, job: dict, automation: dict) -> str:
     )
 
 
+def _poll_ai() -> bool:
+    """Bước AI chờ ai-worker nên chỉ hỏi lại mỗi AI_POLL_SECONDS, không phải mỗi vòng."""
+    global _ai_polled
+    if time.monotonic() - _ai_polled < AI_POLL_SECONDS:
+        return False
+    _ai_polled = time.monotonic()
+    return True
+
+
 def handle_jobs(conn: psycopg.Connection, flowable: FlowableClient, settings: config.Settings | None = None) -> int:
     done = 0
     for action in sorted(AUTOMATION_ACTIONS):
-        for job in flowable.external_acquire(f"{TOPIC_PREFIX}{action}"):
+        if action == "ai" and not _poll_ai():
+            continue
+        lock = AI_LOCK if action == "ai" else LOCK
+        for job in flowable.external_acquire(f"{TOPIC_PREFIX}{action}", lock=lock):
             try:
                 automation = conn.execute(
                     """SELECT id, tenant_id, actions FROM wf.process_automation
@@ -538,6 +664,12 @@ def handle_jobs(conn: psycopg.Connection, flowable: FlowableClient, settings: co
                 conn.commit()
                 flowable.external_complete(job["id"], result)
                 done += 1
+            except Pending:
+                conn.commit()
+                try:
+                    flowable.external_unacquire(job["id"])
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("không trả được việc %s về Flowable (khoá tự hết hạn): %s", job.get("id"), exc)
             except Exception as exc:  # noqa: BLE001
                 conn.rollback()
                 log.warning("tác vụ tự động %s lỗi: %s", job.get("id"), exc)

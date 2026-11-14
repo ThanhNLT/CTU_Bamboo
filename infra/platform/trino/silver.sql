@@ -268,6 +268,8 @@ SELECT
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    CAST(json_extract_scalar(after, '$["automation_run_id"]') AS uuid) AS "automation_run_id",
+    json_extract_scalar(after, '$["element_id"]') AS "element_id",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (

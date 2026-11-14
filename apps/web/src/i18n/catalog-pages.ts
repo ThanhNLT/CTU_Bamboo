@@ -3293,6 +3293,24 @@ export const EN_PAGES: Record<string, string> = {
   "Biến mẫu": "Sample variables",
   "Biến mẫu không phải JSON hợp lệ": "Sample variables are not valid JSON",
   "Chạy kịch bản tự viết": "Run a custom script",
+  "AI đánh giá": "AI assessment",
+  "Tác tử thực hiện": "Performing agent",
+  "Tác tử đang hoạt động của tổ chức; tác tử bật tra cứu tài liệu sẽ đối chiếu quy chế":
+    "Active agents of the organization; agents with document search check against regulations",
+  "Tác tử AI của bước": "AI agent of the step",
+  "Chọn tác tử": "Select an agent",
+  "Chưa có tác tử AI đang hoạt động (cấu hình ở trang Tác tử AI)":
+    "No active AI agent yet (configure one on the AI agents page)",
+  "tra cứu quy chế": "regulation search",
+  "Tác tử không còn hoạt động": "Agent no longer active",
+  "Nhiệm vụ của bước": "Step task",
+  "Tối đa 1000 ký tự; dùng {biến} để chèn giá trị. Tác tử đọc chứng từ và trả mức rủi ro":
+    "Up to 1000 characters; use {variable} to insert values. The agent reads the document and returns a risk level",
+  "Nhiệm vụ của bước AI": "AI step task",
+  "Đánh giá rủi ro của đề nghị {doc_no} theo quy chế mua sắm":
+    "Assess the risk of request {doc_no} against the procurement regulation",
+  ". Điều kiện cổng ví dụ: ": ". Example gateway condition: ",
+  "Bước AI trong quy trình tự động": "AI step in an automated process",
   "Chạy thử với biến mẫu (JSON)": "Test run with sample variables (JSON)",
   "Chạy được. Biến sau bước:": "Ran successfully. Variables after the step:",
   "Cú pháp Python rút gọn: gán, if, for, while, f-string, list/dict. Hàm: len, min, max, sum, round, sorted, today(), now(), add_days(), days_between(), log(). Không import, không truy cập tệp hay mạng; tối đa 2 giây.":

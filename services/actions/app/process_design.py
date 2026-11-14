@@ -25,7 +25,7 @@ import xml.etree.ElementTree as ET
 from collections import deque
 
 import psycopg
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 
 from .common import ActionError, Context, bind_session, session_identity
 
@@ -33,7 +33,8 @@ PERMISSION = "wf.process.design"
 BPMN = "http://www.omg.org/spec/BPMN/20100524/MODEL"
 FLOWABLE = "http://flowable.org/bpmn"
 BAMBOO = "http://bamboo.local/bpmn"
-AUTOMATION_ACTIONS = {"notify", "http", "setvar", "script"}
+AUTOMATION_ACTIONS = {"notify", "http", "setvar", "script", "ai"}
+AI_TASK_MAX = 1000
 AUTOMATION_AUDIENCES = {"INITIATOR", "UNIT", "COMPANY", "GROUP"}
 AUTOMATION_VARIABLE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,40}$")
 AUTOMATION_URL = re.compile(r"^https://[A-Za-z0-9.-]+(:\d{1,5})?(/\S*)?$")
@@ -62,6 +63,18 @@ def action_params(el: ET.Element) -> tuple[dict, list[str]]:
             problems.append("Phương thức chỉ nhận GET hoặc POST")
         if len(params["body"]) > 2000:
             problems.append("Nội dung gửi tối đa 2000 ký tự")
+    elif action == "ai":
+        from .ai_agent import is_injection
+
+        params["agent"], params["task"] = attr("agent"), attr("task")
+        try:
+            uuid.UUID(params["agent"])
+        except ValueError:
+            problems.append("Chưa chọn tác tử AI cho bước")
+        if not 1 <= len(params["task"]) <= AI_TASK_MAX:
+            problems.append(f"Nhiệm vụ của bước AI phải từ 1 đến {AI_TASK_MAX} ký tự")
+        elif is_injection(params["task"]):
+            problems.append("Nhiệm vụ của bước AI có dấu hiệu thay đổi chỉ dẫn hệ thống của tác tử")
     elif action == "script":
         from . import script_sandbox
 
@@ -349,6 +362,61 @@ def sandbox_xml(xml: str, process_id: str) -> str:
     return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
 
+def ai_agent_issues(conn: psycopg.Connection, tenant: str, xml: str) -> list[dict]:
+    """Kiểm tác tử của các bước AI (cần CSDL nên tách khỏi `lint`): phải là tác tử đang hoạt động của cùng tenant."""
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return []
+    steps = []
+    for el in root.iter(f"{{{BPMN}}}serviceTask"):
+        if (el.get(f"{{{BAMBOO}}}action") or "").strip() != "ai":
+            continue
+        agent = (el.get(f"{{{BAMBOO}}}agent") or "").strip()
+        try:
+            steps.append((el, str(uuid.UUID(agent))))
+        except ValueError:
+            continue
+    if not steps:
+        return []
+    found = {
+        str(r[0]): r[1]
+        for r in conn.cursor(row_factory=tuple_row)
+        .execute(
+            "SELECT id, status FROM core.ai_agent WHERE tenant_id = %s AND id = ANY (%s::uuid[])",
+            (tenant, [a for _, a in steps]),
+        )
+        .fetchall()
+    }
+    issues = []
+    for el, agent in steps:
+        if agent not in found:
+            issues.append(_issue("error", f"Tác tử AI của bước “{_label(el)}” không tồn tại", el.get("id")))
+        elif found[agent] != "active":
+            issues.append(_issue("error", f"Tác tử AI của bước “{_label(el)}” đang ngừng hoạt động", el.get("id")))
+    return issues
+
+
+def lint_db(conn: psycopg.Connection, tenant: str, xml: str, forms: list[dict] | None = None) -> list[dict]:
+    """`lint` cộng các kiểm tra cần CSDL."""
+    return lint(xml, forms) + ai_agent_issues(conn, tenant, xml)
+
+
+def ai_agent_options(conn: psycopg.Connection, tenant: str) -> list[dict]:
+    """Tác tử đang hoạt động để người thiết kế chọn cho bước AI; rỗng khi tenant chưa bật mô-đun AI."""
+    rows = (
+        conn.cursor(row_factory=tuple_row)
+        .execute(
+            """SELECT id, name, model, (tool_list ? 'search_docs') AS search_docs
+           FROM core.ai_agent WHERE tenant_id = %s AND status = 'active' AND core.module_enabled(%s, 'ai')
+           ORDER BY name""",
+            (tenant, tenant),
+        )
+        .fetchall()
+    )
+    return [{"id": str(r[0]), "name": r[1], "model": r[2], "search_docs": bool(r[3])} for r in rows]
+
+
 def _who(conn: psycopg.Connection, session: dict) -> tuple[str, str]:
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)
@@ -561,7 +629,8 @@ def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx:
         **base,
         "bpmn_xml": m["bpmn_xml"],
         "forms": m["forms"],
-        "issues": lint(m["bpmn_xml"], m["forms"]),
+        "issues": lint_db(conn, tenant, m["bpmn_xml"], m["forms"]),
+        "ai_agents": ai_agent_options(conn, tenant),
         "versions": versions,
         "runs": runs,
         "change_requests": _change_requests(conn, args["id"], None),
@@ -571,8 +640,8 @@ def process_model_get(conn: psycopg.Connection, session: dict, args: dict, _ctx:
 
 
 def process_model_validate(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> list[dict]:
-    _who(conn, session)
-    return lint(args["bpmn_xml"], _forms(args.get("forms") or []))
+    _, tenant = _who(conn, session)
+    return lint_db(conn, tenant, args["bpmn_xml"], _forms(args.get("forms") or []))
 
 
 def process_model_save(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
@@ -623,7 +692,7 @@ def process_model_save(conn: psycopg.Connection, session: dict, args: dict, _ctx
                 unit,
             ),
         ).fetchone()[0]
-    return {"id": str(model_id), "issues": lint(xml, forms)}
+    return {"id": str(model_id), "issues": lint_db(conn, tenant, xml, forms)}
 
 
 AUDIENCES = {"UNIT", "COMPANY", "GROUP"}
@@ -634,7 +703,7 @@ def process_model_publish(conn: psycopg.Connection, session: dict, args: dict, _
     audience = str(args.get("audience") or ("UNIT" if m["owner_unit_id"] else "GROUP")).upper()
     if audience not in AUDIENCES:
         raise ActionError("Đối tượng nhận chỉ gồm UNIT (đơn vị), COMPANY (công ty) hoặc GROUP (toàn tập đoàn)")
-    errors = [i for i in lint(m["bpmn_xml"], m["forms"]) if i["level"] == "error"]
+    errors = [i for i in lint_db(conn, tenant, m["bpmn_xml"], m["forms"]) if i["level"] == "error"]
     if errors:
         raise ActionError(f"Còn {len(errors)} lỗi: {errors[0]['message']}", "rejected")
     sha = hashlib.sha256(m["bpmn_xml"].encode()).hexdigest()
