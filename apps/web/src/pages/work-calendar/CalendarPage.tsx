@@ -29,6 +29,7 @@ import { useSession } from "../../auth/useSession";
 import { primaryButtonClass, secondaryButtonClass } from "../../components/ui/buttons";
 import { LiveBadge } from "../../live/LiveBadge";
 import { useLiveTopics } from "../../live/useLive";
+import { usePolling } from "../../live/usePolling";
 import { tr } from "../../i18n";
 import { fetchEvents, fetchUnits, type Unit } from "./api";
 import { EventDetail } from "./components/EventDetail";
@@ -95,10 +96,7 @@ export const CalendarPage = () => {
   }, [load]);
 
   const live = useLiveTopics(["calendar"], () => void load());
-  useEffect(() => {
-    const timer = setInterval(() => void load(), 60_000);
-    return () => clearInterval(timer);
-  }, [load]);
+  usePolling(() => void load(), 60_000);
 
   useEffect(() => {
     const id = params.get("event");
