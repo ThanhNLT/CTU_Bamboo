@@ -106,7 +106,7 @@ export const RegulationTab = ({
       )}
 
       {mine.length > 0 && (
-        <ul className="m-0 list-none space-y-2 p-0">
+        <ul className="m-0 list-none flex flex-col gap-2 p-0">
           {mine.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center gap-2 text-[12.5px]">
               <Tag color={PROPOSAL_STATUS[r.status]?.color ?? "default"}>

@@ -44,7 +44,7 @@ export const ChartTooltip = ({
   return (
     <div className="rounded-xl border border-line bg-surface px-3 py-2 text-[12px] shadow-float">
       {label != null && <div className="mb-1 font-semibold text-ink">{label}</div>}
-      <ul className="m-0 list-none space-y-0.5 p-0">
+      <ul className="m-0 list-none flex flex-col gap-0.5 p-0">
         {rows.map((p) => (
           <li key={String(p.dataKey)} className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-ui" style={{ background: p.color ?? p.stroke ?? p.fill }} aria-hidden />

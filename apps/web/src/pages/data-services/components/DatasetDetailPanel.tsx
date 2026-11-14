@@ -119,7 +119,7 @@ const QualityList = ({ dataset }: { dataset: Dataset }) => {
           </span>
         )}
       </p>
-      <ul className="m-0 list-none space-y-2 p-0">
+      <ul className="m-0 list-none flex flex-col gap-2 p-0">
         {dataset.checks.map((c) => (
           <li
             key={c.name}
@@ -144,7 +144,7 @@ const QualityList = ({ dataset }: { dataset: Dataset }) => {
 const LineageColumn = ({ title, items }: { title: string; items: string[] }) => (
   <div className="min-w-0 flex-1">
     <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{title}</div>
-    <ul className="m-0 list-none space-y-1.5 p-0">
+    <ul className="m-0 list-none flex flex-col gap-1.5 p-0">
       {items.map((s) => (
         <li
           key={s}

@@ -19647,6 +19647,45 @@
       "comment": "Thông tin pháp lý của công ty và lần xác thực chữ ký số gần nhất (ADR #57)"
     },
     {
+      "name": "legal_update",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/legal_update",
+        "arguments": [
+          {
+            "name": "tax_code",
+            "type": "String"
+          },
+          {
+            "name": "legal_name",
+            "type": "String"
+          },
+          {
+            "name": "address",
+            "type": "String"
+          }
+        ],
+        "output_type": "LegalStatus!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 10
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Chủ sở hữu bổ sung mã số thuế, tên, địa chỉ còn thiếu sau khi đăng ký (MST, tên khi chưa xác thực)"
+    },
+    {
       "name": "legal_application",
       "definition": {
         "kind": "synchronous",
@@ -20207,6 +20246,10 @@
           },
           {
             "name": "legal_name",
+            "type": "String"
+          },
+          {
+            "name": "address",
             "type": "String"
           },
           {

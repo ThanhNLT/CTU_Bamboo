@@ -48,7 +48,7 @@ def build() -> dict:
     return {
         "realm": "bms",
         "enabled": True,
-        "displayName": "Bamboo DX-OS",
+        "displayName": "Bamboo",
         "sslRequired": "external",
         "registrationAllowed": False,
         "resetPasswordAllowed": False,

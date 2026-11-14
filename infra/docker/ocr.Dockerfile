@@ -20,7 +20,7 @@
 FROM python:3.11-slim-bookworm
 ARG TORCH_VERSION=2.9.1 TORCHVISION_VERSION=0.24.1
 LABEL org.opencontainers.image.title="bamboo-ocr" \
-      org.opencontainers.image.description="Bamboo DX-OS: OCR tiếng Việt (PaddleOCR + VietOCR trên PyTorch)" \
+      org.opencontainers.image.description="Bamboo: OCR tiếng Việt (PaddleOCR + VietOCR trên PyTorch)" \
       org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0" \

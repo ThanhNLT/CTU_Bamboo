@@ -32,7 +32,7 @@ export const STATUS_LABEL: Record<ProjectStatus, string> = {
 };
 
 export const ROLE_LABEL: Record<Role, string> = {
-  MANAGER: tr("Quản lý dự án"),
+  MANAGER: tr("Người quản lý dự án"),
   MEMBER: tr("Thành viên"),
   VIEWER: tr("Theo dõi"),
 };

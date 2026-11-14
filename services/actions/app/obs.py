@@ -149,6 +149,13 @@ class DbHandler(logging.Handler):
 _installed: DbHandler | None = None
 
 
+class _MaskedFormatter(logging.Formatter):
+    """Log WARNING trở lên ra stderr (`docker compose logs`) cũng che dữ liệu cá nhân như log tập trung."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        return mask(super().format(record))
+
+
 def install(service: str, database_url: str) -> DbHandler:
     """Gắn bộ ghi log tập trung vào logger gốc; gọi lại thì dùng lại bộ cũ."""
     global _installed
@@ -156,6 +163,11 @@ def install(service: str, database_url: str) -> DbHandler:
         _installed = DbHandler(service, database_url)
         root = logging.getLogger()
         root.addHandler(_installed)
+        if not any(type(h) is logging.StreamHandler for h in root.handlers):
+            console = logging.StreamHandler(sys.stderr)
+            console.setLevel(logging.WARNING)
+            console.setFormatter(_MaskedFormatter("%(asctime)s %(name)s %(levelname)s %(message)s"))
+            root.addHandler(console)
         if root.level == logging.NOTSET or root.level > logging.INFO:
             root.setLevel(logging.INFO)
     return _installed

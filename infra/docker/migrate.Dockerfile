@@ -19,7 +19,7 @@
 
 FROM postgres:17
 LABEL org.opencontainers.image.title="bamboo-migrate" \
-      org.opencontainers.image.description="Bamboo DX-OS: migration, kiểm thử CSDL và sao lưu theo lịch" \
+      org.opencontainers.image.description="Bamboo: migration, kiểm thử CSDL và sao lưu theo lịch" \
       org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"

@@ -101,7 +101,7 @@ Nghiệp vụ nhiều bước đi qua 137 Hasura Action (dịch vụ `actions`, 
 | Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ocr_retry` |
 | Vận hành | `obs_logs`, `backup_runs` | – |
 | Mô-đun chức năng ([ADR #56](#adr-56)) | `modules` | `module_enable`, `module_disable`, `module_install`, `module_uninstall` |
-| Thông tin pháp lý, chủ sở hữu ([ADR #57](#adr-57)) | `legal_status` | `legal_application`, `legal_verify`, `transfer_ownership`, `create_subsidiary` |
+| Thông tin pháp lý, chủ sở hữu ([ADR #57](#adr-57)) | `legal_status` | `legal_update`, `legal_application`, `legal_verify`, `transfer_ownership`, `create_subsidiary` |
 | Mô-đun ngoài ([ADR #58](#adr-58)) | – | `ext_register`, `ext_rotate_key`, `ext_launch` |
 
 ## 4. Lưu ý khi dùng

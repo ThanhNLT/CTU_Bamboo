@@ -55,7 +55,7 @@ STATUS_LABEL = {
     "DONE": "Hoàn thành",
     "CANCELLED": "Đã hủy",
 }
-ROLE_LABEL = {"MANAGER": "Quản lý dự án", "MEMBER": "Thành viên", "VIEWER": "Theo dõi"}
+ROLE_LABEL = {"MANAGER": "Người quản lý dự án", "MEMBER": "Thành viên", "VIEWER": "Theo dõi"}
 HEALTH_LABEL = {"GREEN": "Đúng tiến độ", "AMBER": "Có nguy cơ chậm", "RED": "Chậm tiến độ"}
 
 

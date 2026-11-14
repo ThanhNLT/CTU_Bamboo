@@ -61,7 +61,7 @@ export const RunsTab = ({
     <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label={tr("Lần chạy thử")}>
       <h2 className="m-0 text-[14px] font-semibold text-ink">{tr("Lần chạy thử")}</h2>
       {runs.length === 0 && <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Chưa chạy thử lần nào.")}</p>}
-      <ol className="m-0 mt-2 list-none space-y-3 p-0">
+      <ol className="m-0 mt-2 list-none flex flex-col gap-3 p-0">
         {runs.map((r) => (
           <li key={r.id} className="rounded-xl border border-line/80 p-3">
             <div className="flex flex-wrap items-center gap-2 text-[12.5px]">

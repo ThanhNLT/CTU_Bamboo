@@ -120,7 +120,7 @@ export const ReadingRoomPanel = ({
           aria-label={tr("Quy tắc phòng đọc")}
         >
           <h2 className="text-[15px] font-semibold text-ink">{tr("Quy tắc phòng đọc")}</h2>
-          <ul className="m-0 mt-3 list-none space-y-3 p-0">
+          <ul className="m-0 mt-3 list-none flex flex-col gap-3 p-0">
             {RULES.map((r) => (
               <li key={r.title} className="flex items-start gap-3">
                 <span

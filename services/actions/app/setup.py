@@ -64,6 +64,7 @@ MEMBER_FIRST_LOGIN = ("UPDATE_PASSWORD",)
 MAX_MEMBERS = 200
 MAX_UNITS = 50
 SIZE_BANDS = ("1-10", "11-50", "51-200", "200+")
+SME_BANDS = ("1-10", "11-50", "51-200")
 TAX_CODE = re.compile(r"^([0-9]{10}(-[0-9]{3})?|[0-9]{12})$")
 _PHONE = re.compile(r"^\+?[0-9 .-]{8,20}$")
 UNIT_TYPES = ("PHONG", "KHOI", "VAN_PHONG", "CHI_NHANH", "NHA_MAY", "PHAN_XUONG", "TRUNG_TAM", "DOI", "KHOA")
@@ -297,16 +298,24 @@ def parse_registration(body: dict) -> dict:
     owner["birth_year"] = _year((body.get("owner") or {}).get("birth_year"))
     owner["title"] = owner["title"] or "Giám đốc"
 
+    size_band = str(body.get("size_band") or "1-10")
+    if size_band not in SIZE_BANDS:
+        raise ActionError("Quy mô không hợp lệ")
+
     c = body.get("company") or {}
-    tax_code = re.sub(r"\s", "", str(c.get("tax_code") or ""))
-    if not TAX_CODE.match(tax_code):
+    tax_code = re.sub(r"\s", "", str(c.get("tax_code") or "")) or None
+    if tax_code is None and size_band not in SME_BANDS:
+        raise ActionError("Doanh nghiệp trên 200 người cần khai mã số thuế khi đăng ký")
+    if tax_code is not None and not TAX_CODE.match(tax_code):
         raise ActionError("Mã số thuế gồm 10 chữ số (13 với chi nhánh, 12 với hộ kinh doanh)")
     legal_name = _text(c, "legal_name", "tên doanh nghiệp", 300)
-    code = str(c.get("code") or "").strip().upper() or suggest_code(legal_name)
+    explicit = str(c.get("code") or "").strip().upper()
+    code = explicit or suggest_code(legal_name)
     if not _TENANT_CODE.match(code):
         raise ActionError("Mã công ty viết hoa không dấu, bắt đầu bằng chữ, 2-20 ký tự (ví dụ ABC)")
     company = {
         "code": code,
+        "code_explicit": bool(explicit),
         "tax_code": tax_code,
         "legal_name": legal_name,
         "short_name": _text(c, "short_name", "tên viết tắt", 120, required=False),
@@ -316,9 +325,6 @@ def parse_registration(body: dict) -> dict:
         "legal_rep_title": owner["title"],
     }
 
-    size_band = str(body.get("size_band") or "1-10")
-    if size_band not in SIZE_BANDS:
-        raise ActionError("Quy mô không hợp lệ")
     flow = str(body.get("flow") or "quick")
     if flow not in ("quick", "detailed"):
         raise ActionError("Luồng đăng ký không hợp lệ")
@@ -382,6 +388,37 @@ def parse_registration(body: dict) -> dict:
     }
 
 
+def _code_taken(conn: psycopg.Connection, code: str) -> bool:
+    return conn.execute("SELECT EXISTS (SELECT FROM core.tenant WHERE code = %s)", (code,)).fetchone()[0]
+
+
+def ensure_unique(conn: psycopg.Connection, company: dict) -> None:
+    """Mã số thuế và mã công ty không được trùng công ty đã có (chạy trước khi tạo tài khoản đăng nhập).
+
+    Mã công ty tự sinh từ tên mà trùng thì thêm số (MINHANH → MINHANH2); mã do người đăng ký tự đặt thì báo lỗi."""
+    tax_code = company.get("tax_code")
+    taken = "SELECT EXISTS (SELECT FROM core.tenant WHERE tax_code = %s)"
+    if tax_code and conn.execute(taken, (tax_code,)).fetchone()[0]:
+        raise ActionError(
+            f"Mã số thuế {tax_code} đã được đăng ký cho một công ty khác. Nếu đó là công ty của bạn, dùng "
+            "Khôi phục tài khoản chủ sở hữu; hoặc để trống mã số thuế và khai sau",
+            "tax-code-taken",
+            409,
+        )
+    code = company["code"]
+    if not _code_taken(conn, code):
+        return
+    if company.get("code_explicit"):
+        raise ActionError(f"Mã công ty {code} đã có; chọn mã khác", "tenant-code-taken", 409)
+    for n in range(2, 1000):
+        suffix = str(n)
+        candidate = code[: 20 - len(suffix)] + suffix
+        if not _code_taken(conn, candidate):
+            company["code"] = candidate
+            return
+    raise ActionError("Không sinh được mã công ty riêng; tự đặt mã công ty", "tenant-code-taken", 409)
+
+
 def start(conn: psycopg.Connection, ctx: Context, body: dict, open_signup: bool = False) -> dict:
     conn.execute("SELECT pg_advisory_xact_lock(hashtext('core.setup'))")
     if not accepting(conn, open_signup):
@@ -396,6 +433,7 @@ def start(conn: psycopg.Connection, ctx: Context, body: dict, open_signup: bool 
         admin = body.get("admin")
         body = body | {"owner": owner, "members": [admin | {"role": "ADMIN"}] if admin else []}
     data = parse_registration(body) | {"setup_code_id": code_id}
+    ensure_unique(conn, data["company"])
     application, token, _pdf = _new_application(conn, ctx, "SETUP", data, render=False)
     return {
         "application_id": application["id"],
@@ -444,6 +482,12 @@ def application_pdf(conn: psycopg.Connection, ctx: Context, application_id: str,
     if purpose is None or purpose[0] not in ("SETUP", "RECOVER"):
         raise ActionError("Không tìm thấy đơn", "not-found", 404)
     a = _application(conn, application_id, token, purpose[0])
+    if not a["data"]["company"].get("tax_code"):
+        raise ActionError(
+            "Khai mã số thuế mới lập được đơn để ký số; bỏ qua bước ký và xác thực sau ở trang Công ty",
+            "tax-code-missing",
+            409,
+        )
     if not a["pdf"]:
         application = {
             **a["data"],
@@ -527,6 +571,7 @@ def _build_company(conn: psycopg.Connection, data: dict, accounts: list[dict], s
     )
     if owner.get("title") and owner["title"] != "Giám đốc":
         conn.execute("UPDATE core.position SET name = %s WHERE id = %s", (owner["title"], director))
+    conn.execute("SELECT core.provision_tenant(%s)", (tid,))
 
     staff_role = _role(conn, tid, "NHAN_VIEN")
     unit_ids = {None: root}
@@ -619,6 +664,12 @@ def finish(
             raise ActionError("Máy chủ yêu cầu đơn đã ký số để khởi tạo công ty", "signature-required", 422)
         signer = None
     else:
+        if not company.get("tax_code"):
+            raise ActionError(
+                "Khai mã số thuế mới ký số được; bỏ qua bước ký và xác thực sau ở trang Công ty",
+                "tax-code-missing",
+                409,
+            )
         if not a["pdf"]:
             raise ActionError("Tải đơn đăng ký PDF về trước, ký số rồi tải lên", "pdf-missing", 409)
         signer = _verify(ctx, signed, a["pdf"], company["tax_code"])
@@ -635,6 +686,22 @@ def finish(
     for m in members:
         role_name = MEMBER_ROLES[m["role"]][1] if m["role"] != "ADMIN" else "Quản trị viên"
         people.append((role_name, m, FIRST_LOGIN if m["role"] == "ADMIN" else MEMBER_FIRST_LOGIN))
+
+    def rollback(subjects: list[str]) -> None:
+        """Gỡ tài khoản vừa tạo để người đăng ký sửa rồi gửi lại được (tên đăng nhập không bị giữ)."""
+        for subject in subjects:
+            try:
+                users.delete(subject)
+                continue
+            except Exception as err:  # noqa: BLE001
+                log.warning("không xóa được tài khoản %s, chuyển sang vô hiệu hóa: %s", subject, err)
+            try:
+                users.disable(subject)
+            except Exception as err:  # noqa: BLE001
+                log.warning("không vô hiệu hóa được tài khoản %s: %s", subject, err)
+
+    with pool.connection() as conn:
+        ensure_unique(conn, company)
     accounts, created = [], []
     try:
         for label, person, actions in people:
@@ -653,12 +720,17 @@ def finish(
                 }
             )
     except AccountConflict as exc:
-        for subject in created:
-            try:
-                users.disable(subject)
-            except Exception as err:  # noqa: BLE001
-                log.warning("không vô hiệu hóa được tài khoản %s: %s", subject, err)
-        raise ActionError(f"{exc}: chọn tên đăng nhập hoặc email khác", "account-conflict", 409) from exc
+        rollback(created)
+        who = person["username"] + (f" / {person['email']}" if person.get("email") else "")
+        raise ActionError(f"{exc} ({who}): chọn tên đăng nhập hoặc email khác", "account-conflict", 409) from exc
+    except Exception as exc:
+        rollback(created)
+        log.exception("không tạo được tài khoản đăng nhập khi khởi tạo công ty %s", company["code"])
+        raise ActionError(
+            "Không tạo được tài khoản đăng nhập (máy chủ xác thực không phản hồi); thử lại sau ít phút",
+            "idp-unavailable",
+            503,
+        ) from exc
 
     try:
         with pool.connection() as conn, conn.transaction():
@@ -680,17 +752,26 @@ def finish(
                     "setup-window-closed",
                     403,
                 )
+            ensure_unique(conn, company)
             tid = _build_company(conn, data, accounts, signer, signed)
             conn.execute(
                 "UPDATE core.setup_application SET finished_at = now(), tenant_id = %s WHERE id = %s", (tid, a["id"])
             )
-    except Exception:
-        for subject in created:
-            try:
-                users.disable(subject)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("không vô hiệu hóa được tài khoản %s sau khi khởi tạo lỗi: %s", subject, exc)
+    except ActionError:
+        rollback(created)
         raise
+    except psycopg.errors.UniqueViolation as exc:
+        rollback(created)
+        log.warning("khởi tạo công ty %s trùng dữ liệu: %s", company["code"], exc)
+        raise ActionError(
+            "Mã công ty hoặc mã số thuế vừa được đăng ký cho công ty khác; gửi lại đơn", "conflict", 409
+        ) from exc
+    except Exception as exc:
+        rollback(created)
+        log.exception("khởi tạo công ty %s lỗi", company["code"])
+        raise ActionError(
+            "Chưa khởi tạo được công ty do lỗi máy chủ; thử lại sau ít phút", "setup-failed", 500
+        ) from exc
     log.info("đã khởi tạo công ty %s (%s)", company["code"], "đã xác thực" if signer else "chưa xác thực")
     return {
         "tenant_code": company["code"],
@@ -935,6 +1016,7 @@ def legal_status(conn: psycopg.Connection, session: dict, _args: dict, ctx: Cont
     return {
         "tax_code": t["tax_code"],
         "legal_name": t["legal_name"],
+        "address": t["address"],
         "legal_rep_name": t["legal_rep_name"],
         "legal_status": t["legal_status"],
         "is_owner": bool(t["is_owner"]),
@@ -989,8 +1071,45 @@ def legal_verify(conn: psycopg.Connection, session: dict, args: dict, ctx: Conte
     return legal_status(conn, session, {}, ctx)
 
 
+def legal_update(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
+    """Chủ sở hữu bổ sung thông tin còn thiếu sau khi đăng ký (doanh nghiệp vừa và nhỏ được bỏ trống khi đăng ký).
+
+    Mã số thuế và tên doanh nghiệp gắn với chữ ký số nên chỉ sửa được khi công ty chưa xác thực; địa chỉ sửa lúc nào
+    cũng được. Trường bỏ trống (null) giữ nguyên giá trị cũ."""
+    t = _owner_tenant(conn, session)
+    if not t["is_owner"]:
+        raise ActionError("Chỉ chủ sở hữu công ty được sửa thông tin pháp lý", "forbidden", 403)
+    verified = t["legal_status"] == "VERIFIED"
+    changes: dict = {}
+    tax_code = re.sub(r"\s", "", str(args.get("tax_code") or ""))
+    if tax_code and tax_code != t["tax_code"]:
+        if not TAX_CODE.match(tax_code):
+            raise ActionError("Mã số thuế gồm 10 chữ số (13 với chi nhánh, 12 với hộ kinh doanh)")
+        if conn.execute(
+            "SELECT EXISTS (SELECT FROM core.tenant WHERE tax_code = %s AND id <> %s)", (tax_code, t["id"])
+        ).fetchone()[0]:
+            raise ActionError(f"Mã số thuế {tax_code} đã thuộc một công ty khác", "tax-code-taken", 409)
+        changes["tax_code"] = tax_code
+    legal_name = _text(args, "legal_name", "tên doanh nghiệp", 300, required=False)
+    if legal_name and legal_name != t["legal_name"]:
+        changes["legal_name"] = legal_name
+    if verified and changes:
+        raise ActionError(
+            "Công ty đã xác thực bằng chữ ký số: mã số thuế và tên doanh nghiệp không sửa trực tiếp được",
+            "verified",
+            409,
+        )
+    address = _text(args, "address", "địa chỉ trụ sở", 500, required=False)
+    if address and address != t["address"]:
+        changes["address"] = address
+    for column, value in changes.items():
+        conn.execute(f"UPDATE core.tenant SET {column} = %s WHERE id = %s", (value, t["id"]))
+    return legal_status(conn, session, {}, ctx)
+
+
 HANDLERS = {
     "legal_status": legal_status,
+    "legal_update": legal_update,
     "legal_application": legal_application,
     "legal_verify": legal_verify,
 }

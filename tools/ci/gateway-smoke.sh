@@ -43,7 +43,7 @@ check "không lộ phiên bản cổng" \
     "$(curl -s -o /dev/null -D - "$GW/healthz" | grep -iE '^server:.*[0-9]+\.[0-9]+' | wc -l | tr -d ' ')" "0"
 
 check "trang chủ qua cổng" "$(code "$GW/")" "200"
-check "trang chủ đúng ứng dụng" "$(curl -s "$GW/" | grep -c '<title>Bamboo DX-OS</title>')" "1"
+check "trang chủ đúng ứng dụng" "$(curl -s "$GW/" | grep -c '<title>Bamboo</title>')" "1"
 check "định tuyến phía trình duyệt (SPA)" "$(code "$GW/p/documents")" "200"
 
 Q='{"query":"query { my_tenants { tenant_code } }"}'

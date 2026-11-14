@@ -222,7 +222,7 @@ export const AutomationTab = ({
       {(automation?.runs.length ?? 0) === 0 && (
         <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Chưa có lần chạy nào.")}</p>
       )}
-      <ul className="m-0 mt-2 list-none space-y-2 p-0">
+      <ul className="m-0 mt-2 list-none flex flex-col gap-2 p-0">
         {automation?.runs.map((r) => (
           <RunRow key={r.id} run={r} />
         ))}

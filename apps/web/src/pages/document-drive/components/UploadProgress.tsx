@@ -98,7 +98,7 @@ export const UploadProgress = ({ items, onClose }: { items: UploadItem[]; onClos
       </header>
 
       {!collapsed && (
-        <ul className="m-0 max-h-[260px] list-none space-y-3 overflow-y-auto px-4 pb-4">
+        <ul className="m-0 max-h-[260px] list-none flex flex-col gap-3 overflow-y-auto px-4 pb-4 *:shrink-0">
           {items.map((item) => (
             <li key={item.id}>
               <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">

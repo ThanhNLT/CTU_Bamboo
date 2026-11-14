@@ -155,7 +155,7 @@ const CompanySwitcher = () => {
 const AppLauncher = () => {
   const { t } = useLocale();
   const content = (
-    <div className="w-[320px] space-y-3 p-1">
+    <div className="w-[320px] flex flex-col gap-3 p-1">
       <div className="grid grid-cols-3 gap-1">
         {NAV_GROUPS.flatMap((g) => g.items.map((i) => ({ ...i, access: i.access ?? g.access }))).map(
           ({ key, label, to, icon: Icon, access }) => (

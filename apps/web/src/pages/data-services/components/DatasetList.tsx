@@ -103,7 +103,7 @@ export const DatasetList = ({
 
   return (
     <ul
-      className={cn("m-0 min-h-0 list-none space-y-3 overflow-y-auto p-0.5 pr-1", className)}
+      className={cn("m-0 min-h-0 list-none flex flex-col gap-3 overflow-y-auto p-0.5 pr-1 *:shrink-0", className)}
       aria-label={tr("Tập dữ liệu")}
     >
       {datasets.map((d, i) => (

@@ -204,7 +204,7 @@ export const RolesPage = () => {
           aria-label={tr("Vai trò")}
           className="rounded-2xl border border-line bg-surface p-2 shadow-card lg:sticky lg:top-[84px] lg:self-start"
         >
-          <ul className="m-0 list-none space-y-0.5 p-0">
+          <ul className="m-0 list-none flex flex-col gap-0.5 p-0">
             {roles.map((r) => {
               const on = r.id === role?.id;
               const active = r.role_grants.filter((g) => parsePeriod(g.valid_period).active).length;
@@ -272,7 +272,7 @@ export const RolesPage = () => {
                     <legend className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
                       {MODULE[m] ?? m}
                     </legend>
-                    <ul className="m-0 list-none space-y-1.5 p-0">
+                    <ul className="m-0 list-none flex flex-col gap-1.5 p-0">
                       {list.map((p) => (
                         <li key={p.code}>
                           <Checkbox

@@ -199,6 +199,6 @@ def test_email_theo_ngon_ngu_nguoi_nhan(conn, database, worker, smtp):  # noqa: 
     assert row["status"] == "DELIVERED" and row["payload"]["title"] == title, "bản lưu giữ nguyên để khớp mã băm"
     mail = email.message_from_bytes(smtp.messages[-1], policy=email.policy.default)
     assert mail["Subject"] == "Request PR-0099 has been approved"
-    assert "Open in Bamboo DX-OS: http://localhost:8000/" in mail.get_body().get_content()
+    assert "Open in Bamboo: http://localhost:8000/" in mail.get_body().get_content()
     conn.execute("DELETE FROM collab.person_locale WHERE person_id = %s", (i["c"],))
     conn.execute("DELETE FROM collab.notification_pref WHERE person_id = %s", (i["c"],))
