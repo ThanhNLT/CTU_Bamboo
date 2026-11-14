@@ -60,6 +60,27 @@ VARS
         exit 1
         ;;
 esac
+cpus=${BAMBOO_CPU_LIMIT:-$(env_value BAMBOO_CPU_LIMIT)}
+if [ -z "$cpus" ]; then
+    n=""
+    command -v docker > /dev/null 2>&1 && n=$(docker info --format '{{.NCPU}}' 2> /dev/null || true)
+    case "$n" in '' | *[!0-9]*) n=$(nproc 2> /dev/null || echo 1) ;; esac
+    reserve=$((n / 4))
+    [ "$reserve" -lt 1 ] && reserve=1
+    cpus=$((n - reserve))
+    if [ "$cpus" -lt 1 ]; then
+        cpus=0
+    else
+        echo "Giới hạn CPU: mỗi dịch vụ nặng (AI, OCR, JVM, Trino, Gotenberg, PostgreSQL) dùng tối đa $cpus/$n lõi để máy không bị đơ; BAMBOO_CPU_LIMIT=0 để bỏ giới hạn" >&2
+    fi
+fi
+case "$cpus" in
+    '' | *[!0-9.]* | .*)
+        echo "BAMBOO_CPU_LIMIT phải là số lõi (vd. 6 hoặc 2.5), 0 là không giới hạn (đang là '$cpus')" >&2
+        exit 1
+        ;;
+esac
+echo "export BAMBOO_CPU_LIMIT=$cpus"
 case "${COMPOSE_FILE:-$(env_value COMPOSE_FILE)}" in
     *gpu.yml*)
         echo "CẢNH BÁO: COMPOSE_FILE ép GPU (infra/compose/gpu.yml): Docker không cấp được GPU thì Ollama, OCR không chạy và ai-worker chờ mãi; OCR cũng không tự tải PyTorch CUDA. Xóa dòng COMPOSE_FILE trong .env, sleeper tự dò GPU (ADR #79)" >&2
