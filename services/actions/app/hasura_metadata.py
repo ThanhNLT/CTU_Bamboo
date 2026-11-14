@@ -2858,6 +2858,7 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "change_requests", "type": "json!"},
                         {"name": "automation", "type": "json"},
                         {"name": "regulations", "type": "json!"},
+                        {"name": "ai_agents", "type": "json"},
                     ],
                 },
                 {

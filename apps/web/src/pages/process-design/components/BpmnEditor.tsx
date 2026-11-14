@@ -93,6 +93,8 @@ const describe = (el: Element | undefined): SelectedElement | undefined => {
     automationName: str("bamboo:name"),
     automationValue: str("bamboo:value"),
     automationScript: str("bamboo:script"),
+    automationAgent: str("bamboo:agent"),
+    automationTask: str("bamboo:task"),
     timerCycle: bo.eventDefinitions?.find((d) => d.$type === "bpmn:TimerEventDefinition")?.timeCycle?.body,
   };
 };
@@ -241,6 +243,8 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
           ["automationName", "bamboo:name"],
           ["automationValue", "bamboo:value"],
           ["automationScript", "bamboo:script"],
+          ["automationAgent", "bamboo:agent"],
+          ["automationTask", "bamboo:task"],
         ];
         for (const [key, attr] of attrs) {
           if (patch[key] !== undefined) props[attr] = (patch[key] as string) || undefined;
