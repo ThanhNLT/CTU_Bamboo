@@ -73,7 +73,7 @@ export type OnboardingPrivate = {
   initial_password: string | null;
 };
 
-export const GENDER: Record<string, string> = { MALE: "Nam", FEMALE: tr("Nữ"), OTHER: tr("Khác") };
+export const GENDER: Record<string, string> = { MALE: tr("Nam"), FEMALE: tr("Nữ"), OTHER: tr("Khác") };
 export const CONTRACT_TYPE: Record<string, string> = {
   PROBATION: tr("Thử việc"),
   FIXED_TERM: tr("Hợp đồng xác định thời hạn"),

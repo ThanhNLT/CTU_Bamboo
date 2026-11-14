@@ -182,6 +182,33 @@ def test_realm_dung_theme_dang_nhap_bamboo(admin):
             http.put("", json={"loginTheme": original}).raise_for_status()
 
 
+def test_realm_giu_thuoc_tinh_tai_khoan(admin):
+    """Keycloak 26 bỏ thuộc tính chưa khai trong User Profile; bootstrap bật ADMIN_EDIT để giữ thuộc tính đánh dấu đơn."""
+    token = keycloak_sync.admin_token(KEYCLOAK, *ADMIN)
+    with httpx.Client(
+        base_url=f"{KEYCLOAK}/admin/realms/{keycloak_sync.REALM}",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=15,
+    ) as http:
+        original = http.get("/users/profile").json()
+        try:
+            http.put("/users/profile", json={k: v for k, v in original.items() if k != "unmanagedAttributePolicy"})
+            assert keycloak_sync.ensure_user_attributes(KEYCLOAK, *ADMIN) is True
+            assert keycloak_sync.ensure_user_attributes(KEYCLOAK, *ADMIN) is False
+            created = http.post(
+                "/users",
+                json={"username": "thuoc.tinh.thu", "enabled": True, "attributes": {"bamboo_setup_application": ["x"]}},
+            )
+            created.raise_for_status()
+            subject = created.headers["Location"].rsplit("/", 1)[-1]
+            try:
+                assert http.get(f"/users/{subject}").json()["attributes"]["bamboo_setup_application"] == ["x"]
+            finally:
+                http.delete(f"/users/{subject}")
+        finally:
+            http.put("/users/profile", json=original)
+
+
 def test_sua_tai_khoan_demo_lech_id(admin, tmp_path, conn):
     """Keycloak có tài khoản demo trùng tên nhưng lệch id: tạo lại đúng id, mật khẩu demo, chuyển liên kết người."""
     http, _ = admin

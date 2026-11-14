@@ -50,7 +50,7 @@ export const NotificationsPanel = ({
       bodyClassName="px-5 pb-5 pt-1"
     >
       {items.length === 0 && <p className="py-4 text-center text-[13px] text-muted">{tr("Chưa có thông báo.")}</p>}
-      <ul className="m-0 list-none space-y-4 p-0">
+      <ul className="m-0 list-none flex flex-col gap-4 p-0">
         {items.slice(0, limit).map((n) => (
           <li key={n.id}>
             <button type="button" onClick={() => void open(n)} className="group flex w-full gap-2.5 text-left">

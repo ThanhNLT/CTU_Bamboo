@@ -98,7 +98,7 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
             {DUE_STYLE[level].column}
             <span className="ml-auto font-medium tabular-nums text-muted">{items.length}</span>
           </div>
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {items.map((t) => (
               <Link
                 key={t.code}
@@ -125,7 +125,7 @@ const KanbanView = ({ tasks }: { tasks: TaskItem[] }) => (
 const CalendarView = ({ tasks }: { tasks: TaskItem[] }) => {
   const days = [...new Set(tasks.map((t) => t.dueDay))];
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {days.map((day) => (
         <div key={day}>
           <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-muted">{day}</div>

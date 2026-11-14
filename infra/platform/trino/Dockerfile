@@ -19,7 +19,7 @@
 
 FROM trinodb/trino:483
 LABEL org.opencontainers.image.title="bamboo-trino" \
-      org.opencontainers.image.description="Bamboo DX-OS: Trino truy vấn Lakehouse (Iceberg bronze/silver)" \
+      org.opencontainers.image.description="Bamboo: Trino truy vấn Lakehouse (Iceberg bronze/silver)" \
       org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"

@@ -2052,6 +2052,15 @@ def build(conn: psycopg.Connection) -> dict:
                 timeout=10,
             ),
             _action(
+                "legal_update",
+                "mutation",
+                [("tax_code", "String"), ("legal_name", "String"), ("address", "String")],
+                "LegalStatus!",
+                [ROLE, ADMIN_ROLE],
+                "Chủ sở hữu bổ sung mã số thuế, tên, địa chỉ còn thiếu sau khi đăng ký (MST, tên khi chưa xác thực)",
+                timeout=10,
+            ),
+            _action(
                 "legal_application",
                 "mutation",
                 [],
@@ -2215,6 +2224,7 @@ def build(conn: psycopg.Connection) -> dict:
                     "fields": [
                         {"name": "tax_code", "type": "String"},
                         {"name": "legal_name", "type": "String"},
+                        {"name": "address", "type": "String"},
                         {"name": "legal_rep_name", "type": "String"},
                         {"name": "legal_status", "type": "String"},
                         {"name": "is_owner", "type": "Boolean!"},

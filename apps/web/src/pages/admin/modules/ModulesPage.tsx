@@ -107,7 +107,7 @@ export const ModulesPage = () => {
     modal.confirm({
       title: trf("Bật {0} cho {1}?", [m.name, tenant.tenant_name]),
       content: (
-        <div className="space-y-2 text-[13px]">
+        <div className="flex flex-col gap-2 text-[13px]">
           <p>{m.description}.</p>
           {m.external && (
             <div>
@@ -235,7 +235,7 @@ export const ModulesPage = () => {
             </header>
             <p className="m-0 flex-1 text-[13px] text-body">{m.description}</p>
             {(m.depends.length > 0 || m.dependents.length > 0) && (
-              <dl className="m-0 space-y-1 text-[12.5px] text-muted">
+              <dl className="m-0 flex flex-col gap-1 text-[12.5px] text-muted">
                 {m.depends.length > 0 && (
                   <div>
                     <dt className="inline">{tr("Cần: ")} </dt>
@@ -251,7 +251,7 @@ export const ModulesPage = () => {
               </dl>
             )}
             {m.external && m.scopes.length > 0 && (
-              <ul className="m-0 list-disc space-y-0.5 pl-5 text-[12.5px] text-muted">
+              <ul className="m-0 list-disc flex flex-col gap-0.5 pl-5 text-[12.5px] text-muted">
                 {m.scopes.map((sc) => (
                   <li key={sc}>{SCOPE_LABEL[sc] ?? sc}</li>
                 ))}

@@ -59,7 +59,7 @@ enable_systemd() {
     mkdir -p "$UNIT_DIR"
     cat > "$UNIT_DIR/$UNIT.service" << EOF
 [Unit]
-Description=Bamboo DX-OS GitOps: đưa hệ thống về đúng cấu hình trong Git
+Description=Bamboo GitOps: đưa hệ thống về đúng cấu hình trong Git
 
 [Service]
 Type=oneshot
@@ -69,7 +69,7 @@ ExecStart="$REPO/tools/gitops/reconcile.sh"
 EOF
     cat > "$UNIT_DIR/$UNIT.timer" << EOF
 [Unit]
-Description=Bamboo DX-OS GitOps: đối chiếu mỗi $INTERVAL phút
+Description=Bamboo GitOps: đối chiếu mỗi $INTERVAL phút
 
 [Timer]
 OnActiveSec=1min

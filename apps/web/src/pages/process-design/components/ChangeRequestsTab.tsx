@@ -63,7 +63,7 @@ export const ChangeRequestsTab = ({
         {canResolve ? tr("Yêu cầu sửa chữa từ người giám sát") : tr("Yêu cầu sửa chữa của bạn")}
       </h2>
       {requests.length === 0 && <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Chưa có yêu cầu nào.")}</p>}
-      <ul className="m-0 mt-3 list-none space-y-3 p-0">
+      <ul className="m-0 mt-3 list-none flex flex-col gap-3 p-0">
         {requests.map((r) => (
           <li key={r.id} className="rounded-xl border border-line/80 p-3 text-[12.5px]">
             <div className="flex flex-wrap items-center gap-2">

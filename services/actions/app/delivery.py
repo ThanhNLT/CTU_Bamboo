@@ -88,7 +88,7 @@ def send_email(settings: config.Settings, payload: dict) -> str:
     msg["Subject"] = payload["title"][:200]
     link = link_for(settings, payload)
     body = (payload.get("body") or "").strip()
-    msg.set_content("\n\n".join(filter(None, [payload["title"], body, i18n.t("Mở trong Bamboo DX-OS: {0}", link)])))
+    msg.set_content("\n\n".join(filter(None, [payload["title"], body, i18n.t("Mở trong Bamboo: {0}", link)])))
     try:
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as smtp:
             if settings.smtp_starttls:

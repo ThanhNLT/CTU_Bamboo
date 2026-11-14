@@ -102,6 +102,7 @@ CORE_ACTIONS = frozenset(
         "module_install",
         "module_uninstall",
         "legal_status",
+        "legal_update",
         "legal_application",
         "legal_verify",
         "transfer_ownership",
