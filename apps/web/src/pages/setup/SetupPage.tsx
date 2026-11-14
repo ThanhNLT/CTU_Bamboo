@@ -185,13 +185,13 @@ const CompanyStep = ({ form, draft }: { form: FormInstance; draft: Registration 
       <Form.Item
         name="tax_code"
         label={tr("Mã số thuế")}
+        extra={tr("Doanh nghiệp đến 200 người được bỏ trống và khai sau ở Quản trị → Thông tin công ty.")}
         rules={[
-          ...req(tr("mã số thuế")),
           { pattern: /^(\d{10}(-\d{3})?|\d{12})$/, message: tr("10 chữ số (13 với chi nhánh, 12 với hộ kinh doanh)") },
         ]}
         normalize={(v: string) => v?.replace(/\s/g, "")}
       >
-        <Input size="large" inputMode="numeric" placeholder="0312345678" />
+        <Input size="large" inputMode="numeric" placeholder={tr("Không bắt buộc")} />
       </Form.Item>
       <Form.Item name="industry" label={tr("Lĩnh vực kinh doanh")} rules={req(tr("lĩnh vực"))}>
         <Select
@@ -212,7 +212,7 @@ const CompanyStep = ({ form, draft }: { form: FormInstance; draft: Registration 
 const SizeStep = ({ draft, onChange }: { draft: Registration; onChange: (d: Partial<Registration>) => void }) => {
   const suggested = SIZES.find((s) => s.value === draft.size_band)?.flow ?? "quick";
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <div role="radiogroup" aria-label={tr("Số người trong doanh nghiệp")} className="grid gap-3 sm:grid-cols-2">
         {SIZES.map((s) => (
           <button
@@ -228,12 +228,12 @@ const SizeStep = ({ draft, onChange }: { draft: Registration; onChange: (d: Part
           </button>
         ))}
       </div>
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         <p className="text-[13px] font-medium text-body">{tr("Cách thiết lập")}</p>
         <div role="radiogroup" aria-label={tr("Cách thiết lập")} className="grid gap-3 sm:grid-cols-2">
           {(
             [
-              ["quick", "Nhanh", tr("Thêm thành viên và giao quyền ngay; phòng ban dựng sau nếu cần.")],
+              ["quick", tr("Nhanh"), tr("Thêm thành viên và giao quyền ngay; phòng ban dựng sau nếu cần.")],
               ["detailed", tr("Chi tiết"), tr("Khai phòng ban, người phụ trách và quyền của từng người.")],
             ] as const
           ).map(([value, label, text]) => (
@@ -293,7 +293,7 @@ const UnitsStep = ({ form, draft }: { form: FormInstance; draft: Registration })
         ]}
       >
         {(fields, { add, remove }, { errors }) => (
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {fields.map((field) => (
               <div key={field.key} className="flex items-start gap-2">
                 <Form.Item name={[field.name, "key"]} hidden>
@@ -377,104 +377,110 @@ const MembersStep = ({ form, draft }: { form: FormInstance; draft: Registration 
       className="auth-form"
       initialValues={{ members: draft.members.map((m) => ({ ...m, unit: m.unit ?? "" })) }}
     >
-      <div className="mb-4 rounded-2xl border border-bamboo-200 bg-bamboo-50/70 px-4 py-3 text-[13px] leading-relaxed text-body">
-        {tr("Bạn (")}
-        {draft.owner.full_name || tr("chủ sở hữu")}
-        {tr(
-          ") đã có toàn quyền. Mỗi thành viên nhận một mật khẩu tạm sau khi tạo xong và đặt mật khẩu mới ở lần đăng nhập đầu. Có thể bỏ qua bước này và thêm người sau.",
-        )}
-      </div>
-      <Form.List name="members">
-        {(fields, { add, remove }) => (
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div
-                key={field.key}
-                className="rounded-2xl border border-black/[0.06] bg-white/50 px-4 pb-1 pt-3 dark:border-white/10 dark:bg-white/[0.03]"
-              >
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-muted">
-                    {tr("Thành viên ")} {index + 1}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={trf("Bỏ thành viên {0}", [index + 1])}
-                    title={tr("Bỏ người này")}
-                    className="grid h-8 w-8 place-items-center rounded-full text-muted transition-colors hover:bg-red-50 hover:text-red-600"
-                    onClick={() => remove(field.name)}
-                  >
-                    <Trash2 className="h-4 w-4" strokeWidth={1.75} />
-                  </button>
+      <div className="flex flex-col gap-5">
+        <div className="rounded-2xl border border-bamboo-200 bg-bamboo-50/70 px-4 py-3 text-[13px] leading-relaxed text-body dark:border-bamboo-700/40 dark:bg-bamboo-900/20">
+          {tr("Bạn (")}
+          {draft.owner.full_name || tr("chủ sở hữu")}
+          {tr(
+            ") đã có toàn quyền. Mỗi thành viên nhận một mật khẩu tạm sau khi tạo xong và đặt mật khẩu mới ở lần đăng nhập đầu. Có thể bỏ qua bước này và thêm người sau.",
+          )}
+        </div>
+        <Form.List name="members">
+          {(fields, { add, remove }) => (
+            <>
+              {fields.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  {fields.map((field, index) => (
+                    <div
+                      key={field.key}
+                      className="rounded-2xl border border-[rgb(27_35_30/0.1)] bg-white/45 p-4 dark:border-white/10 dark:bg-white/[0.04]"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-muted">
+                          {tr("Thành viên ")} {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={trf("Bỏ thành viên {0}", [index + 1])}
+                          title={tr("Bỏ người này")}
+                          className="-mr-2 grid h-8 w-8 place-items-center rounded-full text-muted transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                          onClick={() => remove(field.name)}
+                        >
+                          <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+                        </button>
+                      </div>
+                      <div className="grid gap-x-3 gap-y-4 sm:grid-cols-2 [&_.ant-form-item]:mb-0">
+                        <Form.Item name={[field.name, "full_name"]} label={tr("Họ tên")} rules={req(tr("họ tên"))}>
+                          <Input size="large" onBlur={() => fillUsername(index)} placeholder={tr("Trần Thị Bình")} />
+                        </Form.Item>
+                        <Form.Item
+                          name={[field.name, "username"]}
+                          label={tr("Tên đăng nhập")}
+                          rules={[
+                            ...req(tr("tên đăng nhập")),
+                            USERNAME_RULE,
+                            {
+                              validator: async (_, value) => {
+                                const all = (form.getFieldValue("members") ?? []) as { username?: string }[];
+                                if (
+                                  value &&
+                                  (value === draft.owner.username ||
+                                    all.filter((m) => m?.username === value).length > 1)
+                                )
+                                  throw new Error(tr("Tên đăng nhập bị trùng"));
+                              },
+                            },
+                          ]}
+                          normalize={(v: string) => v?.toLowerCase().trim()}
+                        >
+                          <Input size="large" autoComplete="off" placeholder="binh.tran" />
+                        </Form.Item>
+                        <Form.Item name={[field.name, "role"]} label={tr("Quyền")}>
+                          <Select
+                            size="large"
+                            options={ROLES.map((r) => ({
+                              value: r.value,
+                              label: r.label,
+                              title: r.description,
+                            }))}
+                            optionRender={(o) => (
+                              <div className="py-0.5">
+                                <div className="font-medium">{o.label}</div>
+                                <div className="whitespace-normal text-[12px] text-muted">{o.data.title}</div>
+                              </div>
+                            )}
+                          />
+                        </Form.Item>
+                        {detailed ? (
+                          <Form.Item name={[field.name, "unit"]} label={tr("Phòng ban")}>
+                            <Select size="large" options={unitOptions} />
+                          </Form.Item>
+                        ) : (
+                          <Form.Item name={[field.name, "title"]} label={tr("Chức vụ")}>
+                            <Input size="large" placeholder={tr("Kế toán, Bán hàng…")} />
+                          </Form.Item>
+                        )}
+                        <Form.Item
+                          name={[field.name, "email"]}
+                          label="Email"
+                          rules={[{ type: "email", message: tr("Email không hợp lệ") }]}
+                        >
+                          <Input size="large" inputMode="email" placeholder={tr("Không bắt buộc")} />
+                        </Form.Item>
+                        {detailed ? (
+                          <Form.Item name={[field.name, "title"]} label={tr("Chức vụ")}>
+                            <Input size="large" placeholder={tr("Không bắt buộc")} />
+                          </Form.Item>
+                        ) : (
+                          <Form.Item name={[field.name, "phone"]} label={tr("Điện thoại")} rules={[PHONE_RULE]}>
+                            <Input size="large" inputMode="tel" placeholder={tr("Không bắt buộc")} />
+                          </Form.Item>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="grid gap-x-3 sm:grid-cols-2">
-                  <Form.Item name={[field.name, "full_name"]} label={tr("Họ tên")} rules={req(tr("họ tên"))}>
-                    <Input onBlur={() => fillUsername(index)} placeholder={tr("Trần Thị Bình")} />
-                  </Form.Item>
-                  <Form.Item
-                    name={[field.name, "username"]}
-                    label={tr("Tên đăng nhập")}
-                    rules={[
-                      ...req(tr("tên đăng nhập")),
-                      USERNAME_RULE,
-                      {
-                        validator: async (_, value) => {
-                          const all = (form.getFieldValue("members") ?? []) as { username?: string }[];
-                          if (
-                            value &&
-                            (value === draft.owner.username || all.filter((m) => m?.username === value).length > 1)
-                          )
-                            throw new Error(tr("Tên đăng nhập bị trùng"));
-                        },
-                      },
-                    ]}
-                    normalize={(v: string) => v?.toLowerCase().trim()}
-                  >
-                    <Input autoComplete="off" placeholder="binh.tran" />
-                  </Form.Item>
-                  <Form.Item name={[field.name, "role"]} label={tr("Quyền")}>
-                    <Select
-                      options={ROLES.map((r) => ({
-                        value: r.value,
-                        label: r.label,
-                        title: r.description,
-                      }))}
-                      optionRender={(o) => (
-                        <div className="py-0.5">
-                          <div className="font-medium">{o.label}</div>
-                          <div className="whitespace-normal text-[12px] text-muted">{o.data.title}</div>
-                        </div>
-                      )}
-                    />
-                  </Form.Item>
-                  {detailed ? (
-                    <Form.Item name={[field.name, "unit"]} label={tr("Phòng ban")}>
-                      <Select options={unitOptions} />
-                    </Form.Item>
-                  ) : (
-                    <Form.Item name={[field.name, "title"]} label={tr("Chức vụ")}>
-                      <Input placeholder={tr("Kế toán, Bán hàng…")} />
-                    </Form.Item>
-                  )}
-                  <Form.Item
-                    name={[field.name, "email"]}
-                    label="Email"
-                    rules={[{ type: "email", message: tr("Email không hợp lệ") }]}
-                  >
-                    <Input inputMode="email" placeholder={tr("Không bắt buộc")} />
-                  </Form.Item>
-                  {detailed ? (
-                    <Form.Item name={[field.name, "title"]} label={tr("Chức vụ")}>
-                      <Input placeholder={tr("Không bắt buộc")} />
-                    </Form.Item>
-                  ) : (
-                    <Form.Item name={[field.name, "phone"]} label={tr("Điện thoại")} rules={[PHONE_RULE]}>
-                      <Input inputMode="tel" placeholder={tr("Không bắt buộc")} />
-                    </Form.Item>
-                  )}
-                </div>
-              </div>
-            ))}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+              )}
               <button
                 type="button"
                 className="auth-pill auth-pill--ghost h-9 px-4 text-[13px]"
@@ -482,27 +488,27 @@ const MembersStep = ({ form, draft }: { form: FormInstance; draft: Registration 
               >
                 <Plus className="h-4 w-4" strokeWidth={2} /> {tr(" Thêm thành viên")}
               </button>
-            </div>
-            <div className="space-y-2 pt-3">
-              <p className="text-[13px] font-medium text-body">{tr("Thêm nhanh nhiều người")}</p>
-              <Input.TextArea
-                value={bulk}
-                onChange={(e) => setBulk(e.target.value)}
-                autoSize={{ minRows: 2, maxRows: 6 }}
-                placeholder={tr("Mỗi dòng một họ tên, ví dụ:\nLê Thu Hà\nĐỗ Văn Nam")}
-              />
-              <button
-                type="button"
-                disabled={!bulk.trim()}
-                className="auth-pill auth-pill--ghost h-9 px-4 text-[13px]"
-                onClick={() => addMany(add)}
-              >
-                <Users className="h-4 w-4" strokeWidth={1.75} /> {tr(" Thêm vào danh sách")}
-              </button>
-            </div>
-          </div>
-        )}
-      </Form.List>
+              <div className="flex flex-col gap-2">
+                <p className="text-[13px] font-medium text-body">{tr("Thêm nhanh nhiều người")}</p>
+                <Input.TextArea
+                  value={bulk}
+                  onChange={(e) => setBulk(e.target.value)}
+                  autoSize={{ minRows: 3, maxRows: 6 }}
+                  placeholder={tr("Mỗi dòng một họ tên, ví dụ:\nLê Thu Hà\nĐỗ Văn Nam")}
+                />
+                <button
+                  type="button"
+                  disabled={!bulk.trim()}
+                  className="auth-pill auth-pill--ghost h-9 px-4 text-[13px]"
+                  onClick={() => addMany(add)}
+                >
+                  <Users className="h-4 w-4" strokeWidth={1.75} /> {tr(" Thêm vào danh sách")}
+                </button>
+              </div>
+            </>
+          )}
+        </Form.List>
+      </div>
     </Form>
   );
 };
@@ -545,7 +551,7 @@ const ToolsStep = ({
   const industry = industryOf(draft.company.industry);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[13px] text-muted">
           {tr("Luôn có sẵn: cơ cấu tổ chức, người dùng, phân quyền, danh mục, thông báo.")}
@@ -585,7 +591,7 @@ const ToolsStep = ({
               >
                 {on && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
               </span>
-              <span className="min-w-0 space-y-1">
+              <span className="min-w-0 flex flex-col gap-1">
                 <span className="block text-[14px] font-semibold text-ink">{m.name}</span>
                 <span className="block text-[12.5px] leading-snug text-muted">{m.description}</span>
                 {HEAVY_MODULES.has(m.code) && (
@@ -607,7 +613,7 @@ const ToolsStep = ({
 
 const Summary = ({ label, children, onEdit }: { label: string; children: ReactNode; onEdit: () => void }) => (
   <div className="flex items-start justify-between gap-4 border-b border-black/[0.06] py-3 last:border-0 dark:border-white/10">
-    <div className="min-w-0 space-y-0.5">
+    <div className="min-w-0 flex flex-col gap-0.5">
       <div className="text-[12px] font-medium uppercase tracking-[0.04em] text-muted">{label}</div>
       <div className="text-[14px] text-ink">{children}</div>
     </div>
@@ -637,6 +643,8 @@ const ReviewStep = ({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const names = new Map(status.modules.map((m) => [m.code, m.name]));
+  const hasTax = Boolean(draft.company.tax_code);
+  const needsTax = !hasTax && draft.size_band === "200+";
   const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? r;
   const unitName = (k?: string | null) => draft.units.find((u) => u.key === k)?.name ?? tr("Ban giám đốc");
 
@@ -668,13 +676,14 @@ const ReviewStep = ({
     });
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <div className="rounded-2xl border border-black/[0.06] bg-white/50 px-5 dark:border-white/10 dark:bg-white/[0.03]">
         <Summary label={tr("Chủ sở hữu")} onEdit={() => goTo("profile")}>
           {draft.owner.full_name} · {draft.owner.title} · <span className="font-mono">{draft.owner.username}</span>
         </Summary>
         <Summary label={tr("Doanh nghiệp")} onEdit={() => goTo("company")}>
-          {draft.company.legal_name} · {trf("MST {0}", [draft.company.tax_code])}
+          {draft.company.legal_name} ·{" "}
+          {draft.company.tax_code ? trf("MST {0}", [draft.company.tax_code]) : tr("MST khai sau")}
           {draft.company.industry && ` · ${draft.company.industry}`}
         </Summary>
         <Summary label={tr("Quy mô")} onEdit={() => goTo("size")}>
@@ -705,7 +714,7 @@ const ReviewStep = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-3">
             <FileSignature className="mt-0.5 h-5 w-5 shrink-0 text-bamboo-700" strokeWidth={1.75} />
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <div className="text-[14px] font-semibold text-ink">{tr("Xác thực bằng chữ ký số (tùy chọn)")}</div>
               <p className="text-[13px] leading-relaxed text-muted">
                 {tr(
@@ -716,7 +725,7 @@ const ReviewStep = ({
           </div>
           <Switch
             checked={sign}
-            disabled={busy || !status.signature_ready}
+            disabled={busy || !status.signature_ready || !hasTax}
             onChange={(v) => {
               setSign(v);
               setError(undefined);
@@ -724,6 +733,11 @@ const ReviewStep = ({
             aria-label={tr("Ký số đơn đăng ký ngay")}
           />
         </div>
+        {status.signature_ready && !hasTax && (
+          <p className="mt-3 text-[12.5px] text-muted">
+            {tr("Cần mã số thuế để ký đơn; khai mã số thuế sau rồi ký bổ sung ở Quản trị → Thông tin công ty.")}
+          </p>
+        )}
         {!status.signature_ready && (
           <p className="mt-3 text-[12.5px] text-muted">
             {tr(
@@ -732,14 +746,14 @@ const ReviewStep = ({
           </p>
         )}
         {sign && (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 flex flex-col gap-3">
             {!application ? (
               <button type="button" className="auth-pill auth-pill--ghost" disabled={busy} onClick={prepareSigning}>
                 <FileSignature className="h-4 w-4" strokeWidth={1.75} /> {tr(" Lập đơn đăng ký để ký")}
               </button>
             ) : (
               <>
-                <ol className="list-decimal space-y-1.5 pl-5 text-[13px] text-body">
+                <ol className="list-decimal flex flex-col gap-1.5 pl-5 text-[13px] text-body">
                   <li>
                     <a href={applicationPdfUrl(application)} download className="font-medium text-bamboo-700 underline">
                       {tr("Tải đơn đăng ký (PDF)")}
@@ -767,6 +781,22 @@ const ReviewStep = ({
         )}
       </div>
 
+      {needsTax && (
+        <Alert
+          type="warning"
+          showIcon
+          message={tr("Doanh nghiệp trên 200 người cần khai mã số thuế khi đăng ký.")}
+          action={
+            <button
+              type="button"
+              className="auth-pill auth-pill--ghost h-8 px-3 text-[13px]"
+              onClick={() => goTo("company")}
+            >
+              {tr("Khai mã số thuế")}
+            </button>
+          }
+        />
+      )}
       {error && <Alert type="error" showIcon message={error} />}
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
@@ -793,7 +823,7 @@ const ReviewStep = ({
             <button
               type="button"
               className="auth-pill auth-pill--primary min-w-[180px]"
-              disabled={busy || sign || !status.allow_unverified}
+              disabled={busy || sign || !status.allow_unverified || needsTax}
               onClick={() =>
                 draft.members.length === 0
                   ? modal.confirm({
@@ -823,8 +853,8 @@ const DoneView = ({ result }: { result: SetupResult }) => {
   const text = result.accounts.map((a) => `${a.full_name ?? ""}\t${a.role}\t${a.username}\t${a.password}`).join("\n");
   return (
     <div className="auth-card px-6 py-10 sm:px-12">
-      <div className="mx-auto max-w-[680px] space-y-6">
-        <div className="space-y-3 text-center">
+      <div className="mx-auto max-w-[680px] flex flex-col gap-6">
+        <div className="flex flex-col gap-3 text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-bamboo-600 text-white shadow-[var(--shadow-glass-active)]">
             <Check className="h-7 w-7" strokeWidth={2.5} />
           </span>
@@ -1040,7 +1070,7 @@ const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: Set
           </div>
         </div>
 
-        <header className="mb-6 space-y-1">
+        <header className="mb-6 flex flex-col gap-1">
           <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink">{info.title}</h1>
           <p className="text-[15px] text-body">{info.subtitle}</p>
         </header>
@@ -1096,7 +1126,7 @@ const SignupWizard = ({ status, onDone }: { status: SetupStatus; onDone: (r: Set
 const Notice = ({ title, children }: { title: string; children: ReactNode }) => (
   <div className="auth-card max-w-[560px] gap-4 px-8 py-10 sm:px-12">
     <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-ink">{title}</h1>
-    <div className="space-y-3 text-[15px] leading-relaxed text-body">{children}</div>
+    <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-body">{children}</div>
   </div>
 );
 

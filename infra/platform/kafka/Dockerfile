@@ -19,7 +19,7 @@
 
 FROM apache/kafka:4.3.1
 LABEL org.opencontainers.image.title="bamboo-kafka" \
-      org.opencontainers.image.description="Bamboo DX-OS: Kafka KRaft kèm SCRAM và ACL cho CDC" \
+      org.opencontainers.image.description="Bamboo: Kafka KRaft kèm SCRAM và ACL cho CDC" \
       org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"

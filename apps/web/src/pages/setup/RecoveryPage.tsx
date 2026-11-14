@@ -84,13 +84,13 @@ export const RecoveryPage = () => {
           </Form>
         )}
         {step === 1 && recovery && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <Typography.Paragraph>
               {tr("Công ty ")} <strong>{recovery.tenant_name}</strong>
               {tr(". Mã đơn")} <Typography.Text code>{recovery.nonce}</Typography.Text>
               {tr(", hết hạn lúc")} {dayjs(recovery.expires_at).format("HH:mm:ss")}.
             </Typography.Paragraph>
-            <ol className="list-decimal space-y-2 pl-5 text-[13.5px]">
+            <ol className="list-decimal flex flex-col gap-2 pl-5 text-[13.5px]">
               <li>
                 <a href={recoveryPdfUrl(recovery)} download>
                   {tr("Tải đơn khôi phục (PDF)")}
@@ -125,7 +125,7 @@ export const RecoveryPage = () => {
           </div>
         )}
         {step === 2 && result && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <Alert
               type="success"
               showIcon

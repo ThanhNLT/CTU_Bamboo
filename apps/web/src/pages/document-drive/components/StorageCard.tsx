@@ -96,7 +96,7 @@ export const StorageCard = ({
         </>
       )}
 
-      <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
+      <ul className="m-0 mt-3 list-none flex flex-col gap-1.5 p-0">
         {segments.map((s) => (
           <li key={s.key} className="flex items-center gap-2 text-[12px]">
             <span className={cn("h-2 w-2 shrink-0 rounded-ui", s.className)} aria-hidden />

@@ -329,7 +329,7 @@ export const PropertiesPanel = ({
               <CheckCircle2 className="h-4 w-4" aria-hidden /> {tr(" Không có vấn đề.")}
             </p>
           ) : (
-            <ul className="m-0 mt-2 list-none space-y-1.5 p-0">
+            <ul className="m-0 mt-2 list-none flex flex-col gap-1.5 p-0">
               {issues.map((i, n) => (
                 <li key={`${i.elementId}-${n}`}>
                   <button

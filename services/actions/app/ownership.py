@@ -147,6 +147,12 @@ def create_subsidiary(conn: psycopg.Connection, session: dict, args: dict, ctx: 
                 (tid, subject, account["full_name"], f"{company['code']}-0001", director),
             ).fetchone()[0]
             conn.execute("INSERT INTO core.tenant_owner (tenant_id, person_id) VALUES (%s, %s)", (tid, owner))
+            conn.execute("SELECT core.provision_tenant(%s)", (tid,))
+            conn.execute(
+                """INSERT INTO core.tenant_module (tenant_id, module, enabled_by)
+                   SELECT %s, module, %s FROM core.tenant_module WHERE tenant_id = %s""",
+                (tid, owner, tenant),
+            )
             if company["tax_code"]:
                 conn.execute(
                     """UPDATE core.tenant SET tax_code = %s, legal_name = %s, address = %s, legal_rep_name = %s,

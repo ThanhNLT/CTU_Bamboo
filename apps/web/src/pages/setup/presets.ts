@@ -98,7 +98,7 @@ export const INDUSTRIES: Industry[] = [
     units: [
       { name: tr("Bếp"), type: "PHONG" },
       { name: tr("Phục vụ"), type: "PHONG" },
-      { name: "Kho", type: "PHONG" },
+      { name: tr("Kho"), type: "PHONG" },
       { name: tr("Kế toán"), type: "PHONG" },
     ],
     modules: ["procurement"],
@@ -144,7 +144,7 @@ export const UNIT_TYPES: { value: string; label: string }[] = [
   { value: "PHAN_XUONG", label: tr("Phân xưởng") },
   { value: "TRUNG_TAM", label: tr("Trung tâm") },
   { value: "DOI", label: tr("Đội") },
-  { value: "KHOA", label: "Khoa" },
+  { value: "KHOA", label: tr("Khoa") },
 ];
 
 export const SIZES: { value: SizeBand; label: string; hint: string; flow: "quick" | "detailed" }[] = [

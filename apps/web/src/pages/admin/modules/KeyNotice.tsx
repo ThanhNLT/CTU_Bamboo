@@ -25,7 +25,7 @@ import type { ExtRegistered } from "../../../modules/api";
 import { tr } from "../../../i18n";
 
 export const KeyNotice = ({ r }: { r: ExtRegistered }) => (
-  <div className="space-y-2 text-[13px]">
+  <div className="flex flex-col gap-2 text-[13px]">
     {r.api_key && (
       <>
         <p className="m-0">

@@ -60,6 +60,11 @@ class FakeUsers:
         self.disabled.append(subject)
         return True
 
+    def delete(self, subject):
+        self.created.pop(subject, None)
+        self.disabled.append(subject)
+        return True
+
     def find(self, username):
         return next(({"id": sub} for sub, u in self.created.items() if u["username"] == username), None)
 
@@ -600,3 +605,56 @@ def test_dang_ky_du_lieu_sai(env):
     assert "Quy mô" in register(client, size_band="1000").json()["message"]
     r = register(client, company={"legal_name": "Hộ kinh doanh Bánh mì 37", "tax_code": "001088012345"})
     assert finish_unsigned(client, r).status_code == 200
+
+
+def test_dang_ky_trung_ma_so_thue_hoac_ma_cong_ty(env):
+    """Bản demo mở đăng ký: trùng mã số thuế báo 409 trước khi tạo tài khoản; mã tự sinh trùng thì thêm số."""
+    client, db = env["client"], env["db"]
+    issue_code(db)
+    assert finish_unsigned(client, register(client)).status_code == 200
+    settings = config.Settings(
+        **{**SETTINGS.__dict__, "database_url": db, "sleeper_url": "", "setup_open_signup": True}
+    )
+    with TestClient(main.create_app(settings, ctx=env["ctx"])) as opened:
+        owner = OWNER | {"username": "binh.tran", "email": "binh@minhanh.vn"}
+        r = register(opened, owner=owner)
+        assert r.status_code == 409 and r.json()["code"] == "tax-code-taken", r.text
+
+        company = {"legal_name": "Công ty TNHH Thương mại Minh Anh", "tax_code": "0398765432"}
+        r = register(opened, owner=owner, company=company)
+        assert r.json()["tenant_code"] == "THUONGMAIMINHANH2"
+        r = finish_unsigned(opened, r)
+        assert r.status_code == 200, r.text
+        assert r.json()["tenant_code"] == "THUONGMAIMINHANH2"
+
+        taken = company | {"tax_code": "0398765433", "code": "THUONGMAIMINHANH"}
+        r = register(opened, owner=owner | {"username": "chi.le", "email": None}, company=taken)
+        assert r.json()["code"] == "tenant-code-taken"
+
+
+def test_doanh_nghiep_nho_khai_ma_so_thue_sau(env):
+    client, db = env["client"], env["db"]
+    issue_code(db)
+    company = {"legal_name": "Công ty TNHH Lớn", "industry": "Sản xuất"}
+    assert register(client, company=company, size_band="200+").json()["message"].startswith("Doanh nghiệp trên 200")
+    r = register(client, company=company, size_band="11-50")
+    app_id, token = r.json()["application_id"], r.json()["token"]
+    assert client.get(f"/setup/applications/{app_id}/pdf", params={"token": token}).json()["code"] == (
+        "tax-code-missing"
+    )
+    r = finish_unsigned(client, r)
+    assert r.status_code == 200, r.text
+    assert one(db, "SELECT tax_code IS NULL AND address IS NULL FROM core.tenant") is True
+
+    tenant = str(one(db, "SELECT id FROM core.tenant"))
+    owner = str(one(db, "SELECT person_id FROM core.tenant_owner"))
+    r = action(client, "legal_update", {"tax_code": "0311 222 333", "address": "1 Lê Lợi, TP.HCM"}, owner, tenant)
+    assert r.status_code == 200, r.text
+    assert r.json()["tax_code"] == "0311222333" and r.json()["address"] == "1 Lê Lợi, TP.HCM"
+    assert action(client, "legal_update", {"tax_code": "12"}, owner, tenant).json()["message"].startswith("Mã số thuế")
+    with psycopg.connect(db) as conn, conn.transaction():
+        conn.execute("UPDATE core.tenant SET legal_status = 'VERIFIED'")
+    r = action(client, "legal_update", {"legal_name": "Tên khác"}, owner, tenant)
+    assert r.json()["extensions"]["code"] == "verified"
+    r = action(client, "legal_update", {"address": "2 Lê Lợi, TP.HCM"}, owner, tenant)
+    assert r.status_code == 200 and r.json()["address"] == "2 Lê Lợi, TP.HCM"

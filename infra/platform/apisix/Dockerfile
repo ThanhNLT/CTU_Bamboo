@@ -35,7 +35,7 @@ RUN sed -i 's/\r$//' /tmp/conf/config.yaml /tmp/conf/apisix.yaml \
 
 FROM apache/apisix:3.19.0-debian
 LABEL org.opencontainers.image.title="bamboo-gateway" \
-      org.opencontainers.image.description="Bamboo DX-OS: cổng API APISIX kèm WAF Coraza (OWASP CRS)" \
+      org.opencontainers.image.description="Bamboo: cổng API APISIX kèm WAF Coraza (OWASP CRS)" \
       org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"

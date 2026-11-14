@@ -33,7 +33,7 @@ export const AiSuggestionWidget = ({ suggestion }: { suggestion?: AiSuggestion }
     </h3>
     {suggestion ? (
       <>
-        <ul className="m-0 mt-2.5 list-disc space-y-1 pl-4 text-[12.5px] leading-relaxed text-body marker:text-bamboo-500">
+        <ul className="m-0 mt-2.5 list-disc flex flex-col gap-1 pl-4 text-[12.5px] leading-relaxed text-body marker:text-bamboo-500">
           {suggestion.bullets.map((b) => (
             <li key={b}>{b}</li>
           ))}

@@ -122,7 +122,7 @@ export const NodeQualityPanel = ({
         {node.checks.length === 0 ? (
           <p className="mt-2.5 text-[12.5px] text-muted">{tr("Chưa có kiểm tra Soda cho tài sản này.")}</p>
         ) : (
-          <ul className="m-0 mt-2.5 list-none space-y-3 p-0">
+          <ul className="m-0 mt-2.5 list-none flex flex-col gap-3 p-0">
             {node.checks.map((c) => (
               <li key={c.rule} className="flex items-start gap-2.5">
                 {c.passed ? (
@@ -148,7 +148,7 @@ export const NodeQualityPanel = ({
         {impacts.length === 0 ? (
           <p className="mt-2.5 text-[12.5px] text-muted">{tr("Không có tài sản nào dùng dữ liệu này.")}</p>
         ) : (
-          <ul className="m-0 mt-2.5 list-none space-y-2.5 p-0">
+          <ul className="m-0 mt-2.5 list-none flex flex-col gap-2.5 p-0">
             {impacts.map((n) => {
               const s = statuses.get(n.id) ?? "healthy";
               return (

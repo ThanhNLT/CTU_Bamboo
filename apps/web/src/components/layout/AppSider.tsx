@@ -163,7 +163,6 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         {!collapsed && (
           <span className="leading-tight">
             <span className="block text-[15px] font-bold tracking-[0.14em] text-ink">BAMBOO</span>
-            <span className="block text-[11px] text-muted">DX-OS Open-Core</span>
           </span>
         )}
       </Link>
@@ -176,7 +175,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
           <NavGate key={group.code} access={group.access}>
             <div className="mt-3 first:mt-1 [&:first-child>[role=separator]]:hidden">
               <div role="separator" className={cn("mb-3 h-px bg-line", collapsed ? "mx-2" : "mx-2.5")} />
-              <ul className="m-0 list-none space-y-0.5 p-0" aria-label={t(group.label)}>
+              <ul className="m-0 list-none flex flex-col gap-0.5 p-0" aria-label={t(group.label)}>
                 {group.items.map((item) => (
                   <NavGate key={item.key} access={item.access}>
                     <li>
@@ -195,7 +194,7 @@ export const SiderContent = ({ collapsed = false, onNavigate }: SiderProps) => {
         ))}
       </nav>
 
-      <div className={cn("shrink-0 space-y-2 border-t border-line/70 py-3", collapsed ? "px-2" : "px-3")}>
+      <div className={cn("shrink-0 flex flex-col gap-2 border-t border-line/70 py-3", collapsed ? "px-2" : "px-3")}>
         <a
           href="#design-system"
           className={cn(

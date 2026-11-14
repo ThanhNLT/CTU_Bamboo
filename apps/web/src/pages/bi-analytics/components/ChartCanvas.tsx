@@ -58,7 +58,7 @@ const Tip = ({
   return (
     <div className="max-w-[320px] rounded-xl border border-line bg-surface px-3 py-2 text-[12px] shadow-float">
       {label != null && <div className="mb-1 font-semibold text-ink">{label}</div>}
-      <ul className="m-0 list-none space-y-0.5 p-0">
+      <ul className="m-0 list-none flex flex-col gap-0.5 p-0">
         {payload.map((p) => {
           const s = pivot.series.find((x) => x.key === p.dataKey);
           return (

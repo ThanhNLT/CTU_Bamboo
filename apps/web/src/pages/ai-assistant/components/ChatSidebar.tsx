@@ -82,7 +82,7 @@ export const ChatSidebar = ({
               <h2 className="px-2 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
                 {GROUP_LABEL[g]}
               </h2>
-              <ul className="m-0 list-none space-y-0.5 p-0">
+              <ul className="m-0 list-none flex flex-col gap-0.5 p-0">
                 {items.map((x) => {
                   const active = x.id === activeId;
                   return (

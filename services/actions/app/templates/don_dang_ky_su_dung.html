@@ -42,7 +42,7 @@
 </head>
 <body>
 <h1>{{ title }}</h1>
-<div class="to">{{ _("Kính gửi: Bộ phận quản trị hệ thống Bamboo DX-OS cài đặt tại doanh nghiệp") }}</div>
+<div class="to">{{ _("Kính gửi: Bộ phận quản trị hệ thống Bamboo cài đặt tại doanh nghiệp") }}</div>
 
 <h2>{{ _("1. Thông tin doanh nghiệp") }}</h2>
 <table>
@@ -60,13 +60,13 @@
   {% if a.admin %}<tr><td>{{ _("Quản trị viên") }}</td><td>{{ a.admin.full_name }} · {{ a.admin.username }}{% if a.admin.email %} · {{ a.admin.email }}{% endif %}</td></tr>{% endif %}
 </table>
 <h2>{{ _("3. Cam kết") }}</h2>
-<p>{{ _("Doanh nghiệp đề nghị khởi tạo công ty trên hệ thống Bamboo DX-OS với các thông tin trên và cam kết các thông tin là đúng với đăng ký doanh nghiệp. Chủ sở hữu là người duy nhất được trao, thu hồi quyền quản trị; tài khoản chủ sở hữu và quản trị viên bắt buộc đăng nhập hai lớp. Doanh nghiệp chịu trách nhiệm quản lý các tài khoản này.") }}</p>
+<p>{{ _("Doanh nghiệp đề nghị khởi tạo công ty trên hệ thống Bamboo với các thông tin trên và cam kết các thông tin là đúng với đăng ký doanh nghiệp. Chủ sở hữu là người duy nhất được trao, thu hồi quyền quản trị; tài khoản chủ sở hữu và quản trị viên bắt buộc đăng nhập hai lớp. Doanh nghiệp chịu trách nhiệm quản lý các tài khoản này.") }}</p>
 {% elif a.purpose == 'RECOVER' %}
 <h2>{{ _("2. Đề nghị") }}</h2>
-<p>{{ _("Doanh nghiệp đề nghị đặt lại mật khẩu và mã xác thực hai lớp của tài khoản chủ sở hữu công ty trên hệ thống Bamboo DX-OS. Mật khẩu tạm mới chỉ hiện một lần cho người tải lên đơn đã ký; lần đăng nhập tới phải đổi mật khẩu và cài lại mã xác thực hai lớp. Mọi quản trị viên của công ty được thông báo về việc khôi phục.") }}</p>
+<p>{{ _("Doanh nghiệp đề nghị đặt lại mật khẩu và mã xác thực hai lớp của tài khoản chủ sở hữu công ty trên hệ thống Bamboo. Mật khẩu tạm mới chỉ hiện một lần cho người tải lên đơn đã ký; lần đăng nhập tới phải đổi mật khẩu và cài lại mã xác thực hai lớp. Mọi quản trị viên của công ty được thông báo về việc khôi phục.") }}</p>
 {% else %}
 <h2>{{ _("2. Đề nghị") }}</h2>
-<p>{{ _("Doanh nghiệp đề nghị xác thực thông tin pháp lý của công ty trên hệ thống Bamboo DX-OS bằng chữ ký số của doanh nghiệp và cam kết các thông tin trên là đúng với đăng ký doanh nghiệp.") }}</p>
+<p>{{ _("Doanh nghiệp đề nghị xác thực thông tin pháp lý của công ty trên hệ thống Bamboo bằng chữ ký số của doanh nghiệp và cam kết các thông tin trên là đúng với đăng ký doanh nghiệp.") }}</p>
 {% endif %}
 
 <p>{{ _("Mã đơn:") }} <span class="code">{{ a.nonce }}</span> {{ _("— đơn hết hiệu lực lúc") }} {{ expires }}.</p>

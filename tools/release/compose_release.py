@@ -71,7 +71,7 @@ def main() -> None:
     lines = [f"@version {version}" if x.startswith("@version ") else x for x in lines]
     header = (
         "".join(f"# {x}".rstrip() + "\n" for x in lines) + "\n"
-        f"# Bamboo DX-OS {version}: toàn bộ hệ thống từ image dựng sẵn, không cần mã nguồn.\n"
+        f"# Bamboo {version}: toàn bộ hệ thống từ image dựng sẵn, không cần mã nguồn.\n"
         "#   docker compose -f compose.release.yml up -d\n"
         "# Sinh tự động bằng tools/release/compose_release.py; đừng sửa tay.\n"
     )

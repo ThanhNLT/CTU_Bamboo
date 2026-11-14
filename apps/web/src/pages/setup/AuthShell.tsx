@@ -41,7 +41,7 @@ export const AuthShell = ({ children, wide = false }: { children: ReactNode; wid
       <header className={cn("flex w-full items-center justify-between", wide ? "max-w-[1080px]" : "max-w-[880px]")}>
         <a href="/login" className="flex items-center gap-2.5 text-ink no-underline">
           <BambooLogo className="h-8 w-8 drop-shadow-[0_4px_8px_rgb(19_58_30_/_0.25)]" />
-          <span className="text-[17px] font-semibold tracking-[-0.02em] text-ink">Bamboo DX-OS</span>
+          <span className="text-[17px] font-semibold tracking-[-0.02em] text-ink">Bamboo</span>
         </a>
         <div className="flex items-center gap-2">
           <LocaleToggle />

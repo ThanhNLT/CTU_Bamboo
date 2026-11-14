@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "Bamboo DX-OS Open-Core: gốc workspace JS (pnpm + Turborepo); Python quản lý bằng uv/make",
+  "description": "Bamboo: gốc workspace JS (pnpm + Turborepo); Python quản lý bằng uv/make",
   "packageManager": "pnpm@12.16.1",
   "engines": {
     "node": ">=20"

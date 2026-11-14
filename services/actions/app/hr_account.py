@@ -170,7 +170,7 @@ class KeycloakUsers:
         return True
 
     def delete(self, subject: str) -> bool:
-        """Xóa hẳn tài khoản (chỉ dùng khi dọn tài khoản thử của E2E trên CSDL demo, tools/demo_cleanup.sh)."""
+        """Xóa hẳn tài khoản: gỡ tài khoản vừa tạo khi đăng ký lỗi, dọn tài khoản thử E2E (tools/demo_cleanup.sh)."""
         resp = self.http.delete(f"/users/{subject}", headers=self._headers())
         if resp.status_code == 404:
             return False

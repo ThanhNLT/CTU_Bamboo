@@ -545,7 +545,7 @@ function App() {
                 </Suspense>
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler
-                  handler={({ resource }) => `${resource?.meta?.label ?? "Bamboo"} | Bamboo DX-OS`}
+                  handler={({ resource }) => (resource?.meta?.label ? `${resource.meta.label} | Bamboo` : "Bamboo")}
                 />
               </Refine>
             </AntdApp>

@@ -49,7 +49,7 @@ export const HeroSection = ({ user, now = dayjs() }: { user: DashboardUser; now?
   const go = useGo();
   return (
     <div className="flex flex-col gap-5 px-1 pt-2 lg:flex-row lg:items-end lg:justify-between">
-      <div className="min-w-0 space-y-3">
+      <div className="min-w-0 flex flex-col gap-3">
         <h1 className="text-[30px] font-semibold leading-[1.1] tracking-[-0.025em] text-ink sm:text-[36px]">
           {greeting(now.hour())},<br className="sm:hidden" /> {user.name}
         </h1>

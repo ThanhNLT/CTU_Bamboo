@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-import { App, Descriptions, Spin, Tag, Upload } from "antd";
+import { App, Descriptions, Form, Input, Modal, Spin, Tag, Upload } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../../api/client";
@@ -35,6 +35,7 @@ import { formatDate } from "../../../utils/format";
 type LegalStatus = {
   tax_code: string | null;
   legal_name: string | null;
+  address: string | null;
   legal_rep_name: string | null;
   legal_status: "VERIFIED" | "UNVERIFIED" | null;
   is_owner: boolean;
@@ -51,7 +52,7 @@ type LegalApplication = {
   file_name: string;
 };
 
-const FIELDS = `tax_code legal_name legal_rep_name legal_status is_owner has_owner signature_ready
+const FIELDS = `tax_code legal_name address legal_rep_name legal_status is_owner has_owner signature_ready
   verification { signer_subject issuer signed_at verified_at }`;
 
 const download = (a: LegalApplication) => {
@@ -75,6 +76,8 @@ export const CompanyPage = () => {
   const [data, setData] = useState<LegalStatus>();
   const [application, setApplication] = useState<LegalApplication>();
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [form] = Form.useForm();
 
   const load = useCallback(
     () =>
@@ -120,6 +123,24 @@ export const CompanyPage = () => {
     }
   };
 
+  const save = async () => {
+    const v = (await form.validateFields()) as { tax_code?: string; legal_name?: string; address?: string };
+    setBusy(true);
+    try {
+      const r = await request<{ legal_update: LegalStatus }>(
+        `mutation LegalUpdate($tax_code: String, $legal_name: String, $address: String) { legal_update(tax_code: $tax_code, legal_name: $legal_name, address: $address) { ${FIELDS} } }`,
+        { tax_code: v.tax_code || null, legal_name: v.legal_name || null, address: v.address || null },
+      );
+      setData(r.legal_update);
+      setEditing(false);
+      message.success(tr("Đã cập nhật thông tin công ty."));
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!data)
     return (
       <div className="flex justify-center py-24">
@@ -137,10 +158,34 @@ export const CompanyPage = () => {
           </>
         }
       />
-      <Panel title={tr("Thông tin pháp lý")} extra={data.legal_status && STATUS[data.legal_status]}>
+      <Panel
+        title={tr("Thông tin pháp lý")}
+        extra={
+          <div className="flex items-center gap-2">
+            {data.legal_status && STATUS[data.legal_status]}
+            {data.is_owner && (
+              <button
+                type="button"
+                className={secondaryButtonClass}
+                onClick={() => {
+                  form.setFieldsValue({
+                    tax_code: data.tax_code ?? "",
+                    legal_name: data.legal_name ?? "",
+                    address: data.address ?? "",
+                  });
+                  setEditing(true);
+                }}
+              >
+                {data.tax_code && data.address ? tr("Sửa thông tin") : tr("Bổ sung thông tin")}
+              </button>
+            )}
+          </div>
+        }
+      >
         <Descriptions column={1} size="small" bordered>
           <Descriptions.Item label={tr("Tên doanh nghiệp")}>{data.legal_name ?? tenant.tenant_name}</Descriptions.Item>
           <Descriptions.Item label={tr("Mã số thuế")}>{data.tax_code ?? tr("Chưa khai")}</Descriptions.Item>
+          <Descriptions.Item label={tr("Địa chỉ trụ sở")}>{data.address ?? tr("Chưa khai")}</Descriptions.Item>
           <Descriptions.Item label={tr("Người đại diện theo pháp luật")}>
             {data.legal_rep_name ?? tr("Chưa khai")}
           </Descriptions.Item>
@@ -169,6 +214,44 @@ export const CompanyPage = () => {
         </p>
       </Panel>
 
+      <Modal
+        open={editing}
+        title={tr("Thông tin pháp lý")}
+        okText={tr("Lưu")}
+        cancelText={tr("Hủy")}
+        confirmLoading={busy}
+        onOk={() => void save()}
+        onCancel={() => setEditing(false)}
+        forceRender
+      >
+        <Form form={form} layout="vertical" requiredMark={false}>
+          {data.legal_status === "VERIFIED" && (
+            <p className="mt-0 text-[13px] text-muted">
+              {tr("Công ty đã xác thực bằng chữ ký số nên chỉ sửa được địa chỉ trụ sở.")}
+            </p>
+          )}
+          <Form.Item name="legal_name" label={tr("Tên doanh nghiệp")}>
+            <Input disabled={data.legal_status === "VERIFIED"} />
+          </Form.Item>
+          <Form.Item
+            name="tax_code"
+            label={tr("Mã số thuế")}
+            normalize={(v: string) => v?.replace(/\s/g, "")}
+            rules={[
+              {
+                pattern: /^(\d{10}(-\d{3})?|\d{12})$/,
+                message: tr("10 chữ số (13 với chi nhánh, 12 với hộ kinh doanh)"),
+              },
+            ]}
+          >
+            <Input inputMode="numeric" disabled={data.legal_status === "VERIFIED"} />
+          </Form.Item>
+          <Form.Item name="address" label={tr("Địa chỉ trụ sở")}>
+            <Input autoComplete="street-address" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
       {data.is_owner && <OwnerTools onTransferred={() => void load()} />}
 
       {data.is_owner && data.legal_status === "UNVERIFIED" && (
@@ -180,13 +263,18 @@ export const CompanyPage = () => {
               )}
             </p>
           )}
-          <ol className="mt-0 list-decimal space-y-1.5 pl-5 text-[13px] text-body">
+          <ol className="mt-0 list-decimal flex flex-col gap-1.5 pl-5 text-[13px] text-body">
             <li>{tr("Lập đơn xác thực: hệ thống tải về tệp PDF có mã đơn, hiệu lực 30 phút.")}</li>
             <li>{tr("Ký số tệp bằng chữ ký số (USB token) của doanh nghiệp, không sửa tệp.")}</li>
             <li>{tr("Tải tệp đã ký lên.")}</li>
           </ol>
+          {!data.tax_code && (
+            <p className="mt-0 text-[13px] text-amber-700">
+              {tr("Khai mã số thuế (Bổ sung thông tin) trước khi lập đơn xác thực.")}
+            </p>
+          )}
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button type="button" className={secondaryButtonClass} disabled={busy} onClick={start}>
+            <button type="button" className={secondaryButtonClass} disabled={busy || !data.tax_code} onClick={start}>
               {application ? tr("Lập lại đơn xác thực") : tr("Lập đơn xác thực")}
             </button>
             {application && (
