@@ -144,7 +144,7 @@ export const DocumentDetail = ({
               <h3 id="kb-toc" className="text-[13.5px] font-semibold text-ink">
                 {tr("Mục lục")}
               </h3>
-              <ol className="m-0 mt-2 list-decimal space-y-0.5 pl-5 text-[13px] leading-relaxed text-body marker:text-muted">
+              <ol className="m-0 mt-2 list-decimal flex flex-col gap-0.5 pl-5 text-[13px] leading-relaxed text-body marker:text-muted">
                 {doc.toc.map((t) => (
                   <li key={t}>{t}</li>
                 ))}
@@ -159,7 +159,7 @@ export const DocumentDetail = ({
             {doc.files.length === 0 ? (
               <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Tài liệu chưa có tệp đính kèm.")}</p>
             ) : (
-              <ul className="m-0 mt-2 list-none space-y-1.5 p-0">
+              <ul className="m-0 mt-2 list-none flex flex-col gap-1.5 p-0">
                 {doc.files.map((f) => (
                   <li key={f.id} className="flex items-center justify-between gap-3 rounded-lg bg-canvas px-3 py-2">
                     <span className="min-w-0 truncate text-[13px] text-ink">
@@ -181,7 +181,7 @@ export const DocumentDetail = ({
               {doc.previous.length === 0 ? (
                 <p className="m-0 mt-2 text-[12.5px] text-muted">{tr("Đây là phiên bản đầu tiên.")}</p>
               ) : (
-                <ul className="m-0 mt-2 list-none space-y-1 p-0 text-[12.5px] text-body">
+                <ul className="m-0 mt-2 list-none flex flex-col gap-1 p-0 text-[12.5px] text-body">
                   {doc.previous.map((p) => (
                     <li key={p.id}>
                       v{p.version} · <span className="font-mono">{p.doc_no}</span> {tr(" · ngừng hiệu lực")}

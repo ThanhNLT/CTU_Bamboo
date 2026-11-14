@@ -229,8 +229,8 @@ export const EN_PAGES: Record<string, string> = {
   ": mã nhân viên {0}": ": employee code {0}",
   ": vị trí đang giữ và tài khoản đăng nhập": ": current positions and sign-in accounts",
   "; nhân viên giữ nguyên vị trí cũ.": "; the employee keeps their current position.",
-  '<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Chứng nhận đối soát {0} v{1}</title>\n<style>\n  body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#1b231e;margin:48px;}\n  h1{font-size:22px;margin:0 0 4px} p{margin:0;color:#6b7670;font-size:13px}\n  .badge{display:inline-block;margin:20px 0;padding:6px 14px;border-radius:10px;font-weight:600;font-size:14px;\n    background:{2};color:{3};border:1px solid {4}}\n  table{border-collapse:collapse;width:100%;font-size:13px} td{padding:8px 0;border-bottom:1px solid #e4e9e5;vertical-align:top}\n  td:first-child{width:180px;color:#6b7670} .mono{font-family:"JetBrains Mono",Menlo,Consolas,monospace;word-break:break-all}\n  footer{margin-top:28px;font-size:11.5px;color:#6b7670}\n</style></head><body>\n<h1>Chứng nhận đối soát toàn vẹn</h1><p>Bamboo · DX-OS Open-Core · Sổ cái (chuỗi hash nhật ký kiểm toán)</p>\n<div class="badge">{5}</div>\n<table>{6}</table>\n<footer>Kiểm chứng lại: tính SHA-256 của tệp gốc và so với SHA-256 đã niêm phong; dòng nhật ký #{7} nằm trong chuỗi hash kiểm toán của {8}. Tài liệu được tạo tự động.</footer>\n<script>window.onload=function(){window.print()}</script>\n</body></html>':
-    '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reconciliation certificate {0} v{1}</title>\n<style>\n  body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#1b231e;margin:48px;}\n  h1{font-size:22px;margin:0 0 4px} p{margin:0;color:#6b7670;font-size:13px}\n  .badge{display:inline-block;margin:20px 0;padding:6px 14px;border-radius:10px;font-weight:600;font-size:14px;\n    background:{2};color:{3};border:1px solid {4}}\n  table{border-collapse:collapse;width:100%;font-size:13px} td{padding:8px 0;border-bottom:1px solid #e4e9e5;vertical-align:top}\n  td:first-child{width:180px;color:#6b7670} .mono{font-family:"JetBrains Mono",Menlo,Consolas,monospace;word-break:break-all}\n  footer{margin-top:28px;font-size:11.5px;color:#6b7670}\n</style></head><body>\n<h1>Integrity reconciliation certificate</h1><p>Bamboo · DX-OS Open-Core · Ledger (audit log hash chain)</p>\n<div class="badge">{5}</div>\n<table>{6}</table>\n<footer>To verify again: compute the SHA-256 of the original file and compare it with the sealed SHA-256; log line #{7} is in the audit hash chain of {8}. This document was generated automatically.</footer>\n<script>window.onload=function(){window.print()}</script>\n</body></html>',
+  '<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Chứng nhận đối soát {0} v{1}</title>\n<style>\n  body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#1b231e;margin:48px;}\n  h1{font-size:22px;margin:0 0 4px} p{margin:0;color:#6b7670;font-size:13px}\n  .badge{display:inline-block;margin:20px 0;padding:6px 14px;border-radius:10px;font-weight:600;font-size:14px;\n    background:{2};color:{3};border:1px solid {4}}\n  table{border-collapse:collapse;width:100%;font-size:13px} td{padding:8px 0;border-bottom:1px solid #e4e9e5;vertical-align:top}\n  td:first-child{width:180px;color:#6b7670} .mono{font-family:"JetBrains Mono",Menlo,Consolas,monospace;word-break:break-all}\n  footer{margin-top:28px;font-size:11.5px;color:#6b7670}\n</style></head><body>\n<h1>Chứng nhận đối soát toàn vẹn</h1><p>Bamboo · Sổ cái (chuỗi hash nhật ký kiểm toán)</p>\n<div class="badge">{5}</div>\n<table>{6}</table>\n<footer>Kiểm chứng lại: tính SHA-256 của tệp gốc và so với SHA-256 đã niêm phong; dòng nhật ký #{7} nằm trong chuỗi hash kiểm toán của {8}. Tài liệu được tạo tự động.</footer>\n<script>window.onload=function(){window.print()}</script>\n</body></html>':
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reconciliation certificate {0} v{1}</title>\n<style>\n  body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#1b231e;margin:48px;}\n  h1{font-size:22px;margin:0 0 4px} p{margin:0;color:#6b7670;font-size:13px}\n  .badge{display:inline-block;margin:20px 0;padding:6px 14px;border-radius:10px;font-weight:600;font-size:14px;\n    background:{2};color:{3};border:1px solid {4}}\n  table{border-collapse:collapse;width:100%;font-size:13px} td{padding:8px 0;border-bottom:1px solid #e4e9e5;vertical-align:top}\n  td:first-child{width:180px;color:#6b7670} .mono{font-family:"JetBrains Mono",Menlo,Consolas,monospace;word-break:break-all}\n  footer{margin-top:28px;font-size:11.5px;color:#6b7670}\n</style></head><body>\n<h1>Integrity reconciliation certificate</h1><p>Bamboo · Ledger (audit log hash chain)</p>\n<div class="badge">{5}</div>\n<table>{6}</table>\n<footer>To verify again: compute the SHA-256 of the original file and compare it with the sealed SHA-256; log line #{7} is in the audit hash chain of {8}. This document was generated automatically.</footer>\n<script>window.onload=function(){window.print()}</script>\n</body></html>',
   "Ban giám đốc": "Board of directors",
   "Ban hành": "Issue",
   "Ban hành quyết định": "Issue decision",
@@ -830,7 +830,7 @@ export const EN_PAGES: Record<string, string> = {
   "Gộp cả hai, xếp theo độ phù hợp": "Combine both, ranked by relevance",
   "Gỡ khỏi máy": "Remove from server",
   "Gỡ {0} khỏi máy chủ?": "Remove {0} from the server?",
-  "Gợi ý": "Suggestions",
+  "Gợi ý": "Suggested",
   "Gợi ý của trợ lý": "Assistant suggestions",
   Gửi: "Send",
   "Gửi báo cáo": "Send report",
@@ -1538,6 +1538,25 @@ export const EN_PAGES: Record<string, string> = {
   Nộp: "Submit",
   "Nộp · đang soạn": "Submit · drafting",
   Nữ: "Female",
+  Nam: "Male",
+  Nhanh: "Quick",
+  Kho: "Warehouse",
+  Khoa: "Department",
+  "Doanh nghiệp đến 200 người được bỏ trống và khai sau ở Quản trị → Thông tin công ty.":
+    "Businesses with up to 200 people may leave this blank and add it later in Administration → Company information.",
+  "MST khai sau": "Tax code to be added later",
+  "Cần mã số thuế để ký đơn; khai mã số thuế sau rồi ký bổ sung ở Quản trị → Thông tin công ty.":
+    "A tax code is needed to sign; add it later, then sign in Administration → Company information.",
+  "Doanh nghiệp trên 200 người cần khai mã số thuế khi đăng ký.":
+    "Businesses with more than 200 people must provide a tax code when signing up.",
+  "Khai mã số thuế": "Add tax code",
+  "Đã cập nhật thông tin công ty.": "Company information updated.",
+  "Sửa thông tin": "Edit information",
+  "Bổ sung thông tin": "Complete information",
+  "Công ty đã xác thực bằng chữ ký số nên chỉ sửa được địa chỉ trụ sở.":
+    "The company is verified by digital signature, so only the head office address can be edited.",
+  "Khai mã số thuế (Bổ sung thông tin) trước khi lập đơn xác thực.":
+    "Add the tax code (Complete information) before preparing the verification application.",
   "OCR không đọc được tệp.": "OCR could not read the file.",
   "OCR lỗi": "OCR error",
   "Ollama chưa chạy nên chưa lấy được danh mục mô hình.": "Ollama is not running, so the model list is not available.",
@@ -3128,7 +3147,9 @@ export const EN_PAGES: Record<string, string> = {
   "Đang lập kế hoạch": "Planning",
   "Đang thực hiện": "Active",
   "Tạm dừng": "On hold",
-  "Quản lý dự án": "Project manager",
+  "Quản lý dự án": "Project management",
+  "Kế hoạch dự án chi tiết, WBS, phụ thuộc, sơ đồ Gantt, đường găng, báo cáo tiến độ theo kỳ":
+    "Detailed project plans, WBS, dependencies, Gantt chart, critical path, periodic progress reports",
   "Đúng tiến độ": "On track",
   "Có nguy cơ chậm": "At risk",
   "Chậm tiến độ": "Behind schedule",

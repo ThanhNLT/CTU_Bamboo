@@ -185,7 +185,7 @@ const RRULE: Record<Recurrence, string> = { NONE: "", DAILY: "DAILY", WEEKLY: "W
 
 export const toIcs = (events: CalEvent[]) => {
   const seen = new Set<string>();
-  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bamboo DX-OS//Lich cong tac//VI", "CALSCALE:GREGORIAN"];
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bamboo//Lich cong tac//VI", "CALSCALE:GREGORIAN"];
   for (const e of events) {
     if (seen.has(e.id)) continue;
     seen.add(e.id);

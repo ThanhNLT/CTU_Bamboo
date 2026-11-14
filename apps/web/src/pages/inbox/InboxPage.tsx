@@ -106,7 +106,7 @@ export const InboxPage = () => {
     modal.confirm({
       title: `${t.verb} ${task.code}?`,
       content: (
-        <div className="space-y-1.5 text-[13px]">
+        <div className="flex flex-col gap-1.5 text-[13px]">
           <p className="font-medium text-ink">{task.title}</p>
           {comment && (
             <p className="text-body">

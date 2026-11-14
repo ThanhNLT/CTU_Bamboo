@@ -77,7 +77,7 @@ export const FormsTab = ({
             <p className="m-0 mt-1 text-[11.5px] text-muted">
               {usedBy[f.key]?.length ? trf("Dùng ở: {0}", [usedBy[f.key].join(", ")]) : tr("Chưa gắn vào tác vụ nào")}
             </p>
-            <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
+            <ul className="m-0 mt-3 list-none flex flex-col gap-1.5 p-0">
               {f.fields.map((fd, j) => (
                 <li key={j} className="flex items-center gap-2">
                   <Input

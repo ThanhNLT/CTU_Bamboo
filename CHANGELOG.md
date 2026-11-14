@@ -25,9 +25,25 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
-## [0.5.1] - 2026-11-13
+## [0.5.1] - 2026-11-14
 
-**Nâng cấp:** `git pull` rồi `docker compose up -d --build` (hoặc `make up`); image `gateway`, `sleeper` đổi. Ai có dòng `COMPOSE_FILE=compose.yaml:infra/compose/gpu.yml` trong `.env` thì xóa dòng đó (xem mục dưới). Không có migration mới.
+**Nâng cấp:** `git pull` rồi `docker compose up -d --build` (hoặc `make up`): image `actions`, `web`, `gateway`, `sleeper` đổi, migration mới `060_quyen_cong_ty_moi.sql`, `061_chat_khong_bang_tam.sql` (job `migrate` tự áp), metadata Hasura thêm Action `legal_update`, `bootstrap` đổi cấu hình User Profile của realm `bms`. Ai có dòng `COMPOSE_FILE=compose.yaml:infra/compose/gpu.yml` trong `.env` thì xóa dòng đó (xem mục dưới). Tài khoản tạo từ những lần đăng ký lỗi trước bản này không thuộc công ty nào: xóa ở Keycloak (`http://localhost:8080` → realm `bms` → **Users**) rồi đăng ký lại.
+
+**Sửa "Chưa khởi tạo được công ty do lỗi máy chủ" khi bấm Tạo tài khoản doanh nghiệp (nguyên nhân thật của lỗi 500):** trigger đồng bộ kênh chat theo đơn vị (`chat.sync_units`, migration 055) tạo bảng tạm, nhưng vai trò ứng dụng `bamboo_actions`, `bamboo_hasura` không có quyền `TEMPORARY` trên CSDL (`db/roles/roles.sql` thu hồi khỏi `PUBLIC`), nên mọi thao tác của ứng dụng lên cơ cấu tổ chức báo `permission denied to create temporary tables`: tạo công ty khi đăng ký, tạo công ty thành viên, thêm đơn vị, bổ nhiệm, điều chuyển nhân sự. Dữ liệu demo do `seed` nạp bằng chủ CSDL nên không gặp. Migration 061 viết lại hàm bằng CTE, không cần bảng tạm; giữ nguyên chính sách thu hồi `TEMPORARY`. Kiểm thử mới chạy đăng ký bằng đúng vai trò ứng dụng (`db/tests/bms_460_vai_tro_ung_dung.sql`, `services/actions/tests/test_cong_ty_moi.py`).
+
+**Log lỗi hiện trong `docker compose logs`:** log của dịch vụ Python chỉ ghi vào CSDL (`obs.log_event`), nay mức WARNING trở lên ghi thêm ra stderr (đã che dữ liệu cá nhân).
+
+**Công ty mới dùng được ngay mọi công cụ đã chọn:** vai trò dựng sẵn của công ty tạo qua trang đăng ký chỉ có quyền mua sắm, duyệt (các mã quyền thêm sau chỉ seed cấp cho công ty demo), nên mô-đun đã bật mà người dùng vẫn bị chặn; tài liệu gửi vào thư viện tri thức không có quy tắc duyệt. Hàm mới `core.provision_tenant` cấp đủ quyền theo vai trò (nhân viên: mua sắm, đề xuất tài liệu; trưởng bộ phận: thêm duyệt, tiếp nhận và điều chuyển nhân sự, đơn hàng nội bộ, dự án, lịch đơn vị, số liệu điều hành; kế toán/kiểm soát: kiểm toán, Lakehouse, số liệu điều hành; chủ sở hữu và quản trị viên: mọi quyền) và quy tắc duyệt mặc định cho mua sắm, tiếp nhận nhân sự, thư viện tri thức; chạy khi đăng ký, khi tạo công ty thành viên và một lần cho các công ty đã đăng ký. Công ty thành viên bật sẵn các mô-đun đang bật của công ty mẹ (trước đây không bật mô-đun nào). Dữ liệu demo giữ nguyên phân quyền theo kịch bản.
+
+**Keycloak giữ thuộc tính đánh dấu tài khoản:** Keycloak 26 âm thầm bỏ thuộc tính chưa khai trong User Profile (`bamboo_setup_application`, `bamboo_onboarding_request`), nên gửi lại đơn đăng ký hoặc đề nghị tiếp nhận nhân sự luôn bị báo trùng tài khoản. `bootstrap` đặt `unmanagedAttributePolicy = ADMIN_EDIT` cho realm `bms` (chỉ quản trị đọc, ghi; người dùng không thấy).
+
+**Sửa lỗi "Máy chủ trả lỗi 500" khi bấm Tạo tài khoản doanh nghiệp:** khi đã có công ty (bản demo mở đăng ký), mã số thuế hoặc mã công ty trùng công ty có sẵn làm CSDL từ chối ở bước cuối mà máy chủ không bắt lỗi, và tài khoản vừa tạo bị giữ lại nên gửi lại cũng hỏng. Nay mã số thuế trùng được báo rõ ngay khi gửi đơn, mã công ty tự sinh trùng thì tự thêm số (`MINHANH` → `MINHANH2`), lỗi máy chủ xác thực hoặc CSDL trả thông báo dễ hiểu, và tài khoản vừa tạo được xóa khi khởi tạo lỗi để người đăng ký sửa rồi gửi lại.
+
+**Doanh nghiệp vừa và nhỏ khai thông tin sau:** doanh nghiệp đến 200 người được bỏ trống mã số thuế (địa chỉ vốn đã không bắt buộc) khi đăng ký; chủ sở hữu bổ sung mã số thuế, tên, địa chỉ ở **Quản trị → Thông tin công ty** (nút *Bổ sung thông tin*, Action `legal_update`; mã số thuế và tên chỉ sửa khi công ty chưa xác thực chữ ký số). Ký số cần mã số thuế nên bước ký ẩn đến khi khai.
+
+**Tên hệ thống hiển thị là "Bamboo":** thay "Bamboo DX-OS" ở trang đăng ký, đăng nhập Keycloak, tiêu đề trang, thanh bên, email, mẫu PDF, lệnh cài đặt và nhãn image.
+
+**Sửa giao diện đăng ký:** ô *Nhanh* (bước Quy mô) và một số nhãn (Kho, Khoa, giới tính Nam) đổi theo ngôn ngữ đang chọn; ở bước Công cụ, mô-đun *Quản lý dự án* dịch đúng là "Project management" kèm mô tả; bước Thành viên có khoảng cách đều giữa các phần, ô nhập cùng cỡ với các bước khác, khung thành viên cùng kiểu với ô chọn của hệ thống (cả nền tối).
 
 **Sửa `docker compose up` không vào được trang đăng nhập (`{"error_msg":"404 Route Not Found"}`):** đợt xóa chú thích ở 0.5.0 xóa luôn dòng `#END` cuối `infra/platform/apisix/apisix.yaml`, dấu kết thúc mà APISIX chế độ standalone bắt buộc; thiếu nó APISIX bỏ qua cả tệp nên cổng API không có route nào và mọi đường dẫn trả 404 (riêng `/healthz` của image vẫn trả lời nên container vẫn healthy). Thêm lại dòng `#END`; image `gateway` tự gắn dấu này lúc dựng nên tệp cấu hình mất dòng cuối cũng không hỏng nữa.
 
@@ -333,7 +349,8 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.0...HEAD
+[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.2.0...v0.3.0

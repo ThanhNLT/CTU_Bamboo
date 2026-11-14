@@ -109,7 +109,7 @@ export const EntityList = ({
           <p className="text-[12px] text-muted">{tr("Thử tìm theo mã (CR-02) hoặc địa điểm (Bắc Ninh).")}</p>
         </div>
       ) : (
-        <ul className="m-0 min-h-0 flex-1 list-none space-y-2 overflow-y-auto p-0.5 pr-1" aria-label={tr("Thực thể")}>
+        <ul className="m-0 min-h-0 flex-1 list-none flex flex-col gap-2 overflow-y-auto p-0.5 pr-1 *:shrink-0" aria-label={tr("Thực thể")}>
           {entities.map((e, i) => (
             <li key={e.id}>
               <EntityCard

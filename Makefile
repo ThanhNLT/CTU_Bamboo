@@ -134,7 +134,7 @@ check-docs:
 	$(MAKE) -C docs check
 
 help:
-	@echo "Bamboo DX-OS $(VERSION): dịch và cài đặt từ mã nguồn (chi tiết: docs/van-hanh/dich-tu-ma-nguon.md)"
+	@echo "Bamboo $(VERSION): dịch và cài đặt từ mã nguồn (chi tiết: docs/van-hanh/dich-tu-ma-nguon.md)"
 	@echo
 	@echo "  make build       dịch dịch vụ Python (actions, seed) và giao diện vào $(BUILD_DIR)/"
 	@echo "  make install     cài bản đã dịch vào PREFIX (qua DESTDIR nếu có), chạy bằng lệnh 'bamboo'"
@@ -204,7 +204,7 @@ install:
 	chmod 0755 "$$bin/bamboo" "$$data"/tools/db/*.sh; \
 	cp tools/install/bamboo.env.example "$$etc/bamboo.env.example"; \
 	cp README.md CHANGELOG.md LICENSE NOTICE "$$doc/"; \
-	echo "Đã cài Bamboo DX-OS $(VERSION) vào $(DESTDIR)$(PREFIX); chạy '$(bindir)/bamboo help'"
+	echo "Đã cài Bamboo $(VERSION) vào $(DESTDIR)$(PREFIX); chạy '$(bindir)/bamboo help'"
 
 uninstall:
 	rm -f "$(DESTDIR)$(bindir)/bamboo" "$(DESTDIR)$(pkgsysconfdir)/bamboo.env.example"

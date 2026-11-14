@@ -480,7 +480,7 @@ export const OcrInputPage = () => {
           </section>
 
           <section
-            className="space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-card"
+            className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card"
             aria-label={tr("Trường đã rút")}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -699,7 +699,7 @@ export const OcrInputPage = () => {
         {recent.length === 0 ? (
           <p className="m-0 text-[13px] text-muted">{tr("Chưa có tệp nào đã được đọc chữ.")}</p>
         ) : (
-          <ul className="m-0 list-none space-y-2 p-0">
+          <ul className="m-0 list-none flex flex-col gap-2 p-0">
             {recent.map((r) => (
               <li key={r.id}>
                 <button

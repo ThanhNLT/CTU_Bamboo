@@ -221,7 +221,7 @@ export const PersonDrawer = ({
       {list.length === 0 && (
         <p className="mt-2 text-[12.5px] text-muted">{tr("Chưa giữ vị trí nào — chưa có quyền theo vị trí.")}</p>
       )}
-      <ul className="m-0 mt-2 list-none space-y-2 p-0">
+      <ul className="m-0 mt-2 list-none flex flex-col gap-2 p-0">
         {list.map(({ a, p }) => (
           <li key={a.id} className="flex items-start gap-3 rounded-xl border border-line px-3 py-2.5">
             <Dot tone={a.period.active ? "success" : "neutral"} size="md" className="mt-1.5" />

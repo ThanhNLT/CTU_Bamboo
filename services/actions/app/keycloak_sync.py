@@ -29,6 +29,7 @@ log = logging.getLogger("keycloak_sync")
 REALM = "bms"
 CLIENT_ID = "bms-web"
 LOGIN_THEME = "dxos-login"
+UNMANAGED_POLICY = "ADMIN_EDIT"
 PROVISIONER_ID = "bms-provisioner"
 PROVISIONER_ROLES = ("manage-users", "view-users", "query-users")
 REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/keycloak/realm/bms-realm.json"
@@ -106,6 +107,24 @@ def ensure_login_theme(base_url: str, user: str, password: str, theme: str = LOG
             return False
         http.put("", json={"loginTheme": theme}).raise_for_status()
     log.info("realm %s dùng theme đăng nhập %s", REALM, theme)
+    return True
+
+
+def ensure_user_attributes(base_url: str, user: str, password: str) -> bool:
+    """Keycloak 24+ bỏ âm thầm thuộc tính chưa khai trong User Profile. Bamboo đánh dấu tài khoản tạo theo đơn đăng ký,
+    đề nghị tiếp nhận nhân sự bằng thuộc tính (`bamboo_setup_application`, `bamboo_onboarding_request`) để gửi lại
+    đơn thì dùng lại đúng tài khoản; thiếu thuộc tính thì mọi lần gửi lại bị coi là trùng tài khoản. Cho quản trị
+    (Admin API, tài khoản bms-provisioner) đọc, ghi thuộc tính ngoài User Profile; người dùng không thấy, không sửa."""
+    base_url = base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
+    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
+        profile = http.get("/users/profile")
+        profile.raise_for_status()
+        config = profile.json()
+        if config.get("unmanagedAttributePolicy") == UNMANAGED_POLICY:
+            return False
+        http.put("/users/profile", json=config | {"unmanagedAttributePolicy": UNMANAGED_POLICY}).raise_for_status()
+    log.info("realm %s giữ thuộc tính tài khoản ngoài User Profile (%s)", REALM, UNMANAGED_POLICY)
     return True
 
 

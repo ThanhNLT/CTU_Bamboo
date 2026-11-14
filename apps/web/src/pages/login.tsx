@@ -71,7 +71,7 @@ export const Login: React.FC = () => {
       <AuthShell>
         <div className="auth-card auth-card--split">
           <section className="flex flex-col justify-center gap-6 px-8 py-10 sm:px-12 md:py-16">
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <h1 className="text-[28px] font-semibold tracking-[-0.02em] text-ink">{t("Đăng nhập")}</h1>
               <p className="text-[15px] leading-relaxed text-body">
                 {t("Hệ thống chưa có công ty nào. Bạn đã có tài khoản do quản trị viên cấp thì đăng nhập tại đây.")}

@@ -269,7 +269,7 @@ def _from_env() -> Settings:
         smtp_port=int(env("SMTP_PORT", "25")),
         smtp_user=env("SMTP_USER", ""),
         smtp_password=env("SMTP_PASSWORD", ""),
-        smtp_from=env("SMTP_FROM", "Bamboo DX-OS <no-reply@bamboo.local>"),
+        smtp_from=env("SMTP_FROM", "Bamboo <no-reply@bamboo.local>"),
         smtp_starttls=env("SMTP_STARTTLS", "false").lower() in ("1", "true", "yes"),
         sms_gateway_url=env("SMS_GATEWAY_URL", ""),
         sms_gateway_token=env("SMS_GATEWAY_TOKEN", ""),

@@ -109,6 +109,9 @@ def main() -> int:
     keycloak_sync.ensure_login_theme(
         settings.keycloak_url, settings.keycloak_admin_user, settings.keycloak_admin_password
     )
+    keycloak_sync.ensure_user_attributes(
+        settings.keycloak_url, settings.keycloak_admin_user, settings.keycloak_admin_password
+    )
     keycloak_sync.ensure_provisioner_client(
         settings.keycloak_url,
         settings.keycloak_admin_user,

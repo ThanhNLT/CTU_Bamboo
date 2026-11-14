@@ -19,7 +19,7 @@
 
 FROM eclipse-mosquitto:2.0.21
 LABEL org.opencontainers.image.title="bamboo-mosquitto" \
-      org.opencontainers.image.description="Bamboo DX-OS: broker MQTT cho thiết bị OT (TLS 8883, mTLS nội bộ 8884)" \
+      org.opencontainers.image.description="Bamboo: broker MQTT cho thiết bị OT (TLS 8883, mTLS nội bộ 8884)" \
       org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"

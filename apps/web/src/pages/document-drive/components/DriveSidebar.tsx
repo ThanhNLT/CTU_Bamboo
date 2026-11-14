@@ -38,7 +38,7 @@ export const DriveSidebar = ({
     {title && (
       <p className="m-0 px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{title}</p>
     )}
-    <ul className="m-0 list-none space-y-0.5 p-0">
+    <ul className="m-0 list-none flex flex-col gap-0.5 p-0">
       {items.map(({ key, label, icon: Icon, badge, hint }) => {
         const selected = key === active;
         return (

@@ -28,7 +28,7 @@ ENV_FILE="${BAMBOO_ENV_FILE:-$SYSCONFDIR/bamboo.env}"
 
 usage() {
     cat << EOF
-Bamboo DX-OS $VERSION: chạy các thành phần đã cài, không cần thư mục mã nguồn.
+Bamboo $VERSION: chạy các thành phần đã cài, không cần thư mục mã nguồn.
 
 Cách dùng: bamboo <lệnh> [tham số]
 
