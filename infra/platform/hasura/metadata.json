@@ -22078,6 +22078,10 @@
           {
             "name": "regulations",
             "type": "json!"
+          },
+          {
+            "name": "ai_agents",
+            "type": "json"
           }
         ]
       },

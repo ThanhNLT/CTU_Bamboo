@@ -72,7 +72,10 @@ const ActionChip = ({ a }: { a: RunAction }) => {
 
 export const AgentRunsPanel = ({ runs, agents, events }: { runs: AgentRun[]; agents: Agent[]; events: Option[] }) => {
   const agentName = new Map(agents.map((a) => [a.id, a.name]));
-  const eventLabel = new Map(events.map((e) => [e.code, tr(e.label)]));
+  const eventLabel = new Map([
+    ...events.map((e): [string, string] => [e.code, tr(e.label)]),
+    ["process.ai_step", tr("Bước AI trong quy trình tự động")],
+  ]);
   return (
     <section
       aria-label={tr("Tác tử tự hành động")}
