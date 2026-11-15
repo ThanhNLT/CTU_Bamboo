@@ -21,7 +21,27 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-env_value() { [ -f .env ] && sed -n "s/^$1=//p" .env | tail -n1 || true; }
+# .env sửa bằng Notepad có CRLF, hoặc giá trị đặt trong nháy như Docker Compose vẫn nhận: bỏ cả hai.
+env_value() { [ -f .env ] && sed -n "s/^[[:space:]]*$1=//p" .env | tail -n1 | tr -d '\r' | sed "s/^[[:space:]]*['\"]\{0,1\}//; s/['\"]\{0,1\}[[:space:]]*\$//" || true; }
+
+# Phiên bản tối thiểu: Engine 25 (healthcheck start_interval), Compose 2.20 (include); tài liệu khuyên Compose 2.34+.
+# Không đọc được phiên bản thì bỏ qua, để docker compose tự báo.
+older() { awk -v a="$1" -v b="$2" 'BEGIN { split(a, x, "."); split(b, y, "."); for (i = 1; i <= 3; i++) { if (x[i] + 0 != y[i] + 0) exit !(x[i] + 0 < y[i] + 0) } exit 1 }'; }
+if command -v docker > /dev/null 2>&1; then
+    engine=$(docker version --format '{{.Server.Version}}' 2> /dev/null | sed -n 's/^v\{0,1\}\([0-9][0-9.]*\).*/\1/p' | head -n1 || true)
+    compose=$(docker compose version --short 2> /dev/null | sed -n 's/^v\{0,1\}\([0-9][0-9.]*\).*/\1/p' | head -n1 || true)
+    if [ -n "$engine" ] && older "$engine" 25.0.0; then
+        echo "Docker Engine $engine quá cũ: Bamboo cần Docker Engine 25 trở lên (https://docs.docker.com/engine/install/)" >&2
+        exit 1
+    fi
+    if [ -n "$compose" ] && older "$compose" 2.20.0; then
+        echo "Docker Compose $compose quá cũ: Bamboo cần Docker Compose 2.34 trở lên (gói docker-compose-plugin)" >&2
+        exit 1
+    fi
+    if [ -n "$compose" ] && older "$compose" 2.34.0; then
+        echo "CẢNH BÁO: Docker Compose $compose cũ hơn bản khuyên dùng 2.34; gặp lỗi lạ thì nâng cấp trước" >&2
+    fi
+fi
 
 mode=${BAMBOO_RAM:-$(env_value BAMBOO_RAM)}
 if [ -z "$mode" ]; then
@@ -61,10 +81,12 @@ VARS
         ;;
 esac
 cpus=${BAMBOO_CPU_LIMIT:-$(env_value BAMBOO_CPU_LIMIT)}
+n=""
+command -v docker > /dev/null 2>&1 && n=$(docker info --format '{{.NCPU}}' 2> /dev/null || true)
+# Không hỏi được Docker thì không giới hạn: số lõi của máy thật (nproc) có thể lớn hơn số lõi máy ảo của Docker
+# Desktop, Docker sẽ từ chối tạo container.
+case "$n" in '' | *[!0-9]*) n=0 ;; esac
 if [ -z "$cpus" ]; then
-    n=""
-    command -v docker > /dev/null 2>&1 && n=$(docker info --format '{{.NCPU}}' 2> /dev/null || true)
-    case "$n" in '' | *[!0-9]*) n=$(nproc 2> /dev/null || echo 1) ;; esac
     reserve=$((n / 4))
     [ "$reserve" -lt 1 ] && reserve=1
     cpus=$((n - reserve))
@@ -80,6 +102,10 @@ case "$cpus" in
         exit 1
         ;;
 esac
+if [ "$n" -gt 0 ] && awk -v c="$cpus" -v n="$n" 'BEGIN { exit !(c > n) }'; then
+    echo "BAMBOO_CPU_LIMIT=$cpus lớn hơn số lõi Docker có ($n): dùng $n" >&2
+    cpus=$n
+fi
 echo "export BAMBOO_CPU_LIMIT=$cpus"
 case "${COMPOSE_FILE:-$(env_value COMPOSE_FILE)}" in
     *gpu.yml*)

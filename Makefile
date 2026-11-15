@@ -44,7 +44,7 @@ PNPM ?= pnpm
 UV_LINT := uv run --frozen --only-group lint
 
 up:
-	eval "$$(tools/ram_profile.sh)"; docker compose up -d --build --remove-orphans
+	profile="$$(tools/ram_profile.sh)" && eval "$$profile" && docker compose up -d --build --remove-orphans
 	@tools/gitops/schedule.sh auto
 
 up-gpu: up
