@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
+import { usePolling } from "../../live/usePolling";
 import { useOpsLiveTick } from "./live";
 
 export type OpsTab = "process" | "production" | "hospital" | "quality" | "sites";
@@ -176,9 +177,8 @@ export const useOpsTab = <T extends OpsTab>(tab: T | null, days: number) => {
     if (!tab) return;
     setState({ loading: true });
     void load();
-    const timer = setInterval(() => void load(), REFRESH_MS);
-    return () => clearInterval(timer);
   }, [tab, load]);
+  usePolling(() => void load(), REFRESH_MS, Boolean(tab));
 
   useEffect(() => {
     if (tick) void load();
