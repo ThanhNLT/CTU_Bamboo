@@ -19,8 +19,7 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
-import { AlertTriangle, Brain, ChevronDown, ChevronRight, Copy, RotateCcw, ShieldAlert, Sparkles } from "lucide-react";
+import { AlertTriangle, Copy, RotateCcw, ShieldAlert, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 
 import { cn } from "../../../utils/cn";
@@ -62,62 +61,6 @@ const Notice = ({
   </div>
 );
 
-export const ThinkingAccordion = ({
-  thinking,
-  isLive,
-  elapsedSec,
-}: {
-  thinking: string;
-  isLive: boolean;
-  elapsedSec?: string | null;
-}) => {
-  const [userToggled, setUserToggled] = useState<boolean | null>(null);
-  const isOpen = userToggled !== null ? userToggled : isLive;
-
-  return (
-    <div className="rounded-xl border border-black/[0.08] bg-black/[0.02] text-[13px] transition-colors">
-      <button
-        type="button"
-        onClick={() => setUserToggled(!isOpen)}
-        className="flex w-full items-center justify-between px-3 py-2 text-left font-medium text-muted hover:text-ink"
-      >
-        <span className="inline-flex items-center gap-2">
-          {isLive ? (
-            <span className="flex gap-1" aria-hidden>
-              {[0, 1, 2].map((d) => (
-                <span
-                  key={d}
-                  className="h-1.5 w-1.5 rounded-ui bg-bamboo-500 motion-safe:animate-bounce"
-                  style={{ animationDelay: `${d * 120}ms` }}
-                />
-              ))}
-            </span>
-          ) : (
-            <Brain className="h-3.5 w-3.5 text-bamboo-600" aria-hidden />
-          )}
-          <span>
-            {isLive
-              ? tr("Đang suy luận…")
-              : elapsedSec
-                ? trf("Đã suy nghĩ trong {0}", [elapsedSec])
-                : tr("Dòng suy nghĩ")}
-          </span>
-        </span>
-        {isOpen ? (
-          <ChevronDown className="h-3.5 w-3.5 text-muted" aria-hidden />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-muted" aria-hidden />
-        )}
-      </button>
-      {isOpen && (
-        <div className="border-t border-black/[0.06] px-3 py-2.5 text-muted whitespace-pre-wrap break-words text-[12.5px] leading-relaxed">
-          {thinking}
-        </div>
-      )}
-    </div>
-  );
-};
-
 export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => void; onRetry: () => void }) => {
   if (q.status === "queued")
     return (
@@ -125,16 +68,12 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
         label={q.position ? trf("Đang chờ, vị trí thứ {0}…", [q.position + 1]) : tr("Đang chờ trợ lý…")}
       />
     );
-  if (q.status === "running" && !q.answer && !q.thinking)
-    return <ThinkingMessage label={tr("Đang tìm trong Thư viện tri thức…")} />;
-
-  const isLiveThinking = q.status === "running" && !q.answer;
+  if (q.status === "running" && !q.answer) return <ThinkingMessage label={tr("Đang tìm trong Thư viện tri thức…")} />;
 
   return (
     <div className="flex gap-3">
       <AiAvatar />
       <div className="flex min-w-0 flex-1 flex-col gap-3" aria-busy={q.status === "running"}>
-        {q.thinking && <ThinkingAccordion thinking={q.thinking} isLive={isLiveThinking} elapsedSec={elapsed(q)} />}
         {q.status === "refused" ? (
           <Notice tone="warn" icon={<ShieldAlert className="h-4 w-4" />}>
             {refusalText(q)}

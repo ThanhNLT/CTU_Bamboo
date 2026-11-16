@@ -94,6 +94,8 @@ export type Regulation = {
   publishedAt: string | null;
 };
 
+export type AiAgentOption = { id: string; name: string; model: string; searchDocs: boolean };
+
 export type ProcessDetail = {
   id: string;
   key: string;
@@ -106,6 +108,7 @@ export type ProcessDetail = {
   changeRequests: ChangeRequest[];
   automation: AutomationOverview | null;
   regulations: Regulation[];
+  aiAgents: AiAgentOption[];
   xml: string;
   forms: FormDef[];
   issues: Issue[];
@@ -133,6 +136,8 @@ export type SelectedElement = {
   automationName?: string;
   automationValue?: string;
   automationScript?: string;
+  automationAgent?: string;
+  automationTask?: string;
   timerCycle?: string;
 };
 

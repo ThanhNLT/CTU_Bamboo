@@ -223,6 +223,7 @@ SELECT
     CAST(json_extract(after, '$["allowed_actions"]') AS array(varchar)) AS "allowed_actions",
     json_extract_scalar(after, '$["autonomy"]') AS "autonomy",
     json_extract_scalar(after, '$["webhook_url"]') AS "webhook_url",
+    CAST(json_extract_scalar(after, '$["project_id"]') AS uuid) AS "project_id",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -268,6 +269,8 @@ SELECT
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["started_at"]')) AS timestamp(6) with time zone) AS "started_at",
     CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["finished_at"]')) AS timestamp(6) with time zone) AS "finished_at",
+    CAST(json_extract_scalar(after, '$["automation_run_id"]') AS uuid) AS "automation_run_id",
+    json_extract_scalar(after, '$["element_id"]') AS "element_id",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (
@@ -320,6 +323,46 @@ SELECT
 FROM (
     SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
     FROM lakehouse.bronze.core_ai_question
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.core_ai_suggestion (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.core_ai_suggestion COMMENT 'Trạng thái hiện tại của core.ai_suggestion, dựng từ bronze.core_ai_suggestion' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["run_id"]') AS uuid) AS "run_id",
+    CAST(json_extract_scalar(after, '$["agent_id"]') AS uuid) AS "agent_id",
+    CAST(json_extract_scalar(after, '$["seq"]') AS integer) AS "seq",
+    json_extract_scalar(after, '$["entity_type"]') AS "entity_type",
+    CAST(json_extract_scalar(after, '$["entity_id"]') AS uuid) AS "entity_id",
+    json_extract_scalar(after, '$["action"]') AS "action",
+    CAST(json_extract_scalar(after, '$["recipient_id"]') AS uuid) AS "recipient_id",
+    json_extract_scalar(after, '$["status"]') AS "status",
+    CAST(json_extract_scalar(after, '$["decided_by"]') AS uuid) AS "decided_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["decided_at"]')) AS timestamp(6) with time zone) AS "decided_at",
+    json_extract_scalar(after, '$["reason"]') AS "reason",
+    json_extract_scalar(after, '$["result"]') AS "result",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["expires_at"]')) AS timestamp(6) with time zone) AS "expires_at",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["created_at"]')) AS timestamp(6) with time zone) AS "created_at",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.core_ai_suggestion
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 

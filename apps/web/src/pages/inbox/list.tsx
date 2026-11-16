@@ -26,6 +26,7 @@ import { Button, Space, Table, Tag, Typography } from "antd";
 import gql from "graphql-tag";
 
 import { ActModal } from "../../components/approval/ActModal";
+import { AiSuggestionList } from "../../components/ai-suggestions/AiSuggestions";
 import { ESCALATION_REASON, formatDate, formatMoney } from "../../utils/format";
 import { tr, trf } from "../../i18n";
 
@@ -302,6 +303,7 @@ export const InboxList = () => {
           )}
         />
       </Table>
+      <AiSuggestionList />
       <ActModal
         taskId={acting?.task_id ?? null}
         viaDelegation={acting?.via_delegation}

@@ -811,10 +811,12 @@ Lỗi trả `{message, code}`: `unauthorized` (401, sai khóa), `module-disabled
 - **P.A.R.A** (`core.para_of`, computed field `core_attachment.para`): `PROJECTS | AREAS | RESOURCES | ARCHIVES` theo trạng thái chứng từ; loại chứng từ mới `pm.project` nhận tệp.
 - **Tác tử tự hành động** (`ai_agent_runner.py`): `wf.emit_event` sinh `core.ai_agent_run` (chống trùng theo `agent_id, dedup_key`) → `ai-worker` (`run_agent`, sau lượt hỏi) → kế hoạch JSON → kiểm → thực hiện. Action `ai_agent_automation(id, triggers, instructions, allowed_actions, autonomy, webhook_url)`, `ai_agent_trigger_options`; Hasura cho quản trị AI đọc `core_ai_agent_run`.
 - **Kịch bản** (`script_sandbox.py`): hành động `script` của tác vụ dịch vụ (`bamboo:script`), external task `bamboo.script`; `process_script_test(model_id, script, variables)` chạy thử.
+- **Bước AI** ([ADR #84](#adr-84), migration 062): hành động `ai` (`bamboo:agent`, `bamboo:task`), external task `bamboo.ai` (hỏi mỗi 5 giây, khoá `PT30S`). `exec_ai` trong `flow-sync` chỉ xếp `core.ai_agent_run` (`event = 'process.ai_step'`), trả việc về Flowable (`unacquire`) và đọc lại trạng thái ở lượt hỏi sau; mô hình chạy trong `ai-worker`. Biến ra `<id>_risk` (`low|medium|high|unknown`), `<id>_assessment`, `<id>_ok`; quá `AI_STEP_TIMEOUT` (600 giây) thì `unknown`. `process_model_get` trả `ai_agents` (tác tử đang hoạt động) cho người thiết kế.
+- **Tác tử mức đề xuất** ([ADR #85](#adr-85), migration 063): `autonomy = 'suggest'` → `ai_agent_runner.propose` ghi `core.ai_suggestion` cho người có thẩm quyền (người đang duyệt với `return_for_info`, quản lý dự án đích với `project_task`, người phụ trách tác tử với comment/notify/webhook) và báo `AI_AGENT`. `ai_suggestion.py`: `ai_suggestion_list`, `ai_suggestion_decide` (chỉ người nhận; chấp nhận thì gọi `act_on_task` / `pm_task_save` / `execute` dưới phiên người nhận, lỗi nghiệp vụ → `FAILED`). `ai_agent_automation` nhận `project_id`; `ai_agent_stats` thêm tỉ lệ chấp nhận.
 
 ```bash
-make test-actions T="tests/test_cdr.py tests/test_tac_tu_tu_hanh_dong.py tests/test_kich_ban.py"
-make test-db T=para    # và T=tac_tu
+make test-actions T="tests/test_cdr.py tests/test_tac_tu_tu_hanh_dong.py tests/test_kich_ban.py tests/test_de_xuat_ai.py"
+make test-db T=para    # và T=tac_tu, T=de_xuat_ai
 ```
 
 ## 27. Hội tụ IT/OT: MQTT, NGSI-LD (migration 058, ADR #74, #76)

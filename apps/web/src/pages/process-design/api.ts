@@ -197,13 +197,14 @@ export const getProcess = async (id: string): Promise<ProcessDetail> => {
       change_requests: ChangeRequestRow[];
       automation: AutomationRow | null;
       regulations: RegulationRow[];
+      ai_agents: { id: string; name: string; model: string; search_docs: boolean }[] | null;
     };
   }>(
     `query Get($id: uuid!) { process_model_get(id: $id) { id process_key name description access owner_unit audience
       viewing_version bpmn_xml forms issues { level message element_id }
       versions { version sha256 note audience published_by published_at }
       runs { id status steps variables error version started_by started_at } change_requests automation
-      regulations } }`,
+      regulations ai_agents } }`,
     { id },
   );
   return {
@@ -238,6 +239,7 @@ export const getProcess = async (id: string): Promise<ProcessDetail> => {
     })),
     automation: m.automation && toAutomation(m.automation),
     regulations: m.regulations.map(toRegulation),
+    aiAgents: (m.ai_agents ?? []).map((a) => ({ id: a.id, name: a.name, model: a.model, searchDocs: a.search_docs })),
     changeRequests: (m.change_requests as unknown as ChangeRequestRow[]).map((c): ChangeRequest => ({
       id: c.id,
       version: c.version,

@@ -70,7 +70,7 @@ THINK_OVERRUN_MESSAGE = (
 )
 TRUNCATED_NOTE = "\n\n(câu trả lời bị cắt do quá dài)"
 ANSWER_MAX_TOKENS = 1024
-THINK_MAX_TOKENS = 2048
+THINK_MAX_TOKENS = 4096
 SYSTEM_PROMPT = """Bạn là trợ lý tra cứu Thư viện tri thức của doanh nghiệp. Trả lời bằng tiếng Việt, ngắn gọn.
 Quy tắc:
 - Chỉ trả lời dựa trên các văn bản trong <tai_lieu>. Không dùng kiến thức bên ngoài, không đoán.
@@ -477,7 +477,7 @@ def agent_chunks(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, sett
 
 def run_agent(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, gpu: Gpu):
     """Một lần tự hành động của tác tử: nạp mô hình chat của tác tử (như lượt hỏi) rồi chạy."""
-    pending = conn.execute("SELECT model FROM core.ai_agent_run r JOIN core.ai_agent a ON a.id = r.agent_id "
+    pending = conn.execute("SELECT a.model FROM core.ai_agent_run r JOIN core.ai_agent a ON a.id = r.agent_id "
                            "WHERE r.status = 'queued' ORDER BY r.created_at LIMIT 1").fetchone()  # fmt: skip
     conn.commit()
     if pending is None:
