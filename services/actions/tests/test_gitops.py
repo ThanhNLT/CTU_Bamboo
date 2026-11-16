@@ -20,6 +20,7 @@
 import json
 import os
 import pathlib
+import shutil
 import stat
 import subprocess
 
@@ -63,6 +64,8 @@ def world(tmp_path):
     git(tmp_path, "init", "--bare", "-b", "main", str(origin))
     git(tmp_path, "clone", str(origin), str(work))
     (work / "a.txt").write_text("1")
+    (work / "tools").mkdir()
+    shutil.copy2(ROOT / "tools" / "ram_profile.sh", work / "tools" / "ram_profile.sh")
     git(work, "add", ".")
     git(work, "commit", "-m", "đầu")
     git(work, "push", "origin", "HEAD:main")

@@ -26,6 +26,7 @@ x-logging: &logging
 services:
   clamav:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     profiles: [scan]
     image: clamav/clamav:1.4
     ports:
