@@ -50,6 +50,7 @@ MAX_TASK_DAYS = 90
 MAX_ATTEMPTS = 6
 STALE_MINUTES = 10
 PLAN_MAX_TOKENS = 1024
+PLAN_THINK_MAX_TOKENS = 4096
 NOTIFY_TARGETS = ("requester", "approvers", "owner")
 STEP_EVENT = "process.ai_step"
 STEP_EVENT_LABEL = "Bước AI trong quy trình tự động"
@@ -523,7 +524,8 @@ def propose(conn: psycopg.Connection, run: dict, plan: dict) -> list[dict]:
 
 def chat_text(ai: Ollama, model: str, messages: list[dict], think: bool) -> tuple[str, dict]:
     text, usage = "", {}
-    for delta in ai.chat(model, messages, think=think, max_tokens=PLAN_MAX_TOKENS, json_mode=True):
+    max_tokens = PLAN_THINK_MAX_TOKENS if think else PLAN_MAX_TOKENS
+    for delta in ai.chat(model, messages, think=think, max_tokens=max_tokens, json_mode=True):
         text += delta.content
         if delta.prompt_tokens is not None:
             usage = {"prompt_tokens": delta.prompt_tokens, "completion_tokens": delta.completion_tokens}
