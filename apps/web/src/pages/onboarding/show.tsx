@@ -50,6 +50,7 @@ import {
 
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
+import { usePolling } from "../../live/usePolling";
 import { ActModal } from "../../components/approval/ActModal";
 import { ApprovalPanel } from "../../components/approval/ApprovalPanel";
 import { Attachments } from "../../components/document/Attachments";
@@ -92,13 +93,7 @@ export const OnboardingShow = () => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (ob?.account_status !== "PENDING") return;
-    const t = setInterval(() => {
-      void load();
-    }, 3000);
-    return () => clearInterval(t);
-  }, [ob?.account_status, load]);
+  usePolling(() => void load(), 3000, ob?.account_status === "PENDING");
 
   if (error) return <Alert type="error" showIcon message={error} />;
   if (ob === undefined) return <Spin />;

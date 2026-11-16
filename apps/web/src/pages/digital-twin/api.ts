@@ -23,6 +23,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
 import { useLiveTopics } from "../../live/useLive";
+import { usePolling } from "../../live/usePolling";
 import type { EntityCategory, EntityStatus, Incident, Metric, MetricStatus, SeriesPoint, TwinEntity } from "./types";
 import { ENTITY_STATUS, formatDuration, formatNumber, thresholdText, worstStatus } from "./utils";
 import { tr, trf } from "../../i18n";
@@ -200,9 +201,8 @@ export const useTwinEntities = () => {
   }, []);
   useEffect(() => {
     void load();
-    const id = setInterval(() => void load(), REFRESH_MS);
-    return () => clearInterval(id);
   }, [load]);
+  usePolling(() => void load(), REFRESH_MS);
   const live = useLiveTopics(["iot"], load);
   return { ...state, reload: load, live };
 };
