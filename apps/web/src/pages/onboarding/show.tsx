@@ -52,6 +52,7 @@ import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ActModal } from "../../components/approval/ActModal";
 import { ApprovalPanel } from "../../components/approval/ApprovalPanel";
+import { AiSuggestions } from "../../components/ai-suggestions/AiSuggestions";
 import { Attachments } from "../../components/document/Attachments";
 import { Comments } from "../../components/document/Comments";
 import { StatusTag } from "../../components/StatusTag";
@@ -351,6 +352,7 @@ export const OnboardingShow = () => {
           </Card>
         </Col>
         <Col xs={24} xl={9}>
+          <AiSuggestions entityType={ENTITY} entityId={ob.id} onChange={load} />
           <ApprovalPanel
             round={ob.approval_round}
             steps={ob.approval_steps}

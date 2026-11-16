@@ -1498,6 +1498,31 @@ class Seeder:
             self._holder("TDX", "TDX_CDS.HEAD"),
         )
 
+    def ai_suggest_demo(self):
+        """Tác tử mức đề xuất (ADR #85): soát báo giá khi đề nghị mua sắm được gửi duyệt; chỉ đề xuất trả lại để bổ sung
+        hoặc thêm việc vào dự án DT-SMT4, người duyệt / quản lý dự án chấp nhận mới thực hiện. Chạy sau collab_demo."""
+        tid = self.tenant_id("TDX")
+        agent = uid("TDX", "ai_agent", "Kiểm tra báo giá")
+        project = uid("TDX", "project", "DT-SMT4")
+        if self.x("SELECT 1 FROM core.ai_agent WHERE id = %s", agent).fetchone():
+            return
+        if not self.x("SELECT 1 FROM pm.project WHERE id = %s", project).fetchone():
+            return
+        self.x(
+            """INSERT INTO core.ai_agent (id, tenant_id, name, model, tool_list, created_by, triggers, instructions,
+                                          allowed_actions, autonomy, project_id)
+                  VALUES (%s, %s, 'Kiểm tra báo giá', %s, '["search_docs", "cite"]', %s, '{purchase_request.pending}',
+                          %s, '{return_for_info,project_task}', 'suggest', %s)""",
+            agent,
+            tid,
+            os.environ.get("AI_CHAT_MODEL", "qwen3:4b"),
+            self._holder("TDX", "DT.HEAD"),
+            "Đối chiếu đề nghị mua sắm với Quy chế mua sắm: từ 50 triệu đồng phải có đủ 3 báo giá và nhà cung cấp đề "
+            "xuất. Thiếu thì đề xuất trả lại, ghi rõ phần cần bổ sung. Đề nghị thiết bị cho dây chuyền SMT thì đề xuất "
+            "thêm một công việc nghiệm thu vào dự án. Đủ thì không làm gì.",
+            project,
+        )
+
     def collab_demo(self):
         """Không gian H, P, D (ADR #64–#66): tin nhắn, lịch công tác, dự án, khóa API (xem demo_hpd.py)."""
         HpdDemo(self).run()
@@ -1555,6 +1580,7 @@ class Seeder:
             self.ops_demo,
             self.approval_history_demo,
             self.collab_demo,
+            self.ai_suggest_demo,
         )
         self.modules()
 
@@ -1586,6 +1612,7 @@ def seed(conn: psycopg.Connection) -> bool:
                     seeder.ops_demo,
                     seeder.approval_history_demo,
                     seeder.collab_demo,
+                    seeder.ai_suggest_demo,
                     lambda: demo_load.load(conn),
                 )
             )

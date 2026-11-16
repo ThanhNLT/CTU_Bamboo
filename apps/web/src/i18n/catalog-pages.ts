@@ -3372,4 +3372,45 @@ export const EN_PAGES: Record<string, string> = {
   "MST {0}": "Tax code {0}",
   "Chức năng Ổ đĩa & tệp đính kèm chưa được bật cho công ty; quản trị viên bật ở trang Quản lý chức năng.":
     "The Drive & attachments feature is not enabled for this company; an administrator can enable it on the Feature management page.",
+  "Bỏ qua đề xuất này?": "Dismiss this suggestion?",
+  "Chấp nhận và thực hiện": "Accept and carry out",
+  "Chọn dự án": "Select a project",
+  "Chọn dự án đích": "Select the target project",
+  "Công việc dự án": "Project task",
+  "Công việc được tạo trong dự án này khi người quản lý dự án chấp nhận đề xuất.":
+    "The task is created in this project when the project manager accepts the suggestion.",
+  "Dự án đích": "Target project",
+  "Ghi chú trả lại": "Return note",
+  "Gửi kết quả đánh giá tới webhook đã khai": "Send the assessment to the configured webhook",
+  "Gửi webhook": "Send webhook",
+  "Hệ thống thực hiện bằng quyền của chính bạn. Sửa nội dung nếu cần; AI chỉ gợi ý, quyết định thuộc về bạn.":
+    "The system acts with your own permissions. Edit the content if needed; the AI only suggests, the decision is yours.",
+  "Không có đề xuất AI nào chờ bạn.": "No AI suggestions are waiting for you.",
+  "Không thực hiện được: {0}": "Could not be carried out: {0}",
+  "Mỗi hành động thành một đề xuất cho người có thẩm quyền (người đang duyệt, quản lý dự án hoặc người phụ trách); người đó sửa được nội dung rồi chấp nhận để hệ thống thực hiện bằng quyền của chính họ.":
+    "Each action becomes a suggestion for the person in charge (the current approver, the project manager or the agent owner); they can edit it and accept it so the system acts with their own permissions.",
+  "Nhận xét của AI: {0}": "AI assessment: {0}",
+  "Nội dung bình luận": "Comment text",
+  "Số ngày (bắt đầu hôm nay)": "Number of days (starting today)",
+  "Trả lại để bổ sung": "Return for more information",
+  "Tác tử {0} · {1}": "Agent {0} · {1}",
+  "Tạo công việc dự án": "Create a project task",
+  "Xem và chấp nhận": "Review and accept",
+  "chờ chấp nhận": "awaiting acceptance",
+  "{0} · {1} ngày · dự án {2}": "{0} · {1} days · project {2}",
+  "{0}/{1} · {2} chờ": "{0}/{1} · {2} pending",
+  "Đã bỏ qua đề xuất.": "Suggestion dismissed.",
+  "Đã chấp nhận và thực hiện đề xuất.": "Suggestion accepted and carried out.",
+  "Đề xuất AI của tôi ({0})": "My AI suggestions ({0})",
+  "Đề xuất chờ chấp nhận khi có {0} sự kiện": "Suggests for acceptance on {0} events",
+  "Đề xuất của AI": "AI suggestions",
+  "Đề xuất không được thực hiện; quyết định được ghi nhật ký kiểm toán.":
+    "The suggestion will not be carried out; the decision is recorded in the audit log.",
+  "Đề xuất được nhận": "Suggestions accepted",
+  "Chỉ ghi kế hoạch, không thực hiện": "Record the plan only, do not act",
+  "Đề xuất, chờ người chấp nhận": "Suggest, wait for acceptance",
+  "Đề nghị người đang duyệt trả lại chứng từ để người lập bổ sung (chỉ ở mức đề xuất)":
+    "Ask the current approver to return the document for more information (suggest level only)",
+  "Đề nghị quản lý dự án đích tạo một công việc (chỉ ở mức đề xuất)":
+    "Ask the target project's manager to create a task (suggest level only)",
 };
