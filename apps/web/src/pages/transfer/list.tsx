@@ -19,15 +19,17 @@
  * limitations under the License.
  */
 
-import { CreateButton, List, ShowButton, useTable } from "@refinedev/antd";
+import { CreateButton, ShowButton, useTable } from "@refinedev/antd";
 import { useGo, type BaseRecord } from "@refinedev/core";
-import { Button, Input, Segmented, Space, Table, Typography } from "antd";
+import { Button, Input, Segmented, Table } from "antd";
+import { Eye } from "lucide-react";
 
-import { StatusTag } from "../../components/StatusTag";
+import { StatusDot } from "../../components/StatusTag";
+import { CellText, CellTitle, ListCard, ListPage, ListPageHeader } from "../../components/ui";
 import { formatDate, formatDay } from "../../utils/format";
 import { PR_STATUS_LABEL } from "../../utils/status";
 import { TR_LIST } from "./queries";
-import { tr } from "../../i18n";
+import { tr, trf } from "../../i18n";
 
 type Row = BaseRecord & {
   doc_no: string;
@@ -52,71 +54,99 @@ export const TransferList = () => {
     liveMode: "auto",
   });
   const status = (filters.find((f) => "field" in f && f.field === "status")?.value as string) ?? "ALL";
+  const total = tableProps.pagination ? tableProps.pagination.total : undefined;
 
   return (
-    <List
-      title={tr("Điều chuyển nội bộ")}
-      headerButtons={
-        <Space>
-          <Button onClick={() => go({ to: "/h/transfer/cross" })}>{tr("Liên tập đoàn")}</Button>
-          <CreateButton>{tr("Lập đề nghị điều chuyển")}</CreateButton>
-        </Space>
-      }
-    >
-      <Space style={{ marginBottom: 16 }} wrap>
-        <Segmented
-          value={status}
-          options={STATUS_FILTERS.map((s) => ({ value: s, label: s === "ALL" ? tr("Tất cả") : PR_STATUS_LABEL[s] }))}
-          onChange={(v) => setFilters(v === "ALL" ? [] : [{ field: "status", operator: "eq", value: v }], "replace")}
-        />
-        <Input.Search
-          placeholder={tr("Tìm theo số chứng từ")}
-          allowClear
-          style={{ width: 280 }}
-          onSearch={(q) => setFilters(q ? [{ field: "doc_no", operator: "contains", value: q }] : [], "replace")}
-        />
-      </Space>
-      <Table {...tableProps} rowKey="id" scroll={{ x: 720 }}>
-        <Table.Column
-          dataIndex="doc_no"
-          title={tr("Số")}
-          sorter
-          render={(v: string) => (
-            <Typography.Text code style={{ whiteSpace: "nowrap" }}>
-              {v}
-            </Typography.Text>
-          )}
-        />
-        <Table.Column<Row>
-          title={tr("Nhân viên")}
-          render={(_, r) => (
-            <>
-              {r.person?.full_name ?? "—"}
-              <br />
-              <Typography.Text type="secondary">{r.person?.employee_code}</Typography.Text>
-            </>
-          )}
-        />
-        <Table.Column<Row>
-          title={tr("Từ → đến")}
-          render={(_, r) => (
-            <>
-              {r.source_position?.org_unit.name ?? "—"} → {r.target_unit?.name ?? "—"}
-            </>
-          )}
-        />
-        <Table.Column
-          dataIndex="effective_date"
-          title={tr("Ngày chuyển")}
-          sorter
-          render={formatDay}
-          responsive={["md"]}
-        />
-        <Table.Column dataIndex="status" title={tr("Trạng thái")} render={(s: string) => <StatusTag status={s} />} />
-        <Table.Column dataIndex={["requester", "full_name"]} title={tr("Người lập")} responsive={["lg"]} />
-        <Table.Column dataIndex="created_at" title={tr("Ngày lập")} sorter render={formatDate} responsive={["lg"]} />
-        <Table.Column<Row> title="" render={(_, r) => <ShowButton hideText size="small" recordItemId={r.id} />} />
-      </Table>
-    </List>
+    <ListPage>
+      <ListPageHeader
+        title={tr("Điều chuyển nội bộ")}
+        description={tr("Đề nghị điều chuyển nhân sự giữa các đơn vị trong công ty")}
+        actions={
+          <>
+            <Button size="large" onClick={() => go({ to: "/h/transfer/cross" })}>
+              {tr("Liên tập đoàn")}
+            </Button>
+            <CreateButton size="large">{tr("Lập đề nghị điều chuyển")}</CreateButton>
+          </>
+        }
+      />
+      <ListCard
+        title={tr("Danh sách đề nghị")}
+        meta={total !== undefined ? trf("{0} đề nghị", [total]) : undefined}
+        toolbar={
+          <>
+            <Segmented
+              value={status}
+              options={STATUS_FILTERS.map((s) => ({
+                value: s,
+                label: s === "ALL" ? tr("Tất cả") : PR_STATUS_LABEL[s],
+              }))}
+              onChange={(v) =>
+                setFilters(v === "ALL" ? [] : [{ field: "status", operator: "eq", value: v }], "replace")
+              }
+            />
+            <Input.Search
+              placeholder={tr("Tìm theo số chứng từ")}
+              allowClear
+              style={{ width: 280 }}
+              onSearch={(q) => setFilters(q ? [{ field: "doc_no", operator: "contains", value: q }] : [], "replace")}
+            />
+          </>
+        }
+      >
+        <Table {...tableProps} rowKey="id" className="list-table" scroll={{ x: 820 }}>
+          <Table.Column<Row>
+            dataIndex="doc_no"
+            title={tr("Nhân viên")}
+            sorter
+            render={(_, r) => (
+              <CellTitle
+                title={r.person?.full_name ?? "—"}
+                sub={[r.doc_no, r.person?.employee_code].filter(Boolean).join(" · ")}
+              />
+            )}
+          />
+          <Table.Column<Row>
+            title={tr("Từ → đến")}
+            render={(_, r) => (
+              <CellText
+                main={`${r.source_position?.org_unit.name ?? "—"} → ${r.target_unit?.name ?? "—"}`}
+                sub={r.source_position?.name}
+              />
+            )}
+          />
+          <Table.Column
+            dataIndex="effective_date"
+            title={tr("Ngày chuyển")}
+            sorter
+            responsive={["md"]}
+            render={(v: string) => <span className="whitespace-nowrap tabular-nums text-body">{formatDay(v)}</span>}
+          />
+          <Table.Column dataIndex="status" title={tr("Trạng thái")} render={(s: string) => <StatusDot status={s} />} />
+          <Table.Column<Row>
+            dataIndex="created_at"
+            title={tr("Người lập")}
+            sorter
+            responsive={["lg"]}
+            render={(_, r) => <CellText main={r.requester?.full_name ?? "—"} sub={formatDate(r.created_at)} />}
+          />
+          <Table.Column<Row>
+            title={<span className="sr-only">{tr("Thao tác")}</span>}
+            align="right"
+            width={56}
+            render={(_, r) => (
+              <ShowButton
+                hideText
+                type="text"
+                shape="circle"
+                icon={<Eye className="h-3.5 w-3.5" aria-hidden />}
+                recordItemId={r.id}
+                aria-label={trf("Xem {0}", [r.doc_no])}
+              />
+            )}
+          />
+        </Table>
+      </ListCard>
+    </ListPage>
   );
 };

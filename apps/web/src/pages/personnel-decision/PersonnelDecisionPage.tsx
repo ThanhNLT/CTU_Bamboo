@@ -19,11 +19,12 @@
  * limitations under the License.
  */
 
-import { App, DatePicker, Form, Input, Modal, Radio, Select, Spin, Table, Tag, Typography } from "antd";
+import { App, DatePicker, Form, Input, Modal, Radio, Select, Spin, Table, Typography } from "antd";
 import dayjs from "dayjs";
+import { Printer } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { primaryButtonClass, secondaryButtonClass } from "../../components/ui";
+import { CellText, CellTitle, DotLabel, iconActionClass, ListCard, primaryButtonClass } from "../../components/ui";
 import { formatDay } from "../../utils/format";
 import {
   decisionContext,
@@ -43,7 +44,11 @@ const TYPE_LABEL: Record<DecisionType, string> = {
   TRANSFER: tr("Điều chuyển"),
   DISMISS: tr("Miễn nhiệm"),
 };
-const TYPE_COLOR: Record<DecisionType, string> = { APPOINT: "green", TRANSFER: "blue", DISMISS: "volcano" };
+const TYPE_DOT: Record<DecisionType, string> = {
+  APPOINT: "bg-bamboo-500",
+  TRANSFER: "bg-sky-500",
+  DISMISS: "bg-orange-500",
+};
 const KIND_LABEL: Record<AssignmentKind, string> = {
   PRIMARY: tr("Giữ chính"),
   CONCURRENT: tr("Kiêm nhiệm"),
@@ -279,66 +284,92 @@ export const PersonnelDecisionPage = () => {
         )}
       </div>
 
-      <Table<Decision>
-        rowKey="id"
-        dataSource={data.decisions}
-        pagination={{ pageSize: 20, hideOnSinglePage: true }}
-        locale={{ emptyText: tr("Chưa có quyết định nào.") }}
-        columns={[
-          { title: tr("Số quyết định"), dataIndex: "doc_no", width: 150 },
-          {
-            title: tr("Loại"),
-            dataIndex: "decision_type",
-            width: 130,
-            render: (t: DecisionType, r) => (
-              <Tag color={TYPE_COLOR[t]}>
-                {TYPE_LABEL[t]}
-                {t === "APPOINT" ? ` · ${KIND_LABEL[r.assignment_type]}` : ""}
-              </Tag>
+      <ListCard title={tr("Quyết định đã ban hành")} meta={trf("{0} quyết định", [data.decisions.length])}>
+        <Table<Decision>
+          rowKey="id"
+          className="list-table"
+          dataSource={data.decisions}
+          scroll={{ x: 900 }}
+          pagination={{ pageSize: 20, hideOnSinglePage: true }}
+          locale={{ emptyText: tr("Chưa có quyết định nào.") }}
+          columns={[
+            {
+              title: tr("Nhân sự"),
+              dataIndex: "person_name",
+              render: (n: string, r) => (
+                <CellTitle title={n} sub={[r.doc_no, r.employee_code].filter(Boolean).join(" · ")} />
+              ),
+            },
+            {
+              title: tr("Loại"),
+              dataIndex: "decision_type",
+              render: (t: DecisionType, r) => (
+                <DotLabel
+                  dot={TYPE_DOT[t]}
+                  label={`${TYPE_LABEL[t]}${t === "APPOINT" ? ` · ${KIND_LABEL[r.assignment_type]}` : ""}`}
+                />
+              ),
+            },
+            {
+              title: tr("Từ"),
+              render: (_: unknown, r) =>
+                r.source_position ? (
+                  <CellText main={r.source_position} sub={r.source_unit} />
+                ) : (
+                  <span className="text-muted">—</span>
+                ),
+            },
+            {
+              title: tr("Đến"),
+              render: (_: unknown, r) =>
+                r.target_position ? (
+                  <CellText main={r.target_position} sub={r.target_unit} />
+                ) : (
+                  <span className="text-muted">—</span>
+                ),
+            },
+            {
+              title: tr("Hiệu lực"),
+              dataIndex: "effective_date",
+              render: (d: string) => <span className="whitespace-nowrap tabular-nums text-body">{formatDay(d)}</span>,
+            },
+            {
+              title: tr("Người ban hành"),
+              dataIndex: "issuer_name",
+              render: (n: string) => <CellText main={n} />,
+            },
+            {
+              title: <span className="sr-only">{tr("Thao tác")}</span>,
+              align: "right",
+              width: 56,
+              render: (_: unknown, r) => (
+                <span className="flex justify-end">
+                  <button
+                    type="button"
+                    className={iconActionClass}
+                    aria-label={trf("In quyết định {0}", [r.doc_no])}
+                    title={tr("In PDF")}
+                    onClick={() =>
+                      void decisionPdf(r.id)
+                        .then((pdf) => window.location.assign(pdf.url))
+                        .catch((e: Error) => message.error(e.message))
+                    }
+                  >
+                    <Printer className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                </span>
+              ),
+            },
+          ]}
+          expandable={{
+            expandedRowRender: (r) => (
+              <Typography.Text>
+                {tr("Căn cứ: ")} {r.reason}
+              </Typography.Text>
             ),
-          },
-          {
-            title: tr("Nhân sự"),
-            dataIndex: "person_name",
-            render: (n: string, r) => `${n}${r.employee_code ? ` (${r.employee_code})` : ""}`,
-          },
-          {
-            title: tr("Từ"),
-            render: (_: unknown, r) => (r.source_position ? `${r.source_position} – ${r.source_unit}` : "—"),
-          },
-          {
-            title: tr("Đến"),
-            render: (_: unknown, r) => (r.target_position ? `${r.target_position} – ${r.target_unit}` : "—"),
-          },
-          { title: tr("Hiệu lực"), dataIndex: "effective_date", width: 110, render: (d: string) => formatDay(d) },
-          { title: tr("Người ban hành"), dataIndex: "issuer_name" },
-          {
-            title: "",
-            width: 100,
-            render: (_: unknown, r) => (
-              <button
-                type="button"
-                className={secondaryButtonClass}
-                aria-label={trf("In quyết định {0}", [r.doc_no])}
-                onClick={() =>
-                  void decisionPdf(r.id)
-                    .then((pdf) => window.location.assign(pdf.url))
-                    .catch((e: Error) => message.error(e.message))
-                }
-              >
-                {tr("In PDF")}
-              </button>
-            ),
-          },
-        ]}
-        expandable={{
-          expandedRowRender: (r) => (
-            <Typography.Text>
-              {tr("Căn cứ: ")} {r.reason}
-            </Typography.Text>
-          ),
-        }}
-      />
+          }}
+        />
+      </ListCard>
 
       {ctx && (
         <IssueModal

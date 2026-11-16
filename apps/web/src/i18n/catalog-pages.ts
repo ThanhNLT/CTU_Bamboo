@@ -3354,4 +3354,21 @@ export const EN_PAGES: Record<string, string> = {
   "MST {0}": "Tax code {0}",
   "Chức năng Ổ đĩa & tệp đính kèm chưa được bật cho công ty; quản trị viên bật ở trang Quản lý chức năng.":
     "The Drive & attachments feature is not enabled for this company; an administrator can enable it on the Feature management page.",
+  "Danh sách đơn hàng": "Order list",
+  "Danh sách đề nghị": "Request list",
+  "Hồ sơ tiếp nhận nhân sự mới và đề xuất bổ nhiệm vị trí":
+    "New-hire onboarding files and proposed position assignments",
+  "Lập, gửi duyệt và theo dõi đề nghị mua sắm của đơn vị": "Create, submit and track your unit's purchase requests",
+  "Quyết định đã ban hành": "Issued decisions",
+  "Xem {0}": "View {0}",
+  "{0} hồ sơ": "{0} files",
+  "{0} quyết định": "{0} decisions",
+  "{0} đơn hàng": "{0} orders",
+  "{0} đề nghị": "{0} requests",
+  "Điều chuyển nhân sự sang công ty khác trong tập đoàn": "Transfer staff to another company in the group",
+  "Đơn hàng": "Order",
+  "Đơn đặt hàng giữa các công ty trong tập đoàn": "Orders between companies in the group",
+  "Đề nghị": "Request",
+  "Đề nghị điều chuyển nhân sự giữa các đơn vị trong công ty":
+    "Requests to transfer staff between units in the company",
 };

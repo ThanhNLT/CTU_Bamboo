@@ -296,6 +296,7 @@ export const IcOrderShow = () => {
             )}
           </Descriptions>
           <Table
+            className="table-inset"
             style={{ marginTop: 16 }}
             size="small"
             rowKey="id"
