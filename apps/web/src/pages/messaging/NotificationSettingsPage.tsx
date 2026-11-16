@@ -32,6 +32,7 @@ import {
   type Delivery,
   type Kind,
 } from "./api";
+import { usePolling } from "../../live/usePolling";
 import { tr, trf } from "../../i18n";
 
 const LABEL = {
@@ -162,15 +163,14 @@ export const NotificationSettingsPage = () => {
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(
-      () =>
-        void myDeliveries()
-          .then(setRows)
-          .catch(() => undefined),
-      5000,
-    );
-    return () => window.clearInterval(timer);
   }, [load]);
+  usePolling(
+    () =>
+      void myDeliveries()
+        .then(setRows)
+        .catch(() => undefined),
+    5000,
+  );
 
   if (!data) return <Spin className="mt-24 block" />;
 
