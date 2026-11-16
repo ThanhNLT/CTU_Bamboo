@@ -28,11 +28,12 @@ import type {
   AiModel,
   AutomationInput,
   LoadedModel,
+  ProjectOption,
   TriggerOptions,
 } from "./types";
 
 const AGENT =
-  "id name model status guardrail_config tool_list triggers instructions allowed_actions autonomy webhook_url";
+  "id name model status guardrail_config tool_list triggers instructions allowed_actions autonomy webhook_url project_id";
 
 export const fetchAgents = async () => {
   const { core_ai_agent } = await request<{ core_ai_agent: Agent[] }>(
@@ -45,7 +46,7 @@ export const fetchStats = async (days: number) => {
   const { ai_agent_stats } = await request<{ ai_agent_stats: AgentStats[] }>(
     `query($d: Int) { ai_agent_stats(days: $d) { agent_id questions answered avg_seconds p90_seconds first_token_seconds cold_starts scope_refused
       prompt_refused errors pending prompt_tokens completion_tokens reused retried tokens_per_second
-      avg_context_tokens } }`,
+      avg_context_tokens suggestions_pending suggestions_accepted suggestions_decided acceptance_rate } }`,
     { d: days },
   );
   return ai_agent_stats;
@@ -89,11 +90,27 @@ export const fetchTriggerOptions = async () => {
 
 export const setAutomation = (id: string, v: AutomationInput) =>
   request(
-    `mutation($id: uuid!, $t: jsonb!, $i: String, $a: jsonb!, $m: String, $w: String) {
-      ai_agent_automation(id: $id, triggers: $t, instructions: $i, allowed_actions: $a, autonomy: $m, webhook_url: $w)
-      { id } }`,
-    { id, t: v.triggers, i: v.instructions, a: v.allowed_actions, m: v.autonomy, w: v.webhook_url || null },
+    `mutation($id: uuid!, $t: jsonb!, $i: String, $a: jsonb!, $m: String, $w: String, $p: uuid) {
+      ai_agent_automation(id: $id, triggers: $t, instructions: $i, allowed_actions: $a, autonomy: $m, webhook_url: $w,
+                          project_id: $p) { id } }`,
+    {
+      id,
+      t: v.triggers,
+      i: v.instructions,
+      a: v.allowed_actions,
+      m: v.autonomy,
+      w: v.webhook_url || null,
+      p: v.project_id || null,
+    },
   );
+
+/** Dự án người quản trị xem được, để chọn làm dự án đích của hành động tạo công việc (ADR #85). */
+export const fetchProjects = async () => {
+  const { pm_project } = await request<{ pm_project: ProjectOption[] }>(
+    `query { pm_project(where: {status: {_nin: ["DONE", "CANCELLED"]}}, order_by: {code: asc}) { id code name } }`,
+  );
+  return pm_project;
+};
 
 export const fetchRuns = async (limit = 30) => {
   const { core_ai_agent_run } = await request<{ core_ai_agent_run: AgentRun[] }>(

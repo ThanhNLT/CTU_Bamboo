@@ -36,12 +36,15 @@ export type Agent = {
   allowed_actions: AgentAction[];
   autonomy: Autonomy;
   webhook_url: string | null;
+  project_id: string | null;
 };
 
-export type AgentAction = "comment" | "notify" | "webhook";
-export type Autonomy = "act" | "dry_run";
+export type AgentAction = "comment" | "notify" | "webhook" | "return_for_info" | "project_task";
+export type Autonomy = "act" | "dry_run" | "suggest";
 export type Option = { code: string; label: string };
-export type TriggerOptions = { events: Option[]; actions: Option[]; autonomy: Option[] };
+export type ActionOption = Option & { suggest_only?: boolean };
+export type TriggerOptions = { events: Option[]; actions: ActionOption[]; autonomy: Option[] };
+export type ProjectOption = { id: string; code: string; name: string };
 
 export type AutomationInput = {
   triggers: string[];
@@ -49,6 +52,7 @@ export type AutomationInput = {
   allowed_actions: AgentAction[];
   autonomy: Autonomy;
   webhook_url?: string | null;
+  project_id?: string | null;
 };
 
 export type RunAction = {
@@ -56,8 +60,12 @@ export type RunAction = {
   text?: string;
   to?: string;
   message?: string;
+  note?: string;
+  name?: string;
   ok: boolean | null;
   dry_run?: boolean;
+  suggested?: boolean;
+  suggestions?: { id: string; recipient_id: string }[];
   error?: string;
   recipients?: number;
 };
@@ -97,6 +105,10 @@ export type AgentStats = {
   retried: number;
   tokens_per_second: number | null;
   avg_context_tokens: number | null;
+  suggestions_pending: number;
+  suggestions_accepted: number;
+  suggestions_decided: number;
+  acceptance_rate: number | null;
 };
 
 export type AiModel = { name: string; size_bytes: number | null; family: string | null };
