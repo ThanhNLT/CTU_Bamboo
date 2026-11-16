@@ -116,6 +116,7 @@ class Settings:
     ai_chat_model: str = "qwen3:4b"
     ai_embed_model: str = "bge-m3"
     ai_min_score: float = 0.7
+    ai_step_timeout: int = 600
     ocr_url: str = ""
     sleeper_url: str = ""
     ai_cpu_models: tuple[str, ...] = ("bge-m3",)
@@ -310,6 +311,7 @@ def _from_env() -> Settings:
         ai_chat_model=env("AI_CHAT_MODEL", "qwen3:4b"),
         ai_embed_model=env("AI_EMBED_MODEL", "bge-m3"),
         ai_min_score=float(env("AI_MIN_SCORE", "0.7")),
+        ai_step_timeout=int(env("AI_STEP_TIMEOUT", "600")),
         ocr_url=env("OCR_URL", ""),
         sleeper_url=env("SLEEPER_URL", ""),
         ai_cpu_models=tuple(m.strip() for m in env("AI_CPU_MODELS", "bge-m3").split(",") if m.strip()),

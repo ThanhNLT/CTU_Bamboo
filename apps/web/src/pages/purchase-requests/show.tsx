@@ -54,6 +54,7 @@ import { formatDate, formatDay, formatMoney } from "../../utils/format";
 import { IC_STATUS_LABEL } from "../../utils/status";
 import { StatusTag } from "../../components/StatusTag";
 import { ApprovalPanel } from "../../components/approval/ApprovalPanel";
+import { AiSuggestions } from "../../components/ai-suggestions/AiSuggestions";
 import { Attachments } from "../../components/document/Attachments";
 import { Comments } from "../../components/document/Comments";
 import { CANCEL_PR, MY_TASK_FOR, PR_DETAIL, PR_PDF, SUBMIT_PR } from "./queries";
@@ -315,6 +316,7 @@ export const PurchaseRequestShow = () => {
           </Card>
         </Col>
         <Col xs={24} xl={9}>
+          <AiSuggestions entityType="proc.purchase_request" entityId={pr.id} onChange={load} />
           <ApprovalPanel
             round={pr.approval_round}
             steps={pr.approval_steps}

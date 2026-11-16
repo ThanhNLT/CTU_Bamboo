@@ -43,6 +43,8 @@ const ACTION: Record<string, string> = {
   comment: tr("Bình luận"),
   notify: tr("Thông báo"),
   webhook: "Webhook",
+  return_for_info: tr("Trả lại để bổ sung"),
+  project_task: tr("Công việc dự án"),
 };
 const TARGET: Record<string, string> = {
   requester: tr("người lập"),
@@ -51,20 +53,22 @@ const TARGET: Record<string, string> = {
 };
 
 const ActionChip = ({ a }: { a: RunAction }) => {
-  const Icon = a.dry_run ? CircleDashed : a.ok ? CheckCircle2 : XCircle;
-  const detail = a.text ?? a.message ?? "";
+  const pending = a.dry_run || a.suggested;
+  const Icon = pending ? CircleDashed : a.ok ? CheckCircle2 : XCircle;
+  const detail = a.text ?? a.message ?? a.note ?? a.name ?? "";
   const label = a.type === "notify" && a.to ? `${ACTION.notify} → ${TARGET[a.to] ?? a.to}` : ACTION[a.type];
   return (
     <Tooltip title={[detail, a.error].filter(Boolean).join(" · ") || undefined}>
       <span
         className={cn(
           "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px]",
-          a.dry_run ? "bg-black/[0.045] text-body" : a.ok ? "bg-bamboo-50 text-bamboo-800" : "bg-red-50 text-red-800",
+          pending ? "bg-black/[0.045] text-body" : a.ok ? "bg-bamboo-50 text-bamboo-800" : "bg-red-50 text-red-800",
         )}
       >
         <Icon className="h-3 w-3" aria-hidden />
         {label}
         {a.dry_run ? ` (${tr("đề xuất")})` : ""}
+        {a.suggested ? ` (${tr("chờ chấp nhận")})` : ""}
       </span>
     </Tooltip>
   );
@@ -72,7 +76,10 @@ const ActionChip = ({ a }: { a: RunAction }) => {
 
 export const AgentRunsPanel = ({ runs, agents, events }: { runs: AgentRun[]; agents: Agent[]; events: Option[] }) => {
   const agentName = new Map(agents.map((a) => [a.id, a.name]));
-  const eventLabel = new Map(events.map((e) => [e.code, tr(e.label)]));
+  const eventLabel = new Map([
+    ...events.map((e): [string, string] => [e.code, tr(e.label)]),
+    ["process.ai_step", tr("Bước AI trong quy trình tự động")],
+  ]);
   return (
     <section
       aria-label={tr("Tác tử tự hành động")}

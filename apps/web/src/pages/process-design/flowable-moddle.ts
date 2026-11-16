@@ -69,6 +69,8 @@ export const bambooModdle = {
         { name: "body", isAttr: true, type: "String" },
         { name: "value", isAttr: true, type: "String" },
         { name: "script", isAttr: true, type: "String" },
+        { name: "agent", isAttr: true, type: "String" },
+        { name: "task", isAttr: true, type: "String" },
       ],
     },
   ],

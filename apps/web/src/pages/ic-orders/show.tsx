@@ -43,6 +43,7 @@ import { CheckOutlined, CloseOutlined, StopOutlined } from "@ant-design/icons";
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { StatusTag } from "../../components/StatusTag";
+import { AiSuggestions } from "../../components/ai-suggestions/AiSuggestions";
 import { Comments } from "../../components/document/Comments";
 import type { Comment } from "../../components/document/types";
 import { formatDate, formatDay, formatMoney } from "../../utils/format";
@@ -265,6 +266,7 @@ export const IcOrderShow = () => {
           description={tr("Xác nhận xong, hệ thống tự sinh đơn mua cho bên mua; lô xuất được ghi để truy xuất về sau.")}
         />
       )}
+      <AiSuggestions entityType="ic.ic_order" entityId={order.id} onChange={load} />
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={16}>
           <Descriptions bordered size="small" column={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 }}>

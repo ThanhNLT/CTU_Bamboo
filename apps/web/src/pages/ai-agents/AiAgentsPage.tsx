@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   fetchAgents,
   fetchModels,
+  fetchProjects,
   fetchRuns,
   fetchStats,
   fetchTriggerOptions,
@@ -41,7 +42,7 @@ import { AiAgentsHeader } from "./components/AiAgentsHeader";
 import { AiAgentsTable } from "./components/AiAgentsTable";
 import { AiKpiCards } from "./components/AiKpiCards";
 import { AiResourcePanel } from "./components/AiResourcePanel";
-import type { Agent, AgentRun, AgentStats, AiModel, LoadedModel, TriggerOptions } from "./types";
+import type { Agent, AgentRun, AgentStats, AiModel, LoadedModel, ProjectOption, TriggerOptions } from "./types";
 import { STATS_DAYS, totals } from "./utils";
 import { tr, trf } from "../../i18n";
 
@@ -61,6 +62,11 @@ export const AiAgentsPage = () => {
   const [runs, setRuns] = useState<AgentRun[]>([]);
   const [options, setOptions] = useState<TriggerOptions | null>(null);
   const [automating, setAutomating] = useState<Agent>();
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+
+  useEffect(() => {
+    if (automating) fetchProjects().then(setProjects, () => setProjects([]));
+  }, [automating]);
 
   const load = useCallback(async () => {
     try {
@@ -184,6 +190,7 @@ export const AiAgentsPage = () => {
         open={automating != null}
         agent={automating}
         options={options}
+        projects={projects}
         saving={saving}
         onCancel={() => setAutomating(undefined)}
         onSubmit={(v) => {
