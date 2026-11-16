@@ -20,16 +20,18 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { CreateButton, List, Show, ShowButton, useTable } from "@refinedev/antd";
+import { CreateButton, Show, ShowButton, useTable } from "@refinedev/antd";
 import { useGo, useParsed, type BaseRecord } from "@refinedev/core";
 import { Alert, App, Button, Card, Col, Descriptions, Input, Row, Space, Spin, Steps, Table, Typography } from "antd";
 import { AuditOutlined, SendOutlined, StopOutlined } from "@ant-design/icons";
+import { Eye } from "lucide-react";
 
 import { request } from "../../api/client";
 import { useSession } from "../../auth/useSession";
 import { ActModal } from "../../components/approval/ActModal";
 import { ApprovalPanel } from "../../components/approval/ApprovalPanel";
-import { StatusTag } from "../../components/StatusTag";
+import { StatusDot, StatusTag } from "../../components/StatusTag";
+import { CellText, CellTitle, DotLabel, ListCard, ListPage, ListPageHeader } from "../../components/ui";
 import { formatDate, formatDay } from "../../utils/format";
 import { REQUESTER_KIND, STAGE_LABEL, type CrossTransfer } from "./types";
 import { TRO_CANCEL, TRO_DETAIL, TRO_LIST, TRO_SUBMIT, TR_MY_TASK_FOR } from "./queries";
@@ -57,38 +59,69 @@ export const CrossTransferList = () => {
     meta: { gqlQuery: TRO_LIST },
     liveMode: "auto",
   });
+  const total = tableProps.pagination ? tableProps.pagination.total : undefined;
   return (
-    <List
-      title={trl("Điều chuyển liên tập đoàn")}
-      headerButtons={
-        <Space>
-          <Button onClick={() => go({ to: "/h/transfer" })}>{trl("Điều chuyển nội bộ")}</Button>
-          <CreateButton resource="hr_transfer_request">{trl("Lập đề nghị")}</CreateButton>
-        </Space>
-      }
-    >
-      <Table {...tableProps} rowKey="id" scroll={{ x: 720 }}>
-        <Table.Column
-          dataIndex="doc_no"
-          title={trl("Số")}
-          render={(v: string) => (
-            <Typography.Text code style={{ whiteSpace: "nowrap" }}>
-              {v}
-            </Typography.Text>
-          )}
-        />
-        <Table.Column dataIndex="person_name" title={trl("Nhân viên")} />
-        <Table.Column dataIndex="target_unit_name" title={trl("Đơn vị nơi đến")} />
-        <Table.Column dataIndex="effective_date" title={trl("Ngày chuyển")} render={formatDay} responsive={["md"]} />
-        <Table.Column<Row>
-          title={trl("Đang ở")}
-          render={(_, r) => (r.status === "PENDING" ? STAGE_LABEL[r.stage] : <StatusTag status={r.status} />)}
-        />
-        <Table.Column dataIndex={["requester", "full_name"]} title={trl("Người lập")} responsive={["lg"]} />
-        <Table.Column dataIndex="created_at" title={trl("Ngày lập")} render={formatDate} responsive={["lg"]} />
-        <Table.Column<Row> title="" render={(_, r) => <ShowButton hideText size="small" recordItemId={r.id} />} />
-      </Table>
-    </List>
+    <ListPage>
+      <ListPageHeader
+        title={trl("Điều chuyển liên tập đoàn")}
+        description={trl("Điều chuyển nhân sự sang công ty khác trong tập đoàn")}
+        actions={
+          <>
+            <Button size="large" onClick={() => go({ to: "/h/transfer" })}>
+              {trl("Điều chuyển nội bộ")}
+            </Button>
+            <CreateButton size="large" resource="hr_transfer_request">
+              {trl("Lập đề nghị")}
+            </CreateButton>
+          </>
+        }
+      />
+      <ListCard title={trl("Danh sách đề nghị")} meta={total !== undefined ? trf("{0} đề nghị", [total]) : undefined}>
+        <Table {...tableProps} rowKey="id" className="list-table" scroll={{ x: 820 }}>
+          <Table.Column<Row>
+            title={trl("Nhân viên")}
+            render={(_, r) => <CellTitle title={r.person_name} sub={r.doc_no} />}
+          />
+          <Table.Column<Row> title={trl("Đơn vị nơi đến")} render={(_, r) => <CellText main={r.target_unit_name} />} />
+          <Table.Column
+            dataIndex="effective_date"
+            title={trl("Ngày chuyển")}
+            responsive={["md"]}
+            render={(v: string) => <span className="whitespace-nowrap tabular-nums text-body">{formatDay(v)}</span>}
+          />
+          <Table.Column<Row>
+            title={trl("Đang ở")}
+            render={(_, r) =>
+              r.status === "PENDING" ? (
+                <DotLabel dot="bg-amber-500" label={STAGE_LABEL[r.stage]} />
+              ) : (
+                <StatusDot status={r.status} />
+              )
+            }
+          />
+          <Table.Column<Row>
+            title={trl("Người lập")}
+            responsive={["lg"]}
+            render={(_, r) => <CellText main={r.requester?.full_name ?? "—"} sub={formatDate(r.created_at)} />}
+          />
+          <Table.Column<Row>
+            title={<span className="sr-only">{trl("Thao tác")}</span>}
+            align="right"
+            width={56}
+            render={(_, r) => (
+              <ShowButton
+                hideText
+                type="text"
+                shape="circle"
+                icon={<Eye className="h-3.5 w-3.5" aria-hidden />}
+                recordItemId={r.id}
+                aria-label={trf("Xem {0}", [r.doc_no])}
+              />
+            )}
+          />
+        </Table>
+      </ListCard>
+    </ListPage>
   );
 };
 
