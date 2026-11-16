@@ -183,7 +183,7 @@ Các giới hạn bộ nhớ khác (đặt trong `.env`):
 | `hasura` | `pool_settings` trong metadata | 20 kết nối | Mặc định của Hasura là 50; mỗi kết nối PostgreSQL tốn RAM riêng |
 | `meilisearch` | `MEILI_MAX_INDEXING_MEMORY` | `512 MiB` | Mặc định Meilisearch dùng tới 2/3 RAM máy khi lập chỉ mục |
 | `gateway` | `GATEWAY_WORKERS` | `2` | Mặc định APISIX chạy một worker mỗi lõi CPU, mỗi worker nạp riêng WAF Coraza |
-| `ollama` | `AI_KV_CACHE_TYPE` | `q8_0` | Bộ đệm ngữ cảnh 8K tốn nửa RAM/VRAM so với `f16` (cần flash attention, đã bật) |
+| `ollama` | `AI_KV_CACHE_TYPE` | `q4_0` | Bộ đệm ngữ cảnh (KV cache) lượng tử hóa 4 bit, ngữ cảnh 12K vẫn nhỏ hơn `q8_0` ở 8K (khoảng 75%); đặt `q8_0` nếu chất lượng trả lời giảm (cần flash attention, đã bật) |
 
 Các tiến trình Python chạy với `MALLOC_ARENA_MAX=2` để glibc không tạo vùng heap riêng cho từng luồng. `lakehouse-sink` bỏ snapshot Iceberg cũ hơn 24 giờ mỗi giờ (giữ snapshot hiện tại chứa vị trí Kafka), nên siêu dữ liệu bảng không lớn dần; tệp manifest của snapshot đã bỏ vẫn nằm trên S3, dọn bằng Trino `ALTER TABLE lakehouse.bronze.<bảng> EXECUTE remove_orphan_files`.
 
@@ -205,7 +205,7 @@ tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo
 
 | Hạng mục | Giá trị |
 |---|---|
-| RAM / GPU | Chỉ chiếm khi có việc: qwen3:4b ~3 GB (kèm ngữ cảnh 8K), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
+| RAM / GPU | Chỉ chiếm khi có việc: qwen3:4b ~3 GB (kèm ngữ cảnh 12K), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
 | Đĩa | ~3,7 GB volume `ollama-models`, ~250 MB volume `ocr-models`, image `ocr` ~14 GB (PyTorch CUDA); sau lần tải đầu chạy không cần Internet |
 | Tốc độ | GPU: vài giây mỗi lượt hỏi, 1–2 giây mỗi trang OCR; CPU chậm hơn nhiều lần. Lần đầu sau khi nhàn rỗi chờ thêm thời gian nạp mô hình (chữ đầu tiên sau khoảng 5–6 giây; `ollama` và `ocr` đọc trước tệp mô hình vào page cache khi khởi động, nên máy ít RAM bị hệ điều hành thu hồi cache thì lần nạp đầu đọc lại từ đĩa, chậm hơn nhiều). Lượt hỏi và trang OCR chung một hàng đợi trong `ai-worker`, mỗi lúc một việc, lượt hỏi được ưu tiên |
 
