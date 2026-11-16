@@ -31,6 +31,7 @@ import {
 } from "@ant-design/icons";
 
 import { PR_STATUS_LABEL } from "../utils/status";
+import { DotLabel } from "./ui/ListCard";
 
 const STYLE: Record<string, { color: string; icon: ReactElement }> = {
   DRAFT: { color: "default", icon: <EditOutlined /> },
@@ -56,4 +57,27 @@ export const StatusTag = ({
       {labels[status] ?? status}
     </Tag>
   );
+};
+
+const DOT: Record<string, { dot: string; muted?: boolean }> = {
+  DRAFT: { dot: "bg-gray-400", muted: true },
+  PENDING: { dot: "bg-amber-500" },
+  RETURNED: { dot: "bg-orange-500" },
+  APPROVED: { dot: "bg-bamboo-500" },
+  CONFIRMED: { dot: "bg-bamboo-500" },
+  SETTLED: { dot: "bg-bamboo-500" },
+  REJECTED: { dot: "bg-red-500" },
+  CANCELLED: { dot: "bg-gray-400", muted: true },
+};
+
+/** Compact status for list tables: coloured dot + label. */
+export const StatusDot = ({
+  status,
+  labels = PR_STATUS_LABEL,
+}: {
+  status: string;
+  labels?: Record<string, string>;
+}) => {
+  const s = DOT[status] ?? { dot: "bg-gray-400" };
+  return <DotLabel dot={s.dot} muted={s.muted} label={labels[status] ?? status} />;
 };

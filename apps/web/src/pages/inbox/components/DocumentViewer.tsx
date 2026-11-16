@@ -196,7 +196,7 @@ export const DocumentViewer = ({
         </div>
       )}
 
-      <div className="relative mt-3 min-h-[420px] flex-1 overflow-hidden rounded-3xl bg-[#eef1ee]">
+      <div className="relative mt-3 min-h-[420px] flex-1 overflow-hidden rounded-xl bg-[#eef1ee]">
         <div className="absolute inset-0 overflow-auto px-6 pb-20 pt-6">
           {!file || file.scan === "clean" ? (
             <div
