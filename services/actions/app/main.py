@@ -41,6 +41,7 @@ from bamboo_common.pii import PiiCipher
 from . import (
     admin,
     ai_agent,
+    ai_suggestion,
     anchoring,
     api_gateway,
     attachments,
@@ -225,6 +226,7 @@ HANDLERS = {
     **anchoring.HANDLERS,
     **obs.HANDLERS,
     **ai_agent.HANDLERS,
+    **ai_suggestion.HANDLERS,
     **ocr.HANDLERS,
     **ocr_import.HANDLERS,
     **modules.HANDLERS,
@@ -332,6 +334,7 @@ def create_app(
         signature_trust_dir=settings.signature_trust_dir,
         signature_online=settings.signature_online,
         actions_secret=settings.actions_secret,
+        webhook_allow_private=settings.webhook_allow_private,
         mqtt=mqtt_admin.Dynsec(
             settings.mqtt_host,
             settings.mqtt_port,

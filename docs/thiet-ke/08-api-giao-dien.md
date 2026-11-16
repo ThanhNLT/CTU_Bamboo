@@ -98,7 +98,7 @@ Nghiệp vụ nhiều bước đi qua 137 Hasura Action (dịch vụ `actions`, 
 | Nhắn tin, lịch công tác ([ADR #65](#adr-65)) | `calendar_events`; subscription `chat_conversation`, `chat_message`, `chat_member` | `chat_open_direct`, `chat_create_group`, `chat_update_group`, `chat_leave`, `calendar_save`, `calendar_cancel`, `calendar_respond`; `insert_chat_message_one`, `update_chat_message_by_pk`, `update_chat_member_by_pk` |
 | Quản lý dự án ([ADR #66](#adr-66)) | `pm_project_detail`, `pm_plan_pdf`, `pm_report_pdf` | `pm_project_save`, `pm_members_set`, `pm_task_save`, `pm_task_delete`, `pm_task_reorder`, `pm_baseline_set`, `pm_report_create` |
 | Thời gian thực, phả hệ, cổng dịch vụ API ([ADR #64](#adr-64)) | `lineage_graph`, `api_catalog`; subscription `live_event`, `live_v_online` | `lineage_refresh`, `api_key_create`, `api_key_revoke`; `insert_live_presence_one` |
-| Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ocr_retry` |
+| Trí tuệ số | `ai_assistants`, `ai_models`, `ai_agent_stats`, `ai_suggestion_list`, `ocr_document` | `ai_ask`, `ai_agent_register`, `ai_agent_update`, `ai_agent_unregister`, `ai_suggestion_decide`, `ocr_retry` |
 | Vận hành | `obs_logs`, `backup_runs` | – |
 | Mô-đun chức năng ([ADR #56](#adr-56)) | `modules` | `module_enable`, `module_disable`, `module_install`, `module_uninstall` |
 | Thông tin pháp lý, chủ sở hữu ([ADR #57](#adr-57)) | `legal_status` | `legal_update`, `legal_application`, `legal_verify`, `transfer_ownership`, `create_subsidiary` |

@@ -55,7 +55,7 @@ export const AiAgentsTable = ({
         {models.length > 0 && <span className="text-[11.5px] text-muted">Ollama · {models.join(", ")}</span>}
       </div>
       <div className="relative mt-3 overflow-x-auto">
-        <table className="w-full min-w-[820px] border-collapse text-[12.5px]">
+        <table className="w-full min-w-[900px] border-collapse text-[12.5px]">
           <thead>
             <tr className="text-left text-[11.5px] text-muted">
               <th scope="col" className="border-b border-line py-2 pr-3 font-medium">
@@ -76,6 +76,9 @@ export const AiAgentsTable = ({
               <th scope="col" className="border-b border-line px-3 py-2 text-right font-medium">
                 {tr("Lỗi")}
               </th>
+              <th scope="col" className="border-b border-line px-3 py-2 text-right font-medium">
+                {tr("Đề xuất được nhận")}
+              </th>
               <th scope="col" className="border-b border-line px-3 py-2 font-medium">
                 {tr("Trạng thái")}
               </th>
@@ -87,7 +90,7 @@ export const AiAgentsTable = ({
           <tbody>
             {agents.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-muted">
+                <td colSpan={9} className="py-8 text-center text-muted">
                   {loading ? tr("Đang tải…") : tr("Chưa có tác tử nào.")}
                 </td>
               </tr>
@@ -103,9 +106,11 @@ export const AiAgentsTable = ({
                     {a.triggers.length > 0 && (
                       <span className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-800">
                         <Zap className="h-3 w-3" aria-hidden />
-                        {a.autonomy === "dry_run"
-                          ? trf("Đề xuất khi có {0} sự kiện", [a.triggers.length])
-                          : trf("Tự hành động khi có {0} sự kiện", [a.triggers.length])}
+                        {a.autonomy === "act"
+                          ? trf("Tự hành động khi có {0} sự kiện", [a.triggers.length])
+                          : a.autonomy === "suggest"
+                            ? trf("Đề xuất chờ chấp nhận khi có {0} sự kiện", [a.triggers.length])
+                            : trf("Đề xuất khi có {0} sự kiện", [a.triggers.length])}
                       </span>
                     )}
                   </td>
@@ -141,6 +146,18 @@ export const AiAgentsTable = ({
                     )}
                   >
                     {num(s.errors)}
+                  </td>
+                  <td className="border-b border-line/70 px-3 py-2.5 text-right tabular-nums text-body">
+                    {s.acceptance_rate == null ? "—" : `${Math.round(s.acceptance_rate * 100)}%`}
+                    {(s.suggestions_decided > 0 || s.suggestions_pending > 0) && (
+                      <span className="block text-[11px] text-muted">
+                        {trf("{0}/{1} · {2} chờ", [
+                          s.suggestions_accepted,
+                          s.suggestions_decided,
+                          s.suggestions_pending,
+                        ])}
+                      </span>
+                    )}
                   </td>
                   <td className="border-b border-line/70 px-3 py-2.5">
                     <span
