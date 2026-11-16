@@ -19,16 +19,18 @@
  * limitations under the License.
  */
 
-import { CreateButton, List, ShowButton, useTable } from "@refinedev/antd";
+import { CreateButton, ShowButton, useTable } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
-import { Input, Segmented, Space, Table, Tag, Typography } from "antd";
+import { Input, Segmented, Table } from "antd";
+import { Eye } from "lucide-react";
 
-import { StatusTag } from "../../components/StatusTag";
+import { StatusDot } from "../../components/StatusTag";
+import { CellText, CellTitle, DotLabel, ListCard, ListPage, ListPageHeader } from "../../components/ui";
 import { formatDate, formatDay } from "../../utils/format";
 import { PR_STATUS_LABEL } from "../../utils/status";
 import { OB_LIST } from "./queries";
 import { ACCOUNT_STATUS } from "./types";
-import { tr } from "../../i18n";
+import { tr, trf } from "../../i18n";
 
 type Row = BaseRecord & {
   doc_no: string;
@@ -43,6 +45,18 @@ type Row = BaseRecord & {
 
 const STATUS_FILTERS = ["ALL", "DRAFT", "PENDING", "RETURNED", "APPROVED", "REJECTED", "CANCELLED"];
 
+const TAG_DOT: Record<string, string> = {
+  green: "bg-bamboo-500",
+  success: "bg-bamboo-500",
+  blue: "bg-sky-500",
+  processing: "bg-sky-500",
+  orange: "bg-orange-500",
+  gold: "bg-amber-500",
+  warning: "bg-amber-500",
+  red: "bg-red-500",
+  error: "bg-red-500",
+};
+
 export const OnboardingList = () => {
   const { tableProps, filters, setFilters } = useTable<Row>({
     resource: "hr_onboarding_request",
@@ -52,80 +66,117 @@ export const OnboardingList = () => {
     liveMode: "auto",
   });
   const status = (filters.find((f) => "field" in f && f.field === "status")?.value as string) ?? "ALL";
+  const total = tableProps.pagination ? tableProps.pagination.total : undefined;
 
   return (
-    <List title={tr("Tiếp nhận nhân sự")} headerButtons={<CreateButton>{tr("Lập hồ sơ tiếp nhận")}</CreateButton>}>
-      <Space style={{ marginBottom: 16 }} wrap>
-        <Segmented
-          value={status}
-          options={STATUS_FILTERS.map((s) => ({ value: s, label: s === "ALL" ? tr("Tất cả") : PR_STATUS_LABEL[s] }))}
-          onChange={(v) => setFilters(v === "ALL" ? [] : [{ field: "status", operator: "eq", value: v }], "replace")}
-        />
-        <Input.Search
-          placeholder={tr("Tìm theo số hoặc họ tên")}
-          allowClear
-          style={{ width: 280 }}
-          onSearch={(q) =>
-            setFilters(
-              q
-                ? [
-                    {
-                      operator: "or",
-                      value: [
-                        { field: "doc_no", operator: "contains", value: q },
-                        { field: "full_name", operator: "contains", value: q },
-                      ],
-                    },
-                  ]
-                : [],
-              "replace",
-            )
-          }
-        />
-      </Space>
-      <Table {...tableProps} rowKey="id" scroll={{ x: 720 }}>
-        <Table.Column
-          dataIndex="doc_no"
-          title={tr("Số")}
-          sorter
-          render={(v: string) => (
-            <Typography.Text code style={{ whiteSpace: "nowrap" }}>
-              {v}
-            </Typography.Text>
-          )}
-        />
-        <Table.Column dataIndex="full_name" title={tr("Ứng viên")} sorter />
-        <Table.Column<Row>
-          title={tr("Vị trí bổ nhiệm")}
-          render={(_, r) =>
-            r.target_position ? (
-              <>
-                {r.target_position.name}
-                <br />
-                <Typography.Text type="secondary">{r.target_position.org_unit.name}</Typography.Text>
-              </>
-            ) : (
-              "—"
-            )
-          }
-        />
-        <Table.Column dataIndex="start_date" title={tr("Ngày vào làm")} sorter render={formatDay} responsive={["md"]} />
-        <Table.Column<Row>
-          dataIndex="status"
-          title={tr("Trạng thái")}
-          render={(s: string, r) => (
-            <Space direction="vertical" size={2}>
-              <StatusTag status={s} />
-              {s === "APPROVED" && (
-                <Tag color={ACCOUNT_STATUS[r.account_status]?.color}>{ACCOUNT_STATUS[r.account_status]?.label}</Tag>
-              )}
-            </Space>
-          )}
-        />
-        <Table.Column dataIndex={["requester", "full_name"]} title={tr("Người lập")} responsive={["lg"]} />
-        <Table.Column dataIndex="created_at" title={tr("Ngày lập")} sorter render={formatDate} responsive={["lg"]} />
-        <Table.Column<Row> title="" render={(_, r) => <ShowButton hideText size="small" recordItemId={r.id} />} />
-      </Table>
-    </List>
+    <ListPage>
+      <ListPageHeader
+        title={tr("Tiếp nhận nhân sự")}
+        description={tr("Hồ sơ tiếp nhận nhân sự mới và đề xuất bổ nhiệm vị trí")}
+        actions={<CreateButton size="large">{tr("Lập hồ sơ tiếp nhận")}</CreateButton>}
+      />
+      <ListCard
+        title={tr("Danh sách hồ sơ")}
+        meta={total !== undefined ? trf("{0} hồ sơ", [total]) : undefined}
+        toolbar={
+          <>
+            <Segmented
+              value={status}
+              options={STATUS_FILTERS.map((s) => ({
+                value: s,
+                label: s === "ALL" ? tr("Tất cả") : PR_STATUS_LABEL[s],
+              }))}
+              onChange={(v) =>
+                setFilters(v === "ALL" ? [] : [{ field: "status", operator: "eq", value: v }], "replace")
+              }
+            />
+            <Input.Search
+              placeholder={tr("Tìm theo số hoặc họ tên")}
+              allowClear
+              style={{ width: 280 }}
+              onSearch={(q) =>
+                setFilters(
+                  q
+                    ? [
+                        {
+                          operator: "or",
+                          value: [
+                            { field: "doc_no", operator: "contains", value: q },
+                            { field: "full_name", operator: "contains", value: q },
+                          ],
+                        },
+                      ]
+                    : [],
+                  "replace",
+                )
+              }
+            />
+          </>
+        }
+      >
+        <Table {...tableProps} rowKey="id" className="list-table" scroll={{ x: 820 }}>
+          <Table.Column<Row>
+            dataIndex="full_name"
+            title={tr("Ứng viên")}
+            sorter
+            render={(_, r) => <CellTitle title={r.full_name} sub={r.doc_no} />}
+          />
+          <Table.Column<Row>
+            title={tr("Vị trí bổ nhiệm")}
+            render={(_, r) =>
+              r.target_position ? (
+                <CellText main={r.target_position.name} sub={r.target_position.org_unit.name} />
+              ) : (
+                <span className="text-muted">—</span>
+              )
+            }
+          />
+          <Table.Column
+            dataIndex="start_date"
+            title={tr("Ngày vào làm")}
+            sorter
+            responsive={["md"]}
+            render={(v: string) => <span className="whitespace-nowrap tabular-nums text-body">{formatDay(v)}</span>}
+          />
+          <Table.Column<Row>
+            dataIndex="status"
+            title={tr("Trạng thái")}
+            render={(s: string, r) => {
+              const account = s === "APPROVED" ? ACCOUNT_STATUS[r.account_status] : undefined;
+              return (
+                <span className="flex flex-col items-start">
+                  <StatusDot status={s} />
+                  {account && (
+                    <DotLabel dot={TAG_DOT[account.color ?? ""] ?? "bg-gray-400"} label={account.label} muted />
+                  )}
+                </span>
+              );
+            }}
+          />
+          <Table.Column<Row>
+            dataIndex="created_at"
+            title={tr("Người lập")}
+            sorter
+            responsive={["lg"]}
+            render={(_, r) => <CellText main={r.requester?.full_name ?? "—"} sub={formatDate(r.created_at)} />}
+          />
+          <Table.Column<Row>
+            title={<span className="sr-only">{tr("Thao tác")}</span>}
+            align="right"
+            width={56}
+            render={(_, r) => (
+              <ShowButton
+                hideText
+                type="text"
+                shape="circle"
+                icon={<Eye className="h-3.5 w-3.5" aria-hidden />}
+                recordItemId={r.id}
+                aria-label={trf("Xem {0}", [r.doc_no])}
+              />
+            )}
+          />
+        </Table>
+      </ListCard>
+    </ListPage>
   );
 };

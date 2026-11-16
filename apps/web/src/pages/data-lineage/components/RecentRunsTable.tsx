@@ -104,7 +104,7 @@ export const RecentRunsTable = ({
                   key={r.id}
                   className={cn(bad ? "bg-red-50/70" : r.nodeId === selectedNodeId ? "bg-bamboo-50/60" : "")}
                 >
-                  <td className="rounded-l-lg border-b border-line/70 py-2.5 pl-2 pr-3">
+                  <td className="rounded-l-xl border-b border-line/70 py-2.5 pl-2 pr-3">
                     <button
                       type="button"
                       onClick={() => onSelectNode(r.nodeId)}
@@ -115,7 +115,7 @@ export const RecentRunsTable = ({
                   </td>
                   <td className="border-b border-line/70 px-3 py-2.5 tabular-nums text-body">{r.start}</td>
                   <td className="border-b border-line/70 px-3 py-2.5 tabular-nums text-body">{r.duration}</td>
-                  <td className="rounded-r-lg border-b border-line/70 py-2.5 pl-3 pr-2">
+                  <td className="rounded-r-xl border-b border-line/70 py-2.5 pl-3 pr-2">
                     <ResultBadge result={r.result} />
                   </td>
                 </tr>

@@ -82,6 +82,7 @@ const SHARED_COMPONENTS = {
   Button: { borderRadius: 999, borderRadiusLG: 999, borderRadiusSM: 999, fontWeight: 500 },
   Segmented: { borderRadius: 999, borderRadiusSM: 999, borderRadiusXS: 999, borderRadiusLG: 999 },
   Card: { borderRadiusLG: 20 },
+  Alert: { borderRadiusLG: 14 },
   Modal: { borderRadiusLG: 22 },
   Tag: { borderRadiusSM: 999 },
 };
