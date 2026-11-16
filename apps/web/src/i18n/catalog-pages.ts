@@ -737,7 +737,6 @@ export const EN_PAGES: Record<string, string> = {
   Dòng: "Rows",
   "Dòng hàng": "Line items",
   "Dòng nhật ký": "Log lines",
-  "Dòng suy nghĩ": "Reasoning",
   "Dòng {0}: cần mô tả, đơn vị tính và số lượng lớn hơn 0":
     "Line {0}: description, unit of measure and a quantity greater than 0 are required",
   "Dòng “{0}” cần dạng tên=giá trị": "Line “{0}” must be in the form name=value",
@@ -2440,7 +2439,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đang lập…": "Preparing…",
   "Đang quét an toàn…": "Running security scan…",
   "Đang quét mã độc…": "Scanning for malware…",
-  "Đang suy luận…": "Reasoning…",
   "Đang tìm trong Thư viện tri thức…": "Searching the Knowledge library…",
   "Đang tô sáng: ": "Highlighting: ",
   "Đang tạo tài khoản": "Creating account",
@@ -2573,7 +2571,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đã sao chép bằng chứng đối soát.": "Reconciliation evidence copied.",
   "Đã sao chép câu trả lời.": "Answer copied.",
   "Đã sao chép danh sách tài khoản": "Account list copied",
-  "Đã suy nghĩ trong {0}": "Thought for {0}",
   "Đã thu hồi.": "Revoked.",
   "Đã thêm người. Tạo tài khoản và bổ nhiệm ở ngăn bên phải.":
     "Person added. Create the account and appoint them in the right-hand panel.",

@@ -77,6 +77,14 @@ def fake():
     server.server.shutdown()
 
 
+def test_gioi_han_token_ke_hoach_theo_dong_suy_nghi(fake):
+    messages = [{"role": "user", "content": "x"}]
+    ai_agent_runner.chat_text(Ollama(fake.url), "qwen3:4b", messages, think=False)
+    assert fake.last_body["max_tokens"] == ai_agent_runner.PLAN_MAX_TOKENS == 1024
+    ai_agent_runner.chat_text(Ollama(fake.url), "qwen3:4b", messages, think=True)
+    assert fake.last_body["max_tokens"] == ai_agent_runner.PLAN_THINK_MAX_TOKENS == 4096
+
+
 def agent(conn, owner: str, autonomy: str = "act", allowed=("comment", "notify"), status: str = "active") -> str:
     return str(
         conn.execute(

@@ -70,7 +70,7 @@ THINK_OVERRUN_MESSAGE = (
 )
 TRUNCATED_NOTE = "\n\n(câu trả lời bị cắt do quá dài)"
 ANSWER_MAX_TOKENS = 1024
-THINK_MAX_TOKENS = 2048
+THINK_MAX_TOKENS = 4096
 SYSTEM_PROMPT = """Bạn là trợ lý tra cứu Thư viện tri thức của doanh nghiệp. Trả lời bằng tiếng Việt, ngắn gọn.
 Quy tắc:
 - Chỉ trả lời dựa trên các văn bản trong <tai_lieu>. Không dùng kiến thức bên ngoài, không đoán.
