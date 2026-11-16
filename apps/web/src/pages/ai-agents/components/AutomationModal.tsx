@@ -22,7 +22,7 @@
 import { Checkbox, Form, Input, Modal, Radio, Select } from "antd";
 import { useEffect } from "react";
 
-import type { Agent, AutomationInput, TriggerOptions } from "../types";
+import type { Agent, AutomationInput, ProjectOption, TriggerOptions } from "../types";
 import { tr, trf } from "../../../i18n";
 
 const EXAMPLE = tr(
@@ -33,6 +33,7 @@ export const AutomationModal = ({
   open,
   agent,
   options,
+  projects,
   saving,
   onCancel,
   onSubmit,
@@ -40,12 +41,24 @@ export const AutomationModal = ({
   open: boolean;
   agent?: Agent;
   options: TriggerOptions | null;
+  projects: ProjectOption[];
   saving: boolean;
   onCancel: () => void;
   onSubmit: (v: AutomationInput) => void;
 }) => {
   const [form] = Form.useForm<AutomationInput>();
   const allowed = Form.useWatch("allowed_actions", form) ?? [];
+  const autonomy = Form.useWatch("autonomy", form);
+  const suggestOnly = new Set((options?.actions ?? []).filter((a) => a.suggest_only).map((a) => a.code));
+
+  useEffect(() => {
+    if (autonomy && autonomy !== "suggest" && allowed.some((a) => suggestOnly.has(a)))
+      form.setFieldValue(
+        "allowed_actions",
+        allowed.filter((a) => !suggestOnly.has(a)),
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autonomy]);
 
   useEffect(() => {
     if (!open || !agent) return;
@@ -55,6 +68,7 @@ export const AutomationModal = ({
       allowed_actions: agent.allowed_actions.length ? agent.allowed_actions : ["comment"],
       autonomy: agent.autonomy,
       webhook_url: agent.webhook_url ?? "",
+      project_id: agent.project_id ?? undefined,
     });
   }, [open, agent, form]);
 
@@ -106,9 +120,28 @@ export const AutomationModal = ({
         <Form.Item name="allowed_actions" label={tr("Hành động được phép")}>
           <Checkbox.Group
             className="flex flex-col gap-1.5"
-            options={(options?.actions ?? []).map((a) => ({ value: a.code, label: tr(a.label) }))}
+            options={(options?.actions ?? []).map((a) => ({
+              value: a.code,
+              label: tr(a.label),
+              disabled: a.suggest_only && autonomy !== "suggest",
+            }))}
           />
         </Form.Item>
+        {allowed.includes("project_task") && (
+          <Form.Item
+            name="project_id"
+            label={tr("Dự án đích")}
+            extra={tr("Công việc được tạo trong dự án này khi người quản lý dự án chấp nhận đề xuất.")}
+            rules={[{ required: true, message: tr("Chọn dự án đích") }]}
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder={tr("Chọn dự án")}
+              options={projects.map((p) => ({ value: p.id, label: `${p.code} · ${p.name}` }))}
+            />
+          </Form.Item>
+        )}
         {allowed.includes("webhook") && (
           <Form.Item
             name="webhook_url"
@@ -118,7 +151,17 @@ export const AutomationModal = ({
             <Input placeholder="https://" />
           </Form.Item>
         )}
-        <Form.Item name="autonomy" label={tr("Mức tự chủ")}>
+        <Form.Item
+          name="autonomy"
+          label={tr("Mức tự chủ")}
+          extra={
+            autonomy === "suggest"
+              ? tr(
+                  "Mỗi hành động thành một đề xuất cho người có thẩm quyền (người đang duyệt, quản lý dự án hoặc người phụ trách); người đó sửa được nội dung rồi chấp nhận để hệ thống thực hiện bằng quyền của chính họ.",
+                )
+              : undefined
+          }
+        >
           <Radio.Group options={(options?.autonomy ?? []).map((a) => ({ value: a.code, label: tr(a.label) }))} />
         </Form.Item>
       </Form>
