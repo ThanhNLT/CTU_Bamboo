@@ -22,6 +22,7 @@
 import { App, Button, Spin, Table, Tag } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
+import { usePolling } from "../../live/usePolling";
 import { queueOverview, retryMessage, verifyMessage, type QueueCount, type QueueMessage } from "./api";
 import { tr, trf } from "../../i18n";
 
@@ -45,9 +46,8 @@ export const QueuePage = () => {
   );
   useEffect(() => {
     void load();
-    const timer = window.setInterval(() => void load(), 8000);
-    return () => window.clearInterval(timer);
   }, [load]);
+  usePolling(() => void load(), 8000);
 
   const verify = async (id: string) => {
     try {
