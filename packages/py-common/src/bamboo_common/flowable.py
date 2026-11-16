@@ -140,6 +140,10 @@ class FlowableClient:
         }
         self._check(self.ext.post(f"acquire/jobs/{job_id}/complete", json=body))
 
+    def external_unacquire(self, job_id: str) -> None:
+        """Trả việc về hàng chờ ngay (Flowable chỉ giao việc chưa khoá; khoá hết hạn chỉ được dọn theo chu kỳ)."""
+        self._check(self.ext.post(f"unacquire/jobs/{job_id}", json={"workerId": self.WORKER}))
+
     def external_fail(self, job_id: str, message: str, retries: int) -> None:
         body = {"workerId": self.WORKER, "errorMessage": message[:500], "retries": retries, "retryTimeout": "PT30S"}
         self._check(self.ext.post(f"acquire/jobs/{job_id}/fail", json=body))

@@ -2372,6 +2372,21 @@
               }
             },
             {
+              "name": "project",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "pm",
+                    "name": "project"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "project_id": "id"
+                  }
+                }
+              }
+            },
+            {
               "name": "tenant",
               "using": {
                 "manual_configuration": {
@@ -2408,6 +2423,20 @@
                   "remote_table": {
                     "schema": "core",
                     "name": "ai_question"
+                  },
+                  "column_mapping": {
+                    "id": "agent_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ai_suggestions",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_suggestion"
                   },
                   "column_mapping": {
                     "id": "agent_id"
@@ -2577,6 +2606,22 @@
                   },
                   "column_mapping": {
                     "tenant_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "array_relationships": [
+            {
+              "name": "ai_suggestions",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_suggestion"
+                  },
+                  "column_mapping": {
+                    "id": "run_id"
                   }
                 }
               }
@@ -2915,6 +2960,234 @@
                           "person_id": {
                             "_eq": "X-Hasura-User-Id"
                           }
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            }
+          ]
+        },
+        {
+          "table": {
+            "schema": "core",
+            "name": "ai_suggestion"
+          },
+          "object_relationships": [
+            {
+              "name": "agent",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent"
+                  },
+                  "column_mapping": {
+                    "agent_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "run",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent_run"
+                  },
+                  "column_mapping": {
+                    "run_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "decided_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "decided_by": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "tenant",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "tenant"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "recipient",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "person"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "recipient_id": "id"
+                  }
+                }
+              }
+            }
+          ],
+          "select_permissions": [
+            {
+              "role": "user",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_or": [
+                            {
+                              "recipient_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "_exists": {
+                                "_table": {
+                                  "schema": "core",
+                                  "name": "v_ai_admin"
+                                },
+                                "_where": {
+                                  "_and": [
+                                    {
+                                      "person_id": {
+                                        "_eq": "X-Hasura-User-Id"
+                                      }
+                                    },
+                                    {
+                                      "tenant_id": {
+                                        "_eq": "X-Hasura-Tenant-Id"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "_exists": {
+                        "_table": {
+                          "schema": "core",
+                          "name": "tenant_module"
+                        },
+                        "_where": {
+                          "_and": [
+                            {
+                              "tenant_id": {
+                                "_eq": "X-Hasura-Tenant-Id"
+                              }
+                            },
+                            {
+                              "module": {
+                                "_eq": "ai"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "allow_aggregations": true
+              }
+            },
+            {
+              "role": "platform_admin",
+              "permission": {
+                "columns": "*",
+                "filter": {
+                  "_and": [
+                    {
+                      "_and": [
+                        {
+                          "tenant_id": {
+                            "_eq": "X-Hasura-Tenant-Id"
+                          }
+                        },
+                        {
+                          "_or": [
+                            {
+                              "recipient_id": {
+                                "_eq": "X-Hasura-User-Id"
+                              }
+                            },
+                            {
+                              "_exists": {
+                                "_table": {
+                                  "schema": "core",
+                                  "name": "v_ai_admin"
+                                },
+                                "_where": {
+                                  "_and": [
+                                    {
+                                      "person_id": {
+                                        "_eq": "X-Hasura-User-Id"
+                                      }
+                                    },
+                                    {
+                                      "tenant_id": {
+                                        "_eq": "X-Hasura-Tenant-Id"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
                         }
                       ]
                     },
@@ -4211,6 +4484,36 @@
                   },
                   "column_mapping": {
                     "id": "person_id"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ai_suggestions_by_decided_by_person",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_suggestion"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "decided_by"
+                  }
+                }
+              }
+            },
+            {
+              "name": "ai_suggestions_by_recipient",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_suggestion"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "recipient_id"
                   }
                 }
               }
@@ -11919,6 +12222,21 @@
           },
           "array_relationships": [
             {
+              "name": "ai_agents",
+              "using": {
+                "manual_configuration": {
+                  "remote_table": {
+                    "schema": "core",
+                    "name": "ai_agent"
+                  },
+                  "column_mapping": {
+                    "tenant_id": "tenant_id",
+                    "id": "project_id"
+                  }
+                }
+              }
+            },
+            {
               "name": "dependencys",
               "using": {
                 "manual_configuration": {
@@ -19516,6 +19834,10 @@
           {
             "name": "webhook_url",
             "type": "String"
+          },
+          {
+            "name": "project_id",
+            "type": "uuid"
           }
         ],
         "output_type": "AiAgentAutomation!",
@@ -19593,6 +19915,88 @@
         }
       ],
       "comment": "Xóa tác tử AI chưa có lượt hỏi, hoặc ngừng kích hoạt nếu đã có (cần core.ai.manage)"
+    },
+    {
+      "name": "ai_suggestion_list",
+      "definition": {
+        "kind": "synchronous",
+        "type": "query",
+        "handler": "{{ACTIONS_URL}}/actions/ai_suggestion_list",
+        "arguments": [
+          {
+            "name": "entity_type",
+            "type": "String"
+          },
+          {
+            "name": "entity_id",
+            "type": "uuid"
+          },
+          {
+            "name": "status",
+            "type": "String"
+          }
+        ],
+        "output_type": "[AiSuggestion!]!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Đề xuất của tác tử AI gửi cho người gọi (mặc định PENDING, ALL là mọi trạng thái; ADR #85)"
+    },
+    {
+      "name": "ai_suggestion_decide",
+      "definition": {
+        "kind": "synchronous",
+        "type": "mutation",
+        "handler": "{{ACTIONS_URL}}/actions/ai_suggestion_decide",
+        "arguments": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "decision",
+            "type": "String!"
+          },
+          {
+            "name": "edits",
+            "type": "jsonb"
+          },
+          {
+            "name": "reason",
+            "type": "String"
+          }
+        ],
+        "output_type": "AiSuggestionDecision!",
+        "headers": [
+          {
+            "name": "x-actions-secret",
+            "value_from_env": "ACTIONS_SECRET"
+          }
+        ],
+        "timeout": 30
+      },
+      "permissions": [
+        {
+          "role": "user"
+        },
+        {
+          "role": "platform_admin"
+        }
+      ],
+      "comment": "Người nhận chấp nhận (ACCEPT, sửa được nội dung) hoặc bỏ qua (DISMISS) đề xuất AI; thực hiện dưới quyền người nhận"
     },
     {
       "name": "modules",
@@ -22078,6 +22482,10 @@
           {
             "name": "regulations",
             "type": "json!"
+          },
+          {
+            "name": "ai_agents",
+            "type": "json"
           }
         ]
       },
@@ -23120,6 +23528,124 @@
           {
             "name": "avg_context_tokens",
             "type": "Float"
+          },
+          {
+            "name": "suggestions_pending",
+            "type": "Int!"
+          },
+          {
+            "name": "suggestions_accepted",
+            "type": "Int!"
+          },
+          {
+            "name": "suggestions_decided",
+            "type": "Int!"
+          },
+          {
+            "name": "acceptance_rate",
+            "type": "Float"
+          }
+        ]
+      },
+      {
+        "name": "AiSuggestion",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "agent_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "agent_name",
+            "type": "String!"
+          },
+          {
+            "name": "run_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "entity_type",
+            "type": "String"
+          },
+          {
+            "name": "entity_id",
+            "type": "uuid"
+          },
+          {
+            "name": "entity_label",
+            "type": "String"
+          },
+          {
+            "name": "action",
+            "type": "jsonb!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "reason",
+            "type": "String"
+          },
+          {
+            "name": "result",
+            "type": "jsonb"
+          },
+          {
+            "name": "assessment",
+            "type": "String"
+          },
+          {
+            "name": "risk",
+            "type": "String"
+          },
+          {
+            "name": "project_code",
+            "type": "String"
+          },
+          {
+            "name": "project_name",
+            "type": "String"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamptz!"
+          },
+          {
+            "name": "expires_at",
+            "type": "timestamptz!"
+          },
+          {
+            "name": "decided_at",
+            "type": "timestamptz"
+          }
+        ]
+      },
+      {
+        "name": "AiSuggestionDecision",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid!"
+          },
+          {
+            "name": "status",
+            "type": "String!"
+          },
+          {
+            "name": "reason",
+            "type": "String"
+          },
+          {
+            "name": "result",
+            "type": "jsonb"
+          },
+          {
+            "name": "action",
+            "type": "jsonb!"
           }
         ]
       },
@@ -23178,6 +23704,10 @@
           {
             "name": "webhook_url",
             "type": "String"
+          },
+          {
+            "name": "project_id",
+            "type": "uuid"
           }
         ]
       },
