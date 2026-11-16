@@ -112,6 +112,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [83](#adr-83) | 13/11/2026 | GitOps chạy theo chu kỳ bằng systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production` |
 | [84](#adr-84) | 14/11/2026 | Bước AI trong sơ đồ BPMN: tác tử đánh giá, kết quả thành biến cho cổng rẽ nhánh; flow-sync chỉ hỏi trạng thái |
 | [85](#adr-85) | 14/11/2026 | Tác tử mức đề xuất: hành động thành đề xuất, người có thẩm quyền chấp nhận thì thực hiện bằng quyền của chính họ |
+| [86](#adr-86) | 16/11/2026 | Tối ưu AI không gian I: KV cache `q4_0`, ngữ cảnh 12K, ẩn suy nghĩ ở giao diện, ngân sách suy nghĩ 4096 token |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -926,6 +927,15 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Mở được hành động có tác động nghiệp vụ (trả lại chứng từ, thêm việc vào kế hoạch dự án) mà AI không bao giờ vượt quyền: hệ thống thực hiện bằng quyền của người có thẩm quyền và qua đúng hàm nghiệp vụ sẵn có, nên mọi kiểm tra (người duyệt, quyền quản lý dự án, `MAX_TASKS`) giữ nguyên. Người nhận sửa được nội dung trước khi chấp nhận, nên ghi chú sai của mô hình không tới người lập. Tỉ lệ chấp nhận đo được chất lượng của từng tác tử. Bảng `core.ai_suggestion` nằm trong schema `core` nên có trong CDC và Lakehouse như `core.ai_agent_run`: `action` chỉ chứa nội dung mô hình sinh ra đã che PII (cùng mức với `ai_agent_run.plan`), không chứa văn bản tệp như `page_texts` của OCR ([ADR #52](#adr-52)), nên không loại cột.
 - **Đã loại:** Cho `act` tự trả lại chứng từ hay tạo việc (AI quyết định thay người duyệt); hàng đợi duyệt riêng cho đề xuất thay vì giao thẳng cho người có thẩm quyền; tự chấp nhận theo ngưỡng tin cậy; AI chọn dự án hay người phụ trách công việc; liên kết cố định chứng từ ↔ dự án.
 - **Giới hạn hiện tại:** Thông báo, mô tả đề xuất do máy chủ ghi bằng tiếng Việt. Một chứng từ có nhiều người duyệt mở thì mỗi người nhận một đề xuất trả lại; một người chấp nhận thì đề xuất của người khác hết hạn ở lần quét sau. Đề xuất không gắn chứng từ (bước AI khởi chạy tay) chỉ hiện ở danh sách "Đề xuất AI của tôi" của hộp việc. Ủy quyền duyệt không chuyển đề xuất cho người được ủy quyền.
+
+(adr-86)=
+## ADR #86: Tối ưu AI không gian I: KV cache `q4_0`, ngữ cảnh 12K, ẩn suy nghĩ ở giao diện, ngân sách suy nghĩ 4096 token
+
+- **Ngày:** 16/11/2026
+- **Quyết định:** Bổ sung [ADR #51](#adr-51) và [ADR #63](#adr-63). Giữ `qwen3:4b`; `AI_KV_CACHE_TYPE` mặc định `q4_0` (trước là `q8_0`), `OLLAMA_CONTEXT_LENGTH` 8192 lên 12288. `THINK_MAX_TOKENS` 2048 lên 4096; tác tử tự động bật `think` dùng `PLAN_THINK_MAX_TOKENS=4096` (tắt vẫn `PLAN_MAX_TOKENS=1024`); `ANSWER_MAX_TOKENS` giữ 1024. Trang trợ lý không còn hiện dòng suy nghĩ và không truy vấn trường `thinking`: khi chưa có câu trả lời chỉ hiện chỉ báo chờ. Cột `core.ai_question.thinking`, việc worker ghi và quyền Hasura giữ nguyên.
+- **Lý do:** Trọng số đã là Q4_K_M nên phần còn lại để giảm bộ nhớ là KV cache; `q4_0` ở 12K vẫn nhỏ hơn `q8_0` ở 8K (khoảng 75%). Ngữ cảnh 12K đủ chứa 3000 token ngữ cảnh RAG, prompt và 4096 token sinh. Suy nghĩ dùng hết ngân sách thì lượt hỏi lỗi `THINK_OVERRUN_MESSAGE`, nên model cần đủ token để nghĩ xong rồi mới trả lời. Nội dung suy nghĩ không cần cho người dùng, giữ trong CSDL để dùng lại câu trả lời và tra soát.
+- **Đã loại:** Đổi sang model nhỏ hơn (mất chất lượng tiếng Việt); bật suy nghĩ mặc định (chậm hơn nhiều); xoá cột `thinking`.
+- **Giới hạn hiện tại:** KV `q4_0` có thể giảm nhẹ chất lượng ở ngữ cảnh dài, quay lại bằng `AI_KV_CACHE_TYPE=q8_0`. Lượt hỏi và bước AI bật `think` lâu hơn, bước AI dễ chạm `AI_STEP_TIMEOUT`.
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
