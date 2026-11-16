@@ -47,6 +47,7 @@ x-bao-sync-env: &bao-sync-env
 services:
   db:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     image: postgis/postgis:17-3.5
     platform: linux/amd64
     environment:
@@ -114,6 +115,7 @@ services:
 
   keycloak:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     pull_policy: ${BAMBOO_PULL_POLICY:-build}
     build:
       context: ../platform/keycloak
@@ -154,6 +156,7 @@ services:
 
   flowable:
     logging: *logging
+    cpus: ${BAMBOO_CPU_LIMIT:-0}
     image: flowable/flowable-rest:8.0.0
     depends_on:
       migrate:

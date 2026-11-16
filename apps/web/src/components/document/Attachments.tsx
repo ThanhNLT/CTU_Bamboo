@@ -20,7 +20,7 @@
  */
 
 import type { ReactElement } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { App, Button, List, Popconfirm, Space, Tag, Tooltip, Typography, Upload } from "antd";
 import {
   BugOutlined,
@@ -35,6 +35,7 @@ import {
 } from "@ant-design/icons";
 
 import { request } from "../../api/client";
+import { usePolling } from "../../live/usePolling";
 import { uploadContentType } from "../../utils/fileType";
 import { useModules } from "../../modules/useModules";
 import { formatDate } from "../../utils/format";
@@ -109,11 +110,7 @@ export const Attachments = ({ doc, entityType, me, canUpload, onChange, hint = t
   const ocrBusy = doc.attachments.some((a) => a.ocr && ["PENDING", "RUNNING"].includes(a.ocr.status));
   const files = useModules().enabled("files");
 
-  useEffect(() => {
-    if (!ocrBusy) return;
-    const t = window.setInterval(onChange, OCR_POLL_MS);
-    return () => window.clearInterval(t);
-  }, [ocrBusy, onChange]);
+  usePolling(onChange, OCR_POLL_MS, ocrBusy);
 
   const upload = async (file: File) => {
     if (file.size > MAX) {
