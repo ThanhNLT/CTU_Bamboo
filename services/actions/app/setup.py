@@ -754,6 +754,11 @@ def finish(
                 )
             ensure_unique(conn, company)
             tid = _build_company(conn, data, accounts, signer, signed)
+            if "ai" in (data.get("modules") or []):
+                from .ai_agent import ensure_default_assistant
+
+                owner = conn.execute("SELECT person_id FROM core.tenant_owner WHERE tenant_id = %s", (tid,)).fetchone()
+                ensure_default_assistant(conn, tid, owner[0], ctx.ai_chat_model)
             conn.execute(
                 "UPDATE core.setup_application SET finished_at = now(), tenant_id = %s WHERE id = %s", (tid, a["id"])
             )

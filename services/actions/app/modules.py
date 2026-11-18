@@ -589,6 +589,10 @@ class Manager:
                 "INSERT INTO core.tenant_module (tenant_id, module, enabled_by) VALUES (%s, %s, %s)",
                 (self.tenant, c, self.person),
             )
+        if "ai" in todo:
+            from .ai_agent import ensure_default_assistant
+
+            ensure_default_assistant(self.conn, self.tenant, self.person, self.ctx.ai_chat_model)
         return todo
 
     def disable(self, code: str) -> list[str]:
