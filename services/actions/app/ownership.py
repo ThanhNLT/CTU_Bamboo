@@ -153,6 +153,10 @@ def create_subsidiary(conn: psycopg.Connection, session: dict, args: dict, ctx: 
                    SELECT %s, module, %s FROM core.tenant_module WHERE tenant_id = %s""",
                 (tid, owner, tenant),
             )
+            if conn.execute("SELECT core.module_enabled(%s, 'ai')", (tid,)).fetchone()[0]:
+                from .ai_agent import ensure_default_assistant
+
+                ensure_default_assistant(conn, tid, owner, ctx.ai_chat_model)
             if company["tax_code"]:
                 conn.execute(
                     """UPDATE core.tenant SET tax_code = %s, legal_name = %s, address = %s, legal_rep_name = %s,
