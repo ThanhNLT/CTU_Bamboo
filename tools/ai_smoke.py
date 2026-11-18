@@ -23,7 +23,7 @@
 Hỏi bằng tác tử "Trợ lý quy chế" của Tập đoàn X dưới danh tính người tạo tác tử, gọi thẳng dịch vụ actions,
 chấm từng câu bằng luật trong `ai_smoke_cases.json` (trạng thái, từ khóa, tài liệu trích dẫn) và in số đo tốc độ:
 chữ đầu tiên (từ lúc gửi), tổng thời gian, có phải nạp mô hình không. `--cold` gỡ mô hình khỏi bộ nhớ trước câu đầu.
-Mọi câu còn được kiểm theo ADR #85: trả lời bằng ngôn ngữ của câu hỏi, không lẫn phần lập luận của mô hình
+Mọi câu còn được kiểm theo ADR #89: trả lời bằng ngôn ngữ của câu hỏi, không lẫn phần lập luận của mô hình
 (`<think>`), không dài quá `max_words` từ (mặc định 120).
 Mục tiêu tốc độ trên RTX 4060: mô hình đã nạp chữ đầu < 2 giây và cả lượt < 10 giây; nạp lạnh chữ đầu < 8 giây.
 """

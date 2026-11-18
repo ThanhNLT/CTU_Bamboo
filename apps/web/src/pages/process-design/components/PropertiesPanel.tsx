@@ -23,7 +23,7 @@ import { Input, Select } from "antd";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
-import type { FormDef, Issue, SelectedElement } from "../types";
+import type { AiAgentOption, FormDef, Issue, SelectedElement } from "../types";
 import { ScriptField } from "./ScriptField";
 import { tr } from "../../../i18n";
 
@@ -55,10 +55,12 @@ export const PropertiesPanel = ({
   readOnly,
   showChecks = true,
   modelId,
+  aiAgents = [],
   onChange,
   onFocus,
 }: {
   modelId?: string;
+  aiAgents?: AiAgentOption[];
   element?: SelectedElement;
   forms: FormDef[];
   issues: Issue[];
@@ -155,6 +157,7 @@ export const PropertiesPanel = ({
                       { value: "http", label: tr("Gọi API ngoài (https)") },
                       { value: "setvar", label: tr("Đặt giá trị biến") },
                       { value: "script", label: tr("Chạy kịch bản tự viết") },
+                      { value: "ai", label: tr("AI đánh giá") },
                     ]}
                     onChange={(v?: string) => onChange({ automationAction: v ?? "" })}
                   />
@@ -207,6 +210,56 @@ export const PropertiesPanel = ({
                       {tr("Kết quả lưu vào biến ")} <span className="font-mono">{element.id}_status</span>,{" "}
                       <span className="font-mono">{element.id}_ok</span> {tr(" và")}{" "}
                       <span className="font-mono">{element.id}_body</span> {tr(" để cổng rẽ nhánh dùng.")}
+                    </p>
+                  </>
+                )}
+                {element.automationAction === "ai" && (
+                  <>
+                    <Field
+                      label={tr("Tác tử thực hiện")}
+                      hint={tr("Tác tử đang hoạt động của tổ chức; tác tử bật tra cứu tài liệu sẽ đối chiếu quy chế")}
+                    >
+                      <Select
+                        aria-label={tr("Tác tử AI của bước")}
+                        className="w-full"
+                        showSearch
+                        optionFilterProp="label"
+                        disabled={readOnly}
+                        value={element.automationAgent || undefined}
+                        placeholder={tr("Chọn tác tử")}
+                        notFoundContent={tr("Chưa có tác tử AI đang hoạt động (cấu hình ở trang Tác tử AI)")}
+                        options={[
+                          ...aiAgents.map((a) => ({
+                            value: a.id,
+                            label: a.searchDocs ? `${a.name} · ${tr("tra cứu quy chế")}` : a.name,
+                          })),
+                          ...(element.automationAgent && !aiAgents.some((a) => a.id === element.automationAgent)
+                            ? [{ value: element.automationAgent, label: tr("Tác tử không còn hoạt động") }]
+                            : []),
+                        ]}
+                        onChange={(v?: string) => onChange({ automationAgent: v ?? "" })}
+                      />
+                    </Field>
+                    <Field
+                      label={tr("Nhiệm vụ của bước")}
+                      hint={tr("Tối đa 1000 ký tự; dùng {biến} để chèn giá trị. Tác tử đọc chứng từ và trả mức rủi ro")}
+                    >
+                      <Input.TextArea
+                        aria-label={tr("Nhiệm vụ của bước AI")}
+                        autoSize={{ minRows: 3 }}
+                        maxLength={1000}
+                        disabled={readOnly}
+                        placeholder={tr("Đánh giá rủi ro của đề nghị {doc_no} theo quy chế mua sắm")}
+                        value={element.automationTask ?? ""}
+                        onChange={(e) => onChange({ automationTask: e.target.value })}
+                      />
+                    </Field>
+                    <p className="m-0 text-[11.5px] text-muted">
+                      {tr("Kết quả lưu vào biến ")} <span className="font-mono">{element.id}_risk</span> (low, medium,
+                      high, unknown), <span className="font-mono">{element.id}_assessment</span> {tr(" và")}{" "}
+                      <span className="font-mono">{element.id}_ok</span>
+                      {tr(". Điều kiện cổng ví dụ: ")}
+                      <span className="font-mono">{`\${${element.id}_risk == 'high'}`}</span>
                     </p>
                   </>
                 )}

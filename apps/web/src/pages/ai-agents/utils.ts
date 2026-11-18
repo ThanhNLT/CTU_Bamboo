@@ -76,6 +76,10 @@ const EMPTY: Omit<AgentStats, "agent_id"> = {
   retried: 0,
   tokens_per_second: null,
   avg_context_tokens: null,
+  suggestions_pending: 0,
+  suggestions_accepted: 0,
+  suggestions_decided: 0,
+  acceptance_rate: null,
 };
 
 export const statsOf = (stats: AgentStats[], id: string): AgentStats =>

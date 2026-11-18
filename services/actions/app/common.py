@@ -62,6 +62,7 @@ class Context:
     signature_trust_dir: str = ""
     signature_online: bool = True
     actions_secret: str = ""
+    webhook_allow_private: bool = False
     mqtt: "Dynsec | None" = None
 
 

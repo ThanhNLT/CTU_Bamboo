@@ -737,7 +737,6 @@ export const EN_PAGES: Record<string, string> = {
   Dòng: "Rows",
   "Dòng hàng": "Line items",
   "Dòng nhật ký": "Log lines",
-  "Dòng suy nghĩ": "Reasoning",
   "Dòng {0}: cần mô tả, đơn vị tính và số lượng lớn hơn 0":
     "Line {0}: description, unit of measure and a quantity greater than 0 are required",
   "Dòng “{0}” cần dạng tên=giá trị": "Line “{0}” must be in the form name=value",
@@ -2446,7 +2445,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đang quét an toàn…": "Running security scan…",
   "Đang quét mã độc…": "Scanning for malware…",
   "Đang soạn câu trả lời…": "Composing the answer…",
-  "Đang suy luận…": "Reasoning…",
   "Đang tìm trong Thư viện tri thức…": "Searching the Knowledge library…",
   "Đang tô sáng: ": "Highlighting: ",
   "Đang tạo tài khoản": "Creating account",
@@ -2579,7 +2577,6 @@ export const EN_PAGES: Record<string, string> = {
   "Đã sao chép bằng chứng đối soát.": "Reconciliation evidence copied.",
   "Đã sao chép câu trả lời.": "Answer copied.",
   "Đã sao chép danh sách tài khoản": "Account list copied",
-  "Đã suy nghĩ trong {0}": "Thought for {0}",
   "Đã thu hồi.": "Revoked.",
   "Đã thêm người. Tạo tài khoản và bổ nhiệm ở ngăn bên phải.":
     "Person added. Create the account and appoint them in the right-hand panel.",
@@ -3299,6 +3296,24 @@ export const EN_PAGES: Record<string, string> = {
   "Biến mẫu": "Sample variables",
   "Biến mẫu không phải JSON hợp lệ": "Sample variables are not valid JSON",
   "Chạy kịch bản tự viết": "Run a custom script",
+  "AI đánh giá": "AI assessment",
+  "Tác tử thực hiện": "Performing agent",
+  "Tác tử đang hoạt động của tổ chức; tác tử bật tra cứu tài liệu sẽ đối chiếu quy chế":
+    "Active agents of the organization; agents with document search check against regulations",
+  "Tác tử AI của bước": "AI agent of the step",
+  "Chọn tác tử": "Select an agent",
+  "Chưa có tác tử AI đang hoạt động (cấu hình ở trang Tác tử AI)":
+    "No active AI agent yet (configure one on the AI agents page)",
+  "tra cứu quy chế": "regulation search",
+  "Tác tử không còn hoạt động": "Agent no longer active",
+  "Nhiệm vụ của bước": "Step task",
+  "Tối đa 1000 ký tự; dùng {biến} để chèn giá trị. Tác tử đọc chứng từ và trả mức rủi ro":
+    "Up to 1000 characters; use {variable} to insert values. The agent reads the document and returns a risk level",
+  "Nhiệm vụ của bước AI": "AI step task",
+  "Đánh giá rủi ro của đề nghị {doc_no} theo quy chế mua sắm":
+    "Assess the risk of request {doc_no} against the procurement regulation",
+  ". Điều kiện cổng ví dụ: ": ". Example gateway condition: ",
+  "Bước AI trong quy trình tự động": "AI step in an automated process",
   "Chạy thử với biến mẫu (JSON)": "Test run with sample variables (JSON)",
   "Chạy được. Biến sau bước:": "Ran successfully. Variables after the step:",
   "Cú pháp Python rút gọn: gán, if, for, while, f-string, list/dict. Hàm: len, min, max, sum, round, sorted, today(), now(), add_days(), days_between(), log(). Không import, không truy cập tệp hay mạng; tối đa 2 giây.":
@@ -3377,4 +3392,45 @@ export const EN_PAGES: Record<string, string> = {
   "Đề nghị": "Request",
   "Đề nghị điều chuyển nhân sự giữa các đơn vị trong công ty":
     "Requests to transfer staff between units in the company",
+  "Bỏ qua đề xuất này?": "Dismiss this suggestion?",
+  "Chấp nhận và thực hiện": "Accept and carry out",
+  "Chọn dự án": "Select a project",
+  "Chọn dự án đích": "Select the target project",
+  "Công việc dự án": "Project task",
+  "Công việc được tạo trong dự án này khi người quản lý dự án chấp nhận đề xuất.":
+    "The task is created in this project when the project manager accepts the suggestion.",
+  "Dự án đích": "Target project",
+  "Ghi chú trả lại": "Return note",
+  "Gửi kết quả đánh giá tới webhook đã khai": "Send the assessment to the configured webhook",
+  "Gửi webhook": "Send webhook",
+  "Hệ thống thực hiện bằng quyền của chính bạn. Sửa nội dung nếu cần; AI chỉ gợi ý, quyết định thuộc về bạn.":
+    "The system acts with your own permissions. Edit the content if needed; the AI only suggests, the decision is yours.",
+  "Không có đề xuất AI nào chờ bạn.": "No AI suggestions are waiting for you.",
+  "Không thực hiện được: {0}": "Could not be carried out: {0}",
+  "Mỗi hành động thành một đề xuất cho người có thẩm quyền (người đang duyệt, quản lý dự án hoặc người phụ trách); người đó sửa được nội dung rồi chấp nhận để hệ thống thực hiện bằng quyền của chính họ.":
+    "Each action becomes a suggestion for the person in charge (the current approver, the project manager or the agent owner); they can edit it and accept it so the system acts with their own permissions.",
+  "Nhận xét của AI: {0}": "AI assessment: {0}",
+  "Nội dung bình luận": "Comment text",
+  "Số ngày (bắt đầu hôm nay)": "Number of days (starting today)",
+  "Trả lại để bổ sung": "Return for more information",
+  "Tác tử {0} · {1}": "Agent {0} · {1}",
+  "Tạo công việc dự án": "Create a project task",
+  "Xem và chấp nhận": "Review and accept",
+  "chờ chấp nhận": "awaiting acceptance",
+  "{0} · {1} ngày · dự án {2}": "{0} · {1} days · project {2}",
+  "{0}/{1} · {2} chờ": "{0}/{1} · {2} pending",
+  "Đã bỏ qua đề xuất.": "Suggestion dismissed.",
+  "Đã chấp nhận và thực hiện đề xuất.": "Suggestion accepted and carried out.",
+  "Đề xuất AI của tôi ({0})": "My AI suggestions ({0})",
+  "Đề xuất chờ chấp nhận khi có {0} sự kiện": "Suggests for acceptance on {0} events",
+  "Đề xuất của AI": "AI suggestions",
+  "Đề xuất không được thực hiện; quyết định được ghi nhật ký kiểm toán.":
+    "The suggestion will not be carried out; the decision is recorded in the audit log.",
+  "Đề xuất được nhận": "Suggestions accepted",
+  "Chỉ ghi kế hoạch, không thực hiện": "Record the plan only, do not act",
+  "Đề xuất, chờ người chấp nhận": "Suggest, wait for acceptance",
+  "Đề nghị người đang duyệt trả lại chứng từ để người lập bổ sung (chỉ ở mức đề xuất)":
+    "Ask the current approver to return the document for more information (suggest level only)",
+  "Đề nghị quản lý dự án đích tạo một công việc (chỉ ở mức đề xuất)":
+    "Ask the target project's manager to create a task (suggest level only)",
 };

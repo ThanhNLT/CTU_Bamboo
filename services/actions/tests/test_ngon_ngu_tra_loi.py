@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Trợ lý trả lời đúng điều được hỏi, bằng ngôn ngữ của câu hỏi, không lẫn phần lập luận của mô hình (ADR #85).
+"""Trợ lý trả lời đúng điều được hỏi, bằng ngôn ngữ của câu hỏi, không lẫn phần lập luận của mô hình (ADR #89).
 
 Các test ở đây không cần CSDL hay Meilisearch: `ai_worker.answer` chạy với Ollama giả (HTTP), kết nối giả ghi lại các
 lần cập nhật `core.ai_question` và bộ tìm kiếm giả trả sẵn đoạn tài liệu.

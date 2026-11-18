@@ -599,11 +599,11 @@ def test_thong_ke_co_chu_dau_va_so_lan_nap(ai_env, conn, org, monkeypatch):
 def test_gioi_han_token_theo_dong_suy_nghi(ai_env, conn, org):
     plain = ask_one(ai_env, conn, org, make_agent(conn), "Quy chế giới hạn A", "Hạn mức tạm ứng 20 triệu đồng.")
     assert work(ai_env) == "done"
-    assert ai_env.fake.last_body["max_tokens"] == ai_worker.ANSWER_MAX_TOKENS
+    assert ai_env.fake.last_body["max_tokens"] == ai_worker.ANSWER_MAX_TOKENS == 1024
     assert ai_env.fake.last_body["reasoning_effort"] == "none" and plain["id"]
     ask_one(ai_env, conn, org, make_agent(conn, think=True), "Quy chế giới hạn B", "Hạn mức tạm ứng 30 triệu đồng.")
     assert work(ai_env) == "done"
-    assert ai_env.fake.last_body["max_tokens"] == ai_worker.THINK_MAX_TOKENS
+    assert ai_env.fake.last_body["max_tokens"] == ai_worker.THINK_MAX_TOKENS == 4096
 
 
 def test_het_token_khi_dang_nghi_thi_bao_loi_ro_rang(ai_env, conn, org):

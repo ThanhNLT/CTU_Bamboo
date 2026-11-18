@@ -30,7 +30,7 @@ Không gian I (ADR #63): ngữ cảnh chọn theo ngân sách token, đoạn gom
 lời trích nguồn bằng tên văn bản; số trích dẫn không có trong ngữ cảnh bị gỡ; câu hỏi lặp lại trên đúng các đoạn đó
 dùng lại câu trả lời đã có; Ollama tạm lỗi quá MAX_ATTEMPTS lần thì lượt hỏi báo lỗi thay vì chờ mãi.
 
-Câu trả lời (ADR #85): chỉ đúng điều được hỏi và bằng ngôn ngữ của câu hỏi (`lang.detect`), kể cả lời từ chối và báo
+Câu trả lời (ADR #89): chỉ đúng điều được hỏi và bằng ngôn ngữ của câu hỏi (`lang.detect`), kể cả lời từ chối và báo
 lỗi; phần lập luận của mô hình không bao giờ nằm trong câu trả lời, kể cả với mô hình không tắt được suy nghĩ.
 """
 
@@ -73,7 +73,7 @@ ERROR_MESSAGE = "Trợ lý AI tạm thời không trả lời được. Vui lòn
 THINK_OVERRUN_MESSAGE = "Câu hỏi cần suy nghĩ quá dài nên chưa có câu trả lời. Hãy hỏi cụ thể hơn."
 TRUNCATED_NOTE = "(câu trả lời bị cắt do quá dài)"
 ANSWER_MAX_TOKENS = 1024
-THINK_MAX_TOKENS = 2048
+THINK_MAX_TOKENS = 4096
 REASON_MAX_TOKENS = 512
 SYSTEM_PROMPT = """Bạn là trợ lý tra cứu Thư viện tri thức của doanh nghiệp.
 Quy tắc:

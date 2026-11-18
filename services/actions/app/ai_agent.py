@@ -23,13 +23,14 @@ Quản trị (cần core.ai.manage, kiểm qua core.v_ai_admin): ai_agent_regist
 ai_agent_unregister, ai_models, ai_agent_stats; tự hành động khi có sự kiện (ADR #72): ai_agent_automation,
 ai_agent_trigger_options (lần chạy trong core.ai_agent_run, ai-worker thực hiện qua ai_agent_runner).
 Người dùng: ai_assistants (tác tử hỏi được), ai_ask (lưu lượt hỏi, worker nền trả lời dần). Trợ lý trả lời, từ chối
-và báo lỗi bằng ngôn ngữ của câu hỏi (ADR #85): `reply_language`, `notice`.
+và báo lỗi bằng ngôn ngữ của câu hỏi (ADR #89): `reply_language`, `notice`.
 Nhật ký kiểm toán bật qua audit.enable('core.ai_agent') và trigger audit_log trên core.ai_question.
 """
 
 import logging
 import re
 import unicodedata
+import uuid
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -329,8 +330,20 @@ def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
            GROUP BY a.id ORDER BY a.id""",
         (days, tenant),
     ).fetchall()
+    suggested = {
+        r[0]: r[1:]
+        for r in conn.execute(
+            """SELECT agent_id, count(*) FILTER (WHERE status = 'PENDING'),
+                      count(*) FILTER (WHERE status = 'ACCEPTED'),
+                      count(*) FILTER (WHERE status IN ('ACCEPTED', 'DISMISSED', 'FAILED'))
+               FROM core.ai_suggestion WHERE tenant_id = %s AND created_at > now() - make_interval(days => %s)
+               GROUP BY agent_id""",
+            (tenant, days),
+        )
+    }
     return [
         {
+            **_suggestion_stats(suggested.get(r[0])),
             "agent_id": str(r[0]),
             "questions": r[1],
             "answered": r[2],
@@ -351,6 +364,17 @@ def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Co
         }
         for r in rows
     ]
+
+
+def _suggestion_stats(counts) -> dict:
+    """Đề xuất của tác tử (ADR #85): tỉ lệ chấp nhận = ACCEPTED / số đề xuất đã được người quyết định."""
+    pending, accepted, decided = counts or (0, 0, 0)
+    return {
+        "suggestions_pending": pending,
+        "suggestions_accepted": accepted,
+        "suggestions_decided": decided,
+        "acceptance_rate": round(accepted / decided, 3) if decided else None,
+    }
 
 
 def _askable(tools) -> bool:
@@ -462,8 +486,15 @@ AGENT_ACTIONS = {
     "comment": "Bình luận vào chứng từ (đứng tên người phụ trách tác tử)",
     "notify": "Gửi thông báo cho người lập, người đang duyệt hoặc người phụ trách tác tử",
     "webhook": "Gửi kết quả đánh giá tới webhook HTTPS đã khai",
+    "return_for_info": "Đề nghị người đang duyệt trả lại chứng từ để người lập bổ sung (chỉ ở mức đề xuất)",
+    "project_task": "Đề nghị quản lý dự án đích tạo một công việc (chỉ ở mức đề xuất)",
 }
-AUTONOMY = {"act": "Tự thực hiện", "dry_run": "Chỉ đề xuất, không thực hiện"}
+SUGGEST_ONLY = ("return_for_info", "project_task")
+AUTONOMY = {
+    "act": "Tự thực hiện",
+    "dry_run": "Chỉ ghi kế hoạch, không thực hiện",
+    "suggest": "Đề xuất, chờ người chấp nhận",
+}
 MAX_TRIGGERS = 10
 
 
@@ -481,6 +512,7 @@ def _automation_out(row) -> dict:
         "allowed_actions": row[3],
         "autonomy": row[4],
         "webhook_url": row[5],
+        "project_id": str(row[6]) if row[6] else None,
     }
 
 
@@ -513,16 +545,31 @@ def ai_agent_automation(conn: psycopg.Connection, session: dict, args: dict, _ct
         raise ActionError("Nhiệm vụ có dấu hiệu thay đổi chỉ dẫn hệ thống của tác tử")
     autonomy = _text(args, "autonomy", "mức tự chủ", required=False) or "act"
     if autonomy not in AUTONOMY:
-        raise ActionError("Mức tự chủ phải là 'act' hoặc 'dry_run'")
+        raise ActionError("Mức tự chủ phải là 'act', 'dry_run' hoặc 'suggest'")
+    if autonomy != "suggest" and any(a in SUGGEST_ONLY for a in allowed):
+        raise ActionError("Trả lại chứng từ và tạo công việc dự án chỉ bật được ở mức Đề xuất, chờ người chấp nhận")
     webhook = _text(args, "webhook_url", "địa chỉ webhook", required="webhook" in allowed)
     if webhook and not webhook.startswith("https://"):
         raise ActionError("Webhook phải dùng https://")
+    project = None
+    if "project_task" in allowed:
+        project = _text(args, "project_id", "dự án đích của hành động tạo công việc")
+        try:
+            project = str(uuid.UUID(project))
+        except ValueError as exc:
+            raise ActionError("Mã dự án không hợp lệ") from exc
+        found = conn.execute(
+            "SELECT pm.can_read(id, %s) FROM pm.project WHERE id = %s AND tenant_id = %s", (person, project, tenant)
+        ).fetchone()
+        if not found or not found[0]:
+            raise ActionError("Không tìm thấy dự án", "not-found", 404)
 
     row = conn.execute(
         """UPDATE core.ai_agent SET triggers = %s, instructions = %s, allowed_actions = %s, autonomy = %s,
-                  webhook_url = %s
-           WHERE id = %s RETURNING id, triggers, instructions, allowed_actions, autonomy, webhook_url""",
-        (triggers, instructions, allowed, autonomy, webhook, agent_id),
+                  webhook_url = %s, project_id = %s
+           WHERE id = %s
+           RETURNING id, triggers, instructions, allowed_actions, autonomy, webhook_url, project_id""",
+        (triggers, instructions, allowed, autonomy, webhook, project, agent_id),
     ).fetchone()
     return _automation_out(row)
 
@@ -532,7 +579,7 @@ def ai_agent_trigger_options(conn: psycopg.Connection, session: dict, _args: dic
     _require_admin(conn, person, tenant)
     return {
         "events": [{"code": k, "label": v} for k, v in _events().items()],
-        "actions": [{"code": k, "label": v} for k, v in AGENT_ACTIONS.items()],
+        "actions": [{"code": k, "label": v, "suggest_only": k in SUGGEST_ONLY} for k, v in AGENT_ACTIONS.items()],
         "autonomy": [{"code": k, "label": v} for k, v in AUTONOMY.items()],
     }
 

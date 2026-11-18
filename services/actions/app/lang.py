@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Nhận ngôn ngữ của một câu hỏi để Trợ lý trả lời bằng đúng ngôn ngữ đó (ADR #85).
+"""Nhận ngôn ngữ của một câu hỏi để Trợ lý trả lời bằng đúng ngôn ngữ đó (ADR #89).
 
 `detect` trả "vi" (tiếng Việt, có dấu hoặc không dấu), "en" (tiếng Anh), "zh", "ja", "ko" (nhận theo chữ viết),
 "xx" (ngôn ngữ khác) hoặc "" khi câu quá ít chữ để biết (ví dụ chỉ có mã, số). Không dùng mô hình hay thư viện ngoài:

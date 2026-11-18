@@ -173,7 +173,7 @@ Container không đặt giới hạn bộ nhớ, nên nếu để mặc định,
 
 **Mức RAM 8 / 16** ([ADR #54](#adr-54), sửa ở [ADR #69](#adr-69)): cả hai mức chạy đầy đủ, gồm AI và OCR. `make up` tự chọn theo RAM Docker thấy được (máy 16 GB dùng WSL2 mặc định thường chỉ thấy 8 GB: nâng bằng `memory=12GB` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`). Chọn tay: `BAMBOO_RAM=8 make up` hoặc `BAMBOO_RAM=16 make up`, hoặc đặt `BAMBOO_RAM` trong `.env`. Mức 8 hạ heap JVM, Ollama chỉ giữ một mô hình trên RAM (`OLLAMA_MAX_LOADED_MODELS=1`, gỡ sau 2 phút nhàn rỗi), OCR và dịch vụ dùng thưa ngủ sau 120 giây. Chạy `docker compose up -d` trực tiếp dùng giá trị mặc định của mức 16; `OLLAMA_URL` để trống (cấu hình cũ) vẫn dùng Ollama trong compose.
 
-**Giới hạn CPU** ([ADR #84](#adr-84)): `make up` cho mỗi dịch vụ nặng (PostgreSQL, Keycloak, Flowable, Kafka, Debezium, Tika, Gotenberg, Trino, Ollama, OCR, ClamAV) dùng tối đa ba phần tư số lõi Docker thấy, để máy vẫn dùng được khi AI hay OCR đang chạy. Chọn tay bằng `BAMBOO_CPU_LIMIT=4` (số lõi, nhận số lẻ như `2.5`) trong `.env`; `BAMBOO_CPU_LIMIT=0` bỏ giới hạn; đặt lớn hơn số lõi Docker có thì tự hạ xuống. `make up` kiểm phiên bản Docker trước khi chạy và dừng với thông báo rõ nếu Engine dưới 25 hoặc Compose dưới 2.20. Trên WSL2 muốn giữ chặt hơn cho Windows thì đặt thêm `processors=` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`.
+**Giới hạn CPU** ([ADR #87](#adr-87)): `make up` cho mỗi dịch vụ nặng (PostgreSQL, Keycloak, Flowable, Kafka, Debezium, Tika, Gotenberg, Trino, Ollama, OCR, ClamAV) dùng tối đa ba phần tư số lõi Docker thấy, để máy vẫn dùng được khi AI hay OCR đang chạy. Chọn tay bằng `BAMBOO_CPU_LIMIT=4` (số lõi, nhận số lẻ như `2.5`) trong `.env`; `BAMBOO_CPU_LIMIT=0` bỏ giới hạn; đặt lớn hơn số lõi Docker có thì tự hạ xuống. `make up` kiểm phiên bản Docker trước khi chạy và dừng với thông báo rõ nếu Engine dưới 25 hoặc Compose dưới 2.20. Trên WSL2 muốn giữ chặt hơn cho Windows thì đặt thêm `processors=` trong `%UserProfile%\.wslconfig` rồi `wsl --shutdown`.
 
 **Dịch vụ dùng thưa tự ngủ** ([ADR #53](#adr-53)): `trino-core`, `tika-core`, `gotenberg-core` chỉ chạy khi có yêu cầu; `sleeper` giữ tên mạng và cổng cũ (`trino`, `tika`, `gotenberg`), đánh thức khi có byte đầu tiên và cho ngủ sau `SLEEPER_IDLE_SECONDS` (mặc định 300) không có lưu lượng. Lần gọi đầu sau khi ngủ chậm thêm thời gian khởi động container. Xem trạng thái bằng `docker compose ps` hoặc `docker compose exec sleeper python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:9000/status').read().decode())"`. `sleeper` gắn `/var/run/docker.sock`; môi trường không cho phép thì bỏ `sleeper` và đặt lại tên ba dịch vụ thật như ADR #53 mô tả.
 
@@ -185,7 +185,7 @@ Các giới hạn bộ nhớ khác (đặt trong `.env`):
 | `hasura` | `pool_settings` trong metadata | 20 kết nối | Mặc định của Hasura là 50; mỗi kết nối PostgreSQL tốn RAM riêng |
 | `meilisearch` | `MEILI_MAX_INDEXING_MEMORY` | `512 MiB` | Mặc định Meilisearch dùng tới 2/3 RAM máy khi lập chỉ mục |
 | `gateway` | `GATEWAY_WORKERS` | `2` | Mặc định APISIX chạy một worker mỗi lõi CPU, mỗi worker nạp riêng WAF Coraza |
-| `ollama` | `AI_KV_CACHE_TYPE` | `q8_0` | Bộ đệm ngữ cảnh 8K tốn nửa RAM/VRAM so với `f16` (cần flash attention, đã bật) |
+| `ollama` | `AI_KV_CACHE_TYPE` | `q4_0` | Bộ đệm ngữ cảnh (KV cache) lượng tử hóa 4 bit, ngữ cảnh 12K vẫn nhỏ hơn `q8_0` ở 8K (khoảng 75%); đặt `q8_0` nếu chất lượng trả lời giảm (cần flash attention, đã bật) |
 
 Các tiến trình Python chạy với `MALLOC_ARENA_MAX=2` để glibc không tạo vùng heap riêng cho từng luồng. `lakehouse-sink` bỏ snapshot Iceberg cũ hơn 24 giờ mỗi giờ (giữ snapshot hiện tại chứa vị trí Kafka), nên siêu dữ liệu bảng không lớn dần; tệp manifest của snapshot đã bỏ vẫn nằm trên S3, dọn bằng Trino `ALTER TABLE lakehouse.bronze.<bảng> EXECUTE remove_orphan_files`.
 
@@ -207,7 +207,7 @@ tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo
 
 | Hạng mục | Giá trị |
 |---|---|
-| RAM / GPU | Chỉ chiếm khi có việc: qwen3:4b ~3 GB (kèm ngữ cảnh 8K), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
+| RAM / GPU | Chỉ chiếm khi có việc: qwen3:4b ~3 GB (kèm ngữ cảnh 12K), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
 | Đĩa | ~3,7 GB volume `ollama-models`, ~250 MB volume `ocr-models`, image `ocr` ~14 GB (PyTorch CUDA); sau lần tải đầu chạy không cần Internet |
 | Tốc độ | GPU: vài giây mỗi lượt hỏi, 1–2 giây mỗi trang OCR; CPU chậm hơn nhiều lần. Lần đầu sau khi nhàn rỗi chờ thêm thời gian nạp mô hình (chữ đầu tiên sau khoảng 5–6 giây; `ollama` và `ocr` đọc trước tệp mô hình vào page cache khi khởi động, nên máy ít RAM bị hệ điều hành thu hồi cache thì lần nạp đầu đọc lại từ đĩa, chậm hơn nhiều). Lượt hỏi và trang OCR chung một hàng đợi trong `ai-worker`, mỗi lúc một việc, lượt hỏi được ưu tiên |
 
@@ -217,7 +217,7 @@ tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo
 
 **Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi; `tools/ai_smoke.sh` in điểm theo nhóm câu hỏi (trong phạm vi, ngoài phạm vi, tiêm lệnh). Hạ tạm `AI_MIN_SCORE` xuống 0,5 khi chạy để thấy điểm của câu bị chặn.
 
-**Mô hình luôn suy nghĩ** ([ADR #85](#adr-85)): thẻ `qwen3:4b` của kho Ollama hiện là bản thinking, luôn lập luận trước khi trả lời kể cả khi tác tử tắt dòng suy nghĩ. `ai-worker` không hiện phần lập luận đó, cắt nó sau 512 mảnh rồi buộc mô hình trả lời, nên mỗi lượt hỏi vẫn tốn thời gian sinh phần lập luận (trên CPU khoảng một đến hai phút mỗi lượt; GPU nhanh hơn nhiều lần). Bản `qwen3:4b-instruct` không lập luận nên nhanh hơn, nhưng trong phép thử trả lời sai nhiều hơn ở câu phải so mức tiền và câu hỏi tiếng Anh; chỉ nên đổi khi cần tốc độ hơn độ chính xác.
+**Mô hình luôn suy nghĩ** ([ADR #89](#adr-89)): thẻ `qwen3:4b` của kho Ollama hiện là bản thinking, luôn lập luận trước khi trả lời kể cả khi tác tử tắt dòng suy nghĩ. `ai-worker` không hiện phần lập luận đó, cắt nó sau 512 mảnh rồi buộc mô hình trả lời, nên mỗi lượt hỏi vẫn tốn thời gian sinh phần lập luận (trên CPU khoảng một đến hai phút mỗi lượt; GPU nhanh hơn nhiều lần). Bản `qwen3:4b-instruct` không lập luận nên nhanh hơn, nhưng trong phép thử trả lời sai nhiều hơn ở câu phải so mức tiền và câu hỏi tiếng Anh; chỉ nên đổi khi cần tốc độ hơn độ chính xác.
 
 **Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
 

@@ -24,7 +24,7 @@ import type { Assistant, Citation, HistoryGroup, Question } from "./types";
 import { tr, trf } from "../../i18n";
 import { fold } from "../../utils/text";
 
-const FIELDS = `id question status answer thinking citations guard error model kb_document_id reused_from created_at
+const FIELDS = `id question status answer citations guard error model kb_document_id reused_from created_at
   started_at first_token_at finished_at`;
 
 export const fetchAssistants = async () => {
