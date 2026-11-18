@@ -379,6 +379,8 @@ services:
       SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ollama-core,ocr-core,ai-worker
       SLEEPER_GPU: ${BAMBOO_GPU:-auto}
       SLEEPER_GPU_SERVICES: ollama-core,ocr-core
+      SLEEPER_AI_SERVICES: ollama-core,ocr-core,ai-worker
+      SLEEPER_AI_MIN_RAM_GB: ${BAMBOO_AI_MIN_RAM_GB:-7}
     networks:
       default:
         aliases: [trino, tika, gotenberg, ollama, ocr]

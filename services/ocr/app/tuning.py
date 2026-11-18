@@ -30,6 +30,8 @@ chỗ cho mô hình của tác tử AI. `OCR_THREADS` đặt số luồng; `OCR_
 import logging
 import math
 import os
+import subprocess
+import sys
 
 import torch
 
@@ -68,10 +70,24 @@ def _read(path: str) -> str:
         return ""
 
 
+def performance_cores() -> int:
+    """macOS: số nhân hiệu năng (Apple Silicon có thêm nhân tiết kiệm điện, chạy tính toán chậm hơn nhiều)."""
+    for key in ("hw.perflevel0.physicalcpu", "hw.physicalcpu"):
+        try:
+            out = subprocess.run(["sysctl", "-n", key], capture_output=True, text=True, timeout=2).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if out.isdigit() and int(out) > 0:
+            return int(out)
+    return os.cpu_count() or 1
+
+
 def cpu_threads() -> int:
     configured = os.environ.get("OCR_THREADS", "").strip()
     if configured.isdigit() and int(configured) > 0:
         return int(configured)
+    if sys.platform == "darwin":
+        return max(1, min(MAX_THREADS, performance_cores()))
     allowed = os.sched_getaffinity(0) if hasattr(os, "sched_getaffinity") else set(range(os.cpu_count() or 1))
     cores = physical_cores(_read("/proc/cpuinfo"), set(allowed))
     quota = quota_cpus(_read("/sys/fs/cgroup/cpu.max"))
@@ -90,4 +106,7 @@ def apply(device: str) -> None:
         return
     threads = cpu_threads()
     torch.set_num_threads(threads)
+    if device == "mps":
+        log.info("GPU Apple (Metal): VietOCR trên GPU, bộ dò chữ trên CPU %d luồng", threads)
+        return
     log.info("CPU: %d luồng tính toán", threads)
