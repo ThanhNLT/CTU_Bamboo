@@ -68,7 +68,12 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
         label={q.position ? trf("Đang chờ, vị trí thứ {0}…", [q.position + 1]) : tr("Đang chờ trợ lý…")}
       />
     );
-  if (q.status === "running" && !q.answer) return <ThinkingMessage label={tr("Đang tìm trong Thư viện tri thức…")} />;
+  if (q.status === "running" && !q.answer)
+    return (
+      <ThinkingMessage
+        label={q.first_token_at ? tr("Đang soạn câu trả lời…") : tr("Đang tìm trong Thư viện tri thức…")}
+      />
+    );
 
   return (
     <div className="flex gap-3">

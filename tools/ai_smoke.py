@@ -23,6 +23,8 @@
 Hỏi bằng tác tử "Trợ lý quy chế" của Tập đoàn X dưới danh tính người tạo tác tử, gọi thẳng dịch vụ actions,
 chấm từng câu bằng luật trong `ai_smoke_cases.json` (trạng thái, từ khóa, tài liệu trích dẫn) và in số đo tốc độ:
 chữ đầu tiên (từ lúc gửi), tổng thời gian, có phải nạp mô hình không. `--cold` gỡ mô hình khỏi bộ nhớ trước câu đầu.
+Mọi câu còn được kiểm theo ADR #89: trả lời bằng ngôn ngữ của câu hỏi, không lẫn phần lập luận của mô hình
+(`<think>`), không dài quá `max_words` từ (mặc định 120).
 Mục tiêu tốc độ trên RTX 4060: mô hình đã nạp chữ đầu < 2 giây và cả lượt < 10 giây; nạp lạnh chữ đầu < 8 giây.
 """
 
@@ -42,8 +44,22 @@ SECRET = os.environ.get("ACTIONS_SECRET", "dev-actions-secret")
 OLLAMA = os.environ.get("OLLAMA", "http://127.0.0.1:11434")
 TIMEOUT = float(os.environ.get("AI_SMOKE_TIMEOUT", "300"))
 CASES = Path(__file__).with_name("ai_smoke_cases.json")
-NOT_FOUND = ("không tìm thấy", "không có thông tin", "không quy định", "không đề cập", "không có quy định")
+NOT_FOUND = (
+    "không tìm thấy",
+    "không có thông tin",
+    "không quy định",
+    "không đề cập",
+    "không có quy định",
+    "not found",
+    "no information",
+    "does not",
+    "do not",
+)
+MAX_WORDS = 120
 WARM_FIRST, WARM_TOTAL, COLD_FIRST = 2.0, 10.0, 8.0
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "services/actions"))
+from app import lang  # noqa: E402
 
 
 def sql(query: str) -> list[list[str]]:
@@ -134,8 +150,22 @@ def top_scores(ids: list[str], since: str) -> dict[str, str]:
     return found
 
 
+def style_problems(case: dict, r: dict) -> list[str]:
+    """Lỗi về cách trả lời: lẫn phần lập luận, sai ngôn ngữ so với câu hỏi, dài dòng."""
+    problems, answer = [], r["answer"]
+    if "<think>" in answer or "</think>" in answer:
+        problems.append("lộ phần lập luận của mô hình (thẻ think)")
+    want, got = case.get("lang", "vi"), lang.detect(re.sub(r"\[\d+\]", " ", answer))
+    if got and (want == "vi") != (got == "vi"):
+        problems.append(f"trả lời bằng ngôn ngữ khác câu hỏi (câu hỏi: {want}, câu trả lời: {got})")
+    words, limit = len(answer.split()), case.get("max_words", MAX_WORDS)
+    if r["status"] == "done" and words > limit:
+        problems.append(f"câu trả lời dài {words} từ (tối đa {limit})")
+    return problems
+
+
 def judge(case: dict, r: dict) -> list[str]:
-    problems, text = [], fold(r["answer"])
+    problems, text = style_problems(case, r), fold(r["answer"])
     want = case["status"]
     leaked = [k for k in case.get("forbid", []) if fold(k) in text or fold(k) in fold(r["cites"])]
     if leaked:
@@ -190,7 +220,10 @@ def main() -> int:
         speed = (
             f"chữ đầu {r['first']}s · cả lượt {r['total']}s{' · nạp lạnh' if r['cold'] else ''}" if r["first"] else "—"
         )
-        print(f"{'ok  ' if not problems else 'FAIL'} [{case['group']}] {case['q']}\n     → {r['status']} · {speed}")
+        size = f" · {len(r['answer'].split())} từ" if r["status"] == "done" else ""
+        print(
+            f"{'ok  ' if not problems else 'FAIL'} [{case['group']}] {case['q']}\n     → {r['status']} · {speed}{size}"
+        )
         for p in problems:
             print(f"     ! {p}")
     scores = top_scores([qid for _, qid, _, _ in results], f"{int(time.time() - start) + 30}s")

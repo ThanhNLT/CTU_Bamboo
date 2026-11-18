@@ -191,14 +191,18 @@ def test_email_theo_ngon_ngu_nguoi_nhan(conn, database, worker, smtp):  # noqa: 
     session = {"x-hasura-tenant-id": str(i["TDX"]), "x-hasura-user-id": str(i["c"])}
     with psycopg.connect(database, autocommit=True) as app_conn:
         assert messaging.set_my_locale(app_conn, session, {"locale": "en"}, Context())["locale"] == "en"
-    title = "Đề nghị PR-0099 đã được duyệt"
-    message_id = enqueue_for(conn, i, "EMAIL", "nhan.vien@bamboo.vn", title)
-    settings = settings_for(database, smtp_host="127.0.0.1", smtp_port=smtp.port)
-    assert delivery.run_once(worker, settings, signer()) >= 1
-    row = conn.execute("SELECT status, payload FROM msg.queue WHERE id = %s", (message_id,)).fetchone()
-    assert row["status"] == "DELIVERED" and row["payload"]["title"] == title, "bản lưu giữ nguyên để khớp mã băm"
-    mail = email.message_from_bytes(smtp.messages[-1], policy=email.policy.default)
-    assert mail["Subject"] == "Request PR-0099 has been approved"
-    assert "Open in Bamboo: http://localhost:8000/" in mail.get_body().get_content()
-    conn.execute("DELETE FROM collab.person_locale WHERE person_id = %s", (i["c"],))
-    conn.execute("DELETE FROM collab.notification_pref WHERE person_id = %s", (i["c"],))
+    try:
+        title = "Đề nghị PR-0099 đã được duyệt"
+        message_id = enqueue_for(conn, i, "EMAIL", "nhan.vien@bamboo.vn", title)
+        settings = settings_for(database, smtp_host="127.0.0.1", smtp_port=smtp.port)
+        assert delivery.run_once(worker, settings, signer()) >= 1
+        row = conn.execute("SELECT status, payload FROM msg.queue WHERE id = %s", (message_id,)).fetchone()
+        assert row["status"] == "DELIVERED" and row["payload"]["title"] == title, "bản lưu giữ nguyên để khớp mã băm"
+        # Hàng đợi có thể còn thư của test khác; lấy đúng thư PR-0099 thay vì thư gửi sau cùng.
+        mails = [email.message_from_bytes(m, policy=email.policy.default) for m in smtp.messages]
+        mail = next(m for m in mails if "PR-0099" in m["Subject"])
+        assert mail["Subject"] == "Request PR-0099 has been approved"
+        assert "Open in Bamboo: http://localhost:8000/" in mail.get_body().get_content()
+    finally:
+        conn.execute("DELETE FROM collab.person_locale WHERE person_id = %s", (i["c"],))
+        conn.execute("DELETE FROM collab.notification_pref WHERE person_id = %s", (i["c"],))
