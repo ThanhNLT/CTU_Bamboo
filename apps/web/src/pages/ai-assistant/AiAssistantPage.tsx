@@ -34,11 +34,35 @@ import { ChatInput } from "./components/ChatInput";
 import { ChatSidebar } from "./components/ChatSidebar";
 import { UserMessage } from "./components/UserMessage";
 import type { Assistant, Question } from "./types";
-import { tr } from "../../i18n";
+import { tr, trf } from "../../i18n";
 
-type Status = { loading: boolean; enabled: boolean; assistants: Assistant[] };
+type Reason = "off" | "none" | "model" | "error";
+type Status = { loading: boolean; enabled: boolean; assistants: Assistant[]; reason?: Reason; detail?: string };
 
-const AiOff = ({ loading }: { loading: boolean }) => (
+const WAKE_RETRIES = 2;
+const WAKE_RETRY_MS = 5000;
+
+const offText = (reason: Reason | undefined, detail: string | undefined) => {
+  switch (reason) {
+    case "none":
+      return tr(
+        "Công ty của bạn chưa có trợ lý nào đang hoạt động (trợ lý có thể đã bị ngừng). Người quản trị tác tử AI bật lại trợ lý ở trang Tác tử AI.",
+      );
+    case "model":
+      return trf(
+        "Máy chủ AI chưa có mô hình {0} của trợ lý. Người quản trị tác tử AI tải mô hình hoặc đổi mô hình của trợ lý.",
+        [detail ?? ""],
+      );
+    case "error":
+      return trf("Không kiểm tra được trạng thái trợ lý AI: {0}", [detail ?? ""]);
+    default:
+      return tr(
+        "Chưa kết nối được mô hình AI cục bộ trên máy chủ. Tải lại trang sau ít phút; còn lỗi thì liên hệ người quản trị máy chủ.",
+      );
+  }
+};
+
+const AiOff = ({ loading, reason, detail }: { loading: boolean; reason?: Reason; detail?: string }) => (
   <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface px-6 py-16 text-center shadow-card">
     <span className="grid h-11 w-11 place-items-center rounded-ui bg-black/[0.045] text-muted" aria-hidden>
       <Bot className="h-5 w-5" />
@@ -49,12 +73,8 @@ const AiOff = ({ loading }: { loading: boolean }) => (
       </p>
     ) : (
       <>
-        <p className="text-[15px] font-semibold text-ink">{tr("Trợ lý AI chưa bật")}</p>
-        <p className="max-w-md text-[12.5px] text-muted">
-          {tr(
-            "Máy chủ chưa chạy mô hình AI cục bộ, hoặc chưa có trợ lý nào được cấu hình cho đơn vị của bạn. Liên hệ người quản trị tác tử AI.",
-          )}
-        </p>
+        <p className="text-[15px] font-semibold text-ink">{tr("Trợ lý AI chưa sẵn sàng")}</p>
+        <p className="max-w-md text-[12.5px] text-muted">{offText(reason, detail)}</p>
       </>
     )}
   </div>
@@ -79,14 +99,32 @@ export const AiAssistantPage = () => {
 
   useEffect(() => {
     let live = true;
-    fetchAssistants()
-      .then((r) => {
-        if (!live) return;
-        const usable = r.assistants.filter((a) => a.ready);
-        setStatus({ loading: false, enabled: r.ai_enabled && usable.length > 0, assistants: usable });
-        setAssistantId(usable[0]?.id);
-      })
-      .catch(() => live && setStatus({ loading: false, enabled: false, assistants: [] }));
+    let retry: number | undefined;
+    const check = (left: number) =>
+      fetchAssistants()
+        .then((r) => {
+          if (!live) return;
+          if (!r.ai_enabled && left > 0) {
+            retry = window.setTimeout(() => void check(left - 1), WAKE_RETRY_MS);
+            return;
+          }
+          const usable = r.assistants.filter((a) => a.ready);
+          const missing = [...new Set(r.assistants.map((a) => a.model))].join(", ");
+          const reason: Reason | undefined = !r.ai_enabled
+            ? "off"
+            : r.assistants.length === 0
+              ? "none"
+              : usable.length === 0
+                ? "model"
+                : undefined;
+          setStatus({ loading: false, enabled: !reason, assistants: usable, reason, detail: missing });
+          setAssistantId(usable[0]?.id);
+        })
+        .catch(
+          (e: Error) =>
+            live && setStatus({ loading: false, enabled: false, assistants: [], reason: "error", detail: e.message }),
+        );
+    void check(WAKE_RETRIES);
     fetchHistory()
       .then((rows) => {
         if (!live) return;
@@ -96,6 +134,7 @@ export const AiAssistantPage = () => {
       .catch((e: Error) => message.error(e.message));
     return () => {
       live = false;
+      window.clearTimeout(retry);
     };
   }, [message]);
 
@@ -267,7 +306,7 @@ export const AiAssistantPage = () => {
             ))}
           </ChatArea>
         ) : (
-          <AiOff loading={status.loading} />
+          <AiOff loading={status.loading} reason={status.reason} detail={status.detail} />
         )}
       </div>
     </div>

@@ -271,7 +271,7 @@ Mô hình ngôn ngữ hoặc mô hình embedding chạy cục bộ, dùng chung 
 _Tránh dùng_: AI (khi nói mô hình cụ thể), LLM (khi nói tác tử)
 
 **Dòng suy nghĩ** (`thinking`):
-Quá trình lập luận nội bộ của mô hình trước khi đưa ra câu trả lời; hiển thị trực tiếp khi đang trả lời và tự động thu gọn khi hoàn tất. Không dùng làm căn cứ trích dẫn nguồn.
+Quá trình lập luận nội bộ của mô hình trước khi đưa ra câu trả lời; chỉ hiện và chỉ lưu khi tác tử bật dòng suy nghĩ (hiển thị trực tiếp khi đang trả lời, tự động thu gọn khi hoàn tất), không bao giờ nằm trong câu trả lời. Không dùng làm căn cứ trích dẫn nguồn.
 _Tránh dùng_: thought, reasoning token, log suy nghĩ
 
 

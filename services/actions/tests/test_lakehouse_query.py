@@ -170,7 +170,9 @@ def test_dang_nhap_sai_bi_tu_choi(tenants):
     with pytest.raises(TrinoError) as err:
         wrong.query("SELECT 1")
     assert err.value.name == "UNAUTHENTICATED"
-    http_url = os.environ.get("TRINO_HTTP_URL") or f"http://{urlparse(SETTINGS.trino_url).hostname}:8080"
+    # Tên `trino` là proxy sleeper, chỉ chuyển cổng 8443; cổng HTTP 8080 phải hỏi thẳng trino-core (đã được đánh thức
+    # bởi lần gọi HTTPS ở trên).
+    http_url = os.environ.get("TRINO_HTTP_URL") or "http://trino-core:8080"
     resp = httpx.post(
         http_url + "/v1/statement",
         content="SELECT 1",
