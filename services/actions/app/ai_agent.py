@@ -163,10 +163,28 @@ def _model_names(ctx: Context) -> set[str] | None:
         return None
 
 
+def can_chat(ctx: Context, model: str) -> bool:
+    """Mô hình trả lời được (Ollama ghi khả năng `completion`). Mô hình chỉ tạo embedding như bge-m3 thì không: gọi chat
+    sẽ bị Ollama từ chối. Không hỏi được Ollama thì coi là được, để lỗi thật (nếu có) báo lúc gọi."""
+    if ctx.ai is None:
+        return True
+    try:
+        caps = ctx.ai.capabilities(model)
+    except OllamaUnavailable as exc:
+        log.info("chưa hỏi được khả năng của %s: %s", model, exc)
+        return True
+    return not caps or "completion" in caps
+
+
 def _check_model(ctx: Context, model: str) -> None:
     names = _model_names(ctx)
     if names is not None and model not in names and f"{model}:latest" not in names:
         raise ActionError(f"Ollama chưa có mô hình {model}", "model-not-found")
+    if names is not None and not can_chat(ctx, model):
+        raise ActionError(
+            f"Mô hình {model} chỉ dùng để tìm kiếm (embedding), không trả lời được; chọn mô hình trò chuyện",
+            "model-not-chat",
+        )
 
 
 def _agent_out(row) -> dict:
@@ -295,7 +313,8 @@ def ai_models(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context
         loaded = ctx.ai.running()
     except OllamaUnavailable:
         loaded = []
-    return {"ai_enabled": True, "models": models, "loaded": loaded}
+    chat = [m for m in models if can_chat(ctx, m["name"])]
+    return {"ai_enabled": True, "models": chat, "loaded": loaded}
 
 
 def ai_agent_stats(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> list[dict]:
@@ -420,7 +439,7 @@ def ai_assistants(conn: psycopg.Connection, session: dict, _args: dict, ctx: Con
                 "id": str(r[0]),
                 "name": r[1],
                 "model": r[2],
-                "ready": names is not None and (r[2] in names or f"{r[2]}:latest" in names),
+                "ready": names is not None and (r[2] in names or f"{r[2]}:latest" in names) and can_chat(ctx, r[2]),
             }
             for r in rows
         ],
