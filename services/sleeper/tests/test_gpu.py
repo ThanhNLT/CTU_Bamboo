@@ -17,20 +17,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tự dùng GPU NVIDIA khi máy có (ADR #79), với Docker Engine giả."""
+"""Tự dùng GPU NVIDIA khi máy có (ADR #79), không có GPU thì chỉ chạy AI trên CPU khi đủ RAM (ADR #90); Docker Engine giả."""
 
 import itertools
 import unittest
 
-from app.sleeper import GPU_REQUEST, DockerError, Gpu, Target, clone_body, has_gpu
+from app.sleeper import GPU_REQUEST, AiRam, DockerError, Gpu, Modules, Target, clone_body, has_gpu
 
 
 class FakeEngine:
     """Docker giả: container theo id, tìm theo nhãn compose; `gpu_ok` quyết định container xin GPU start được không."""
 
-    def __init__(self, gpu_ok: bool):
+    def __init__(self, gpu_ok: bool, ram_gb: float = 16):
         self.project = "bamboo"
         self.gpu_ok = gpu_ok
+        self.ram = int(ram_gb * 2**30)
         self.ids = itertools.count(1)
         self.c: dict[str, dict] = {}
         self.log: list[str] = []
@@ -104,6 +105,9 @@ class FakeEngine:
 
     async def wait(self, cid):
         return 0
+
+    async def mem_total(self):
+        return self.ram
 
 
 def services(engine):
@@ -234,3 +238,70 @@ class GpuTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             clone_body({**info, "HostConfig": body["HostConfig"]}, gpu=False)["HostConfig"]["DeviceRequests"], []
         )
+
+
+AI = ["ollama-core", "ocr-core", "ai-worker"]
+
+
+class AiRamTest(unittest.IsolatedAsyncioTestCase):
+    def setup(self, gpu_ok: bool, ram_gb: float, mode="auto"):
+        e = FakeEngine(gpu_ok=gpu_ok, ram_gb=ram_gb)
+        for service in AI:
+            e.add(service)
+        targets = [Target(1, "ollama-core", 11434, 300), Target(2, "ocr-core", 8000, 300)]
+        gpu = Gpu(e, ["ollama-core", "ocr-core"], targets, mode) if mode != "false" else None
+        return e, gpu, AiRam(e, AI, targets, 7 * 1024, gpu), targets
+
+    async def running(self, e, service):
+        return (await e.state(await e.find(service))).get("Running")
+
+    async def test_chua_do_xong_gpu_thi_chua_quyet(self):
+        e, _gpu, ai, _ = self.setup(gpu_ok=False, ram_gb=4)
+        await ai.reconcile()
+        self.assertEqual(ai.status()["device"], "pending")
+        self.assertTrue(await self.running(e, "ollama-core"))
+
+    async def test_co_gpu_thi_khong_xet_ram(self):
+        e, gpu, ai, _ = self.setup(gpu_ok=True, ram_gb=4)
+        await gpu.reconcile()
+        await ai.reconcile()
+        self.assertEqual(ai.status()["device"], "gpu")
+        self.assertEqual(ai.off(), set())
+
+    async def test_khong_gpu_du_ram_thi_chay_cpu(self):
+        e, gpu, ai, targets = self.setup(gpu_ok=False, ram_gb=7.6)
+        await gpu.reconcile()
+        await ai.reconcile()
+        self.assertEqual(ai.status(), {"device": "cpu", "ram_mb": 7782, "min_ram_mb": 7168})
+        self.assertTrue(await self.running(e, "ai-worker"))
+        self.assertFalse(any(t.blocked for t in targets))
+
+    async def test_khong_gpu_thieu_ram_thi_tat_ai(self):
+        e, gpu, ai, targets = self.setup(gpu_ok=False, ram_gb=5.8)
+        await gpu.reconcile()
+        await ai.reconcile()
+        self.assertEqual(ai.status()["device"], "off")
+        self.assertEqual(ai.off(), set(AI))
+        for service in AI:
+            self.assertFalse(await self.running(e, service), service)
+        self.assertTrue(all(t.blocked for t in targets), "không đánh thức Ollama, OCR")
+
+    async def test_tat_gpu_bang_bien_thi_xet_ram_ngay(self):
+        e, _gpu, ai, _ = self.setup(gpu_ok=True, ram_gb=5.8, mode="false")
+        await ai.reconcile()
+        self.assertEqual(ai.status()["device"], "off")
+
+    async def test_mo_dun_khong_chay_lai_dich_vu_ai_da_tat(self):
+        e, gpu, ai, targets = self.setup(gpu_ok=False, ram_gb=5.8)
+        await gpu.reconcile()
+        await ai.reconcile()
+
+        async def fetch(_url):
+            return {"run": AI, "stop": []}
+
+        modules = Modules(e, "http://actions", set(AI), targets, fetch, forced_off=ai.off)
+        done = await modules.reconcile()
+        self.assertEqual(done["started"], [])
+        for service in AI:
+            self.assertFalse(await self.running(e, service), service)
+        self.assertTrue(all(t.blocked for t in targets))

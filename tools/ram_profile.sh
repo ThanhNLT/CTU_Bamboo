@@ -50,8 +50,18 @@ if [ -z "$mode" ]; then
         bytes=$(docker info --format '{{.MemTotal}}' 2> /dev/null || true)
         [ -n "$bytes" ] && kb=$((bytes / 1024))
     fi
-    [ -z "$kb" ] && kb=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
+    [ -z "$kb" ] && [ -r /proc/meminfo ] && kb=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
+    [ -z "$kb" ] && kb=$(($(sysctl -n hw.memsize 2> /dev/null || echo 0) / 1024))
     if [ "$kb" -ge $((12 * 1024 * 1024)) ]; then mode=16; else mode=8; fi
+    min=${BAMBOO_AI_MIN_RAM_GB:-$(env_value BAMBOO_AI_MIN_RAM_GB)}
+    case "${COMPOSE_FILE:-}" in
+        *mac.yml*) ;;
+        *)
+            if awk -v kb="$kb" -v gb="${min:-7}" 'BEGIN { exit !(kb < gb * 1024 * 1024) }'; then
+                echo "CẢNH BÁO: Docker chỉ có $((kb / 1024)) MB RAM, dưới ${min:-7} GB: máy không có GPU NVIDIA thì AI (trợ lý, OCR) sẽ tắt; cấp thêm RAM cho Docker để dùng AI trên CPU (ADR #90)" >&2
+            fi
+            ;;
+    esac
     echo "Tự chọn mức RAM $mode (Docker thấy $((kb / 1024)) MB); đặt BAMBOO_RAM=8 hoặc 16 để chọn tay" >&2
 fi
 
@@ -110,6 +120,17 @@ echo "export BAMBOO_CPU_LIMIT=$cpus"
 case "${COMPOSE_FILE:-$(env_value COMPOSE_FILE)}" in
     *gpu.yml*)
         echo "CẢNH BÁO: COMPOSE_FILE ép GPU (infra/compose/gpu.yml): Docker không cấp được GPU thì Ollama, OCR không chạy và ai-worker chờ mãi; OCR cũng không tự tải PyTorch CUDA. Xóa dòng COMPOSE_FILE trong .env, sleeper tự dò GPU (ADR #79)" >&2
+        ;;
+esac
+# Docker arm64: CSDL và ClamAV bản arm64 thay vì giả lập amd64 (ADR #91); giá trị đặt trong .env được giữ.
+arch=""
+command -v docker > /dev/null 2>&1 && arch=$(docker info --format '{{.Architecture}}' 2> /dev/null || true)
+case "$arch" in
+    aarch64 | arm64)
+        [ -n "${BAMBOO_DB_IMAGE:-$(env_value BAMBOO_DB_IMAGE)}" ] || echo 'export BAMBOO_DB_IMAGE="imresamu/postgis:17-3.5"'
+        [ -n "${BAMBOO_DB_PLATFORM:-$(env_value BAMBOO_DB_PLATFORM)}" ] || echo 'export BAMBOO_DB_PLATFORM="linux/arm64"'
+        [ -n "${BAMBOO_CLAMAV_IMAGE:-$(env_value BAMBOO_CLAMAV_IMAGE)}" ] || echo 'export BAMBOO_CLAMAV_IMAGE="clamav/clamav-debian:1.4"'
+        echo "Docker arm64: CSDL, ClamAV chạy bản arm64, không qua giả lập" >&2
         ;;
 esac
 profiles=${COMPOSE_PROFILES:-$(env_value COMPOSE_PROFILES)}

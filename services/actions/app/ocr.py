@@ -246,7 +246,31 @@ def text_of(conn: psycopg.Connection, attachment_id) -> str:
     return row["text"] if isinstance(row, dict) else row[0]
 
 
-def ocr_retry(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+def require_ai(ctx: Context) -> None:
+    """Chặn lượt hỏi, việc OCR khi sleeper đã tắt AI vì không có GPU và Docker thiếu RAM (ADR #90).
+
+    Không hỏi được sleeper (máy dev không chạy Docker) thì cho qua."""
+    if not ctx.sleeper_url:
+        return
+    try:
+        resp = httpx.get(f"{ctx.sleeper_url.rstrip('/')}/status", timeout=2.0)
+        resp.raise_for_status()
+        ai = resp.json().get("ai") or {}
+    except (httpx.HTTPError, ValueError, AttributeError):
+        return
+    if ai.get("device") != "off":
+        return
+    ram = f"{(ai.get('ram_mb') or 0) / 1024:.1f}"
+    need = f"{(ai.get('min_ram_mb') or 0) / 1024:.0f}"
+    raise ActionError(
+        f"AI đang tắt: máy chủ không có GPU và Docker chỉ có {ram} GB RAM, chưa đủ {need} GB để chạy AI trên CPU. "
+        "Quản trị viên cấp thêm RAM cho Docker hoặc lắp GPU rồi khởi động lại hệ thống",
+        "ai-unavailable",
+        503,
+    )
+
+
+def ocr_retry(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     """Người xem được tệp xếp lại việc OCR đã xong, bị bỏ qua hoặc lỗi; đang chờ hoặc đang chạy thì từ chối."""
     attachment_id = str(uuid.UUID(args["attachment_id"]))
     att = conn.execute(
@@ -265,6 +289,7 @@ def ocr_retry(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context
         raise ActionError("Tệp này không cần OCR", "not-ocr", 409)
     if row[0] in ("PENDING", "RUNNING"):
         raise ActionError("Tệp đang chờ hoặc đang OCR", "busy", 409)
+    require_ai(ctx)
     bind_session(conn, session)
     conn.execute(
         """UPDATE core.attachment_ocr
