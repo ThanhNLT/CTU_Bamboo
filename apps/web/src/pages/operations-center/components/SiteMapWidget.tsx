@@ -38,6 +38,12 @@ const PAD = 26;
 
 type Box = { x: number; y: number; w: number; h: number };
 
+const ISLANDS = ARCHIPELAGOS.map((a) => ({ ...a, ...project(a.lat, a.lng) }));
+const ISLAND_BOUNDS = ISLANDS.flatMap((p) => [
+  { x: p.x - 30, y: p.y - 6 },
+  { x: p.x + 30, y: p.y + 28 },
+]);
+
 const fitBox = (points: { x: number; y: number }[], aspect: number, whole: boolean): Box => {
   let b: Box = { x: 0, y: 0, w: VN_WIDTH, h: VN_HEIGHT };
   if (!whole && points.length > 0) {
@@ -47,6 +53,11 @@ const fitBox = (points: { x: number; y: number }[], aspect: number, whole: boole
     const y0 = Math.min(...ys) - PAD;
     b = { x: x0, y: y0, w: Math.max(...xs) + PAD - x0, h: Math.max(...ys) + PAD - y0 };
   }
+  const x0 = Math.min(b.x, ...ISLAND_BOUNDS.map((p) => p.x));
+  const y0 = Math.min(b.y, ...ISLAND_BOUNDS.map((p) => p.y));
+  const x1 = Math.max(b.x + b.w, ...ISLAND_BOUNDS.map((p) => p.x));
+  const y1 = Math.max(b.y + b.h, ...ISLAND_BOUNDS.map((p) => p.y));
+  b = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   const cx = b.x + b.w / 2;
   const cy = b.y + b.h / 2;
   const w = b.w / b.h < aspect ? b.h * aspect : b.w;
@@ -163,22 +174,28 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
             aria-hidden
           >
             <path d={VN_PATH} fill="#f7f9f4" stroke="#b9c7bc" strokeWidth={box.w / width} />
-            {ARCHIPELAGOS.map((a) => {
-              const p = project(a.lat, a.lng);
-              return (
-                <g key={a.name}>
-                  {[-4, 0, 4].map((d) => (
-                    <circle key={d} cx={p.x + d} cy={p.y + (d ? 2 : -2)} r={0.9} fill="#9fb2a4" />
-                  ))}
-                  {whole && (
-                    <text x={p.x} y={p.y + 10} fontSize={6} textAnchor="middle" fill="#6b7670">
-                      {a.name}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
+            {ISLANDS.map((p) => (
+              <g key={p.name}>
+                {[-4, 0, 4].map((d) => (
+                  <circle key={d} cx={p.x + d} cy={p.y + (d ? 2 : -2)} r={0.9} fill="#9fb2a4" />
+                ))}
+              </g>
+            ))}
           </svg>
+          {ISLANDS.map((p) => {
+            const at = pct(p.x, p.y);
+            const half = p.name.length * 3 + 6;
+            const left = Math.min(Math.max((at.left / 100) * width, half), width - half);
+            return (
+              <span
+                key={p.name}
+                className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap text-[10.5px] font-medium text-[#5f6b64]"
+                style={{ left, top: `calc(${at.top}% + 7px)` }}
+              >
+                {p.name}
+              </span>
+            );
+          })}
           {points.map(({ site, x, y }) => (
             <Marker
               key={site.id}

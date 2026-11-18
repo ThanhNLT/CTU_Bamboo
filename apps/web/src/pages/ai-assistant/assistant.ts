@@ -25,7 +25,7 @@ import { tr, trf } from "../../i18n";
 import { fold } from "../../utils/text";
 
 const FIELDS = `id question status answer thinking citations guard error model kb_document_id reused_from created_at
-  started_at finished_at`;
+  started_at first_token_at finished_at`;
 
 export const fetchAssistants = async () => {
   const { ai_assistants } = await request<{ ai_assistants: { ai_enabled: boolean; assistants: Assistant[] } }>(
@@ -109,9 +109,10 @@ export const plainText = (q: Question) =>
   ].join("\n");
 
 export const refusalText = (q: Question) =>
-  q.guard === "prompt"
+  q.answer ||
+  (q.guard === "prompt"
     ? tr("Câu hỏi bị chặn vì có dấu hiệu cố tình thay đổi chỉ dẫn của trợ lý.")
-    : q.answer || tr("Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem.");
+    : tr("Không tìm thấy nội dung liên quan trong Thư viện tri thức mà bạn được xem."));
 
 export const elapsed = (q: Question) => {
   if (!q.started_at || !q.finished_at) return null;

@@ -126,7 +126,11 @@ export const AiMessage = ({ q, onCopy, onRetry }: { q: Question; onCopy: () => v
       />
     );
   if (q.status === "running" && !q.answer && !q.thinking)
-    return <ThinkingMessage label={tr("Đang tìm trong Thư viện tri thức…")} />;
+    return (
+      <ThinkingMessage
+        label={q.first_token_at ? tr("Đang soạn câu trả lời…") : tr("Đang tìm trong Thư viện tri thức…")}
+      />
+    );
 
   const isLiveThinking = q.status === "running" && !q.answer;
 

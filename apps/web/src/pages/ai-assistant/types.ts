@@ -46,6 +46,7 @@ export type Question = {
   reused_from?: string | null;
   created_at: string;
   started_at: string | null;
+  first_token_at?: string | null;
   finished_at: string | null;
   position?: number;
 };

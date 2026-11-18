@@ -201,7 +201,7 @@ docker compose logs -f ollama-init         # lần đầu tải ~3,7 GB (qwen3:4
 docker compose logs -f ocr-init            # lần đầu tải ~250 MB mô hình OCR (PaddleOCR, VietOCR)
 curl 127.0.0.1:11434/api/tags              # thấy hai mô hình là xong
 curl 127.0.0.1:8866/health                 # dịch vụ OCR: GPU hay CPU, mô hình đang nạp chưa
-tools/ai_smoke.sh                          # 22 câu mẫu chấm bằng luật, in tốc độ (--cold: gỡ mô hình trước câu đầu)
+tools/ai_smoke.sh                          # 39 câu mẫu chấm bằng luật (nội dung, ngôn ngữ, độ dài), in tốc độ (--cold: gỡ mô hình trước câu đầu)
 tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo tỉ lệ lỗi ký tự
 ```
 
@@ -216,6 +216,8 @@ tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo
 **OCR tệp quét.** Ảnh PNG/JPEG luôn OCR; PDF chỉ OCR trang không có chữ, tối đa 50 trang mỗi tệp. Chỉ tệp của đề nghị mua sắm và tài liệu thư viện (các tệp được đánh chỉ mục tìm kiếm). Văn bản OCR vào chỉ mục toàn văn và, với tài liệu thư viện, vào chỉ mục đoạn của Trợ lý RAG. Tệp có từ trước khi nâng cấp được OCR bù. Trạng thái từng tệp ở bảng `core.attachment_ocr`.
 
 **Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi; `tools/ai_smoke.sh` in điểm theo nhóm câu hỏi (trong phạm vi, ngoài phạm vi, tiêm lệnh). Hạ tạm `AI_MIN_SCORE` xuống 0,5 khi chạy để thấy điểm của câu bị chặn.
+
+**Mô hình luôn suy nghĩ** ([ADR #85](#adr-85)): thẻ `qwen3:4b` của kho Ollama hiện là bản thinking, luôn lập luận trước khi trả lời kể cả khi tác tử tắt dòng suy nghĩ. `ai-worker` không hiện phần lập luận đó, cắt nó sau 512 mảnh rồi buộc mô hình trả lời, nên mỗi lượt hỏi vẫn tốn thời gian sinh phần lập luận (trên CPU khoảng một đến hai phút mỗi lượt; GPU nhanh hơn nhiều lần). Bản `qwen3:4b-instruct` không lập luận nên nhanh hơn, nhưng trong phép thử trả lời sai nhiều hơn ở câu phải so mức tiền và câu hỏi tiếng Anh; chỉ nên đổi khi cần tốc độ hơn độ chính xác.
 
 **Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
 

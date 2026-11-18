@@ -1243,8 +1243,8 @@ export const EN_PAGES: Record<string, string> = {
   "Mua sắm": "Procurement",
   "Mua sắm duyệt xong 6 tháng gần nhất": "Procurement approved in the last 6 months",
   "Mua sắm: {0}": "Procurement: {0}",
-  "Máy chủ chưa chạy mô hình AI cục bộ, hoặc chưa có trợ lý nào được cấu hình cho đơn vị của bạn. Liên hệ người quản trị tác tử AI.":
-    "The server is not running a local AI model, or no assistant is configured for your unit. Contact the AI agent administrator.",
+  "Máy chủ AI chưa có mô hình {0} của trợ lý. Người quản trị tác tử AI tải mô hình hoặc đổi mô hình của trợ lý.":
+    "The AI server does not have the assistant model {0}. The AI agent administrator must pull the model or change the assistant's model.",
   "Máy chủ chưa cài chứng thư gốc (thư mục infra/platform/trust): nhờ người quản trị máy chủ cài trước khi ký.":
     "The server has no root certificate installed (infra/platform/trust folder): ask the server administrator to install it before signing.",
   "Máy chủ chưa cài chứng thư gốc để kiểm chữ ký số, nên bước này tạm ẩn. Ký bổ sung sau khi người quản trị máy chủ cài chứng thư Root CA quốc gia.":
@@ -1928,7 +1928,12 @@ export const EN_PAGES: Record<string, string> = {
   "Trả về / từ chối / hủy": "Returned / rejected / cancelled",
   "Trả về bổ sung": "Return for more information",
   "Trần Thị Bình": "Tran Thi Binh",
-  "Trợ lý AI chưa bật": "AI assistant not enabled",
+  "Trợ lý AI chưa sẵn sàng": "AI assistant not ready",
+  "Chưa kết nối được mô hình AI cục bộ trên máy chủ. Tải lại trang sau ít phút; còn lỗi thì liên hệ người quản trị máy chủ.":
+    "Cannot reach the local AI model on the server. Reload the page in a few minutes; if it persists, contact the server administrator.",
+  "Công ty của bạn chưa có trợ lý nào đang hoạt động (trợ lý có thể đã bị ngừng). Người quản trị tác tử AI bật lại trợ lý ở trang Tác tử AI.":
+    "Your company has no active assistant (it may have been deactivated). The AI agent administrator can reactivate it on the AI Agents page.",
+  "Không kiểm tra được trạng thái trợ lý AI: {0}": "Could not check the AI assistant status: {0}",
   "Trợ lý AI tạm thời không trả lời được.": "The AI assistant cannot answer right now.",
   "Trợ lý chưa có gợi ý cho hồ sơ này.": "The assistant has no suggestions for this record yet.",
   "Trợ lý chỉ hiện ở trang Trợ lý đa năng khi có cả search_docs và cite.":
@@ -2440,6 +2445,7 @@ export const EN_PAGES: Record<string, string> = {
   "Đang lập…": "Preparing…",
   "Đang quét an toàn…": "Running security scan…",
   "Đang quét mã độc…": "Scanning for malware…",
+  "Đang soạn câu trả lời…": "Composing the answer…",
   "Đang suy luận…": "Reasoning…",
   "Đang tìm trong Thư viện tri thức…": "Searching the Knowledge library…",
   "Đang tô sáng: ": "Highlighting: ",

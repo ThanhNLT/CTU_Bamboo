@@ -324,6 +324,7 @@ def create_app(
         users=_keycloak_users(settings),
         lakehouse=_lakehouse(settings),
         ai=Ollama(settings.ollama_url, timeout=10.0) if settings.ollama_url else None,
+        ai_chat_model=settings.ai_chat_model,
         channels=_channels(settings),
         signer=receipts.Signer.from_env(settings.actions_secret),
         anchor_signer=receipts.Signer.from_env(settings.actions_secret, "anchor"),

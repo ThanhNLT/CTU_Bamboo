@@ -25,10 +25,11 @@ import pytest
 from psycopg.rows import dict_row
 from test_tro_ly_ai import FakeOllama
 
-from app import ai_agent, ai_agent_runner
+from app import ai_agent, ai_agent_runner, ai_worker, search
 from app.common import ActionError, Context
+from app.gpu import Gpu
 from bamboo_common.ollama import Ollama
-from conftest import SETTINGS, TEST_APP_DB_URL, ids, pr
+from conftest import SETTINGS, TEST_APP_DB_URL, drop_role, ids, pr
 
 RUN = {"allowed_actions": ["comment", "notify"]}
 
@@ -162,6 +163,18 @@ def test_che_do_chi_de_xuat_khong_thuc_hien(conn, fake, clean):
     assert not conn.execute("SELECT 1 FROM collab.comment WHERE entity_id = %s", (pr_id,)).fetchone()
 
 
+def test_ai_worker_chay_lan_tu_hanh_dong_dang_cho(conn, fake, clean):
+    ag = agent(conn, "c", autonomy="dry_run")
+    fake.reply = json.dumps({"assessment": "Ổn", "risk": "low", "actions": []})
+    pr(conn, f"wk_{uuid.uuid4().hex[:6]}", "c", "P_NV_MH_DT", 2_000_000)
+    ai = Ollama(fake.url)
+    meili = search.Meili(SETTINGS.meili_url, SETTINGS.meili_search_key)
+    with psycopg.connect(TEST_APP_DB_URL, row_factory=dict_row) as w:
+        assert ai_worker.run_agent(w, meili, ai, SETTINGS, Gpu(ai, None)) == "done"
+    [run] = runs(conn, ag)
+    assert run["status"] == "done"
+
+
 def test_nguoi_phu_trach_khong_xem_duoc_chung_tu_thi_bo_qua(conn, fake, clean):
     ag = agent(conn, "a")
     calls = fake.chat_calls
@@ -180,7 +193,14 @@ def test_mo_hinh_tra_sai_dinh_dang_thi_bao_loi(conn, fake, clean):
     assert run["error"] == "Mô hình không trả về JSON" and run["actions"] == []
 
 
-def test_cau_hinh_tu_hanh_dong_can_quyen_quan_tri_ai(conn):
+@pytest.fixture
+def no_qt_ai(conn):
+    drop_role(conn, "QT_AI")
+    yield
+    drop_role(conn, "QT_AI")
+
+
+def test_cau_hinh_tu_hanh_dong_can_quyen_quan_tri_ai(conn, no_qt_ai):
     i = ids(conn, "TDX", "c", "tp_mh_dt")
     ag = agent(conn, "tp_mh_dt", status="inactive")
     session = {"x-hasura-role": "user", "x-hasura-user-id": i["c"], "x-hasura-tenant-id": i["TDX"]}

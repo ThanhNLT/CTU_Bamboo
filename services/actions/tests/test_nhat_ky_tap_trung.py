@@ -86,10 +86,14 @@ def test_bo_ghi_log_gan_ma_truy_vet_che_va_khong_chan(cur, database):
         log.removeHandler(broken)
 
 
-def test_yeu_cau_http_mang_ma_truy_vet_va_ingest(cur, database):
+def test_yeu_cau_http_mang_ma_truy_vet_va_ingest(cur, database, monkeypatch):
     settings = config.Settings(**{**SETTINGS.__dict__, "database_url": database, "obs_enabled": True})
     trace = "trace-" + uuid.uuid4().hex[:12]
     with TestClient(main.create_app(settings, ctx=Context())) as client:
+        # obs.install chỉ gắn bộ ghi một lần cho cả tiến trình, theo CSDL của app tạo đầu tiên (có thể là CSDL của
+        # test khác); trỏ bộ ghi về CSDL của test này.
+        monkeypatch.setattr(obs._installed, "database_url", database)
+        monkeypatch.setattr(obs._installed, "_conn", None)
         headers = {"x-actions-secret": SETTINGS.actions_secret, "x-request-id": trace}
         i = ids(cur, "TDX", "c")
         session = {"x-hasura-role": "user", "x-hasura-user-id": i["c"], "x-hasura-tenant-id": i["TDX"]}

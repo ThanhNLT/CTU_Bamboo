@@ -22,7 +22,8 @@
 Quản trị (cần core.ai.manage, kiểm qua core.v_ai_admin): ai_agent_register, ai_agent_update,
 ai_agent_unregister, ai_models, ai_agent_stats; tự hành động khi có sự kiện (ADR #72): ai_agent_automation,
 ai_agent_trigger_options (lần chạy trong core.ai_agent_run, ai-worker thực hiện qua ai_agent_runner).
-Người dùng: ai_assistants (tác tử hỏi được), ai_ask (lưu lượt hỏi, worker nền trả lời dần).
+Người dùng: ai_assistants (tác tử hỏi được), ai_ask (lưu lượt hỏi, worker nền trả lời dần). Trợ lý trả lời, từ chối
+và báo lỗi bằng ngôn ngữ của câu hỏi (ADR #85): `reply_language`, `notice`.
 Nhật ký kiểm toán bật qua audit.enable('core.ai_agent') và trigger audit_log trên core.ai_question.
 """
 
@@ -35,7 +36,7 @@ from psycopg.types.json import Jsonb
 
 from bamboo_common.ollama import WAKE_SECONDS, OllamaUnavailable
 
-from . import pii_guard
+from . import i18n, lang, pii_guard
 from .common import ActionError, Context, bind_session
 
 log = logging.getLogger("ai_agent")
@@ -69,6 +70,20 @@ def fold(text: str) -> str:
 
 def is_injection(text: str) -> bool:
     return bool(_INJECTION.search(fold(text)) or _INJECTION_CS.search(text))
+
+
+def reply_language(conn: psycopg.Connection, tenant, person, question: str) -> str:
+    """Ngôn ngữ trả lời một câu hỏi: ngôn ngữ của chính câu hỏi; câu quá ít chữ để biết (chỉ có mã, số) thì theo ngôn
+    ngữ giao diện mà người hỏi đã chọn."""
+    found = lang.detect(question)
+    if found:
+        return found
+    return lang.EN if i18n.person_locale(conn, tenant, person) == "en" else lang.VI
+
+
+def notice(text: str, language: str) -> str:
+    """Câu cố định của trợ lý (từ chối, báo lỗi) theo ngôn ngữ trả lời: tiếng Việt, mọi ngôn ngữ khác dùng tiếng Anh."""
+    return i18n.message(text, "vi" if language == lang.VI else "en")
 
 
 def guardrails(config: dict | None) -> dict:
@@ -342,9 +357,31 @@ def _askable(tools) -> bool:
     return isinstance(tools, list) and all(t in tools for t in TOOLS)
 
 
+DEFAULT_ASSISTANT = "Trợ lý tri thức"
+
+
+def ensure_default_assistant(conn: psycopg.Connection, tenant, person, model: str) -> bool:
+    """Công ty chưa từng có tác tử AI nào thì tạo một trợ lý hỏi đáp Thư viện tri thức, để mọi người trong công ty
+    dùng được ngay khi bật mô-đun AI. Công ty đã có tác tử (kể cả đã ngừng) thì giữ nguyên quyết định của quản trị."""
+    if not model:
+        return False
+    conn.execute("SELECT pg_advisory_xact_lock(hashtext('core.ai_agent.default:' || %s::text))", (str(tenant),))
+    row = conn.execute(
+        """INSERT INTO core.ai_agent (tenant_id, name, model, tool_list, created_by)
+           SELECT %s, %s, %s, %s, %s
+           WHERE NOT EXISTS (SELECT FROM core.ai_agent WHERE tenant_id = %s)
+           RETURNING id""",
+        (tenant, DEFAULT_ASSISTANT, model, Jsonb(list(TOOLS)), person, tenant),
+    ).fetchone()
+    if row:
+        log.info("tạo trợ lý AI mặc định %s cho tenant %s", row[0], tenant)
+    return row is not None
+
+
 def ai_assistants(conn: psycopg.Connection, session: dict, _args: dict, ctx: Context) -> dict:
     """Tác tử đang hoạt động hỏi được tài liệu (search_docs + cite) và AI có đang bật không."""
-    _person, tenant = _identity(session)
+    person, tenant = _identity(session)
+    ensure_default_assistant(conn, tenant, person, ctx.ai_chat_model)
     rows = conn.execute(
         """SELECT id, name, model FROM core.ai_agent
            WHERE tenant_id = %s AND status = 'active' AND tool_list @> '["search_docs", "cite"]'::jsonb
@@ -404,6 +441,7 @@ def ai_ask(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -
 
     guard = guardrails(agent[2])
     refused = guard["prompt_guard"] and is_injection(question)
+    refusal = notice(PROMPT_REFUSAL, reply_language(conn, tenant, person, question)) if refused else ""
     if guard["pii_guard"]:
         question, _ = pii_guard.guard().mask(question)
     bind_session(conn, session)
@@ -415,7 +453,7 @@ def ai_ask(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -
                   CASE WHEN r THEN %s ELSE '' END, CASE WHEN r THEN now() END, CASE WHEN r THEN now() END
            FROM (SELECT %s::boolean AS r) f
            RETURNING id, status""",
-        (tenant, agent[0], person, question, doc_id or None, agent[1], PROMPT_REFUSAL, refused),
+        (tenant, agent[0], person, question, doc_id or None, agent[1], refusal, refused),
     ).fetchone()
     return {"id": str(row[0]), "status": row[1], "position": 0 if refused else queue_position(conn, row[0])}
 

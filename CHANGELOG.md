@@ -25,6 +25,23 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp:** `docker compose up -d --build ai-worker actions web seed`. Không có migration hay metadata mới.
+
+### Thay đổi
+
+- **Trợ lý AI trả lời đúng điều được hỏi, bằng ngôn ngữ của câu hỏi** (ADR #85): hỏi tiếng Việt (có dấu hoặc gõ không dấu) thì trả lời tiếng Việt; hỏi tiếng Anh, Trung, Nhật, Hàn thì trả lời bằng ngôn ngữ đó; câu chỉ có mã hoặc số thì theo ngôn ngữ giao diện của người hỏi. Lời từ chối ("Không tìm thấy…", chặn tiêm lệnh), báo lỗi và ghi chú "bị cắt" cũng theo ngôn ngữ câu hỏi (tiếng Việt, còn lại tiếng Anh). Prompt mới yêu cầu trả lời thẳng ngay từ câu đầu, không lời dẫn, không kể thêm điều không được hỏi, không gợi ý ở cuối; quy định theo mức (khoảng tiền, thời hạn) thì nêu mức áp dụng. Câu trả lời đã lưu từ prompt cũ không còn được dùng lại.
+- Tác tử tự hành động viết nhận xét, bình luận và thông báo bằng ngôn ngữ của nhiệm vụ được giao.
+- Trang Trợ lý hiện "Đang soạn câu trả lời…" khi mô hình đã bắt đầu sinh nhưng chưa có chữ nào được hiện, thay cho "Đang tìm trong Thư viện tri thức…".
+- `tools/ai_smoke.sh` kiểm thêm cho mọi câu: trả lời cùng ngôn ngữ với câu hỏi, không lẫn phần lập luận của mô hình, không quá 120 từ; thêm nhóm `ngon_ngu` (39 câu).
+
+### Sửa lỗi
+
+- **Câu trả lời của Trợ lý là cả đoạn lập luận tiếng Anh của mô hình ("Okay, let's see. The user is asking…"), thường bị cắt ở 1.024 token trước khi tới câu trả lời:** thẻ `qwen3:4b` của kho Ollama hiện là bản thinking, luôn lập luận trước khi trả lời, và Ollama không tách phần lập luận khi tác tử tắt dòng suy nghĩ (mặc định). `ai-worker` nay tách phần lập luận khỏi câu trả lời (không hiện, không lưu khi tắt dòng suy nghĩ), cắt lập luận dài quá 512 mảnh rồi gọi mô hình thêm một lần để trả lời ngay; lượt hỏi hết token khi đang lập luận, kể cả khi bật dòng suy nghĩ, cũng được buộc trả lời thay vì báo "suy nghĩ quá dài". Mô hình trả về rỗng thì báo lỗi kèm nút hỏi lại thay vì hiện câu trả lời trống.
+- `ai-worker` khởi động lại liên tục (`column reference "model" is ambiguous`) khi có lần tự hành động của tác tử đang chờ, làm mọi lượt hỏi Trợ lý AI đứng chờ mãi. Worker gặp lỗi bất ngờ giờ ghi log rồi thử lại, không thoát.
+- Chỉ công ty TDX có trợ lý AI nên tài khoản công ty khác luôn thấy "Trợ lý AI chưa bật". Công ty chưa từng có tác tử AI nào giờ tự có "Trợ lý tri thức" (mô hình `AI_CHAT_MODEL`) khi bật mô-đun Trí tuệ số, khi đăng ký hay tạo công ty con có mô-đun này, hoặc khi người đầu tiên mở trang Trợ lý. Công ty đã có tác tử (kể cả đã ngừng) giữ nguyên. Dữ liệu demo tạo trợ lý cho cả TDX và BVX.
+- Trang Trợ lý báo đúng lý do chưa dùng được (chưa kết nối mô hình, công ty chưa có trợ lý đang hoạt động, thiếu mô hình, lỗi máy chủ) và tự thử lại khi mô hình đang khởi động.
+- Test `test_cau_hinh_tu_hanh_dong_can_quyen_quan_tri_ai` để sót quyền quản trị AI trong DB test làm hai test khác fail; `make test-actions` tự xóa container test cũ đã dừng.
+
 ## [0.5.1] - 2026-11-14
 
 **Nâng cấp:** `git pull` rồi `docker compose up -d --build` (hoặc `make up`): image `actions`, `web`, `gateway`, `sleeper` đổi, migration mới `060_quyen_cong_ty_moi.sql`, `061_chat_khong_bang_tam.sql` (job `migrate` tự áp), metadata Hasura thêm Action `legal_update`, `bootstrap` đổi cấu hình User Profile của realm `bms`. Ai có dòng `COMPOSE_FILE=compose.yaml:infra/compose/gpu.yml` trong `.env` thì xóa dòng đó (xem mục dưới). Tài khoản tạo từ những lần đăng ký lỗi trước bản này không thuộc công ty nào: xóa ở Keycloak (`http://localhost:8080` → realm `bms` → **Users**) rồi đăng ký lại.
