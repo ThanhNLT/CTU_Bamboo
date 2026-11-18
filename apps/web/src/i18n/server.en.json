@@ -592,6 +592,7 @@
   "Mô hình AI không trả lời": "The AI model did not respond",
   "Mô hình không trả về JSON": "The model did not return JSON",
   "Mô hình trả về JSON không hợp lệ": "The model returned invalid JSON",
+  "Mô hình {0} chỉ dùng để tìm kiếm (embedding), không trả lời được; chọn mô hình trò chuyện": "Model {0} is only for search (embedding) and cannot answer; choose a chat model",
   "Mô-đun chưa khai phạm vi {0}": "The module has not declared scope {0}",
   "Mô-đun chưa được bật cho công ty": "The module is not enabled for the company",
   "Mô-đun tạm thời không truy cập được": "The module is temporarily unavailable",
