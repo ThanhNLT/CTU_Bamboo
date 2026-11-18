@@ -19,8 +19,8 @@
 
 """Một trang ảnh → các dòng chữ: xoay hướng trang, phát hiện dòng (PaddleOCR), xoay dòng, nhận dạng (VietOCR).
 
-Mọi mô hình chạy bằng PyTorch trên `device` (CUDA hoặc CPU). Thứ tự đọc: trên xuống, trái sang phải; các ô cùng hàng
-gộp thành một dòng. Không dựng lại bảng, bố cục.
+Mọi mô hình chạy bằng PyTorch trên `device` (CUDA, Metal hoặc CPU; PaddleX không nhận Metal nên phần của nó chạy CPU).
+Thứ tự đọc: trên xuống, trái sang phải; các ô cùng hàng gộp thành một dòng. Không dựng lại bảng, bố cục.
 """
 
 import os
@@ -59,6 +59,7 @@ class Models:
 def paddle_models(device: str) -> dict:
     from paddleocr import DocImgOrientationClassification, TextDetection, TextLineOrientationClassification
 
+    # PaddleX không nhận thiết bị Metal (mps): trên Mac, bộ dò chữ và xoay trang chạy CPU, VietOCR chạy GPU.
     paddle = "gpu:" + device.split(":")[-1] if device.startswith("cuda") else "cpu"
     return {
         "doc_ori": DocImgOrientationClassification(model_name=DOC_ORI_MODEL, engine="transformers", device=paddle),

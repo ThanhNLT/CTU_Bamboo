@@ -30,6 +30,7 @@ import gc
 import io
 import logging
 import os
+import sys
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -49,11 +50,18 @@ MAX_BYTES = 30 * 1024 * 1024
 
 
 def device() -> str:
-    return "cuda:0" if torch.cuda.is_available() and torch.cuda.device_count() > 0 else "cpu"
+    """GPU NVIDIA (CUDA), GPU Apple Silicon (Metal, khi OCR chạy thẳng trên macOS) hoặc CPU."""
+    if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+        return "cuda:0"
+    if os.environ.get("OCR_MPS", "auto").strip().lower() not in ("0", "false") and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
 
 
 def device_name(dev: str) -> str:
-    return torch.cuda.get_device_name(0) if dev.startswith("cuda") else "CPU"
+    if dev.startswith("cuda"):
+        return torch.cuda.get_device_name(0)
+    return "Apple GPU (Metal)" if dev == "mps" else "CPU"
 
 
 class ModelsMissing(Exception):
@@ -111,6 +119,8 @@ class Engine:
         gc.collect()
         if self.device.startswith("cuda"):
             torch.cuda.empty_cache()
+        elif self.device == "mps":
+            torch.mps.empty_cache()
         _trim_heap()
         return had
 
@@ -135,9 +145,15 @@ class Engine:
 
 
 def _trim_heap() -> None:
-    """Trả vùng heap trống cho hệ điều hành: glibc giữ lại bộ nhớ đã free, RSS không giảm sau khi gỡ mô hình."""
+    """Trả vùng heap trống cho hệ điều hành: glibc (và malloc của macOS) giữ lại bộ nhớ đã free, RSS không giảm sau khi
+    gỡ mô hình."""
     try:
-        ctypes.CDLL("libc.so.6").malloc_trim(0)
+        if sys.platform == "darwin":
+            relief = ctypes.CDLL(None).malloc_zone_pressure_relief
+            relief.argtypes, relief.restype = [ctypes.c_void_p, ctypes.c_size_t], ctypes.c_size_t
+            relief(None, 0)
+        else:
+            ctypes.CDLL("libc.so.6").malloc_trim(0)
     except (OSError, AttributeError):
         pass
 
@@ -170,7 +186,8 @@ async def lifespan(app: FastAPI):
     )
     stop = threading.Event()
     threading.Thread(target=app.state.engine.watch_idle, args=(stop,), daemon=True).start()
-    threading.Thread(target=warm_page_cache, args=(app.state.engine.models_dir,), daemon=True).start()
+    if os.environ.get("OCR_WARM_CACHE", "1").strip().lower() not in ("0", "false"):
+        threading.Thread(target=warm_page_cache, args=(app.state.engine.models_dir,), daemon=True).start()
     log.info("dịch vụ OCR chạy trên %s, nạp mô hình khi có việc", app.state.device)
     yield
     stop.set()
@@ -186,6 +203,8 @@ def health(request: Request):
     if engine.device.startswith("cuda"):
         free, total = torch.cuda.mem_get_info(0)
         body |= {"free_mb": free // 2**20, "total_mb": total // 2**20}
+    elif engine.device == "mps":
+        body |= {"used_mb": torch.mps.driver_allocated_memory() // 2**20}
     return body
 
 

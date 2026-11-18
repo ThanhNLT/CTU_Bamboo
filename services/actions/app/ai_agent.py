@@ -39,6 +39,7 @@ from bamboo_common.ollama import WAKE_SECONDS, OllamaUnavailable
 
 from . import i18n, lang, pii_guard
 from .common import ActionError, Context, bind_session
+from .ocr import require_ai
 
 log = logging.getLogger("ai_agent")
 
@@ -455,7 +456,7 @@ def queue_position(conn: psycopg.Connection, question_id) -> int:
     ).fetchone()[0]
 
 
-def ai_ask(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -> dict:
+def ai_ask(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     """Lưu một lượt hỏi và trả ngay; worker ai_worker trả lời dần, giao diện theo dõi qua subscription."""
     person, tenant = _identity(session)
     agent = conn.execute(
@@ -470,6 +471,7 @@ def ai_ask(conn: psycopg.Connection, session: dict, args: dict, _ctx: Context) -
         raise ActionError("Nhập câu hỏi", "question-required")
     if len(question) > MAX_QUESTION:
         raise ActionError(f"Câu hỏi tối đa {MAX_QUESTION} ký tự")
+    require_ai(ctx)
     doc_id = args.get("kb_document_id")
     if (
         doc_id
