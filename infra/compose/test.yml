@@ -70,6 +70,8 @@ services:
       HASURA_URL: http://hasura-test:8080
       ACTIONS_PORT: "8090"
       REQUIRE_SERVICES: "1"
+      # Test tự bật SETUP_OPEN_SIGNUP khi cần; mặc định demo (true) làm sai các test khởi tạo máy trống.
+      SETUP_OPEN_SIGNUP: "false"
     volumes:
       - ../..:/repo
       - actions-secrets:/run/bms:ro

@@ -18,6 +18,7 @@
 # limitations under the License.
 
 import datetime
+import re
 import uuid
 
 import httpx
@@ -130,7 +131,7 @@ def test_bao_cao_kpi_dong_bang(conn, app_conn, leaders, s3, gotenberg):  # noqa:
     who = session(leaders["c"], tenant)
     rows = documents.kpi_snapshots(app_conn, who, {"kpi_key": key}, None)
     assert [r["value"] for r in rows] == [9.25, 6.5] and all(r["valid"] for r in rows)
-    assert rows[0]["period"].startswith("Tháng ")
+    assert re.fullmatch(r"[A-Z][a-z]{2}-\d{4}", rows[0]["period"]), "tháng dạng MMM-YYYY, ví dụ Sep-2026"
 
     ctx = Context(storage=s3, gotenberg_url=gotenberg)
     out = documents.get_kpi_report_pdf(app_conn, who, {}, ctx)

@@ -59,7 +59,8 @@ test-db:
 	docker compose run --rm --build --entrypoint /repo/tools/db/test.sh migrate $(T)
 
 test-actions:
-	docker compose --profile test up -d --build hasura-test flowable bootstrap
+	docker compose --profile test up -d --build --force-recreate hasura-test flowable bootstrap
+	@docker rm bamboo-actions-test > /dev/null 2>&1 || true
 	docker compose --profile test run --rm --build --name bamboo-actions-test actions-test $(T)
 
 test-seed:
