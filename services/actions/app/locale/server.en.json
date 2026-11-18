@@ -521,6 +521,7 @@
   "Loại bổ nhiệm không hợp lệ: {0}": "Invalid appointment type: {0}",
   "Loại chứng từ chưa hỗ trợ duyệt: {0}": "This document type does not support approval yet: {0}",
   "Loại chứng từ không nhận tệp đính kèm: {0}": "This document type does not accept attachments: {0}",
+  "Loại chứng từ này chưa hỗ trợ trả lại để bổ sung": "This document type does not support returning for more information yet",
   "Loại kết quả không hợp lệ: {0}": "Invalid result type: {0}",
   "Loại lịch không hợp lệ": "Invalid event type",
   "Loại quyết định không hợp lệ: {0}": "Invalid decision type: {0}",

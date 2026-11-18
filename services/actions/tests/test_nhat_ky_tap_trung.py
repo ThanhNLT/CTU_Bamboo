@@ -18,6 +18,7 @@
 # limitations under the License.
 
 import logging
+import queue
 import uuid
 
 import psycopg
@@ -91,16 +92,20 @@ def test_yeu_cau_http_mang_ma_truy_vet_va_ingest(cur, database, monkeypatch):
     trace = "trace-" + uuid.uuid4().hex[:12]
     with TestClient(main.create_app(settings, ctx=Context())) as client:
         # obs.install chỉ gắn bộ ghi một lần cho cả tiến trình, theo CSDL của app tạo đầu tiên (có thể là CSDL của
-        # test khác); trỏ bộ ghi về CSDL của test này.
-        monkeypatch.setattr(obs._installed, "database_url", database)
-        monkeypatch.setattr(obs._installed, "_conn", None)
+        # test khác, đã bị xóa). Trỏ bộ ghi về CSDL của test này và thay hàng đợi: khi chạy cả bộ, hàng đợi cũ đầy
+        # dòng log ghi hỏng nên dòng mới bị bỏ hoặc nằm sau lô 500 dòng mà flush() lấy.
+        handler = obs._installed
+        monkeypatch.setattr(handler, "database_url", database)
+        monkeypatch.setattr(handler, "_conn", None)
+        monkeypatch.setattr(handler, "queue", queue.Queue(handler.queue.maxsize))
         headers = {"x-actions-secret": SETTINGS.actions_secret, "x-request-id": trace}
         i = ids(cur, "TDX", "c")
         session = {"x-hasura-role": "user", "x-hasura-user-id": i["c"], "x-hasura-tenant-id": i["TDX"]}
         response = client.post("/actions/obs_logs", json={"input": {}, "session_variables": session}, headers=headers)
         assert response.status_code == 403 and response.headers["x-request-id"] == trace, "nhân viên không xem được log"
         assert client.post("/actions/obs_logs", json={}, headers={"x-actions-secret": "sai"}).status_code == 401
-        obs._installed.flush()
+        while not handler.queue.empty():
+            handler.flush()
         rows = cur.execute(
             "SELECT message, tenant_id, person_id, service FROM obs.log_event WHERE trace_id = %s ORDER BY id", (trace,)
         ).fetchall()
