@@ -28,6 +28,8 @@ import pytest
 
 from conftest import ROOT
 
+pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="cần git (image actions không cài git)")
+
 SCRIPT = ROOT / "tools" / "gitops" / "reconcile.sh"
 
 FAKE_DOCKER = """#!/usr/bin/env bash

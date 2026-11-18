@@ -68,6 +68,10 @@ class Ollama:
             for m in resp.json().get("models", [])
         ]
 
+    def capabilities(self, model: str) -> list[str]:
+        """Khả năng Ollama ghi nhận cho mô hình (`completion`, `thinking`, `tools`...), lấy từ `/api/show`."""
+        return self._post("/api/show", {"model": model}).get("capabilities") or []
+
     def running(self) -> list[dict]:
         """Mô hình đang nạp: tên, tổng dung lượng và phần nằm trên VRAM (`/api/ps`)."""
         try:
