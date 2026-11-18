@@ -277,7 +277,7 @@ flowchart LR
 | Vận hành | Hàng đợi tin nhắn (đưa lại tin chết, xác minh biên nhận) | `/admin/queue` |
 | | Vận hành hệ thống: nhật ký tập trung, neo kiểm toán, sao lưu | `/admin/ops` |
 
-Trang AI và OCR chạy ở mọi cấu hình (cả máy 8 GB, chậm hơn khi đổi mô hình; xem mục dưới).
+Trang AI và OCR tự chọn nơi chạy: GPU NVIDIA nếu máy có, GPU Apple (Metal) trên Mac Apple Silicon, không có GPU thì CPU khi Docker có từ 7 GB RAM (máy 8 GB chạy được, chậm hơn khi đổi mô hình); dưới mức đó AI tắt và báo lý do (xem mục dưới).
 
 ## Yêu cầu cấu hình máy tính
 
@@ -286,9 +286,9 @@ Trang AI và OCR chạy ở mọi cấu hình (cả máy 8 GB, chậm hơn khi �
 | CPU | 4 nhân (vCPU) | 8 nhân |
 | RAM Docker thấy được | 8 GB (đầy đủ gồm AI và OCR; mỗi lúc một mô hình AI, lượt hỏi đầu sau khi nhàn rỗi chậm hơn) | 16 GB (đầy đủ, mô hình hỏi đáp và mô hình nhúng cùng nằm trên RAM); thêm 2 GB nếu bật ClamAV |
 | Ổ đĩa | 20 GB SSD trống | 50 GB SSD (image OCR khoảng 14 GB, mô hình AI khoảng 3,7 GB) |
-| GPU | Không cần | NVIDIA 8 GB VRAM trở lên để AI, OCR nhanh hơn (đã kiểm trên RTX 4060) |
+| GPU | Không cần (AI chạy CPU khi Docker có từ 7 GB RAM) | NVIDIA 8 GB VRAM trở lên (đã kiểm trên RTX 4060), hoặc Mac Apple Silicon 16 GB (AI chạy GPU Metal ngoài Docker, cần `brew install ollama uv`) |
 | Hệ điều hành | Linux, macOS, Windows 10/11 với WSL2 | Linux |
-| Kiến trúc | amd64 hoặc arm64 (image PostGIS chạy qua giả lập trên arm64) | amd64 |
+| Kiến trúc | amd64 hoặc arm64 (`make up` tự dùng bản arm64 của PostGIS, ClamAV) | amd64 |
 | Phần mềm | Docker Engine 25+ với Docker Compose v2 | Docker Compose 2.40.2+ (chạy image dựng sẵn từ OCI) |
 
 Trên Windows, đặt mã nguồn trong hệ thống tệp của WSL2 ([ADR #12](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)). WSL2 mặc định
