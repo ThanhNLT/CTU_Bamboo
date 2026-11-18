@@ -18,7 +18,8 @@ Thành phần chạy dưới dạng dịch vụ (image Docker chính thức, kh�
 ------------------------------------------------------------------------------------------------
 Apache APISIX 3.19 (apache/apisix)              Apache-2.0
 Coraza proxy-wasm 0.6 + OWASP CRS (nhúng trong image cổng API) Apache-2.0
-PostgreSQL 17 + PostGIS 3.5 (postgis/postgis)   PostgreSQL License; PostGIS: GPL-2.0-or-later
+PostgreSQL 17 + PostGIS 3.5 (postgis/postgis;   PostgreSQL License; PostGIS: GPL-2.0-or-later
+  arm64: imresamu/postgis)
 Keycloak 26 (quay.io/keycloak/keycloak)          Apache-2.0
 Hasura GraphQL Engine v2 CE (hasura/graphql-engine) Apache-2.0
 Flowable REST 8 (flowable/flowable-rest)         Apache-2.0
@@ -30,7 +31,8 @@ Gotenberg 8 (gotenberg/gotenberg, bản -chromium) MIT; Chromium: BSD-3-Clause v
 Apache Kafka 4 (apache/kafka)                    Apache-2.0
 Debezium Server 3 (quay.io/debezium/server)      Apache-2.0
 Trino 483 (trinodb/trino)                        Apache-2.0
-ClamAV 1.4 (clamav/clamav, tùy chọn)             GPL-2.0-only
+ClamAV 1.4 (clamav/clamav, tùy chọn;            GPL-2.0-only
+  arm64: clamav/clamav-debian)
 Ollama (ollama/ollama)                           MIT; image kèm thư viện CUDA runtime của NVIDIA (giấy phép
                                                  NVIDIA) để dùng GPU, kéo thẳng từ Docker Hub, không phân phối lại
 nginx (nginxinc/nginx-unprivileged)              BSD-2-Clause
