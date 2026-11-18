@@ -32,7 +32,7 @@ import pytest
 import uvicorn
 from psycopg.rows import dict_row
 
-from app import bootstrap, config, main, modules, search, storage
+from app import bootstrap, config, i18n, main, modules, search, storage
 from bamboo_common.flowable import FlowableClient
 from bamboo_common.openbao import Bao
 
@@ -42,6 +42,13 @@ TEST_APP_DB_URL = os.environ.get("TEST_APP_DATABASE_URL") or TEST_DB_URL
 ACTIONS_PORT = int(os.environ.get("ACTIONS_PORT", "8090"))
 MEILI_TEST_INDEX = os.environ.get("MEILI_TEST_INDEX", "documents_test")
 SETTINGS = config.load()
+
+
+@pytest.fixture(autouse=True)
+def _ngon_ngu_mac_dinh():
+    """`i18n.for_session` đặt ngôn ngữ cho luồng đang chạy; trả về tiếng Việt sau mỗi test để không rò sang test sau."""
+    yield
+    i18n.set_locale("vi")
 
 
 def _admin_url(url: str) -> str:

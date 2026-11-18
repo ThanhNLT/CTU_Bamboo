@@ -1485,18 +1485,20 @@ class Seeder:
         self.seat_role(
             "QUAN_TRI_AI", "Quản trị tác tử AI", "core.ai.manage", {"TDX": ["TDX_CDS.HEAD"], "BVX": ["BVX_KHTH.HEAD"]}
         )
-        tid = self.tenant_id("TDX")
-        agent = uid("TDX", "ai_agent", "Trợ lý quy chế")
-        if self.x("SELECT 1 FROM core.ai_agent WHERE id = %s", agent).fetchone():
-            return
-        self.x(
-            """INSERT INTO core.ai_agent (id, tenant_id, name, model, tool_list, created_by)
-                  VALUES (%s, %s, 'Trợ lý quy chế', %s, '["search_docs", "cite"]', %s)""",
-            agent,
-            tid,
-            os.environ.get("AI_CHAT_MODEL", "qwen3:4b"),
-            self._holder("TDX", "TDX_CDS.HEAD"),
-        )
+        for code, seat in (("TDX", "TDX_CDS.HEAD"), ("BVX", "BVX_KHTH.HEAD")):
+            agent = uid(code, "ai_agent", "Trợ lý quy chế")
+            if self.x("SELECT 1 FROM core.ai_agent WHERE id = %s", agent).fetchone():
+                continue
+            self.x(
+                """INSERT INTO core.ai_agent (id, tenant_id, name, model, tool_list, created_by)
+                      SELECT %s, %s, 'Trợ lý quy chế', %s, '["search_docs", "cite"]', %s
+                      WHERE NOT EXISTS (SELECT FROM core.ai_agent WHERE tenant_id = %s)""",
+                agent,
+                self.tenant_id(code),
+                os.environ.get("AI_CHAT_MODEL", "qwen3:4b"),
+                self._holder(code, seat),
+                self.tenant_id(code),
+            )
 
     def ai_suggest_demo(self):
         """Tác tử mức đề xuất (ADR #85): soát báo giá khi đề nghị mua sắm được gửi duyệt; chỉ đề xuất trả lại để bổ sung
