@@ -44,13 +44,15 @@ PNPM ?= pnpm
 UV_LINT := uv run --frozen --only-group lint
 
 up:
-	profile="$$(tools/ram_profile.sh)" && eval "$$profile" && docker compose up -d --build --remove-orphans
+	native="$$(tools/mac/ai.sh up)" && eval "$$native" && profile="$$(tools/ram_profile.sh)" && eval "$$profile" \
+		&& docker compose up -d --build --remove-orphans
 	@tools/gitops/schedule.sh auto
 
 up-gpu: up
 
 down:
 	docker compose down
+	@tools/mac/ai.sh down
 
 migrate:
 	docker compose run --rm --build migrate
@@ -142,7 +144,7 @@ help:
 	@echo "  make uninstall   gỡ bản đã cài"
 	@echo "  make dist        đóng gói mã nguồn bamboo-$(VERSION).tar.gz kèm SHA256SUMS vào $(BUILD_DIR)/dist/"
 	@echo "  make clean       xóa $(BUILD_DIR)/ và apps/web/dist/"
-	@echo "  make up          dịch image và chạy toàn bộ hệ thống bằng Docker Compose"
+	@echo "  make up          dịch image và chạy toàn bộ hệ thống bằng Docker Compose (Mac Apple Silicon: AI chạy GPU Metal trên máy)"
 	@echo "  make gitops-enable   tự đối chiếu hệ thống với cấu hình trong Git theo chu kỳ (gitops-disable, gitops-status)"
 	@echo "  make check       kiểm tra tĩnh toàn kho mã"
 	@echo

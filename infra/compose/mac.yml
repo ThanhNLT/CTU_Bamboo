@@ -1,0 +1,62 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.1
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# macOS Apple Silicon (ADR #90): Ollama và OCR chạy thẳng trên máy để dùng GPU Metal, phần còn lại trong Docker.
+# Docker trên macOS chạy trong máy ảo Linux, không cấp được GPU Apple cho container, nên Ollama, OCR trong Docker chỉ
+# chạy CPU. `make up` trên Mac Apple Silicon tự bật tệp này khi tools/mac/ai.sh đã dựng được Ollama, OCR trên máy;
+# chạy tay: `tools/mac/ai.sh up` rồi `COMPOSE_FILE=compose.yaml:infra/compose/mac.yml
+# OLLAMA_URL=http://host.docker.internal:11434 docker compose up -d`.
+
+services:
+  ollama-core:
+    profiles: [docker-ai]
+
+  ocr-core:
+    profiles: [docker-ai]
+
+  ocr-init:
+    profiles: [docker-ai]
+
+  ollama-init:
+    depends_on: !reset {}
+    environment:
+      OLLAMA_HOST: http://host.docker.internal:11434
+
+  ai-worker:
+    depends_on: !override
+      bootstrap:
+        condition: service_completed_successfully
+      ollama-init:
+        condition: service_completed_successfully
+      sleeper:
+        condition: service_healthy
+    environment:
+      OCR_URL: http://host.docker.internal:8866
+
+  sleeper:
+    environment:
+      SLEEPER_TARGETS: 8443=trino-core:8443,9998=tika-core:9998,3000=gotenberg-core:3000
+      SLEEPER_MANAGED: flowable,kafka,debezium,lakehouse-sink,trino-core,mosquitto,iot-bridge,meilisearch,search-sync,tika-core,ai-worker
+      SLEEPER_GPU: "false"
+      SLEEPER_GPU_SERVICES: ""
+      SLEEPER_AI_SERVICES: ""
+    ports: !override
+      - "127.0.0.1:8085:8443"
+      - "127.0.0.1:9998:9998"
+      - "127.0.0.1:3000:3000"
