@@ -178,6 +178,7 @@
   "Câu hỏi có dấu hiệu cố tình thay đổi chỉ dẫn của trợ lý nên không được xử lý.": "The question appears to deliberately alter the assistant's instructions and was not processed.",
   "Câu hỏi cần suy nghĩ quá dài nên chưa có câu trả lời. Hãy hỏi cụ thể hơn.": "The question needed too much reasoning, so there is no answer yet. Please ask a more specific question.",
   "Câu hỏi tối đa {0} ký tự": "A question may be at most {0} characters",
+  "AI đang tắt: máy chủ không có GPU và Docker chỉ có {0} GB RAM, chưa đủ {1} GB để chạy AI trên CPU. Quản trị viên cấp thêm RAM cho Docker hoặc lắp GPU rồi khởi động lại hệ thống": "AI is off: the server has no GPU and Docker has only {0} GB of RAM, less than the {1} GB needed to run AI on the CPU. An administrator should give Docker more RAM or add a GPU, then restart the system",
   "Còn {0} lỗi — sửa trước khi chạy thử: {1}": "{0} errors remain — fix them before the test run: {1}",
   "Còn {0} lỗi: {1}": "{0} errors remain: {1}",
   "Có báo cáo tiến độ dự án mới": "A new project progress report",

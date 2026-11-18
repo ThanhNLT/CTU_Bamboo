@@ -249,6 +249,41 @@ curl 127.0.0.1:8866/health                  # "device" là tên GPU
 
 `BAMBOO_GPU=false` trong `.env` để luôn chạy CPU. Lắp card hoặc cài toolkit sau khi đã chạy thì `docker compose restart sleeper` để thử lại. `infra/compose/gpu.yml` vẫn dùng được để ép GPU ngay từ đầu (`docker compose -f compose.yaml -f infra/compose/gpu.yml up -d`), nhưng khi đó máy không có card thì container không tạo được.
 
+**AI chạy ở đâu** ([ADR #90](#adr-90)): Mac Apple Silicon thì GPU Metal ngoài Docker (dưới đây); máy có GPU NVIDIA thì GPU trong Docker (trên); không có GPU thì CPU nếu Docker có từ `BAMBOO_AI_MIN_RAM_GB` (mặc định 7) GB RAM; thấp hơn thì `sleeper` tắt Ollama, OCR, `ai-worker`, trợ lý và nút OCR lại báo "AI đang tắt" kèm số RAM. Xem bằng `docker compose exec sleeper python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:9000/status').read().decode())"` (khóa `ai.device`: `gpu`, `cpu`, `off`, `pending` khi chưa dò xong GPU). Cấp thêm RAM cho Docker (Docker Desktop → Settings → Resources, hoặc `memory=` trong `.wslconfig`) rồi `docker compose restart sleeper`.
+
+**Mac Apple Silicon (M1 trở lên)** ([ADR #90](#adr-90)). Docker trên macOS không cấp được GPU Apple cho container, nên `make up` tự dựng Ollama và OCR thẳng trên máy để chạy GPU Metal, các dịch vụ còn lại vẫn trong Docker. Cần Docker Desktop (hoặc OrbStack) có Docker Compose 2.24.4 trở lên, cộng hai công cụ:
+
+```bash
+brew install ollama uv   # hoặc Ollama.app từ https://ollama.com/download
+make up                  # lần đầu tải thêm khoảng 1 GB cho OCR và mô hình OCR
+tools/mac/ai.sh status   # Ollama, OCR trên máy; "device": "Apple GPU (Metal)"
+ollama ps                # cột PROCESSOR ghi "100% GPU" khi đang trả lời
+make down                # dừng cả Ollama, OCR do make up dựng
+```
+
+Môi trường Python của OCR, mô hình OCR và log (`logs/ollama.log`, `logs/ocr.log`) nằm ở `~/Library/Application Support/Bamboo` (đổi bằng `BAMBOO_MAC_DIR`); mô hình Ollama ở `~/.ollama`. Đã mở Ollama.app thì Bamboo dùng luôn nó nhưng không áp được cấu hình riêng (ngữ cảnh 12K, KV cache `q4_0`): thoát Ollama.app trước `make up` để Bamboo tự dựng. Thiếu công cụ hoặc dịch vụ không lên thì `make up` báo lý do và chạy Ollama, OCR bản CPU trong Docker như máy không có GPU; `BAMBOO_GPU=false` để luôn chạy như vậy. Gõ `docker compose …` trực tiếp thay vì `make up` thì thêm vào `.env`:
+
+```bash
+COMPOSE_FILE=compose.yaml:infra/compose/mac.yml
+OLLAMA_URL=http://host.docker.internal:11434
+```
+
+Bộ nhớ hợp nhất của Mac dùng chung cho CPU, GPU và máy ảo Docker, nên càng ít cấp cho Docker thì càng nhiều chỗ cho mô hình trên GPU ([ADR #91](#adr-91)). AI đã chạy ngoài Docker, nên trong Docker Desktop → Settings → Resources chỉ cần cấp **6–8 GB RAM** (Mac 16 GB: 8 GB; Mac 8 GB: 6 GB, `make up` tự chọn mức RAM 8) và bật **Resource Saver** để máy ảo dừng khi không dùng. `make up` tự làm phần còn lại:
+
+- CSDL và ClamAV chạy bản arm64, không qua giả lập Rosetta. Gõ `docker compose …` tay (hoặc chạy `compose.release.yml` của bản phát hành) thì đặt trong `.env`:
+
+  ```bash
+  BAMBOO_DB_IMAGE=imresamu/postgis:17-3.5
+  BAMBOO_DB_PLATFORM=linux/arm64
+  BAMBOO_CLAMAV_IMAGE=clamav/clamav-debian:1.4
+  ```
+
+- Mọi image Bamboo tự dựng (`make up` dựng tại máy, hoặc image phát hành trên GHCR dựng cho `linux/amd64` và `linux/arm64`) đều là bản arm64 native.
+- Mac dưới 16 GB: Ollama giữ một mô hình 2 phút, OCR gỡ mô hình sau 120 giây; từ 16 GB: hai mô hình 5 phút, OCR 300 giây. Đặt `OLLAMA_MAX_LOADED_MODELS`, `AI_KEEP_ALIVE`, `OCR_IDLE_SECONDS` trong `.env` để chọn tay.
+- OCR trả bộ nhớ cho macOS ngay khi gỡ mô hình và không đọc trước trọng số vào bộ nhớ đệm.
+
+Đã từng chạy Bamboo trên Mac bằng CPU trong Docker thì volume `bamboo_ollama-models`, `bamboo_ocr-models` (khoảng 5 GB) không còn dùng: `docker volume rm bamboo_ollama-models bamboo_ocr-models` để lấy lại ổ đĩa. VietOCR chạy GPU, bộ dò chữ của PaddleX chạy CPU (PaddleX chưa hỗ trợ Metal).
+
 **Dựng máy demo (RTX 5060 Laptop + Ryzen 9840HS).** Số đo trong tài liệu này là của RTX 4060; số chính thức của buổi demo là số đo trên máy demo. Làm trước ngày 27/10, không để đến sáng ngày demo vì tải khoảng 18 GB (mô hình ~3,7 GB, image `ocr` ~14 GB):
 
 1. Cài NVIDIA Container Toolkit như trên; GPU Blackwell cần driver đủ mới, image `ocr` dùng CUDA 12.8 và Ollama 0.35.1 đều hỗ trợ, nhưng chưa chạy thử trên máy này nên kiểm bằng `docker run --rm --gpus all ubuntu nvidia-smi`.

@@ -31,6 +31,9 @@ dừng theo các mô-đun đã cài, rồi start/stop cho khớp. Chỉ chạm d
 SLEEPER_TARGETS) của mô-đun chưa cài thì bị khóa: có yêu cầu đến cũng không đánh thức. SLEEPER_HOLD_UNTIL (bootstrap,seed):
 chưa dừng container compose vừa chạy (theo mô-đun hay vì nhàn rỗi) cho tới khi các job này chạy xong sau lần khởi động đó;
 seed là job cài mô-đun của dữ liệu demo, dừng trước khi seed xong thì tắt nhầm dịch vụ của mô-đun sắp được cài.
+
+GPU và RAM cho AI: SLEEPER_GPU_SERVICES chuyển sang GPU NVIDIA khi máy có (ADR #79); không có GPU mà Docker thấy dưới
+SLEEPER_AI_MIN_RAM_GB thì dừng, khóa SLEEPER_AI_SERVICES (ADR #90).
 """
 
 import asyncio
@@ -113,6 +116,10 @@ class Docker:
 
     async def wait(self, container: str) -> int:
         return json.loads(await self._call("POST", f"/containers/{container}/wait", (200,)))["StatusCode"]
+
+    async def mem_total(self) -> int:
+        """RAM (byte) Docker Engine thấy: RAM máy, hoặc RAM cấp cho máy ảo của Docker Desktop, WSL2."""
+        return int(json.loads(await self._call("GET", "/info", (200,)))["MemTotal"])
 
 
 SWAP_SUFFIXES = ("-sleeper-old", "-sleeper-new")
@@ -349,6 +356,72 @@ class Gpu:
         return False
 
 
+class AiRam:
+    """Không có GPU thì AI chỉ chạy trên CPU khi Docker đủ RAM (ADR #90).
+
+    Trên CPU, mô hình nằm trong RAM của Docker (qwen3:4b ~3 GB kèm ngữ cảnh, bge-m3 ~1,2 GB, bộ OCR ~0,4 GB) cùng mọi
+    dịch vụ khác; thiếu RAM thì OOM killer hạ một tiến trình bất kỳ, kể cả CSDL. Khi đã biết AI không dùng GPU (`gpu` dò
+    xong mà không có card, hoặc tắt bằng BAMBOO_GPU=false) mà Docker thấy dưới `min_mb` thì dừng và khóa các dịch vụ AI:
+    không đánh thức, mô-đun không chạy lại; actions đọc `/status` để trợ lý, OCR báo lý do thay vì chờ mãi. Có GPU thì
+    mô hình nằm trên VRAM, không xét RAM. device: pending (chưa dò xong GPU) | gpu | cpu | off."""
+
+    def __init__(self, docker: Docker, services: list[str], targets: list["Target"], min_mb: int, gpu: Gpu | None):
+        self.docker = docker
+        self.services = services
+        self.targets = {t.service: t for t in targets}
+        self.min_mb = min_mb
+        self.gpu = gpu
+        self.device = "pending"
+        self.ram_mb: int | None = None
+
+    def off(self) -> set[str]:
+        return set(self.services) if self.device == "off" else set()
+
+    def status(self) -> dict:
+        return {"device": self.device, "ram_mb": self.ram_mb, "min_ram_mb": self.min_mb}
+
+    def _gpu(self) -> bool | None:
+        if self.gpu is None or self.gpu.mode == "false":
+            return False
+        if self.gpu.usable is None:
+            return None
+        return self.gpu.usable and not set(self.gpu.services) <= self.gpu.failed
+
+    async def reconcile(self) -> None:
+        gpu = self._gpu()
+        if gpu is None:
+            return
+        if gpu:
+            self.device = "gpu"
+            return
+        if self.ram_mb is None:
+            self.ram_mb = await self.docker.mem_total() // 2**20
+        if self.ram_mb >= self.min_mb:
+            self.device = "cpu"
+            return
+        if self.device != "off":
+            log.warning(
+                "không có GPU và Docker chỉ có %d MB RAM (AI trên CPU cần %d MB): tắt %s",
+                self.ram_mb,
+                self.min_mb,
+                ", ".join(self.services),
+            )
+            self.device = "off"
+        for service in self.services:
+            target = self.targets.get(service)
+            if target is not None:
+                target.blocked = True
+            try:
+                container = await self.docker.find(service)
+                if (await self.docker.state(container)).get("Running"):
+                    await self.docker.stop(container)
+                    if target is not None:
+                        for writer in list(target.writers):
+                            writer.close()
+            except DockerError:
+                continue
+
+
 def parse_targets(spec: str, default_idle: float) -> list["Target"]:
     targets = []
     for item in filter(None, (part.strip() for part in spec.split(","))):
@@ -509,7 +582,9 @@ class Modules:
         targets: list[Target],
         fetch=http_get_json,
         hold_until: str = "",
+        forced_off=lambda: set(),
     ):
+        self.forced_off = forced_off
         self.docker = docker
         self.url = url
         self.managed = managed
@@ -567,9 +642,10 @@ class Modules:
         except (OSError, ValueError, asyncio.TimeoutError) as exc:
             log.debug("chưa hỏi được mô-đun từ %s: %s", self.url, exc)
             return {"started": [], "stopped": []}
-        order = [s for s in desired.get("run", []) if s in self.managed]
+        off = self.forced_off()
+        order = [s for s in desired.get("run", []) if s in self.managed and s not in off]
         run = set(order)
-        stop = (set(desired.get("stop", [])) & self.managed) - run
+        stop = ((set(desired.get("stop", [])) | off) & self.managed) - run
         done = {"started": [], "stopped": []}
         for service in sorted(stop) + order:
             target = self.targets.get(service)
@@ -622,8 +698,10 @@ class Sleeper:
         check_every: float = 30,
         modules: Modules | None = None,
         gpu: Gpu | None = None,
+        ai_ram: AiRam | None = None,
     ):
         self.gpu = gpu
+        self.ai_ram = ai_ram
         self.docker = docker
         self.targets = targets
         self.wake_timeout = wake_timeout
@@ -655,6 +733,8 @@ class Sleeper:
             }
         if self.modules is not None:
             out.update(await self.modules.status())
+        if self.ai_ram is not None:
+            out["ai"] = self.ai_ram.status()
         return out
 
     async def _admin(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
@@ -681,13 +761,13 @@ class Sleeper:
             log.info("cổng %d -> %s:%d, ngủ sau %.0f giây", t.listen_port, t.service, t.port, t.idle_seconds)
         if self.modules is not None:
             log.info("theo mô-đun từ %s, quản lý %s", self.modules.url, ", ".join(sorted(self.modules.managed)))
-        if self.modules is None and self.gpu is None:
+        if self.modules is None and self.gpu is None and self.ai_ram is None:
             await self.watch()
         else:
             await asyncio.gather(self.watch(), self.background(float(os.environ.get("SLEEPER_MODULES_EVERY", "15"))))
 
     async def background(self, every: float) -> None:
-        """Đối chiếu mô-đun rồi GPU, tuần tự để hai việc không cùng start/stop một container."""
+        """Đối chiếu mô-đun, GPU rồi RAM cho AI, tuần tự để hai việc không cùng start/stop một container."""
         while True:
             if self.modules is not None:
                 await self.modules.reconcile()
@@ -696,6 +776,11 @@ class Sleeper:
                     await self.gpu.reconcile()
                 except (DockerError, OSError) as exc:
                     log.warning("không đối chiếu được GPU: %s", exc)
+            if self.ai_ram is not None:
+                try:
+                    await self.ai_ram.reconcile()
+                except (DockerError, OSError) as exc:
+                    log.warning("không kiểm được RAM cho AI: %s", exc)
             await asyncio.sleep(every)
 
 
@@ -709,11 +794,32 @@ def main() -> None:
     modules_url = os.environ.get("SLEEPER_MODULES_URL", "")
     managed = {s.strip() for s in os.environ.get("SLEEPER_MANAGED", "").split(",") if s.strip()}
     hold_until = os.environ.get("SLEEPER_HOLD_UNTIL", "")
-    modules = Modules(docker, modules_url, managed, targets, hold_until=hold_until) if modules_url and managed else None
     gpu_mode = os.environ.get("SLEEPER_GPU", "auto").strip().lower() or "auto"
     gpu_services = [s.strip() for s in os.environ.get("SLEEPER_GPU_SERVICES", "").split(",") if s.strip()]
     gpu = Gpu(docker, gpu_services, targets, gpu_mode) if gpu_services and gpu_mode != "false" else None
-    sleeper = Sleeper(docker, targets, float(os.environ.get("SLEEPER_WAKE_TIMEOUT", "180")), modules=modules, gpu=gpu)
+    ai_services = [s.strip() for s in os.environ.get("SLEEPER_AI_SERVICES", "").split(",") if s.strip()]
+    min_mb = round(float(os.environ.get("SLEEPER_AI_MIN_RAM_GB", "0") or 0) * 1024)
+    ai_ram = AiRam(docker, ai_services, targets, min_mb, gpu) if ai_services and min_mb > 0 else None
+    modules = (
+        Modules(
+            docker,
+            modules_url,
+            managed,
+            targets,
+            hold_until=hold_until,
+            forced_off=ai_ram.off if ai_ram else lambda: set(),
+        )
+        if modules_url and managed
+        else None
+    )
+    sleeper = Sleeper(
+        docker,
+        targets,
+        float(os.environ.get("SLEEPER_WAKE_TIMEOUT", "180")),
+        modules=modules,
+        gpu=gpu,
+        ai_ram=ai_ram,
+    )
     asyncio.run(sleeper.run(int(os.environ.get("SLEEPER_ADMIN_PORT", "9000"))))
 
 
