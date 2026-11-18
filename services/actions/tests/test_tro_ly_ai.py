@@ -312,7 +312,8 @@ class FakeOllama:
                     self._json({"embeddings": [fake.vector(t) for t in body["input"]]})
                     return
                 if self.path == "/api/show":
-                    self._json({"capabilities": fake.capabilities})
+                    embed_only = str(body.get("model", "")).startswith("bge-m3")
+                    self._json({"capabilities": ["embedding"] if embed_only else fake.capabilities})
                     return
                 fake.chat_calls += 1
                 fake.last_messages = body["messages"]
@@ -716,6 +717,21 @@ def test_tro_ly_va_mo_hinh(ai_env, conn):
     with pytest.raises(ActionError) as err:
         act("ai_models", {}, i["c"], i["TDX"], ai_env.ctx)
     assert err.value.status == 403
+
+
+def test_mo_hinh_embedding_khong_dung_lam_tro_ly(ai_env, conn):
+    """bge-m3 chỉ tạo embedding: Ollama từ chối chat nên không được chọn làm mô hình của tác tử (lỗi "does not support
+    chat" khi hỏi); tác tử lỡ mang mô hình đó thì không hiện là sẵn sàng."""
+    assert ai_agent.can_chat(ai_env.ctx, "qwen3:4b") and not ai_agent.can_chat(ai_env.ctx, "bge-m3:latest")
+    with pytest.raises(ActionError) as err:
+        ai_agent._check_model(ai_env.ctx, "bge-m3")
+    assert err.value.code == "model-not-chat"
+    ai_agent._check_model(ai_env.ctx, "qwen3:4b")
+    i = ids(conn, "TDX", "c")
+    agent = make_agent(conn)
+    conn.execute("UPDATE core.ai_agent SET model = 'bge-m3:latest' WHERE id = %s", (agent,))
+    found = act("ai_assistants", {}, i["c"], i["TDX"], ai_env.ctx)
+    assert [a["ready"] for a in found["assistants"] if a["id"] == agent] == [False]
 
 
 def test_cong_ty_chua_co_tac_tu_tu_co_tro_ly_mac_dinh(ai_env, conn):
