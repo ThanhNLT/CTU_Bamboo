@@ -69,6 +69,27 @@ def _require_storage(ctx: Context) -> storage.Storage:
     return ctx.storage
 
 
+def check_quota(conn: psycopg.Connection, tenant: str, person: str, size: int) -> None:
+    """Chặn khi tệp mới vượt hạn mức của đơn vị hoặc của tài khoản tải lên (ADR #88).
+
+    Khóa dòng tenant để hai lần tải đồng thời không cùng lọt qua hạn mức.
+    """
+    quota, user_quota = conn.execute(
+        "SELECT storage_quota_bytes, user_storage_quota_bytes FROM core.tenant WHERE id = %s FOR UPDATE", (tenant,)
+    ).fetchone()
+    used = conn.execute("SELECT core.storage_used(%s)", (tenant,)).fetchone()[0]
+    if used + size > quota:
+        raise ActionError(
+            f"Vượt hạn mức dung lượng của đơn vị: còn {_gb(max(quota - used, 0))} trên {_gb(quota)}", "file-quota"
+        )
+    mine = conn.execute("SELECT core.storage_used_by(%s, %s)", (tenant, person)).fetchone()[0]
+    if mine + size > user_quota:
+        raise ActionError(
+            f"Vượt hạn mức dung lượng của tài khoản: còn {_gb(max(user_quota - mine, 0))} trên {_gb(user_quota)}",
+            "file-quota",
+        )
+
+
 def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     s3 = _require_storage(ctx)
     entity_type, entity_id = args["entity_type"], args["entity_id"]
@@ -85,14 +106,7 @@ def get_upload_url(conn: psycopg.Connection, session: dict, args: dict, ctx: Con
     tenant = conn.execute("SELECT collab.entity_tenant(%s, %s)", (entity_type, entity_id)).fetchone()[0]
     person = session_identity(session, tenant)
     require_read(conn, entity_type, entity_id, person)
-    quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE id = %s FOR UPDATE", (tenant,)).fetchone()[
-        0
-    ]
-    used = conn.execute("SELECT core.storage_used(%s)", (tenant,)).fetchone()[0]
-    if used + size > quota:
-        raise ActionError(
-            f"Vượt hạn mức dung lượng của đơn vị: còn {_gb(max(quota - used, 0))} trên {_gb(quota)}", "file-quota"
-        )
+    check_quota(conn, tenant, person, size)
 
     attachment_id = str(uuid.uuid4())
     key = f"{tenant}/{entity_type}/{entity_id}/{attachment_id}"
@@ -343,9 +357,12 @@ def delete_attachment(conn: psycopg.Connection, session: dict, args: dict, ctx: 
 
 def drive_usage(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Context) -> dict:
     tenant = session.get("x-hasura-tenant-id")
-    session_identity(session, tenant)
-    quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE id = %s", (tenant,)).fetchone()[0]
+    person = session_identity(session, tenant)
+    quota, user_quota = conn.execute(
+        "SELECT storage_quota_bytes, user_storage_quota_bytes FROM core.tenant WHERE id = %s", (tenant,)
+    ).fetchone()
     used = conn.execute("SELECT core.storage_used(%s)", (tenant,)).fetchone()[0]
+    mine = conn.execute("SELECT core.storage_used_by(%s, %s)", (tenant, person)).fetchone()[0]
     rows = conn.execute(
         """SELECT content_type, sum(size_bytes)::bigint, count(*) FROM core.attachment
            WHERE tenant_id = %s AND deleted_at IS NULL AND status = 'CLEAN'
@@ -356,5 +373,8 @@ def drive_usage(conn: psycopg.Connection, session: dict, _args: dict, _ctx: Cont
         "quota_bytes": quota,
         "used_bytes": used,
         "available_bytes": max(quota - used, 0),
+        "user_quota_bytes": user_quota,
+        "user_used_bytes": mine,
+        "user_available_bytes": max(min(user_quota - mine, quota - used), 0),
         "by_type": [{"content_type": r[0], "bytes": r[1], "files": r[2]} for r in rows],
     }

@@ -63,3 +63,13 @@ SELECT test.eq(core.storage_used(test.id('TDX')), 1500::bigint, 'Tệp đang t�
 UPDATE core.attachment SET deleted_at = now() WHERE storage_key = 'k2';
 SELECT test.eq(core.storage_used(test.id('TDX')), 1000::bigint, 'Tệp đã xóa không tính');
 SELECT test.eq(core.storage_used(test.id('BVX')), 0::bigint, 'Tính riêng từng tenant');
+
+SELECT test.eq((SELECT user_storage_quota_bytes FROM core.tenant WHERE id = test.id('TDX')), 5368709120::bigint,
+               'Mỗi tài khoản mặc định 5 GB');
+INSERT INTO core.attachment (tenant_id, entity_type, entity_id, file_name, content_type, size_bytes, storage_key, uploaded_by)
+VALUES (test.id('TDX'), 'proc.purchase_request', test.id('pr1'), 'd.pdf', 'application/pdf', 300, 'k3', test.id('d'));
+SELECT test.eq(core.storage_used_by(test.id('TDX'), test.id('c')), 1000::bigint, 'Chỉ tính tệp của chính người đó');
+SELECT test.eq(core.storage_used_by(test.id('TDX'), test.id('d')), 300::bigint, 'Người khác tính riêng');
+SELECT test.eq(core.storage_used(test.id('TDX')), 1300::bigint, 'Đơn vị vẫn tính tổng mọi người');
+SELECT test.throws($$UPDATE core.tenant SET user_storage_quota_bytes = 0 WHERE id = test.id('TDX')$$,
+                   '%violates check%', 'Hạn mức tài khoản phải dương');

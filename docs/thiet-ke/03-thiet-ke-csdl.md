@@ -118,6 +118,7 @@ database, cách ly logic như mọi tenant khác (xem [ADR #15](#adr-15)).
 | `047_quy_trinh_van_ban` | `wf.process_regulation`: liên kết quy trình với văn bản nguồn (`SOURCE`) và văn bản quy định của từng phiên bản đã phát hành (`REGULATION`) |
 | `062_buoc_ai_quy_trinh` | `core.ai_agent_run.automation_run_id`, `element_id`: lần chạy tác tử của bước AI gắn với lần chạy quy trình tự động ([ADR #84](#adr-84)) |
 | `063_de_xuat_ai` | Mức tự chủ `suggest`, hành động `return_for_info`, `project_task` (chỉ ở mức này), `core.ai_agent.project_id`; `core.ai_suggestion` (đề xuất chờ người nhận chấp nhận, hết hạn qua `core.ai_suggestion_expire` trong `wf.refresh_all`) ([ADR #85](#adr-85)) |
+| `064_han_muc_tai_khoan` | `core.tenant.user_storage_quota_bytes` (mặc định 5 GB), `core.storage_used_by`: hạn mức dung lượng cho mỗi tài khoản theo tệp do người đó tải lên ([ADR #88](#adr-88)) |
 
 Quy ước số chứng từ (`core.next_doc_no(tenant, tiền tố)`, theo tenant, tiền tố và năm giờ Việt Nam, không nhảy số):
 `PR` đề nghị mua sắm, `IC` đơn hàng nội bộ, `PO` đơn mua, `TN` tiếp nhận nhân sự, `NV` mã nhân viên, `DC` điều chuyển nội
