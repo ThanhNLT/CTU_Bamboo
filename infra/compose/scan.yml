@@ -28,7 +28,7 @@ services:
     logging: *logging
     cpus: ${BAMBOO_CPU_LIMIT:-0}
     profiles: [scan]
-    # clamav/clamav chỉ có bản amd64; máy arm64 dùng clamav/clamav-debian (ADR #91), `make up` tự đặt.
+    
     image: ${BAMBOO_CLAMAV_IMAGE:-clamav/clamav:1.4}
     ports:
       - "127.0.0.1:3310:3310"

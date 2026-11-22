@@ -48,10 +48,7 @@ services:
   db:
     logging: *logging
     cpus: ${BAMBOO_CPU_LIMIT:-0}
-    # postgis/postgis chỉ có bản amd64; máy arm64 (Mac Apple Silicon) dùng imresamu/postgis cùng Dockerfile, bản đa kiến
-    # trúc (ADR #91): `make up` tự đặt hai biến này khi Docker là arm64.
-    image: ${BAMBOO_DB_IMAGE:-postgis/postgis:17-3.5}
-    platform: ${BAMBOO_DB_PLATFORM:-linux/amd64}
+    image: ${BAMBOO_DB_IMAGE:-imresamu/postgis:17-3.5}
     environment:
       POSTGRES_DB: bms
       POSTGRES_USER: bms
