@@ -30,15 +30,16 @@ chuyển máy thì có thể xóa thư mục này.
 1. `CONTEXT.md`: ngôn ngữ chung của miền (đơn vị, vị trí, bổ nhiệm, ủy quyền, hạn mức duyệt…). Dùng đúng thuật ngữ ở
    đây, tránh các từ ghi ở mục "Tránh dùng".
 2. `docs/tong-quan/01-yeu-cau-va-kien-truc.md`: đề thi OLP 2026, kiến trúc 3 tầng, bảng đối chiếu Tầng 1.
-3. `docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md`: nhật ký ADR, hiện tới **ADR #91**. Số **#88 đang để dành** cho
-   nhánh hạn mức tài khoản (mục 3.1), ADR mới tiếp theo dùng **#92**.
+3. `docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md`: nhật ký ADR, hiện tới **ADR #91**. ADR #88 nằm ở PR #134 (mục 3.1),
+   ADR mới tiếp theo dùng **#92**.
 4. `docs/thiet-ke/09-thu-vien-va-giay-phep.md`: thư viện, phiên bản, giấy phép theo tầng.
 5. `README.md`, `CHANGELOG.md`, `Makefile` (mọi lệnh chạy, test đi qua `make`).
 
 ## 2. Trạng thái repo lúc bàn giao
 
 - Kho: `CTUBamboo/Bamboo` trên GitHub, đang **private có chủ ý**. Chuyển từ `ThanhNLT/Bamboo` ngày 07-Nov-2026.
-- `main` ở **e04f2e4** (merge PR #132). Không còn PR mở, không còn issue mở.
+- `main` ở **e04f2e4** (merge PR #132). PR đang mở: #133 (tài liệu thư viện và bàn giao), #134 (hạn mức tài khoản).
+  Không còn issue mở.
 - Phiên bản trong header tệp: **0.5.1**. Bản phát hành gần nhất **v0.5.0** (13-Nov-2026). Không có 0.6.x (0.6.0
   chưa từng phát hành). Chỉ tạo thẻ/release khi chủ dự án yêu cầu.
 - Các PR merge gần nhất:
@@ -51,19 +52,16 @@ chuyển máy thì có thể xóa thư mục này.
 
 ## 3. Việc dở dang chỉ có trên máy cũ (dễ mất khi chuyển)
 
-### 3.1. Nhánh `feat/han-muc-tai-khoan`: CHƯA COMMIT, CHƯA PUSH
+### 3.1. Nhánh `feat/han-muc-tai-khoan`: đã push, PR #134 chờ merge
 
-- Nội dung: hạn mức ổ đĩa **5 GB cho mỗi tài khoản** (thay cho hạn mức chỉ theo tenant), migration
+- Nội dung: hạn mức ổ đĩa **5 GB cho mỗi tài khoản** bên cạnh hạn mức của đơn vị, migration
   `db/migrations/bms/064_han_muc_tai_khoan.sql`, ADR #88; sửa `admin.py`, `attachments.py`, `hasura_metadata.py`,
-  `process_regulation.py`, `server.en.json`, trang Ổ đĩa (`StorageCard.tsx`, `useDriveUsage.ts`), test
-  `test_quan_tri.py`, `test_tep_dinh_kem.py`, `db/tests/bms_160_ncc_han_muc.sql`, metadata Hasura, tài liệu CSDL.
-  Tổng 15 tệp sửa + 1 migration mới.
-- Tách từ `main` cũ e61024b. Đã qua ruff, tsc, eslint, i18n, prettier; **chưa chạy** `db/tests` và test actions cần
-  CSDL.
-- Bản vá đầy đủ đã được lưu ngoài Git trên máy cũ (hỏi chủ dự án). Áp lên `main` hiện tại bằng `git apply -3`: mọi
-  tệp áp sạch, riêng tệp ADR xung đột vì `main` đã thêm ADR #89–#91; giữ cả hai phần, đặt ADR #88 trước #89.
-- Sau khi áp: sinh lại `infra/platform/hasura/metadata.json` và `infra/platform/trino/silver.sql` nếu migration đổi
-  bảng, chạy `make test-db` và `make test-actions` trên Docker thật.
+  `process_regulation.py`, bản dịch máy chủ, trang Ổ đĩa (`StorageCard.tsx`, `useDriveUsage.ts`), test
+  `test_quan_tri.py`, `test_tep_dinh_kem.py`, `db/tests/bms_160_ncc_han_muc.sql`, metadata Hasura, view silver
+  `core_tenant`, tài liệu CSDL, CHANGELOG.
+- Một commit 9494b6b tách từ `main` e04f2e4. Đã qua ruff (không thêm lỗi so với `main`), header, i18n máy chủ và web,
+  tsc, eslint, prettier, dựng tài liệu. **Chưa chạy** `make test-db` và `make test-actions` (cần CSDL): chạy trên
+  Docker thật trước khi merge.
 
 ### 3.2. Thay đổi chưa commit trên nhánh `feat/apple-silicon` (đã merge qua #132)
 
@@ -154,7 +152,7 @@ ADR #91 và cập nhật `NOTICE`.
 - Tiêu chí PoF 6: kênh trao đổi (Discussions đang tắt), đưa tài liệu Sphinx lên web, điền homepage của kho; giữ
   `CHANGELOG.md` cập nhật (lịch sử được chấm là changelog và commit).
 - Công khai kho và các gói GHCR.
-- Hoàn tất nhánh hạn mức tài khoản (3.1).
+- Chạy test CSDL rồi merge PR #134 (3.1).
 
 ### Tầng 1 còn "Một phần"
 
@@ -194,7 +192,7 @@ ADR #91 và cập nhật `NOTICE`.
 | 11–14-Nov | Đồng bộ ngôn ngữ thông báo, ngày `DD-MMM-YYYY`, dịch câu máy chủ; dịch và cài từ mã nguồn; tắt UI OpenBao và Console Hasura mặc định, GitOps theo chu kỳ; sửa cổng API 404; phát hành v0.5.0 (13-Nov); viết lại `main` thành chuỗi thẳng (14-Nov) | ADR #82, #83; PR #122–#127 |
 | 14–16-Nov | Giới hạn CPU dịch vụ nặng, sửa `make up`, bước AI trong quy trình, tác tử mức đề xuất, tối ưu AI không gian I | ADR #84–#87; PR #128 |
 | 16–18-Nov | Tối ưu câu trả lời AI (PR #129 đóng, nội dung chuyển sang #130), chặn mô hình embedding làm chat, Mac Apple Silicon | ADR #89–#91; PR #130–#132 |
-| 18-Nov | Bắt đầu hạn mức 5 GB mỗi tài khoản (chưa commit) | ADR #88 (để dành) |
+| 18–22-Nov | Hạn mức 5 GB mỗi tài khoản | ADR #88; PR #134 |
 | 22-Nov | Danh sách thư viện và giấy phép theo tầng; tài liệu bàn giao này | |
 
 ## 7. Bắt đầu trên máy mới
@@ -204,4 +202,4 @@ ADR #91 và cập nhật `NOTICE`.
    `gh auth setup-git`.
 3. Cài `uv` (≥ 0.13), Node ≥ 20 và pnpm theo `packageManager` trong `package.json`; `uv sync`, `pnpm install`.
 4. Kiểm Docker Engine ≥ 25, Compose ≥ 2.20 (nên ≥ 2.34), rồi `make up`.
-5. Áp lại nhánh hạn mức (3.1) trên nhánh mới từ `origin/main`, chạy test, mở PR theo mẫu ở mục 4.
+5. Chạy `make test-db`, `make test-actions` cho PR #134; việc mới thì tạo nhánh từ `origin/main`, mở PR theo mẫu ở mục 4.
