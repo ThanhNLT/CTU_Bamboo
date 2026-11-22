@@ -1103,6 +1103,7 @@ SELECT
     json_extract_scalar(after, '$["legal_status"]') AS "legal_status",
     json_extract_scalar(after, '$["industry"]') AS "industry",
     json_extract_scalar(after, '$["size_band"]') AS "size_band",
+    CAST(json_extract_scalar(after, '$["user_storage_quota_bytes"]') AS bigint) AS "user_storage_quota_bytes",
     source_ts AS _changed_at,
     lsn AS _lsn
 FROM (

@@ -634,15 +634,30 @@ def _end(a: Admin, table: str, row_id, end: date | None) -> None:
     )
 
 
-def save_storage_quota(a: Admin, data: dict) -> str:
-    a.require(ORG)
+def _quota_bytes(value) -> int:
     try:
-        gb = float(str(data.get("quota_gb") or "").replace(",", "."))
+        gb = float(str(value or "").replace(",", "."))
     except ValueError as exc:
         raise ActionError("Hạn mức phải là số GB") from exc
     if not 0.1 <= gb <= 100_000:
         raise ActionError("Hạn mức từ 0,1 GB tới 100.000 GB")
-    a.conn.execute("UPDATE core.tenant SET storage_quota_bytes = %s WHERE id = %s", (int(gb * 1024**3), a.tenant))
+    return int(gb * 1024**3)
+
+
+def save_storage_quota(a: Admin, data: dict) -> str:
+    """Đổi hạn mức của đơn vị (`quota_gb`) và/hoặc của mỗi tài khoản (`user_quota_gb`, ADR #88)."""
+    a.require(ORG)
+    if data.get("quota_gb") is None and data.get("user_quota_gb") is None:
+        raise ActionError("Hạn mức phải là số GB")
+    if data.get("quota_gb") is not None:
+        a.conn.execute(
+            "UPDATE core.tenant SET storage_quota_bytes = %s WHERE id = %s", (_quota_bytes(data["quota_gb"]), a.tenant)
+        )
+    if data.get("user_quota_gb") is not None:
+        a.conn.execute(
+            "UPDATE core.tenant SET user_storage_quota_bytes = %s WHERE id = %s",
+            (_quota_bytes(data["user_quota_gb"]), a.tenant),
+        )
     return str(a.tenant)
 
 
