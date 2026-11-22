@@ -38,7 +38,8 @@ chuyển máy thì có thể xóa thư mục này.
 ## 2. Trạng thái repo lúc bàn giao
 
 - Kho: `CTUBamboo/Bamboo` trên GitHub, đang **private có chủ ý**. Chuyển từ `ThanhNLT/Bamboo` ngày 07-Nov-2026.
-- `main` ở **e04f2e4** (merge PR #132). PR đang mở: #133 (tài liệu thư viện và bàn giao), #134 (hạn mức tài khoản).
+- `main` ở **e04f2e4** (merge PR #132). PR đang mở: #133 (tài liệu thư viện và bàn giao), #134 (hạn mức tài khoản), #135 (draft:
+  compose sửa dở và kịch bản kiểm thử PDF).
   Không còn issue mở.
 - Phiên bản trong header tệp: **0.5.1**. Bản phát hành gần nhất **v0.5.0** (13-Nov-2026). Không có 0.6.x (0.6.0
   chưa từng phát hành). Chỉ tạo thẻ/release khi chủ dự án yêu cầu.
@@ -63,16 +64,17 @@ chuyển máy thì có thể xóa thư mục này.
   tsc, eslint, prettier, dựng tài liệu. **Chưa chạy** `make test-db` và `make test-actions` (cần CSDL): chạy trên
   Docker thật trước khi merge.
 
-### 3.2. Thay đổi chưa commit trên nhánh `feat/apple-silicon` (đã merge qua #132)
+### 3.2. Ba tệp compose sửa dở: đã push nguyên trạng ở PR #135 (draft)
 
-Ba tệp `infra/compose/core.yml`, `mac.yml`, `scan.yml` có thay đổi chưa commit, không rõ ai sửa:
+Ba tệp `infra/compose/core.yml`, `mac.yml`, `scan.yml` có thay đổi sửa dở, chủ dự án sẽ tự sửa tiếp (PR #135 nhánh
+`chore/compose-kich-ban-kiem-thu`, đi kèm `docs/Kich-ban-kiem-thu-Bamboo.pdf`):
 
 - `core.yml`: bỏ biến `BAMBOO_DB_PLATFORM` và đổi image CSDL mặc định thành `imresamu/postgis:17-3.5` cho mọi máy.
 - `mac.yml`: bỏ thẻ `!reset` / `!override` (thẻ này cần Docker Compose mới; có thể đã gặp lỗi với bản cũ).
 - `scan.yml`: xóa dòng chú thích về image ClamAV arm64.
 
-Các thay đổi này đi ngược một phần ADR #91. Hỏi chủ dự án trước khi giữ hay bỏ; nếu giữ thì ghi lại lý do vào
-ADR #91 và cập nhật `NOTICE`.
+Các thay đổi này đi ngược một phần ADR #91, và `scan.yml` còn một dòng chỉ có khoảng trắng. Khi sửa xong, nếu giữ
+hướng này thì ghi lý do vào ADR #91, cập nhật `NOTICE`, bỏ trạng thái draft của PR.
 
 ### 3.3. Tệp không theo dõi bằng Git, phải chép tay sang máy mới
 
@@ -81,7 +83,7 @@ ADR #91 và cập nhật `NOTICE`.
 - Tài liệu nội bộ bị loại khỏi Git: mọi tệp `.docx` (ví dụ `docs/Bamboo - Kế hoạch phát triển.docx`),
   `docs/Presentation/`, `docs/UI-template/`, `docs/DXOS - Layer 1 - Design/`, `docs/chuyen-repo/`,
   `docs/Kien_truc_he_thong_tong_the.pdf`, `docs/bao-cao-doi-chieu-de-thi-OLP2026.pdf`.
-- `docs/Kich-ban-kiem-thu-Bamboo.pdf`: đang untracked, chủ dự án chưa quyết có đưa lên GitHub hay không. Đừng commit.
+- `docs/Kich-ban-kiem-thu-Bamboo.pdf`: đã đưa vào PR #135.
 - `.env` ở gốc repo (gitignored): cấu hình máy cũ (mức RAM, `SEED_DEMO`, `SIGNATURE_ONLINE`…). Máy mới để
   `make up` tự sinh lại theo cấu hình máy, chỉ chép giá trị cần giữ.
 - `git stash` cũ trên máy cũ (`truoc-tai-cau-truc`, `pre-pull-24-10`…) đều đã lỗi thời, không cần chép.
@@ -89,7 +91,8 @@ ADR #91 và cập nhật `NOTICE`.
 ### 3.4. Nhánh chỉ có ở máy cũ
 
 - `backup/main-truoc-viet-lai`, `backup/fix-cong-api-404-truoc-viet-lai`: sao lưu lịch sử `main` trước lần viết lại
-  ngày 14-Nov. Nếu muốn giữ thì `git bundle` mang sang; không push.
+  ngày 14-Nov; `wip/final-10-11`: trạng thái cuối 10-Nov, ghi rõ không push. Ba nhánh này đã gói vào một tệp
+  `git bundle` ngoài Git trên máy cũ (hỏi chủ dự án); lấy lại bằng `git fetch <tệp bundle> <nhánh>:<nhánh>`. Không push.
 - Các worktree phụ `wt-chimuc` (`feat/chi-muc-toan-van`), `wt-qt` (`feat/quy-trinh-van-ban`): nhánh đã nằm trong
   `main`, bỏ được.
 
