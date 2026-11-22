@@ -173,7 +173,6 @@ export const EN_PAGES: Record<string, string> = {
   " — (trống)": " — (empty)",
   " — nhờ quản trị viên của tenant cấp vai trò cho vị trí của bạn.":
     " — ask your tenant administrator to grant a role to your position.",
-  "%) cho cả đơn vị": "%) for the whole unit",
   "(chỉ hiện một lần). Lần đăng nhập tới phải đổi mật khẩu và cài lại mã xác thực hai lớp.":
     "(shown only once). On next sign-in the user must change the password and set up two-factor authentication again.",
   "(chỉ hiện một lần; lần đăng nhập đầu phải đổi mật khẩu và cài mã xác thực hai lớp).":
@@ -234,6 +233,7 @@ export const EN_PAGES: Record<string, string> = {
   "Ban giám đốc": "Board of directors",
   "Ban hành": "Issue",
   "Ban hành quyết định": "Issue decision",
+  "Bạn còn tải lên được ": "You can still upload ",
   "Ban hành quyết định nhân sự": "Issue personnel decision",
   "Biên nhận hợp lệ": "Valid receipt",
   "Biên nhận không hợp lệ": "Invalid receipt",
@@ -619,7 +619,6 @@ export const EN_PAGES: Record<string, string> = {
     "The question was blocked because it appears to try to change the assistant's instructions.",
   "Câu hỏi cho trợ lý": "Question for the assistant",
   "Cây đơn vị": "Unit tree",
-  "Còn khả dụng ": "Available ",
   "Còn {0} lỗi cần sửa trước khi phát hành.": "{0} errors must be fixed before publishing.",
   "Có PII · cần quyền đặc biệt": "Contains PII · special permission required",
   "Có thay đổi chưa lưu.": "There are unsaved changes.",
@@ -660,6 +659,7 @@ export const EN_PAGES: Record<string, string> = {
   "Cơ sở: ": "Site: ",
   "Cả công ty": "Whole company",
   "Cả hai": "Both",
+  "Cả đơn vị": "Whole unit",
   "Cả nhóm ": "Whole group ",
   "Cả phòng ban sở hữu quy trình": "Whole department that owns the process",
   "Cả tenant": "Whole tenant",
@@ -702,6 +702,7 @@ export const EN_PAGES: Record<string, string> = {
   "Cổng theo sự kiện": "Event-based gateway",
   Cột: "Column",
   "Cột thay đổi": "Changed columns",
+  "Của bạn": "Yours",
   "Của tôi ": "Mine ",
   "Danh mục": "Catalog",
   "Danh mục dùng chung của tenant · mã là khóa, nhập lại cùng mã là cập nhật":
@@ -721,7 +722,6 @@ export const EN_PAGES: Record<string, string> = {
   "Doanh nghiệp vừa, có phòng ban": "Medium business, with departments",
   "Dung lượng": "Storage",
   "Dung lượng lớn nhất": "Largest size",
-  "Dung lượng đã dùng": "Storage used",
   "Duy nhất trong tenant; dùng khi nhập từ Excel": "Unique within the tenant; used when importing from Excel",
   "Duy nhất trong tenant; dùng khi nhập từ Excel.": "Unique within the tenant; used when importing from Excel.",
   Duyệt: "Approve",
@@ -866,7 +866,8 @@ export const EN_PAGES: Record<string, string> = {
     "Action taken (required), e.g. checked the HEPA filter, monitoring for another 30 minutes",
   "Hạn chế": "Restricted",
   "Hạn mức (GB)": "Quota (GB)",
-  "Hạn mức dung lượng của đơn vị": "Unit storage quota",
+  "Hạn mức dung lượng": "Storage quota",
+  "Hạn mức mỗi tài khoản (GB)": "Quota per account (GB)",
   "Hạn xử lý": "Due date",
   "Hạn xử lý (SLA)": "Due date (SLA)",
   "Hẹn giờ": "Timer",
@@ -1318,6 +1319,8 @@ export const EN_PAGES: Record<string, string> = {
     "Each row is a position that receives approval tasks: tasks handled in the period and average time, tasks pending, overdue by {0} hours, and the longest waiting task.",
   "Mỗi dòng một họ tên, ví dụ:\nLê Thu Hà\nĐỗ Văn Nam": "One full name per line, for example:\nLe Thu Ha\nDo Van Nam",
   "Mỗi dòng một mục": "One item per line",
+  "Mỗi tài khoản chỉ được giữ chừng này tệp do chính mình tải lên, kể cả khi đơn vị còn chỗ.":
+    "Each account may keep at most this much in files it uploaded itself, even when the unit still has space.",
   "Mỗi lượt hỏi độc lập, không dùng lại lượt trước. Thông tin cá nhân được che trước khi lưu.":
     "Each question is independent and does not reuse earlier ones. Personal information is masked before saving.",
   "Mỗi người chỉ giữ chính một ghế tại một thời điểm; hợp đồng không giữ ghế trưởng và phải ở công ty khác công ty giữ chính (ADR #29).":

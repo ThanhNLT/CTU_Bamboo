@@ -175,12 +175,7 @@ def process_from_document(conn: psycopg.Connection, session: dict, args: dict, c
 def _attach(
     conn: psycopg.Connection, ctx: Context, tenant: str, doc_id: str, person: str, name: str, ctype: str, data: bytes
 ) -> str:
-    quota = conn.execute("SELECT storage_quota_bytes FROM core.tenant WHERE id = %s FOR UPDATE", (tenant,)).fetchone()[
-        0
-    ]
-    used = conn.execute("SELECT core.storage_used(%s)", (tenant,)).fetchone()[0]
-    if used + len(data) > quota:
-        raise ActionError("Vượt hạn mức dung lượng của đơn vị", "file-quota")
+    attachments.check_quota(conn, tenant, person, len(data))
     att_id = str(uuid.uuid4())
     key = f"{tenant}/{ENTITY}/{doc_id}/{att_id}"
     verdict, detail, engines, report = attachments.scan_content(

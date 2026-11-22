@@ -408,6 +408,38 @@ def test_han_muc_dung_luong(hasura, conn, s3):
         conn.execute("UPDATE core.tenant SET storage_quota_bytes = DEFAULT WHERE id = %s", (i["TDX"],))
 
 
+def test_han_muc_moi_tai_khoan(hasura, conn, s3):
+    i = ids(conn, "TDX", "c")
+    pr_id = pr(conn, "tep_han_muc_tk", "c", "P_NV_MH_DT", 10_000_000)
+    usage = """query { drive_usage { quota_bytes used_bytes user_quota_bytes user_used_bytes user_available_bytes } }"""
+    before = hasura(usage, person=i["c"], tenant=i["TDX"])["data"]["drive_usage"]
+    assert before["user_quota_bytes"] == 5 * 1024**3
+    assert before["user_used_bytes"] <= before["used_bytes"]
+
+    conn.execute(
+        "UPDATE core.tenant SET user_storage_quota_bytes = core.storage_used_by(id, %s) + %s WHERE id = %s",
+        (i["c"], len(PDF), i["TDX"]),
+    )
+    try:
+        att = upload(hasura, i, pr_id, PDF)
+        assert (
+            hasura(CONFIRM, {"a": att}, person=i["c"], tenant=i["TDX"])["data"]["confirm_upload"]["status"] == "CLEAN"
+        )
+        data = hasura(
+            UPLOAD,
+            {"id": pr_id, "name": "them.pdf", "type": "application/pdf", "size": 10},
+            person=i["c"],
+            tenant=i["TDX"],
+        )
+        assert data["errors"][0]["extensions"]["code"] == "file-quota", data
+        assert "tài khoản" in data["errors"][0]["message"], data
+        after = hasura(usage, person=i["c"], tenant=i["TDX"])["data"]["drive_usage"]
+        assert after["user_available_bytes"] == 0
+        assert after["used_bytes"] < after["quota_bytes"], "Đơn vị còn chỗ, chỉ tài khoản đã đầy"
+    finally:
+        conn.execute("UPDATE core.tenant SET user_storage_quota_bytes = DEFAULT WHERE id = %s", (i["TDX"],))
+
+
 @pytest.mark.parametrize(
     ("doc_status", "code"), [("APPROVED", "locked"), ("CANCELLED", "locked"), ("DRAFT", "unavailable")]
 )

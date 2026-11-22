@@ -326,7 +326,20 @@ def test_han_muc_dung_luong_quan_tri(client, conn, admin):
     assert quota["storage_quota_bytes"] == 20 * 1024**3
     assert save(client, admin, "storage_quota", {"quota_gb": "0"}).status_code == 400
     assert save(client, admin, "storage_quota", {"quota_gb": "5"}, who="nv").status_code == 403
-    conn.execute("UPDATE core.tenant SET storage_quota_bytes = DEFAULT WHERE code = 'TDX'")
+
+    r = save(client, admin, "storage_quota", {"user_quota_gb": "2,5"})
+    assert r.status_code == 200, r.text
+    row = conn.execute(
+        "SELECT storage_quota_bytes, user_storage_quota_bytes FROM core.tenant WHERE code = 'TDX'"
+    ).fetchone()
+    assert row["user_storage_quota_bytes"] == int(2.5 * 1024**3)
+    assert row["storage_quota_bytes"] == 20 * 1024**3, "Chỉ đổi hạn mức tài khoản thì giữ hạn mức đơn vị"
+    assert save(client, admin, "storage_quota", {"user_quota_gb": "0"}).status_code == 400
+    assert save(client, admin, "storage_quota", {}).status_code == 400
+    assert save(client, admin, "storage_quota", {"user_quota_gb": "1"}, who="nv").status_code == 403
+    conn.execute(
+        "UPDATE core.tenant SET storage_quota_bytes = DEFAULT, user_storage_quota_bytes = DEFAULT WHERE code = 'TDX'"
+    )
 
 
 def test_them_ncc_de_xuat(client, conn, admin):
