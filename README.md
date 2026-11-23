@@ -149,7 +149,7 @@ Mức: **Có** = đã hiện thực, có kiểm thử; **Một phần** = có nh
 | Cổng API, WAF | Apache APISIX 3.19, Coraza + OWASP CRS | Apache-2.0 | Một điểm vào, kiểm token tại biên, WAF, giới hạn tần suất, websocket | Có |
 | Định danh, SSO, MFA | Keycloak 26 | Apache-2.0 | Đăng nhập OIDC + PKCE, một tài khoản nhiều tenant, OTP bắt buộc cho quản trị nền tảng | Có |
 | API dữ liệu | Hasura GraphQL Engine v2 CE | Apache-2.0 | Tự sinh GraphQL từ CSDL, phân quyền theo dòng, subscription thời gian thực, 99 Action nghiệp vụ | Có |
-| Dữ liệu có cấu trúc | PostgreSQL 17 + PostGIS 3.5 | PostgreSQL, GPL-2.0-or-later (PostGIS) | Nguồn sự thật, ràng buộc nghiệp vụ, nhật ký kiểm toán chuỗi hash, KPI đóng băng | Có |
+| Dữ liệu có cấu trúc | PostgreSQL 17 + PostGIS 3 | PostgreSQL, GPL-2.0-or-later (PostGIS) | Nguồn sự thật, ràng buộc nghiệp vụ, nhật ký kiểm toán chuỗi hash, KPI đóng băng | Có |
 | Quy trình | Flowable REST 8; diagram-js, bpmn-moddle (lớp BPMN tự viết) | Apache-2.0; MIT | Luồng duyệt BPMN, thiết kế quy trình trên giao diện, chạy thử sandbox, quy trình tự động (hẹn giờ, webhook, sự kiện) | Có |
 | Lưu trữ đối tượng | SeaweedFS 4 | Apache-2.0 | Tệp đính kèm, ổ đĩa, Lakehouse; bucket kiểm dịch, link có chữ ký | Có |
 | Két bí mật, ký số | OpenBao 2 | MPL-2.0 | Secret, AppRole riêng từng dịch vụ, mã hóa dữ liệu nhạy cảm, chữ ký Ed25519 cho biên nhận và bản neo | Có |
@@ -271,7 +271,7 @@ Trang AI và OCR chạy ở mọi cấu hình (cả máy 8 GB, chậm hơn khi �
 | Ổ đĩa | 20 GB SSD trống | 50 GB SSD (image OCR khoảng 14 GB, mô hình AI khoảng 3,7 GB) |
 | GPU | Không cần | NVIDIA 8 GB VRAM trở lên để AI, OCR nhanh hơn (đã kiểm trên RTX 4060) |
 | Hệ điều hành | Linux, macOS, Windows 10/11 với WSL2 | Linux |
-| Kiến trúc | amd64 hoặc arm64 (image PostGIS chạy qua giả lập trên arm64) | amd64 |
+| Kiến trúc | amd64 hoặc arm64 (mọi image chạy native, kể cả Mac Apple Silicon) | amd64 |
 | Phần mềm | Docker Engine 25+ với Docker Compose v2 | Docker Compose 2.40.2+ (chạy image dựng sẵn từ OCI) |
 
 Trên Windows, đặt mã nguồn trong hệ thống tệp của WSL2 ([ADR #12](docs/quan-ly-du-an/05-quyet-dinh-kien-truc.md)). WSL2 mặc định
@@ -356,7 +356,7 @@ mặc định của máy dev, giống bản Docker; tên dịch vụ đổi thà
 
 | Phần mềm | Phiên bản | Ghi chú |
 |---|---|---|
-| PostgreSQL | 17, extension `ltree`, `btree_gist` | PostGIS 3.5 tùy chọn; `wal_level=logical` nếu chạy CDC |
+| PostgreSQL | 17, extension `ltree`, `btree_gist` | PostGIS 3 tùy chọn; `wal_level=logical` nếu chạy CDC |
 | Python | 3.13 | Dịch vụ `actions`, `seed` |
 | Node.js | 22 (tối thiểu 20) | Giao diện |
 | pnpm | 12.16.1 (ghim ở `packageManager` trong `package.json`) | Workspace JS: `npm install -g --allow-scripts=pnpm pnpm@12.16.1` (npm mới chặn install script; thiếu cờ này lệnh `pnpm` không chạy được từ Turborepo) |

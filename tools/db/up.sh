@@ -14,6 +14,23 @@ for _ in $(seq 1 30); do
     sleep 2
 done
 
+# Volume tạo bằng image cũ (postgis/postgis trên Debian bullseye, glibc 2.31) rồi chạy bằng image bamboo-db
+# (bookworm, glibc 2.36, chạy native trên arm64): dựng lại index theo collation mới và nâng extension PostGIS.
+# Idempotent: volume mới hoặc đã nâng thì không làm gì.
+for db in $(psql -X -At -d postgres -c "SELECT datname FROM pg_database WHERE datallowconn
+        AND datcollversion IS DISTINCT FROM pg_database_collation_actual_version(oid)" 2> /dev/null); do
+    echo "collation: reindex $db"
+    psql -X -q -v ON_ERROR_STOP=1 -d "$db" -c "REINDEX DATABASE \"$db\"" \
+        -c "ALTER DATABASE \"$db\" REFRESH COLLATION VERSION"
+done
+for db in $(psql -X -At -d postgres -c "SELECT datname FROM pg_database WHERE datallowconn"); do
+    if [[ -n "$(psql -X -At -d "$db" -c "SELECT 1 FROM pg_extension e JOIN pg_available_extensions a ON a.name = e.extname
+            WHERE e.extname = 'postgis' AND e.extversion <> a.default_version")" ]]; then
+        echo "postgis: nâng extension trong $db"
+        psql -X -q -v ON_ERROR_STOP=1 -d "$db" -c "SELECT postgis_extensions_upgrade()"
+    fi
+done
+
 for db in ${EXTRA_DATABASES:-flowable hasura_meta}; do
     if [[ -z "$(psql -X -At -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$db'")" ]]; then
         echo "create database $db"

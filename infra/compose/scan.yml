@@ -15,7 +15,8 @@ services:
   clamav:
     logging: *logging
     profiles: [scan]
-    image: clamav/clamav:1.4
+    # clamav/clamav chỉ có amd64; bản -debian cùng phiên bản có cả arm64 (Mac Apple Silicon)
+    image: clamav/clamav-debian:1.4
     ports:
       - "127.0.0.1:3310:3310"
 

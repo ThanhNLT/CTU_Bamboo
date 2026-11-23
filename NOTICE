@@ -13,12 +13,17 @@ không phải nguồn mở duy nhất là thư viện GPU của NVIDIA (CUDA, cu
 chứa và không phân phối chúng; chỉ trên máy có GPU NVIDIA chúng mới được tải về lúc chạy từ nguồn chính
 thức (image Ollama trên Docker Hub, gói PyTorch CUDA cho OCR), xem bên dưới.
 
+Thành phần copyleft: ClamAV, PostGIS (GPL-2.0), Grafana (AGPL-3.0) chạy như tiến trình/dịch vụ riêng,
+không liên kết vào mã Bamboo; psycopg, crc32c, python-bidi (LGPL), OpenBao, Vector, certifi, tqdm
+(MPL-2.0), Mosquitto, paho-mqtt (EPL-2.0) dùng nguyên bản như thư viện hoặc dịch vụ. Dự án không sửa
+mã của các thành phần này; nếu sửa, phần sửa phải công bố theo giấy phép gốc của thành phần đó.
+
 ------------------------------------------------------------------------------------------------
 Thành phần chạy dưới dạng dịch vụ (image Docker chính thức, không sửa đổi)
 ------------------------------------------------------------------------------------------------
 Apache APISIX 3.19 (apache/apisix)              Apache-2.0
 Coraza proxy-wasm 0.6 + OWASP CRS (nhúng trong image cổng API) Apache-2.0
-PostgreSQL 17 + PostGIS 3.5 (postgis/postgis)   PostgreSQL License; PostGIS: GPL-2.0-or-later
+PostgreSQL 17 + PostGIS 3 (postgres + PGDG)     PostgreSQL License; PostGIS: GPL-2.0-or-later
 Keycloak 26 (quay.io/keycloak/keycloak)          Apache-2.0
 Hasura GraphQL Engine v2 CE (hasura/graphql-engine) Apache-2.0
 Flowable REST 8 (flowable/flowable-rest)         Apache-2.0
@@ -30,60 +35,137 @@ Gotenberg 8 (gotenberg/gotenberg, bản -chromium) MIT; Chromium: BSD-3-Clause v
 Apache Kafka 4 (apache/kafka)                    Apache-2.0
 Debezium Server 3 (quay.io/debezium/server)      Apache-2.0
 Trino 483 (trinodb/trino)                        Apache-2.0
-ClamAV 1.4 (clamav/clamav, tùy chọn)             GPL-2.0-only
+Eclipse Mosquitto 2 (eclipse-mosquitto)          EPL-2.0 OR EDL-1.0 (BSD-3-Clause)
+ClamAV 1.4 (clamav/clamav-debian, tùy chọn)      GPL-2.0-only
 Ollama (ollama/ollama)                           MIT; image kèm thư viện CUDA runtime của NVIDIA (giấy phép
                                                  NVIDIA) để dùng GPU, kéo thẳng từ Docker Hub, không phân phối lại
+Vector 0.46 (timberio/vector, tùy chọn)          MPL-2.0
+OpenTelemetry Collector (otel/opentelemetry-collector, nhóm observability) Apache-2.0
+Jaeger 2 (jaegertracing/jaeger, nhóm observability) Apache-2.0
+Prometheus 3 (prom/prometheus, nhóm observability) Apache-2.0
+Grafana OSS 13 (grafana/grafana-oss, nhóm observability) AGPL-3.0-only (dịch vụ riêng, không sửa đổi)
+Mailpit (axllent/mailpit, hộp thư thử)           MIT
 nginx (nginxinc/nginx-unprivileged)              BSD-2-Clause
 Python 3.13 (python:3.13-slim)                   PSF-2.0
 Node.js 22 (node:22-alpine, chỉ lúc build)       MIT
 Alpine Linux (alpine:3.22, chỉ lúc build image cổng API) MIT và các giấy phép của từng gói
+uv (ghcr.io/astral-sh/uv, chỉ lúc build)         MIT OR Apache-2.0
+
+Mac Apple Silicon (từ 0.5.1, tools/mac/ai.sh): Ollama cài bằng Homebrew chạy thẳng trên máy để dùng GPU
+Metal (MIT); các dịch vụ khác vẫn chạy bằng image ở trên.
+
+Image dựng sẵn phát hành trên GHCR (gateway, keycloak, openbao, kafka, trino, db, mosquitto) dựng FROM image chính
+thức ở trên và chỉ thêm tệp cấu hình của dự án; image gateway chép thêm tệp coraza-proxy-wasm.wasm tải
+nguyên bản từ bản phát hành chính thức của Coraza (kiểm SHA256), không sửa đổi.
+
+Mô hình AI (không nằm trong kho mã và image; Ollama tải về lúc chạy từ thư viện mô hình của Ollama):
+Qwen3 4B (qwen3:4b, trò chuyện, RAG, tác tử)         Apache-2.0
+BGE-M3 (bge-m3, sinh vector tìm ngữ nghĩa)           MIT
 
 ------------------------------------------------------------------------------------------------
 Thư viện Python (phiên bản ghim trong uv.lock; OCR: services/ocr/uv.lock; cài từ PyPI)
 ------------------------------------------------------------------------------------------------
-FastAPI, Pydantic, Starlette, Uvicorn, AnyIO, h11           MIT / BSD-3-Clause
+Dịch vụ actions, seed và gói dùng chung bamboo-common:
+FastAPI, Pydantic, pydantic-core, Starlette, Uvicorn, AnyIO, h11   MIT / BSD-3-Clause (Starlette, Uvicorn)
+annotated-types, annotated-doc, typing-inspection           MIT
+typing-extensions                                           PSF-2.0
 uvloop (kèm libuv), httptools (kèm llhttp)                 MIT OR Apache-2.0 / MIT
 httpx, httpcore, idna, certifi                              BSD-3-Clause / MPL-2.0 (certifi)
 Jinja2, MarkupSafe                                          BSD-3-Clause
 openpyxl, et-xmlfile (đọc/ghi tệp nhập hàng loạt)          MIT
-kafka-python                                                Apache-2.0
-pyiceberg, pyarrow, requests, tenacity (image lakehouse)    Apache-2.0
-SQLAlchemy, cachetools, mmh3, pyparsing, pyroaring, rich, strictyaml, markdown-it-py, mdurl, charset-normalizer  MIT
-fsspec, zstandard                                           BSD-3-Clause
 psycopg, psycopg-binary, psycopg-pool                       LGPL-3.0-only (dùng như thư viện, không sửa)
 PyJWT, cryptography, cffi, pycparser                        MIT / Apache-2.0 OR BSD-3-Clause / MIT-0 / BSD-3-Clause
 boto3, botocore, s3transfer, jmespath, python-dateutil, six, urllib3   Apache-2.0 / MIT
+Pillow (CDR ảnh)                                            MIT-CMU
+pypdf (CDR PDF)                                             BSD-3-Clause
+pypdfium2 (kèm PDFium, dựng ảnh trang PDF)                  BSD-3-Clause, Apache-2.0
+pyHanko, pyhanko-certvalidator, asn1crypto, oscrypto, uritools, tzlocal (xác minh chữ ký số PDF)  MIT
+lxml                                                        BSD-3-Clause
+aiohttp, aiosignal, frozenlist, multidict, yarl, propcache  Apache-2.0 (aiohttp: Apache-2.0 AND MIT)
+aiohappyeyeballs                                            PSF-2.0
+attrs                                                       MIT
+tzdata                                                      Apache-2.0
+paho-mqtt (cầu nối MQTT iot-bridge)                         EPL-2.0 OR BSD-3-Clause (dùng như thư viện, không sửa)
+prometheus-client                                           Apache-2.0 AND BSD-2-Clause
+OpenTelemetry (opentelemetry-api, -sdk, -proto, -semantic-conventions, -exporter-otlp-proto-http,
+  -exporter-otlp-proto-common, -exporter-otlp-common, -exporter-http-transport, -instrumentation, -instrumentation-asgi, -fastapi, -httpx, -dbapi,
+  -psycopg, -util-http)                                     Apache-2.0
+protobuf                                                    BSD-3-Clause
+googleapis-common-protos                                    Apache-2.0
+asgiref                                                     BSD-3-Clause
+packaging                                                   Apache-2.0 OR BSD-2-Clause
+PyYAML                                                      MIT
 Presidio (presidio-analyzer, presidio-anonymizer)           MIT
+phonenumbers                                                Apache-2.0
+regex                                                       Apache-2.0 AND CNRI-Python
+click                                                       BSD-3-Clause
 spaCy, thinc, catalogue, confection, srsly, wasabi, weasel, cymem, preshed, murmurhash, spacy-legacy, spacy-loggers  MIT
 typer, cloudpathlib, smart-open, filelock, setuptools       MIT
 shellingham                                                 ISC
 wrapt                                                       BSD-2-Clause
 blis, tldextract                                            BSD-3-Clause
+requests-file                                               Apache-2.0
 numpy                                                       BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0
 tqdm                                                        MPL-2.0 AND MIT (dùng như thư viện, không sửa)
+Faker (sinh dữ liệu demo, dịch vụ seed)                     MIT
+
+Image lakehouse (nhóm phụ thuộc lakehouse của actions):
+kafka-python                                                Apache-2.0
+pyiceberg, pyarrow, requests, tenacity                      Apache-2.0
+SQLAlchemy, cachetools, mmh3, pyparsing, pyroaring, rich, strictyaml, markdown-it-py, mdurl, charset-normalizer  MIT
+Pygments                                                    BSD-2-Clause
+fsspec, zstandard                                           BSD-3-Clause
 
 Dịch vụ OCR (services/ocr, image bamboo-ocr chỉ dựng tại máy, không phát hành lên registry):
-PyTorch, torchvision (bản CPU, download.pytorch.org/whl/cpu)  BSD-3-Clause
-PaddleOCR, PaddleX, VietOCR, transformers, OpenCV           Apache-2.0
+PyTorch, torchvision (bản CPU, download.pytorch.org/whl/cpu)  BSD-3-Clause (kèm giấy phép từng thành phần)
+PaddleOCR, PaddleX, transformers, OpenCV (opencv-contrib-python)  Apache-2.0
+VietOCR                                                     Apache-2.0 (kho mã); metadata PyPI ghi MIT
+huggingface-hub, hf-xet, tokenizers, safetensors, modelscope, modelscope-hub, aistudio-sdk, bce-python-sdk  Apache-2.0
+pandas, shapely, psutil, prettytable, PySocks               BSD-3-Clause
+pycryptodome                                                BSD-2-Clause AND Unlicense AND MIT
+ujson                                                       BSD-3-Clause AND TCL
+einops, gdown, future, colorlog, py-cpuinfo, pyclipper, ruamel.yaml, truststore, wcwidth, beautifulsoup4, soupsieve  MIT
+httpx2, httpcore2                                           BSD-3-Clause
+chardet                                                     0BSD
+crc32c                                                      LGPL-2.1-or-later (dùng như thư viện, không sửa)
+python-bidi                                                 LGPL-3.0-or-later (dùng như thư viện, không sửa)
 Python 3.11 (python:3.11-slim-bookworm)                     PSF-2.0
+Mac Apple Silicon (OCR chạy thẳng trên máy, dùng GPU Metal): PyTorch, torchvision bản macOS từ PyPI
+(BSD-3-Clause) kèm sympy, mpmath, networkx (BSD-3-Clause), Jinja2, MarkupSafe (BSD-3-Clause).
 Không nằm trong image, chỉ tải lúc chạy trên máy có GPU NVIDIA (sleeper chạy `python -m app.accel`, vào
 volume ocr-accel, từ download.pytorch.org/whl/cu128): PyTorch, torchvision bản CUDA (BSD-3-Clause), Triton
 (MIT) và các gói nvidia-* gồm CUDA runtime, cuDNN… (NVIDIA Software License Agreement, không phải giấy phép
 nguồn mở). `BAMBOO_GPU=false` để không tải và không dùng.
+
+Công cụ phát triển, kiểm thử và tài liệu (nhóm dev/lint và gói docs, không nằm trong bản phát hành):
+uv, uv_build                                                MIT OR Apache-2.0
+Ruff                                                        MIT
+reuse (kiểm giấy phép từng tệp)                             GPL-3.0-or-later (mã), Apache-2.0, CC0-1.0, CC-BY-SA-4.0
+  kèm boolean.py (BSD-2-Clause), license-expression (Apache-2.0), python-debian (GPL-2.0-or-later),
+  binaryornot (MIT), tomlkit (MIT)
+pytest, pluggy, iniconfig                                   MIT
+Sphinx, sphinxcontrib-applehelp, -devhelp, -htmlhelp, -jsmath, -qthelp, -serializinghtml, -mermaid  BSD-2-Clause
+MyST-Parser, mdit-py-plugins, Furo, sphinx-basic-ng, sphinx-copybutton, sphinx-autobuild, watchfiles, imagesize  MIT
+docutils                                                    Public Domain, BSD-2-Clause, PSF-2.0 (theo từng tệp)
+alabaster, Babel, snowballstemmer, accessible-pygments, websockets, colorama  BSD-3-Clause
+roman-numerals, roman-numerals-py                           0BSD OR CC0-1.0
 
 ------------------------------------------------------------------------------------------------
 Thư viện JavaScript (apps/web và tests/e2e, phiên bản khóa trong pnpm-lock.yaml, cài từ npm registry)
 ------------------------------------------------------------------------------------------------
 Phụ thuộc production của apps/web (289 gói, kiểm bằng `node tools/ci/check_licenses.mjs`):
 MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, BlueOak-1.0.0, 0BSD, CC0-1.0.
-Thư viện chính: Refine (@refinedev/core, antd, hasura, react-router, kbar) MIT; React, React DOM
-MIT; Ant Design MIT; keycloak-js Apache-2.0; @react-keycloak/web MIT; graphql MIT;
-graphql-request MIT; axios MIT.
+Thư viện chính: Refine (@refinedev/core, antd, hasura, react-router, kbar) MIT; React, React DOM,
+React Router MIT; Ant Design, @ant-design/icons MIT; lucide-react ISC; Recharts MIT; Day.js MIT;
+keycloak-js Apache-2.0; @react-keycloak/web MIT; graphql, graphql-request, graphql-tag MIT.
 Sơ đồ quy trình (tải lười): diagram-js, diagram-js-direct-editing, bpmn-moddle, moddle, tiny-svg,
 min-dash, min-dom (Camunda Services GmbH / bpmn.io) MIT. Lớp BPMN (vẽ, đọc/ghi XML, bảng công cụ) do dự
 án tự viết trong apps/web/src/bpmn; không dùng bpmn-js (giấy phép bpmn.io chưa được OSI phê duyệt).
-Công cụ build (devDependencies, không nằm trong bản phát hành): Vite, TypeScript, ESLint,
-@refinedev/cli – MIT / Apache-2.0 / BSD-2-Clause; kèm dữ liệu caniuse-lite (CC-BY-4.0).
+Công cụ build và kiểm thử (devDependencies, không nằm trong bản phát hành): pnpm, Turborepo, Vite,
+@vitejs/plugin-react, Tailwind CSS (@tailwindcss/vite; CSS sinh ra nằm trong bản build), ESLint,
+typescript-eslint, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, Prettier,
+@refinedev/cli – MIT; TypeScript, Playwright (@playwright/test, kiểm thử đầu–cuối) – Apache-2.0;
+một số gói phụ thuộc BSD-2-Clause; kèm dữ liệu caniuse-lite (CC-BY-4.0).
 
 ------------------------------------------------------------------------------------------------
 Nội dung khác

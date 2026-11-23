@@ -465,7 +465,7 @@ def agent_chunks(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, sett
 
 def run_agent(conn: psycopg.Connection, meili: search.Meili, ai: Ollama, settings: config.Settings, gpu: Gpu):
     """Một lần tự hành động của tác tử: nạp mô hình chat của tác tử (như lượt hỏi) rồi chạy."""
-    pending = conn.execute("SELECT model FROM core.ai_agent_run r JOIN core.ai_agent a ON a.id = r.agent_id "
+    pending = conn.execute("SELECT a.model FROM core.ai_agent_run r JOIN core.ai_agent a ON a.id = r.agent_id "
                            "WHERE r.status = 'queued' ORDER BY r.created_at LIMIT 1").fetchone()  # fmt: skip
     conn.commit()
     if pending is None:
