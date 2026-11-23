@@ -34,12 +34,11 @@ services:
     profiles: [docker-ai]
 
   ollama-init:
-    depends_on: !reset {}
     environment:
       OLLAMA_HOST: http://host.docker.internal:11434
 
   ai-worker:
-    depends_on: !override
+    depends_on:
       bootstrap:
         condition: service_completed_successfully
       ollama-init:
@@ -56,7 +55,7 @@ services:
       SLEEPER_GPU: "false"
       SLEEPER_GPU_SERVICES: ""
       SLEEPER_AI_SERVICES: ""
-    ports: !override
+    ports:
       - "127.0.0.1:8085:8443"
       - "127.0.0.1:9998:9998"
       - "127.0.0.1:3000:3000"
