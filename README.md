@@ -1,6 +1,6 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.5.1
+  @version 0.5.2
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
@@ -106,6 +106,7 @@ phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗ
 
 | Phiên bản | Ngày | Nội dung chính |
 |---|---|---|
+| [0.5.2](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.2) | 24/11/2026 | Hạn mức dung lượng 5 GB mỗi tài khoản, AI tự tắt kèm lý do khi máy thiếu RAM, Mac Apple Silicon chạy CSDL và ClamAV bản arm64 và AI trên GPU Metal, trợ lý AI trả lời theo ngôn ngữ câu hỏi; NOTICE liệt kê đủ thư viện và giấy phép, tệp `.license` cho tệp không ghi được header; sửa `make up` trên Mac và câu trả lời của trợ lý lẫn phần lập luận của mô hình |
 | [0.5.1](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.1) | 14/11/2026 | Dịch và cài đặt từ mã nguồn bằng `make`, GitOps tự chạy theo chu kỳ, tắt giao diện web của OpenBao và Hasura Console, tài liệu cho người đóng góp; sửa cổng API trả 404 và dịch vụ tự tắt khi `docker compose up`; sửa không tạo được công ty khi đăng ký (lỗi 500, tài khoản mới báo "chưa thuộc tenant nào"), công ty mới dùng được ngay mọi công cụ đã chọn, doanh nghiệp vừa và nhỏ khai mã số thuế sau, tên hệ thống hiển thị "Bamboo", đồng bộ ngôn ngữ và khoảng cách giao diện |
 | [0.5.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.0) | 13/11/2026 | Thông báo giấy phép Apache-2.0 trong từng tệp, bỏ thành phần chưa được OSI phê duyệt (bpmn-js, CUDA trong image OCR), hoàn thiện Tầng 1 (CDR, MQTT/NGSI-LD, giám sát, mTLS nội bộ, kịch bản tự viết, tác tử AI tự hành động), AI tự nhận GPU, thông báo theo ngôn ngữ đang chọn, ngày và số theo định dạng quốc tế |
 | [0.4.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
@@ -336,7 +337,7 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
   HTTPS, `BAMBOO_ENV=production`, sao lưu, nâng cấp): [Triển khai production](docs/van-hanh/trien-khai.md).
 
 **Chạy bằng image dựng sẵn**, không cần mã nguồn (Docker Compose 2.40.2+; kho và gói GHCR phải ở chế độ công khai). Image dựng sẵn
-hiện có tới bản 0.3.0; bản 0.4.0–0.5.1 chạy từ mã nguồn bằng lệnh ở trên.
+hiện có tới bản 0.3.0; bản 0.4.0–0.5.2 chạy từ mã nguồn bằng lệnh ở trên.
 
 ```bash
 docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y
