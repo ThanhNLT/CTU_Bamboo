@@ -114,7 +114,10 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [85](#adr-85) | 14/11/2026 | Tác tử mức đề xuất: hành động thành đề xuất, người có thẩm quyền chấp nhận thì thực hiện bằng quyền của chính họ |
 | [86](#adr-86) | 16/11/2026 | Tối ưu AI không gian I: KV cache `q4_0`, ngữ cảnh 12K, ẩn suy nghĩ ở giao diện, ngân sách suy nghĩ 4096 token |
 | [87](#adr-87) | 14/11/2026 | Dịch vụ nặng dùng tối đa ba phần tư số lõi; giao diện ngừng hỏi định kỳ khi tab ẩn |
+| [88](#adr-88) | 18/11/2026 | Hạn mức dung lượng cho mỗi tài khoản, mặc định 5 GB, kiểm cùng hạn mức của đơn vị |
 | [89](#adr-89) | 17/11/2026 | Trợ lý trả lời đúng điều được hỏi, bằng ngôn ngữ của câu hỏi; lập luận của mô hình không nằm trong câu trả lời và có giới hạn |
+| [90](#adr-90) | 18/11/2026 | AI tự chọn nơi chạy: GPU NVIDIA, GPU Apple (Metal) trên Mac, CPU khi đủ RAM, tắt khi thiếu RAM |
+| [91](#adr-91) | 18/11/2026 | Mac Apple Silicon tiết kiệm tài nguyên: CSDL và ClamAV bản arm64, OCR trên máy trả bộ nhớ khi nhàn rỗi |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -946,6 +949,15 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** `tools/ram_profile.sh` (chạy trong `make up` và GitOps) đặt `BAMBOO_CPU_LIMIT` bằng số lõi Docker thấy (`docker info`, không có thì `nproc`) trừ một phần tư (ít nhất một lõi); `db`, `keycloak`, `flowable`, `kafka`, `debezium`, `tika-core`, `gotenberg-core`, `trino-core`, `ollama-core`, `ocr-core`, `clamav` khai báo `cpus: ${BAMBOO_CPU_LIMIT:-0}`. Đặt `BAMBOO_CPU_LIMIT` trong `.env` để chọn tay, `0` là không giới hạn, lớn hơn số lõi Docker có thì tự hạ xuống bằng số đó; không hỏi được Docker thì không giới hạn (số lõi máy thật có thể lớn hơn máy ảo của Docker Desktop, Docker sẽ từ chối tạo container); `docker compose up` trực tiếp không giới hạn như trước. Cùng lúc, `make up` dừng ngay khi script báo lỗi thay vì chạy tiếp với cấu hình mặc định, `ram_profile.sh` đọc được `.env` lưu bằng Notepad (CRLF) hoặc có giá trị trong nháy, và dừng với thông báo rõ khi Docker Engine dưới 25 hoặc Compose dưới 2.20 (cảnh báo dưới 2.34). Ở giao diện web, mọi vòng hỏi định kỳ (`setInterval`) đi qua `usePolling` (`apps/web/src/live/usePolling.ts`): tab ẩn thì không gửi yêu cầu, tab hiện lại thì hỏi bù ngay nếu đã quá chu kỳ.
 - **Lý do:** Ollama, OCR, Trino, Gotenberg và lúc khởi động cả cụm JVM đều ăn hết mọi lõi; trên WSL2 điều đó làm cả Windows đơ, chuột và bàn phím giật. Chừa một phần tư số lõi giữ máy dùng được mà không đổi kết quả. Ollama chạy số luồng bằng số lõi vật lý, thường không quá ba phần tư số lõi logic nên không bị nghẽn hạn mức; OCR và JVM đọc hạn mức cgroup để chọn số luồng. `sleeper` tạo lại container theo cấu hình cũ nên bản GPU giữ nguyên giới hạn. Tab bị bỏ quên trước đây vẫn hỏi máy chủ mỗi 3–60 giây suốt ngày đêm, giữ các dịch vụ dùng thưa không ngủ được (ADR #53).
 - **Đã loại:** `cpu_shares` (chỉ chia CPU giữa các container trong máy ảo WSL, Windows vẫn thấy máy ảo dùng 100%); giới hạn riêng từng dịch vụ (thêm hàng chục biến mà không đổi kết quả); bắt người dùng sửa `.wslconfig` (`processors=`) (không tự động, vẫn ghi trong hướng dẫn cho ai muốn chặn chặt hơn).
+
+(adr-88)=
+## ADR #88: Hạn mức dung lượng cho mỗi tài khoản, mặc định 5 GB, kiểm cùng hạn mức của đơn vị
+
+- **Ngày:** 18/11/2026
+- **Quyết định:** Bổ sung hạn mức đơn vị của nhóm 1 (migration 018, mặc định 10 GB). Migration 064 thêm `core.tenant.user_storage_quota_bytes` (mặc định 5 GB, phải dương) và hàm `core.storage_used_by(tenant, person)`: tổng dung lượng tệp đính kèm do người đó tải lên (`uploaded_by`), tính như `core.storage_used` (tệp sạch và tệp đang chờ kiểm dịch trong một giờ, bỏ tệp đã xóa). `attachments.check_quota` khóa dòng tenant (`FOR UPDATE`) rồi kiểm cả hai hạn mức; `get_upload_url` và việc lưu văn bản quy định sinh từ sơ đồ (`process_regulation`) cùng gọi hàm này, vượt thì lỗi `file-quota` kèm số còn lại. `drive_usage` thêm `user_quota_bytes`, `user_used_bytes`, `user_available_bytes` (phần nhỏ hơn giữa chỗ còn của tài khoản và của đơn vị). Người có quyền `core.org.manage` đổi hạn mức mỗi tài khoản trong hộp "Đổi hạn mức" ở Ổ đĩa (`admin_save` `storage_quota` nhận `user_quota_gb` bên cạnh `quota_gb`, gửi một hoặc cả hai, mỗi giá trị 0,1–100.000 GB). Thẻ Dung lượng hiện hai thanh "Của bạn" và "Cả đơn vị".
+- **Lý do:** Kế hoạch phát triển yêu cầu 5 GB cho mỗi tài khoản. Chỉ có hạn mức đơn vị thì một người có thể dùng hết chỗ của mọi người. Một mức chung cho cả tenant đáp ứng yêu cầu và dễ quản trị; tính theo người tải lên vì đó là người duy nhất chắc chắn gắn với tệp (tệp nằm ở chứng từ của nhiều người).
+- **Đã loại:** Hạn mức riêng từng người (thêm cột ở `core.person` và màn hình sửa; chưa có nhu cầu, thêm sau được mà không đổi cách kiểm); kiểm bằng trigger ở CSDL (hai đường ghi tệp đều qua actions, thông báo lỗi kèm số còn lại dựng ở đó); bỏ hạn mức đơn vị (tổng của nhiều tài khoản có thể vượt dung lượng máy chủ).
+- **Giới hạn hiện tại:** Hạ hạn mức xuống dưới mức đang dùng không xóa tệp, chỉ chặn tải thêm. Tệp của người đã nghỉ việc vẫn tính vào đơn vị cho tới khi bị xóa.
 
 (adr-89)=
 ## ADR #89: Trợ lý trả lời đúng điều được hỏi, bằng ngôn ngữ của câu hỏi; lập luận của mô hình không nằm trong câu trả lời và có giới hạn
