@@ -31,6 +31,34 @@ import { formatBytes } from "../utils";
 import { tr } from "../../../i18n";
 
 const GB = 1024 ** 3;
+const toGb = (bytes: number) => Math.round((bytes / GB) * 10) / 10;
+
+const UsageBar = ({ label, used, quota }: { label: string; used: number; quota: number }) => {
+  const percent = Math.min(100, (used / Math.max(quota, 1)) * 100);
+  return (
+    <div className="mt-3">
+      <div className="flex items-baseline justify-between gap-2 text-[12px]">
+        <span className="text-body">{label}</span>
+        <span className="tabular-nums text-muted">
+          {formatBytes(used)} / {formatBytes(quota)}
+        </span>
+      </div>
+      <div
+        className="mt-1 h-2 overflow-hidden rounded-ui bg-gray-200/70"
+        role="progressbar"
+        aria-label={label}
+        aria-valuenow={Math.round(percent)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <span
+          className={cn("block h-full", percent >= 90 ? "bg-red-500" : "bg-bamboo-600")}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
+};
 
 export const StorageCard = ({
   segments,
@@ -45,13 +73,12 @@ export const StorageCard = ({
   const perms = usePermissions();
   const [editing, setEditing] = useState(false);
   const [gb, setGb] = useState<number | null>(null);
+  const [userGb, setUserGb] = useState<number | null>(null);
   const visible = segments.reduce((sum, s) => sum + s.bytes, 0);
-  const total = usage ? Math.max(usage.quotaBytes, 1) : Math.max(visible, 1);
-  const percent = usage ? Math.min(100, (usage.usedBytes / total) * 100) : 0;
 
   const save = async () => {
     try {
-      await adminSave("storage_quota", { quota_gb: gb });
+      await adminSave("storage_quota", { quota_gb: gb, user_quota_gb: userGb });
       message.success(tr("Đã đổi hạn mức dung lượng."));
       setEditing(false);
       onChanged();
@@ -62,36 +89,16 @@ export const StorageCard = ({
 
   return (
     <section className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-labelledby="storage-title">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 id="storage-title" className="text-[14px] font-semibold text-ink">
-          {tr("Dung lượng")}
-        </h2>
-        {usage && (
-          <span className="text-[12px] tabular-nums text-muted">
-            {formatBytes(usage.usedBytes)} / {formatBytes(usage.quotaBytes)}
-          </span>
-        )}
-      </div>
+      <h2 id="storage-title" className="m-0 text-[14px] font-semibold text-ink">
+        {tr("Dung lượng")}
+      </h2>
 
       {usage && (
         <>
-          <div
-            className="mt-3 h-2 overflow-hidden rounded-ui bg-gray-200/70"
-            role="progressbar"
-            aria-label={tr("Dung lượng đã dùng")}
-            aria-valuenow={Math.round(percent)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span
-              className={cn("block h-full", percent >= 90 ? "bg-red-500" : "bg-bamboo-600")}
-              style={{ width: `${percent}%` }}
-            />
-          </div>
+          <UsageBar label={tr("Của bạn")} used={usage.userUsedBytes} quota={usage.userQuotaBytes} />
+          <UsageBar label={tr("Cả đơn vị")} used={usage.usedBytes} quota={usage.quotaBytes} />
           <p className="m-0 mt-2 text-[12.5px] text-body">
-            {tr("Còn khả dụng ")} <b className="tabular-nums">{formatBytes(usage.availableBytes)}</b> (
-            {(100 - percent).toFixed(0)}
-            {tr("%) cho cả đơn vị")}
+            {tr("Bạn còn tải lên được ")} <b className="tabular-nums">{formatBytes(usage.userAvailableBytes)}</b>
           </p>
         </>
       )}
@@ -115,7 +122,8 @@ export const StorageCard = ({
           type="button"
           className="mt-2 text-[12px] font-semibold text-bamboo-700 underline-offset-2 hover:underline"
           onClick={() => {
-            setGb(Math.round((usage.quotaBytes / GB) * 10) / 10);
+            setGb(toGb(usage.quotaBytes));
+            setUserGb(toGb(usage.userQuotaBytes));
             setEditing(true);
           }}
         >
@@ -124,7 +132,7 @@ export const StorageCard = ({
       )}
       <Modal
         open={editing}
-        title={tr("Hạn mức dung lượng của đơn vị")}
+        title={tr("Hạn mức dung lượng")}
         okText={tr("Lưu")}
         cancelText={tr("Hủy")}
         onOk={() => void save()}
@@ -141,6 +149,19 @@ export const StorageCard = ({
           step={1}
           value={gb}
           onChange={setGb}
+          addonAfter="GB"
+          className="w-full"
+        />
+        <p className="mt-4 text-[13px] text-body">
+          {tr("Mỗi tài khoản chỉ được giữ chừng này tệp do chính mình tải lên, kể cả khi đơn vị còn chỗ.")}
+        </p>
+        <InputNumber
+          aria-label={tr("Hạn mức mỗi tài khoản (GB)")}
+          min={0.1}
+          max={100000}
+          step={1}
+          value={userGb}
+          onChange={setUserGb}
           addonAfter="GB"
           className="w-full"
         />

@@ -25,10 +25,11 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
-**Nâng cấp:** `docker compose up -d --build sleeper ai-worker actions web seed` (Mac Apple Silicon: `make up`). Không có migration hay metadata mới.
+**Nâng cấp:** `make up` (chạy migration 064 và nạp lại metadata Hasura; Mac Apple Silicon cũng dùng `make up`).
 
 ### Thay đổi
 
+- **Hạn mức dung lượng cho mỗi tài khoản, mặc định 5 GB** (ADR #88): ngoài hạn mức của cả đơn vị, mỗi người chỉ giữ tối đa 5 GB tệp do chính mình tải lên; vượt thì báo lỗi kèm dung lượng còn lại. Thẻ Dung lượng ở Ổ đĩa hiện hai thanh "Của bạn" và "Cả đơn vị"; người có quyền quản lý tổ chức đổi được cả hai mức trong hộp "Đổi hạn mức". Migration 064, view silver `core_tenant` thêm cột `user_storage_quota_bytes`.
 - **AI tắt kèm lý do khi không có GPU và Docker thiếu RAM** (ADR #90): không có GPU mà Docker có dưới `BAMBOO_AI_MIN_RAM_GB` (mặc định 7 GB) thì `sleeper` dừng Ollama, OCR, `ai-worker` để không làm hết RAM cả hệ thống; Trợ lý và nút OCR lại báo "AI đang tắt" kèm RAM hiện có và RAM cần. Có GPU NVIDIA hoặc đủ RAM thì như trước.
 - **Mac Apple Silicon tốn ít tài nguyên hơn** (ADR #91): `make up` trên Docker arm64 dùng bản arm64 của CSDL (`imresamu/postgis:17-3.5`) và ClamAV (`clamav/clamav-debian:1.4`) thay vì giả lập amd64 qua Rosetta (biến `BAMBOO_DB_IMAGE`, `BAMBOO_DB_PLATFORM`, `BAMBOO_CLAMAV_IMAGE`, đặt trong `.env` khi chạy `docker compose` tay hoặc bản phát hành); OCR trên Mac trả bộ nhớ cho macOS khi gỡ mô hình, không đọc trước trọng số; thời gian giữ mô hình tính theo RAM thật của Mac. Tài liệu triển khai hướng dẫn cấp 6–8 GB cho Docker Desktop và bật Resource Saver.
 - **AI chạy GPU Metal trên Mac Apple Silicon** (ADR #90): `make up` trên macOS Apple Silicon tự dựng Ollama và dịch vụ OCR thẳng trên máy (`tools/mac/ai.sh`, `infra/compose/mac.yml`) vì Docker trên macOS không cấp được GPU Apple cho container; các dịch vụ khác vẫn trong Docker. Cần `brew install ollama uv`; thiếu thì vẫn chạy CPU trong Docker như trước. Dịch vụ OCR dùng thiết bị Metal (`mps`) khi có; `services/ocr/uv.lock` khóa thêm môi trường macOS arm64 (phiên bản các gói trên Linux không đổi).
