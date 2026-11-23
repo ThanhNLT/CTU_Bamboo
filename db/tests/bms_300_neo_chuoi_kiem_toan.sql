@@ -1,5 +1,5 @@
 -- Bamboo - DX-OS Open-Core
--- @version 0.5.1
+-- @version 0.5.2
 -- @author CTUBamboo
 -- @copyright Copyright 2026 Bamboo
 -- @license Apache-2.0
