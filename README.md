@@ -38,7 +38,7 @@ Mã nguồn của Bamboo phát hành theo **[Apache License 2.0](LICENSE)**, m�
   quyền sáng chế.
 - **Trong từng tệp:** mỗi tệp mã mang header của dự án (lấy từ [`docs/Header.txt`](docs/Header.txt), gắn bằng
   `python tools/header.py`) ghi bản quyền, `@license Apache-2.0` và thông báo giấy phép Apache-2.0; [REUSE.toml](REUSE.toml) khai báo giấy phép cho
-  toàn bộ kho mã theo chuẩn [REUSE 3.3](https://reuse.software), kể cả tệp không ghi được header (JSON, ảnh...). Biểu tượng mẫu của Refine theo MIT
+  toàn bộ kho mã theo chuẩn [REUSE 3.3](https://reuse.software), kể cả tệp không ghi được header (JSON, ảnh...); tệp dữ liệu, cấu hình không chứa được chú thích (CSV, dữ liệu demo, `jvm.config`...) có thêm tệp `<tên>.license` đi kèm ghi SPDX. Biểu tượng mẫu của Refine theo MIT
   ([`LICENSES/MIT.txt`](LICENSES/MIT.txt)). Kiểm tra: `reuse lint`.
 - **Thành phần bên thứ ba:** đều là phần mềm nguồn mở, dùng như dịch vụ hoặc thư viện không sửa đổi, không đóng gói kèm mã
   nguồn của dự án phụ thuộc. Danh sách và giấy phép từng thành phần: [NOTICE](NOTICE).
@@ -106,7 +106,7 @@ phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗ
 
 | Phiên bản | Ngày | Nội dung chính |
 |---|---|---|
-| 0.5.1 | 14/11/2026 | Dịch và cài đặt từ mã nguồn bằng `make`, GitOps tự chạy theo chu kỳ, tắt giao diện web của OpenBao và Hasura Console, tài liệu cho người đóng góp; sửa cổng API trả 404 và dịch vụ tự tắt khi `docker compose up`; sửa không tạo được công ty khi đăng ký (lỗi 500, tài khoản mới báo "chưa thuộc tenant nào"), công ty mới dùng được ngay mọi công cụ đã chọn, doanh nghiệp vừa và nhỏ khai mã số thuế sau, tên hệ thống hiển thị "Bamboo", đồng bộ ngôn ngữ và khoảng cách giao diện |
+| [0.5.1](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.1) | 14/11/2026 | Dịch và cài đặt từ mã nguồn bằng `make`, GitOps tự chạy theo chu kỳ, tắt giao diện web của OpenBao và Hasura Console, tài liệu cho người đóng góp; sửa cổng API trả 404 và dịch vụ tự tắt khi `docker compose up`; sửa không tạo được công ty khi đăng ký (lỗi 500, tài khoản mới báo "chưa thuộc tenant nào"), công ty mới dùng được ngay mọi công cụ đã chọn, doanh nghiệp vừa và nhỏ khai mã số thuế sau, tên hệ thống hiển thị "Bamboo", đồng bộ ngôn ngữ và khoảng cách giao diện |
 | [0.5.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.0) | 13/11/2026 | Thông báo giấy phép Apache-2.0 trong từng tệp, bỏ thành phần chưa được OSI phê duyệt (bpmn-js, CUDA trong image OCR), hoàn thiện Tầng 1 (CDR, MQTT/NGSI-LD, giám sát, mTLS nội bộ, kịch bản tự viết, tác tử AI tự hành động), AI tự nhận GPU, thông báo theo ngôn ngữ đang chọn, ngày và số theo định dạng quốc tế |
 | [0.4.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
 | [0.3.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
@@ -424,9 +424,10 @@ uv sync --frozen --package bamboo-actions --package bamboo-seed && . .venv/bin/a
 ### 4. OpenBao và SeaweedFS
 
 ```bash
-mkdir -p .local/{openbao,run,seaweedfs,meili}
-# Chép infra/platform/openbao/config.hcl thành .local/openbao/config.hcl, đổi storage "raft" path thành .local/openbao/data,
-# api_addr thành http://127.0.0.1:8200, cluster_addr thành http://127.0.0.1:8201
+mkdir -p .local/{openbao/data,run,seaweedfs,meili}
+# Sinh cấu hình chạy native từ tệp mẫu của bản Docker (không sửa tay): dữ liệu vào .local/openbao/data, chỉ nghe 127.0.0.1
+sed -e 's|"/openbao/file"|".local/openbao/data"|' -e 's|0\.0\.0\.0:8200|127.0.0.1:8200|' -e 's|http://openbao:|http://127.0.0.1:|' \
+  infra/platform/openbao/config.hcl > .local/openbao/config.hcl
 bao server -config=.local/openbao/config.hcl &
 
 cd services/actions
