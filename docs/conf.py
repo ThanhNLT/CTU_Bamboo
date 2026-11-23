@@ -33,6 +33,7 @@ exclude_patterns = [
     "README.md",
     "agents",
     "chuyen-repo",
+    "ban-giao",
     "Thumbs.db",
     ".DS_Store",
 ]
