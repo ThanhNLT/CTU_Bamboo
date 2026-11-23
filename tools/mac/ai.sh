@@ -50,6 +50,9 @@ apple_silicon() {
 
 ollama_up() { curl -fsS -m 2 "http://$OLLAMA_ADDR/api/version" > /dev/null 2>&1; }
 ocr_up() { curl -fsS -m 3 "http://127.0.0.1:$OCR_PORT/health" > /dev/null 2>&1; }
+# Cổng đang do một container Docker giữ (sleeper của lần chạy AI trong Docker trước đó mở 11434, 8866 tới Ollama, OCR
+# trong Docker): trả lời trên cổng đó không phải Ollama, OCR trên máy.
+docker_port() { docker ps -q --filter "publish=$1" 2> /dev/null | grep -q .; }
 
 # Tiến trình do script dựng: pid trong $STATE/<tên>.pid, còn sống và đúng là tiến trình đó.
 ours() {
@@ -170,11 +173,31 @@ cmd_up() {
         return 0
     fi
     mkdir -p "$STATE"
+    if docker_port "${OLLAMA_ADDR##*:}" || docker_port "$OCR_PORT"; then
+        if ! command -v ollama > /dev/null 2>&1; then
+            say "Chưa cài Ollama: brew install ollama uv rồi chạy lại make up để AI dùng GPU Apple; lần này Ollama, OCR chạy CPU trong Docker"
+            return 0
+        fi
+        if ! command -v "$UV" > /dev/null 2>&1; then
+            say "Chưa cài uv (cần để dựng OCR trên máy): brew install uv rồi chạy lại make up; lần này Ollama, OCR chạy CPU trong Docker"
+            return 0
+        fi
+        # Chuyển từ AI trong Docker sang AI trên máy: trả cổng 11434, 8866 cho Ollama, OCR trên máy. docker compose up sau
+        # đó dựng lại sleeper theo infra/compose/mac.yml (không mở hai cổng này).
+        say "Cổng ${OLLAMA_ADDR##*:}, $OCR_PORT đang do container của lần chạy AI trong Docker giữ: dừng sleeper, ollama-core, ocr-core để chuyển AI sang GPU Apple"
+        docker compose stop sleeper ollama-core ocr-core > /dev/null 2>&1 || true
+        local c
+        for c in $(docker ps -q --filter "publish=${OLLAMA_ADDR##*:}") $(docker ps -q --filter "publish=$OCR_PORT"); do
+            say "CẢNH BÁO: container $(docker inspect -f '{{.Name}}' "$c" 2> /dev/null) vẫn giữ cổng; Ollama, OCR chạy CPU trong Docker"
+            return 0
+        done
+    fi
     if ! start_ollama || ! start_ocr; then
         stop ocr
         stop ollama
         say "Không dựng được AI trên máy: Ollama, OCR chạy CPU trong Docker (chậm hơn nhiều). Sửa lỗi trên rồi chạy lại make up, hoặc đặt BAMBOO_GPU=false để không thử nữa"
-        ollama_up && say "CẢNH BÁO: cổng 11434 đang có Ollama khác trên máy (Ollama.app?), sleeper không mở được cổng đó: thoát nó trước khi make up"
+        ollama_up && ! docker_port "${OLLAMA_ADDR##*:}" \
+            && say "CẢNH BÁO: cổng 11434 đang có Ollama khác trên máy (Ollama.app?), sleeper không mở được cổng đó: thoát nó trước khi make up"
         return 0
     fi
     # Container Ollama, OCR của lần chạy CPU trước (nếu có) không còn dùng: dừng để trả RAM cho máy ảo Docker.
