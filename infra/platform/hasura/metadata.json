@@ -21078,6 +21078,18 @@
             "type": "bigint!"
           },
           {
+            "name": "user_quota_bytes",
+            "type": "bigint!"
+          },
+          {
+            "name": "user_used_bytes",
+            "type": "bigint!"
+          },
+          {
+            "name": "user_available_bytes",
+            "type": "bigint!"
+          },
+          {
             "name": "by_type",
             "type": "[DriveUsageType!]!"
           }
