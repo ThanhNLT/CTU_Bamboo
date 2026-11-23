@@ -29,4 +29,5 @@ Lược đồ cơ sở dữ liệu, cấu hình các dịch vụ lõi Tầng 1 v
 03-thiet-ke-csdl
 06-dich-vu-nen-tang
 08-api-giao-dien
+09-thu-vien-va-giay-phep
 ```
