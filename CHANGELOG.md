@@ -1,6 +1,6 @@
 <!--
   Bamboo - DX-OS Open-Core
-  @version 0.5.1
+  @version 0.5.2
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
@@ -25,6 +25,8 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+## [0.5.2] - 2026-11-24
+
 **Nâng cấp:** `make up` (chạy migration 064 và nạp lại metadata Hasura; Mac Apple Silicon cũng dùng `make up`).
 
 ### Thay đổi
@@ -37,6 +39,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 - Tác tử tự hành động viết nhận xét, bình luận và thông báo bằng ngôn ngữ của nhiệm vụ được giao.
 - Trang Trợ lý hiện "Đang soạn câu trả lời…" khi mô hình đã bắt đầu sinh nhưng chưa có chữ nào được hiện, thay cho "Đang tìm trong Thư viện tri thức…".
 - `tools/ai_smoke.sh` kiểm thêm cho mọi câu: trả lời cùng ngôn ngữ với câu hỏi, không lẫn phần lập luận của mô hình, không quá 120 từ; thêm nhóm `ngon_ngu` (39 câu).
+
+### Giấy phép và tài liệu
+
+- `NOTICE` liệt kê đủ mọi thành phần bên thứ ba đang dùng, đối chiếu với `uv.lock`, `services/ocr/uv.lock` và phụ thuộc trực tiếp trong `package.json`: thêm Mosquitto, Vector, OpenTelemetry Collector, Jaeger, Prometheus, Grafana OSS (AGPL-3.0), Mailpit, mô hình Qwen3 4B và BGE-M3, Pillow, pypdf, pypdfium2, pyHanko, paho-mqtt, thư viện OpenTelemetry, gói phụ thuộc của OCR, gói chạy trên Mac, công cụ phát triển và tài liệu; thêm đoạn giải thích cách dùng thành phần copyleft; bỏ axios (không còn dùng). `docs/thiet-ke/09-thu-vien-va-giay-phep.md` đồng bộ theo.
+- Tệp không chứa được chú thích (dữ liệu demo sinh tự động, `jvm.config`, `manifest.webmanifest`, mẫu pull request) có tệp `<tên>.license` đi kèm ghi SPDX theo chuẩn REUSE; nội dung tệp gốc không đổi.
+- README mục *Chạy native*: cấu hình OpenBao sinh bằng lệnh từ tệp mẫu thay cho sửa tay.
 
 ### Sửa lỗi
 
@@ -373,7 +381,8 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.1...HEAD
+[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.3.0...v0.4.0

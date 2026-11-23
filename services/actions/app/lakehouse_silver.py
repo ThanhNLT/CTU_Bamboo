@@ -1,5 +1,5 @@
 # Bamboo - DX-OS Open-Core
-# @version 0.5.1
+# @version 0.5.2
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
@@ -152,7 +152,7 @@ def build(conn: psycopg.Connection) -> str:
     bronze_cols = ",\n    ".join(f"{_ident(n)} {t}" for n, t in bronze_ddl())
     out = [
         "-- Bamboo - DX-OS Open-Core",
-        "-- @version 0.5.1",
+        "-- @version 0.5.2",
         "-- @author CTUBamboo",
         "-- @copyright Copyright 2026 Bamboo",
         "-- @license Apache-2.0",
