@@ -23,20 +23,37 @@ import { useCallback, useEffect, useState } from "react";
 
 import { request } from "../../api/client";
 
-export type DriveUsage = { quotaBytes: number; usedBytes: number; availableBytes: number };
+export type DriveUsage = {
+  quotaBytes: number;
+  usedBytes: number;
+  availableBytes: number;
+  userQuotaBytes: number;
+  userUsedBytes: number;
+  userAvailableBytes: number;
+};
 
-const USAGE = `query DriveUsage { drive_usage { quota_bytes used_bytes available_bytes } }`;
+type Row = Record<
+  "quota_bytes" | "used_bytes" | "available_bytes" | "user_quota_bytes" | "user_used_bytes" | "user_available_bytes",
+  number
+>;
+
+const USAGE = `query DriveUsage {
+  drive_usage { quota_bytes used_bytes available_bytes user_quota_bytes user_used_bytes user_available_bytes }
+}`;
 
 export const useDriveUsage = () => {
   const [data, setData] = useState<DriveUsage>();
   const reload = useCallback(
     () =>
-      request<{ drive_usage: { quota_bytes: number; used_bytes: number; available_bytes: number } }>(USAGE)
+      request<{ drive_usage: Row }>(USAGE)
         .then(({ drive_usage: u }) =>
           setData({
             quotaBytes: Number(u.quota_bytes),
             usedBytes: Number(u.used_bytes),
             availableBytes: Number(u.available_bytes),
+            userQuotaBytes: Number(u.user_quota_bytes),
+            userUsedBytes: Number(u.user_used_bytes),
+            userAvailableBytes: Number(u.user_available_bytes),
           }),
         )
         .catch(() => setData(undefined)),
