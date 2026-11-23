@@ -26,6 +26,19 @@ MAX_CER="${OCR_MAX_CER:-0.05}"
 
 curl -fsS -m 200 http://127.0.0.1:8866/health || { echo "Dịch vụ OCR chưa chạy (docker compose up -d)"; exit 1; }
 echo
+
+# Mac Apple Silicon (ADR #90): OCR chạy thẳng trên máy (tools/mac/ai.sh), không có container ocr-core: chạy bộ kiểm
+# bằng môi trường Python của OCR trên máy, gọi thẳng cổng 8866.
+if [[ -z "$(docker compose ps -q --status running ocr-core 2> /dev/null)" ]]; then
+    venv="${BAMBOO_MAC_DIR:-"$HOME/Library/Application Support/Bamboo"}/ocr-venv/bin/python"
+    [[ -x "$venv" ]] || { echo "Không có container ocr-core, cũng không thấy OCR trên máy ($venv)"; exit 1; }
+    [[ -f "$FONT" ]] || FONT="${OCR_SMOKE_FONT:-/System/Library/Fonts/Supplemental/Times New Roman.ttf}"
+    args=(--max-cer "$MAX_CER" --url http://127.0.0.1:8866)
+    if [[ -f "$FONT" ]]; then args+=(--font "$FONT"); else echo "Không thấy font $FONT (đặt OCR_SMOKE_FONT), bỏ qua mẫu tổng hợp"; fi
+    [[ -n "$SAMPLES" ]] && args+=(--samples "$SAMPLES")
+    exec "$venv" "$(dirname "$0")/ocr_smoke.py" "${args[@]}"
+fi
+
 args=(--max-cer "$MAX_CER" --url http://ocr:8000)
 docker compose cp tools/ocr_smoke.py ocr-core:/tmp/ocr_smoke.py >/dev/null 2>&1
 if [[ -f "$FONT" ]]; then
