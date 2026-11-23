@@ -84,7 +84,7 @@ Giấy phép không thuộc nhóm dễ dãi (MIT/BSD/Apache/ISC) được **in �
 
 | Thành phần | Phiên bản | Giấy phép | Dùng ở đâu, để làm gì |
 |---|---|---|---|
-| PostgreSQL + PostGIS (`postgis/postgis`; arm64: `imresamu/postgis`) | 17-3.5 | PostgreSQL License; PostGIS **GPL-2.0-or-later** | Nguồn sự thật, phân quyền theo dòng, kiểm toán chuỗi hash |
+| PostgreSQL + PostGIS (`imresamu/postgis`, bản đa kiến trúc dựng từ Dockerfile của postgis/docker-postgis; đổi bằng `BAMBOO_DB_IMAGE`) | 17-3.5 | PostgreSQL License; PostGIS **GPL-2.0-or-later** | Nguồn sự thật, phân quyền theo dòng, kiểm toán chuỗi hash |
 | PostgreSQL (`postgres`, image migrate) | 17 | PostgreSQL License | Chạy migration `db/migrations` |
 | Hasura GraphQL Engine CE (`hasura/graphql-engine`) | v2.51.0-ce | Apache-2.0 | GraphQL tự sinh, subscription, Action nghiệp vụ |
 | psycopg (`psycopg[binary]`) | 3.3.6 | **LGPL-3.0-only** | Driver PostgreSQL cho `services/actions`, `services/seed` |
@@ -123,7 +123,7 @@ Giấy phép không thuộc nhóm dễ dãi (MIT/BSD/Apache/ISC) được **in �
 
 | Thành phần | Phiên bản | Giấy phép | Dùng ở đâu, để làm gì |
 |---|---|---|---|
-| Eclipse Mosquitto (`eclipse-mosquitto`) | 2.0.21 | **EPL-2.0** OR EDL-1.0 | Broker MQTT có TLS, tài khoản theo công ty |
+| Eclipse Mosquitto (`eclipse-mosquitto`, image `bamboo-mosquitto` thêm cấu hình) | 2.0.21 | **EPL-2.0** OR EDL-1.0 | Broker MQTT có TLS, tài khoản theo công ty |
 | paho-mqtt | 2.2.0 | **EPL-2.0** OR BSD-3-Clause | Client MQTT trong `iot_bridge.py`, `mqtt_admin.py` |
 
 ### Truyền thông
@@ -321,6 +321,7 @@ phát hành web.
 | GPL-2.0-or-later | PostGIS | Phần mở rộng trong image CSDL upstream, không sửa |
 | AGPL-3.0-only | Grafana OSS | Chạy image upstream riêng (nhóm `observability`), không sửa; chỉ dùng cấu hình bảng điều khiển |
 | LGPL-3.0-only | psycopg, psycopg-pool | Dùng như thư viện qua `import`, không sửa |
+| LGPL-2.1-or-later, LGPL-3.0-or-later | crc32c, python-bidi (phụ thuộc gián tiếp của OCR) | Dùng như thư viện, không sửa |
 | MPL-2.0 | OpenBao, Vector, certifi, tqdm | Dùng nguyên bản, không sửa tệp nguồn |
 | EPL-2.0 (lựa chọn kép) | Mosquitto, paho-mqtt | Dùng nguyên bản, không sửa; giấy phép cho chọn EDL-1.0 hoặc BSD-3-Clause |
 | GPL-3.0-or-later | reuse | Chỉ là công cụ kiểm ở máy phát triển, không phân phối |
