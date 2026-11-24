@@ -25,6 +25,13 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp:** `make up` (migration `066` chuyển tác tử đang dùng `qwen3:4b` sang mô hình mới; `ollama-init` tải `qwen3:4b-instruct-2507-q4_K_M`, khoảng 2,5 GB). Ai đã chép `AI_CHAT_MODEL=qwen3:4b` từ `.env.example` vào `.env` thì sửa thành `AI_CHAT_MODEL=qwen3:4b-instruct-2507-q4_K_M` (hoặc xóa dòng), và để trống `AI_KV_CACHE_TYPE=` để Mac dùng mặc định mới. Mô hình cũ vẫn nằm trên đĩa: Mac chạy `ollama rm qwen3:4b`, máy khác chạy `docker compose exec ollama-core ollama rm qwen3:4b` để lấy lại khoảng 2,5 GB.
+
+### Thay đổi
+
+- **Trợ lý AI trả lời nhanh hơn khoảng 2,5 lần: mô hình trò chuyện mặc định là Qwen3-4B bản instruct** (ADR #93): `AI_CHAT_MODEL` mặc định đổi từ `qwen3:4b` (Ollama trỏ tới bản thinking-2507, tắt suy nghĩ vẫn lập luận trước khi trả lời) sang `qwen3:4b-instruct-2507-q4_K_M` (cùng kích thước, cùng giấy phép Apache-2.0, trả lời thẳng). Đo bằng `tools/ai_smoke.sh` trên Mac Apple M1 Pro 16 GB: bản instruct đạt 37/39 câu, trung vị cả lượt 9,0 giây; bản thinking 38/39 câu, 23,1 giây. Hai câu lỗi của bản instruct chỉ trích dẫn một văn bản liên quan khác với văn bản mong đợi.
+- **Mac Apple Silicon từ 16 GB dùng KV cache f16 cho Ollama** (ADR #93): sinh chữ 33 token/giây thay vì 26 với `q4_0` (GPU Metal không phải giải lượng tử bộ đệm), tốn thêm khoảng 1,2 GB bộ nhớ hợp nhất ở ngữ cảnh 12K. Mac 8 GB giữ `q4_0`; Docker vẫn mặc định `q4_0`. `AI_KV_CACHE_TYPE` trong `.env` (không để trống) vẫn được ưu tiên.
+
 ### Sửa lỗi
 
 - **Kiểm thử bước AI của quy trình tự động hỏng ngẫu nhiên trên CI (`test_cong_re_nhanh_theo_danh_gia_cua_ai`):** kiểm thử và `flow-sync` của stack đang chạy dùng chung một Flowable, nhận việc cùng chủ đề `bamboo.*`; `flow-sync` thật nhận mất việc của kiểm thử, không thấy quy trình trong CSDL chính nên báo "Quy trình tự động đã tắt" và Flowable treo việc 30 giây, quá thời gian chờ của kiểm thử. Tiền tố chủ đề nay đọc từ `AUTOMATION_TOPIC_PREFIX` (mặc định `bamboo.`, quy trình đã phát hành không đổi); container `actions-test` dùng `bamboo-test.`.
