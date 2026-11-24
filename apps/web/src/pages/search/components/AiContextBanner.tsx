@@ -60,10 +60,15 @@ export const AiContextBanner = ({
             {tr("Tìm chính xác theo từ khóa ")} <b className="font-semibold text-ink">“{query}”</b>{" "}
             {tr(" · chuyển sang “Kết hợp” để tìm cả cách nói khác")}
           </span>
+        ) : mode === "semantic" ? (
+          <span>
+            {tr("Tìm theo ý nghĩa của ")} <b className="font-semibold text-ink">“{query}”</b>{" "}
+            {tr(" · ra cả chứng từ dùng cách nói khác, không chứa đúng từ đã gõ")}
+          </span>
         ) : (
           <span>
-            {tr("Chưa nhận ra ý định cụ thể, đang tìm theo từ khóa ")}{" "}
-            <b className="font-semibold text-ink">“{query}”</b>
+            {tr("Tìm theo từ khóa ")} <b className="font-semibold text-ink">“{query}”</b>{" "}
+            {tr(" · sau đó thêm các chứng từ gần về ý nghĩa")}
           </span>
         )}
       </p>

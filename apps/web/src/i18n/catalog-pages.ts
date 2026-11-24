@@ -2000,6 +2000,11 @@ export const EN_PAGES: Record<string, string> = {
   "Tìm bảng, cột, báo cáo": "Search tables, columns, reports",
   "Tìm bảng, cột, báo cáo trong sơ đồ": "Search tables, columns, reports in the diagram",
   "Tìm chính xác theo từ khóa ": "Exact keyword search ",
+  "Tìm theo từ khóa ": "Keyword search ",
+  " · sau đó thêm các chứng từ gần về ý nghĩa": " · followed by records close in meaning",
+  "Tìm theo ý nghĩa của ": "Meaning search for ",
+  " · ra cả chứng từ dùng cách nói khác, không chứa đúng từ đã gõ":
+    " · also finds records worded differently that do not contain the exact words",
   "Tìm hồ sơ theo mã, tiêu đề, người nộp": "Search records by code, title, submitter",
   "Tìm kiếm toàn văn: lỗi chỉ mục · {0}": "Full-text search: index error · {0}",
   "Tìm kiếm toàn văn: {0}": "Full-text search: {0}",
