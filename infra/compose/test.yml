@@ -72,6 +72,8 @@ services:
       REQUIRE_SERVICES: "1"
       # Test tự bật SETUP_OPEN_SIGNUP khi cần; mặc định demo (true) làm sai các test khởi tạo máy trống.
       SETUP_OPEN_SIGNUP: "false"
+      # Chủ đề việc Flowable riêng cho kiểm thử: flow-sync của stack đang chạy dùng chung Flowable, không nhận mất việc của test.
+      AUTOMATION_TOPIC_PREFIX: bamboo-test.
     volumes:
       - ../..:/repo
       - actions-secrets:/run/bms:ro
