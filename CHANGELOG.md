@@ -25,6 +25,11 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+### Sửa lỗi
+
+- **Kiểm thử bước AI của quy trình tự động hỏng ngẫu nhiên trên CI (`test_cong_re_nhanh_theo_danh_gia_cua_ai`):** kiểm thử và `flow-sync` của stack đang chạy dùng chung một Flowable, nhận việc cùng chủ đề `bamboo.*`; `flow-sync` thật nhận mất việc của kiểm thử, không thấy quy trình trong CSDL chính nên báo "Quy trình tự động đã tắt" và Flowable treo việc 30 giây, quá thời gian chờ của kiểm thử. Tiền tố chủ đề nay đọc từ `AUTOMATION_TOPIC_PREFIX` (mặc định `bamboo.`, quy trình đã phát hành không đổi); container `actions-test` dùng `bamboo-test.`.
+- **`make test-actions` (và các lệnh `make` khác) trên Mac khi AI chạy trên máy dựng lại `sleeper` mở cổng 8866 rồi hỏng:** Makefile dùng cùng `infra/compose/mac.yml` với `make up` khi `tools/mac/ai.sh compose-file` thấy Ollama, OCR trên máy đang chạy.
+
 ## [0.5.2] - 2026-11-24
 
 **Nâng cấp:** `make up` (chạy migration 064 và nạp lại metadata Hasura; Mac Apple Silicon cũng dùng `make up`).

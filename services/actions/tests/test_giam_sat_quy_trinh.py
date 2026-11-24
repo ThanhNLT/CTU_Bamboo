@@ -185,7 +185,9 @@ def test_chuyen_doi_sang_dinh_nghia_tu_dong():
         "audience": "UNIT",
         "message": "Nhớ cập nhật tiến độ tuần này",
     }
-    assert 'flowable:type="external-worker"' in xml and 'flowable:topic="bamboo.notify"' in xml
+    assert (
+        'flowable:type="external-worker"' in xml and f'flowable:topic="{process_automation.TOPIC_PREFIX}notify"' in xml
+    )
 
     user_task = auto_bpmn().replace("<exclusiveGateway", '<userTask id="u" name="Duyệt"/><exclusiveGateway')
     assert any("cần người thao tác" in p for p in process_automation.automation_xml(user_task, "auto_x_p")[2])
