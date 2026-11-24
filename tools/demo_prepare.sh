@@ -22,7 +22,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 OLLAMA="${OLLAMA:-http://127.0.0.1:11434}"
-CHAT_MODEL="${AI_CHAT_MODEL:-qwen3:4b}"
+CHAT_MODEL="${AI_CHAT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}"
 EMBED_MODEL="${AI_EMBED_MODEL:-bge-m3}"
 KEEP="${DEMO_KEEP_ALIVE:-2h}"
 ok=1
