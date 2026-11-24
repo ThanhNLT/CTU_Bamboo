@@ -38,8 +38,8 @@ from . import config, ocr, search, storage
 
 log = logging.getLogger("ai_chunks")
 
-EMBEDDER = "bge"
-DIMENSIONS = 1024
+EMBEDDER = search.EMBEDDER
+DIMENSIONS = search.DIMENSIONS
 CHARS_PER_TOKEN = 3.5
 MAX_HEADING = 120
 

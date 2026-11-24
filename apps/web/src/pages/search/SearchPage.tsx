@@ -81,7 +81,7 @@ export const SearchPage = () => {
     return () => window.clearTimeout(t);
   }, [text, q, setUrl]);
 
-  const docs = useDocumentSearch(q, true);
+  const docs = useDocumentSearch(q, true, mode);
   const entities = useEntitySearch(q);
 
   const terms = useMemo(() => highlightTerms(q), [q]);

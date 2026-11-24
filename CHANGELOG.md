@@ -25,6 +25,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Nâng cấp:** `make up` (migration 065; `bootstrap` làm trống chỉ mục `documents` để thêm vector, `search-sync` tự nạp lại).
+
+### Thay đổi
+
+- **Tìm theo ý nghĩa trên trang Tìm kiếm** (ADR #92): ngoài kết quả chứa đúng từ khóa, trang Tìm kiếm ra thêm đề nghị mua sắm, tài liệu, tệp gần về ý nghĩa dù dùng cách nói khác (ví dụ "đồ dùng văn phòng" ra đề nghị mua giấy A4), gắn nhãn "Khớp ý nghĩa" kèm độ tương đồng. Ba chế độ Từ khóa / Ngữ nghĩa / Kết hợp nay chạy thật (trước đây chỉ có trên giao diện). Vector `bge-m3` lưu trong chỉ mục Meilisearch có sẵn, không thêm dịch vụ; AI chưa chạy thì vẫn tìm theo từ khóa như trước.
+
 ### Sửa lỗi
 
 - **Kiểm thử bước AI của quy trình tự động hỏng ngẫu nhiên trên CI (`test_cong_re_nhanh_theo_danh_gia_cua_ai`):** kiểm thử và `flow-sync` của stack đang chạy dùng chung một Flowable, nhận việc cùng chủ đề `bamboo.*`; `flow-sync` thật nhận mất việc của kiểm thử, không thấy quy trình trong CSDL chính nên báo "Quy trình tự động đã tắt" và Flowable treo việc 30 giây, quá thời gian chờ của kiểm thử. Tiền tố chủ đề nay đọc từ `AUTOMATION_TOPIC_PREFIX` (mặc định `bamboo.`, quy trình đã phát hành không đổi); container `actions-test` dùng `bamboo-test.`.

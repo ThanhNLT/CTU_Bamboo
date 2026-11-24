@@ -54,6 +54,7 @@ class Context:
     lakehouse: "Trino | None" = None
     ai: "Ollama | None" = None
     ai_chat_model: str = ""
+    ai_embed_model: str = ""
     channels: tuple[str, ...] = ()
     signer: "Signer | None" = None
     anchor_signer: "Signer | None" = None

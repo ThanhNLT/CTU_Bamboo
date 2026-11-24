@@ -48,9 +48,9 @@ class Ollama:
         self.url = url.rstrip("/")
         self.http = httpx.Client(base_url=self.url, timeout=timeout)
 
-    def _post(self, path: str, body: dict) -> dict:
+    def _post(self, path: str, body: dict, timeout: float | None = None) -> dict:
         try:
-            resp = self.http.post(path, json=body)
+            resp = self.http.post(path, json=body, **({"timeout": timeout} if timeout is not None else {}))
         except httpx.HTTPError as exc:
             raise OllamaUnavailable(f"Ollama không truy cập được: {exc}") from exc
         if resp.status_code >= 400:
@@ -97,10 +97,10 @@ class Ollama:
         """Nạp mô hình vào bộ nhớ mà không sinh gì (yêu cầu rỗng), để chạy song song với việc khác."""
         self._post("/api/generate", {"model": model, "stream": False})
 
-    def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+    def embed(self, model: str, texts: list[str], timeout: float | None = None) -> list[list[float]]:
         if not texts:
             return []
-        vectors = self._post("/api/embed", {"model": model, "input": texts})["embeddings"]
+        vectors = self._post("/api/embed", {"model": model, "input": texts}, timeout)["embeddings"]
         if len(vectors) != len(texts):
             raise OllamaUnavailable(f"Ollama trả {len(vectors)} vector cho {len(texts)} đoạn")
         return vectors

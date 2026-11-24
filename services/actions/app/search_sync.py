@@ -30,6 +30,30 @@ from . import ai_chunks, config, ocr, search, storage
 
 log = logging.getLogger("search_sync")
 MAX_BACKOFF = 300
+EMBED_BATCH = 16
+# AI không sẵn sàng (chưa bật, máy thiếu RAM): chờ lâu mới thử đánh thức lại để nạp vector còn thiếu.
+EMBED_RETRY_SECONDS = 600.0
+BACKFILL_BATCH = 200
+
+
+def with_vectors(docs: list[dict], ai: Ollama | None, settings: config.Settings) -> tuple[list[dict], bool]:
+    """Gắn `_vectors` cho mọi tài liệu (ADR #92): Meilisearch từ chối tài liệu thiếu khóa này khi chỉ mục có embedder.
+
+    AI không có hoặc lỗi thì vector là null: tài liệu vẫn tìm được theo từ khóa, trả False để nạp lại vector sau.
+    """
+    vectors: list | None = None
+    if ai is not None and docs:
+        try:
+            vectors = []
+            texts = [search.semantic_text(d) or d.get("title") or d.get("file_name") or "-" for d in docs]
+            for i in range(0, len(texts), EMBED_BATCH):
+                vectors += ai.embed(settings.ai_embed_model, texts[i : i + EMBED_BATCH])
+        except OllamaUnavailable as exc:
+            log.info("chưa tạo được vector, nạp tạm không vector: %s", exc)
+            vectors = None
+    if vectors is None:
+        return [{**d, "_vectors": {search.EMBEDDER: None}} for d in docs], False
+    return [{**d, "_vectors": {search.EMBEDDER: v}} for d, v in zip(docs, vectors, strict=True)], True
 
 
 def purchase_request_doc(conn: psycopg.Connection, entity_id) -> dict | None:
@@ -93,15 +117,22 @@ def attachment_docs(conn: psycopg.Connection, settings: config.Settings, entity_
 
 
 def sync_one(
-    conn: psycopg.Connection, meili: search.Meili, settings: config.Settings, entity_type: str, entity_id
+    conn: psycopg.Connection,
+    meili: search.Meili,
+    settings: config.Settings,
+    entity_type: str,
+    entity_id,
+    ai: Ollama | None = None,
 ) -> bool:
+    """Nạp lại một tài liệu vào chỉ mục. Trả True khi chỉ mục đã đủ (có vector, hoặc tài liệu đã gỡ khỏi chỉ mục)."""
     if entity_type == "core.attachment":
         docs = attachment_docs(conn, settings, entity_id)
         conn.rollback()
+        docs, embedded = with_vectors(docs, ai, settings)
         meili.delete_by_filter(settings.meili_index, f'attachment_id = "{uuid.UUID(str(entity_id))}"')
         if docs:
             meili.put_documents(settings.meili_index, docs)
-        return bool(docs)
+        return embedded or not docs
     if entity_type == "proc.purchase_request":
         doc = purchase_request_doc(conn, entity_id)
     elif entity_type == "collab.kb_document":
@@ -111,12 +142,19 @@ def sync_one(
     conn.rollback()
     if doc is None:
         meili.delete_document(settings.meili_index, search.doc_id(entity_type, entity_id))
-        return False
-    meili.put_documents(settings.meili_index, [doc])
-    return True
+        return True
+    docs, embedded = with_vectors([doc], ai, settings)
+    meili.put_documents(settings.meili_index, docs)
+    return embedded
 
 
-def run_once(conn: psycopg.Connection, meili: search.Meili, settings: config.Settings, limit: int = 50) -> int:
+def run_once(
+    conn: psycopg.Connection,
+    meili: search.Meili,
+    settings: config.Settings,
+    limit: int = 50,
+    ai: Ollama | None = None,
+) -> int:
     rows = conn.execute(
         """SELECT entity_type, entity_id, attempts, updated_at FROM search.pending
            WHERE dirty AND next_attempt_at <= now()
@@ -124,15 +162,17 @@ def run_once(conn: psycopg.Connection, meili: search.Meili, settings: config.Set
         (limit,),
     ).fetchall()
     conn.commit()
+    if rows and ai is not None and not ai_ready(ai):
+        ai = None
     for row in rows:
         key = (row["entity_type"], row["entity_id"])
         try:
-            sync_one(conn, meili, settings, *key)
+            embedded = sync_one(conn, meili, settings, *key, ai=ai)
             conn.execute(
                 """UPDATE search.pending
-                   SET dirty = (updated_at <> %s), attempts = 0, last_error = NULL, indexed_at = now()
+                   SET dirty = (updated_at <> %s), attempts = 0, last_error = NULL, indexed_at = now(), embedded = %s
                    WHERE entity_type = %s AND entity_id = %s""",
-                (row["updated_at"], *key),
+                (row["updated_at"], embedded, *key),
             )
             conn.commit()
         except Exception as exc:  # noqa: BLE001
@@ -210,6 +250,27 @@ def ai_ready(ai: Ollama | None) -> bool:
         return False
 
 
+def mark_missing_vectors(conn: psycopg.Connection, limit: int = BACKFILL_BATCH) -> int:
+    """Đánh dấu nạp lại các tài liệu đã nạp khi AI chưa chạy (chưa có vector); trả số tài liệu đã đánh dấu."""
+    marked = conn.execute(
+        """UPDATE search.pending SET dirty = true, attempts = 0, next_attempt_at = now()
+           WHERE (entity_type, entity_id) IN (
+               SELECT entity_type, entity_id FROM search.pending
+               WHERE NOT embedded AND NOT dirty AND indexed_at IS NOT NULL LIMIT %s)""",
+        (limit,),
+    ).rowcount
+    conn.commit()
+    return marked
+
+
+def missing_vectors(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM search.pending WHERE NOT embedded AND NOT dirty AND indexed_at IS NOT NULL LIMIT 1"
+    ).fetchone()
+    conn.commit()
+    return row is not None
+
+
 def reindex_if_empty(conn: psycopg.Connection, meili: search.Meili, index: str) -> int:
     if meili.document_count(index) > 0:
         return 0
@@ -236,9 +297,21 @@ def run_forever(settings: config.Settings, idle_seconds: float = 30.0) -> None:
     log.info("search-sync đang chạy")
     ai = Ollama(settings.ollama_url) if settings.ollama_url else None
     chunks_checked = False
+    backfill_after = 0.0
     while True:
-        while run_once(work, meili, settings):
+        while run_once(work, meili, settings, ai=ai):
             pass
+        try:
+            # Bootstrap làm trống chỉ mục khi thêm embedder (ADR #92) có thể xảy ra sau lúc search-sync khởi động.
+            reindex_if_empty(work, meili, settings.meili_index)
+            if ai is not None and time.monotonic() >= backfill_after and missing_vectors(work):
+                if ai_ready(ai):
+                    log.info("AI sẵn sàng: nạp lại %s tài liệu chưa có vector", mark_missing_vectors(work))
+                    continue
+                backfill_after = time.monotonic() + EMBED_RETRY_SECONDS
+        except search.SearchUnavailable as exc:
+            work.rollback()
+            log.warning("chỉ mục tìm kiếm chưa sẵn sàng: %s", exc)
         try:
             if ai is not None and not chunks_checked:
                 reindex_chunks_if_empty(work, meili, settings.meili_chunk_index)
