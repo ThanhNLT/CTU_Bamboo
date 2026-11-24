@@ -500,7 +500,7 @@ make test-actions T=tests/test_che_pii.py       # Action và Hasura: nhật ký 
 
 ## 11. Mô hình AI cục bộ – Ollama (ADR #51)
 
-Trợ lý RAG hỏi đáp Thư viện tri thức. Mọi thứ chạy trong máy chủ: Ollama phục vụ mô hình sinh `qwen3:4b` và embedding `bge-m3`, vector nằm trong Meilisearch có sẵn, điều phối là lớp mỏng trong `actions`.
+Trợ lý RAG hỏi đáp Thư viện tri thức. Mọi thứ chạy trong máy chủ: Ollama phục vụ mô hình sinh `qwen3:4b-instruct-2507-q4_K_M` (Qwen3-4B bản instruct, [ADR #93](#adr-93)) và embedding `bge-m3`, vector nằm trong Meilisearch có sẵn, điều phối là lớp mỏng trong `actions`.
 
 | Service | Profile | Việc |
 |---|---|---|
@@ -510,7 +510,7 @@ Trợ lý RAG hỏi đáp Thư viện tri thức. Mọi thứ chạy trong máy 
 | `search-sync` | (mặc định) | Thêm hàng đợi `search.pending_chunk`: chia đoạn, gọi `/api/embed`, ghi `documents_kb_chunk`; chỉ chạy khi Ollama trả lời `/api/tags` |
 | `bootstrap` | (mặc định) | Tạo chỉ mục `documents_kb_chunk` (embedder `userProvided`, 1024 chiều) bằng khóa admin |
 
-Biến môi trường (`x-actions-env`, không phải bí mật): `OLLAMA_URL` (mặc định `http://ollama:11434`), `AI_CHAT_MODEL` (`qwen3:4b`), `AI_EMBED_MODEL` (`bge-m3`), `MEILI_CHUNK_INDEX` (`documents_kb_chunk`), `AI_MIN_SCORE` (`0.7`: điểm tối thiểu của đoạn; Meilisearch quy cosine về `(1 + cos) / 2` nên đoạn không liên quan vẫn được khoảng 0,5–0,7), `AI_CPU_MODELS` (`bge-m3`: mô hình phụ được giữ lại khi gỡ mô hình chính, ADR #52); `ai-worker` thêm `OCR_URL` (`http://ocr:8000`). Mô hình chỉ nạp khi có việc: `AI_KEEP_ALIVE` (`5m`, đặt cho `ollama`) và `OCR_IDLE_SECONDS` (`300`, đặt cho `ocr`) là thời gian nhàn rỗi trước khi gỡ. Ollama không truy cập được thì `ai_assistants` trả `ai_enabled = false`, trang `/i/assistant` hiện "Trợ lý AI chưa bật"; các đoạn chờ trong `search.pending_chunk` và được nạp bù khi bật.
+Biến môi trường (`x-actions-env`, không phải bí mật): `OLLAMA_URL` (mặc định `http://ollama:11434`), `AI_CHAT_MODEL` (`qwen3:4b-instruct-2507-q4_K_M`), `AI_EMBED_MODEL` (`bge-m3`), `MEILI_CHUNK_INDEX` (`documents_kb_chunk`), `AI_MIN_SCORE` (`0.7`: điểm tối thiểu của đoạn; Meilisearch quy cosine về `(1 + cos) / 2` nên đoạn không liên quan vẫn được khoảng 0,5–0,7), `AI_CPU_MODELS` (`bge-m3`: mô hình phụ được giữ lại khi gỡ mô hình chính, ADR #52); `ai-worker` thêm `OCR_URL` (`http://ocr:8000`). Mô hình chỉ nạp khi có việc: `AI_KEEP_ALIVE` (`5m`, đặt cho `ollama`) và `OCR_IDLE_SECONDS` (`300`, đặt cho `ocr`) là thời gian nhàn rỗi trước khi gỡ. Ollama không truy cập được thì `ai_assistants` trả `ai_enabled = false`, trang `/i/assistant` hiện "Trợ lý AI chưa bật"; các đoạn chờ trong `search.pending_chunk` và được nạp bù khi bật.
 
 ### Chỉ mục đoạn
 
@@ -557,7 +557,7 @@ Giao diện ──ai_ask──▶ actions: kiểm tác tử, prompt_guard, che P
 
 ### Giới hạn
 
-Chạy CPU mất vài chục giây đến khoảng hai phút mỗi lượt (bản thinking của `qwen3:4b` luôn lập luận trước khi trả lời, phần này đã giới hạn 512 mảnh); một lượt một lúc nên người sau phải chờ. Hàng đợi chung cho mọi tenant (một mô hình), nên vị trí chờ người hỏi thấy gồm cả lượt của tenant khác (chỉ là con số, không lộ nội dung). Chỉ chạy một `ai-worker`. Mô hình 4B có thể trả lời thiếu ý hoặc trích sai số đoạn; smoke test `tools/ai_smoke.sh` dùng để kiểm bằng mắt. Chỉ lấy tài liệu thư viện đang hiệu lực, không lấy tệp chứng từ hay Ổ đĩa.
+Chạy CPU mất vài chục giây mỗi lượt, phần lớn là đọc ngữ cảnh (khoảng 6.000 token cho 6 đoạn); mô hình thinking nếu được chọn cho tác tử còn lập luận trước khi trả lời (giới hạn 512 mảnh); một lượt một lúc nên người sau phải chờ. Hàng đợi chung cho mọi tenant (một mô hình), nên vị trí chờ người hỏi thấy gồm cả lượt của tenant khác (chỉ là con số, không lộ nội dung). Chỉ chạy một `ai-worker`. Mô hình 4B có thể trả lời thiếu ý hoặc trích sai số đoạn; smoke test `tools/ai_smoke.sh` dùng để kiểm bằng mắt. Chỉ lấy tài liệu thư viện đang hiệu lực, không lấy tệp chứng từ hay Ổ đĩa.
 
 ```bash
 make up                                           # AI chạy cùng hệ thống, tự dùng GPU NVIDIA khi có
