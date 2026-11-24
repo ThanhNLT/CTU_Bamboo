@@ -131,7 +131,7 @@ def test_tham_so_buoc_ai():
         assert any(message in p for p in problems), (attrs, problems)
     xml, actions, problems = process_automation.automation_xml(ai_bpmn(ok), "auto_x_p")
     assert problems == [] and actions["danh_gia"]["agent"] == ok
-    assert 'flowable:topic="bamboo.ai"' in xml
+    assert f'flowable:topic="{process_automation.TOPIC_PREFIX}ai"' in xml
 
 
 def test_kiem_tac_tu_can_csdl(app_conn, conn, world):
