@@ -25,6 +25,10 @@
 #                            không in gì (stack giữ Ollama, OCR trong Docker).
 #   tools/mac/ai.sh down     dừng Ollama, OCR do script này dựng (không đụng Ollama.app người dùng tự mở)
 #   tools/mac/ai.sh status   Ollama, OCR trên máy có đang chạy không, chạy trên đâu
+#   tools/mac/ai.sh compose-file
+#                            in COMPOSE_FILE kèm infra/compose/mac.yml khi OCR (và Ollama) do `up` dựng đang chạy, không
+#                            in gì nếu không; Makefile dùng để mọi lệnh docker compose (test, migrate...) cùng cấu hình với
+#                            `make up`, không dựng lại sleeper mở cổng 11434, 8866 đang thuộc Ollama, OCR trên máy
 #
 # Docker trên macOS chạy trong máy ảo Linux, không cấp được GPU Apple cho container. `make up` gọi `up`, `make down`
 # gọi `down`. Dữ liệu (môi trường Python của OCR, mô hình OCR, log) nằm ở BAMBOO_MAC_DIR, mặc định
@@ -210,6 +214,16 @@ cmd_up() {
     echo "export OLLAMA_URL=\"http://host.docker.internal:11434\""
 }
 
+cmd_compose_file() {
+    apple_silicon || return 0
+    [ -n "$(ours ocr)" ] || return 0
+    [ -n "$(ours ollama)" ] || ollama_up || return 0
+    local files
+    files=$(setting COMPOSE_FILE compose.yaml)
+    case ":$files:" in *:infra/compose/mac.yml:*) ;; *) files="$files:infra/compose/mac.yml" ;; esac
+    echo "$files"
+}
+
 cmd_status() {
     if ollama_up; then
         say "Ollama: chạy ở $OLLAMA_ADDR$([ -n "$(ours ollama)" ] && echo " (do Bamboo dựng)")"
@@ -228,8 +242,9 @@ case "${1:-}" in
     up) cmd_up ;;
     down) stop ocr && stop ollama ;;
     status) cmd_status ;;
+    compose-file) cmd_compose_file ;;
     *)
-        say "Cách dùng: $0 up|down|status"
+        say "Cách dùng: $0 up|down|status|compose-file"
         exit 2
         ;;
 esac

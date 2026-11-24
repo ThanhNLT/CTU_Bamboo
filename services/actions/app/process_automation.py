@@ -28,6 +28,7 @@ giờ do chính Flowable kích hoạt, hoặc do người có quyền khởi ch�
 import hashlib
 import json
 import logging
+import os
 import re
 import secrets
 import threading
@@ -80,7 +81,10 @@ EVENTS = {
 }
 MAX_ACTIVE_PER_TENANT = 20
 MIN_TIMER_SECONDS = 60
-TOPIC_PREFIX = "bamboo."
+# Chủ đề việc ngoài (external worker) trên Flowable. Mọi flow-sync nối cùng một Flowable nhận việc theo chủ đề, nên
+# kiểm thử (actions-test, infra/compose/test.yml) đặt tiền tố riêng: flow-sync của stack đang chạy không nhận mất việc
+# của kiểm thử (nhận rồi báo "Quy trình tự động đã tắt" làm Flowable treo việc 30 giây).
+TOPIC_PREFIX = os.environ.get("AUTOMATION_TOPIC_PREFIX", "bamboo.")
 ALLOWED_NODES = {
     "startEvent",
     "endEvent",

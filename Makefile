@@ -43,6 +43,15 @@ DEMO_PASSWORD ?= demo-password
 PNPM ?= pnpm
 UV_LINT := uv run --frozen --only-group lint
 
+# Mac Apple Silicon, AI chạy trên máy (tools/mac/ai.sh, ADR #90): mọi lệnh docker compose dưới đây dùng cùng tệp compose
+# với `make up` (thêm infra/compose/mac.yml); thiếu nó, lệnh test dựng lại sleeper mở cổng 11434, 8866 đang thuộc Ollama,
+# OCR trên máy và hỏng.
+MAC_COMPOSE_FILE := $(shell tools/mac/ai.sh compose-file 2> /dev/null)
+ifneq ($(MAC_COMPOSE_FILE),)
+export COMPOSE_FILE := $(MAC_COMPOSE_FILE)
+export OLLAMA_URL := http://host.docker.internal:11434
+endif
+
 up:
 	native="$$(tools/mac/ai.sh up)" && eval "$$native" && profile="$$(tools/ram_profile.sh)" && eval "$$profile" \
 		&& docker compose up -d --build --remove-orphans
