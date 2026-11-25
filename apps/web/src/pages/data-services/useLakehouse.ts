@@ -131,7 +131,11 @@ export const useLakehouseDatasets = () => {
   useEffect(() => {
     let alive = true;
     const load = () => request<{ lakehouse_datasets: RawDataset[] }>(DATASETS);
-    waking(load, () => alive, () => setStarting(true))
+    waking(
+      load,
+      () => alive,
+      () => setStarting(true),
+    )
       .then((r) => alive && setDatasets(r.lakehouse_datasets.map(toDataset)))
       .catch((e: Status) => alive && setError({ statusCode: e.statusCode, message: e.message }))
       .finally(() => alive && setLoading(false));
@@ -153,7 +157,11 @@ export const useLakehousePreview = (name?: string) => {
     setPreview(undefined);
     setError(undefined);
     const load = () => request<{ lakehouse_preview: RawPreview }>(PREVIEW, { dataset: name });
-    waking(load, () => alive, () => undefined)
+    waking(
+      load,
+      () => alive,
+      () => undefined,
+    )
       .then(
         ({ lakehouse_preview: p }) => alive && setPreview({ totalRows: p.total_rows, rows: p.rows, masked: p.masked }),
       )
