@@ -38,6 +38,7 @@ const PREVIEW = `
 `;
 
 type RawDataset = { name: string; label: string; domain: string; columns: Array<{ name: string; type: string }> };
+type RawPreview = { total_rows: number; rows: Array<Record<string, unknown>>; masked: string[] };
 
 const COLUMN_NOTE: Record<string, string> = {
   id: tr("Khóa chính"),
@@ -96,16 +97,41 @@ const toDataset = (d: RawDataset): Dataset => {
   };
 };
 
-type Status = { statusCode?: number; message: string };
+type Status = { statusCode?: number; message: string; errors?: { code?: string } };
+
+// Trino nằm sau sleeper: lần gọi đầu sau khi nhàn rỗi phải chờ Trino khởi động và có thể quá thời gian chờ của action.
+// Gọi lại vài lần thay vì báo lỗi ngay; lỗi quyền, không tìm thấy, sai tham số là kết quả thật nên không gọi lại.
+const WAKE_RETRIES = 4;
+const WAKE_RETRY_MS = 5000;
+const FINAL_CODES = new Set(["unauthorized", "forbidden", "not-found", "bad-request"]);
+const FINAL_STATUS = new Set([401, 403, 404]);
+
+const isFinal = (e: Status) =>
+  FINAL_STATUS.has(e.statusCode ?? 0) || (!!e.errors?.code && FINAL_CODES.has(e.errors.code));
+
+async function waking<T>(call: () => Promise<T>, live: () => boolean, onRetry: () => void): Promise<T> {
+  for (let left = WAKE_RETRIES; ; left--) {
+    try {
+      return await call();
+    } catch (e) {
+      if (left <= 0 || !live() || isFinal(e as Status)) throw e;
+      onRetry();
+      await new Promise((resolve) => setTimeout(resolve, WAKE_RETRY_MS));
+      if (!live()) throw e;
+    }
+  }
+}
 
 export const useLakehouseDatasets = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
   const [error, setError] = useState<Status>();
 
   useEffect(() => {
     let alive = true;
-    request<{ lakehouse_datasets: RawDataset[] }>(DATASETS)
+    const load = () => request<{ lakehouse_datasets: RawDataset[] }>(DATASETS);
+    waking(load, () => alive, () => setStarting(true))
       .then((r) => alive && setDatasets(r.lakehouse_datasets.map(toDataset)))
       .catch((e: Status) => alive && setError({ statusCode: e.statusCode, message: e.message }))
       .finally(() => alive && setLoading(false));
@@ -114,7 +140,7 @@ export const useLakehouseDatasets = () => {
     };
   }, []);
 
-  return { datasets, loading, error };
+  return { datasets, loading, starting, error };
 };
 
 export const useLakehousePreview = (name?: string) => {
@@ -126,10 +152,8 @@ export const useLakehousePreview = (name?: string) => {
     let alive = true;
     setPreview(undefined);
     setError(undefined);
-    request<{ lakehouse_preview: { total_rows: number; rows: Array<Record<string, unknown>>; masked: string[] } }>(
-      PREVIEW,
-      { dataset: name },
-    )
+    const load = () => request<{ lakehouse_preview: RawPreview }>(PREVIEW, { dataset: name });
+    waking(load, () => alive, () => undefined)
       .then(
         ({ lakehouse_preview: p }) => alive && setPreview({ totalRows: p.total_rows, rows: p.rows, masked: p.masked }),
       )
