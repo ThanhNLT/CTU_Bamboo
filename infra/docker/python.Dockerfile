@@ -34,10 +34,14 @@ LABEL org.opencontainers.image.title="bamboo-python" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2
+RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 WORKDIR /repo/${APP_DIR}
+# Cài bằng uv (nhanh hơn pip nhiều lần, vẫn kiểm hash trong uv.lock); bộ đệm tải về nằm ở cache mount của BuildKit nên
+# dựng lại trên cùng máy không tải lại gói, và không nằm trong image.
 RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
     --mount=from=manifests,source=/ws,target=/ws \
-    set -eu; export UV_NO_CACHE=1; pkg="${PACKAGE:-bamboo-${APP_DIR##*/}}"; set --; \
+    --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+    set -eu; pkg="${PACKAGE:-bamboo-${APP_DIR##*/}}"; set --; \
     for g in ${DEP_GROUPS}; do set -- "$@" --group "$g"; done; \
     cd /ws; \
     uv export --frozen --package "$pkg" --no-dev "$@" --no-emit-workspace --no-header -o /tmp/req.txt; \
@@ -46,7 +50,7 @@ RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
       | { grep '^\./' || true; } > /opt/bamboo/workspace-deps.txt; \
     uv export --frozen --package "$pkg" --only-group dev --no-emit-workspace --no-hashes --no-header \
       -o /opt/bamboo/dev-pins.txt; \
-    pip install --no-cache-dir -r /tmp/req.txt; \
+    UV_LINK_MODE=copy uv pip install --system --require-hashes -r /tmp/req.txt; \
     rm /tmp/req.txt
 RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
     --mount=type=bind,source=packages,target=/ws/packages \
@@ -54,9 +58,8 @@ RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
     if [ -s /opt/bamboo/workspace-deps.txt ]; then \
       UV_NO_CACHE=1 uv pip install --system --offline --no-deps $(cat /opt/bamboo/workspace-deps.txt); \
     fi
-COPY ${APP_DIR}/app ./app
-RUN python -m compileall -q app
 COPY infra/platform /repo/infra/platform
 COPY services/seed/data /repo/services/seed/data
-RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
+COPY ${APP_DIR}/app ./app
+RUN python -m compileall -q app
 USER 10001
