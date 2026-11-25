@@ -27,6 +27,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ### Sửa lỗi
 
+- **Trang Dịch vụ dữ liệu báo "Không tải được danh mục" lần đầu sau khi Lakehouse nhàn rỗi, kiểm thử đầu–cuối `dich-vu-du-lieu.spec.ts` hỏng ngẫu nhiên (chỉ qua nhờ chạy lại trên CI, luôn hỏng khi chạy trên Mac, Windows vì không chạy lại):** Trino nằm sau sleeper, lần gọi đầu phải chờ Trino khởi động (sleeper chờ tới 180 giây) nhưng action `lakehouse_datasets` chỉ chờ 30 giây và trang không gọi lại. Thời gian chờ của `lakehouse_datasets`, `lakehouse_preview` nâng lên 90 giây; trang gọi lại tối đa 4 lần, cách 5 giây, khi lỗi không phải lỗi quyền, không tìm thấy, sai tham số, và báo "Lakehouse đang khởi động…" trong lúc chờ; kiểm thử chờ danh mục tới 180 giây.
 - **Kiểm thử bước AI của quy trình tự động hỏng ngẫu nhiên trên CI (`test_cong_re_nhanh_theo_danh_gia_cua_ai`):** kiểm thử và `flow-sync` của stack đang chạy dùng chung một Flowable, nhận việc cùng chủ đề `bamboo.*`; `flow-sync` thật nhận mất việc của kiểm thử, không thấy quy trình trong CSDL chính nên báo "Quy trình tự động đã tắt" và Flowable treo việc 30 giây, quá thời gian chờ của kiểm thử. Tiền tố chủ đề nay đọc từ `AUTOMATION_TOPIC_PREFIX` (mặc định `bamboo.`, quy trình đã phát hành không đổi); container `actions-test` dùng `bamboo-test.`.
 - **`make test-actions` (và các lệnh `make` khác) trên Mac khi AI chạy trên máy dựng lại `sleeper` mở cổng 8866 rồi hỏng:** Makefile dùng cùng `infra/compose/mac.yml` với `make up` khi `tools/mac/ai.sh compose-file` thấy Ollama, OCR trên máy đang chạy.
 

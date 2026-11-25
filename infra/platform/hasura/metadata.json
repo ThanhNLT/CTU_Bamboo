@@ -15677,7 +15677,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
-        "timeout": 30
+        "timeout": 90
       },
       "permissions": [
         {
@@ -15708,7 +15708,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
-        "timeout": 60
+        "timeout": 90
       },
       "permissions": [
         {
