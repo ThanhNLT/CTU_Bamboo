@@ -20,48 +20,85 @@
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
+import tempfile
 
 import yaml
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(os.environ.get("BAMBOO_ROOT") or pathlib.Path(__file__).resolve().parents[2]).resolve()
 TAG_VAR = "${BAMBOO_TAG:-dev}"
 PULL_VAR = "${BAMBOO_PULL_POLICY:-build}"
 DOCKER_SOCK = "/var/run/docker.sock"
 
 
-def build(version: str) -> dict:
+def compose_config() -> dict:
+    """Cấu hình compose chưa thay biến. Docker Compose kiểm schema cả khi --no-interpolate nên từ chối
+    `pull_policy: ${BAMBOO_PULL_POLICY:-build}`: đọc bản chép ở thư mục tạm, biến đó thay bằng `build`. Thư mục tạm
+    không có .env nên giá trị của máy dựng không lọt vào tệp phát hành."""
     compose = os.environ.get("DOCKER_COMPOSE", "docker compose").split()
-    raw = subprocess.run(
-        [*compose, "--profile", "scan", "config", "--no-interpolate", "--format", "json"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    spec = json.loads(raw)
-    services = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        for src in [ROOT / "compose.yaml", *sorted((ROOT / "infra/compose").glob("*.yml"))]:
+            dst = pathlib.Path(tmp) / src.relative_to(ROOT)
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src.read_text(encoding="utf-8").replace(PULL_VAR, "build"), encoding="utf-8")
+        raw = subprocess.run(
+            [*compose, "--profile", "scan", "config", "--no-interpolate", "--format", "json"],
+            cwd=tmp,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    # Đường dẫn bind mount trỏ vào thư mục tạm (macOS: /var là liên kết tới /private/var): trả về đường trong kho mã.
+    for prefix in sorted({os.path.realpath(tmp), tmp}, key=len, reverse=True):
+        raw = raw.replace(json.dumps(prefix)[1:-1], json.dumps(str(ROOT))[1:-1])
+    return json.loads(raw)
+
+
+def build(version: str) -> dict:
+    spec = compose_config()
+    services, configs = {}, {}
     for name, svc in spec["services"].items():
         if "test" in svc.get("profiles", []):
             continue
-        svc.pop("build", None)
-        if svc.get("pull_policy") == PULL_VAR:
+        if svc.pop("build", None) is not None and svc.get("pull_policy") == "build":
             svc["pull_policy"] = "${BAMBOO_PULL_POLICY:-missing}"
         svc["image"] = svc["image"].replace(TAG_VAR, "${BAMBOO_TAG:-%s}" % version)
-        binds = [
-            v.get("source")
-            for v in svc.get("volumes", [])
-            if v.get("type") == "bind" and v.get("source") != DOCKER_SOCK
-        ]
-        if binds:
-            raise SystemExit(f"Dịch vụ {name} còn bind mount {binds}: đóng gói vào image trước khi phát hành")
+        inline_binds(name, svc, configs)
         for dep in list(svc.get("depends_on", {})):
             if "test" in spec["services"].get(dep, {}).get("profiles", []):
                 del svc["depends_on"][dep]
         services[name] = svc
     volumes = {k: {} for k in spec.get("volumes", {})}
-    return {"name": spec.get("name", "bamboo"), "services": services, "volumes": volumes}
+    out = {"name": spec.get("name", "bamboo"), "services": services, "volumes": volumes}
+    if configs:
+        out["configs"] = configs
+    return out
+
+
+def inline_binds(name: str, svc: dict, configs: dict) -> None:
+    """Tệp cấu hình gắn từ kho mã (bind mount, ví dụ Prometheus, Grafana) thành `configs` có nội dung viết thẳng trong
+    tệp phát hành, để chạy không cần mã nguồn. Compose thay biến trong `content`, nên `$` viết thành `$$`."""
+    keep, mounts = [], []
+    for vol in svc.get("volumes", []):
+        if vol.get("type") != "bind" or vol.get("source") == DOCKER_SOCK:
+            keep.append(vol)
+            continue
+        src = pathlib.Path(vol["source"])
+        if not src.is_relative_to(ROOT) or not src.exists():
+            raise SystemExit(f"Dịch vụ {name} gắn {src} nằm ngoài kho mã: đóng gói vào image trước khi phát hành")
+        files = [src] if src.is_file() else sorted(p for p in src.rglob("*") if p.is_file() and p.name[0] != ".")
+        for f in files:
+            key = re.sub(r"[^A-Za-z0-9]+", "-", f"{name}-{f.relative_to(ROOT)}").strip("-")
+            configs[key] = {"content": f.read_text(encoding="utf-8").replace("$", "$$")}
+            target = vol["target"] if f == src else f"{vol['target']}/{f.relative_to(src).as_posix()}"
+            mounts.append({"source": key, "target": target})
+    if mounts:
+        svc["volumes"] = keep
+        if not keep:
+            del svc["volumes"]
+        svc["configs"] = [*svc.get("configs", []), *mounts]
 
 
 def main() -> None:

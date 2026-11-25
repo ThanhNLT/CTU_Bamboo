@@ -101,7 +101,8 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 ### Các phiên bản đã phát hành
 
 Bản phát hành ở [GitHub Releases](https://github.com/CTUBamboo/Bamboo/releases), mỗi bản gồm mã nguồn `bamboo-<phiên bản>.tar.gz`
-và `SHA256SUMS`; bản 0.1.0–0.3.0 có thêm `compose.release.yml` và image dựng sẵn trên GitHub Container Registry. Định dạng
+và `SHA256SUMS`; bản 0.1.0–0.3.0 và từ 0.5.2 có thêm `compose.release.yml` và image dựng sẵn (amd64, arm64) trên GitHub
+Container Registry. Định dạng
 phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗi bản).
 
 | Phiên bản | Ngày | Nội dung chính |
@@ -337,10 +338,11 @@ một tài khoản ở mục [Cơ sở dữ liệu demo](#cơ-sở-dữ-liệu-d
   HTTPS, `BAMBOO_ENV=production`, sao lưu, nâng cấp): [Triển khai production](docs/van-hanh/trien-khai.md).
 
 **Chạy bằng image dựng sẵn**, không cần mã nguồn (Docker Compose 2.40.2+; kho và gói GHCR phải ở chế độ công khai). Image dựng sẵn
-hiện có tới bản 0.3.0; bản 0.4.0–0.5.2 chạy từ mã nguồn bằng lệnh ở trên.
+có cho bản 0.1.0–0.3.0 và từ 0.5.2 (amd64 và arm64, Mac Apple Silicon chạy native); bản 0.4.0–0.5.1 chạy từ mã nguồn bằng lệnh
+ở trên.
 
 ```bash
-docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y
+docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.5.2 up -d -y
 ```
 
 Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -f compose.release.yml up -d`.
