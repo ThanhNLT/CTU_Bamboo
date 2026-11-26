@@ -847,7 +847,7 @@ mosquitto_pub -h localhost -p 1883 -u <tài khoản> -P <mật khẩu> -t bamboo
 
 | Service | Profile | Việc |
 |---|---|---|
-| `otel-collector` | `observability` | OTLP gRPC 4317 / HTTP 4318 → Jaeger; số liệu của chính nó ở `:8888` |
+| `otel-collector` | `observability` | OTLP gRPC 4317 / HTTP 4318 → Jaeger; nhận span của `gateway` (APISIX, dịch vụ `bamboo-gateway`) và `actions`; số liệu của chính nó ở `:8888` |
 | `jaeger` | `observability` | Lưu span trong bộ nhớ, giao diện `127.0.0.1:16686` |
 | `prometheus` | `observability` | Thu `actions:8000/metrics`, `gateway:9091/apisix/prometheus/metrics`, `keycloak:9000/metrics`, `otel-collector:8888`; luật cảnh báo `infra/platform/observability/alerts.yml`; `127.0.0.1:9090` |
 | `grafana` | `observability` | Nguồn Prometheus + Jaeger, bảng điều khiển **Bamboo tổng quan** (`infra/platform/observability/grafana/`); `127.0.0.1:3001`, tài khoản `admin` / `GRAFANA_ADMIN_PASSWORD` |
