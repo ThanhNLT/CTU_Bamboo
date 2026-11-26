@@ -4,7 +4,7 @@
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
- * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ * @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8000",
     locale: "vi-VN",
+    // Máy chủ tính "hôm nay" theo giờ Việt Nam (ví dụ ngày hiệu lực quyết định nhân sự); runner CI chạy giờ UTC.
+    timezoneId: "Asia/Ho_Chi_Minh",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

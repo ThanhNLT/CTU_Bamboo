@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Hỏi đáp và trao đổi
-    url: https://github.com/CTUBamboo/Bamboo/discussions
+    url: https://github.com/ThanhNLT/CTU_Bamboo/discussions
     about: Câu hỏi về cài đặt, cách dùng và ý tưởng chưa thành đề xuất cụ thể
   - name: Báo lỗ hổng bảo mật
-    url: https://github.com/CTUBamboo/Bamboo/security/advisories/new
+    url: https://github.com/ThanhNLT/CTU_Bamboo/security/advisories/new
     about: Không báo lỗ hổng qua issue công khai; xem SECURITY.md
