@@ -34,6 +34,12 @@ LABEL org.opencontainers.image.title="bamboo-python" \
       org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2
+# Gói hệ thống riêng của từng image (actions: softhsm2, token PKCS#11 bằng phần mềm cho ký số văn bản, app.org_sign).
+ARG APT_PACKAGES=
+RUN if [ -n "$APT_PACKAGES" ]; then \
+      apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $APT_PACKAGES \
+      && rm -rf /var/lib/apt/lists/*; \
+    fi
 WORKDIR /repo/${APP_DIR}
 RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
     --mount=from=manifests,source=/ws,target=/ws \

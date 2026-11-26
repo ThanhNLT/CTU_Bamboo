@@ -81,7 +81,8 @@ boto3, botocore, s3transfer, jmespath, python-dateutil, six, urllib3   Apache-2.
 Pillow (CDR ảnh)                                            MIT-CMU
 pypdf (CDR PDF)                                             BSD-3-Clause
 pypdfium2 (kèm PDFium, dựng ảnh trang PDF)                  BSD-3-Clause, Apache-2.0
-pyHanko, pyhanko-certvalidator, asn1crypto, oscrypto, uritools, tzlocal (xác minh chữ ký số PDF)  MIT
+pyHanko, pyhanko-certvalidator, asn1crypto, oscrypto, uritools, tzlocal (xác minh, ký số PDF)  MIT
+python-pkcs11 (ký số qua HSM PKCS#11)                       MIT
 lxml                                                        BSD-3-Clause
 aiohttp, aiosignal, frozenlist, multidict, yarl, propcache  Apache-2.0 (aiohttp: Apache-2.0 AND MIT)
 aiohappyeyeballs                                            PSF-2.0
