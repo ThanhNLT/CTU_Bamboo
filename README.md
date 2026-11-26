@@ -194,8 +194,8 @@ Danh sách đầy đủ thư viện Python, JavaScript và giấy phép: [NOTICE
 
 Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp theo:
 
-- **Bảo mật:** mTLS cho kết nối tới PostgreSQL, Kafka, SeaweedFS; ký số bằng chứng thư công cộng và HSM (cần thiết bị
-  hoặc dịch vụ ký số từ xa của CA).
+- **Bảo mật:** mTLS cho kết nối tới PostgreSQL, Kafka, SeaweedFS; ký số theo từng pháp nhân khi một cài đặt có
+  nhiều công ty khác mã số thuế.
 - **Vận hành:** chuyển sang Kubernetes (k3s) và Argo CD.
 - **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; dịch thông báo
   lỗi do máy chủ trả về sang tiếng Anh.
