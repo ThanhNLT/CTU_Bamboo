@@ -20,13 +20,14 @@
 """Số liệu Prometheus và truy vết OpenTelemetry (ADR #75)."""
 
 import http.server
+import json
 import threading
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app import config, main, telemetry
-from conftest import SETTINGS, TEST_APP_DB_URL
+from conftest import ROOT, SETTINGS, TEST_APP_DB_URL
 
 
 @pytest.fixture
@@ -85,9 +86,20 @@ def test_truy_vet_otlp_gan_ma_yeu_cau(database, monkeypatch):
     with TestClient(main.create_app(settings)) as c:
         r = c.get("/modules/services", headers={"x-request-id": "req-abc-123"})
         assert r.status_code == 200 and len(r.headers["x-trace-id"]) == 32
+        # Cổng API (plugin opentelemetry) gắn traceparent; Hasura chuyển tiếp nó: span của actions nằm trong trace đó.
+        gateway_trace = "4bf92f3577b34da6a3ce929d0e0e4736"
+        r = c.get("/modules/services", headers={"traceparent": f"00-{gateway_trace}-00f067aa0ba902b7-01"})
+        assert r.headers["x-trace-id"] == gateway_trace
         trace.get_tracer_provider().force_flush()
     server.shutdown()
     body = b"".join(_Collector.received)
     assert b"bamboo-actions-test" in body, "resource service.name"
     assert b"req-abc-123" in body, "span gắn X-Request-Id của cổng API"
     assert b"/modules/services" in body and b"SELECT" in body, "span HTTP và span SQL con"
+
+
+def test_hasura_chuyen_tiep_traceparent_cho_actions():
+    """Mọi Action chuyển tiếp header của client (gồm traceparent cổng API gắn) để trace nối cổng → Hasura → actions."""
+    metadata = json.loads((ROOT / "infra/platform/hasura/metadata.json").read_text(encoding="utf-8"))
+    actions = metadata["metadata"]["actions"] if "metadata" in metadata else metadata["actions"]
+    assert actions and all(a["definition"].get("forward_client_headers") is True for a in actions)

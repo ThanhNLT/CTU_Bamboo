@@ -423,6 +423,7 @@ services:
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-gateway:${BAMBOO_TAG:-dev}
     environment:
       APISIX_WORKER_PROCESSES: ${GATEWAY_WORKERS:-2}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       web:
         condition: service_started
