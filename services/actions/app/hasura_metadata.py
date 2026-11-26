@@ -1626,10 +1626,11 @@ def build(conn: psycopg.Connection) -> dict:
             _action(
                 "search_documents",
                 "query",
-                [("query", "String!"), ("kind", "SearchKind"), ("limit", "Int"), ("offset", "Int")],
+                [("query", "String!"), ("kind", "SearchKind"), ("mode", "String"), ("limit", "Int"), ("offset", "Int")],
                 "[SearchHit!]!",
                 [ROLE, ADMIN_ROLE],
-                "Tìm toàn văn đề nghị mua sắm và nội dung tệp đính kèm, chỉ trả chứng từ người gọi xem được (ADR #36)",
+                "Tìm toàn văn đề nghị mua sắm và nội dung tệp đính kèm, bổ sung kết quả gần về ý nghĩa, chỉ trả chứng từ "
+                "người gọi xem được (ADR #36, #92)",
                 timeout=15,
             ),
             _action(
@@ -2418,6 +2419,7 @@ def build(conn: psycopg.Connection) -> dict:
                         {"name": "matched_field", "type": "String"},
                         {"name": "snippet", "type": "String!"},
                         {"name": "score", "type": "Float!"},
+                        {"name": "semantic_score", "type": "Float"},
                     ],
                     "relationships": [
                         {
