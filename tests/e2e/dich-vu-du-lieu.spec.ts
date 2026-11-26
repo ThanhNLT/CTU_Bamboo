@@ -4,7 +4,7 @@
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
- * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ * @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,18 @@ async function login(page: Page, username: string) {
   await expect(page.getByText("Tập đoàn X").first()).toBeVisible();
 }
 
+// Trino nằm sau sleeper: lần đầu sau khi nhàn rỗi phải chờ khởi động (Docker Desktop trên Mac, Windows chậm hơn CI),
+// trang tự gọi lại nên chờ danh mục lâu hơn thời gian chờ mặc định.
+const LAKEHOUSE_WAKE = 180_000;
+
 test("CDO xem tập dữ liệu Lakehouse và dữ liệu mẫu đã che", async ({ page }) => {
+  test.setTimeout(LAKEHOUSE_WAKE + 120_000);
   await login(page, "cdo");
   await page.goto("/d/services");
   await expect(page.getByRole("heading", { name: "Dịch vụ dữ liệu" })).toBeVisible();
 
   const list = page.getByRole("list", { name: "Tập dữ liệu" });
-  await expect(list.getByRole("button", { name: /^Đề nghị mua sắm/ })).toBeVisible({ timeout: 30_000 });
+  await expect(list.getByRole("button", { name: /^Đề nghị mua sắm/ })).toBeVisible({ timeout: LAKEHOUSE_WAKE });
   await expect(list.getByText("lakehouse.silver.core_permission")).toHaveCount(0);
 
   await page
