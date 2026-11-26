@@ -58,7 +58,7 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
 
   await login(page, "tp.muahang.dienthoai");
   await page.goto("/");
-  await page.getByText("Lịch", { exact: true }).click();
+  await page.getByRole("main").getByTitle("Lịch", { exact: true }).click();
   await page
     .getByRole("link", { name: new RegExp(TITLE) })
     .first()
