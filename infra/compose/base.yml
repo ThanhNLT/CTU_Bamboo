@@ -62,7 +62,7 @@ services:
       TRINO_URL: https://trino:8443
       TRINO_CA_FILE: /run/bms/trino-ca.pem
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
-      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
       AI_MIN_SCORE: ${AI_MIN_SCORE:-0.7}
       AI_STEP_TIMEOUT: ${AI_STEP_TIMEOUT:-600}
