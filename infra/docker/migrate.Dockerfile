@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
 FROM postgres:17
 LABEL org.opencontainers.image.title="bamboo-migrate" \
       org.opencontainers.image.description="Bamboo: migration, kiểm thử CSDL và sao lưu theo lịch" \
-      org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
-      org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
+      org.opencontainers.image.source="https://github.com/ThanhNLT/CTU_Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/ThanhNLT/CTU_Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 COPY db /repo/db
 COPY tools/db /repo/tools/db

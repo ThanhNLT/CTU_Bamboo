@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ Khi chuyển sang k3s, cấu hình đặt ở đây, tách theo cùng nhóm vớ
 
 | Thư mục dự kiến | Nội dung |
 |---|---|
-| `base/` | Kustomize cho từng nhóm dịch vụ (core, data, ai, scan), dùng chung image `ghcr.io/ctubamboo/bamboo-*` |
+| `base/` | Kustomize cho từng nhóm dịch vụ (core, data, ai, scan), dùng chung image `ghcr.io/thanhnlt/bamboo-*` |
 | `overlays/<môi-trường>/` | Khác biệt theo môi trường (tài nguyên, tên miền, số bản sao) |
 | `argocd/` | Ứng dụng ArgoCD trỏ vào overlay; Git là nguồn duy nhất, như cấu hình cổng APISIX standalone (ADR #34) |
 

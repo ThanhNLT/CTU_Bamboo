@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -64,14 +64,14 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 
 | Tiêu chí | Đáp ứng trong kho mã |
 |---|---|
-| Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `CTUBamboo/Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
+| Kho mã trên Internet, có web viewer, thực sự được dùng | GitHub `ThanhNLT/CTU_Bamboo`: lịch sử commit, pull request, nhánh tính năng. Kho phải ở chế độ công khai trước khi BTC chấm |
 | Giấy phép OSI ghi trong từng tệp mã | Header dự án ở đầu mỗi tệp (`@license Apache-2.0` kèm thông báo giấy phép Apache-2.0, gắn bằng `tools/header.py` từ `docs/Header.txt`); `REUSE.toml` khai báo giấy phép toàn kho theo chuẩn REUSE 3.3, kể cả tệp không ghi được header; tệp dữ liệu, cấu hình không chứa được chú thích có tệp `<tên>.license` đi kèm; kiểm bằng `reuse lint` |
 | Không có giấy phép không tương thích | Mã của dự án Apache-2.0; thành phần bên thứ ba và giấy phép liệt kê trong `NOTICE` |
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |
-| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` (bản 0.1.0–0.3.0 và từ 0.5.2 có thêm `compose.release.yml` và image dựng sẵn amd64, arm64 trên GHCR); [CHANGELOG](https://github.com/CTUBamboo/Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
+| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` (bản 0.1.0–0.3.0 và từ 0.5.2 có thêm `compose.release.yml` và image dựng sẵn amd64, arm64 trên GHCR); [CHANGELOG](https://github.com/ThanhNLT/CTU_Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
 | Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | [Dịch và cài đặt từ mã nguồn](../van-hanh/dich-tu-ma-nguon.md): `make up` (Docker Compose) hoặc `make build && make install` (GNU Make, uv, pnpm); cấu hình bằng biến trên dòng lệnh, `config.mk` hoặc `.env`, không sửa tệp mã; `make help` in các tùy chọn |
-| Chạy được ngoài thư mục mã nguồn | `make install PREFIX=...` cài dịch vụ, giao diện, migration ra ngoài thư mục mã, chạy bằng lệnh `bamboo`; với Docker, mã và cấu hình nằm trong image, `make release-compose` sinh `compose.release.yml` chạy từ thư mục bất kỳ (image dựng sẵn trên GHCR cho bản 0.1.0–0.3.0 và từ 0.5.2: `docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.5.2 up -d -y`) |
+| Chạy được ngoài thư mục mã nguồn | `make install PREFIX=...` cài dịch vụ, giao diện, migration ra ngoài thư mục mã, chạy bằng lệnh `bamboo`; với Docker, mã và cấu hình nằm trong image, `make release-compose` sinh `compose.release.yml` chạy từ thư mục bất kỳ (image dựng sẵn trên GHCR cho bản 0.1.0–0.3.0 và từ 0.5.2: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.5.2 up -d -y`) |
 | Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`uv.lock`, `pnpm-lock.yaml`); dịch vụ dùng image chính thức của upstream, không vá mã |
 | Bug tracker, changelog, readme | GitHub Issues (có mẫu báo lỗi, đề xuất), GitHub Discussions, `CHANGELOG.md`, `README.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`, tài liệu Sphinx (`make -C docs html`) |
 
