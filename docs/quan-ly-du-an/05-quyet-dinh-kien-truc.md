@@ -118,6 +118,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [89](#adr-89) | 17/11/2026 | Trợ lý trả lời đúng điều được hỏi, bằng ngôn ngữ của câu hỏi; lập luận của mô hình không nằm trong câu trả lời và có giới hạn |
 | [90](#adr-90) | 18/11/2026 | AI tự chọn nơi chạy: GPU NVIDIA, GPU Apple (Metal) trên Mac, CPU khi đủ RAM, tắt khi thiếu RAM |
 | [91](#adr-91) | 18/11/2026 | Mac Apple Silicon tiết kiệm tài nguyên: CSDL và ClamAV bản arm64, OCR trên máy trả bộ nhớ khi nhàn rỗi |
+| [95](#adr-95) | 26/11/2026 | Kubernetes (k3s) và Argo CD: manifest Kustomize sinh từ cấu hình compose, CI dựng thử trên cụm k3s tạm |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -999,6 +1000,26 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Trên Mac Apple Silicon, container amd64 chạy qua Rosetta (hoặc QEMU nếu tắt Rosetta): CSDL, dịch vụ được dùng liên tục, tốn thêm CPU, RAM và chậm hơn nhiều so với bản native; ClamAV nạp cơ sở dữ liệu chữ ký khoảng 1 GB vào RAM nên giả lập càng tốn. Bộ nhớ hợp nhất của Mac dùng chung cho CPU, GPU và máy ảo Docker, nên bộ nhớ OCR giữ lại sau khi gỡ mô hình hay page cache của trọng số đều lấy chỗ của mô hình Ollama trên GPU.
 - **Đã loại:** Tự dựng image PostGIS từ `postgres:17-bookworm` (phải ghim đúng bản PostGIS 3.5 trong kho apt.postgresql.org, kho chỉ giữ bản mới nhất); đổi image CSDL cho mọi kiến trúc (máy amd64 không lợi gì, đổi nhà phát hành image không cần thiết); bản alpine của PostGIS (không có arm64); tệp compose bổ sung `arm64.yml` (không đi theo `compose.release.yml`, người chạy bản phát hành trên Mac vẫn bị giả lập).
 - **Giới hạn hiện tại:** Chưa chạy thử trên Mac thật. CSDL đã tạo khi còn chạy giả lập amd64 được mở bằng bản arm64 (cùng PostgreSQL 17, cùng Debian bookworm, x86-64 và arm64 cùng căn chỉnh 8 byte nên PostgreSQL nhận được); nếu `db` không khởi động, sao lưu bằng `pg_dump` trên bản cũ rồi nạp lại. `docker compose …` gõ tay không qua `make up` thì phải đặt ba biến trên trong `.env`. RAM của máy ảo Docker Desktop không tự co lại: đặt mức cấp trong Docker Desktop.
+
+(adr-95)=
+## ADR #95: Kubernetes (k3s) và Argo CD: manifest Kustomize sinh từ cấu hình compose, CI dựng thử trên cụm k3s tạm
+
+- **Ngày:** 26/11/2026
+- **Quyết định:** `tools/k8s/generate.py` sinh `infra/k8s/base` (mỗi dịch vụ một Deployment hoặc Job, Service, PVC,
+  ConfigMap) và `infra/k8s/components/<nhóm>` từ cấu hình compose đã qua `tools/release/compose_release.py`; biến
+  `${TÊN:-mặc định}` đọc từ Secret `bamboo-settings`, `depends_on` thành init container chờ Job xong hoặc Service sẵn sàng.
+  Overlay `ci` (image dựng tại chỗ, Secret từ mặc định của dev, bỏ dịch vụ nặng) và `production` (image GHCR, Ingress,
+  Secret tạo ngoài Git); `infra/k8s/argocd/application.yaml` cho Argo CD tự đồng bộ overlay production từ `main` (prune,
+  selfHeal). Workflow `Kubernetes` kiểm manifest khớp compose, schema (kubeconform), dựng phần lõi trên cụm k3s tạm (k3d)
+  và chạy `tools/ci/gateway-smoke.sh` qua cổng API. Compose vẫn là cách chạy chính, `reconcile.sh` (ADR #83) giữ nguyên.
+- **Lý do:** Một nguồn cấu hình cho cả hai cách chạy, không phải giữ hai bộ tay đồng bộ với nhau; k3s chạy được trên
+  một máy như compose, Argo CD cho GitOps đúng nghĩa (kéo từ Git, tự sửa lệch, xem lịch sử đồng bộ).
+- **Đã loại:** Helm chart viết tay (hai bộ cấu hình); kompose (không xử lý `depends_on`, cấu hình gắn từ kho mã, biến
+  mặc định); chuyển hẳn sang Kubernetes ngay (sleeper, Vector cần Docker API, máy 8 GB khó gánh thêm control plane).
+- **Giới hạn hiện tại:** Một node (PVC `ReadWriteOnce` dùng chung); không có sleeper nên dịch vụ nặng chạy thường trực;
+  chưa có mTLS trong cụm (dùng service mesh), chưa có External Secrets từ OpenBao (Secret tạo tay hoặc công cụ ngoài);
+  Job (`migrate`, `bootstrap`) chạy lại khi Argo CD thay bằng bản mới (`Replace=true`), chưa có sync wave; CI chỉ dựng
+  phần lõi (không AI, OCR, Trino, Kafka, IoT).
 
 (adr-mau)=
 ## Mẫu cho quyết định mới

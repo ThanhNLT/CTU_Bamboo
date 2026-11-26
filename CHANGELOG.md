@@ -27,6 +27,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ### Thay đổi
 
+- **Kubernetes (k3s) và Argo CD:** `tools/k8s/generate.py` sinh manifest Kustomize (`infra/k8s/base`, nhóm tùy chọn ở `components/`) từ cấu hình compose; overlay `ci` và `production`, Application của Argo CD tự đồng bộ từ `main`. Workflow `Kubernetes` kiểm manifest khớp compose, đúng schema và dựng phần lõi trên cụm k3s tạm rồi chạy kiểm thử cổng API (ADR #95). Compose vẫn là cách chạy chính.
 - **Image dựng sẵn trên GHCR trở lại, từ bản 0.5.2:** workflow `Images` dựng 13 image (thêm `bamboo-ocr`, trước đây thiếu) cho `linux/amd64` và `linux/arm64` khi đẩy thẻ `v*`, phát hành compose dạng OCI artifact (`docker compose -f oci://ghcr.io/ctubamboo/bamboo:<phiên bản> up -d -y`) và gắn `compose.release.yml` vào GitHub Release; chạy tay với `ref` là thẻ cũ để dựng lại image cho bản đó. Pull request đổi Dockerfile, lockfile hay compose chỉ dựng thử bản amd64, không đẩy; đẩy lên `main` không còn dựng lại 13 image hai kiến trúc. Bước chạy thử sau khi phát hành chỉ kiểm hệ thống lên được và cổng API (kiểm thử giao diện chạy ở workflow CI trên mã nguồn).
 - **Dựng image nhanh hơn:** image Python và OCR cài gói bằng `uv` thay cho `pip` (vẫn kiểm hash theo `uv.lock`), có bộ đệm tải về của BuildKit nên `make up` dựng lại không tải lại gói; image Python, OCR, sleeper có `.dockerignore` riêng chỉ gửi những thư mục cần dùng, không còn gửi `node_modules` (khoảng 500 MB), `.venv`, `backups` của máy dựng vào build context.
 

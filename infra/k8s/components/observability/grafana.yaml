@@ -1,0 +1,125 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: bamboo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: grafana
+        app.kubernetes.io/part-of: bamboo
+    spec:
+      serviceAccountName: bamboo
+      enableServiceLinks: false
+      containers:
+      - name: grafana
+        image: grafana/grafana-oss:13.0.1
+        env:
+        - name: _BAMBOO_GRAFANA_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: GRAFANA_ADMIN_PASSWORD
+              optional: true
+        - name: GF_ANALYTICS_CHECK_FOR_UPDATES
+          value: 'false'
+        - name: GF_ANALYTICS_REPORTING_ENABLED
+          value: 'false'
+        - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
+          value: /var/lib/grafana/dashboards/bamboo.json
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: $(_BAMBOO_GRAFANA_ADMIN_PASSWORD)
+        - name: GF_SECURITY_ADMIN_USER
+          value: admin
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: 'false'
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: grafana-data
+          mountPath: /var/lib/grafana
+          readOnly: false
+        - name: grafana-infra-platform-observability-grafana-provisioning-dashb
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+          subPath: content
+          readOnly: true
+        - name: grafana-infra-platform-observability-grafana-provisioning-datas
+          mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+          subPath: content
+          readOnly: true
+        - name: grafana-infra-platform-observability-grafana-dashboards-bamboo
+          mountPath: /var/lib/grafana/dashboards/bamboo.json
+          subPath: content
+          readOnly: true
+        resources:
+          limits:
+            memory: 256Mi
+      initContainers:
+      - name: wait-jaeger
+        image: busybox:1.37.0
+        command:
+        - sh
+        - -c
+        - until nc -z -w 2 jaeger 16686; do sleep 2; done
+      - name: wait-prometheus
+        image: busybox:1.37.0
+        command:
+        - sh
+        - -c
+        - until nc -z -w 2 prometheus 9090; do sleep 2; done
+      volumes:
+      - name: grafana-data
+        persistentVolumeClaim:
+          claimName: grafana-data
+      - name: grafana-infra-platform-observability-grafana-provisioning-dashb
+        configMap:
+          name: grafana-infra-platform-observability-grafana-provisioning-dashb
+      - name: grafana-infra-platform-observability-grafana-provisioning-datas
+        configMap:
+          name: grafana-infra-platform-observability-grafana-provisioning-datas
+      - name: grafana-infra-platform-observability-grafana-dashboards-bamboo
+        configMap:
+          name: grafana-infra-platform-observability-grafana-dashboards-bamboo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app.kubernetes.io/part-of: bamboo
+spec:
+  selector:
+    app.kubernetes.io/name: grafana
+  ports:
+  - name: p3000
+    port: 3000
+    targetPort: 3000

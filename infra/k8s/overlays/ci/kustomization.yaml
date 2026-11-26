@@ -1,0 +1,136 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Cụm k3s thử (CI, máy dev với k3d): image dựng tại chỗ thẻ dev, Secret bamboo-settings từ giá trị mặc định của dev
+# (settings.env, sinh bằng tools/k8s/generate.py), bỏ các dịch vụ nặng không cần cho kiểm thử cổng API.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bamboo
+resources:
+  - ../../base
+  - namespace.yaml
+secretGenerator:
+  - name: bamboo-settings
+    envs: [settings.env]
+    options:
+      disableNameSuffixHash: true
+images:
+  - name: ghcr.io/ctubamboo/bamboo-actions
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-lakehouse
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-seed
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-migrate
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-ocr
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-web
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-keycloak
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-openbao
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-gateway
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-trino
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-kafka
+    newTag: dev
+  - name: ghcr.io/ctubamboo/bamboo-mosquitto
+    newTag: dev
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ollama-core
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ocr-core
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ai-worker
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: trino-core
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kafka
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: debezium
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: lakehouse-sink
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: iot-bridge
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: mosquitto
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: backup
+  - patch: |-
+      $patch: delete
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: ollama-init
+  - patch: |-
+      $patch: delete
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: ocr-init
+  - patch: |-
+      $patch: delete
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: trino-init
