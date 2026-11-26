@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ services:
       args:
         APP_DIR: services/actions
         APT_PACKAGES: softhsm2
-    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-actions:${BAMBOO_TAG:-dev}
+    image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-actions:${BAMBOO_TAG:-dev}
     environment:
       BAMBOO_ENV: ${BAMBOO_ENV:-development}
       MALLOC_ARENA_MAX: "2"

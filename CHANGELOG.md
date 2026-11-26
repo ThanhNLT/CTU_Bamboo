@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,9 +25,14 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+**Kho mã chuyển sang [ThanhNLT/CTU_Bamboo](https://github.com/ThanhNLT/CTU_Bamboo)** (26/11/2026, tài khoản CTUBamboo bị GitHub tạm khóa): toàn bộ lịch sử commit, nhánh và thẻ phiên bản giữ nguyên; image dựng sẵn chuyển sang `ghcr.io/thanhnlt/bamboo-*`. Pull request, issue và image cũ còn ở `CTUBamboo/Bamboo`, chưa truy cập được. Máy đã clone kho cũ: `git remote set-url origin https://github.com/ThanhNLT/CTU_Bamboo.git`.
+
+### Sửa lỗi
+
+- **Trang Dịch vụ dữ liệu báo "Không tải được danh mục" lần đầu sau khi Lakehouse nhàn rỗi, kiểm thử đầu–cuối `dich-vu-du-lieu.spec.ts` hỏng ngẫu nhiên (chỉ qua nhờ chạy lại trên CI, luôn hỏng khi chạy trên Mac, Windows vì không chạy lại):** Trino nằm sau sleeper, lần gọi đầu phải chờ Trino khởi động (sleeper chờ tới 180 giây) nhưng action `lakehouse_datasets` chỉ chờ 30 giây và trang không gọi lại. Thời gian chờ của `lakehouse_datasets`, `lakehouse_preview` nâng lên 90 giây; trang gọi lại tối đa 4 lần, cách 5 giây, khi lỗi không phải lỗi quyền, không tìm thấy, sai tham số, và báo "Lakehouse đang khởi động…" trong lúc chờ; kiểm thử chờ danh mục tới 180 giây.
 ### Thay đổi
 
-- **Image dựng sẵn trên GHCR trở lại, từ bản 0.5.2:** workflow `Images` dựng 13 image (thêm `bamboo-ocr`, trước đây thiếu) cho `linux/amd64` và `linux/arm64` khi đẩy thẻ `v*`, phát hành compose dạng OCI artifact (`docker compose -f oci://ghcr.io/ctubamboo/bamboo:<phiên bản> up -d -y`) và gắn `compose.release.yml` vào GitHub Release; chạy tay với `ref` là thẻ cũ để dựng lại image cho bản đó. Pull request đổi Dockerfile, lockfile hay compose chỉ dựng thử bản amd64, không đẩy; đẩy lên `main` không còn dựng lại 13 image hai kiến trúc. Bước chạy thử sau khi phát hành chỉ kiểm hệ thống lên được và cổng API (kiểm thử giao diện chạy ở workflow CI trên mã nguồn).
+- **Image dựng sẵn trên GHCR trở lại, từ bản 0.5.2:** workflow `Images` dựng 13 image (thêm `bamboo-ocr`, trước đây thiếu) cho `linux/amd64` và `linux/arm64` khi đẩy thẻ `v*`, phát hành compose dạng OCI artifact (`docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y`) và gắn `compose.release.yml` vào GitHub Release; chạy tay với `ref` là thẻ cũ để dựng lại image cho bản đó. Pull request đổi Dockerfile, lockfile hay compose chỉ dựng thử bản amd64, không đẩy; đẩy lên `main` không còn dựng lại 13 image hai kiến trúc. Bước chạy thử sau khi phát hành chỉ kiểm hệ thống lên được và cổng API (kiểm thử giao diện chạy ở workflow CI trên mã nguồn).
 - **Dựng image nhanh hơn:** image Python và OCR cài gói bằng `uv` thay cho `pip` (vẫn kiểm hash theo `uv.lock`), có bộ đệm tải về của BuildKit nên `make up` dựng lại không tải lại gói; image Python, OCR, sleeper có `.dockerignore` riêng chỉ gửi những thư mục cần dùng, không còn gửi `node_modules` (khoảng 500 MB), `.venv`, `backups` của máy dựng vào build context.
 - **Ký số văn bản bằng chứng thư tổ chức:** quyết định nhân sự, báo cáo KPI và phiếu đề nghị mua sắm in ra PDF được ký PAdES bằng chứng thư số công cộng của công ty khi cấu hình `ORG_SIGN_PROVIDER`: HSM hoặc token qua PKCS#11 (image `actions` có SoftHSM2), hoặc dịch vụ ký số từ xa của CA chuẩn CSC API v1; PIN và bí mật OAuth2 đọc từ OpenBao `bms/org-sign`, dấu thời gian RFC 3161 tùy chọn. Chỉ ký văn bản của công ty có mã số thuế trong chứng thư; bản đã ký lưu tách bản chưa ký. Không cấu hình thì in như cũ (ADR #94).
 
@@ -123,7 +128,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 **Sửa `docker compose up` trên bản clone Windows không đăng nhập được tài khoản demo:** Git for Windows mặc định `core.autocrlf=true` nên script `.sh` mang CRLF; chép vào image, `migrate` thoát ngay (`env: 'bash\r'`), kéo theo Keycloak, Hasura, actions, cổng API không chạy. Thêm `.gitattributes` buộc checkout LF trên mọi hệ điều hành; image `migrate`, `web`, `gateway`, `kafka`, `trino` bỏ CRLF khỏi script và cấu hình lúc dựng, nên cả bản clone cũ vẫn chạy được bằng một lệnh.
 
-**Kho mã chuyển sang [CTUBamboo/Bamboo](https://github.com/CTUBamboo/Bamboo):** link cũ `github.com/ThanhNLT/Bamboo` tự chuyển hướng; máy đang có bản clone chạy `git remote set-url origin https://github.com/CTUBamboo/Bamboo`. Image dựng sẵn đổi tiền tố mặc định thành `ghcr.io/ctubamboo/bamboo` (`BAMBOO_IMAGE_PREFIX`); ai đã đặt tiền tố cũ trong `.env` thì sửa theo. Image dựng tại máy mang tên mới nên lần `docker compose up` đầu tiên dựng lại (dùng lại cache, nhanh); image tên cũ xóa bằng `docker images 'ghcr.io/thanhnlt/*' -q | xargs -r docker rmi`. Namespace BPMN `https://github.com/ThanhNLT/Bamboo/bpmn` giữ nguyên vì là định danh của quy trình đã triển khai, không phải link.
+**Kho mã chuyển sang [CTUBamboo/Bamboo](https://github.com/CTUBamboo/Bamboo):** link cũ `github.com/ThanhNLT/Bamboo` tự chuyển hướng; máy đang có bản clone chạy `git remote set-url origin https://github.com/ThanhNLT/CTU_Bamboo`. Image dựng sẵn đổi tiền tố mặc định thành `ghcr.io/thanhnlt/bamboo` (`BAMBOO_IMAGE_PREFIX`); ai đã đặt tiền tố cũ trong `.env` thì sửa theo. Image dựng tại máy mang tên mới nên lần `docker compose up` đầu tiên dựng lại (dùng lại cache, nhanh); image tên cũ xóa bằng `docker images 'ghcr.io/thanhnlt/*' -q | xargs -r docker rmi`. Namespace BPMN `https://github.com/ThanhNLT/Bamboo/bpmn` giữ nguyên vì là định danh của quy trình đã triển khai, không phải link.
 
 **Nâng cấp (hoàn thiện Tầng 1 và các nguyên lý, ADR #70–#77):** chạy `make up` (image `actions`, `web` đổi; dịch vụ mới `mosquitto`, `iot-bridge`; nhóm `observability` mới). Migration `056`–`058`.
 - **CDR cho tệp tải lên (ADR #70):** sau khi quét sạch, ảnh được mã hóa lại (bỏ EXIF, dữ liệu thừa), tệp Office dựng lại gói zip (bỏ liên kết ngoài, sổ tính liên kết, DTD), PDF ghi lại chỉ với đối tượng còn dùng (bỏ hành động tự chạy, JavaScript, tệp nhúng, XFA, dữ liệu sau `%%EOF`); PDF đã ký số giữ nguyên. Người dùng tải về bản đã dựng lại; mã băm bản gốc lưu trong báo cáo quét. `make up` ở mức RAM 16 bật ClamAV (`BAMBOO_CLAMAV`).
@@ -321,7 +326,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 Tìm kiếm toàn văn, mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, đăng nhập được sau khi nâng cấp. Gồm cả các sửa lỗi ghi ở mục 0.2.1 trước đây (chưa từng phát hành riêng).
 
 ```bash
-docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y   # mở http://localhost:8000
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y   # mở http://localhost:8000
 ```
 
 **Nâng cấp từ 0.1.0 hoặc 0.2.0:** sao lưu (`scripts/ops/backup.sh` hoặc `scripts\ops\backup.ps1`), rồi chạy lệnh trên (hoặc `git pull && docker compose up -d --build` khi chạy từ mã nguồn). Dữ liệu demo giữ nguyên:
@@ -347,7 +352,7 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.3.0 up -d -y   # mở http://
 Cổng API Apache APISIX trở thành điểm vào duy nhất của hệ thống.
 
 ```bash
-docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.2.0 up -d -y   # mở http://localhost:8000
 ```
 
 **Nâng cấp từ 0.1.0:** địa chỉ ứng dụng đổi từ `http://localhost:5173` sang `http://localhost:8000`. Keycloak chỉ import realm ở lần chạy đầu, nên máy đã chạy 0.1.0 cần thêm `http://localhost:8000/*` vào *Valid redirect URIs* và `http://localhost:8000` vào *Web origins* của client `bms-web` trong Keycloak (từ 0.3.0 việc này tự động, xem trên). Triển khai thật: một tên miền trỏ vào cổng và đặt `WEB_ORIGIN`, `KEYCLOAK_URL`, `HASURA_PUBLIC_URL`, `S3_PUBLIC_ENDPOINT`, `CORS_ORIGINS` theo tên miền đó.
@@ -363,7 +368,7 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.2.0 up -d -y   # mở http://
 Bản phát hành đầu tiên: nền tảng lõi (Keycloak, Hasura, PostgreSQL, Flowable, SeaweedFS, OpenBao) và ứng dụng Đề nghị mua sắm cho kịch bản Tập đoàn X, chạy bằng một lệnh.
 
 ```bash
-docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.1.0 up -d -y
 ```
 
 ### Thêm
@@ -381,7 +386,7 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
 - Kiểm thử đầu–cuối bằng Playwright (`npm run test:e2e`) trên stack thật.
 - Toàn bộ hệ thống chạy bằng một lệnh `docker compose up -d`: healthcheck cho mọi dịch vụ chạy lâu, khởi động theo trạng thái healthy, tự khởi động lại (ADR #13).
 - README, NOTICE, `.env.example`, header SPDX cho mọi tệp (chuẩn REUSE 3.3).
-- Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/ctubamboo/bamboo:<phiên bản> up -d -y` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
+- Image dựng sẵn trên GHCR (amd64 + arm64) và tệp compose phát hành dạng OCI artifact: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y` chạy toàn bộ hệ thống không cần mã nguồn; migration, realm Keycloak, cấu hình OpenBao đóng gói vào image.
 
 - Sẵn sàng production: `BAMBOO_ENV=production` từ chối khởi động khi còn mật khẩu mặc định; container Python chạy bằng uid 10001; image `web` đọc địa chỉ Keycloak/Hasura lúc khởi động (`/config.js`); nginx nén gzip, header bảo mật, không cache `index.html`; xoay vòng log mọi container; Hasura Console và CORS, địa chỉ và chế độ chạy Keycloak cấu hình được; nhãn OCI cho mọi image.
 - Tài liệu triển khai production (tên miền TLS, sao lưu/khôi phục, nâng cấp, khóa OpenBao), SECURITY.md, mẫu báo lỗi và đề xuất trên GitHub Issues.
@@ -394,11 +399,11 @@ docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.1.0 up -d -y
 - `openbao-init` chờ `sys/init` tới 5 phút (raft chậm, hết giờ giữa chừng là mất khóa) và dừng rõ ràng khi thiếu file khóa.
 - `.dockerignore` để build image Python không gửi `node_modules` và tài liệu vào build context.
 
-[Chưa phát hành]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.2...HEAD
-[0.5.2]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.1...v0.5.2
-[0.5.1]: https://github.com/CTUBamboo/Bamboo/compare/v0.5.0...v0.5.1
-[0.5.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/CTUBamboo/Bamboo/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/CTUBamboo/Bamboo/releases/tag/v0.1.0
+[Chưa phát hành]: https://github.com/ThanhNLT/CTU_Bamboo/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/ThanhNLT/CTU_Bamboo/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/ThanhNLT/CTU_Bamboo/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/ThanhNLT/CTU_Bamboo/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/ThanhNLT/CTU_Bamboo/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/ThanhNLT/CTU_Bamboo/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/ThanhNLT/CTU_Bamboo/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.1.0
