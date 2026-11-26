@@ -379,7 +379,10 @@ def personnel_decision_context(conn: psycopg.Connection, session: dict, _args: d
                    WHERE a.position_id = pos.id AND a.valid_period @> now()
                      AND a.assignment_type IN ('PRIMARY', 'CONCURRENT', 'ACTING'))
            FROM core.position pos JOIN core.org_unit u ON u.id = pos.org_unit_id
-           WHERE pos.tenant_id = %s AND pos.valid_period @> now()
+           -- Quyết định có hiệu lực từ đầu ngày (giờ Việt Nam): vị trí mở trong hôm nay chưa dùng được cho ngày hôm
+           -- nay (hr.issue_personnel_decision từ chối "Vị trí không còn hiệu lực vào ngày hiệu lực"), nên không đưa vào danh sách.
+           WHERE pos.tenant_id = %s AND pos.valid_period @> hr.day_start((now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)
+             AND pos.valid_period @> now()
              AND core.has_permission(%s, 'hr.decision.issue', pos.org_unit_id)
            ORDER BY u.path, pos.is_head DESC, pos.name
            LIMIT 5000""",
