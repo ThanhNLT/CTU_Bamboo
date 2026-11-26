@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ request, thảo luận, nhận xét mã và các buổi gặp của nhóm.
 
 ## Xử lý vi phạm
 
-Gặp hành vi vi phạm, hãy báo cho nhóm duy trì bằng cách nhắc `@CTUBamboo` ngay tại issue, pull request hoặc thảo luận
+Gặp hành vi vi phạm, hãy báo cho nhóm duy trì bằng cách nhắc `@ThanhNLT` ngay tại issue, pull request hoặc thảo luận
 liên quan; nội dung xúc phạm có thể báo thêm cho GitHub bằng nút **Report content**. Nhóm duy trì xem xét từng báo cáo, có
 thể nhắc nhở, ẩn hoặc xóa nội dung, khóa cuộc trao đổi, hoặc chặn tài khoản vi phạm khỏi kho mã, và trả lời người báo về
 cách đã xử lý.
