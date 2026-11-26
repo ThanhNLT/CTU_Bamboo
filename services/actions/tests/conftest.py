@@ -33,6 +33,7 @@ import uvicorn
 from psycopg.rows import dict_row
 
 from app import bootstrap, config, i18n, main, modules, search, storage
+from bamboo_common import tls
 from bamboo_common.flowable import FlowableClient
 from bamboo_common.openbao import Bao
 
@@ -147,6 +148,7 @@ WAIT_SECONDS = float(os.environ.get("WAIT_FOR_SERVICES", "180"))
 
 
 def _reachable(url: str, **kw) -> bool:
+    kw.setdefault("verify", tls.verify(url))  # mTLS nội bộ: chứng chỉ máy khách của actions-test
     deadline = time.monotonic() + WAIT_SECONDS
     while True:
         try:
