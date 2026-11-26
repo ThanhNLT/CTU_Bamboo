@@ -24,6 +24,8 @@ import time
 import jwt
 import psycopg
 
+from bamboo_common import tls
+
 
 class AuthError(Exception):
     pass
@@ -31,7 +33,12 @@ class AuthError(Exception):
 
 class KeycloakVerifier:
     def __init__(self, jwks_url: str, issuer: str, clients: set[str], jwks_client=None):
-        self.jwks = jwks_client or jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=300)
+        self.jwks = jwks_client or jwt.PyJWKClient(
+            jwks_url,
+            cache_keys=True,
+            lifespan=300,
+            ssl_context=tls.context() if jwks_url.startswith("https://") else None,
+        )
         self.issuer = issuer
         self.clients = clients
 

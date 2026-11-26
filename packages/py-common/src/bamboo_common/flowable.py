@@ -19,12 +19,17 @@
 
 import httpx
 
+from bamboo_common import tls
+
 
 class FlowableClient:
     def __init__(self, base_url: str, user: str, password: str, timeout: float = 15.0):
-        self.http = httpx.Client(base_url=base_url.rstrip("/") + "/", auth=(user, password), timeout=timeout)
+        verify = tls.verify(base_url)
+        self.http = httpx.Client(
+            base_url=base_url.rstrip("/") + "/", auth=(user, password), timeout=timeout, verify=verify
+        )
         external = base_url.rstrip("/").removesuffix("/service") + "/external-job-api/"
-        self.ext = httpx.Client(base_url=external, auth=(user, password), timeout=timeout)
+        self.ext = httpx.Client(base_url=external, auth=(user, password), timeout=timeout, verify=verify)
 
     def close(self) -> None:
         self.http.close()

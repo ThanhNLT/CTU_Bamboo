@@ -25,6 +25,7 @@ import time
 import httpx
 import psycopg
 
+from bamboo_common import tls
 from bamboo_common.pii import PiiCipher
 
 log = logging.getLogger("hr_account")
@@ -56,7 +57,9 @@ class KeycloakUsers:
         self.base_url = base_url.rstrip("/")
         self.client_id = client_id
         self.client_secret = client_secret
-        self.http = httpx.Client(base_url=f"{self.base_url}/admin/realms/{REALM}", timeout=timeout)
+        self.http = httpx.Client(
+            base_url=f"{self.base_url}/admin/realms/{REALM}", timeout=timeout, verify=tls.verify(self.base_url)
+        )
         self._token: str | None = None
         self._expires = 0.0
 
@@ -64,6 +67,7 @@ class KeycloakUsers:
         if self._token is None or time.monotonic() > self._expires:
             resp = httpx.post(
                 f"{self.base_url}/realms/{REALM}/protocol/openid-connect/token",
+                verify=tls.verify(self.base_url),
                 timeout=15,
                 data={
                     "grant_type": "client_credentials",

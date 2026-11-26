@@ -52,7 +52,10 @@ jobs:
           uv run --frozen --only-group lint ruff check . --select I
           uv run --frozen --only-group lint ruff format --check .
       - name: Docker Compose hợp lệ
-        run: docker compose --profile test --profile scan config -q
+        run: |
+          docker compose --profile test --profile scan config -q
+          COMPOSE_FILE=compose.yaml:infra/compose/mtls.yml \
+            docker compose --profile test --profile scan --profile observability --profile logs config -q
       - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7
         with:
@@ -72,6 +75,9 @@ jobs:
     runs-on: ubuntu-latest
     # Dựng hệ thống ~14 phút, kiểm thử tích hợp ~25 phút, Playwright ~15 phút: 60 phút không còn đủ.
     timeout-minutes: 90
+    # Chạy như production: mTLS cho các chặng HTTP nội bộ (infra/compose/mtls.yml, ADR #76).
+    env:
+      COMPOSE_FILE: compose.yaml:infra/compose/mtls.yml
     steps:
       - uses: actions/checkout@v7
       - name: Giải phóng đĩa runner

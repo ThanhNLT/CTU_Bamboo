@@ -25,10 +25,14 @@ import time
 import httpx
 import pytest
 
+from bamboo_common import tls
+
 pytestmark = pytest.mark.skipif(os.environ.get("DEMO_STACK") != "1", reason="cần DEMO_STACK=1 (make test-auth)")
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-TOKEN_URL = os.environ.get("KEYCLOAK_TOKEN_URL", "http://keycloak:8080/realms/bms/protocol/openid-connect/token")
+TOKEN_URL = os.environ.get("KEYCLOAK_TOKEN_URL") or (
+    os.environ.get("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080") + "/realms/bms/protocol/openid-connect/token"
+)
 GRAPHQL = os.environ.get("HASURA_URL", "http://hasura:8080") + "/v1/graphql"
 PASSWORD = os.environ.get("DEMO_PASSWORD", "demo-password")
 USERS = json.loads((ROOT / "infra/platform/keycloak/realm/bms-realm.json").read_text(encoding="utf-8"))["users"]
@@ -50,7 +54,9 @@ def keycloak_ready():
 
 def login(username: str) -> dict:
     return httpx.post(
-        TOKEN_URL, data={"grant_type": "password", "client_id": "bms-e2e", "username": username, "password": PASSWORD}
+        TOKEN_URL,
+        verify=tls.verify(TOKEN_URL),
+        data={"grant_type": "password", "client_id": "bms-e2e", "username": username, "password": PASSWORD},
     ).json()
 
 
@@ -58,7 +64,7 @@ def gql(token: str, query: str, tenant: str | None = None) -> dict:
     headers = {"Authorization": f"Bearer {token}"}
     if tenant:
         headers["x-bamboo-tenant"] = tenant
-    return httpx.post(GRAPHQL, json={"query": query}, headers=headers).json()
+    return httpx.post(GRAPHQL, json={"query": query}, headers=headers, verify=tls.verify(GRAPHQL)).json()
 
 
 @pytest.mark.parametrize("user", [u for u in USERS if not u["requiredActions"]], ids=lambda u: u["username"])
