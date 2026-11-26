@@ -218,7 +218,9 @@ def _env(svc: dict, command_refs: dict[str, str]) -> tuple[list[dict], dict[str,
 def build(version: str = VERSION):
     spec = compose_release.build(version)
     services = {
-        n: s for n, s in spec["services"].items() if n not in SKIP_SERVICES and not set(s.get("profiles", [])) & SKIP_PROFILES
+        n: s
+        for n, s in spec["services"].items()
+        if n not in SKIP_SERVICES and not set(s.get("profiles", [])) & SKIP_PROFILES
     }
     jobs = {n for n, s in services.items() if str(s.get("restart", "")) in ("no", "False", "false")}
     configs = spec.get("configs", {})
@@ -235,7 +237,9 @@ def build(version: str = VERSION):
         env, used = _env(svc, refs)
         for key, default in used.items():
             if key in settings and settings[key] != default:
-                print(f"cảnh báo: {key} có mặc định khác nhau ({settings[key]!r}, {default!r} ở {name})", file=sys.stderr)
+                print(
+                    f"cảnh báo: {key} có mặc định khác nhau ({settings[key]!r}, {default!r} ở {name})", file=sys.stderr
+                )
             settings.setdefault(key, default)
 
         mounts, pod_volumes = [], []
@@ -243,7 +247,9 @@ def build(version: str = VERSION):
             if vol.get("type") == "volume":
                 volumes.add(vol["source"])
                 pod_volumes.append({"name": vol["source"], "persistentVolumeClaim": {"claimName": vol["source"]}})
-                mounts.append({"name": vol["source"], "mountPath": vol["target"], "readOnly": bool(vol.get("read_only"))})
+                mounts.append(
+                    {"name": vol["source"], "mountPath": vol["target"], "readOnly": bool(vol.get("read_only"))}
+                )
             elif vol.get("type") == "tmpfs":
                 vname = re.sub(r"[^a-z0-9]+", "-", vol["target"].lower()).strip("-") or "tmp"
                 pod_volumes.append({"name": vname, "emptyDir": {"medium": "Memory"}})
@@ -394,7 +400,11 @@ def render(version: str = VERSION) -> dict[pathlib.Path, str]:
         files[directory / f"{name}.yaml"] = header + "\n" + note + body
         groups.setdefault(group, []).append(f"{name}.yaml")
     for group, names in groups.items():
-        kind = ("kustomize.config.k8s.io/v1alpha1", "Component") if group else ("kustomize.config.k8s.io/v1beta1", "Kustomization")
+        kind = (
+            ("kustomize.config.k8s.io/v1alpha1", "Component")
+            if group
+            else ("kustomize.config.k8s.io/v1beta1", "Kustomization")
+        )
         kustomization = {"apiVersion": kind[0], "kind": kind[1]}
         if not group:
             kustomization["namespace"] = NAMESPACE
