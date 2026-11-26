@@ -61,7 +61,7 @@ thức ở trên và chỉ thêm tệp cấu hình của dự án; image gateway
 nguyên bản từ bản phát hành chính thức của Coraza (kiểm SHA256), không sửa đổi.
 
 Mô hình AI (không nằm trong kho mã và image; Ollama tải về lúc chạy từ thư viện mô hình của Ollama):
-Qwen3 4B (qwen3:4b, trò chuyện, RAG, tác tử)         Apache-2.0
+Qwen3 4B Instruct 2507 (qwen3:4b-instruct-2507-q4_K_M, trò chuyện, RAG, tác tử)  Apache-2.0
 BGE-M3 (bge-m3, sinh vector tìm ngữ nghĩa)           MIT
 
 ------------------------------------------------------------------------------------------------

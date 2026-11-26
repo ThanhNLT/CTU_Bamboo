@@ -85,7 +85,10 @@ def fold(text: str) -> str:
 
 
 def unload_models() -> None:
-    for model in ("qwen3:4b", os.environ.get("AI_EMBED_MODEL", "bge-m3")):
+    for model in (
+        os.environ.get("AI_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
+        os.environ.get("AI_EMBED_MODEL", "bge-m3"),
+    ):
         try:
             if "bge" in model:
                 post(f"{OLLAMA}/api/embed", {"model": model, "input": [], "keep_alive": 0})
