@@ -18472,6 +18472,10 @@
             "type": "SearchKind"
           },
           {
+            "name": "mode",
+            "type": "String"
+          },
+          {
             "name": "limit",
             "type": "Int"
           },
@@ -18498,7 +18502,7 @@
           "role": "platform_admin"
         }
       ],
-      "comment": "Tìm toàn văn đề nghị mua sắm và nội dung tệp đính kèm, chỉ trả chứng từ người gọi xem được (ADR #36)"
+      "comment": "Tìm toàn văn đề nghị mua sắm và nội dung tệp đính kèm, bổ sung kết quả gần về ý nghĩa, chỉ trả chứng từ người gọi xem được (ADR #36, #92)"
     },
     {
       "name": "get_purchase_request_pdf",
@@ -21294,6 +21298,10 @@
           {
             "name": "score",
             "type": "Float!"
+          },
+          {
+            "name": "semantic_score",
+            "type": "Float"
           }
         ],
         "relationships": [
