@@ -72,7 +72,7 @@ Cổng API đã lo phần còn lại: chặn đường dẫn không khai báo, k
 Chạy bằng image dựng sẵn (không cần mã nguồn), trong thư mục có `.env`:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.5.2 up -d -y
 ```
 
 Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura, deploy BPMN khi nội dung đổi và bổ sung `WEB_ORIGIN` vào redirect URI của client `bms-web` trong Keycloak nếu còn thiếu (đổi tên miền không cần import lại realm; giá trị cũ được giữ, gỡ thủ công trong trang quản trị nếu muốn). Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
