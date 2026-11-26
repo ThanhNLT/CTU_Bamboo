@@ -25,6 +25,10 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+### Thay đổi
+
+- **Ký số văn bản bằng chứng thư tổ chức:** quyết định nhân sự, báo cáo KPI và phiếu đề nghị mua sắm in ra PDF được ký PAdES bằng chứng thư số công cộng của công ty khi cấu hình `ORG_SIGN_PROVIDER`: HSM hoặc token qua PKCS#11 (image `actions` có SoftHSM2), hoặc dịch vụ ký số từ xa của CA chuẩn CSC API v1; PIN và bí mật OAuth2 đọc từ OpenBao `bms/org-sign`, dấu thời gian RFC 3161 tùy chọn. Chỉ ký văn bản của công ty có mã số thuế trong chứng thư; bản đã ký lưu tách bản chưa ký. Không cấu hình thì in như cũ (ADR #94).
+
 ### Sửa lỗi
 
 - **Kiểm thử bước AI của quy trình tự động hỏng ngẫu nhiên trên CI (`test_cong_re_nhanh_theo_danh_gia_cua_ai`):** kiểm thử và `flow-sync` của stack đang chạy dùng chung một Flowable, nhận việc cùng chủ đề `bamboo.*`; `flow-sync` thật nhận mất việc của kiểm thử, không thấy quy trình trong CSDL chính nên báo "Quy trình tự động đã tắt" và Flowable treo việc 30 giây, quá thời gian chờ của kiểm thử. Tiền tố chủ đề nay đọc từ `AUTOMATION_TOPIC_PREFIX` (mặc định `bamboo.`, quy trình đã phát hành không đổi); container `actions-test` dùng `bamboo-test.`.

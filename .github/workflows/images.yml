@@ -44,7 +44,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: actions, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions" }
+          - { name: actions, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions\nAPT_PACKAGES=softhsm2" }
           - { name: lakehouse, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions\nDEP_GROUPS=lakehouse" }
           - { name: seed, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/seed" }
           - { name: migrate, context: ., file: infra/docker/migrate.Dockerfile, args: "" }

@@ -46,6 +46,7 @@ path "secret/data/bms/meilisearch-search" { capabilities = ["read"] }
 path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 path "secret/data/bms/trino-actions" { capabilities = ["read"] }
 path "secret/data/bms/mosquitto" { capabilities = ["read"] }
+path "secret/data/bms/org-sign"  { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
 path "transit/sign/receipt"      { capabilities = ["update"] }
