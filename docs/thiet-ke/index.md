@@ -21,11 +21,12 @@
 
 # Thiết kế kỹ thuật
 
-Lược đồ cơ sở dữ liệu, cấu hình các dịch vụ lõi Tầng 1 và API mà ứng dụng Tầng 2 dùng.
+Thiết kế chi tiết 3 tầng, lược đồ cơ sở dữ liệu, cấu hình các dịch vụ lõi Tầng 1 và API mà ứng dụng Tầng 2 dùng.
 
 ```{toctree}
 :maxdepth: 2
 
+02-thiet-ke-chi-tiet-3-tang
 03-thiet-ke-csdl
 06-dich-vu-nen-tang
 08-api-giao-dien
