@@ -17,6 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Node có chú thích BAMBOO_MTLS: bamboo-start đổi sang HTTPS với chứng chỉ máy khách khi bật mTLS nội bộ (mtls.yml).
 upstreams:
   - id: web
     type: roundrobin
@@ -25,17 +26,17 @@ upstreams:
   - id: hasura
     type: roundrobin
     nodes:
-      "hasura:8080": 1
+      "hasura:8080": 1 # BAMBOO_MTLS hasura:8443
     timeout: { connect: 5, send: 60, read: 60 }
   - id: actions
     type: roundrobin
     nodes:
-      "actions:8000": 1
+      "actions:8000": 1 # BAMBOO_MTLS actions:8443
     timeout: { connect: 5, send: 300, read: 300 }
   - id: keycloak
     type: roundrobin
     nodes:
-      "keycloak:8080": 1
+      "keycloak:8080": 1 # BAMBOO_MTLS keycloak:8443
   - id: s3
     type: roundrobin
     nodes:
@@ -73,12 +74,40 @@ plugin_configs:
               - SecRuleRemoveByTag attack-sqli
           default_directives: default
 
+# Truy vết OpenTelemetry (ADR #75): span cho mọi yêu cầu qua cổng, chuyển traceparent (W3C) cho Hasura, actions,
+# Keycloak. Mặc định không lấy mẫu; bamboo-start.sh bật khi có OTEL_EXPORTER_OTLP_ENDPOINT (nhóm observability) và trỏ
+# collector về đó.
+plugin_metadata:
+  - id: opentelemetry
+    trace_id_source: random
+    resource:
+      service.name: bamboo-gateway
+      service.namespace: bamboo
+    collector:
+      address: otel-collector:4318 # BAMBOO_OTEL_COLLECTOR
+      request_timeout: 3
+    batch_span_processor:
+      drop_on_queue_full: true
+      max_queue_size: 2048
+      batch_timeout: 2
+      inactive_timeout: 1
+      max_export_batch_size: 256
+
 global_rules:
   - id: 1
     plugins:
       request-id:
         header_name: X-Request-Id
         include_in_response: true
+      opentelemetry:
+        sampler:
+          name: always_off # BAMBOO_TRACE_SAMPLER
+          options:
+            root:
+              name: always_on
+        additional_attributes:
+          - route_id
+          - http_x_request_id
       prometheus: {}
 
 routes:
@@ -92,6 +121,20 @@ routes:
       redirect:
         uri: "http://localhost:8000$request_uri"
         ret_code: 302
+
+  # forward-auth không gắn được chứng chỉ máy khách: khi bật mTLS, nó gọi route này của chính cổng (chỉ nhận từ
+  # 127.0.0.1), route chuyển tiếp tới actions qua upstream HTTPS. Không bật mTLS thì không có gì gọi tới đây.
+  - id: internal-auth-gateway
+    uri: /__bamboo/auth-gateway
+    hosts: ["127.0.0.1"]
+    priority: 1100
+    methods: [GET]
+    vars:
+      - ["remote_addr", "==", "127.0.0.1"]
+    upstream_id: actions
+    plugins:
+      proxy-rewrite:
+        uri: /auth/gateway
 
   - id: healthz
     uri: /healthz

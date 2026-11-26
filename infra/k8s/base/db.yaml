@@ -1,0 +1,101 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  labels:
+    app.kubernetes.io/name: db
+    app.kubernetes.io/part-of: bamboo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: db
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: db
+        app.kubernetes.io/part-of: bamboo
+    spec:
+      serviceAccountName: bamboo
+      enableServiceLinks: false
+      containers:
+      - name: db
+        image: imresamu/postgis:17-3.5
+        args:
+        - postgres
+        - -c
+        - wal_level=logical
+        - -c
+        - max_wal_senders=10
+        - -c
+        - max_replication_slots=10
+        - -c
+        - max_slot_wal_keep_size=1GB
+        - -c
+        - jit=off
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: POSTGRES_PASSWORD
+              optional: true
+        - name: POSTGRES_DB
+          value: bms
+        - name: POSTGRES_USER
+          value: bms
+        ports:
+        - containerPort: 5432
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -h 127.0.0.1 -U bms -d bms
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: pgdata
+          mountPath: /var/lib/postgresql/data
+          readOnly: false
+      volumes:
+      - name: pgdata
+        persistentVolumeClaim:
+          claimName: pgdata
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  labels:
+    app.kubernetes.io/part-of: bamboo
+spec:
+  selector:
+    app.kubernetes.io/name: db
+  ports:
+  - name: p5432
+    port: 5432
+    targetPort: 5432

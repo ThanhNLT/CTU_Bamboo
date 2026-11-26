@@ -27,6 +27,7 @@ import time
 
 import httpx
 
+from bamboo_common import tls
 from bamboo_common.flowable import FlowableClient
 
 from . import ai_chunks, config, keycloak_sync, search, setup_code, storage
@@ -62,7 +63,7 @@ def deploy_bpmn(flowable: FlowableClient, path: pathlib.Path = BPMN) -> bool:
 def apply_hasura_metadata(hasura_url: str, admin_secret: str, path: pathlib.Path = METADATA) -> None:
     metadata = json.loads(path.read_text(encoding="utf-8"))
     headers = {"x-hasura-admin-secret": admin_secret}
-    with httpx.Client(base_url=hasura_url, headers=headers, timeout=60) as http:
+    with httpx.Client(base_url=hasura_url, headers=headers, timeout=60, verify=tls.verify(hasura_url)) as http:
         resp = http.post(
             "/v1/metadata",
             json={
@@ -91,7 +92,12 @@ def main() -> int:
     if search.ensure_index(meili, settings.meili_chunk_index, ai_chunks.index_settings()):
         log.info("đã tạo index đoạn %s", settings.meili_chunk_index)
     search.ensure_keys(meili)
-    wait_for("Hasura", lambda: httpx.get(f"{settings.hasura_url}/healthz", timeout=5).raise_for_status())
+    wait_for(
+        "Hasura",
+        lambda: httpx.get(
+            f"{settings.hasura_url}/healthz", timeout=5, verify=tls.verify(settings.hasura_url)
+        ).raise_for_status(),
+    )
     apply_hasura_metadata(settings.hasura_url, settings.hasura_admin_secret)
     wait_for(
         "Keycloak",
