@@ -57,18 +57,17 @@ class KeycloakUsers:
         self.base_url = base_url.rstrip("/")
         self.client_id = client_id
         self.client_secret = client_secret
-        self.http = httpx.Client(
-            base_url=f"{self.base_url}/admin/realms/{REALM}", timeout=timeout, verify=tls.verify(self.base_url)
-        )
+        verify = tls.verify(self.base_url)
+        self.http = httpx.Client(base_url=f"{self.base_url}/admin/realms/{REALM}", timeout=timeout, verify=verify)
+        # Lấy token qua Client riêng (verify đặt một lần, cùng chứng chỉ mTLS) thay cho httpx.post từng lần.
+        self.auth = httpx.Client(base_url=f"{self.base_url}/realms/{REALM}", timeout=15, verify=verify)
         self._token: str | None = None
         self._expires = 0.0
 
     def _headers(self) -> dict:
         if self._token is None or time.monotonic() > self._expires:
-            resp = httpx.post(
-                f"{self.base_url}/realms/{REALM}/protocol/openid-connect/token",
-                verify=tls.verify(self.base_url),
-                timeout=15,
+            resp = self.auth.post(
+                "/protocol/openid-connect/token",
                 data={
                     "grant_type": "client_credentials",
                     "client_id": self.client_id,
