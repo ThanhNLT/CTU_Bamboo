@@ -161,8 +161,14 @@ docker compose -f compose.release.yml up -d
 ```
 
 Hai cách chạy dùng chung tên dự án `bamboo` nên dùng chung volume dữ liệu. `make release-compose VERSION=<phiên bản>` sinh
-tệp tham chiếu image của một bản đã phát hành trên GitHub Container Registry thay cho image dịch tại máy (hiện có tới
-bản 0.3.0).
+tệp tham chiếu image của một bản đã phát hành trên GitHub Container Registry thay cho image dịch tại máy (bản 0.1.0–0.3.0
+và từ 0.5.2). Tệp cấu hình mà nhóm `logs`, `observability` gắn từ thư mục mã nguồn (Prometheus, Grafana, OpenTelemetry
+Collector, Vector) được nhúng vào `compose.release.yml` dưới dạng `configs`, nên bản phát hành chạy được cả hai nhóm này.
+
+Image trên GHCR do workflow `Images` (`.github/workflows/images.yml`) dựng cho `linux/amd64` và `linux/arm64` mỗi khi đẩy thẻ
+`v*`, kèm compose phát hành dạng OCI artifact `ghcr.io/thanhnlt/bamboo:<phiên bản>` và tệp `compose.release.yml` gắn vào
+GitHub Release; chạy tay workflow với `ref` là một thẻ cũ để dựng lại image cho bản đó. Pull request đổi Dockerfile, lockfile
+hay compose chỉ dựng thử bản amd64, không đẩy.
 
 ## Đóng gói mã nguồn
 
