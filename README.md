@@ -196,7 +196,7 @@ Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp the
 
 - **Bảo mật:** mTLS cho các chặng HTTP nội bộ còn lại (APISIX, Hasura, Keycloak, Flowable: cần sidecar hoặc service mesh);
   ký số theo từng pháp nhân khi một cài đặt có nhiều công ty khác mã số thuế.
-- **Vận hành:** chuyển sang Kubernetes (k3s) và Argo CD; span của APISIX, Hasura.
+- **Vận hành:** chuyển sang Kubernetes (k3s) và Argo CD.
 - **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; dịch thông báo
   lỗi do máy chủ trả về sang tiếng Anh.
 - **Lakehouse:** chính sách vòng đời và xóa dữ liệu.
