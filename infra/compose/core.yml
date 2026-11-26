@@ -338,11 +338,12 @@ services:
     logging: *logging
     profiles: [logs]
     image: timberio/vector:0.46.1-debian
-    command: ["--config", "/etc/vector/vector.yaml"]
+    command: ["--config", "/etc/vector/vector.yaml", "--config", "/etc/vector/sink.yaml"]
     environment:
       ACTIONS_SECRET: ${ACTIONS_SECRET:-dev-actions-secret}
     volumes:
       - ../platform/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - ../platform/vector/sink.yaml:/etc/vector/sink.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       - actions
@@ -423,6 +424,7 @@ services:
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-gateway:${BAMBOO_TAG:-dev}
     environment:
       APISIX_WORKER_PROCESSES: ${GATEWAY_WORKERS:-2}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
       web:
         condition: service_started

@@ -41,20 +41,3 @@ transforms:
         .message = msg
       }
       . = {"timestamp": .timestamp, "service": .service, "level": .level, "message": .message, "trace_id": .trace_id, "fields": .fields}
-
-sinks:
-  bamboo:
-    type: http
-    inputs: [normalize]
-    uri: http://actions:8000/obs/ingest
-    method: post
-    encoding:
-      codec: json
-    framing:
-      method: newline_delimited
-    batch:
-      max_events: 200
-      timeout_secs: 5
-    request:
-      headers:
-        x-actions-secret: "${ACTIONS_SECRET}"
