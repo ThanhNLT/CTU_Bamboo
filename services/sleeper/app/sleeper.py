@@ -360,7 +360,7 @@ class Gpu:
 class AiRam:
     """Không có GPU thì AI chỉ chạy trên CPU khi Docker đủ RAM (ADR #90).
 
-    Trên CPU, mô hình nằm trong RAM của Docker (qwen3:4b ~3 GB kèm ngữ cảnh, bge-m3 ~1,2 GB, bộ OCR ~0,4 GB) cùng mọi
+    Trên CPU, mô hình nằm trong RAM của Docker (mô hình trò chuyện Qwen3 4B ~3 GB kèm ngữ cảnh, bge-m3 ~1,2 GB, bộ OCR ~0,4 GB) cùng mọi
     dịch vụ khác; thiếu RAM thì OOM killer hạ một tiến trình bất kỳ, kể cả CSDL. Khi đã biết AI không dùng GPU (`gpu` dò
     xong mà không có card, hoặc tắt bằng BAMBOO_GPU=false) mà Docker thấy dưới `min_mb` thì dừng và khóa các dịch vụ AI:
     không đánh thức, mô-đun không chạy lại; actions đọc `/status` để trợ lý, OCR báo lý do thay vì chờ mãi. Có GPU thì
