@@ -105,7 +105,7 @@ services:
     environment:
       DATABASE_URL: postgresql://bms:${POSTGRES_PASSWORD:-bms-dev}@db:5432/bms
       SEED_DEMO: ${SEED_DEMO:-true}
-      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-kcadmin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-kcadmin-dev}

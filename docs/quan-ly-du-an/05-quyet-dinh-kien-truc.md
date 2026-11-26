@@ -119,6 +119,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [90](#adr-90) | 18/11/2026 | AI tự chọn nơi chạy: GPU NVIDIA, GPU Apple (Metal) trên Mac, CPU khi đủ RAM, tắt khi thiếu RAM |
 | [91](#adr-91) | 18/11/2026 | Mac Apple Silicon tiết kiệm tài nguyên: CSDL và ClamAV bản arm64, OCR trên máy trả bộ nhớ khi nhàn rỗi |
 | [92](#adr-92) | 24/11/2026 | Tìm theo ý nghĩa trên trang Tìm kiếm: vector bge-m3 trong chỉ mục Meilisearch sẵn có, kết quả nối sau từ khóa |
+| [93](#adr-93) | 24/11/2026 | Mô hình trò chuyện mặc định là Qwen3-4B bản instruct; Mac từ 16 GB dùng KV cache f16 |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -1013,6 +1014,20 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** README và giao diện đã hứa tìm theo ý nghĩa nhưng trang Tìm kiếm chỉ tìm từ khóa. Hạ tầng đã có đủ (Ollama, `bge-m3`, Meilisearch tìm vector, lọc quyền theo chỉ mục), chỉ cần nối. Giữ kết quả từ khóa đứng trước để tra mã chứng từ, tên tệp vẫn chính xác như cũ; thêm kết quả ý nghĩa phía sau thay vì trộn điểm vì điểm của hai cách tìm không so được với nhau.
 - **Đã loại:** CSDL vector riêng (Qdrant, Milvus: thêm một dịch vụ cho máy 8 GB và phải đồng bộ quyền xem sang chỗ khác, như ADR #51); `pgvector` (phải đổi image CSDL, tăng dung lượng sao lưu và CDC); embedder `ollama` của Meilisearch tự gọi Ollama (Ollama ngủ hoặc tắt thì tác vụ nạp tài liệu thất bại, tìm từ khóa cũng mất); trộn điểm `semanticRatio` 0,5 (mã chứng từ có thể bị đẩy xuống sau kết quả gần nghĩa, và luôn trả về tài liệu không liên quan vì tìm vector luôn có láng giềng gần nhất).
 - **Giới hạn hiện tại:** Ngưỡng cos 0,55 đo trên dữ liệu demo, dữ liệu thật có thể cần chỉnh (`search.SEMANTIC_MIN_COS`). Tệp dài chỉ lấy 2.000 ký tự đầu mỗi phần để tạo vector. Lần tìm đầu sau khi Ollama ngủ có thể chỉ ra kết quả từ khóa vì quá 4 giây.
+
+(adr-93)=
+## ADR #93: Mô hình trò chuyện mặc định là Qwen3-4B bản instruct; Mac từ 16 GB dùng KV cache f16
+
+- **Ngày:** 24/11/2026
+- **Quyết định:** Bổ sung [ADR #51](#adr-51), [#89](#adr-89), [#90](#adr-90); thay phần "giữ `qwen3:4b`" của [ADR #63](#adr-63) bổ sung và phần "đã loại bản instruct" của [ADR #89](#adr-89).
+  - **Mô hình mặc định.** `AI_CHAT_MODEL` mặc định là `qwen3:4b-instruct-2507-q4_K_M` ở mọi nơi đọc biến này (`.env.example`, các tệp compose, `config.py`, seed, `tools/demo_prepare.sh`, `tools/ai_smoke.py`). Migration `066_mo_hinh_tro_chuyen.sql` chuyển tác tử có `model = 'qwen3:4b'` sang mô hình mới, vì `ollama-init` chỉ tải mô hình trong `AI_CHAT_MODEL`; `core.ai_question.model` giữ tên mô hình đã trả lời. Cơ chế của ADR #89 (tách `</think>`, cắt lập luận sau 512 mảnh) giữ nguyên cho ai chọn mô hình thinking ở trang Tác tử AI.
+  - **KV cache trên Mac.** `tools/mac/ai.sh` đặt `OLLAMA_KV_CACHE_TYPE=f16` khi Mac có từ 16 GB, `q4_0` khi ít hơn; `AI_KV_CACHE_TYPE` trong `.env` (không để trống) vẫn thắng. `.env.example` để trống biến này; Docker vẫn mặc định `q4_0` (`infra/compose/ai.yml`).
+- **Lý do:** Đo trên Mac Apple M1 Pro 16 GB (GPU 16 nhân, Ollama 0.40.17 trên máy, Metal), ngữ cảnh 12K, flash attention:
+  - **KV cache:** `f16` sinh 33,4 token/giây, `q8_0` 26,4, `q4_0` 26,1; prefill như nhau (khoảng 330–350 token/giây). Bộ nhớ mô hình kèm bộ đệm 4,1 GB với `f16`, 2,9 GB với `q4_0`. Tắt flash attention (bắt buộc `f16`) chậm hẳn (19 token/giây), tăng `num_batch` lên 1024, 2048 không đổi gì. Trên Metal, bộ đệm lượng tử phải giải lượng tử ở mỗi bước sinh, nên chỉ tiết kiệm bộ nhớ chứ không nhanh hơn; máy 16 GB đủ chỗ cho 1,2 GB thêm.
+  - **Mô hình:** `tools/ai_smoke.sh` (39 câu, chấm bằng luật) chạy qua `ai-worker` thật: bản instruct đạt 37/39, trung vị cả lượt 9,0 giây khi mô hình đã nạp; bản thinking (`qwen3:4b`) 38/39, 23,1 giây. Hai câu lỗi của bản instruct đều trả lời đúng nhưng trích dẫn một văn bản liên quan khác văn bản mong đợi; câu lỗi của bản thinking trả lời câu đáng ra phải từ chối. Phép thử trong ADR #89 cho thấy bản instruct sai các câu so mức tiền và câu hỏi tiếng Anh, nhưng phép thử đó chạy trước khi có lời nhắc ngôn ngữ sát chỗ trả lời và prompt "chỉ trả lời điều được hỏi"; với prompt hiện tại, cả nhóm `ngon_ngu` và các câu mức tiền đều đạt. Gọi thẳng Ollama (không qua cơ chế cắt của `ai-worker`), bản thinking lập luận 300–2.000 token mỗi câu, mất 11–65 giây.
+  - Cùng kích thước tệp (2,5 GB, Q4_K_M), cùng giấy phép Apache-2.0, cùng họ Qwen3 nên không đổi yêu cầu phần cứng hay giấy phép.
+- **Đã loại:** Engine MLX của Ollama (nhanh hơn trên Apple Silicon nhưng Ollama chỉ hỗ trợ Mac trên 32 GB bộ nhớ hợp nhất và một số mô hình định dạng riêng, chưa có Qwen3 4B); mô hình riêng cho Mac (hai nền tảng chạy hai mô hình khác nhau, tác tử đã seed mang tên mô hình của nơi tạo); giảm ngữ cảnh xuống 8K (câu hỏi RAG khoảng 6.000 token, cộng 1.024 token trả lời và 4.096 khi tác tử bật suy nghĩ thì không đủ); `q8_0` trên Mac (không nhanh hơn `q4_0`).
+- **Giới hạn hiện tại:** Chưa đo trên GPU NVIDIA và CPU sau khi đổi mô hình (bản instruct không lập luận nên không thể chậm hơn, nhưng độ chính xác chỉ kiểm bằng 39 câu của `ai_smoke`). Chữ đầu tiên vẫn sau khoảng 8 giây trên M1 Pro vì phải đọc khoảng 6.000 token ngữ cảnh; ADR #89 đã loại việc thu hẹp ngữ cảnh. Máy đã có `.env` chép từ `.env.example` cũ giữ `qwen3:4b` và `q4_0` cho tới khi sửa tay (CHANGELOG ghi cách sửa).
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
