@@ -80,7 +80,7 @@ wait_for() {
 start_ollama() {
     if ollama_up; then
         if [ -z "$(ours ollama)" ]; then
-            say "Ollama trên máy đã chạy sẵn (Ollama.app?): dùng nó. Cấu hình của Bamboo (ngữ cảnh 12K, KV cache q4_0, flash attention) chỉ áp khi script tự dựng Ollama; muốn áp thì thoát Ollama.app rồi chạy lại make up"
+            say "Ollama trên máy đã chạy sẵn (Ollama.app?): dùng nó. Cấu hình của Bamboo (ngữ cảnh 12K, KV cache f16 khi máy từ 16 GB, flash attention) chỉ áp khi script tự dựng Ollama; muốn áp thì thoát Ollama.app rồi chạy lại make up"
         fi
         return 0
     fi
@@ -89,18 +89,22 @@ start_ollama() {
         return 1
     fi
     # Bộ nhớ hợp nhất của Mac là bộ nhớ của GPU: tính theo RAM của máy, không theo RAM cấp cho máy ảo Docker.
-    local gb models=1 keep=2m
+    # KV cache (ADR #93, đo trên M1 Pro 16 GB, Qwen3 4B, ngữ cảnh 12K): f16 sinh 33 token/giây, q8_0 và q4_0 chỉ 26 vì
+    # GPU Metal phải giải lượng tử từng bước; prefill như nhau. f16 tốn thêm khoảng 1,2 GB (4,1 GB thay vì 2,9 GB), nên
+    # chỉ dùng khi máy từ 16 GB; máy 8 GB giữ q4_0. AI_KV_CACHE_TYPE trong .env (không để trống) thắng cả hai.
+    local gb models=1 keep=2m kv=q4_0
     gb=$(($(sysctl -n hw.memsize 2> /dev/null || echo 0) / 1024 / 1024 / 1024))
-    if [ "$gb" -ge 16 ]; then models=2 keep=5m; fi
+    if [ "$gb" -ge 16 ]; then models=2 keep=5m kv=f16; fi
+    kv=$(setting AI_KV_CACHE_TYPE "$kv")
     mkdir -p "$STATE/logs"
-    say "Dựng Ollama trên máy (GPU Metal, $gb GB bộ nhớ hợp nhất), log ở $STATE/logs/ollama.log"
+    say "Dựng Ollama trên máy (GPU Metal, $gb GB bộ nhớ hợp nhất, KV cache $kv), log ở $STATE/logs/ollama.log"
     OLLAMA_HOST=$OLLAMA_ADDR \
         OLLAMA_NUM_PARALLEL=1 \
         OLLAMA_MAX_LOADED_MODELS=$(setting OLLAMA_MAX_LOADED_MODELS "$models") \
         OLLAMA_KEEP_ALIVE=$(setting AI_KEEP_ALIVE "$keep") \
         OLLAMA_CONTEXT_LENGTH=12288 \
         OLLAMA_FLASH_ATTENTION=1 \
-        OLLAMA_KV_CACHE_TYPE=$(setting AI_KV_CACHE_TYPE q4_0) \
+        OLLAMA_KV_CACHE_TYPE=$kv \
         nohup ollama serve >> "$STATE/logs/ollama.log" 2>&1 < /dev/null &
     echo $! > "$STATE/ollama.pid"
     if ! wait_for ollama_up 30 ollama; then
