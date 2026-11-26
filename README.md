@@ -23,6 +23,10 @@
 
 Bài thi OLP Phần mềm nguồn mở 2026, chủ đề *Xây dựng Hệ điều hành Chuyển đổi số bằng Công nghệ Lõi nguồn mở (DX-OS Open-Core)*.
 
+> **Về địa chỉ kho mã:** ngày 26/11/2026 GitHub khóa tài khoản nhóm `CTUBamboo` (chỉ báo vi phạm Điều khoản dịch vụ, không
+> nêu lý do cụ thể; nhóm đã gửi yêu cầu xem xét). Dự án chuyển nguyên lịch sử sang kho này. Diễn biến và những gì còn ở kho
+> cũ: [Nhật ký chuyển kho mã](docs/quan-ly-du-an/07-chuyen-kho-ma.md).
+
 **Mục lục:** [Giấy phép](#giấy-phép) · [Giới thiệu](#giới-thiệu-về-bamboo) · [Thông tin phần mềm](#thông-tin-về-phần-mềm) ·
 [Kiến trúc](#kiến-trúc-hệ-thống) · [Luồng dữ liệu](#các-luồng-dữ-liệu-chính) · [Chức năng](#chức-năng-có-sẵn-có-giao-diện) ·
 [Cấu hình máy](#yêu-cầu-cấu-hình-máy-tính) · [Chạy bằng Docker](#chạy-bằng-một-lệnh-với-docker) ·
