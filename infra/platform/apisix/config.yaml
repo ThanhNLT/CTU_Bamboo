@@ -32,6 +32,19 @@ nginx_config:
   http:
     client_max_body_size: 30m
 
+# Chỉ nạp plugin cổng dùng tới (danh sách thay hẳn danh sách mặc định của APISIX). opentelemetry không có trong danh
+# sách mặc định; plugin WASM coraza-filter khai báo riêng ở mục wasm.
+plugins:
+  - request-id
+  - opentelemetry
+  - redirect
+  - mocking
+  - client-control
+  - forward-auth
+  - limit-count
+  - proxy-rewrite
+  - prometheus
+
 plugin_attr:
   prometheus:
     export_addr:
