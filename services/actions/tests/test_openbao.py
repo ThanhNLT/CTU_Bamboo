@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -174,11 +174,14 @@ def test_tu_unseal_sau_khi_khoi_dong_lai(roles):
     assert openbao_init.unseal_if_sealed(ADDR, KEYS) is False, "đang mở thì không làm gì"
     root.request("PUT", "sys/seal")
     try:
-        assert Bao(ADDR).request("GET", "sys/seal-status")["sealed"] is True
+        # Stack đang chạy có `openbao-unseal --watch` (mỗi 5 giây) cùng mở khóa với luồng hẹn giờ dưới đây, nên không thể
+        # khẳng định OpenBao còn khóa ở một thời điểm cụ thể hay đăng nhập phải chờ đủ 4 giây: chỉ kiểm dịch vụ đang chờ
+        # (config._login) đăng nhập tiếp được khi OpenBao được mở lại.
+        deadline = time.monotonic() + 3
+        while not Bao(ADDR).request("GET", "sys/seal-status")["sealed"] and time.monotonic() < deadline:
+            time.sleep(0.1)
         threading.Timer(4, openbao_init.unseal_if_sealed, (ADDR, KEYS)).start()
-        started = time.monotonic()
         bao = config._login(ADDR, str(roles["actions"]), wait=60)
-        assert time.monotonic() - started >= 3
         assert bao.read("bms/actions")["secret"]
     finally:
         openbao_init.unseal_if_sealed(ADDR, KEYS)
