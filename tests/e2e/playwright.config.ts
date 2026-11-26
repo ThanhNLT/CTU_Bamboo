@@ -30,6 +30,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8000",
     locale: "vi-VN",
+    // Máy chủ tính "hôm nay" theo giờ Việt Nam (ví dụ ngày hiệu lực quyết định nhân sự); runner CI chạy giờ UTC.
+    timezoneId: "Asia/Ho_Chi_Minh",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
