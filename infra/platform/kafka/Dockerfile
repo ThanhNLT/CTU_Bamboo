@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
 FROM apache/kafka:4.3.1
 LABEL org.opencontainers.image.title="bamboo-kafka" \
       org.opencontainers.image.description="Bamboo: Kafka KRaft kèm SCRAM và ACL cho CDC" \
-      org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
-      org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
+      org.opencontainers.image.source="https://github.com/ThanhNLT/CTU_Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/ThanhNLT/CTU_Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 COPY --chown=appuser:appuser kafka_server_jaas.conf /etc/kafka/bamboo/kafka_server_jaas.conf
 COPY --chown=appuser:appuser --chmod=0755 start.sh /etc/kafka/bamboo/start.sh
