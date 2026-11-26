@@ -52,7 +52,10 @@ jobs:
           uv run --frozen --only-group lint ruff check . --select I
           uv run --frozen --only-group lint ruff format --check .
       - name: Docker Compose hợp lệ
-        run: docker compose --profile test --profile scan config -q
+        run: |
+          docker compose --profile test --profile scan config -q
+          COMPOSE_FILE=compose.yaml:infra/compose/mtls.yml \
+            docker compose --profile test --profile scan --profile observability --profile logs config -q
       - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7
         with:
@@ -72,6 +75,9 @@ jobs:
     runs-on: ubuntu-latest
     # Dựng hệ thống ~14 phút, kiểm thử tích hợp ~25 phút, Playwright ~15 phút: 60 phút không còn đủ.
     timeout-minutes: 90
+    # Chạy như production: mTLS cho các chặng HTTP nội bộ (infra/compose/mtls.yml, ADR #76).
+    env:
+      COMPOSE_FILE: compose.yaml:infra/compose/mtls.yml
     steps:
       - uses: actions/checkout@v7
       - name: Giải phóng đĩa runner
@@ -80,7 +86,11 @@ jobs:
                       /usr/local/share/powershell /usr/share/swift /usr/local/julia* /opt/microsoft
           df -h /
       - name: Một lệnh dựng toàn bộ hệ thống
-        run: time docker compose up -d
+        # Runner chỉ có 2 vCPU, 7 GB: Ollama, OCR chạy CPU chiếm gần 4 GB và gần trọn một nhân, làm các kiểm thử giao
+        # diện quá thời gian. Kiểm thử AI dùng Ollama giả lập, kiểm thử giao diện không cần AI, nên CI không chạy chúng.
+        run: |
+          time docker compose up -d \
+            --scale ollama-core=0 --scale ollama-init=0 --scale ocr-core=0 --scale ocr-init=0 --scale ai-worker=0
       - name: Chờ sẵn sàng
         run: tools/ci/wait-ready.sh 1200
       - name: Đăng nhập thật mọi tài khoản demo (Keycloak + Hasura webhook)

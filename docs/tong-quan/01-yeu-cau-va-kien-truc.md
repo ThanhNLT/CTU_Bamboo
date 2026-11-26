@@ -69,9 +69,9 @@ Bảng 7 lớp công nghệ trong đề chỉ là ví dụ; đội được toà
 | Không có giấy phép không tương thích | Mã của dự án Apache-2.0; thành phần bên thứ ba và giấy phép liệt kê trong `NOTICE` |
 | Thông báo mục đích giấy phép | `NOTICE` (đoạn mục đích giấy phép), README mục Giấy phép |
 | Bản sao toàn văn giấy phép | `LICENSE`, `LICENSES/` |
-| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` (bản 0.1.0–0.3.0 có thêm `compose.release.yml`); [CHANGELOG](https://github.com/ThanhNLT/CTU_Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
+| Có bản phát hành theo phiên bản, định dạng mở | GitHub Releases theo SemVer, asset `.tar.gz` kèm `SHA256SUMS` (bản 0.1.0–0.3.0 và từ 0.5.2 có thêm `compose.release.yml` và image dựng sẵn amd64, arm64 trên GHCR); [CHANGELOG](https://github.com/ThanhNLT/CTU_Bamboo/blob/main/CHANGELOG.md) theo Keep a Changelog |
 | Hướng dẫn dịch từ mã nguồn, cấu hình được trước khi dịch, công cụ nguồn mở | [Dịch và cài đặt từ mã nguồn](../van-hanh/dich-tu-ma-nguon.md): `make up` (Docker Compose) hoặc `make build && make install` (GNU Make, uv, pnpm); cấu hình bằng biến trên dòng lệnh, `config.mk` hoặc `.env`, không sửa tệp mã; `make help` in các tùy chọn |
-| Chạy được ngoài thư mục mã nguồn | `make install PREFIX=...` cài dịch vụ, giao diện, migration ra ngoài thư mục mã, chạy bằng lệnh `bamboo`; với Docker, mã và cấu hình nằm trong image, `make release-compose` sinh `compose.release.yml` chạy từ thư mục bất kỳ (image dựng sẵn trên GHCR hiện có tới bản 0.3.0) |
+| Chạy được ngoài thư mục mã nguồn | `make install PREFIX=...` cài dịch vụ, giao diện, migration ra ngoài thư mục mã, chạy bằng lệnh `bamboo`; với Docker, mã và cấu hình nằm trong image, `make release-compose` sinh `compose.release.yml` chạy từ thư mục bất kỳ (image dựng sẵn trên GHCR cho bản 0.1.0–0.3.0 và từ 0.5.2: `docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.5.2 up -d -y`) |
 | Dùng thư viện có sẵn, không đóng gói kèm, không sửa mã gói phụ thuộc | Phụ thuộc cài từ PyPI và npm, ghim phiên bản (`uv.lock`, `pnpm-lock.yaml`); dịch vụ dùng image chính thức của upstream, không vá mã |
 | Bug tracker, changelog, readme | GitHub Issues (có mẫu báo lỗi, đề xuất), GitHub Discussions, `CHANGELOG.md`, `README.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`, tài liệu Sphinx (`make -C docs html`) |
 
@@ -103,8 +103,8 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Định danh, bảo mật | SSO, MFA | Keycloak 26: OIDC + PKCE, một tài khoản nhiều tenant ([ADR #30](#adr-30)), OTP bắt buộc cho quản trị nền tảng | Có |
 | | Két sắt mật mã | OpenBao: secret, AppRole riêng từng dịch vụ, transit mã hóa dữ liệu nhạy cảm ([ADR #25](#adr-25)) | Có |
 | | Kiểm dịch tệp | Bucket kiểm dịch, bộ quét nội bộ luôn chạy, ClamAV bật mặc định ở mức RAM 16; **CDR** gỡ nội dung chủ động và dựng lại ảnh, Office, PDF trước khi nhận ([ADR #70](#adr-70)) | Có |
-| | Chữ ký số, PKI, HSM | Ký Ed25519 bằng OpenBao cho biên nhận và bản neo kiểm toán; xác minh chữ ký số PDF theo chứng thư của CA công cộng ([ADR #57](#adr-57)); CA nội bộ OpenBao cấp chứng chỉ TLS và chứng chỉ dịch vụ cho mTLS ([ADR #76](#adr-76)); chưa ký bằng chứng thư công cộng, chưa có HSM (cần thiết bị hoặc dịch vụ ký số từ xa của CA) | Một phần |
-| Đa thuê ước, biên mạng | Cửa ngõ API zero-trust | APISIX là điểm vào duy nhất, kiểm token tại biên, WAF ([ADR #34](#adr-34)); mTLS nội bộ bằng chứng chỉ dịch vụ do CA OpenBao cấp, bắt đầu ở chặng MQTT ([ADR #76](#adr-76)); các chặng HTTP nội bộ còn lại chưa mTLS | Một phần |
+| | Chữ ký số, PKI, HSM | Ký Ed25519 bằng OpenBao cho biên nhận và bản neo kiểm toán; xác minh chữ ký số PDF theo chứng thư của CA công cộng ([ADR #57](#adr-57)); CA nội bộ OpenBao cấp chứng chỉ TLS và chứng chỉ dịch vụ cho mTLS ([ADR #76](#adr-76)); văn bản hệ thống phát hành (quyết định nhân sự, báo cáo KPI, phiếu đề nghị) ký PAdES bằng chứng thư công cộng của tổ chức qua HSM (PKCS#11) hoặc dịch vụ ký số từ xa của CA (CSC API), cắm thiết bị hoặc tài khoản là dùng được ([ADR #94](#adr-94)); chưa thử với HSM, CA thật | Có |
+| Đa thuê ước, biên mạng | Cửa ngõ API zero-trust | APISIX là điểm vào duy nhất, kiểm token tại biên, WAF ([ADR #34](#adr-34)); mTLS nội bộ bằng chứng chỉ dịch vụ do CA OpenBao cấp ở chặng MQTT và các chặng HTTP giữa cổng API, Hasura, `actions`, Keycloak, Flowable (`infra/compose/mtls.yml`, tự bật ở production, [ADR #76](#adr-76)); kết nối tới PostgreSQL, Kafka, SeaweedFS chưa mTLS | Có |
 | | Che PII | Presidio với bộ nhận diện theo mẫu cho Việt Nam, bản che trong nhật ký và ô trao đổi ([ADR #43](#adr-43)) | Có |
 | | Đa thuê ước | `tenant_id` + khóa kép + phân quyền theo dòng; Bệnh viện X là tenant riêng ([ADR #14](#adr-14)) | Có |
 | | Bản địa hóa | Danh mục chuỗi i18n: toàn bộ giao diện có tiếng Anh (gần 3.000 câu, `pnpm lint` chặn câu chưa dịch); thông báo lỗi do máy chủ trả về và dữ liệu vẫn bằng tiếng Việt | Có |
@@ -118,10 +118,10 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Quy trình, tự động hóa | BPMN | Flowable REST 8; thiết kế bằng lớp BPMN tự viết trên diagram-js ([ADR #81](#adr-81)), chạy thử sandbox, phát hành ([ADR #47](#adr-47)) | Có |
 | | Kịch bản ngầm | Quy trình tự động: hẹn giờ, webhook, sự kiện nghiệp vụ; hành động có sẵn và **kịch bản người dùng tự viết** (tập con Python chạy bằng trình thông dịch an toàn, chạy thử ngay trong trang thiết kế, [ADR #73](#adr-73)) | Có |
 | | Nạp dữ liệu theo lô | `/ingest/*` NDJSON/CSV, chạy thử, nguyên tử | Có |
-| Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); truy vết OpenTelemetry (Collector → Jaeger), số liệu Prometheus (actions, APISIX, Keycloak), Grafana có bảng điều khiển và cảnh báo dựng sẵn ([ADR #75](#adr-75)) | Có |
+| Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); truy vết OpenTelemetry (Collector → Jaeger) liền một trace từ cổng APISIX qua Hasura tới `actions` và SQL, số liệu Prometheus (actions, APISIX, Keycloak), Grafana có bảng điều khiển và cảnh báo dựng sẵn ([ADR #75](#adr-75)) | Có |
 | | Kiểm toán bất biến | Chuỗi hash theo tenant, neo có chữ ký công bố ra ngoài CSDL ([ADR #33](#adr-33), [ADR #46](#adr-46)) | Có |
 | | Trục sự kiện | Debezium Server + Kafka KRaft ([ADR #38](#adr-38)) | Có |
-| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh` (Git là nguồn sự thật: kéo nhánh triển khai, tự đưa hệ thống Compose về đúng cấu hình khi cấu hình đổi hoặc dịch vụ dừng), chạy mỗi 5 phút bằng systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production` ([ADR #83](#adr-83)); chưa dùng Argo CD, Kubernetes | Một phần |
+| | GitOps | Script đối chiếu `tools/gitops/reconcile.sh` (Git là nguồn sự thật: kéo nhánh triển khai, tự đưa hệ thống Compose về đúng cấu hình khi cấu hình đổi hoặc dịch vụ dừng), chạy mỗi 5 phút bằng systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production` ([ADR #83](#adr-83)); manifest Kubernetes (k3s) sinh từ compose và Application của Argo CD tự đồng bộ từ Git, CI dựng thử trên cụm k3s tạm ([ADR #95](#adr-95)) | Có |
 | | Sao lưu, khôi phục | Sao lưu theo lịch, diễn tập khôi phục có kiểm chuỗi hash | Có |
 | Truyền thông | Định tuyến đa kênh | Email, SMS, webhook theo lựa chọn từng người | Có |
 | | Thời gian thực | Subscription GraphQL qua websocket | Có |
@@ -134,7 +134,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Phân tách theo vòng đời dữ liệu | OLTP trên PostgreSQL; CDC → Kafka → Iceberg bronze → view silver trên Trino ([ADR #39](#adr-39), [ADR #40](#adr-40)) | Có |
 | Hội tụ IT/OT | Bản sao số nhận số đo thật qua **MQTT** (Mosquitto, tài khoản thiết bị tách theo công ty, TLS/mTLS) và **REST NGSI-LD**, tự mở/đóng sự cố theo ngưỡng, tự chuyển ngoại tuyến; dữ liệu mẫu vẫn còn cho thiết bị chưa nối ([ADR #74](#adr-74)) | Có |
 | Quản trị dữ liệu thế hệ mới | Trang Phả hệ và chất lượng dữ liệu, báo sự cố dữ liệu; phả hệ dựng từ cấu hình CDC/Lakehouse/lớp ngữ nghĩa đang chạy, **thu tự động mỗi 15 phút** kèm kiểm tra slot CDC ([ADR #77](#adr-77)), đối chiếu số dòng PostgreSQL ↔ silver theo công ty khi bấm; chưa theo cột chi tiết | Có |
-| Zero-Trust + GitOps | WAF và kiểm token tại biên, bucket kiểm dịch + CDR, mỗi dịch vụ một tài khoản CSDL và AppRole riêng ([ADR #35](#adr-35)), chứng chỉ dịch vụ và mTLS nội bộ ở chặng MQTT ([ADR #76](#adr-76)), healthcheck và tự khởi động lại, script đối chiếu cấu hình chạy theo chu kỳ ([ADR #83](#adr-83)); các chặng HTTP nội bộ còn lại chưa mTLS | Một phần |
+| Zero-Trust + GitOps | WAF và kiểm token tại biên, bucket kiểm dịch + CDR, mỗi dịch vụ một tài khoản CSDL và AppRole riêng ([ADR #35](#adr-35)), chứng chỉ dịch vụ và mTLS nội bộ ở chặng MQTT và các chặng HTTP ([ADR #76](#adr-76)), healthcheck và tự khởi động lại, script đối chiếu cấu hình chạy theo chu kỳ ([ADR #83](#adr-83)) | Một phần |
 
 ## 6. Tầng 2: không gian H-P-D-I
 

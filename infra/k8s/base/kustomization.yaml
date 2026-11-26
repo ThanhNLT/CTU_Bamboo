@@ -1,0 +1,60 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bamboo
+resources:
+- actions.yaml
+- ai-worker.yaml
+- aliases.yaml
+- backup.yaml
+- bootstrap.yaml
+- db.yaml
+- debezium.yaml
+- flow-sync.yaml
+- flowable.yaml
+- gateway.yaml
+- gotenberg-core.yaml
+- hasura.yaml
+- iot-bridge.yaml
+- kafka.yaml
+- keycloak.yaml
+- lakehouse-sink.yaml
+- mailpit.yaml
+- meilisearch.yaml
+- migrate.yaml
+- mosquitto.yaml
+- ocr-core.yaml
+- ocr-init.yaml
+- ollama-core.yaml
+- ollama-init.yaml
+- openbao-init.yaml
+- openbao-unseal.yaml
+- openbao.yaml
+- rbac.yaml
+- search-sync.yaml
+- seaweedfs.yaml
+- seed.yaml
+- tika-core.yaml
+- trino-core.yaml
+- trino-init.yaml
+- volumes.yaml
+- web.yaml

@@ -28,3 +28,10 @@ db
 .env
 build
 config.mk
+node_modules
+**/node_modules
+.venv
+**/.venv
+.local
+backups
+**/.DS_Store

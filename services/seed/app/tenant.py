@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import secrets
+import ssl
 import string
 import sys
 import urllib.error
@@ -35,6 +36,16 @@ from .demo import UNIT_TYPES
 log = logging.getLogger("tenant")
 
 REALM = "bms"
+
+
+def _internal_tls(url: str) -> ssl.SSLContext | None:
+    """mTLS tới Keycloak (infra/compose/mtls.yml): chứng chỉ dịch vụ trong INTERNAL_TLS_DIR do openbao-init cấp."""
+    directory, identity = os.environ.get("INTERNAL_TLS_DIR", ""), os.environ.get("INTERNAL_TLS_IDENTITY", "")
+    if not url.startswith("https://") or not directory or not identity:
+        return None
+    ctx = ssl.create_default_context(cafile=os.path.join(directory, "ca.crt"))
+    ctx.load_cert_chain(os.path.join(directory, f"{identity}.crt"), os.path.join(directory, f"{identity}.key"))
+    return ctx
 
 
 class Keycloak:
@@ -52,7 +63,7 @@ class Keycloak:
             headers["Authorization"] = f"Bearer {self.token}"
         req = urllib.request.Request(self.base_url + path, data=body, method=method, headers=headers)
         try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=15, context=_internal_tls(self.base_url)) as resp:
                 return resp, resp.read().decode()
         except urllib.error.HTTPError as exc:
             if exc.code == 409:
