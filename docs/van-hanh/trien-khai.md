@@ -47,6 +47,7 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 8 | Quét virus bằng ClamAV (bộ quét nội bộ và CDR luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus, ADR #70) | `make up` ở mức RAM 16 tự bật (`BAMBOO_CLAMAV=true` để bật ở mức 8); chạy tay: `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
+| 10a | Ký số văn bản (tùy chọn) | Có HSM hoặc tài khoản ký số từ xa của CA: đặt `ORG_SIGN_*` trong `.env` (mục 10), PIN và bí mật OAuth2 vào OpenBao `secret/bms/org-sign`; khởi động lại `actions` và in thử một quyết định nhân sự |
 | 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`, `CDC_DB_PASSWORD` (Debezium), `LAKEHOUSE_DB_PASSWORD` (catalog Iceberg); superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
 | 12 | Trục dữ liệu (ADR #45) | Mật khẩu Kafka `DEBEZIUM_KAFKA_PASSWORD`, `LAKEHOUSE_KAFKA_PASSWORD` (Kafka từ chối client không có tài khoản, ACL theo tiền tố topic). Trino chỉ nhận đăng nhập qua HTTPS bằng chứng chỉ của CA nội bộ OpenBao; mật khẩu `bms-admin`, `bms-actions` do OpenBao sinh; người dùng tenant chỉ thấy dữ liệu của tenant mình (row filter). Không mở cổng 8085 của Trino ra ngoài máy chủ |
 | 13 | Giám sát (ADR #75) | `GRAFANA_ADMIN_PASSWORD` riêng (bắt buộc với `BAMBOO_ENV=production`). Grafana `:3001`, Jaeger `:16686`, Prometheus `:9090` chỉ nghe 127.0.0.1: xem qua đường hầm SSH, không mở ra Internet. Mức RAM 8 bật bằng `BAMBOO_OBSERVABILITY=true` |
@@ -72,7 +73,7 @@ Cổng API đã lo phần còn lại: chặn đường dẫn không khai báo, k
 Chạy bằng image dựng sẵn (không cần mã nguồn), trong thư mục có `.env`:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.5.2 up -d -y
 ```
 
 Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura, deploy BPMN khi nội dung đổi và bổ sung `WEB_ORIGIN` vào redirect URI của client `bms-web` trong Keycloak nếu còn thiếu (đổi tên miền không cần import lại realm; giá trị cũ được giữ, gỡ thủ công trong trang quản trị nếu muốn). Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
@@ -293,3 +294,28 @@ Bộ nhớ hợp nhất của Mac dùng chung cho CPU, GPU và máy ảo Docker,
 5. Ngay trước buổi demo chạy `tools/demo_prepare.sh`: kiểm AI đang bật, giữ qwen3 và bge-m3 trong bộ nhớ 2 giờ, kiểm đã có tệp "Đã OCR".
 
 **Quyền:** người quản trị tác tử cần quyền `core.ai.manage` (seed demo gán cho CDO Tập đoàn X và KHTH BVX). Tác tử không có quyền riêng; trợ lý chỉ đọc tài liệu thư viện đang hiệu lực mà người hỏi được xem.
+
+## 10. Ký số văn bản bằng chứng thư tổ chức (ADR #94)
+
+Quyết định nhân sự, báo cáo KPI và phiếu đề nghị mua sắm in ra PDF được ký PAdES bằng chứng thư số công cộng của công ty
+khi có cấu hình; không cấu hình thì in như cũ. Chỉ văn bản của công ty có mã số thuế nằm trong chứng thư mới được ký.
+
+- **HSM hoặc token USB (PKCS#11):** gắn thư viện PKCS#11 của hãng vào container `actions` (volume hoặc image riêng), đặt
+  `ORG_SIGN_PROVIDER=pkcs11`, `ORG_SIGN_PKCS11_LIB` (đường dẫn `.so`), `ORG_SIGN_PKCS11_TOKEN` (nhãn token),
+  `ORG_SIGN_PKCS11_KEY` và `ORG_SIGN_PKCS11_CERT` (nhãn khóa, chứng thư; cùng nhãn thì để trống `CERT`). Chưa có HSM:
+  SoftHSM2 có sẵn trong image (`/usr/lib/softhsm/libsofthsm2.so`), cần volume giữ thư mục token và `SOFTHSM2_CONF`.
+- **Ký số từ xa của CA (CSC API v1):** `ORG_SIGN_PROVIDER=csc`, `ORG_SIGN_CSC_URL` (phần trước `/csc/v1`),
+  `ORG_SIGN_CSC_CREDENTIAL`, `ORG_SIGN_CSC_TOKEN_URL` và `ORG_SIGN_CSC_CLIENT_ID` (OAuth2 client credentials). Gói dịch
+  vụ đòi xác nhận trên điện thoại cho từng lần ký thì không ký tự động được: hỏi CA gói cho phép ký tự động (ký số tổ chức).
+- **Bí mật:** PIN và bí mật OAuth2 không đặt trong `.env` mà ghi vào OpenBao, dịch vụ `actions` đọc khi khởi động:
+
+  ```bash
+  docker compose exec -e BAO_TOKEN=<root token trong volume openbao-keys, mục 6> openbao \
+    bao kv put -address=http://127.0.0.1:8200 secret/bms/org-sign pin=... csc_client_secret=...
+  ```
+
+- **Dấu thời gian:** `ORG_SIGN_TSA_URL` (máy chủ TSA của CA) gắn dấu thời gian RFC 3161, chữ ký kiểm được cả khi chứng thư
+  đã hết hạn.
+
+Kiểm tra: khởi động lại `actions` (`docker compose up -d actions`), nhật ký có dòng `ký số văn bản bằng chứng thư tổ chức
+qua ...`; in thử một quyết định nhân sự rồi mở PDF bằng trình đọc có kiểm chữ ký số.
