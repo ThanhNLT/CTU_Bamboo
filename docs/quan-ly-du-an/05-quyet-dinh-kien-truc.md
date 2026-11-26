@@ -121,6 +121,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [92](#adr-92) | 24/11/2026 | Tìm theo ý nghĩa trên trang Tìm kiếm: vector bge-m3 trong chỉ mục Meilisearch sẵn có, kết quả nối sau từ khóa |
 | [93](#adr-93) | 24/11/2026 | Mô hình trò chuyện mặc định là Qwen3-4B bản instruct; Mac từ 16 GB dùng KV cache f16 |
 | [94](#adr-94) | 26/11/2026 | Ký số văn bản hệ thống phát hành bằng chứng thư tổ chức: HSM qua PKCS#11 hoặc dịch vụ ký số từ xa chuẩn CSC |
+| [95](#adr-95) | 26/11/2026 | Kubernetes (k3s) và Argo CD: manifest Kustomize sinh từ cấu hình compose, CI dựng thử trên cụm k3s tạm |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -1053,6 +1054,26 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
   cần nhiều chứng thư thì chưa cấu hình được theo từng công ty); dịch vụ ký số từ xa đòi người dùng xác nhận trên điện
   thoại cho từng lần ký không ký tự động được; chưa ký văn bản PDF khác (biên nhận, quy trình); chưa nhúng thông tin
   thu hồi (PAdES B-LT/LTA). Kiểm thử dùng máy chủ CSC giả lập và SoftHSM2, chưa thử với HSM hay CA thật.
+
+(adr-95)=
+## ADR #95: Kubernetes (k3s) và Argo CD: manifest Kustomize sinh từ cấu hình compose, CI dựng thử trên cụm k3s tạm
+
+- **Ngày:** 26/11/2026
+- **Quyết định:** `tools/k8s/generate.py` sinh `infra/k8s/base` (mỗi dịch vụ một Deployment hoặc Job, Service, PVC,
+  ConfigMap) và `infra/k8s/components/<nhóm>` từ cấu hình compose đã qua `tools/release/compose_release.py`; biến
+  `${TÊN:-mặc định}` đọc từ Secret `bamboo-settings`, `depends_on` thành init container chờ Job xong hoặc Service sẵn sàng.
+  Overlay `ci` (image dựng tại chỗ, Secret từ mặc định của dev, bỏ dịch vụ nặng) và `production` (image GHCR, Ingress,
+  Secret tạo ngoài Git); `infra/k8s/argocd/application.yaml` cho Argo CD tự đồng bộ overlay production từ `main` (prune,
+  selfHeal). Workflow `Kubernetes` kiểm manifest khớp compose, schema (kubeconform), dựng phần lõi trên cụm k3s tạm (k3d)
+  và chạy `tools/ci/gateway-smoke.sh` qua cổng API. Compose vẫn là cách chạy chính, `reconcile.sh` (ADR #83) giữ nguyên.
+- **Lý do:** Một nguồn cấu hình cho cả hai cách chạy, không phải giữ hai bộ tay đồng bộ với nhau; k3s chạy được trên
+  một máy như compose, Argo CD cho GitOps đúng nghĩa (kéo từ Git, tự sửa lệch, xem lịch sử đồng bộ).
+- **Đã loại:** Helm chart viết tay (hai bộ cấu hình); kompose (không xử lý `depends_on`, cấu hình gắn từ kho mã, biến
+  mặc định); chuyển hẳn sang Kubernetes ngay (sleeper, Vector cần Docker API, máy 8 GB khó gánh thêm control plane).
+- **Giới hạn hiện tại:** Một node (PVC `ReadWriteOnce` dùng chung); không có sleeper nên dịch vụ nặng chạy thường trực;
+  chưa có mTLS trong cụm (dùng service mesh), chưa có External Secrets từ OpenBao (Secret tạo tay hoặc công cụ ngoài);
+  Job (`migrate`, `bootstrap`) chạy lại khi Argo CD thay bằng bản mới (`Replace=true`), chưa có sync wave; CI chỉ dựng
+  phần lõi (không AI, OCR, Trino, Kafka, IoT).
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
