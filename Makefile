@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: help build build-py build-web install uninstall dist clean gitops-enable gitops-disable gitops-status check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
+.PHONY: help build build-py build-web install uninstall dist clean gitops-enable gitops-disable gitops-status check check-py check-web check-docs setup-code up-gpu test-gateway release-compose k8s-manifests up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 -include config.mk
 
@@ -52,6 +52,13 @@ export COMPOSE_FILE := $(MAC_COMPOSE_FILE)
 export OLLAMA_URL := http://host.docker.internal:11434
 endif
 
+# mTLS nội bộ (infra/compose/mtls.yml, ADR #76): BAMBOO_ENV=production (hoặc BAMBOO_MTLS=true) thì mọi lệnh docker compose
+# dưới đây thêm tệp này, như `make up`.
+MTLS_COMPOSE_FILE := $(shell COMPOSE_FILE="$(COMPOSE_FILE)" tools/mtls.sh compose-file 2> /dev/null)
+ifneq ($(MTLS_COMPOSE_FILE),)
+export COMPOSE_FILE := $(MTLS_COMPOSE_FILE)
+endif
+
 up:
 	native="$$(tools/mac/ai.sh up)" && eval "$$native" && profile="$$(tools/ram_profile.sh)" && eval "$$profile" \
 		&& docker compose up -d --build --remove-orphans
@@ -80,7 +87,6 @@ test-seed:
 
 test-auth:
 	docker compose run --rm -u 0 -v ./:/repo -e DEMO_STACK=1 -e DEMO_PASSWORD=$(DEMO_PASSWORD) \
-		-e KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/bms/protocol/openid-connect/token \
 		actions sh -c "pip install -q pytest -c /opt/bamboo/dev-pins.txt && python -m pytest -q tests/test_demo_login.py"
 
 test-gateway:
@@ -104,6 +110,10 @@ realm:
 
 psql:
 	docker compose exec db psql -U bms -d bms
+
+# Manifest Kubernetes (infra/k8s, ADR #95) sinh lại từ cấu hình compose sau khi sửa infra/compose.
+k8s-manifests:
+	$(UV) run --no-project --with pyyaml python tools/k8s/generate.py
 
 release-compose:
 	$(UV) run --quiet --no-project --with pyyaml python tools/release/compose_release.py \

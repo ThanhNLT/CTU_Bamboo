@@ -47,6 +47,8 @@ Máy dev chạy `docker compose up -d` với cấu hình mặc định là đủ
 | 8 | Quét virus bằng ClamAV (bộ quét nội bộ và CDR luôn chạy, ClamAV quét thêm bằng cơ sở dữ liệu mẫu virus, ADR #70) | `make up` ở mức RAM 16 tự bật (`BAMBOO_CLAMAV=true` để bật ở mức 8); chạy tay: `docker compose --profile scan up -d` và `CLAMAV_HOST=clamav`; đặt `SCAN_REQUIRE_CLAMAV=true` để không nhận tệp khi thiếu ClamAV |
 | 9 | Sao lưu | Lịch sao lưu theo mục 5, thử khôi phục ít nhất một lần |
 | 10 | Khóa OpenBao | Sao lưu volume `openbao-keys` tách biệt, giới hạn quyền truy cập máy chủ (mục 6) |
+| 10a | Ký số văn bản (tùy chọn) | Có HSM hoặc tài khoản ký số từ xa của CA: đặt `ORG_SIGN_*` trong `.env` (mục 10), PIN và bí mật OAuth2 vào OpenBao `secret/bms/org-sign`; khởi động lại `actions` và in thử một quyết định nhân sự |
+| 11a | mTLS nội bộ | `make up` với `BAMBOO_ENV=production` tự thêm `infra/compose/mtls.yml`: Keycloak, Flowable, `actions` và Hasura (qua sidecar ghostunnel) chỉ nhận HTTPS kèm chứng chỉ máy khách do CA nội bộ OpenBao cấp; cổng gỡ lỗi 8080, 8081, 8082, 8090 đóng. Gọi tay bằng `curl --cert` với chứng chỉ trong volume `*-tls` (mục 6). Tắt bằng `BAMBOO_MTLS=false` (không khuyến nghị) |
 | 11 | Tài khoản CSDL | Mỗi dịch vụ một role không phải superuser (ADR #35), mật khẩu `HASURA_DB_PASSWORD`, `ACTIONS_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FLOWABLE_DB_PASSWORD`, `CDC_DB_PASSWORD` (Debezium), `LAKEHOUSE_DB_PASSWORD` (catalog Iceberg); superuser `bms` chỉ dùng cho `migrate`, `seed` và quản trị. Đổi mật khẩu: sửa `.env` rồi `docker compose up -d` (job `migrate` đặt lại mật khẩu, các dịch vụ khởi động lại với giá trị mới) |
 | 12 | Trục dữ liệu (ADR #45) | Mật khẩu Kafka `DEBEZIUM_KAFKA_PASSWORD`, `LAKEHOUSE_KAFKA_PASSWORD` (Kafka từ chối client không có tài khoản, ACL theo tiền tố topic). Trino chỉ nhận đăng nhập qua HTTPS bằng chứng chỉ của CA nội bộ OpenBao; mật khẩu `bms-admin`, `bms-actions` do OpenBao sinh; người dùng tenant chỉ thấy dữ liệu của tenant mình (row filter). Không mở cổng 8085 của Trino ra ngoài máy chủ |
 | 13 | Giám sát (ADR #75) | `GRAFANA_ADMIN_PASSWORD` riêng (bắt buộc với `BAMBOO_ENV=production`). Grafana `:3001`, Jaeger `:16686`, Prometheus `:9090` chỉ nghe 127.0.0.1: xem qua đường hầm SSH, không mở ra Internet. Mức RAM 8 bật bằng `BAMBOO_OBSERVABILITY=true` |
@@ -72,7 +74,7 @@ Cổng API đã lo phần còn lại: chặn đường dẫn không khai báo, k
 Chạy bằng image dựng sẵn (không cần mã nguồn), trong thư mục có `.env`:
 
 ```bash
-docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.3.0 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.5.2 up -d -y
 ```
 
 Nâng cấp lên phiên bản mới: **sao lưu trước** (mục 5), rồi chạy lại lệnh trên với số phiên bản mới. Job `migrate` chỉ chạy các migration chưa chạy (bảng `public.schema_migration`), `bootstrap` nạp lại metadata Hasura, deploy BPMN khi nội dung đổi và bổ sung `WEB_ORIGIN` vào redirect URI của client `bms-web` trong Keycloak nếu còn thiếu (đổi tên miền không cần import lại realm; giá trị cũ được giữ, gỡ thủ công trong trang quản trị nếu muốn). Migration chỉ đi tiến: muốn quay về bản cũ thì khôi phục bản sao lưu.
@@ -185,7 +187,7 @@ Các giới hạn bộ nhớ khác (đặt trong `.env`):
 | `hasura` | `pool_settings` trong metadata | 20 kết nối | Mặc định của Hasura là 50; mỗi kết nối PostgreSQL tốn RAM riêng |
 | `meilisearch` | `MEILI_MAX_INDEXING_MEMORY` | `512 MiB` | Mặc định Meilisearch dùng tới 2/3 RAM máy khi lập chỉ mục |
 | `gateway` | `GATEWAY_WORKERS` | `2` | Mặc định APISIX chạy một worker mỗi lõi CPU, mỗi worker nạp riêng WAF Coraza |
-| `ollama` | `AI_KV_CACHE_TYPE` | `q4_0` | Bộ đệm ngữ cảnh (KV cache) lượng tử hóa 4 bit, ngữ cảnh 12K vẫn nhỏ hơn `q8_0` ở 8K (khoảng 75%); đặt `q8_0` nếu chất lượng trả lời giảm (cần flash attention, đã bật) |
+| `ollama` | `AI_KV_CACHE_TYPE` | `q4_0` (Mac Apple Silicon từ 16 GB: `f16`) | Bộ đệm ngữ cảnh (KV cache) lượng tử hóa 4 bit, ngữ cảnh 12K vẫn nhỏ hơn `q8_0` ở 8K (khoảng 75%); đặt `q8_0` nếu chất lượng trả lời giảm (cần flash attention, đã bật). Trên GPU Metal của Mac, `f16` sinh chữ nhanh hơn khoảng 28% vì không phải giải lượng tử ([ADR #93](#adr-93)); để trống thì mỗi nơi dùng mặc định của mình |
 
 Các tiến trình Python chạy với `MALLOC_ARENA_MAX=2` để glibc không tạo vùng heap riêng cho từng luồng. `lakehouse-sink` bỏ snapshot Iceberg cũ hơn 24 giờ mỗi giờ (giữ snapshot hiện tại chứa vị trí Kafka), nên siêu dữ liệu bảng không lớn dần; tệp manifest của snapshot đã bỏ vẫn nằm trên S3, dọn bằng Trino `ALTER TABLE lakehouse.bronze.<bảng> EXECUTE remove_orphan_files`.
 
@@ -197,7 +199,7 @@ Trợ lý RAG, tác tử AI (Ollama) và OCR tệp quét (dịch vụ `ocr`) kh�
 
 ```bash
 docker compose up -d
-docker compose logs -f ollama-init         # lần đầu tải ~3,7 GB (qwen3:4b ~2,5 GB, bge-m3 ~1,2 GB)
+docker compose logs -f ollama-init         # lần đầu tải ~3,7 GB (Qwen3 4B Instruct ~2,5 GB, bge-m3 ~1,2 GB)
 docker compose logs -f ocr-init            # lần đầu tải ~250 MB mô hình OCR (PaddleOCR, VietOCR)
 curl 127.0.0.1:11434/api/tags              # thấy hai mô hình là xong
 curl 127.0.0.1:8866/health                 # dịch vụ OCR: GPU hay CPU, mô hình đang nạp chưa
@@ -207,7 +209,7 @@ tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo
 
 | Hạng mục | Giá trị |
 |---|---|
-| RAM / GPU | Chỉ chiếm khi có việc: qwen3:4b ~3 GB (kèm ngữ cảnh 12K), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
+| RAM / GPU | Chỉ chiếm khi có việc: Qwen3 4B Instruct ~3 GB (kèm ngữ cảnh 12K; Mac từ 16 GB ~4,1 GB vì KV cache f16), bộ OCR ~0,4 GB, bge-m3 ~1,2 GB. GPU tùy chọn: NVIDIA từ 8 GB VRAM (máy chuẩn: RTX 4060 Laptop 8 GB); không có GPU thì cần thêm 8 GB RAM |
 | Đĩa | ~3,7 GB volume `ollama-models`, ~250 MB volume `ocr-models`, image `ocr` ~14 GB (PyTorch CUDA); sau lần tải đầu chạy không cần Internet |
 | Tốc độ | GPU: vài giây mỗi lượt hỏi, 1–2 giây mỗi trang OCR; CPU chậm hơn nhiều lần. Lần đầu sau khi nhàn rỗi chờ thêm thời gian nạp mô hình (chữ đầu tiên sau khoảng 5–6 giây; `ollama` và `ocr` đọc trước tệp mô hình vào page cache khi khởi động, nên máy ít RAM bị hệ điều hành thu hồi cache thì lần nạp đầu đọc lại từ đĩa, chậm hơn nhiều). Lượt hỏi và trang OCR chung một hàng đợi trong `ai-worker`, mỗi lúc một việc, lượt hỏi được ưu tiên |
 
@@ -217,7 +219,7 @@ tools/ocr_smoke.sh                         # OCR ảnh mẫu tiếng Việt, đo
 
 **Hiệu chỉnh độ liên quan:** câu hỏi ngoài phạm vi vẫn được trả lời (thay vì "Không tìm thấy…") thì tăng `AI_MIN_SCORE` (mặc định 0,7); câu đúng phạm vi bị từ chối thì giảm. Log `ai-worker` in điểm cao nhất của mỗi lượt hỏi; `tools/ai_smoke.sh` in điểm theo nhóm câu hỏi (trong phạm vi, ngoài phạm vi, tiêm lệnh). Hạ tạm `AI_MIN_SCORE` xuống 0,5 khi chạy để thấy điểm của câu bị chặn.
 
-**Mô hình luôn suy nghĩ** ([ADR #89](#adr-89)): thẻ `qwen3:4b` của kho Ollama hiện là bản thinking, luôn lập luận trước khi trả lời kể cả khi tác tử tắt dòng suy nghĩ. `ai-worker` không hiện phần lập luận đó, cắt nó sau 512 mảnh rồi buộc mô hình trả lời, nên mỗi lượt hỏi vẫn tốn thời gian sinh phần lập luận (trên CPU khoảng một đến hai phút mỗi lượt; GPU nhanh hơn nhiều lần). Bản `qwen3:4b-instruct` không lập luận nên nhanh hơn, nhưng trong phép thử trả lời sai nhiều hơn ở câu phải so mức tiền và câu hỏi tiếng Anh; chỉ nên đổi khi cần tốc độ hơn độ chính xác.
+**Mô hình trò chuyện** ([ADR #93](#adr-93)): mặc định là `qwen3:4b-instruct-2507-q4_K_M`, Qwen3-4B bản instruct, trả lời thẳng không lập luận. Thẻ `qwen3:4b` của kho Ollama là bản thinking, luôn lập luận trước khi trả lời kể cả khi tác tử tắt dòng suy nghĩ ([ADR #89](#adr-89)); nếu tác tử dùng mô hình đó, `ai-worker` không hiện phần lập luận, cắt sau 512 mảnh rồi buộc mô hình trả lời. Đo bằng `tools/ai_smoke.sh` trên Mac Apple M1 Pro 16 GB: bản instruct đạt 37/39 câu, trung vị cả lượt 9,0 giây; bản thinking 38/39 câu, 23,1 giây. Phần lớn thời gian còn lại là đọc ngữ cảnh (khoảng 6.000 token, GPU M1 Pro đọc khoảng 330 token/giây), nên chữ đầu tiên vẫn sau khoảng 8 giây.
 
 **Đổi mô hình:** đặt `AI_CHAT_MODEL` (hoặc `AI_EMBED_MODEL`) trong `.env`, chạy lại `docker compose up -d` để `ollama-init` tải, rồi chọn mô hình cho tác tử ở trang Tác tử AI. Đổi `AI_EMBED_MODEL` thì phải dùng mô hình 1024 chiều như `bge-m3`, xóa chỉ mục `documents_kb_chunk` để nạp lại (search-sync tự nạp bù khi chỉ mục trống).
 
@@ -293,3 +295,28 @@ Bộ nhớ hợp nhất của Mac dùng chung cho CPU, GPU và máy ảo Docker,
 5. Ngay trước buổi demo chạy `tools/demo_prepare.sh`: kiểm AI đang bật, giữ qwen3 và bge-m3 trong bộ nhớ 2 giờ, kiểm đã có tệp "Đã OCR".
 
 **Quyền:** người quản trị tác tử cần quyền `core.ai.manage` (seed demo gán cho CDO Tập đoàn X và KHTH BVX). Tác tử không có quyền riêng; trợ lý chỉ đọc tài liệu thư viện đang hiệu lực mà người hỏi được xem.
+
+## 10. Ký số văn bản bằng chứng thư tổ chức (ADR #94)
+
+Quyết định nhân sự, báo cáo KPI và phiếu đề nghị mua sắm in ra PDF được ký PAdES bằng chứng thư số công cộng của công ty
+khi có cấu hình; không cấu hình thì in như cũ. Chỉ văn bản của công ty có mã số thuế nằm trong chứng thư mới được ký.
+
+- **HSM hoặc token USB (PKCS#11):** gắn thư viện PKCS#11 của hãng vào container `actions` (volume hoặc image riêng), đặt
+  `ORG_SIGN_PROVIDER=pkcs11`, `ORG_SIGN_PKCS11_LIB` (đường dẫn `.so`), `ORG_SIGN_PKCS11_TOKEN` (nhãn token),
+  `ORG_SIGN_PKCS11_KEY` và `ORG_SIGN_PKCS11_CERT` (nhãn khóa, chứng thư; cùng nhãn thì để trống `CERT`). Chưa có HSM:
+  SoftHSM2 có sẵn trong image (`/usr/lib/softhsm/libsofthsm2.so`), cần volume giữ thư mục token và `SOFTHSM2_CONF`.
+- **Ký số từ xa của CA (CSC API v1):** `ORG_SIGN_PROVIDER=csc`, `ORG_SIGN_CSC_URL` (phần trước `/csc/v1`),
+  `ORG_SIGN_CSC_CREDENTIAL`, `ORG_SIGN_CSC_TOKEN_URL` và `ORG_SIGN_CSC_CLIENT_ID` (OAuth2 client credentials). Gói dịch
+  vụ đòi xác nhận trên điện thoại cho từng lần ký thì không ký tự động được: hỏi CA gói cho phép ký tự động (ký số tổ chức).
+- **Bí mật:** PIN và bí mật OAuth2 không đặt trong `.env` mà ghi vào OpenBao, dịch vụ `actions` đọc khi khởi động:
+
+  ```bash
+  docker compose exec -e BAO_TOKEN=<root token trong volume openbao-keys, mục 6> openbao \
+    bao kv put -address=http://127.0.0.1:8200 secret/bms/org-sign pin=... csc_client_secret=...
+  ```
+
+- **Dấu thời gian:** `ORG_SIGN_TSA_URL` (máy chủ TSA của CA) gắn dấu thời gian RFC 3161, chữ ký kiểm được cả khi chứng thư
+  đã hết hạn.
+
+Kiểm tra: khởi động lại `actions` (`docker compose up -d actions`), nhật ký có dòng `ký số văn bản bằng chứng thư tổ chức
+qua ...`; in thử một quyết định nhân sự rồi mở PDF bằng trình đọc có kiểm chữ ký số.

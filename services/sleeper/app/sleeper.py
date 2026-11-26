@@ -41,6 +41,7 @@ import json
 import logging
 import os
 import shlex
+import ssl
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -359,7 +360,7 @@ class Gpu:
 class AiRam:
     """Không có GPU thì AI chỉ chạy trên CPU khi Docker đủ RAM (ADR #90).
 
-    Trên CPU, mô hình nằm trong RAM của Docker (qwen3:4b ~3 GB kèm ngữ cảnh, bge-m3 ~1,2 GB, bộ OCR ~0,4 GB) cùng mọi
+    Trên CPU, mô hình nằm trong RAM của Docker (mô hình trò chuyện Qwen3 4B ~3 GB kèm ngữ cảnh, bge-m3 ~1,2 GB, bộ OCR ~0,4 GB) cùng mọi
     dịch vụ khác; thiếu RAM thì OOM killer hạ một tiến trình bất kỳ, kể cả CSDL. Khi đã biết AI không dùng GPU (`gpu` dò
     xong mà không có card, hoặc tắt bằng BAMBOO_GPU=false) mà Docker thấy dưới `min_mb` thì dừng và khóa các dịch vụ AI:
     không đánh thức, mô-đun không chạy lại; actions đọc `/status` để trợ lý, OCR báo lý do thay vì chờ mãi. Có GPU thì
@@ -545,17 +546,35 @@ class Target:
             dst.close()
 
 
+def internal_tls() -> ssl.SSLContext | None:
+    """mTLS tới actions (infra/compose/mtls.yml): chứng chỉ dịch vụ trong INTERNAL_TLS_DIR do openbao-init cấp."""
+    directory, identity = os.environ.get("INTERNAL_TLS_DIR", ""), os.environ.get("INTERNAL_TLS_IDENTITY", "")
+    if not directory or not identity:
+        return None
+    ctx = ssl.create_default_context(cafile=os.path.join(directory, "ca.crt"))
+    ctx.load_cert_chain(os.path.join(directory, f"{identity}.crt"), os.path.join(directory, f"{identity}.key"))
+    return ctx
+
+
 async def http_get_json(url: str, timeout: float = 5.0) -> dict:
-    """GET một URL http:// trong mạng nội bộ, trả JSON (thư viện chuẩn, không thêm gói)."""
+    """GET một URL http:// (hoặc https:// với mTLS nội bộ) trong mạng nội bộ, trả JSON (thư viện chuẩn, không thêm gói)."""
     parts = urlparse(url)
-    if parts.scheme != "http" or not parts.hostname:
-        raise ValueError(f"chỉ hỗ trợ http://: {url}")
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        raise ValueError(f"chỉ hỗ trợ http:// hoặc https://: {url}")
+    tls = internal_tls() if parts.scheme == "https" else None
+    if parts.scheme == "https" and tls is None:
+        raise ValueError(f"https:// cần INTERNAL_TLS_DIR và INTERNAL_TLS_IDENTITY: {url}")
     path = parts.path or "/"
     if parts.query:
         path += f"?{parts.query}"
 
     async def call() -> bytes:
-        reader, writer = await asyncio.open_connection(parts.hostname, parts.port or 80)
+        if tls is not None:
+            reader, writer = await asyncio.open_connection(
+                parts.hostname, parts.port or 443, ssl=tls, server_hostname=parts.hostname
+            )
+        else:
+            reader, writer = await asyncio.open_connection(parts.hostname, parts.port or 80)
         try:
             writer.write(f"GET {path} HTTP/1.0\r\nHost: {parts.hostname}\r\nAccept: application/json\r\n\r\n".encode())
             await writer.drain()
