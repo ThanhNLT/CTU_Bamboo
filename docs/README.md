@@ -30,8 +30,8 @@ File này chỉ để đọc trên Git, không đưa vào trang Sphinx.
 docs/
 ├── index.md                     Trang chủ, mục lục
 ├── tong-quan/                   Yêu cầu đề thi và đối chiếu, kiến trúc 3 tầng, kịch bản nghiệp vụ
-├── thiet-ke/                    Thiết kế CSDL, dịch vụ nền tảng Tầng 1, API
-├── quan-ly-du-an/               Nhật ký quyết định kiến trúc (ADR)
+├── thiet-ke/                    Thiết kế chi tiết 3 tầng, CSDL, dịch vụ nền tảng Tầng 1, API, thư viện
+├── quan-ly-du-an/               Nhật ký quyết định kiến trúc (ADR), lịch sử pull request, nhật ký chuyển kho
 ├── van-hanh/                    Triển khai production, khởi tạo cho công ty mới
 ├── _static/custom.css           CSS bổ sung
 ├── conf.py                      Cấu hình Sphinx
