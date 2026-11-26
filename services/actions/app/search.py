@@ -20,6 +20,8 @@
 import hashlib
 import hmac
 import html
+import logging
+import re
 import time
 import uuid
 
@@ -27,6 +29,8 @@ import httpx
 import psycopg
 
 from .common import ActionError, Context, session_identity
+
+log = logging.getLogger("search")
 
 INDEX = "documents"
 SEARCH_KEY_UID = "8f1d6a52-3c1e-4c55-9a43-6a0b7f5e2c01"
@@ -53,6 +57,17 @@ TEXT_TYPES = {
 PLAIN_TYPES = {"text/plain", "text/csv", "text/markdown"}
 _PRE, _POST = "", ""
 _SNIPPET_FIELDS = ("content", "description", "items", "title", "file_name", "partner", "requester", "doc_no")
+
+# Tìm theo ý nghĩa (ADR #92): vector bge-m3 1024 chiều do search-sync tạo (embedder `userProvided`, cùng mô hình với
+# chỉ mục đoạn của trợ lý RAG). Điểm ngữ nghĩa của Meilisearch là (1 + cos) / 2; đo trên dữ liệu demo, câu hỏi và
+# chứng từ liên quan có cos ≈ 0,56–0,67, câu vô nghĩa ≤ 0,40, trung vị 0,45–0,51 nên chỉ lấy cos ≥ SEMANTIC_MIN_COS.
+EMBEDDER = "bge"
+DIMENSIONS = 1024
+SEMANTIC_MIN_COS = 0.55
+SEMANTIC_QUERY_SECONDS = 4.0
+SEMANTIC_TEXT_CHARS = 2000
+# Câu tìm có mã số (PR-2026-000123, mã số thuế...) chỉ tìm theo từ khóa: vector của các mã giống nhau rất gần nhau.
+_CODE_QUERY = re.compile(r"\d{3,}")
 
 
 def derive_key(master_key: str, uid: str) -> str:
@@ -93,7 +108,26 @@ def index_settings() -> dict:
         ],
         "typoTolerance": {"disableOnAttributes": ["doc_no"]},
         "pagination": {"maxTotalHits": MAX_CANDIDATES},
+        "embedders": {EMBEDDER: {"source": "userProvided", "dimensions": DIMENSIONS}},
     }
+
+
+def semantic_text(doc: dict) -> str:
+    """Văn bản đại diện cho vector của một tài liệu: tiêu đề, dòng hàng, nhà cung cấp, mô tả, đầu nội dung tệp.
+
+    Không đưa số chứng từ, mã: vector của các mã gần như trùng nhau làm mọi chứng từ giống nhau.
+    """
+    items = doc.get("items")
+    parts = [
+        doc.get("title"),
+        doc.get("file_name"),
+        f"Hàng hóa: {'; '.join(i for i in items if isinstance(i, str))}" if isinstance(items, list) and items else None,
+        f"Nhà cung cấp: {doc['partner']}" if doc.get("partner") else None,
+        doc.get("org_unit"),
+        doc.get("description"),
+        (doc.get("content") or "")[:SEMANTIC_TEXT_CHARS],
+    ]
+    return ". ".join(p.strip() for p in parts if isinstance(p, str) and p.strip())[:SEMANTIC_TEXT_CHARS]
 
 
 def doc_id(entity_type: str, entity_id) -> str:
@@ -153,10 +187,24 @@ class Meili:
 
 
 def ensure_index(admin: Meili, index: str = INDEX, settings: dict | None = None) -> bool:
+    """Tạo hoặc cập nhật cài đặt chỉ mục. Trả True khi chỉ mục mới tạo hoặc vừa bị làm trống (search-sync nạp lại).
+
+    Meilisearch không thêm được embedder `userProvided` vào chỉ mục đang có tài liệu chưa có vector (bản trước ADR #92):
+    khi đó xóa tài liệu rồi đặt lại cài đặt; search-sync thấy chỉ mục trống thì đánh dấu nạp lại toàn bộ.
+    """
     created = admin.request("GET", f"/indexes/{index}", ok404=True) is None
     if created:
         admin.wait(admin.request("POST", "/indexes", {"uid": index, "primaryKey": "id"}))
-    admin.wait(admin.request("PATCH", f"/indexes/{index}/settings", settings or index_settings()))
+    body = settings or index_settings()
+    try:
+        admin.wait(admin.request("PATCH", f"/indexes/{index}/settings", body))
+    except SearchUnavailable as exc:
+        if "no vectors provided" not in str(exc):
+            raise
+        log.info("chỉ mục %s chưa có vector: xóa tài liệu để thêm embedder, search-sync sẽ nạp lại", index)
+        admin.wait(admin.request("DELETE", f"/indexes/{index}/documents"))
+        admin.wait(admin.request("PATCH", f"/indexes/{index}/settings", body))
+        created = True
     return created
 
 
@@ -270,7 +318,26 @@ def _readable(conn: psycopg.Connection, person: str, hits: list[dict]) -> set[st
     return {r[0] for r in rows}
 
 
+def _query_vector(ctx: Context, query: str) -> list[float] | None:
+    """Vector của câu tìm, hoặc None để chỉ tìm theo từ khóa (AI chưa bật, câu tìm là mã số, Ollama không trả kịp)."""
+    ai, model = getattr(ctx, "ai", None), getattr(ctx, "ai_embed_model", "")
+    if ai is None or not model or len(query) < 3 or _CODE_QUERY.search(query):
+        return None
+    try:
+        [vector] = ai.embed(model, [query], timeout=SEMANTIC_QUERY_SECONDS)
+    except Exception as exc:  # noqa: BLE001
+        log.info("tìm theo ý nghĩa tạm không dùng được, chỉ tìm từ khóa: %s", exc)
+        return None
+    return vector if len(vector) == DIMENSIONS else None
+
+
 def search_documents(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> list[dict]:
+    """Tìm theo từ khóa (ADR #36), rồi bổ sung kết quả gần về ý nghĩa mà từ khóa không ra (ADR #92).
+
+    `mode`: `hybrid` (mặc định) trả kết quả từ khóa trước theo thứ tự của Meilisearch rồi nối kết quả theo ý nghĩa;
+    `keyword` chỉ tìm từ khóa; `semantic` chỉ tìm theo ý nghĩa, quay về từ khóa khi AI chưa sẵn sàng. Kết quả theo ý
+    nghĩa chỉ lấy khi cos ≥ SEMANTIC_MIN_COS và mang `semantic_score` (cos). Mọi kết quả đều lọc lại theo quyền xem.
+    """
     query = (args.get("query") or "").strip()
     if not query:
         raise ActionError("Nhập từ khóa để tìm", "query-required")
@@ -281,6 +348,9 @@ def search_documents(conn: psycopg.Connection, session: dict, args: dict, ctx: C
     kind = args.get("kind")
     if kind not in (None, "purchase_request", "attachment", "kb_document"):
         raise ActionError(f"Loại kết quả không hợp lệ: {kind}")
+    mode = args.get("mode") or "hybrid"
+    if mode not in ("hybrid", "keyword", "semantic"):
+        raise ActionError(f"Chế độ tìm không hợp lệ: {mode}")
     tenant = session.get("x-hasura-tenant-id")
     person = session_identity(session, tenant)
     if ctx.search is None:
@@ -289,8 +359,7 @@ def search_documents(conn: psycopg.Connection, session: dict, args: dict, ctx: C
     filters = [f'tenant_id = "{uuid.UUID(tenant)}"']
     if kind:
         filters.append(f'kind = "{kind}"')
-    body = {
-        "q": query,
+    common = {
         "filter": " AND ".join(filters),
         "attributesToRetrieve": ["id", "kind", "entity_type", "entity_id", "attachment_id", "file_name"],
         "attributesToCrop": ["content", "description"],
@@ -301,37 +370,60 @@ def search_documents(conn: psycopg.Connection, session: dict, args: dict, ctx: C
         "showRankingScore": True,
     }
     results: list[dict] = []
-    seen_files: set[str] = set()
-    page_size = min(max(2 * (offset + limit), 40), 200)
-    start = 0
-    while len(results) < offset + limit and start < MAX_CANDIDATES:
-        try:
-            found = ctx.search.search(ctx.search_index, {**body, "offset": start, "limit": page_size})
-        except SearchUnavailable as exc:
-            raise ActionError("Tìm kiếm tạm thời không dùng được", "search-unavailable", 503) from exc
-        hits = found["hits"]
-        allowed = _readable(conn, person, hits)
-        for hit in hits:
-            if hit["id"] not in allowed:
-                continue
-            if hit.get("attachment_id"):
-                if hit["attachment_id"] in seen_files:
+    seen: set[str] = set()
+    want = offset + limit
+    page_size = min(max(2 * want, 40), 200)
+
+    def collect(body: dict, semantic: bool, required: bool) -> None:
+        start = 0
+        while len(results) < want and start < MAX_CANDIDATES:
+            try:
+                found = ctx.search.search(ctx.search_index, {**body, "offset": start, "limit": page_size})
+            except SearchUnavailable as exc:
+                if not required:
+                    log.info("bỏ qua tìm theo ý nghĩa: %s", exc)
+                    return
+                raise ActionError("Tìm kiếm tạm thời không dùng được", "search-unavailable", 503) from exc
+            hits = [h for h in found["hits"] if (h.get("attachment_id") or h["id"]) not in seen]
+            allowed = _readable(conn, person, hits)
+            for hit in hits:
+                key = hit.get("attachment_id") or hit["id"]
+                if hit["id"] not in allowed or key in seen:
                     continue
-                seen_files.add(hit["attachment_id"])
-            field, snippet = _snippet(hit)
-            results.append(
-                {
-                    "kind": hit["kind"],
-                    "entity_type": hit["entity_type"],
-                    "entity_id": hit["entity_id"],
-                    "attachment_id": hit.get("attachment_id"),
-                    "file_name": hit.get("file_name"),
-                    "matched_field": field,
-                    "snippet": snippet,
-                    "score": round(hit.get("_rankingScore", 0.0), 4),
-                }
-            )
-        if len(hits) < page_size:
-            break
-        start += page_size
+                seen.add(key)
+                field, snippet = _snippet(hit)
+                score = hit.get("_rankingScore", 0.0)
+                results.append(
+                    {
+                        "kind": hit["kind"],
+                        "entity_type": hit["entity_type"],
+                        "entity_id": hit["entity_id"],
+                        "attachment_id": hit.get("attachment_id"),
+                        "file_name": hit.get("file_name"),
+                        "matched_field": None if semantic else field,
+                        "snippet": snippet,
+                        "score": round(score, 4),
+                        "semantic_score": round(2 * score - 1, 4) if semantic else None,
+                    }
+                )
+            if len(found["hits"]) < page_size:
+                break
+            start += page_size
+
+    vector = _query_vector(ctx, query) if mode == "semantic" else None
+    if mode != "semantic" or vector is None:
+        # Từ khóa phải có đủ mọi từ đã gõ (như giao diện hứa): mặc định `last` của Meilisearch bỏ dần từ cuối câu nên
+        # "đồ dùng văn phòng" ra mọi tài liệu có chữ "phòng" và chiếm hết chỗ của kết quả gần về ý nghĩa.
+        collect({**common, "q": query, "matchingStrategy": "all"}, semantic=False, required=True)
+    if mode == "hybrid" and len(results) < want:
+        vector = _query_vector(ctx, query)
+    if len(results) < want and vector is not None:
+        semantic = {
+            **common,
+            "q": "",
+            "vector": vector,
+            "hybrid": {"embedder": EMBEDDER, "semanticRatio": 1.0},
+            "rankingScoreThreshold": (1 + SEMANTIC_MIN_COS) / 2,
+        }
+        collect(semantic, semantic=True, required=False)
     return results[offset : offset + limit]
