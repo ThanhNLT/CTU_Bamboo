@@ -26,7 +26,7 @@ import jinja2
 import psycopg
 from psycopg.rows import dict_row
 
-from . import i18n, storage
+from . import i18n, org_sign, storage
 from .common import ActionError, Context, require_read, session_identity
 
 TEMPLATES = pathlib.Path(__file__).resolve().parent / "templates"
@@ -234,6 +234,27 @@ def html_to_pdf(gotenberg_url: str, html: str, footer_html: str, timeout: float 
     return resp.content
 
 
+def cached_pdf_key(ctx: Context, prefix: str, digest: str, tax_code: str | None) -> tuple[str, bool]:
+    """Khóa lưu PDF theo mã băm nội dung; khi có bộ ký số của công ty, bản đã ký mang hậu tố `.sealed` (đổi cấu hình
+    ký không phục vụ nhầm bản chưa ký). Trả (khóa, đã có sẵn)."""
+    if org_sign.covers(ctx.org_signer, tax_code):
+        sealed = f"{prefix}/{digest}.sealed.pdf"
+        if ctx.storage.document_exists(sealed):
+            return sealed, True
+    plain = f"{prefix}/{digest}.pdf"
+    if not org_sign.covers(ctx.org_signer, tax_code) and ctx.storage.document_exists(plain):
+        return plain, True
+    return plain, False
+
+
+def store_pdf(ctx: Context, prefix: str, digest: str, pdf: bytes, tax_code: str | None, reason: str) -> str:
+    """Ký (nếu được) rồi lưu PDF vừa dựng; trả khóa đã lưu."""
+    pdf, sealed = org_sign.seal(ctx.org_signer, tax_code, pdf, reason)
+    key = f"{prefix}/{digest}{'.sealed' if sealed else ''}.pdf"
+    ctx.storage.put_document(key, pdf, "application/pdf")
+    return key
+
+
 def get_purchase_request_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx: Context) -> dict:
     request_id = args["request_id"]
     row = conn.execute("SELECT tenant_id FROM proc.purchase_request WHERE id = %s", (request_id,)).fetchone()
@@ -248,15 +269,16 @@ def get_purchase_request_pdf(conn: psycopg.Connection, session: dict, args: dict
     html = render_purchase_request(pr)
     content.update(html.encode())
     digest = content.hexdigest()
-    key = f"{pr['tenant_id']}/proc.purchase_request/{request_id}/forms/{digest}.pdf"
+    prefix = f"{pr['tenant_id']}/proc.purchase_request/{request_id}/forms"
+    tax_code = org_sign.tenant_tax_code(conn, pr["tenant_id"])
+    key, cached = cached_pdf_key(ctx, prefix, digest, tax_code)
     file_name = f"{pr['doc_no']}.pdf"
-    cached = ctx.storage.document_exists(key)
     if not cached:
         try:
             pdf = html_to_pdf(ctx.gotenberg_url, html, footer(pr["doc_no"], digest[:16].upper()))
         except PdfUnavailable as exc:
             raise ActionError("Tạm thời chưa in được phiếu, thử lại sau", "pdf-unavailable", 503) from exc
-        ctx.storage.put_document(key, pdf, "application/pdf")
+        key = store_pdf(ctx, prefix, digest, pdf, tax_code, f"Phiếu đề nghị mua sắm {pr['doc_no']}")
     return {
         "request_id": request_id,
         "file_name": file_name,
