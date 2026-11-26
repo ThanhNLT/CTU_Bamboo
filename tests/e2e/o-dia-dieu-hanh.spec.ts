@@ -4,7 +4,7 @@
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
- * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ * @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@
  */
 
 import { expect, test, type Page } from "@playwright/test";
+
+import { minimalPdf } from "./pdf";
 
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E ổ đĩa ${Date.now()}`;
@@ -54,7 +56,7 @@ test("tải tệp vào chứng từ qua Ổ đĩa, xem số liệu điều hành
   await page.locator('input[type="file"]').setInputFiles({
     name: FILE,
     mimeType: "application/pdf",
-    buffer: Buffer.from("%PDF-1.7\nbao gia o dia\n%%EOF\n"),
+    buffer: minimalPdf("bao gia o dia"),
   });
   await expect(page.getByLabel("Tiến trình tải lên").getByText("Đã quét sạch · đã lưu")).toBeVisible();
   await expect(page.getByRole("row", { name: new RegExp(FILE) }).getByText("Sạch")).toBeVisible();
