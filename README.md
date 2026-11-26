@@ -499,7 +499,7 @@ BAO_APPROLE_FILE=../../.local/run/actions.json python -m app.flow_sync &        
 BAO_APPROLE_FILE=../../.local/run/search.json python -m app.search_sync &          # đánh chỉ mục tìm kiếm
 ```
 
-Tùy chọn: `python -m app.ai_worker` (cần Ollama với `qwen3:4b`, `bge-m3`), `python -m app.lakehouse_sink` (cần Kafka, Debezium,
+Tùy chọn: `python -m app.ai_worker` (cần Ollama với `qwen3:4b-instruct-2507-q4_K_M`, `bge-m3`), `python -m app.lakehouse_sink` (cần Kafka, Debezium,
 Trino). Biến môi trường đầy đủ: `services/actions/app/config.py`.
 
 ### 7. Giao diện
