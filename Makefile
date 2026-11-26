@@ -52,6 +52,13 @@ export COMPOSE_FILE := $(MAC_COMPOSE_FILE)
 export OLLAMA_URL := http://host.docker.internal:11434
 endif
 
+# mTLS nội bộ (infra/compose/mtls.yml, ADR #76): BAMBOO_ENV=production (hoặc BAMBOO_MTLS=true) thì mọi lệnh docker compose
+# dưới đây thêm tệp này, như `make up`.
+MTLS_COMPOSE_FILE := $(shell COMPOSE_FILE="$(COMPOSE_FILE)" tools/mtls.sh compose-file 2> /dev/null)
+ifneq ($(MTLS_COMPOSE_FILE),)
+export COMPOSE_FILE := $(MTLS_COMPOSE_FILE)
+endif
+
 up:
 	native="$$(tools/mac/ai.sh up)" && eval "$$native" && profile="$$(tools/ram_profile.sh)" && eval "$$profile" \
 		&& docker compose up -d --build --remove-orphans
@@ -80,7 +87,6 @@ test-seed:
 
 test-auth:
 	docker compose run --rm -u 0 -v ./:/repo -e DEMO_STACK=1 -e DEMO_PASSWORD=$(DEMO_PASSWORD) \
-		-e KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/bms/protocol/openid-connect/token \
 		actions sh -c "pip install -q pytest -c /opt/bamboo/dev-pins.txt && python -m pytest -q tests/test_demo_login.py"
 
 test-gateway:

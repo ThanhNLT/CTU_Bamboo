@@ -24,6 +24,7 @@ import httpx
 import pytest
 
 from app import keycloak_sync
+from bamboo_common import tls
 from conftest import TEST_DB_URL
 
 KEYCLOAK = os.environ.get("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080")
@@ -65,7 +66,10 @@ def admin():
     except httpx.HTTPError:
         pytest.skip("Keycloak không truy cập được")
     http = httpx.Client(
-        base_url=f"{KEYCLOAK}/admin/realms/bms", headers={"Authorization": f"Bearer {token}"}, timeout=15
+        base_url=f"{KEYCLOAK}/admin/realms/bms",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=15,
+        verify=tls.verify(KEYCLOAK),
     )
     client = http.get("/clients", params={"clientId": "bms-web"}).json()[0]
     yield http, client
@@ -106,6 +110,7 @@ def _check_provisioner(http, secret):
         f"{KEYCLOAK}/realms/bms/protocol/openid-connect/token",
         timeout=15,
         data={"grant_type": "client_credentials", "client_id": keycloak_sync.PROVISIONER_ID, "client_secret": secret},
+        verify=tls.verify(KEYCLOAK),
     )
     assert token.status_code == 200
     users = httpx.get(
@@ -113,12 +118,14 @@ def _check_provisioner(http, secret):
         params={"max": 1},
         timeout=15,
         headers={"Authorization": f"Bearer {token.json()['access_token']}"},
+        verify=tls.verify(KEYCLOAK),
     )
     assert users.status_code == 200
     clients = httpx.get(
         f"{KEYCLOAK}/admin/realms/bms/clients",
         timeout=15,
         headers={"Authorization": f"Bearer {token.json()['access_token']}"},
+        verify=tls.verify(KEYCLOAK),
     )
     assert clients.status_code == 403
     assert keycloak_sync.ensure_provisioner_client(KEYCLOAK, *ADMIN, secret + "-2") is True
@@ -146,7 +153,10 @@ def test_bo_sung_tai_khoan_demo(admin, tmp_path):
 def master_realm() -> httpx.Client:
     token = keycloak_sync.admin_token(KEYCLOAK, *ADMIN)
     return httpx.Client(
-        base_url=f"{KEYCLOAK}/admin/realms/master", headers={"Authorization": f"Bearer {token}"}, timeout=15
+        base_url=f"{KEYCLOAK}/admin/realms/master",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=15,
+        verify=tls.verify(KEYCLOAK),
     )
 
 
@@ -170,7 +180,10 @@ def test_realm_dung_theme_dang_nhap_bamboo(admin):
     realm = keycloak_sync.REALM
     token = keycloak_sync.admin_token(KEYCLOAK, *ADMIN)
     with httpx.Client(
-        base_url=f"{KEYCLOAK}/admin/realms/{realm}", headers={"Authorization": f"Bearer {token}"}, timeout=15
+        base_url=f"{KEYCLOAK}/admin/realms/{realm}",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=15,
+        verify=tls.verify(KEYCLOAK),
     ) as http:
         original = http.get("").json().get("loginTheme")
         try:
@@ -189,6 +202,7 @@ def test_realm_giu_thuoc_tinh_tai_khoan(admin):
         base_url=f"{KEYCLOAK}/admin/realms/{keycloak_sync.REALM}",
         headers={"Authorization": f"Bearer {token}"},
         timeout=15,
+        verify=tls.verify(KEYCLOAK),
     ) as http:
         original = http.get("/users/profile").json()
         try:

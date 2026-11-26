@@ -28,6 +28,7 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 ### Thay đổi
 
 - **Truy vết từ cổng API:** APISIX có span cho mọi yêu cầu (plugin `opentelemetry`) và gắn traceparent cho Hasura, `actions`, Keycloak; mọi Action của Hasura chuyển tiếp header của client (`forward_client_headers`) nên span của `actions` nằm cùng trace với cổng. Bật cùng lúc với truy vết của `actions` khi có `OTEL_EXPORTER_OTLP_ENDPOINT` (nhóm `observability`); không có thì cổng không lấy mẫu. Cổng chỉ nạp các plugin đang dùng thay cho danh sách mặc định của APISIX. Hasura CE không có span riêng, thời gian ở Hasura xem trong span của cổng.
+- **mTLS cho các chặng HTTP nội bộ:** tệp `infra/compose/mtls.yml` (tự thêm khi `BAMBOO_ENV=production`, hoặc `BAMBOO_MTLS=true`; CI chạy e2e với nó) đưa cổng APISIX → Hasura/actions/Keycloak, Hasura → actions và dịch vụ → Keycloak/Flowable/Hasura lên HTTPS bắt buộc chứng chỉ máy khách do CA nội bộ OpenBao cấp: Keycloak, Flowable TLS gốc; `actions` nghe HTTPS 8443 (HTTP chỉ còn 127.0.0.1); Hasura sau sidecar ghostunnel. Máy dev mặc định vẫn HTTP. `openbao-init` cấp thêm chứng chỉ cho từng dịch vụ (SAN là tên dịch vụ, khóa PKCS#8). Job `actions` của Prometheus và sink của Vector tách ra tệp riêng để thay bản HTTPS.
 
 ### Sửa lỗi
 

@@ -1,0 +1,223 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# mTLS cho các chặng HTTP nội bộ (bổ sung ADR #76): thêm vào COMPOSE_FILE (compose.yaml:infra/compose/mtls.yml).
+# `make up` tự thêm khi BAMBOO_ENV=production; job e2e của CI chạy với tệp này. Máy dev mặc định không dùng, để các cổng
+# gỡ lỗi (Keycloak 8080, Hasura Console 8081, Flowable 8082, actions 8090) vẫn mở bằng HTTP.
+#
+# openbao-init cấp chứng chỉ dịch vụ (CA nội bộ OpenBao, 90 ngày, cấp lại khi còn dưới 30 ngày) vào volume riêng của từng
+# dịch vụ. Máy chủ bắt buộc chứng chỉ máy khách do CA đó cấp:
+#   keycloak:8443, flowable:8443   TLS gốc (Quarkus, Spring Boot)
+#   actions:8443                   uvicorn (app.serve); HTTP 8000 chỉ còn ở 127.0.0.1 cho healthcheck
+#   hasura:8443                    sidecar ghostunnel `hasura-tls` chung mạng với hasura (Hasura CE không có TLS),
+#                                  Hasura chỉ nghe 127.0.0.1; chỉ nhận CN gateway, bootstrap, actions
+# Máy khách: cổng API (bamboo-start), Hasura gọi Action và auth hook qua sidecar `hasura-egress` (127.0.0.1:8001 ->
+# actions:8443 với chứng chỉ `hasura`), dịch vụ Python (bamboo_common.tls), sleeper, Prometheus, Vector.
+
+x-internal-tls: &internal-tls
+  INTERNAL_TLS_DIR: /run/bms/tls
+  INTERNAL_TLS_IDENTITY: actions
+  FLOWABLE_URL: https://flowable:8443/flowable-rest/service
+  HASURA_URL: https://hasura:8443
+  KEYCLOAK_JWKS_URL: https://keycloak:8443/realms/bms/protocol/openid-connect/certs
+  KEYCLOAK_INTERNAL_URL: https://keycloak:8443
+
+x-after-certs: &after-certs
+  openbao-init:
+    condition: service_completed_successfully
+
+x-ghostunnel: &ghostunnel
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+  image: ghostunnel/ghostunnel:v1.11.5-alpine
+  network_mode: service:hasura
+  user: "10001:10001"
+  volumes:
+    - hasura-tls:/tls:ro
+  mem_limit: 48m
+  restart: unless-stopped
+
+services:
+  openbao-init:
+    environment:
+      SERVICE_CERT_OUTPUTS: >-
+        mosquitto=/mosquitto-tls@1883,bamboo-bridge=/run/bms-actions/mqtt@10001,bamboo-admin=/run/bms-actions/mqtt@10001,actions=/run/bms-actions/tls@10001,bootstrap=/run/bms-bootstrap/tls@10001,gateway=/tls/gateway@636,hasura=/tls/hasura@10001,keycloak=/tls/keycloak@1000,flowable=/tls/flowable@100,seed=/tls/seed@10001,sleeper=/tls/sleeper@0,prometheus=/tls/prometheus@65534,vector=/tls/vector@0
+    volumes:
+      - gateway-tls:/tls/gateway
+      - hasura-tls:/tls/hasura
+      - keycloak-tls:/tls/keycloak
+      - flowable-tls:/tls/flowable
+      - seed-tls:/tls/seed
+      - sleeper-tls:/tls/sleeper
+      - prometheus-tls:/tls/prometheus
+      - vector-tls:/tls/vector
+
+  keycloak:
+    depends_on: *after-certs
+    environment:
+      KC_HTTP_ENABLED: "false"
+      KC_HTTPS_PORT: "8443"
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/tls/keycloak.crt
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/tls/keycloak.key
+      KC_TRUSTSTORE_PATHS: /opt/keycloak/conf/tls/ca.crt
+      KC_HTTPS_CLIENT_AUTH: required
+      # Cổng quản trị 9000 (health, metrics) vẫn HTTP trong mạng Docker cho healthcheck và Prometheus.
+      KC_HTTP_MANAGEMENT_SCHEME: http
+    volumes:
+      - keycloak-tls:/opt/keycloak/conf/tls:ro
+    ports: !reset []
+
+  flowable:
+    depends_on: *after-certs
+    environment:
+      SERVER_PORT: "8443"
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: file:/tls/flowable.crt
+      SERVER_SSL_CERTIFICATEPRIVATEKEY: file:/tls/flowable.key
+      SERVER_SSL_TRUSTCERTIFICATE: file:/tls/ca.crt
+      SERVER_SSL_CLIENTAUTH: need
+    volumes:
+      - flowable-tls:/tls:ro
+    ports: !reset []
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8443"]
+
+  hasura:
+    environment:
+      HASURA_GRAPHQL_SERVER_HOST: 127.0.0.1
+      ACTIONS_URL: http://127.0.0.1:8001
+      HASURA_GRAPHQL_AUTH_HOOK: http://127.0.0.1:8001/auth/hasura
+    ports: !reset []
+
+  hasura-tls:
+    <<: *ghostunnel
+    depends_on:
+      hasura:
+        condition: service_started
+      openbao-init:
+        condition: service_completed_successfully
+    command:
+      - server
+      - --listen=0.0.0.0:8443
+      - --target=127.0.0.1:8080
+      - --cert=/tls/hasura.crt
+      - --key=/tls/hasura.key
+      - --cacert=/tls/ca.crt
+      - --allow-cn=gateway
+      - --allow-cn=bootstrap
+      - --allow-cn=actions
+      - --timed-reload=1h
+      - --quiet=conns
+
+  hasura-egress:
+    <<: *ghostunnel
+    depends_on:
+      hasura:
+        condition: service_started
+      openbao-init:
+        condition: service_completed_successfully
+    command:
+      - client
+      - --listen=127.0.0.1:8001
+      - --target=actions:8443
+      - --cert=/tls/hasura.crt
+      - --key=/tls/hasura.key
+      - --cacert=/tls/ca.crt
+      - --verify-cn=actions
+      - --timed-reload=1h
+      - --quiet=conns
+
+  actions:
+    environment: *internal-tls
+    command: ["python", "-m", "app.serve"]
+    ports: !reset []
+
+  flow-sync:
+    environment: *internal-tls
+
+  ai-worker:
+    environment: *internal-tls
+
+  iot-bridge:
+    environment: *internal-tls
+
+  actions-test:
+    environment:
+      <<: *internal-tls
+      HASURA_URL: http://hasura-test:8080
+
+  bootstrap:
+    environment:
+      <<: *internal-tls
+      INTERNAL_TLS_IDENTITY: bootstrap
+    depends_on:
+      hasura-tls:
+        condition: service_started
+
+  seed:
+    depends_on: *after-certs
+    environment:
+      KEYCLOAK_INTERNAL_URL: https://keycloak:8443
+      INTERNAL_TLS_DIR: /tls
+      INTERNAL_TLS_IDENTITY: seed
+    volumes:
+      - seed-tls:/tls:ro
+
+  gateway:
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+      hasura-tls:
+        condition: service_started
+    environment:
+      GATEWAY_TLS_DIR: /usr/local/apisix/conf/bamboo-tls
+    volumes:
+      - gateway-tls:/usr/local/apisix/conf/bamboo-tls:ro
+
+  sleeper:
+    depends_on: *after-certs
+    environment:
+      SLEEPER_MODULES_URL: https://actions:8443/modules/services
+      INTERNAL_TLS_DIR: /tls
+      INTERNAL_TLS_IDENTITY: sleeper
+    volumes:
+      - sleeper-tls:/tls:ro
+
+  prometheus:
+    volumes:
+      - ./infra/platform/observability/scrape-actions-mtls.yml:/etc/prometheus/scrape/actions.yml:ro
+      - prometheus-tls:/etc/prometheus/tls:ro
+
+  vector:
+    volumes:
+      - ./infra/platform/vector/sink-mtls.yaml:/etc/vector/sink.yaml:ro
+      - vector-tls:/etc/vector/tls:ro
+
+volumes:
+  gateway-tls:
+  hasura-tls:
+  keycloak-tls:
+  flowable-tls:
+  seed-tls:
+  sleeper-tls:
+  prometheus-tls:
+  vector-tls:
