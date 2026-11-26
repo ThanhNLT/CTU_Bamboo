@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,7 +70,8 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Dựng hệ thống ~14 phút, kiểm thử tích hợp ~25 phút, Playwright ~15 phút: 60 phút không còn đủ.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
       - name: Giải phóng đĩa runner

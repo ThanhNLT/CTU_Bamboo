@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ FROM python:3.11-slim-bookworm
 ARG TORCH_VERSION=2.9.1 TORCHVISION_VERSION=0.24.1
 LABEL org.opencontainers.image.title="bamboo-ocr" \
       org.opencontainers.image.description="Bamboo: OCR tiếng Việt (PaddleOCR + VietOCR trên PyTorch)" \
-      org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
-      org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
+      org.opencontainers.image.source="https://github.com/ThanhNLT/CTU_Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/ThanhNLT/CTU_Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0" \
       bamboo.gpu.prepare="python -m app.accel"
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2 \
