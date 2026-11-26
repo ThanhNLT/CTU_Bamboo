@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ metadata:
     app.kubernetes.io/part-of: bamboo
 data:
   content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
-    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ Apache-2.0\n# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
     \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
     \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
     \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
@@ -44,7 +44,7 @@ metadata:
     app.kubernetes.io/part-of: bamboo
 data:
   content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
-    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ Apache-2.0\n# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
     \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
     \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
     \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
@@ -151,7 +151,7 @@ metadata:
     app.kubernetes.io/part-of: bamboo
 data:
   content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
-    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ Apache-2.0\n# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
     \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
     \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
     \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
@@ -172,7 +172,7 @@ metadata:
     app.kubernetes.io/part-of: bamboo
 data:
   content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
-    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ Apache-2.0\n# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
     \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
     \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
     \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
@@ -193,7 +193,7 @@ metadata:
     app.kubernetes.io/part-of: bamboo
 data:
   content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
-    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ Apache-2.0\n# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
     \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
     \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
     \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\

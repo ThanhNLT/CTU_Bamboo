@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -89,9 +89,9 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 
 | | |
 |---|---|
-| Mã nguồn | <https://github.com/CTUBamboo/Bamboo> |
-| Báo lỗi, đề xuất | [GitHub Issues](https://github.com/CTUBamboo/Bamboo/issues) (có mẫu báo lỗi và đề xuất); lỗ hổng bảo mật: [SECURITY.md](SECURITY.md) |
-| Hỏi đáp, trao đổi | [GitHub Discussions](https://github.com/CTUBamboo/Bamboo/discussions); các kênh hỗ trợ: [SUPPORT.md](SUPPORT.md) |
+| Mã nguồn | <https://github.com/ThanhNLT/CTU_Bamboo> |
+| Báo lỗi, đề xuất | [GitHub Issues](https://github.com/ThanhNLT/CTU_Bamboo/issues) (có mẫu báo lỗi và đề xuất); lỗ hổng bảo mật: [SECURITY.md](SECURITY.md) |
+| Hỏi đáp, trao đổi | [GitHub Discussions](https://github.com/ThanhNLT/CTU_Bamboo/discussions); các kênh hỗ trợ: [SUPPORT.md](SUPPORT.md) |
 | Đóng góp | [CONTRIBUTING.md](CONTRIBUTING.md), [Quy tắc ứng xử](CODE_OF_CONDUCT.md) |
 | Lịch sử thay đổi | [CHANGELOG.md](CHANGELOG.md) theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo [Semantic Versioning](https://semver.org/lang/vi/) |
 | Giấy phép | [Apache-2.0](LICENSE) |
@@ -100,20 +100,20 @@ và dữ liệu không sạch khi quy trình chưa chuẩn.
 
 ### Các phiên bản đã phát hành
 
-Bản phát hành ở [GitHub Releases](https://github.com/CTUBamboo/Bamboo/releases), mỗi bản gồm mã nguồn `bamboo-<phiên bản>.tar.gz`
+Bản phát hành ở [GitHub Releases](https://github.com/ThanhNLT/CTU_Bamboo/releases), mỗi bản gồm mã nguồn `bamboo-<phiên bản>.tar.gz`
 và `SHA256SUMS`; bản 0.1.0–0.3.0 và từ 0.5.2 có thêm `compose.release.yml` và image dựng sẵn (amd64, arm64) trên GitHub
 Container Registry. Định dạng
 phát hành chính thức là `.tar.gz` (tệp zip do GitHub tự sinh kèm mỗi bản).
 
 | Phiên bản | Ngày | Nội dung chính |
 |---|---|---|
-| [0.5.2](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.2) | 24/11/2026 | Hạn mức dung lượng 5 GB mỗi tài khoản, AI tự tắt kèm lý do khi máy thiếu RAM, Mac Apple Silicon chạy CSDL và ClamAV bản arm64 và AI trên GPU Metal, trợ lý AI trả lời theo ngôn ngữ câu hỏi; NOTICE liệt kê đủ thư viện và giấy phép, tệp `.license` cho tệp không ghi được header; sửa `make up` trên Mac và câu trả lời của trợ lý lẫn phần lập luận của mô hình |
-| [0.5.1](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.1) | 14/11/2026 | Dịch và cài đặt từ mã nguồn bằng `make`, GitOps tự chạy theo chu kỳ, tắt giao diện web của OpenBao và Hasura Console, tài liệu cho người đóng góp; sửa cổng API trả 404 và dịch vụ tự tắt khi `docker compose up`; sửa không tạo được công ty khi đăng ký (lỗi 500, tài khoản mới báo "chưa thuộc tenant nào"), công ty mới dùng được ngay mọi công cụ đã chọn, doanh nghiệp vừa và nhỏ khai mã số thuế sau, tên hệ thống hiển thị "Bamboo", đồng bộ ngôn ngữ và khoảng cách giao diện |
-| [0.5.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.5.0) | 13/11/2026 | Thông báo giấy phép Apache-2.0 trong từng tệp, bỏ thành phần chưa được OSI phê duyệt (bpmn-js, CUDA trong image OCR), hoàn thiện Tầng 1 (CDR, MQTT/NGSI-LD, giám sát, mTLS nội bộ, kịch bản tự viết, tác tử AI tự hành động), AI tự nhận GPU, thông báo theo ngôn ngữ đang chọn, ngày và số theo định dạng quốc tế |
-| [0.4.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
-| [0.3.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
-| [0.2.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
-| [0.1.0](https://github.com/CTUBamboo/Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
+| [0.5.2](https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.5.2) | 24/11/2026 | Hạn mức dung lượng 5 GB mỗi tài khoản, AI tự tắt kèm lý do khi máy thiếu RAM, Mac Apple Silicon chạy CSDL và ClamAV bản arm64 và AI trên GPU Metal, trợ lý AI trả lời theo ngôn ngữ câu hỏi; NOTICE liệt kê đủ thư viện và giấy phép, tệp `.license` cho tệp không ghi được header; sửa `make up` trên Mac và câu trả lời của trợ lý lẫn phần lập luận của mô hình |
+| [0.5.1](https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.5.1) | 14/11/2026 | Dịch và cài đặt từ mã nguồn bằng `make`, GitOps tự chạy theo chu kỳ, tắt giao diện web của OpenBao và Hasura Console, tài liệu cho người đóng góp; sửa cổng API trả 404 và dịch vụ tự tắt khi `docker compose up`; sửa không tạo được công ty khi đăng ký (lỗi 500, tài khoản mới báo "chưa thuộc tenant nào"), công ty mới dùng được ngay mọi công cụ đã chọn, doanh nghiệp vừa và nhỏ khai mã số thuế sau, tên hệ thống hiển thị "Bamboo", đồng bộ ngôn ngữ và khoảng cách giao diện |
+| [0.5.0](https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.5.0) | 13/11/2026 | Thông báo giấy phép Apache-2.0 trong từng tệp, bỏ thành phần chưa được OSI phê duyệt (bpmn-js, CUDA trong image OCR), hoàn thiện Tầng 1 (CDR, MQTT/NGSI-LD, giám sát, mTLS nội bộ, kịch bản tự viết, tác tử AI tự hành động), AI tự nhận GPU, thông báo theo ngôn ngữ đang chọn, ngày và số theo định dạng quốc tế |
+| [0.4.0](https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.4.0) | 29/10/2026 | Nhân sự (tiếp nhận, điều chuyển, quyết định), đơn hàng nội bộ, che dữ liệu cá nhân, Lakehouse (CDC → Iceberg → Trino), quản trị tổ chức, sổ cái, thiết kế và chạy tự động quy trình, thư viện tri thức, trung tâm điều hành, bản sao số, phả hệ, AI cục bộ (RAG, tác tử), OCR tiếng Việt, quét tệp, thông báo đa kênh, neo kiểm toán, nhật ký, sao lưu, nạp lô; tài liệu cập nhật |
+| [0.3.0](https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.3.0) | 05/10/2026 | Tìm kiếm toàn văn (Meilisearch + Tika), mỗi dịch vụ một tài khoản CSDL đặc quyền tối thiểu, script sao lưu và khôi phục |
+| [0.2.0](https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.2.0) | 04/10/2026 | Cổng API APISIX là điểm vào duy nhất (WAF, kiểm token tại biên, giới hạn tần suất) |
+| [0.1.0](https://github.com/ThanhNLT/CTU_Bamboo/releases/tag/v0.1.0) | 04/10/2026 | Bản đầu: cơ cấu tổ chức, phân quyền, chuỗi duyệt, đề nghị mua sắm, kiểm toán chuỗi hash, tệp đính kèm, OpenBao, Flowable, giao diện Refine |
 
 ### Cấu trúc mã nguồn
 
@@ -301,7 +301,7 @@ Lần đầu cần Internet để tải image và mô hình; sau đó chạy đ�
 ## Chạy bằng một lệnh với Docker
 
 ```bash
-git clone https://github.com/CTUBamboo/Bamboo.git
+git clone https://github.com/ThanhNLT/CTU_Bamboo.git
 cd Bamboo
 make up        # đầy đủ gồm AI ở mọi mức RAM; máy 8 GB tự tiết kiệm RAM hơn (BAMBOO_RAM=8 hoặc 16 để chọn tay)
 ```
@@ -343,7 +343,7 @@ có cho bản 0.1.0–0.3.0 và từ 0.5.2 (amd64 và arm64, Mac Apple Silicon c
 ở trên.
 
 ```bash
-docker compose -f oci://ghcr.io/ctubamboo/bamboo:0.5.2 up -d -y
+docker compose -f oci://ghcr.io/thanhnlt/bamboo:0.5.2 up -d -y
 ```
 
 Hoặc tải `compose.release.yml` ở trang phát hành rồi `docker compose -f compose.release.yml up -d`.
