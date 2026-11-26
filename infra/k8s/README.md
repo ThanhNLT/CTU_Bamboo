@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ CI (`.github/workflows/k8s.yml`) báo lỗi khi manifest lệch compose, kiểm 
 3. Sửa host trong `overlays/production/ingress.yaml`, đặt các URL công khai trong Secret theo tên miền đó.
 4. `kubectl apply -n argocd -f infra/k8s/argocd/application.yaml`. Argo CD dựng hệ thống và giữ cụm khớp nhánh `main`.
 
-Thử trên máy bằng k3d: `k3d cluster create bamboo`, `docker compose build`, `k3d image import ghcr.io/ctubamboo/bamboo-<tên>:dev
+Thử trên máy bằng k3d: `k3d cluster create bamboo`, `docker compose build`, `k3d image import ghcr.io/thanhnlt/bamboo-<tên>:dev
 -c bamboo`, `kubectl apply -k infra/k8s/overlays/ci`, `kubectl -n bamboo port-forward svc/gateway 8000:9080`.
 
 ## Khác với Compose
