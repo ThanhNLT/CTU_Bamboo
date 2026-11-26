@@ -83,7 +83,7 @@ const READY = {
 };
 
 test("tải bản quét, kiểm tra các trường OCR rút ra và điền vào đề nghị mua sắm nháp", async ({ page }) => {
-  await page.route("**/v1/graphql", async (route) => {
+  await page.route("**/graphql", async (route) => {
     const body = route.request().postDataJSON() as { query?: string } | undefined;
     if (body?.query?.includes("ocr_document(")) {
       await route.fulfill({ json: { data: READY } });
