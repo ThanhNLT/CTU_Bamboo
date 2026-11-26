@@ -40,6 +40,8 @@ dependencies = [
     "pypdfium2",
     "pillow",
     "pyhanko",
+    "python-pkcs11",
+    "aiohttp",
     "pypdf>=7",
     "paho-mqtt>=2",
     "prometheus-client",

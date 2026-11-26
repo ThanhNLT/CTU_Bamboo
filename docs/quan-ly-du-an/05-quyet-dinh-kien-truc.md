@@ -118,6 +118,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [89](#adr-89) | 17/11/2026 | Trợ lý trả lời đúng điều được hỏi, bằng ngôn ngữ của câu hỏi; lập luận của mô hình không nằm trong câu trả lời và có giới hạn |
 | [90](#adr-90) | 18/11/2026 | AI tự chọn nơi chạy: GPU NVIDIA, GPU Apple (Metal) trên Mac, CPU khi đủ RAM, tắt khi thiếu RAM |
 | [91](#adr-91) | 18/11/2026 | Mac Apple Silicon tiết kiệm tài nguyên: CSDL và ClamAV bản arm64, OCR trên máy trả bộ nhớ khi nhàn rỗi |
+| [94](#adr-94) | 26/11/2026 | Ký số văn bản hệ thống phát hành bằng chứng thư tổ chức: HSM qua PKCS#11 hoặc dịch vụ ký số từ xa chuẩn CSC |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -999,6 +1000,29 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Lý do:** Trên Mac Apple Silicon, container amd64 chạy qua Rosetta (hoặc QEMU nếu tắt Rosetta): CSDL, dịch vụ được dùng liên tục, tốn thêm CPU, RAM và chậm hơn nhiều so với bản native; ClamAV nạp cơ sở dữ liệu chữ ký khoảng 1 GB vào RAM nên giả lập càng tốn. Bộ nhớ hợp nhất của Mac dùng chung cho CPU, GPU và máy ảo Docker, nên bộ nhớ OCR giữ lại sau khi gỡ mô hình hay page cache của trọng số đều lấy chỗ của mô hình Ollama trên GPU.
 - **Đã loại:** Tự dựng image PostGIS từ `postgres:17-bookworm` (phải ghim đúng bản PostGIS 3.5 trong kho apt.postgresql.org, kho chỉ giữ bản mới nhất); đổi image CSDL cho mọi kiến trúc (máy amd64 không lợi gì, đổi nhà phát hành image không cần thiết); bản alpine của PostGIS (không có arm64); tệp compose bổ sung `arm64.yml` (không đi theo `compose.release.yml`, người chạy bản phát hành trên Mac vẫn bị giả lập).
 - **Giới hạn hiện tại:** Chưa chạy thử trên Mac thật. CSDL đã tạo khi còn chạy giả lập amd64 được mở bằng bản arm64 (cùng PostgreSQL 17, cùng Debian bookworm, x86-64 và arm64 cùng căn chỉnh 8 byte nên PostgreSQL nhận được); nếu `db` không khởi động, sao lưu bằng `pg_dump` trên bản cũ rồi nạp lại. `docker compose …` gõ tay không qua `make up` thì phải đặt ba biến trên trong `.env`. RAM của máy ảo Docker Desktop không tự co lại: đặt mức cấp trong Docker Desktop.
+
+(adr-94)=
+## ADR #94: Ký số văn bản hệ thống phát hành bằng chứng thư tổ chức: HSM qua PKCS#11 hoặc dịch vụ ký số từ xa chuẩn CSC
+
+- **Ngày:** 26/11/2026
+- **Quyết định:** Quyết định nhân sự, báo cáo KPI và phiếu đề nghị mua sắm in ra PDF được ký PAdES (pyHanko, trường chữ
+  ký `BambooSeal`, SHA-256, dấu thời gian RFC 3161 khi có `ORG_SIGN_TSA_URL`) bằng chứng thư số công cộng của tổ chức
+  (`app.org_sign`). Khóa riêng không vào Bamboo: `ORG_SIGN_PROVIDER=pkcs11` dùng HSM hoặc token qua thư viện PKCS#11 của
+  hãng (chọn token, khóa, chứng thư theo nhãn; image `actions` có SoftHSM2 cho máy chưa có HSM), `csc` dùng dịch vụ ký số
+  từ xa của CA theo Cloud Signature Consortium API v1 (OAuth2 client credentials, `credentials/authorize` kèm PIN, ràng
+  mã băm khi SCAL2). PIN, bí mật OAuth2 đọc từ OpenBao `bms/org-sign`. Chỉ ký văn bản của công ty có mã số thuế nằm trong
+  chứng thư (đọc như khi kiểm đơn đăng ký, ADR #57); bản đã ký lưu khóa `<mã băm>.sealed.pdf`, tách bản chưa ký; ký lỗi
+  thì vẫn trả bản chưa ký và ghi lỗi.
+- **Lý do:** Văn bản do hệ thống phát hành cần giá trị pháp lý như văn bản giấy có dấu; chuẩn PKCS#11 và CSC là hai đường
+  mà HSM và các CA Việt Nam (ký số từ xa) cung cấp, nên cắm thiết bị hoặc tài khoản là ký được, không phải viết thêm mã.
+  Dấu thời gian giữ chữ ký kiểm được sau khi chứng thư hết hạn.
+- **Đã loại:** Khóa riêng trong tệp hoặc trong OpenBao (không đạt yêu cầu khóa nằm trong thiết bị an toàn); một bộ ký
+  cho mọi công ty bất kể mã số thuế (ký nhân danh công ty khác); ký bằng chữ ký Ed25519 của OpenBao (không phải chứng thư
+  số công cộng, trình đọc PDF không công nhận).
+- **Giới hạn hiện tại:** Một bộ ký cho mỗi cài đặt (mọi công ty dùng chung chứng thư phải cùng mã số thuế; nhiều pháp nhân
+  cần nhiều chứng thư thì chưa cấu hình được theo từng công ty); dịch vụ ký số từ xa đòi người dùng xác nhận trên điện
+  thoại cho từng lần ký không ký tự động được; chưa ký văn bản PDF khác (biên nhận, quy trình); chưa nhúng thông tin
+  thu hồi (PAdES B-LT/LTA). Kiểm thử dùng máy chủ CSC giả lập và SoftHSM2, chưa thử với HSM hay CA thật.
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
