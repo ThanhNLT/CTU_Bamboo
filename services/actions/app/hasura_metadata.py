@@ -1002,7 +1002,7 @@ def build(conn: psycopg.Connection) -> dict:
                 "[LakehouseDataset!]!",
                 [ROLE, ADMIN_ROLE],
                 "Tập dữ liệu tầng silver của tenant (cần data.lakehouse.read, ADR #45)",
-                timeout=30,
+                timeout=90,
             ),
             _action(
                 "lakehouse_preview",
@@ -1011,7 +1011,7 @@ def build(conn: psycopg.Connection) -> dict:
                 "LakehousePreview!",
                 [ROLE, ADMIN_ROLE],
                 "Số dòng và 20 dòng thay đổi gần nhất của một tập dữ liệu, đã che dữ liệu cá nhân (ADR #45)",
-                timeout=60,
+                timeout=90,
             ),
             _action(
                 "lineage_refresh",
