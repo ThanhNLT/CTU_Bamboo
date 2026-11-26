@@ -184,7 +184,17 @@ class OrgSigner:
                 self_inner.session = pkcs11.open_pkcs11_session(
                     cfg.pkcs11_lib, token_criteria=TokenCriteria(label=cfg.pkcs11_token), user_pin=cfg.pin or None
                 )
-                return pkcs11.PKCS11Signer(self_inner.session, cert_label=cfg.pkcs11_cert, key_label=cfg.pkcs11_key)
+                signer = pkcs11.PKCS11Signer(self_inner.session, cert_label=cfg.pkcs11_cert, key_label=cfg.pkcs11_key)
+                # Khóa EC: dùng CKM_ECDSA thô (băm SHA-256 bằng phần mềm); nhiều token, kể cả SoftHSM2, không có
+                # CKM_ECDSA_SHA256.
+                if signer.signing_cert.public_key.algorithm == "ec":
+                    signer = pkcs11.PKCS11Signer(
+                        self_inner.session,
+                        cert_label=cfg.pkcs11_cert,
+                        key_label=cfg.pkcs11_key,
+                        use_raw_mechanism=True,
+                    )
+                return signer
 
             def __exit__(self_inner, *exc):
                 self_inner.session.close()
@@ -271,5 +281,5 @@ def seal(signer: "OrgSigner | None", tax_code: str | None, pdf: bytes, reason: s
             return pdf, False
         return signer.sign(pdf, reason), True
     except Exception as exc:  # noqa: BLE001
-        log.error("không ký được văn bản bằng chứng thư tổ chức: %s", exc)
+        log.error("không ký được văn bản bằng chứng thư tổ chức: %r", exc)
         return pdf, False
