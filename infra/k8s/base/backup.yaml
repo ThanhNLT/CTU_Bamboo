@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ spec:
       enableServiceLinks: false
       containers:
       - name: backup
-        image: ghcr.io/ctubamboo/bamboo-migrate:0.5.2
+        image: ghcr.io/thanhnlt/bamboo-migrate:0.5.2
         command:
         - bash
         - /repo/tools/ops/backup-scheduler.sh
