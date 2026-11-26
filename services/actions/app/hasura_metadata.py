@@ -368,6 +368,8 @@ def _action(
             "arguments": [{"name": n, "type": t} for n, t in args],
             "output_type": output,
             "headers": [{"name": "x-actions-secret", "value_from_env": "ACTIONS_SECRET"}],
+            # Chuyển tiếp header của yêu cầu (gồm traceparent cổng API gắn) để span của actions nối vào trace của cổng.
+            "forward_client_headers": True,
             "timeout": timeout,
         },
         "permissions": [{"role": r} for r in roles],

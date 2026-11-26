@@ -15455,6 +15455,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -15489,6 +15490,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15528,6 +15530,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15563,6 +15566,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15594,6 +15598,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15620,6 +15625,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -15651,6 +15657,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15677,6 +15684,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15708,6 +15716,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -15734,6 +15743,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 120
       },
       "permissions": [
@@ -15760,6 +15770,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15786,6 +15797,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15829,6 +15841,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15860,6 +15873,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15891,6 +15905,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15926,6 +15941,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -15969,6 +15985,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16000,6 +16017,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16043,6 +16061,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16074,6 +16093,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16105,6 +16125,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16140,6 +16161,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16171,6 +16193,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16202,6 +16225,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16237,6 +16261,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16268,6 +16293,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16299,6 +16325,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16334,6 +16361,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16365,6 +16393,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16396,6 +16425,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16427,6 +16457,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -16458,6 +16489,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -16484,6 +16516,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16543,6 +16576,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -16574,6 +16608,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16609,6 +16644,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16644,6 +16680,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16675,6 +16712,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16701,6 +16739,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16736,6 +16775,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -16771,6 +16811,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16810,6 +16851,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16845,6 +16887,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16876,6 +16919,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16907,6 +16951,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16933,6 +16978,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16964,6 +17010,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -16999,6 +17046,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17054,6 +17102,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17089,6 +17138,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -17136,6 +17186,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 90
       },
       "permissions": [
@@ -17175,6 +17226,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17201,6 +17253,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17227,6 +17280,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -17253,6 +17307,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -17304,6 +17359,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17330,6 +17386,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17361,6 +17418,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17387,6 +17445,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17430,6 +17489,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17461,6 +17521,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17492,6 +17553,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17518,6 +17580,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17544,6 +17607,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17575,6 +17639,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17606,6 +17671,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17645,6 +17711,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17680,6 +17747,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -17711,6 +17779,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -17746,6 +17815,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -17777,6 +17847,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17812,6 +17883,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17847,6 +17919,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17886,6 +17959,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17917,6 +17991,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17952,6 +18027,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -17987,6 +18063,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 120
       },
       "permissions": [
@@ -18018,6 +18095,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18061,6 +18139,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -18092,6 +18171,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18123,6 +18203,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18154,6 +18235,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -18201,6 +18283,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18232,6 +18315,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 120
       },
       "permissions": [
@@ -18263,6 +18347,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18294,6 +18379,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18325,6 +18411,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18356,6 +18443,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18399,6 +18487,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 15
       },
       "permissions": [
@@ -18430,6 +18519,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -18477,6 +18567,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18508,6 +18599,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18539,6 +18631,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18574,6 +18667,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18629,6 +18723,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18660,6 +18755,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -18695,6 +18791,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18726,6 +18823,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -18752,6 +18850,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18778,6 +18877,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18825,6 +18925,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18856,6 +18957,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18891,6 +18993,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18926,6 +19029,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -18977,6 +19081,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19008,6 +19113,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19043,6 +19149,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19078,6 +19185,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19104,6 +19212,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19135,6 +19244,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19170,6 +19280,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19205,6 +19316,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19240,6 +19352,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19275,6 +19388,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19310,6 +19424,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19349,6 +19464,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19380,6 +19496,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -19411,6 +19528,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19454,6 +19572,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 120
       },
       "permissions": [
@@ -19489,6 +19608,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19515,6 +19635,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19541,6 +19662,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19572,6 +19694,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19611,6 +19734,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19637,6 +19761,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19663,6 +19788,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19694,6 +19820,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19741,6 +19868,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19792,6 +19920,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19847,6 +19976,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19873,6 +20003,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19904,6 +20035,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19943,6 +20075,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -19986,6 +20119,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -20012,6 +20146,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -20038,6 +20173,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -20077,6 +20213,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -20103,6 +20240,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 90
       },
       "permissions": [
@@ -20138,6 +20276,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 60
       },
       "permissions": [
@@ -20169,6 +20308,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -20200,6 +20340,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -20235,6 +20376,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -20266,6 +20408,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 10
       },
       "permissions": [
@@ -20325,6 +20468,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -20356,6 +20500,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -20387,6 +20532,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -20418,6 +20564,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [
@@ -20449,6 +20596,7 @@
             "value_from_env": "ACTIONS_SECRET"
           }
         ],
+        "forward_client_headers": true,
         "timeout": 30
       },
       "permissions": [

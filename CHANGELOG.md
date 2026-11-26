@@ -25,6 +25,10 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 ## [Chưa phát hành]
 
+### Thay đổi
+
+- **Truy vết từ cổng API:** APISIX có span cho mọi yêu cầu (plugin `opentelemetry`) và gắn traceparent cho Hasura, `actions`, Keycloak; mọi Action của Hasura chuyển tiếp header của client (`forward_client_headers`) nên span của `actions` nằm cùng trace với cổng. Bật cùng lúc với truy vết của `actions` khi có `OTEL_EXPORTER_OTLP_ENDPOINT` (nhóm `observability`); không có thì cổng không lấy mẫu. Cổng chỉ nạp các plugin đang dùng thay cho danh sách mặc định của APISIX. Hasura CE không có span riêng, thời gian ở Hasura xem trong span của cổng.
+
 ### Sửa lỗi
 
 - **Kiểm thử bước AI của quy trình tự động hỏng ngẫu nhiên trên CI (`test_cong_re_nhanh_theo_danh_gia_cua_ai`):** kiểm thử và `flow-sync` của stack đang chạy dùng chung một Flowable, nhận việc cùng chủ đề `bamboo.*`; `flow-sync` thật nhận mất việc của kiểm thử, không thấy quy trình trong CSDL chính nên báo "Quy trình tự động đã tắt" và Flowable treo việc 30 giây, quá thời gian chờ của kiểm thử. Tiền tố chủ đề nay đọc từ `AUTOMATION_TOPIC_PREFIX` (mặc định `bamboo.`, quy trình đã phát hành không đổi); container `actions-test` dùng `bamboo-test.`.
