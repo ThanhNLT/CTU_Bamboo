@@ -46,7 +46,7 @@ export const DataServicesPage = () => {
   const [query, setQuery] = useState("");
   const [domain, setDomain] = useState<DomainFilter>("all");
   const [params] = useSearchParams();
-  const { datasets, loading, error } = useLakehouseDatasets();
+  const { datasets, loading, starting, error } = useLakehouseDatasets();
   const [selectedId, setSelectedId] = useState<string | null>(() => params.get("dataset"));
 
   const domains = useMemo(() => domainCounts(datasets), [datasets]);
@@ -55,7 +55,13 @@ export const DataServicesPage = () => {
 
   let body: ReactNode;
   if (loading) {
-    body = <p className="text-[13px] text-muted">{tr("Đang tải danh mục tập dữ liệu…")}</p>;
+    body = (
+      <p className="text-[13px] text-muted">
+        {starting
+          ? tr("Lakehouse đang khởi động… lần đầu sau khi nhàn rỗi có thể mất khoảng một phút.")
+          : tr("Đang tải danh mục tập dữ liệu…")}
+      </p>
+    );
   } else if (error?.statusCode === 403) {
     body = (
       <Notice
