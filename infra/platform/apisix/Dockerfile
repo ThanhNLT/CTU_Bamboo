@@ -43,4 +43,8 @@ ENV APISIX_STAND_ALONE=true
 COPY --from=coraza --chown=apisix:0 /tmp/coraza/coraza-proxy-wasm.wasm /usr/local/apisix/proxywasm/coraza-proxy-wasm.wasm
 COPY --from=coraza --chown=apisix:0 /tmp/conf/config.yaml /usr/local/apisix/conf/config.yaml
 COPY --from=coraza --chown=apisix:0 /tmp/conf/apisix.yaml /usr/local/apisix/conf/apisix.yaml
+COPY --from=coraza --chown=apisix:0 /tmp/conf/ /usr/local/apisix/conf/bamboo/
+COPY --chown=apisix:0 --chmod=0755 bamboo-start.sh /usr/local/bin/bamboo-start
 EXPOSE 9080
+ENTRYPOINT ["/usr/local/bin/bamboo-start"]
+CMD ["docker-start"]

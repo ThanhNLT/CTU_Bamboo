@@ -46,6 +46,7 @@ path "secret/data/bms/meilisearch-search" { capabilities = ["read"] }
 path "secret/data/bms/keycloak-provisioner" { capabilities = ["read"] }
 path "secret/data/bms/trino-actions" { capabilities = ["read"] }
 path "secret/data/bms/mosquitto" { capabilities = ["read"] }
+path "secret/data/bms/org-sign"  { capabilities = ["read"] }
 path "transit/encrypt/pii"       { capabilities = ["update"] }
 path "transit/decrypt/pii"       { capabilities = ["update"] }
 path "transit/sign/receipt"      { capabilities = ["update"] }
@@ -75,7 +76,23 @@ path "secret/data/bms/kafka-lakehouse"     { capabilities = ["read"] }
 
 
 INTERNAL_HOSTS = ["trino"]
-SERVICE_IDENTITIES = ["mosquitto", "bamboo-bridge", "bamboo-admin"]
+# MQTT (ADR #76) và các chặng HTTP nội bộ khi bật infra/compose/mtls.yml: máy chủ (keycloak, flowable, hasura qua
+# sidecar, actions) và máy khách (gateway, hasura, actions, bootstrap, seed, sleeper, prometheus, vector).
+SERVICE_IDENTITIES = [
+    "mosquitto",
+    "bamboo-bridge",
+    "bamboo-admin",
+    "gateway",
+    "hasura",
+    "actions",
+    "keycloak",
+    "flowable",
+    "bootstrap",
+    "seed",
+    "sleeper",
+    "prometheus",
+    "vector",
+]
 SERVICE_CERT_TTL = "2160h"
 TRINO_USERS = {"bms-admin": "bms/trino-admin", "bms-actions": "bms/trino-actions"}
 TRINO_PBKDF2_ITERATIONS = 10000
@@ -406,7 +423,14 @@ def service_certs(root: Bao, outputs: dict[str, pathlib.Path], uid: int | None =
             issued = root.request(
                 "POST",
                 "pki/issue/service",
-                {"common_name": identity, "alt_names": "localhost", "ip_sans": "127.0.0.1", "ttl": SERVICE_CERT_TTL},
+                {
+                    # Tên dịch vụ trong mạng Docker là SAN để máy khách kiểm được tên máy chủ (keycloak, flowable...).
+                    "common_name": identity,
+                    "alt_names": f"{identity},localhost",
+                    "ip_sans": "127.0.0.1",
+                    "ttl": SERVICE_CERT_TTL,
+                    "private_key_format": "pkcs8",
+                },
             )["data"]
             _write_if_changed(key, issued["private_key"] + "\n", 0o600)
             _write_if_changed(crt, issued["certificate"] + "\n" + issued["issuing_ca"] + "\n", 0o644)

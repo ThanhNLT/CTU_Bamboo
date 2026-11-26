@@ -30,6 +30,9 @@ DRY=0
 cd "$REPO" || exit 2
 log() { echo "$(date -u +%FT%TZ) $*"; }
 dc() { docker compose -p "$PROJECT" "$@"; }
+# Cùng bộ tệp compose với `make up`: production thì thêm infra/compose/mtls.yml (mTLS nội bộ, ADR #76).
+mtls_files=$(tools/mtls.sh compose-file 2> /dev/null || true)
+[ -z "$mtls_files" ] || export COMPOSE_FILE="$mtls_files"
 
 if command -v flock > /dev/null 2>&1; then
     exec 9> "$REPO/.gitops.lock"

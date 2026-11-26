@@ -46,6 +46,8 @@ SECRET_FIELDS = {
     "bms/kafka-lakehouse": {"username": "kafka_username", "password": "kafka_password"},
     "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
     "bms/mosquitto": {"admin_password": "mqtt_admin_password", "bridge_password": "mqtt_bridge_password"},
+    # Ký số văn bản bằng chứng thư tổ chức (app.org_sign): PIN của token HSM hoặc dịch vụ ký số từ xa, bí mật OAuth2.
+    "bms/org-sign": {"pin": "org_sign_pin", "csc_client_secret": "org_sign_csc_client_secret"},
 }
 
 
@@ -113,7 +115,7 @@ class Settings:
     trino_password: str
     ollama_url: str = ""
     meili_chunk_index: str = "documents_kb_chunk"
-    ai_chat_model: str = "qwen3:4b"
+    ai_chat_model: str = "qwen3:4b-instruct-2507-q4_K_M"
     ai_embed_model: str = "bge-m3"
     ai_min_score: float = 0.7
     ai_step_timeout: int = 600
@@ -130,6 +132,8 @@ class Settings:
     mqtt_bridge_password: str = ""
     mqtt_tls_dir: str = ""
     mqtt_tls_port: int = 8884
+    org_sign_pin: str = ""
+    org_sign_csc_client_secret: str = ""
 
 
 DEV_DEFAULTS = {
@@ -308,7 +312,7 @@ def _from_env() -> Settings:
         trino_password=env("TRINO_PASSWORD", ""),
         ollama_url=env("OLLAMA_URL", ""),
         meili_chunk_index=env("MEILI_CHUNK_INDEX", "documents_kb_chunk"),
-        ai_chat_model=env("AI_CHAT_MODEL", "qwen3:4b"),
+        ai_chat_model=env("AI_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
         ai_embed_model=env("AI_EMBED_MODEL", "bge-m3"),
         ai_min_score=float(env("AI_MIN_SCORE", "0.7")),
         ai_step_timeout=int(env("AI_STEP_TIMEOUT", "600")),
@@ -319,6 +323,8 @@ def _from_env() -> Settings:
             "SIGNATURE_TRUST_DIR", str(pathlib.Path(__file__).resolve().parents[3] / "infra/platform/trust")
         ),
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
+        org_sign_pin=env("ORG_SIGN_PIN", ""),
+        org_sign_csc_client_secret=env("ORG_SIGN_CSC_CLIENT_SECRET", ""),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
         mqtt_host=env("MQTT_HOST", ""),
         mqtt_port=int(env("MQTT_PORT", "1883")),
