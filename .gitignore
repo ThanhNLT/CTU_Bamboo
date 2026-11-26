@@ -36,3 +36,7 @@ config.mk
 .gitops-state.json
 .gitops.lock
 .gitops.log
+
+# Tệp của hệ điều hành, tài liệu nộp riêng (không đưa vào kho)
+.DS_Store
+/docs/*.docx
