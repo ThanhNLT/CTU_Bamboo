@@ -196,7 +196,7 @@ Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp the
 
 - **Bảo mật:** mTLS cho kết nối tới PostgreSQL, Kafka, SeaweedFS; ký số theo từng pháp nhân khi một cài đặt có
   nhiều công ty khác mã số thuế.
-- **Vận hành:** chuyển sang Kubernetes (k3s) và Argo CD.
+- **Vận hành:** Kubernetes nhiều node (storage ReadWriteMany, service mesh cho mTLS), External Secrets từ OpenBao.
 - **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; dịch thông báo
   lỗi do máy chủ trả về sang tiếng Anh.
 - **Lakehouse:** chính sách vòng đời và xóa dữ liệu.

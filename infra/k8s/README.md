@@ -19,19 +19,51 @@
   limitations under the License.
 -->
 
-# Triển khai Kubernetes (k3s, GitOps): chỗ dành sẵn
+# Triển khai Kubernetes (k3s) và GitOps bằng Argo CD
 
-Thư mục này **chưa có manifest**. Bamboo hiện chạy bằng Docker Compose: `compose.yaml` ở gốc repo include các tệp trong
-`infra/compose/` (ADR #13), image dựng từ `infra/docker/` và `infra/platform/`.
+Bamboo chạy chính bằng Docker Compose (ADR #13). Thư mục này là cùng hệ thống ở dạng manifest Kubernetes cho k3s một
+node, đồng bộ bằng Argo CD (ADR #95). Manifest **sinh từ compose**, không viết tay: sửa `infra/compose/*.yml` rồi chạy
 
-Khi chuyển sang k3s, cấu hình đặt ở đây, tách theo cùng nhóm với `infra/compose/`:
+```bash
+uv run --no-project --with pyyaml python tools/k8s/generate.py
+```
 
-| Thư mục dự kiến | Nội dung |
+CI (`.github/workflows/k8s.yml`) báo lỗi khi manifest lệch compose, kiểm schema, và dựng thử phần lõi trên cụm k3s tạm
+(k3d) rồi chạy `tools/ci/gateway-smoke.sh` qua cổng API.
+
+| Thư mục | Nội dung |
 |---|---|
-| `base/` | Kustomize cho từng nhóm dịch vụ (core, data, ai, scan), dùng chung image `ghcr.io/thanhnlt/bamboo-*` |
-| `overlays/<môi-trường>/` | Khác biệt theo môi trường (tài nguyên, tên miền, số bản sao) |
-| `argocd/` | Ứng dụng ArgoCD trỏ vào overlay; Git là nguồn duy nhất, như cấu hình cổng APISIX standalone (ADR #34) |
+| `base/` | Mỗi dịch vụ một Deployment (dịch vụ chạy một lần như `migrate`, `openbao-init`, `bootstrap` thành Job) và Service; PVC cho volume có tên; ConfigMap cho tệp cấu hình; ServiceAccount cho init container chờ Job |
+| `components/<nhóm>/` | Nhóm tùy chọn của compose (`observability`, `scan`), bật bằng `components:` trong overlay |
+| `overlays/ci/` | Cụm thử: image dựng tại chỗ thẻ `dev`, Secret `bamboo-settings` từ mặc định của dev (`settings.env`), bỏ dịch vụ nặng (AI, OCR, Trino, Kafka, IoT) |
+| `overlays/production/` | Image GHCR theo phiên bản, Ingress cho cổng API; Secret tạo ngoài Git |
+| `argocd/application.yaml` | Application của Argo CD trỏ vào `overlays/production` (tự đồng bộ, prune, selfHeal) |
 
-Nguyên tắc giữ nguyên khi chuyển: mỗi dịch vụ một danh tính riêng (CSDL, OpenBao AppRole, S3, Kafka), bí mật chỉ lấy từ
-OpenBao, tệp tải lên vào `bms-quarantine` trước khi quét. Vòng đối soát hiện tại cho Compose là
-`tools/gitops/reconcile.sh`, chạy theo chu kỳ bằng `make gitops-enable`.
+## Cài trên k3s
+
+1. Cài k3s (một node) và Argo CD (`kubectl create namespace argocd && kubectl apply -n argocd -f
+   https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml`).
+2. Tạo Secret cài đặt từ tệp `.env` của bạn (cùng tên biến với `.env.example`; danh sách biến cần có xem
+   `overlays/ci/settings.env`):
+
+   ```bash
+   kubectl create namespace bamboo
+   kubectl -n bamboo create secret generic bamboo-settings --from-env-file=.env
+   ```
+
+   Hoặc dùng External Secrets Operator đọc từ OpenBao, Sealed Secrets: miễn ra Secret tên `bamboo-settings`.
+3. Sửa host trong `overlays/production/ingress.yaml`, đặt các URL công khai trong Secret theo tên miền đó.
+4. `kubectl apply -n argocd -f infra/k8s/argocd/application.yaml`. Argo CD dựng hệ thống và giữ cụm khớp nhánh `main`.
+
+Thử trên máy bằng k3d: `k3d cluster create bamboo`, `docker compose build`, `k3d image import ghcr.io/thanhnlt/bamboo-<tên>:dev
+-c bamboo`, `kubectl apply -k infra/k8s/overlays/ci`, `kubectl -n bamboo port-forward svc/gateway 8000:9080`.
+
+## Khác với Compose
+
+- `depends_on` thành init container: chờ Job xong (`kubectl wait`) hoặc chờ Service có pod sẵn sàng (`nc`).
+- Không có `sleeper` (cần Docker API): Trino, Tika, Gotenberg, Ollama, OCR chạy thường trực; tên `trino`, `tika`... là
+  Service trỏ thẳng vào chúng. Không có `vector` (đọc log container qua Docker): dùng bộ thu log của cụm.
+- Volume là PVC `ReadWriteOnce`, nhiều pod dùng chung (`actions-secrets`...): cụm một node (local-path của k3s) chạy
+  được; nhiều node cần storage `ReadWriteMany` (Longhorn, NFS).
+- Mỗi biến `${TÊN:-mặc định}` của compose đọc từ Secret `bamboo-settings` (khóa `TÊN`); thiếu khóa thì giá trị rỗng.
+- mTLS nội bộ (`infra/compose/mtls.yml`) chưa có bản Kubernetes: trong cụm nên dùng service mesh (Linkerd, Istio).
