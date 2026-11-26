@@ -35,6 +35,12 @@ LABEL org.opencontainers.image.title="bamboo-python" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
+# Gói hệ thống riêng của từng image (actions: softhsm2, token PKCS#11 bằng phần mềm cho ký số văn bản, app.org_sign).
+ARG APT_PACKAGES=
+RUN if [ -n "$APT_PACKAGES" ]; then \
+      apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $APT_PACKAGES \
+      && rm -rf /var/lib/apt/lists/*; \
+    fi
 WORKDIR /repo/${APP_DIR}
 # Cài bằng uv (nhanh hơn pip nhiều lần, vẫn kiểm hash trong uv.lock); bộ đệm tải về nằm ở cache mount của BuildKit nên
 # dựng lại trên cùng máy không tải lại gói, và không nằm trong image.
