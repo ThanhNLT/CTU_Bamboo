@@ -157,6 +157,72 @@ spec:
               name: bamboo-settings
               key: OLLAMA_URL
               optional: true
+        - name: ORG_SIGN_CSC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_CLIENT_ID
+              optional: true
+        - name: ORG_SIGN_CSC_CREDENTIAL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_CREDENTIAL
+              optional: true
+        - name: ORG_SIGN_CSC_TOKEN_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_TOKEN_URL
+              optional: true
+        - name: ORG_SIGN_CSC_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_URL
+              optional: true
+        - name: ORG_SIGN_LOCATION
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_LOCATION
+              optional: true
+        - name: ORG_SIGN_PKCS11_CERT
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_CERT
+              optional: true
+        - name: ORG_SIGN_PKCS11_KEY
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_KEY
+              optional: true
+        - name: ORG_SIGN_PKCS11_LIB
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_LIB
+              optional: true
+        - name: ORG_SIGN_PKCS11_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_TOKEN
+              optional: true
+        - name: ORG_SIGN_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PROVIDER
+              optional: true
+        - name: ORG_SIGN_TSA_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_TSA_URL
+              optional: true
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           valueFrom:
             secretKeyRef:

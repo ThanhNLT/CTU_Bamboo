@@ -178,11 +178,12 @@ data:
     \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
     \ OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions\
     \ and\n# limitations under the License.\n\nglobal:\n  scrape_interval: 15s\n  evaluation_interval: 30s\n\nrule_files:\n\
-    \  - /etc/prometheus/alerts.yml\n\nscrape_configs:\n  - job_name: actions\n    metrics_path: /metrics\n    static_configs:\n\
-    \      - targets: [\"actions:8000\"]\n  - job_name: gateway\n    metrics_path: /apisix/prometheus/metrics\n    static_configs:\n\
-    \      - targets: [\"gateway:9091\"]\n  - job_name: keycloak\n    metrics_path: /metrics\n    static_configs:\n      -\
-    \ targets: [\"keycloak:9000\"]\n  - job_name: otel-collector\n    static_configs:\n      - targets: [\"otel-collector:8888\"\
-    ]\n  - job_name: prometheus\n    static_configs:\n      - targets: [\"localhost:9090\"]\n"
+    \  - /etc/prometheus/alerts.yml\n\n# Job thu số liệu của actions nằm ở tệp riêng để infra/compose/mtls.yml thay bằng bản\
+    \ HTTPS + chứng chỉ máy khách.\nscrape_config_files:\n  - /etc/prometheus/scrape/*.yml\n\nscrape_configs:\n  - job_name:\
+    \ gateway\n    metrics_path: /apisix/prometheus/metrics\n    static_configs:\n      - targets: [\"gateway:9091\"]\n  -\
+    \ job_name: keycloak\n    metrics_path: /metrics\n    static_configs:\n      - targets: [\"keycloak:9000\"]\n  - job_name:\
+    \ otel-collector\n    static_configs:\n      - targets: [\"otel-collector:8888\"]\n  - job_name: prometheus\n    static_configs:\n\
+    \      - targets: [\"localhost:9090\"]\n"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -210,3 +211,20 @@ data:
     \ trong bucket kiểm dịch quá 15 phút\"\n      - alert: ThietBiNgoaiTuyen\n        expr: sum(bamboo_iot_live_devices{state=\"\
     offline\"}) > 0\n        for: 15m\n        labels: {severity: warning}\n        annotations:\n          summary: \"Có\
     \ thiết bị gửi số đo trực tiếp đang ngoại tuyến\"\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-infra-platform-observability-scrape-actions-yml
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: bamboo
+data:
+  content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
+    \ Apache-2.0\n# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
+    \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
+    \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
+    \ OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions\
+    \ and\n# limitations under the License.\n\nscrape_configs:\n  - job_name: actions\n    metrics_path: /metrics\n    static_configs:\n\
+    \      - targets: [\"actions:8000\"]\n"
