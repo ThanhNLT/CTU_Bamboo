@@ -24,6 +24,8 @@ import pathlib
 import httpx
 import psycopg
 
+from bamboo_common import tls
+
 log = logging.getLogger("keycloak_sync")
 
 REALM = "bms"
@@ -38,6 +40,7 @@ REALM_FILE = pathlib.Path(__file__).resolve().parents[3] / "infra/platform/keycl
 def admin_token(base_url: str, user: str, password: str) -> str:
     resp = httpx.post(
         f"{base_url}/realms/master/protocol/openid-connect/token",
+        verify=tls.verify(base_url),
         timeout=15,
         data={"grant_type": "password", "client_id": "admin-cli", "username": user, "password": password},
     )
@@ -65,7 +68,9 @@ def desired_changes(client: dict, web_origin: str) -> dict:
 def ensure_web_client(base_url: str, user: str, password: str, web_origin: str) -> bool:
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
-    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
+    with httpx.Client(
+        base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15, verify=tls.verify(base_url)
+    ) as http:
         found = http.get("/clients", params={"clientId": CLIENT_ID})
         found.raise_for_status()
         if not found.json():
@@ -85,7 +90,9 @@ def ensure_admin_console_url(base_url: str, user: str, password: str, admin_url:
     admin_url = admin_url.rstrip("/")
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
-    with httpx.Client(base_url=f"{base_url}/admin/realms/master", headers=headers, timeout=15) as http:
+    with httpx.Client(
+        base_url=f"{base_url}/admin/realms/master", headers=headers, timeout=15, verify=tls.verify(base_url)
+    ) as http:
         realm = http.get("")
         realm.raise_for_status()
         attrs = dict(realm.json().get("attributes") or {})
@@ -100,7 +107,9 @@ def ensure_login_theme(base_url: str, user: str, password: str, theme: str = LOG
     """Realm đã có từ trước không nhận lại tệp import, nên đặt theme đăng nhập qua Admin API."""
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
-    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
+    with httpx.Client(
+        base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15, verify=tls.verify(base_url)
+    ) as http:
         realm = http.get("")
         realm.raise_for_status()
         if realm.json().get("loginTheme") == theme:
@@ -117,7 +126,9 @@ def ensure_user_attributes(base_url: str, user: str, password: str) -> bool:
     (Admin API, tài khoản bms-provisioner) đọc, ghi thuộc tính ngoài User Profile; người dùng không thấy, không sửa."""
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
-    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
+    with httpx.Client(
+        base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15, verify=tls.verify(base_url)
+    ) as http:
         profile = http.get("/users/profile")
         profile.raise_for_status()
         config = profile.json()
@@ -134,7 +145,9 @@ def ensure_provisioner_client(base_url: str, user: str, password: str, secret: s
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
     changed = False
-    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15) as http:
+    with httpx.Client(
+        base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=15, verify=tls.verify(base_url)
+    ) as http:
         desired = {
             "clientId": PROVISIONER_ID,
             "name": "Tạo tài khoản nhân viên (dịch vụ nội bộ)",
@@ -195,6 +208,7 @@ def ensure_demo_users(
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
     resp = httpx.post(
         f"{base_url}/admin/realms/{REALM}/partialImport",
+        verify=tls.verify(base_url),
         headers=headers,
         timeout=30,
         json={"ifResourceExists": "SKIP", "users": users},
@@ -219,7 +233,9 @@ def fix_demo_user_ids(
     base_url = base_url.rstrip("/")
     headers = {"Authorization": f"Bearer {admin_token(base_url, user, password)}"}
     fixed: list[tuple[str, str]] = []
-    with httpx.Client(base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=30) as http:
+    with httpx.Client(
+        base_url=f"{base_url}/admin/realms/{REALM}", headers=headers, timeout=30, verify=tls.verify(base_url)
+    ) as http:
         for wanted in users:
             found = http.get("/users", params={"username": wanted["username"], "exact": "true"})
             found.raise_for_status()
