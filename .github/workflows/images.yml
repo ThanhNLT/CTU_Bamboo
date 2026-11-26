@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
 
 name: Images
 
-# Image dựng sẵn trên GHCR (ghcr.io/ctubamboo/bamboo-*) cho amd64 và arm64, kèm compose phát hành dạng OCI artifact:
-#   docker compose -f oci://ghcr.io/ctubamboo/bamboo:<phiên bản> up -d -y
+# Image dựng sẵn trên GHCR (ghcr.io/thanhnlt/bamboo-*) cho amd64 và arm64, kèm compose phát hành dạng OCI artifact:
+#   docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y
 # - Đẩy thẻ v*: dựng, đẩy image <phiên bản> và latest, phát hành compose, gắn compose.release.yml vào GitHub Release,
 #   chạy thử hệ thống từ image vừa đẩy.
 # - Chạy tay (workflow_dispatch) với `ref` là thẻ đã có (ví dụ v0.5.2): như trên cho mã của thẻ đó, workflow và công cụ
@@ -57,7 +57,7 @@ permissions:
   contents: read
 
 env:
-  PREFIX: ghcr.io/ctubamboo/bamboo
+  PREFIX: ghcr.io/thanhnlt/bamboo
 
 jobs:
   plan:
