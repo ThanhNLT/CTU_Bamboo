@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/k3d-io/k3d/${K3D_VERSION}/install.sh" | TAG="${K3D_VERSION}" bash
           k3d cluster create bamboo --image "${K3S_IMAGE}" --k3s-arg "--disable=traefik@server:0" --wait
           for name in actions seed migrate web keycloak openbao gateway; do
-            k3d image import -c bamboo "ghcr.io/ctubamboo/bamboo-$name:dev"
+            k3d image import -c bamboo "ghcr.io/thanhnlt/bamboo-$name:dev"
           done
       - name: Triển khai overlay ci
         run: |

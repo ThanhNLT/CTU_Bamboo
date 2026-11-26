@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -343,7 +343,7 @@ def _group_file(group: str, name: str) -> str:
 
 
 def k8s_image(image: str) -> str:
-    """`${BAMBOO_IMAGE_PREFIX:-ghcr.io/ctubamboo/bamboo}-x:tag` thành tên cụ thể; overlay đổi thẻ bằng `images:`."""
+    """`${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-x:tag` thành tên cụ thể; overlay đổi thẻ bằng `images:`."""
     return resolve_default(image)
 
 

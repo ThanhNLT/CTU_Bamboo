@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,29 +31,29 @@ secretGenerator:
     options:
       disableNameSuffixHash: true
 images:
-  - name: ghcr.io/ctubamboo/bamboo-actions
+  - name: ghcr.io/thanhnlt/bamboo-actions
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-lakehouse
+  - name: ghcr.io/thanhnlt/bamboo-lakehouse
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-seed
+  - name: ghcr.io/thanhnlt/bamboo-seed
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-migrate
+  - name: ghcr.io/thanhnlt/bamboo-migrate
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-ocr
+  - name: ghcr.io/thanhnlt/bamboo-ocr
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-web
+  - name: ghcr.io/thanhnlt/bamboo-web
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-keycloak
+  - name: ghcr.io/thanhnlt/bamboo-keycloak
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-openbao
+  - name: ghcr.io/thanhnlt/bamboo-openbao
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-gateway
+  - name: ghcr.io/thanhnlt/bamboo-gateway
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-trino
+  - name: ghcr.io/thanhnlt/bamboo-trino
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-kafka
+  - name: ghcr.io/thanhnlt/bamboo-kafka
     newTag: dev
-  - name: ghcr.io/ctubamboo/bamboo-mosquitto
+  - name: ghcr.io/thanhnlt/bamboo-mosquitto
     newTag: dev
 patches:
   - patch: |-
