@@ -4,7 +4,7 @@
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
- * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ * @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ test("duyệt đề nghị mua sắm trong Hộp việc", async ({ page }) => {
 
   await login(page, "tp.muahang.dienthoai");
   await page.goto("/");
-  await page.getByText("Lịch", { exact: true }).click();
+  await page.getByRole("main").getByTitle("Lịch", { exact: true }).click();
   await page
     .getByRole("link", { name: new RegExp(TITLE) })
     .first()

@@ -4,7 +4,7 @@
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
- * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ * @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ test("KPI ghim, Bản sao số, Phả hệ dữ liệu dùng dữ liệu trong C
   await expect(page.getByRole("heading", { name: /24 giờ qua/ })).toBeVisible();
 
   await page.goto("/d/lineage");
+  await page.getByTitle("Dữ liệu mẫu", { exact: true }).click();
   await expect(page.getByText(/closed_at không rỗng với việc đã xong/).first()).toBeVisible();
   await page.getByRole("button", { name: "Báo sự cố dữ liệu" }).click();
   const dialog = page.getByRole("dialog", { name: "Báo sự cố dữ liệu" });
