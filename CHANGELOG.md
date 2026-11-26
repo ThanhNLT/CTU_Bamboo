@@ -27,6 +27,12 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 
 **Kho mã chuyển sang [ThanhNLT/CTU_Bamboo](https://github.com/ThanhNLT/CTU_Bamboo)** (26/11/2026, tài khoản CTUBamboo bị GitHub tạm khóa): toàn bộ lịch sử commit, nhánh và thẻ phiên bản giữ nguyên; image dựng sẵn chuyển sang `ghcr.io/thanhnlt/bamboo-*`. Pull request, issue và image cũ còn ở `CTUBamboo/Bamboo`, chưa truy cập được. Máy đã clone kho cũ: `git remote set-url origin https://github.com/ThanhNLT/CTU_Bamboo.git`.
 
+**Nâng cấp:** `make up` (migration 065; `bootstrap` làm trống chỉ mục `documents` để thêm vector, `search-sync` tự nạp lại).
+
+### Thay đổi
+
+- **Tìm theo ý nghĩa trên trang Tìm kiếm** (ADR #92): ngoài kết quả chứa đúng từ khóa, trang Tìm kiếm ra thêm đề nghị mua sắm, tài liệu, tệp gần về ý nghĩa dù dùng cách nói khác (ví dụ "đồ dùng văn phòng" ra đề nghị mua giấy A4), gắn nhãn "Khớp ý nghĩa" kèm độ tương đồng. Ba chế độ Từ khóa / Ngữ nghĩa / Kết hợp nay chạy thật (trước đây chỉ có trên giao diện). Vector `bge-m3` lưu trong chỉ mục Meilisearch có sẵn, không thêm dịch vụ; AI chưa chạy thì vẫn tìm theo từ khóa như trước.
+
 ### Sửa lỗi
 
 - **Trang Dịch vụ dữ liệu báo "Không tải được danh mục" lần đầu sau khi Lakehouse nhàn rỗi, kiểm thử đầu–cuối `dich-vu-du-lieu.spec.ts` hỏng ngẫu nhiên (chỉ qua nhờ chạy lại trên CI, luôn hỏng khi chạy trên Mac, Windows vì không chạy lại):** Trino nằm sau sleeper, lần gọi đầu phải chờ Trino khởi động (sleeper chờ tới 180 giây) nhưng action `lakehouse_datasets` chỉ chờ 30 giây và trang không gọi lại. Thời gian chờ của `lakehouse_datasets`, `lakehouse_preview` nâng lên 90 giây; trang gọi lại tối đa 4 lần, cách 5 giây, khi lỗi không phải lỗi quyền, không tìm thấy, sai tham số, và báo "Lakehouse đang khởi động…" trong lúc chờ; kiểm thử chờ danh mục tới 180 giây.
