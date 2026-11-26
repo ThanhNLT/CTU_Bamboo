@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ diện. Khi tham gia, bạn đồng ý tuân theo [Quy tắc ứng xử](CODE_OF
 
 | Bạn muốn | Dùng |
 |---|---|
-| Báo lỗi | [Issues](https://github.com/CTUBamboo/Bamboo/issues/new/choose), mẫu **Báo lỗi** |
-| Đề xuất tính năng | [Issues](https://github.com/CTUBamboo/Bamboo/issues/new/choose), mẫu **Đề xuất** |
-| Hỏi cách cài đặt, cách dùng, trao đổi ý tưởng | [Discussions](https://github.com/CTUBamboo/Bamboo/discussions) |
+| Báo lỗi | [Issues](https://github.com/ThanhNLT/CTU_Bamboo/issues/new/choose), mẫu **Báo lỗi** |
+| Đề xuất tính năng | [Issues](https://github.com/ThanhNLT/CTU_Bamboo/issues/new/choose), mẫu **Đề xuất** |
+| Hỏi cách cài đặt, cách dùng, trao đổi ý tưởng | [Discussions](https://github.com/ThanhNLT/CTU_Bamboo/discussions) |
 | Báo lỗ hổng bảo mật | Không mở issue công khai; làm theo [SECURITY.md](SECURITY.md) |
 
 Trước khi mở issue, tìm xem đã có issue hoặc thảo luận tương tự chưa. Issue mới mang nhãn `needs-triage`; nhóm duy trì
@@ -41,7 +41,7 @@ phân loại rồi gắn `needs-info` khi cần bạn bổ sung thông tin, ho�
 Cách nhanh nhất là Docker Compose, một lệnh dựng toàn bộ hệ thống kèm dữ liệu demo:
 
 ```bash
-git clone https://github.com/CTUBamboo/Bamboo.git && cd Bamboo
+git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd Bamboo
 make up                # http://localhost:8000, tài khoản demo trong README
 ```
 
