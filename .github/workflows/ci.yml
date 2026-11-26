@@ -86,7 +86,11 @@ jobs:
                       /usr/local/share/powershell /usr/share/swift /usr/local/julia* /opt/microsoft
           df -h /
       - name: Một lệnh dựng toàn bộ hệ thống
-        run: time docker compose up -d
+        # Runner chỉ có 2 vCPU, 7 GB: Ollama, OCR chạy CPU chiếm gần 4 GB và gần trọn một nhân, làm các kiểm thử giao
+        # diện quá thời gian. Kiểm thử AI dùng Ollama giả lập, kiểm thử giao diện không cần AI, nên CI không chạy chúng.
+        run: |
+          time docker compose up -d \
+            --scale ollama-core=0 --scale ollama-init=0 --scale ocr-core=0 --scale ocr-init=0 --scale ai-worker=0
       - name: Chờ sẵn sàng
         run: tools/ci/wait-ready.sh 1200
       - name: Đăng nhập thật mọi tài khoản demo (Keycloak + Hasura webhook)
