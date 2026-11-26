@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@
 | Triển khai thật, sao lưu, nâng cấp | [Triển khai production](docs/van-hanh/trien-khai.md) |
 | Dùng cho công ty của mình | [Khởi tạo cho một công ty mới](docs/van-hanh/cong-ty-moi.md) |
 | Kiến trúc, CSDL, API | [Tài liệu kỹ thuật](docs/index.md) |
-| Hỏi đáp, trao đổi ý tưởng | [Discussions](https://github.com/CTUBamboo/Bamboo/discussions) |
-| Báo lỗi, đề xuất tính năng | [Issues](https://github.com/CTUBamboo/Bamboo/issues/new/choose) |
+| Hỏi đáp, trao đổi ý tưởng | [Discussions](https://github.com/ThanhNLT/CTU_Bamboo/discussions) |
+| Báo lỗi, đề xuất tính năng | [Issues](https://github.com/ThanhNLT/CTU_Bamboo/issues/new/choose) |
 | Báo lỗ hổng bảo mật | [SECURITY.md](SECURITY.md) |
 | Thay đổi giữa các phiên bản | [CHANGELOG.md](CHANGELOG.md) |
 
