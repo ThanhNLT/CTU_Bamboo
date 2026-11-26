@@ -176,6 +176,7 @@ name = "bamboo-actions"
 version = "0.0.0"
 source = { virtual = "services/actions" }
 dependencies = [
+    { name = "aiohttp", marker = "extra == 'project-14-bamboo-actions'" },
     { name = "bamboo-common", marker = "extra == 'project-14-bamboo-actions'" },
     { name = "boto3", marker = "extra == 'project-14-bamboo-actions'" },
     { name = "fastapi", marker = "extra == 'project-14-bamboo-actions'" },
@@ -199,6 +200,7 @@ dependencies = [
     { name = "pyjwt", extra = ["crypto"], marker = "extra == 'project-14-bamboo-actions'" },
     { name = "pypdf", marker = "extra == 'project-14-bamboo-actions'" },
     { name = "pypdfium2", marker = "extra == 'project-14-bamboo-actions'" },
+    { name = "python-pkcs11", marker = "extra == 'project-14-bamboo-actions'" },
     { name = "uvicorn", marker = "extra == 'project-14-bamboo-actions'" },
     { name = "uvloop", marker = "extra == 'project-14-bamboo-actions'" },
 ]
@@ -219,6 +221,7 @@ lakehouse = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp" },
     { name = "bamboo-common", editable = "packages/py-common" },
     { name = "boto3" },
     { name = "fastapi" },
@@ -242,6 +245,7 @@ requires-dist = [
     { name = "pyjwt", extras = ["crypto"] },
     { name = "pypdf", specifier = ">=7" },
     { name = "pypdfium2" },
+    { name = "python-pkcs11" },
     { name = "uvicorn" },
     { name = "uvloop" },
 ]
@@ -441,7 +445,7 @@ name = "cffi"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "(implementation_name != 'PyPy' and extra == 'project-14-bamboo-actions') or (extra == 'project-11-bamboo-docs' and extra == 'project-14-bamboo-actions')" },
+    { name = "pycparser", marker = "(implementation_name != 'PyPy' or extra == 'project-11-bamboo-docs') and extra == 'project-14-bamboo-actions'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz", hash = "sha256:dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be", size = 530807, upload-time = "2026-08-03T21:21:18.939Z" }
 wheels = [
@@ -548,7 +552,7 @@ name = "cryptography"
 version = "50.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "(platform_python_implementation != 'PyPy' and extra == 'project-14-bamboo-actions') or (extra == 'project-11-bamboo-docs' and extra == 'project-14-bamboo-actions')" },
+    { name = "cffi", marker = "(platform_python_implementation != 'PyPy' or extra == 'project-11-bamboo-docs') and extra == 'project-14-bamboo-actions'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9d/af/182eb91b0df3fe75c4d9f26fe70684569566745f6ba7e5c9c73a862c5252/cryptography-50.0.2.tar.gz", hash = "sha256:7b46165bb56eb4704e2eaaf86f3c940d19154535d9b0ca7d6d590b04060e00d5", size = 880623, upload-time = "2026-09-30T15:30:04.884Z" }
 wheels = [
@@ -1806,6 +1810,23 @@ wheels = [
 ]
 
 [[package]]
+name = "python-pkcs11"
+version = "0.10.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asn1crypto", marker = "extra == 'project-14-bamboo-actions'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3c/1e/4599d63cadc847c68af32a7d232d003563b2682af1373490727b5b3936da/python_pkcs11-0.10.1.tar.gz", hash = "sha256:e0d7ccede3b3145a678d7c8c59b3c64dcebeb77c9146ad3394a4b1309c4ab2a2", size = 207635, upload-time = "2026-10-20T23:11:12.494Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/3b/68284b35bc8408f1ea2c1a8b2501b21f6a4a0bd21178023db6a64477bd03/python_pkcs11-0.10.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:bcddd10924ca5dc62f117a168e538da37aa23df7c9461b2e7dffe65fcd5acd9e", size = 568477, upload-time = "2026-10-20T23:10:45.791Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/4e/e255500b914f0c4cf37c3b51c84f107e325c554920af0ec62fd43fbc124b/python_pkcs11-0.10.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6c05e23631b0e95585a7936392df12ac68fc5051e24f12a952bf536d5cf83baf", size = 1997116, upload-time = "2026-10-20T23:10:47.185Z" },
+    { url = "https://files.pythonhosted.org/packages/94/50/ff5b52f9967822cd510a1727ae3bc0014d680af708e027d6559833c8afe8/python_pkcs11-0.10.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7270f8844463f2ac713df63a21d4a8c7111c57ca5edfb8bf34156e45d7cb855b", size = 2039394, upload-time = "2026-10-20T23:10:48.64Z" },
+    { url = "https://files.pythonhosted.org/packages/da/e4/52a020992953bbd6f2818d35890b83706dbbec6f58850341a9c80567d3f9/python_pkcs11-0.10.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:aa629aafc061fd324bac210f35e7a9057457a228d12823b787de378ee68a81df", size = 1931155, upload-time = "2026-10-20T23:10:50.053Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/75/b57f79651a3a5f3ad81c32d82d651bfb93e59988eea6b32aa8b1c847e6fa/python_pkcs11-0.10.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:dbde5f0ce3c22e05cf0a46514a46a02b4fbfbd88bb3c04a9f392876abb819693", size = 2000594, upload-time = "2026-10-20T23:10:51.494Z" },
+    { url = "https://files.pythonhosted.org/packages/21/ab/a4181ff6ac4bdd38a062c3e110d666793a2ef3587652ea874412d21ed207/python_pkcs11-0.10.1-cp313-cp313-win_amd64.whl", hash = "sha256:808dd59edd6d6badbf08de075e20657481022efd6a15e5f9b6111d7c889f37b0", size = 285166, upload-time = "2026-10-20T23:10:52.959Z" },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2348,7 +2369,7 @@ name = "tqdm"
 version = "4.70.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "(sys_platform == 'win32' and extra == 'project-14-bamboo-actions') or (extra == 'project-11-bamboo-docs' and extra == 'project-14-bamboo-actions')" },
+    { name = "colorama", marker = "(sys_platform == 'win32' or extra == 'project-11-bamboo-docs') and extra == 'project-14-bamboo-actions'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz", hash = "sha256:cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4", size = 171846, upload-time = "2026-09-11T07:25:16.601Z" }
 wheels = [
@@ -2361,7 +2382,7 @@ version = "0.27.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc", marker = "extra == 'project-14-bamboo-actions'" },
-    { name = "colorama", marker = "(sys_platform == 'win32' and extra == 'project-14-bamboo-actions') or (extra == 'project-11-bamboo-docs' and extra == 'project-14-bamboo-actions')" },
+    { name = "colorama", marker = "(sys_platform == 'win32' or extra == 'project-11-bamboo-docs') and extra == 'project-14-bamboo-actions'" },
     { name = "rich", marker = "extra == 'project-14-bamboo-actions'" },
     { name = "shellingham", marker = "extra == 'project-14-bamboo-actions'" },
 ]
@@ -2405,7 +2426,7 @@ name = "tzlocal"
 version = "5.4.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "tzdata", marker = "(sys_platform == 'win32' and extra == 'project-14-bamboo-actions') or (extra == 'project-11-bamboo-docs' and extra == 'project-14-bamboo-actions')" },
+    { name = "tzdata", marker = "(sys_platform == 'win32' or extra == 'project-11-bamboo-docs') and extra == 'project-14-bamboo-actions'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d8/89/2bd035df331499589fc92e59375c17c6cea6a500453b2c5f6a6ec9572825/tzlocal-5.4.5.tar.gz", hash = "sha256:ba976898bad27945178c9ca25c222c19e322b30c10342b9f40b46714f70d2d5f", size = 31483, upload-time = "2026-10-22T09:09:26.38Z" }
 wheels = [
@@ -2462,7 +2483,7 @@ name = "wasabi"
 version = "1.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "(sys_platform == 'win32' and extra == 'project-14-bamboo-actions') or (extra == 'project-11-bamboo-docs' and extra == 'project-14-bamboo-actions')" },
+    { name = "colorama", marker = "(sys_platform == 'win32' or extra == 'project-11-bamboo-docs') and extra == 'project-14-bamboo-actions'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ac/f9/054e6e2f1071e963b5e746b48d1e3727470b2a490834d18ad92364929db3/wasabi-1.1.3.tar.gz", hash = "sha256:4bb3008f003809db0c3e28b4daf20906ea871a2bb43f9914197d540f4f2e0878", size = 30391, upload-time = "2024-05-31T16:56:18.99Z" }
 wheels = [
