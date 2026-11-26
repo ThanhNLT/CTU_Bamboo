@@ -26,10 +26,14 @@ Mọi thay đổi đáng kể của dự án được ghi ở đây. Định d�
 ## [Chưa phát hành]
 
 **Kho mã chuyển sang [ThanhNLT/CTU_Bamboo](https://github.com/ThanhNLT/CTU_Bamboo)** (26/11/2026, tài khoản CTUBamboo bị GitHub tạm khóa): toàn bộ lịch sử commit, nhánh và thẻ phiên bản giữ nguyên; image dựng sẵn chuyển sang `ghcr.io/thanhnlt/bamboo-*`. Pull request, issue và image cũ còn ở `CTUBamboo/Bamboo`, chưa truy cập được. Máy đã clone kho cũ: `git remote set-url origin https://github.com/ThanhNLT/CTU_Bamboo.git`.
+
+**Nâng cấp:** `make up` (migration 065; `bootstrap` làm trống chỉ mục `documents` để thêm vector, `search-sync` tự nạp lại).
+
 **Nâng cấp:** `make up` (migration `066` chuyển tác tử đang dùng `qwen3:4b` sang mô hình mới; `ollama-init` tải `qwen3:4b-instruct-2507-q4_K_M`, khoảng 2,5 GB). Ai đã chép `AI_CHAT_MODEL=qwen3:4b` từ `.env.example` vào `.env` thì sửa thành `AI_CHAT_MODEL=qwen3:4b-instruct-2507-q4_K_M` (hoặc xóa dòng), và để trống `AI_KV_CACHE_TYPE=` để Mac dùng mặc định mới. Mô hình cũ vẫn nằm trên đĩa: Mac chạy `ollama rm qwen3:4b`, máy khác chạy `docker compose exec ollama-core ollama rm qwen3:4b` để lấy lại khoảng 2,5 GB.
 
 ### Thay đổi
 
+- **Tìm theo ý nghĩa trên trang Tìm kiếm** (ADR #92): ngoài kết quả chứa đúng từ khóa, trang Tìm kiếm ra thêm đề nghị mua sắm, tài liệu, tệp gần về ý nghĩa dù dùng cách nói khác (ví dụ "đồ dùng văn phòng" ra đề nghị mua giấy A4), gắn nhãn "Khớp ý nghĩa" kèm độ tương đồng. Ba chế độ Từ khóa / Ngữ nghĩa / Kết hợp nay chạy thật (trước đây chỉ có trên giao diện). Vector `bge-m3` lưu trong chỉ mục Meilisearch có sẵn, không thêm dịch vụ; AI chưa chạy thì vẫn tìm theo từ khóa như trước.
 - **Trợ lý AI trả lời nhanh hơn khoảng 2,5 lần: mô hình trò chuyện mặc định là Qwen3-4B bản instruct** (ADR #93): `AI_CHAT_MODEL` mặc định đổi từ `qwen3:4b` (Ollama trỏ tới bản thinking-2507, tắt suy nghĩ vẫn lập luận trước khi trả lời) sang `qwen3:4b-instruct-2507-q4_K_M` (cùng kích thước, cùng giấy phép Apache-2.0, trả lời thẳng). Đo bằng `tools/ai_smoke.sh` trên Mac Apple M1 Pro 16 GB: bản instruct đạt 37/39 câu, trung vị cả lượt 9,0 giây; bản thinking 38/39 câu, 23,1 giây. Hai câu lỗi của bản instruct chỉ trích dẫn một văn bản liên quan khác với văn bản mong đợi.
 - **Mac Apple Silicon từ 16 GB dùng KV cache f16 cho Ollama** (ADR #93): sinh chữ 33 token/giây thay vì 26 với `q4_0` (GPU Metal không phải giải lượng tử bộ đệm), tốn thêm khoảng 1,2 GB bộ nhớ hợp nhất ở ngữ cảnh 12K. Mac 8 GB giữ `q4_0`; Docker vẫn mặc định `q4_0`. `AI_KV_CACHE_TYPE` trong `.env` (không để trống) vẫn được ưu tiên.
 
