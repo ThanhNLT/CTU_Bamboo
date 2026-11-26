@@ -1495,7 +1495,7 @@ class Seeder:
                       WHERE NOT EXISTS (SELECT FROM core.ai_agent WHERE tenant_id = %s)""",
                 agent,
                 self.tenant_id(code),
-                os.environ.get("AI_CHAT_MODEL", "qwen3:4b"),
+                os.environ.get("AI_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
                 self._holder(code, seat),
                 self.tenant_id(code),
             )
@@ -1517,7 +1517,7 @@ class Seeder:
                           %s, '{return_for_info,project_task}', 'suggest', %s)""",
             agent,
             tid,
-            os.environ.get("AI_CHAT_MODEL", "qwen3:4b"),
+            os.environ.get("AI_CHAT_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
             self._holder("TDX", "DT.HEAD"),
             "Đối chiếu đề nghị mua sắm với Quy chế mua sắm: từ 50 triệu đồng phải có đủ 3 báo giá và nhà cung cấp đề "
             "xuất. Thiếu thì đề xuất trả lại, ghi rõ phần cần bổ sung. Đề nghị thiết bị cho dây chuyền SMT thì đề xuất "
