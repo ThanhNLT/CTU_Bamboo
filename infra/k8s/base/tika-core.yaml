@@ -1,0 +1,81 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tika-core
+  labels:
+    app.kubernetes.io/name: tika-core
+    app.kubernetes.io/part-of: bamboo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tika-core
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tika-core
+        app.kubernetes.io/part-of: bamboo
+    spec:
+      serviceAccountName: bamboo
+      enableServiceLinks: false
+      containers:
+      - name: tika-core
+        image: apache/tika:4.1.0-1
+        env:
+        - name: _BAMBOO_TIKA_JAVA_OPTS
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: TIKA_JAVA_OPTS
+              optional: true
+        - name: JAVA_TOOL_OPTIONS
+          value: $(_BAMBOO_TIKA_JAVA_OPTS)
+        - name: MALLOC_ARENA_MAX
+          value: '2'
+        ports:
+        - containerPort: 9998
+        readinessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - "exec 3<>/dev/tcp/127.0.0.1/9998 && printf 'GET /version HTTP/1.0\r\n\r\n' >&3 && grep -q Tika <&3"
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tika-core
+  labels:
+    app.kubernetes.io/part-of: bamboo
+spec:
+  selector:
+    app.kubernetes.io/name: tika-core
+  ports:
+  - name: p9998
+    port: 9998
+    targetPort: 9998
