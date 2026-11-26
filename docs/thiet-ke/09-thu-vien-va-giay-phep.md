@@ -152,7 +152,7 @@ Hàng đợi `msg.queue`, thử lại, hàng chết, biên nhận Ed25519 do d�
 | Thành phần | Phiên bản | Giấy phép | Dùng ở đâu, để làm gì |
 |---|---|---|---|
 | Ollama (`ollama/ollama`; Mac: chạy ngoài Docker) | 0.35.1 | MIT; image kèm CUDA runtime (giấy phép NVIDIA) | Chạy mô hình chat và embedding, CPU hoặc GPU |
-| Mô hình Qwen3-4B (`qwen3:4b`, biến `AI_CHAT_MODEL`) | thẻ 4b của registry Ollama | Apache-2.0 | Trợ lý RAG, tác tử, bước AI trong quy trình |
+| Mô hình Qwen3-4B-Instruct-2507 (`qwen3:4b-instruct-2507-q4_K_M`, biến `AI_CHAT_MODEL`) | thẻ 4b-instruct-2507-q4_K_M của registry Ollama | Apache-2.0 | Trợ lý RAG, tác tử, bước AI trong quy trình |
 | Mô hình BGE-M3 (`bge-m3`, biến `AI_EMBED_MODEL`) | thẻ latest của registry Ollama | MIT | Vector cho tìm ngữ nghĩa |
 
 ### OCR tiếng Việt (`services/ocr`, image `bamboo-ocr`)
