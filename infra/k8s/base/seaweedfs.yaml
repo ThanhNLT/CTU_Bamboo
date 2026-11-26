@@ -1,0 +1,129 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweedfs
+  labels:
+    app.kubernetes.io/name: seaweedfs
+    app.kubernetes.io/part-of: bamboo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: seaweedfs
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: seaweedfs
+        app.kubernetes.io/part-of: bamboo
+    spec:
+      serviceAccountName: bamboo
+      enableServiceLinks: false
+      containers:
+      - name: seaweedfs
+        image: chrislusf/seaweedfs:4.48
+        args:
+        - sh
+        - -c
+        - server -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0 -master.volumeSizeLimitMB=256 -volume.max=64 -filer -s3 -s3.port=8333
+          -s3.config=/etc/bms/s3.json -s3.allowedOrigins=$(_BAMBOO_CORS_ORIGINS)
+        env:
+        - name: _BAMBOO_CORS_ORIGINS
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: CORS_ORIGINS
+              optional: true
+        ports:
+        - containerPort: 8333
+        - containerPort: 9333
+        - containerPort: 19333
+        - containerPort: 8080
+        - containerPort: 18080
+        - containerPort: 8888
+        - containerPort: 18888
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333 && { [ ! /etc/bms/s3.json
+              -nt /tmp/s3.json.loaded ] || { touch /tmp/s3.json.loaded && kill -HUP 1; }; }
+          periodSeconds: 3
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: seaweedfs-data
+          mountPath: /data
+          readOnly: false
+        - name: seaweedfs-config
+          mountPath: /etc/bms
+          readOnly: true
+      initContainers:
+      - name: wait-openbao-init
+        image: registry.k8s.io/kubectl:v1.37.2
+        args:
+        - wait
+        - --for=condition=complete
+        - job/openbao-init
+        - --timeout=3600s
+      volumes:
+      - name: seaweedfs-data
+        persistentVolumeClaim:
+          claimName: seaweedfs-data
+      - name: seaweedfs-config
+        persistentVolumeClaim:
+          claimName: seaweedfs-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweedfs
+  labels:
+    app.kubernetes.io/part-of: bamboo
+spec:
+  selector:
+    app.kubernetes.io/name: seaweedfs
+  ports:
+  - name: p8333
+    port: 8333
+    targetPort: 8333
+  - name: p9333
+    port: 9333
+    targetPort: 9333
+  - name: p19333
+    port: 19333
+    targetPort: 19333
+  - name: p8080
+    port: 8080
+    targetPort: 8080
+  - name: p18080
+    port: 18080
+    targetPort: 18080
+  - name: p8888
+    port: 8888
+    targetPort: 8888
+  - name: p18888
+    port: 18888
+    targetPort: 18888

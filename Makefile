@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: help build build-py build-web install uninstall dist clean gitops-enable gitops-disable gitops-status check check-py check-web check-docs setup-code up-gpu test-gateway release-compose up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
+.PHONY: help build build-py build-web install uninstall dist clean gitops-enable gitops-disable gitops-status check check-py check-web check-docs setup-code up-gpu test-gateway release-compose k8s-manifests up down migrate test-db test-actions test-seed test-auth test-all hasura-metadata trino-sql trino-password realm psql bao-token
 
 -include config.mk
 
@@ -104,6 +104,10 @@ realm:
 
 psql:
 	docker compose exec db psql -U bms -d bms
+
+# Manifest Kubernetes (infra/k8s, ADR #95) sinh lại từ cấu hình compose sau khi sửa infra/compose.
+k8s-manifests:
+	$(UV) run --no-project --with pyyaml python tools/k8s/generate.py
 
 release-compose:
 	$(UV) run --quiet --no-project --with pyyaml python tools/release/compose_release.py \

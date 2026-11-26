@@ -1,0 +1,105 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meilisearch
+  labels:
+    app.kubernetes.io/name: meilisearch
+    app.kubernetes.io/part-of: bamboo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: meilisearch
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: meilisearch
+        app.kubernetes.io/part-of: bamboo
+    spec:
+      serviceAccountName: bamboo
+      enableServiceLinks: false
+      containers:
+      - name: meilisearch
+        image: getmeili/meilisearch:v1.54.3
+        args:
+        - /bin/meilisearch
+        - --config-file-path
+        - /etc/meilisearch/config.toml
+        env:
+        - name: MEILI_MAX_INDEXING_MEMORY
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: MEILI_MAX_INDEXING_MEMORY
+              optional: true
+        ports:
+        - containerPort: 7700
+        readinessProbe:
+          exec:
+            command:
+            - curl
+            - -fsS
+            - -o
+            - /dev/null
+            - http://127.0.0.1:7700/health
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: meilisearch-data
+          mountPath: /meili_data
+          readOnly: false
+        - name: meilisearch-config
+          mountPath: /etc/meilisearch
+          readOnly: true
+      initContainers:
+      - name: wait-openbao-init
+        image: registry.k8s.io/kubectl:v1.37.2
+        args:
+        - wait
+        - --for=condition=complete
+        - job/openbao-init
+        - --timeout=3600s
+      volumes:
+      - name: meilisearch-data
+        persistentVolumeClaim:
+          claimName: meilisearch-data
+      - name: meilisearch-config
+        persistentVolumeClaim:
+          claimName: meilisearch-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meilisearch
+  labels:
+    app.kubernetes.io/part-of: bamboo
+spec:
+  selector:
+    app.kubernetes.io/name: meilisearch
+  ports:
+  - name: p7700
+    port: 7700
+    targetPort: 7700

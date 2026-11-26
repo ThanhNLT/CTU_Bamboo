@@ -1,0 +1,212 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-infra-platform-observability-grafana-provisioning-dashb
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: bamboo
+data:
+  content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
+    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
+    \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
+    \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
+    \ OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions\
+    \ and\n# limitations under the License.\n\napiVersion: 1\nproviders:\n  - name: bamboo\n    folder: Bamboo\n    type:\
+    \ file\n    disableDeletion: true\n    options:\n      path: /var/lib/grafana/dashboards\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-infra-platform-observability-grafana-provisioning-datas
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: bamboo
+data:
+  content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
+    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
+    \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
+    \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
+    \ OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions\
+    \ and\n# limitations under the License.\n\napiVersion: 1\ndatasources:\n  - name: Prometheus\n    uid: prometheus\n  \
+    \  type: prometheus\n    access: proxy\n    url: http://prometheus:9090\n    isDefault: true\n  - name: Jaeger\n    uid:\
+    \ jaeger\n    type: jaeger\n    access: proxy\n    url: http://jaeger:16686\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-infra-platform-observability-grafana-dashboards-bamboo
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: bamboo
+data:
+  content: "{\n  \"uid\": \"bamboo-overview\",\n  \"title\": \"Bamboo tổng quan\",\n  \"tags\": [\n    \"bamboo\"\n  ],\n\
+    \  \"timezone\": \"browser\",\n  \"schemaVersion\": 39,\n  \"version\": 1,\n  \"refresh\": \"30s\",\n  \"time\": {\n \
+    \   \"from\": \"now-3h\",\n    \"to\": \"now\"\n  },\n  \"panels\": [\n    {\n      \"id\": 1,\n      \"type\": \"stat\"\
+    ,\n      \"title\": \"Dịch vụ đang trả lời\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"\
+    uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n        \"x\": 0,\n        \"y\": 0,\n        \"w\": 4,\n     \
+    \   \"h\": 4\n      },\n      \"options\": {\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\
+    \n          ]\n        }\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\":\
+    \ \"sum(up)\"\n        }\n      ]\n    },\n    {\n      \"id\": 2,\n      \"type\": \"stat\",\n      \"title\": \"Yêu\
+    \ cầu/giây qua cổng API\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\
+    \n      },\n      \"gridPos\": {\n        \"x\": 4,\n        \"y\": 0,\n        \"w\": 4,\n        \"h\": 4\n      },\n\
+    \      \"options\": {\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n          ]\n\
+    \        }\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"sum(rate(apisix_http_status[5m]))\"\
+    \n        }\n      ]\n    },\n    {\n      \"id\": 3,\n      \"type\": \"stat\",\n      \"title\": \"Action lỗi (5 phút)\"\
+    ,\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n      \"gridPos\"\
+    : {\n        \"x\": 8,\n        \"y\": 0,\n        \"w\": 4,\n        \"h\": 4\n      },\n      \"options\": {\n     \
+    \   \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n          ]\n        }\n      },\n    \
+    \  \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"sum(increase(bamboo_action_calls_total{outcome=\\\
+    \"error\\\"}[5m]))\"\n        }\n      ]\n    },\n    {\n      \"id\": 4,\n      \"type\": \"stat\",\n      \"title\"\
+    : \"Tin trong hàng chết\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\
+    \n      },\n      \"gridPos\": {\n        \"x\": 12,\n        \"y\": 0,\n        \"w\": 4,\n        \"h\": 4\n      },\n\
+    \      \"options\": {\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n          ]\n\
+    \        }\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"sum(bamboo_message_queue{status=\\\
+    \"DEAD\\\"}) or vector(0)\"\n        }\n      ]\n    },\n    {\n      \"id\": 5,\n      \"type\": \"stat\",\n      \"\
+    title\": \"Tệp đang kiểm dịch\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\
+    \n      },\n      \"gridPos\": {\n        \"x\": 16,\n        \"y\": 0,\n        \"w\": 4,\n        \"h\": 4\n      },\n\
+    \      \"options\": {\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n          ]\n\
+    \        }\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"bamboo_attachments_pending\"\
+    \n        }\n      ]\n    },\n    {\n      \"id\": 6,\n      \"type\": \"stat\",\n      \"title\": \"Thiết bị ngoại tuyến\"\
+    ,\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n      \"gridPos\"\
+    : {\n        \"x\": 20,\n        \"y\": 0,\n        \"w\": 4,\n        \"h\": 4\n      },\n      \"options\": {\n    \
+    \    \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n          ]\n        }\n      },\n   \
+    \   \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"sum(bamboo_iot_live_devices{state=\\\
+    \"offline\\\"}) or vector(0)\"\n        }\n      ]\n    },\n    {\n      \"id\": 7,\n      \"type\": \"timeseries\",\n\
+    \      \"title\": \"Cổng API: yêu cầu theo mã trạng thái\",\n      \"datasource\": {\n        \"type\": \"prometheus\"\
+    ,\n        \"uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n        \"x\": 0,\n        \"y\": 4,\n        \"w\"\
+    : 12,\n        \"h\": 8\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"short\"\n\
+    \        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"legend\": {\n          \"displayMode\"\
+    : \"list\",\n          \"placement\": \"bottom\"\n        }\n      },\n      \"targets\": [\n        {\n          \"refId\"\
+    : \"A\",\n          \"expr\": \"sum by (code) (rate(apisix_http_status[5m]))\",\n          \"legendFormat\": \"{{code}}\"\
+    \n        }\n      ]\n    },\n    {\n      \"id\": 8,\n      \"type\": \"timeseries\",\n      \"title\": \"Cổng API: độ\
+    \ trễ p95 theo route\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n\
+    \      },\n      \"gridPos\": {\n        \"x\": 12,\n        \"y\": 4,\n        \"w\": 12,\n        \"h\": 8\n      },\n\
+    \      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"ms\"\n        },\n        \"overrides\": []\n\
+    \      },\n      \"options\": {\n        \"legend\": {\n          \"displayMode\": \"list\",\n          \"placement\"\
+    : \"bottom\"\n        }\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"\
+    histogram_quantile(0.95, sum by (le, route) (rate(apisix_http_latency_bucket{type=\\\"request\\\"}[5m])))\",\n       \
+    \   \"legendFormat\": \"{{route}}\"\n        }\n      ]\n    },\n    {\n      \"id\": 9,\n      \"type\": \"timeseries\"\
+    ,\n      \"title\": \"Actions: độ trễ p95 theo route\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n\
+    \        \"uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n        \"x\": 0,\n        \"y\": 12,\n        \"w\"\
+    : 12,\n        \"h\": 8\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"s\"\n    \
+    \    },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"legend\": {\n          \"displayMode\":\
+    \ \"list\",\n          \"placement\": \"bottom\"\n        }\n      },\n      \"targets\": [\n        {\n          \"refId\"\
+    : \"A\",\n          \"expr\": \"histogram_quantile(0.95, sum by (le, route) (rate(bamboo_http_request_duration_seconds_bucket[5m])))\"\
+    ,\n          \"legendFormat\": \"{{route}}\"\n        }\n      ]\n    },\n    {\n      \"id\": 10,\n      \"type\": \"\
+    timeseries\",\n      \"title\": \"Action gọi nhiều nhất\",\n      \"datasource\": {\n        \"type\": \"prometheus\"\
+    ,\n        \"uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n        \"x\": 12,\n        \"y\": 12,\n        \"\
+    w\": 12,\n        \"h\": 8\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"reqps\"\
+    \n        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"legend\": {\n          \"displayMode\"\
+    : \"list\",\n          \"placement\": \"bottom\"\n        }\n      },\n      \"targets\": [\n        {\n          \"refId\"\
+    : \"A\",\n          \"expr\": \"topk(10, sum by (action) (rate(bamboo_action_calls_total[5m])))\",\n          \"legendFormat\"\
+    : \"{{action}}\"\n        }\n      ]\n    },\n    {\n      \"id\": 11,\n      \"type\": \"timeseries\",\n      \"title\"\
+    : \"Action bị từ chối hoặc lỗi\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\
+    \n      },\n      \"gridPos\": {\n        \"x\": 0,\n        \"y\": 20,\n        \"w\": 12,\n        \"h\": 8\n      },\n\
+    \      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"short\"\n        },\n        \"overrides\":\
+    \ []\n      },\n      \"options\": {\n        \"legend\": {\n          \"displayMode\": \"list\",\n          \"placement\"\
+    : \"bottom\"\n        }\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"\
+    sum by (action, outcome) (rate(bamboo_action_calls_total{outcome!=\\\"ok\\\"}[5m]))\",\n          \"legendFormat\": \"\
+    {{action}} · {{outcome}}\"\n        }\n      ]\n    },\n    {\n      \"id\": 12,\n      \"type\": \"timeseries\",\n  \
+    \    \"title\": \"Hàng đợi\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\
+    \n      },\n      \"gridPos\": {\n        \"x\": 12,\n        \"y\": 20,\n        \"w\": 12,\n        \"h\": 8\n     \
+    \ },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"short\"\n        },\n        \"overrides\"\
+    : []\n      },\n      \"options\": {\n        \"legend\": {\n          \"displayMode\": \"list\",\n          \"placement\"\
+    : \"bottom\"\n        }\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\": \"\
+    sum by (status) (bamboo_message_queue)\",\n          \"legendFormat\": \"thông báo {{status}}\"\n        },\n        {\n\
+    \          \"refId\": \"B\",\n          \"expr\": \"sum by (status) (bamboo_ai_questions)\",\n          \"legendFormat\"\
+    : \"hỏi AI {{status}}\"\n        },\n        {\n          \"refId\": \"C\",\n          \"expr\": \"sum by (status) (bamboo_ai_agent_runs)\"\
+    ,\n          \"legendFormat\": \"tác tử {{status}}\"\n        },\n        {\n          \"refId\": \"D\",\n          \"\
+    expr\": \"bamboo_ocr_pending\",\n          \"legendFormat\": \"OCR\"\n        }\n      ]\n    }\n  ],\n  \"links\": [\n\
+    \    {\n      \"title\": \"Truy vết (Jaeger)\",\n      \"type\": \"link\",\n      \"url\": \"/explore?left=%7B%22datasource%22:%22jaeger%22%7D\"\
+    \n    }\n  ]\n}\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-infra-platform-observability-otel-collector-yaml
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: bamboo
+data:
+  content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
+    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
+    \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
+    \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
+    \ OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions\
+    \ and\n# limitations under the License.\n\nreceivers:\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n\
+    \      http:\n        endpoint: 0.0.0.0:4318\n\nprocessors:\n  memory_limiter:\n    check_interval: 2s\n    limit_mib:\
+    \ 96\n    spike_limit_mib: 24\n  batch:\n    timeout: 2s\n    send_batch_size: 512\n\nexporters:\n  otlp/jaeger:\n   \
+    \ endpoint: jaeger:4317\n    tls:\n      insecure: true\n\nservice:\n  telemetry:\n    metrics:\n      readers:\n    \
+    \    - pull:\n            exporter:\n              prometheus:\n                host: 0.0.0.0\n                port: 8888\n\
+    \  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [otlp/jaeger]\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-infra-platform-observability-prometheus-yml
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: bamboo
+data:
+  content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
+    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
+    \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
+    \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
+    \ OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions\
+    \ and\n# limitations under the License.\n\nglobal:\n  scrape_interval: 15s\n  evaluation_interval: 30s\n\nrule_files:\n\
+    \  - /etc/prometheus/alerts.yml\n\nscrape_configs:\n  - job_name: actions\n    metrics_path: /metrics\n    static_configs:\n\
+    \      - targets: [\"actions:8000\"]\n  - job_name: gateway\n    metrics_path: /apisix/prometheus/metrics\n    static_configs:\n\
+    \      - targets: [\"gateway:9091\"]\n  - job_name: keycloak\n    metrics_path: /metrics\n    static_configs:\n      -\
+    \ targets: [\"keycloak:9000\"]\n  - job_name: otel-collector\n    static_configs:\n      - targets: [\"otel-collector:8888\"\
+    ]\n  - job_name: prometheus\n    static_configs:\n      - targets: [\"localhost:9090\"]\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-infra-platform-observability-alerts-yml
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: bamboo
+data:
+  content: "# Bamboo - DX-OS Open-Core\n# @version 0.5.2\n# @author CTUBamboo\n# @copyright Copyright 2026 Bamboo\n# @license\
+    \ Apache-2.0\n# @see https://github.com/CTUBamboo/Bamboo, Bamboo project\n#\n# Licensed under the Apache License, Version\
+    \ 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy\
+    \ of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed\
+    \ to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES\
+    \ OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions\
+    \ and\n# limitations under the License.\n\ngroups:\n  - name: bamboo\n    rules:\n      - alert: DichVuKhongTraLoi\n \
+    \       expr: up == 0\n        for: 2m\n        labels: {severity: critical}\n        annotations:\n          summary:\
+    \ \"{{ $labels.job }} không trả lời Prometheus quá 2 phút\"\n      - alert: TyLeLoiActionCao\n        expr: >\n      \
+    \    sum(rate(bamboo_action_calls_total{outcome=\"error\"}[5m]))\n          / clamp_min(sum(rate(bamboo_action_calls_total[5m])),\
+    \ 0.001) > 0.05\n        for: 5m\n        labels: {severity: warning}\n        annotations:\n          summary: \"Hơn\
+    \ 5% lượt gọi Action lỗi không lường trước trong 5 phút\"\n      - alert: HangChetCoTin\n        expr: sum(bamboo_message_queue{status=\"\
+    DEAD\"}) > 0\n        for: 10m\n        labels: {severity: warning}\n        annotations:\n          summary: \"Hàng đợi\
+    \ thông báo có tin trong hàng chết (xem Quản trị → Hàng đợi)\"\n      - alert: TepKetKiemDich\n        expr: bamboo_attachments_pending\
+    \ > 20\n        for: 15m\n        labels: {severity: warning}\n        annotations:\n          summary: \"Nhiều tệp nằm\
+    \ trong bucket kiểm dịch quá 15 phút\"\n      - alert: ThietBiNgoaiTuyen\n        expr: sum(bamboo_iot_live_devices{state=\"\
+    offline\"}) > 0\n        for: 15m\n        labels: {severity: warning}\n        annotations:\n          summary: \"Có\
+    \ thiết bị gửi số đo trực tiếp đang ngoại tuyến\"\n"

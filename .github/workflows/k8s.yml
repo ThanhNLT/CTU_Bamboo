@@ -1,0 +1,102 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Manifest Kubernetes (infra/k8s, ADR #95): khớp compose, đúng schema, và dựng được phần lõi trên cụm k3s tạm.
+name: Kubernetes
+
+on:
+  pull_request:
+    paths:
+      - compose.yaml
+      - infra/compose/**
+      - infra/k8s/**
+      - infra/docker/**
+      - infra/platform/**
+      - tools/k8s/**
+      - tools/release/**
+      - .github/workflows/k8s.yml
+  workflow_dispatch:
+
+concurrency:
+  group: k8s-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  K3D_VERSION: v5.9.0
+  K3S_IMAGE: rancher/k3s:v1.37.2-k3s1
+  KUBECONFORM_VERSION: v0.8.0
+
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Manifest khớp cấu hình compose
+        run: uv run --no-project --with pyyaml python tools/k8s/generate.py --check
+      - name: Đúng schema Kubernetes
+        run: |
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kubeconform
+          for overlay in ci production; do
+            kubectl kustomize "infra/k8s/overlays/$overlay" \
+              | kubeconform -strict -summary -skip Application -kubernetes-version 1.37.0
+          done
+
+  k3s:
+    needs: manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v7
+      - name: Giải phóng đĩa runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+                      /usr/local/share/powershell /usr/share/swift /usr/local/julia* /opt/microsoft
+      - name: Dựng image của Bamboo
+        run: docker compose build actions seed migrate web keycloak openbao gateway
+      - name: Cụm k3s tạm (k3d)
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/k3d-io/k3d/${K3D_VERSION}/install.sh" | TAG="${K3D_VERSION}" bash
+          k3d cluster create bamboo --image "${K3S_IMAGE}" --k3s-arg "--disable=traefik@server:0" --wait
+          for name in actions seed migrate web keycloak openbao gateway; do
+            k3d image import -c bamboo "ghcr.io/ctubamboo/bamboo-$name:dev"
+          done
+      - name: Triển khai overlay ci
+        run: |
+          kubectl apply -k infra/k8s/overlays/ci
+          kubectl -n bamboo wait --for=condition=complete job/bootstrap --timeout=45m
+          kubectl -n bamboo rollout status deploy/gateway --timeout=10m
+          kubectl -n bamboo get pods
+      - name: Kiểm thử cổng API trong cụm
+        run: |
+          kubectl -n bamboo port-forward svc/gateway 8000:9080 > /tmp/port-forward.log 2>&1 &
+          for _ in $(seq 30); do curl -fsS http://localhost:8000/healthz > /dev/null && break; sleep 2; done
+          tools/ci/gateway-smoke.sh http://localhost:8000
+      - name: Trạng thái cụm khi lỗi
+        if: failure()
+        run: |
+          kubectl -n bamboo get pods,jobs,pvc -o wide || true
+          kubectl -n bamboo get events --sort-by=.lastTimestamp | tail -60 || true
+          for pod in $(kubectl -n bamboo get pods -o name); do
+            echo "=== $pod"; kubectl -n bamboo logs "$pod" --all-containers --tail=40 || true
+          done
