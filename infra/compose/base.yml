@@ -25,6 +25,7 @@ services:
       dockerfile: infra/docker/python.Dockerfile
       args:
         APP_DIR: services/actions
+        APT_PACKAGES: softhsm2
     image: ${BAMBOO_IMAGE_PREFIX:-ghcr.io/thanhnlt/bamboo}-actions:${BAMBOO_TAG:-dev}
     environment:
       BAMBOO_ENV: ${BAMBOO_ENV:-development}
@@ -56,6 +57,17 @@ services:
       SMS_GATEWAY_TOKEN: ${SMS_GATEWAY_TOKEN:-}
       WEBHOOK_ALLOW_PRIVATE: ${WEBHOOK_ALLOW_PRIVATE:-false}
       SIGNATURE_ONLINE: ${SIGNATURE_ONLINE:-true}
+      ORG_SIGN_PROVIDER: ${ORG_SIGN_PROVIDER:-}
+      ORG_SIGN_PKCS11_LIB: ${ORG_SIGN_PKCS11_LIB:-}
+      ORG_SIGN_PKCS11_TOKEN: ${ORG_SIGN_PKCS11_TOKEN:-}
+      ORG_SIGN_PKCS11_KEY: ${ORG_SIGN_PKCS11_KEY:-}
+      ORG_SIGN_PKCS11_CERT: ${ORG_SIGN_PKCS11_CERT:-}
+      ORG_SIGN_CSC_URL: ${ORG_SIGN_CSC_URL:-}
+      ORG_SIGN_CSC_CREDENTIAL: ${ORG_SIGN_CSC_CREDENTIAL:-}
+      ORG_SIGN_CSC_TOKEN_URL: ${ORG_SIGN_CSC_TOKEN_URL:-}
+      ORG_SIGN_CSC_CLIENT_ID: ${ORG_SIGN_CSC_CLIENT_ID:-}
+      ORG_SIGN_TSA_URL: ${ORG_SIGN_TSA_URL:-}
+      ORG_SIGN_LOCATION: ${ORG_SIGN_LOCATION:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8000,http://localhost:5173}
       SETUP_ALLOW_UNVERIFIED: ${SETUP_ALLOW_UNVERIFIED:-true}
       SETUP_OPEN_SIGNUP: ${SETUP_OPEN_SIGNUP:-${SEED_DEMO:-true}}

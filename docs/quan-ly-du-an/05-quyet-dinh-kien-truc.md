@@ -120,6 +120,7 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [91](#adr-91) | 18/11/2026 | Mac Apple Silicon tiết kiệm tài nguyên: CSDL và ClamAV bản arm64, OCR trên máy trả bộ nhớ khi nhàn rỗi |
 | [92](#adr-92) | 24/11/2026 | Tìm theo ý nghĩa trên trang Tìm kiếm: vector bge-m3 trong chỉ mục Meilisearch sẵn có, kết quả nối sau từ khóa |
 | [93](#adr-93) | 24/11/2026 | Mô hình trò chuyện mặc định là Qwen3-4B bản instruct; Mac từ 16 GB dùng KV cache f16 |
+| [94](#adr-94) | 26/11/2026 | Ký số văn bản hệ thống phát hành bằng chứng thư tổ chức: HSM qua PKCS#11 hoặc dịch vụ ký số từ xa chuẩn CSC |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -1027,6 +1028,29 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
   - Cùng kích thước tệp (2,5 GB, Q4_K_M), cùng giấy phép Apache-2.0, cùng họ Qwen3 nên không đổi yêu cầu phần cứng hay giấy phép.
 - **Đã loại:** Engine MLX của Ollama (nhanh hơn trên Apple Silicon nhưng Ollama chỉ hỗ trợ Mac trên 32 GB bộ nhớ hợp nhất và một số mô hình định dạng riêng, chưa có Qwen3 4B); mô hình riêng cho Mac (hai nền tảng chạy hai mô hình khác nhau, tác tử đã seed mang tên mô hình của nơi tạo); giảm ngữ cảnh xuống 8K (câu hỏi RAG khoảng 6.000 token, cộng 1.024 token trả lời và 4.096 khi tác tử bật suy nghĩ thì không đủ); `q8_0` trên Mac (không nhanh hơn `q4_0`).
 - **Giới hạn hiện tại:** Chưa đo trên GPU NVIDIA và CPU sau khi đổi mô hình (bản instruct không lập luận nên không thể chậm hơn, nhưng độ chính xác chỉ kiểm bằng 39 câu của `ai_smoke`). Chữ đầu tiên vẫn sau khoảng 8 giây trên M1 Pro vì phải đọc khoảng 6.000 token ngữ cảnh; ADR #89 đã loại việc thu hẹp ngữ cảnh. Máy đã có `.env` chép từ `.env.example` cũ giữ `qwen3:4b` và `q4_0` cho tới khi sửa tay (CHANGELOG ghi cách sửa).
+
+(adr-94)=
+## ADR #94: Ký số văn bản hệ thống phát hành bằng chứng thư tổ chức: HSM qua PKCS#11 hoặc dịch vụ ký số từ xa chuẩn CSC
+
+- **Ngày:** 26/11/2026
+- **Quyết định:** Quyết định nhân sự, báo cáo KPI và phiếu đề nghị mua sắm in ra PDF được ký PAdES (pyHanko, trường chữ
+  ký `BambooSeal`, SHA-256, dấu thời gian RFC 3161 khi có `ORG_SIGN_TSA_URL`) bằng chứng thư số công cộng của tổ chức
+  (`app.org_sign`). Khóa riêng không vào Bamboo: `ORG_SIGN_PROVIDER=pkcs11` dùng HSM hoặc token qua thư viện PKCS#11 của
+  hãng (chọn token, khóa, chứng thư theo nhãn; image `actions` có SoftHSM2 cho máy chưa có HSM), `csc` dùng dịch vụ ký số
+  từ xa của CA theo Cloud Signature Consortium API v1 (OAuth2 client credentials, `credentials/authorize` kèm PIN, ràng
+  mã băm khi SCAL2). PIN, bí mật OAuth2 đọc từ OpenBao `bms/org-sign`. Chỉ ký văn bản của công ty có mã số thuế nằm trong
+  chứng thư (đọc như khi kiểm đơn đăng ký, ADR #57); bản đã ký lưu khóa `<mã băm>.sealed.pdf`, tách bản chưa ký; ký lỗi
+  thì vẫn trả bản chưa ký và ghi lỗi.
+- **Lý do:** Văn bản do hệ thống phát hành cần giá trị pháp lý như văn bản giấy có dấu; chuẩn PKCS#11 và CSC là hai đường
+  mà HSM và các CA Việt Nam (ký số từ xa) cung cấp, nên cắm thiết bị hoặc tài khoản là ký được, không phải viết thêm mã.
+  Dấu thời gian giữ chữ ký kiểm được sau khi chứng thư hết hạn.
+- **Đã loại:** Khóa riêng trong tệp hoặc trong OpenBao (không đạt yêu cầu khóa nằm trong thiết bị an toàn); một bộ ký
+  cho mọi công ty bất kể mã số thuế (ký nhân danh công ty khác); ký bằng chữ ký Ed25519 của OpenBao (không phải chứng thư
+  số công cộng, trình đọc PDF không công nhận).
+- **Giới hạn hiện tại:** Một bộ ký cho mỗi cài đặt (mọi công ty dùng chung chứng thư phải cùng mã số thuế; nhiều pháp nhân
+  cần nhiều chứng thư thì chưa cấu hình được theo từng công ty); dịch vụ ký số từ xa đòi người dùng xác nhận trên điện
+  thoại cho từng lần ký không ký tự động được; chưa ký văn bản PDF khác (biên nhận, quy trình); chưa nhúng thông tin
+  thu hồi (PAdES B-LT/LTA). Kiểm thử dùng máy chủ CSC giả lập và SoftHSM2, chưa thử với HSM hay CA thật.
 
 (adr-mau)=
 ## Mẫu cho quyết định mới

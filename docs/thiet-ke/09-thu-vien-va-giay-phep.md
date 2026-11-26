@@ -58,7 +58,9 @@ Giấy phép không thuộc nhóm dễ dãi (MIT/BSD/Apache/ISC) được **in �
 | Thành phần | Phiên bản | Giấy phép | Dùng ở đâu, để làm gì |
 |---|---|---|---|
 | OpenBao (`openbao/openbao`) | 2.7.1 | **MPL-2.0** | Secret, AppRole từng dịch vụ, transit, ký Ed25519, CA nội bộ cho mTLS |
-| pyHanko | 0.38.0 | MIT | Xác minh chữ ký số PDF đơn đăng ký (`legal_sign.py`) |
+| pyHanko | 0.38.0 | MIT | Xác minh chữ ký số PDF đơn đăng ký (`legal_sign.py`), ký PAdES văn bản bằng chứng thư tổ chức (`org_sign.py`) |
+| python-pkcs11 | 0.10.1 | MIT | Ký số qua HSM, token PKCS#11 (`org_sign.py`) |
+| SoftHSM2 (gói Debian trong image `actions`) | 2.6 | BSD-2-Clause | Token PKCS#11 bằng phần mềm cho máy chưa có HSM, kiểm thử |
 | pyhanko-certvalidator | 0.33.0 | MIT | Kiểm chuỗi chứng thư, OCSP/CRL |
 | asn1crypto | 1.5.1 | MIT | Phân tích ASN.1 cho pyHanko |
 

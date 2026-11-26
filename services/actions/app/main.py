@@ -69,6 +69,7 @@ from . import (
     ocr,
     ocr_import,
     ops,
+    org_sign,
     ownership,
     pii_guard,
     process_automation,
@@ -305,6 +306,20 @@ class PathCORS:
         return await self.app(scope, receive, send)
 
 
+def _org_signer(settings: config.Settings) -> "org_sign.OrgSigner | None":
+    """Bộ ký số văn bản bằng chứng thư tổ chức (ORG_SIGN_*); cấu hình sai thì ghi lỗi và chạy tiếp không ký."""
+    try:
+        cfg = org_sign.Config.from_env(settings.org_sign_pin, settings.org_sign_csc_client_secret)
+    except org_sign.OrgSignError as exc:
+        log.error("%s: văn bản PDF sẽ không được ký số", exc)
+        return None
+    if cfg is None:
+        return None
+    signer = org_sign.OrgSigner(cfg)
+    log.info("ký số văn bản bằng chứng thư tổ chức qua %s", cfg.provider)
+    return signer
+
+
 def create_app(
     settings: config.Settings | None = None,
     pool: ConnectionPool | None = None,
@@ -346,6 +361,7 @@ def create_app(
         )
         if settings.mqtt_host
         else None,
+        org_signer=_org_signer(settings),
     )
     verifier = verifier or auth.KeycloakVerifier(
         settings.keycloak_jwks_url, settings.keycloak_issuer, set(settings.keycloak_clients)
