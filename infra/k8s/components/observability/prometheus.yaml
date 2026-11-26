@@ -68,6 +68,10 @@ spec:
           mountPath: /etc/prometheus/alerts.yml
           subPath: content
           readOnly: true
+        - name: prometheus-infra-platform-observability-scrape-actions-yml
+          mountPath: /etc/prometheus/scrape/actions.yml
+          subPath: content
+          readOnly: true
         resources:
           limits:
             memory: 384Mi
@@ -81,6 +85,9 @@ spec:
       - name: prometheus-infra-platform-observability-alerts-yml
         configMap:
           name: prometheus-infra-platform-observability-alerts-yml
+      - name: prometheus-infra-platform-observability-scrape-actions-yml
+        configMap:
+          name: prometheus-infra-platform-observability-scrape-actions-yml
 ---
 apiVersion: v1
 kind: Service

@@ -50,6 +50,12 @@ spec:
               name: bamboo-settings
               key: GATEWAY_WORKERS
               optional: true
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: OTEL_EXPORTER_OTLP_ENDPOINT
+              optional: true
         - name: APISIX_WORKER_PROCESSES
           value: $(_BAMBOO_GATEWAY_WORKERS)
         ports:
