@@ -3,7 +3,7 @@
 # @author CTUBamboo
 # @copyright Copyright 2026 Bamboo
 # @license Apache-2.0
-# @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ ARG PACKAGE=
 ARG DEP_GROUPS=
 LABEL org.opencontainers.image.title="bamboo-python" \
       org.opencontainers.image.description="Bamboo: dịch vụ Python (actions, flow-sync, bootstrap, openbao-init, seed)" \
-      org.opencontainers.image.source="https://github.com/CTUBamboo/Bamboo" \
-      org.opencontainers.image.documentation="https://github.com/CTUBamboo/Bamboo#readme" \
+      org.opencontainers.image.source="https://github.com/ThanhNLT/CTU_Bamboo" \
+      org.opencontainers.image.documentation="https://github.com/ThanhNLT/CTU_Bamboo#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MALLOC_ARENA_MAX=2
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
