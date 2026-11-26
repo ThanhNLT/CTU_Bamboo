@@ -105,6 +105,7 @@
   "Chạy quá thời gian cho phép": "Ran past the allowed time",
   "Chậm tiến độ": "Behind schedule",
   "Chế độ nguyên tử tối đa {0} dòng; dùng chế độ từng lô cho tệp lớn": "Atomic mode allows at most {0} rows; use batch mode for large files",
+  "Chế độ tìm không hợp lệ: {0}": "Invalid search mode: {0}",
   "Chế độ xem gồm all, mine, unit": "View mode must be all, mine or unit",
   "Chỉ OCR {0} trang quét đầu tiên trên {1} trang": "OCR ran on only the first {0} scanned pages of {1}",
   "Chỉ chủ nhóm đổi được tên và thành viên": "Only the group owner can change the name and members",
