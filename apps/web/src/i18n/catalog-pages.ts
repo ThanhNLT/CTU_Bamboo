@@ -4,7 +4,7 @@
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
- * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ * @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2459,6 +2459,8 @@ export const EN_PAGES: Record<string, string> = {
   "Đang tạo đề nghị nháp…": "Creating draft request…",
   "Đang tạo…": "Creating…",
   "Đang tải danh mục tập dữ liệu…": "Loading dataset catalog…",
+  "Lakehouse đang khởi động… lần đầu sau khi nhàn rỗi có thể mất khoảng một phút.":
+    "The Lakehouse is starting… the first query after idle time can take about a minute.",
   "Đang tải dữ liệu mẫu…": "Loading sample data…",
   "Đang tải lên và quét an toàn…": "Uploading and running security scan…",
   "Đang tải lên {0} tệp": "Uploading {0} files",

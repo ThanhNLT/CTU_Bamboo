@@ -4,7 +4,7 @@
   @author CTUBamboo
   @copyright Copyright 2026 Bamboo
   @license Apache-2.0
-  @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+  @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -42,15 +42,15 @@ Bamboo dịch được từ mã nguồn theo hai cách, đều chỉ dùng công
 | `psql` (PostgreSQL client) | 17 | PostgreSQL | Chạy migration ở bản cài vào hệ thống |
 
 Phụ thuộc lấy từ PyPI và npm lúc dịch, không có bản sao nào nằm trong kho mã; danh sách và giấy phép ở
-[NOTICE](https://github.com/CTUBamboo/Bamboo/blob/main/NOTICE).
+[NOTICE](https://github.com/ThanhNLT/CTU_Bamboo/blob/main/NOTICE).
 
 ## Lấy mã nguồn
 
 ```bash
-git clone https://github.com/CTUBamboo/Bamboo.git && cd Bamboo
+git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd Bamboo
 ```
 
-Hoặc tải `bamboo-<phiên bản>.tar.gz` và `SHA256SUMS` ở [trang phát hành](https://github.com/CTUBamboo/Bamboo/releases):
+Hoặc tải `bamboo-<phiên bản>.tar.gz` và `SHA256SUMS` ở [trang phát hành](https://github.com/ThanhNLT/CTU_Bamboo/releases):
 
 ```bash
 sha256sum -c SHA256SUMS && tar xzf bamboo-<phiên bản>.tar.gz && cd bamboo-<phiên bản>
@@ -120,7 +120,7 @@ Internet. Sau khi cài, thư mục mã nguồn không còn được dùng tới 
 
 Bamboo cần các dịch vụ nền tảng đang chạy: PostgreSQL, OpenBao, SeaweedFS, Meilisearch, Keycloak, Flowable, Hasura. Cài
 chúng từ gói của hệ điều hành hoặc bản phân phối chính thức theo mục *Chạy native* của
-[README](https://github.com/CTUBamboo/Bamboo#chạy-native-không-dùng-docker) (bước 1, 4, 5); tệp cấu hình mẫu của từng dịch
+[README](https://github.com/ThanhNLT/CTU_Bamboo#chạy-native-không-dùng-docker) (bước 1, 4, 5); tệp cấu hình mẫu của từng dịch
 vụ nằm ở `PREFIX/share/bamboo/infra/platform/`.
 
 Tạo tệp cấu hình rồi chạy lần lượt:

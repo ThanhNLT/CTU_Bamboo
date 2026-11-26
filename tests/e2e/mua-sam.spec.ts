@@ -4,7 +4,7 @@
  * @author CTUBamboo
  * @copyright Copyright 2026 Bamboo
  * @license Apache-2.0
- * @see https://github.com/CTUBamboo/Bamboo, Bamboo project
+ * @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@
  */
 
 import { expect, test, type Page } from "@playwright/test";
+
+import { minimalPdf } from "./pdf";
 
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password";
 const TITLE = `E2E mua linh kiện ${Date.now()}`;
@@ -63,7 +65,7 @@ test("lập đề nghị, đính kèm, gửi duyệt và duyệt", async ({ page
   await page.locator('input[type="file"]').setInputFiles({
     name: "bao-gia.pdf",
     mimeType: "application/pdf",
-    buffer: Buffer.from("%PDF-1.7\nbao gia\n%%EOF\n"),
+    buffer: minimalPdf("bao gia"),
   });
   await expect(page.getByText("Sạch")).toBeVisible();
   await page.locator('input[type="file"]').setInputFiles({
