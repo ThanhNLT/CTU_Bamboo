@@ -30,7 +30,7 @@ import re
 import psycopg
 from psycopg.rows import dict_row
 
-from . import forms, i18n, storage
+from . import forms, i18n, org_sign, storage
 from .common import ActionError, Context, bind_session, session_identity
 
 TEMPLATE_VERSION = "1"
@@ -48,16 +48,17 @@ def _need_pdf(ctx: Context) -> None:
         raise ActionError("Chưa cấu hình in văn bản", "unavailable", 503)
 
 
-def _publish(ctx: Context, prefix: str, digest: str, html: str, doc_no: str, file_name: str) -> dict:
-    """Dựng PDF nếu chưa có bản cùng mã băm rồi trả liên kết tải có chữ ký."""
-    key = f"{prefix}/{digest}.pdf"
-    cached = ctx.storage.document_exists(key)
+def _publish(
+    ctx: Context, prefix: str, digest: str, html: str, doc_no: str, file_name: str, tax_code: str | None = None
+) -> dict:
+    """Dựng PDF nếu chưa có bản cùng mã băm (ký số bằng chứng thư tổ chức khi có, org_sign) rồi trả liên kết tải."""
+    key, cached = forms.cached_pdf_key(ctx, prefix, digest, tax_code)
     if not cached:
         try:
             pdf = forms.html_to_pdf(ctx.gotenberg_url, html, forms.footer(doc_no, digest[:16].upper()))
         except forms.PdfUnavailable as exc:
             raise ActionError("Tạm thời chưa in được văn bản, thử lại sau", "pdf-unavailable", 503) from exc
-        ctx.storage.put_document(key, pdf, "application/pdf")
+        key = forms.store_pdf(ctx, prefix, digest, pdf, tax_code, f"Văn bản {doc_no}")
     return {
         "file_name": file_name,
         "check_code": digest[:16].upper(),
@@ -142,7 +143,13 @@ def get_personnel_decision_pdf(conn: psycopg.Connection, session: dict, args: di
     digest = _digest(html)
     html = html.replace("{check_code}", digest[:16].upper())
     out = _publish(
-        ctx, f"{d['tenant_id']}/hr.personnel_decision/{d['id']}/forms", digest, html, d["doc_no"], f"{d['doc_no']}.pdf"
+        ctx,
+        f"{d['tenant_id']}/hr.personnel_decision/{d['id']}/forms",
+        digest,
+        html,
+        d["doc_no"],
+        f"{d['doc_no']}.pdf",
+        org_sign.tenant_tax_code(conn, d["tenant_id"]),
     )
     return {"decision_id": str(d["id"]), "doc_no": d["doc_no"], **out}
 
@@ -256,7 +263,15 @@ def get_kpi_report_pdf(conn: psycopg.Connection, session: dict, args: dict, ctx:
     html = forms._env.get_template("bao_cao_kpi.html").render(r=report)
     digest = _digest(html)
     suffix = month or "tong-hop"
-    out = _publish(ctx, f"{tenant}/kpi.snapshot/forms", digest, html, f"KPI-{suffix}", f"bao-cao-kpi-{suffix}.pdf")
+    out = _publish(
+        ctx,
+        f"{tenant}/kpi.snapshot/forms",
+        digest,
+        html,
+        f"KPI-{suffix}",
+        f"bao-cao-kpi-{suffix}.pdf",
+        org_sign.tenant_tax_code(conn, tenant),
+    )
     return {"month": month, "kpis": len(report["kpis"]), **out}
 
 

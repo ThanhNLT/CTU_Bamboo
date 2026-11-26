@@ -1,0 +1,525 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sinh bằng tools/k8s/generate.py từ cấu hình Docker Compose; đừng sửa tay.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openbao-init
+  labels:
+    app.kubernetes.io/name: openbao-init
+    app.kubernetes.io/part-of: bamboo
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
+spec:
+  backoffLimit: 20
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openbao-init
+        app.kubernetes.io/part-of: bamboo
+    spec:
+      serviceAccountName: bamboo
+      enableServiceLinks: false
+      containers:
+      - name: openbao-init
+        image: ghcr.io/thanhnlt/bamboo-actions:0.5.2
+        args:
+        - python
+        - -m
+        - app.openbao_init
+        env:
+        - name: _BAMBOO_ACTIONS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ACTIONS_DB_PASSWORD
+              optional: true
+        - name: _BAMBOO_FLOWABLE_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: FLOWABLE_ADMIN
+              optional: true
+        - name: _BAMBOO_FLOWABLE_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: FLOWABLE_ADMIN_PASSWORD
+              optional: true
+        - name: _BAMBOO_KEYCLOAK_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: KEYCLOAK_URL
+              optional: true
+        - name: ACTIONS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ACTIONS_SECRET
+              optional: true
+        - name: AI_CHAT_MODEL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: AI_CHAT_MODEL
+              optional: true
+        - name: AI_CPU_MODELS
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: AI_CPU_MODELS
+              optional: true
+        - name: AI_EMBED_MODEL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: AI_EMBED_MODEL
+              optional: true
+        - name: AI_MIN_SCORE
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: AI_MIN_SCORE
+              optional: true
+        - name: AI_STEP_TIMEOUT
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: AI_STEP_TIMEOUT
+              optional: true
+        - name: BAMBOO_ENV
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: BAMBOO_ENV
+              optional: true
+        - name: CLAMAV_HOST
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: CLAMAV_HOST
+              optional: true
+        - name: CORS_ORIGINS
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: CORS_ORIGINS
+              optional: true
+        - name: GRAFANA_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: GRAFANA_ADMIN_PASSWORD
+              optional: true
+        - name: HASURA_ENABLE_CONSOLE
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: HASURA_ENABLE_CONSOLE
+              optional: true
+        - name: HASURA_GRAPHQL_ADMIN_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: HASURA_GRAPHQL_ADMIN_SECRET
+              optional: true
+        - name: MQTT_HOST
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: MQTT_HOST
+              optional: true
+        - name: OLLAMA_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: OLLAMA_URL
+              optional: true
+        - name: ORG_SIGN_CSC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_CLIENT_ID
+              optional: true
+        - name: ORG_SIGN_CSC_CREDENTIAL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_CREDENTIAL
+              optional: true
+        - name: ORG_SIGN_CSC_TOKEN_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_TOKEN_URL
+              optional: true
+        - name: ORG_SIGN_CSC_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_CSC_URL
+              optional: true
+        - name: ORG_SIGN_LOCATION
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_LOCATION
+              optional: true
+        - name: ORG_SIGN_PKCS11_CERT
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_CERT
+              optional: true
+        - name: ORG_SIGN_PKCS11_KEY
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_KEY
+              optional: true
+        - name: ORG_SIGN_PKCS11_LIB
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_LIB
+              optional: true
+        - name: ORG_SIGN_PKCS11_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PKCS11_TOKEN
+              optional: true
+        - name: ORG_SIGN_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_PROVIDER
+              optional: true
+        - name: ORG_SIGN_TSA_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_TSA_URL
+              optional: true
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: OTEL_EXPORTER_OTLP_ENDPOINT
+              optional: true
+        - name: S3_PUBLIC_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: S3_PUBLIC_ENDPOINT
+              optional: true
+        - name: SCAN_REQUIRE_CLAMAV
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SCAN_REQUIRE_CLAMAV
+              optional: true
+        - name: SETUP_ALLOW_UNVERIFIED
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SETUP_ALLOW_UNVERIFIED
+              optional: true
+        - name: SETUP_OPEN_SIGNUP
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SETUP_OPEN_SIGNUP
+              optional: true
+        - name: SIGNATURE_ONLINE
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SIGNATURE_ONLINE
+              optional: true
+        - name: SMS_GATEWAY_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMS_GATEWAY_TOKEN
+              optional: true
+        - name: SMS_GATEWAY_URL
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMS_GATEWAY_URL
+              optional: true
+        - name: SMTP_FROM
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMTP_FROM
+              optional: true
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMTP_HOST
+              optional: true
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMTP_PASSWORD
+              optional: true
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMTP_PORT
+              optional: true
+        - name: SMTP_STARTTLS
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMTP_STARTTLS
+              optional: true
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: SMTP_USER
+              optional: true
+        - name: WEBHOOK_ALLOW_PRIVATE
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: WEBHOOK_ALLOW_PRIVATE
+              optional: true
+        - name: ACTIONS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ACTIONS_DB_PASSWORD
+              optional: true
+        - name: CDC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: CDC_DB_PASSWORD
+              optional: true
+        - name: DEBEZIUM_KAFKA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: DEBEZIUM_KAFKA_PASSWORD
+              optional: true
+        - name: DEMO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: DEMO_PASSWORD
+              optional: true
+        - name: FLOWABLE_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: FLOWABLE_ADMIN
+              optional: true
+        - name: FLOWABLE_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: FLOWABLE_ADMIN_PASSWORD
+              optional: true
+        - name: FLOWABLE_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: FLOWABLE_DB_PASSWORD
+              optional: true
+        - name: HASURA_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: HASURA_DB_PASSWORD
+              optional: true
+        - name: KEYCLOAK_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: KEYCLOAK_ADMIN
+              optional: true
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: KEYCLOAK_ADMIN_PASSWORD
+              optional: true
+        - name: KEYCLOAK_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: KEYCLOAK_DB_PASSWORD
+              optional: true
+        - name: LAKEHOUSE_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: LAKEHOUSE_DB_PASSWORD
+              optional: true
+        - name: LAKEHOUSE_KAFKA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: LAKEHOUSE_KAFKA_PASSWORD
+              optional: true
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: POSTGRES_PASSWORD
+              optional: true
+        - name: BAO_ADDR
+          value: http://openbao:8200
+        - name: BAO_APPROLE_FILE
+          value: ''
+        - name: DATABASE_URL
+          value: postgresql://bamboo_actions:$(_BAMBOO_ACTIONS_DB_PASSWORD)@db:5432/bms
+        - name: FLOWABLE_PASSWORD
+          value: $(_BAMBOO_FLOWABLE_ADMIN_PASSWORD)
+        - name: FLOWABLE_URL
+          value: http://flowable:8080/flowable-rest/service
+        - name: FLOWABLE_USER
+          value: $(_BAMBOO_FLOWABLE_ADMIN)
+        - name: HASURA_URL
+          value: http://hasura:8080
+        - name: KEYCLOAK_ISSUER
+          value: $(_BAMBOO_KEYCLOAK_URL)/realms/bms
+        - name: KEYCLOAK_JWKS_URL
+          value: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
+        - name: MALLOC_ARENA_MAX
+          value: '2'
+        - name: MQTT_TLS_DIR
+          value: /run/bms/mqtt
+        - name: S3_ENDPOINT
+          value: http://seaweedfs:8333
+        - name: TRINO_CA_FILE
+          value: /run/bms/trino-ca.pem
+        - name: TRINO_URL
+          value: https://trino:8443
+        - name: APPROLE_OUTPUTS
+          value: actions=/run/bms-actions/approle.json,bootstrap=/run/bms-bootstrap/approle.json,search=/run/bms-search/approle.json,lakehouse=/run/bms-lakehouse/approle.json
+        - name: APPROLE_UID
+          value: '10001'
+        - name: BAO_KEYS_FILE
+          value: /openbao/keys/init.json
+        - name: INTERNAL_CA_OUTPUTS
+          value: /run/bms-actions/trino-ca.pem
+        - name: MEILI_CONFIG_PATH
+          value: /etc/meilisearch/config.toml
+        - name: MQTT_DYNSEC_PATH
+          value: /mosquitto-data/dynamic-security.json
+        - name: MQTT_UID
+          value: '1883'
+        - name: S3_CONFIG_PATH
+          value: /etc/bms/s3.json
+        - name: SERVICE_CERT_OUTPUTS
+          value: mosquitto=/mosquitto-tls@1883,bamboo-bridge=/run/bms-actions/mqtt@10001,bamboo-admin=/run/bms-actions/mqtt@10001
+        - name: TRINO_CATALOG_PATH
+          value: /etc/trino/bms-catalog/lakehouse.properties
+        - name: TRINO_SECRETS_DIR
+          value: /etc/trino/secrets
+        - name: TRINO_UID
+          value: '1000'
+        volumeMounts:
+        - name: openbao-keys
+          mountPath: /openbao/keys
+          readOnly: false
+        - name: actions-secrets
+          mountPath: /run/bms-actions
+          readOnly: false
+        - name: bootstrap-secrets
+          mountPath: /run/bms-bootstrap
+          readOnly: false
+        - name: search-secrets
+          mountPath: /run/bms-search
+          readOnly: false
+        - name: lakehouse-secrets
+          mountPath: /run/bms-lakehouse
+          readOnly: false
+        - name: seaweedfs-config
+          mountPath: /etc/bms
+          readOnly: false
+        - name: meilisearch-config
+          mountPath: /etc/meilisearch
+          readOnly: false
+        - name: trino-catalog
+          mountPath: /etc/trino/bms-catalog
+          readOnly: false
+        - name: trino-secrets
+          mountPath: /etc/trino/secrets
+          readOnly: false
+        - name: mosquitto-data
+          mountPath: /mosquitto-data
+          readOnly: false
+        - name: mosquitto-tls
+          mountPath: /mosquitto-tls
+          readOnly: false
+        securityContext:
+          runAsUser: 0
+      initContainers:
+      - name: wait-openbao
+        image: busybox:1.37.0
+        command:
+        - sh
+        - -c
+        - until nc -z -w 2 openbao 8200; do sleep 2; done
+      volumes:
+      - name: openbao-keys
+        persistentVolumeClaim:
+          claimName: openbao-keys
+      - name: actions-secrets
+        persistentVolumeClaim:
+          claimName: actions-secrets
+      - name: bootstrap-secrets
+        persistentVolumeClaim:
+          claimName: bootstrap-secrets
+      - name: search-secrets
+        persistentVolumeClaim:
+          claimName: search-secrets
+      - name: lakehouse-secrets
+        persistentVolumeClaim:
+          claimName: lakehouse-secrets
+      - name: seaweedfs-config
+        persistentVolumeClaim:
+          claimName: seaweedfs-config
+      - name: meilisearch-config
+        persistentVolumeClaim:
+          claimName: meilisearch-config
+      - name: trino-catalog
+        persistentVolumeClaim:
+          claimName: trino-catalog
+      - name: trino-secrets
+        persistentVolumeClaim:
+          claimName: trino-secrets
+      - name: mosquitto-data
+        persistentVolumeClaim:
+          claimName: mosquitto-data
+      - name: mosquitto-tls
+        persistentVolumeClaim:
+          claimName: mosquitto-tls
+      restartPolicy: OnFailure

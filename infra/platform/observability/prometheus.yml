@@ -24,11 +24,11 @@ global:
 rule_files:
   - /etc/prometheus/alerts.yml
 
+# Job thu số liệu của actions nằm ở tệp riêng để infra/compose/mtls.yml thay bằng bản HTTPS + chứng chỉ máy khách.
+scrape_config_files:
+  - /etc/prometheus/scrape/*.yml
+
 scrape_configs:
-  - job_name: actions
-    metrics_path: /metrics
-    static_configs:
-      - targets: ["actions:8000"]
   - job_name: gateway
     metrics_path: /apisix/prometheus/metrics
     static_configs:

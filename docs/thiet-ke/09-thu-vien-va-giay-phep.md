@@ -58,7 +58,9 @@ Giấy phép không thuộc nhóm dễ dãi (MIT/BSD/Apache/ISC) được **in �
 | Thành phần | Phiên bản | Giấy phép | Dùng ở đâu, để làm gì |
 |---|---|---|---|
 | OpenBao (`openbao/openbao`) | 2.7.1 | **MPL-2.0** | Secret, AppRole từng dịch vụ, transit, ký Ed25519, CA nội bộ cho mTLS |
-| pyHanko | 0.38.0 | MIT | Xác minh chữ ký số PDF đơn đăng ký (`legal_sign.py`) |
+| pyHanko | 0.38.0 | MIT | Xác minh chữ ký số PDF đơn đăng ký (`legal_sign.py`), ký PAdES văn bản bằng chứng thư tổ chức (`org_sign.py`) |
+| python-pkcs11 | 0.10.1 | MIT | Ký số qua HSM, token PKCS#11 (`org_sign.py`) |
+| SoftHSM2 (gói Debian trong image `actions`) | 2.6 | BSD-2-Clause | Token PKCS#11 bằng phần mềm cho máy chưa có HSM, kiểm thử |
 | pyhanko-certvalidator | 0.33.0 | MIT | Kiểm chuỗi chứng thư, OCSP/CRL |
 | asn1crypto | 1.5.1 | MIT | Phân tích ASN.1 cho pyHanko |
 
@@ -152,7 +154,7 @@ Hàng đợi `msg.queue`, thử lại, hàng chết, biên nhận Ed25519 do d�
 | Thành phần | Phiên bản | Giấy phép | Dùng ở đâu, để làm gì |
 |---|---|---|---|
 | Ollama (`ollama/ollama`; Mac: chạy ngoài Docker) | 0.35.1 | MIT; image kèm CUDA runtime (giấy phép NVIDIA) | Chạy mô hình chat và embedding, CPU hoặc GPU |
-| Mô hình Qwen3-4B (`qwen3:4b`, biến `AI_CHAT_MODEL`) | thẻ 4b của registry Ollama | Apache-2.0 | Trợ lý RAG, tác tử, bước AI trong quy trình |
+| Mô hình Qwen3-4B-Instruct-2507 (`qwen3:4b-instruct-2507-q4_K_M`, biến `AI_CHAT_MODEL`) | thẻ 4b-instruct-2507-q4_K_M của registry Ollama | Apache-2.0 | Trợ lý RAG, tác tử, bước AI trong quy trình |
 | Mô hình BGE-M3 (`bge-m3`, biến `AI_EMBED_MODEL`) | thẻ latest của registry Ollama | MIT | Vector cho tìm ngữ nghĩa |
 
 ### OCR tiếng Việt (`services/ocr`, image `bamboo-ocr`)
