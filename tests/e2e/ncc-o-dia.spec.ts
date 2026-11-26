@@ -77,7 +77,7 @@ test("CDO lập đề nghị với nhà cung cấp mới, thêm vào danh mục,
   await expect(page.getByRole("cell", { name: CODE })).toBeVisible();
 
   await page.goto("/h/drive");
-  await expect(page.getByText(/Còn khả dụng/)).toBeVisible();
+  await expect(page.getByText(/Bạn còn tải lên được/)).toBeVisible();
   await page.getByRole("button", { name: "Tải lên", exact: true }).click();
   const picker = page.getByRole("dialog", { name: "Tải tệp vào chứng từ" });
   await picker.getByRole("combobox", { name: "Chứng từ nhận tệp" }).fill(docNo);
