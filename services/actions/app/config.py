@@ -46,6 +46,8 @@ SECRET_FIELDS = {
     "bms/kafka-lakehouse": {"username": "kafka_username", "password": "kafka_password"},
     "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
     "bms/mosquitto": {"admin_password": "mqtt_admin_password", "bridge_password": "mqtt_bridge_password"},
+    # Ký số văn bản bằng chứng thư tổ chức (app.org_sign): PIN của token HSM hoặc dịch vụ ký số từ xa, bí mật OAuth2.
+    "bms/org-sign": {"pin": "org_sign_pin", "csc_client_secret": "org_sign_csc_client_secret"},
 }
 
 
@@ -130,6 +132,8 @@ class Settings:
     mqtt_bridge_password: str = ""
     mqtt_tls_dir: str = ""
     mqtt_tls_port: int = 8884
+    org_sign_pin: str = ""
+    org_sign_csc_client_secret: str = ""
 
 
 DEV_DEFAULTS = {
@@ -319,6 +323,8 @@ def _from_env() -> Settings:
             "SIGNATURE_TRUST_DIR", str(pathlib.Path(__file__).resolve().parents[3] / "infra/platform/trust")
         ),
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
+        org_sign_pin=env("ORG_SIGN_PIN", ""),
+        org_sign_csc_client_secret=env("ORG_SIGN_CSC_CLIENT_SECRET", ""),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
         mqtt_host=env("MQTT_HOST", ""),
         mqtt_port=int(env("MQTT_PORT", "1883")),

@@ -120,6 +120,8 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 | [91](#adr-91) | 18/11/2026 | Mac Apple Silicon tiết kiệm tài nguyên: CSDL và ClamAV bản arm64, OCR trên máy trả bộ nhớ khi nhàn rỗi |
 | [92](#adr-92) | 24/11/2026 | Tìm theo ý nghĩa trên trang Tìm kiếm: vector bge-m3 trong chỉ mục Meilisearch sẵn có, kết quả nối sau từ khóa |
 | [93](#adr-93) | 24/11/2026 | Mô hình trò chuyện mặc định là Qwen3-4B bản instruct; Mac từ 16 GB dùng KV cache f16 |
+| [94](#adr-94) | 26/11/2026 | Ký số văn bản hệ thống phát hành bằng chứng thư tổ chức: HSM qua PKCS#11 hoặc dịch vụ ký số từ xa chuẩn CSC |
+| [95](#adr-95) | 26/11/2026 | Kubernetes (k3s) và Argo CD: manifest Kustomize sinh từ cấu hình compose, CI dựng thử trên cụm k3s tạm |
 
 (adr-1)=
 ## ADR #1: Chỉ dùng phần mềm có giấy phép OSI
@@ -842,8 +844,9 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Ngày:** 06/11/2026
 - **Quyết định:** Dịch vụ `actions` có `/metrics` (chỉ mạng nội bộ, cổng API không định tuyến): lượt gọi và thời gian theo **mẫu route** HTTP (không theo đường dẫn cụ thể, tránh bùng nhãn) và theo Action (`ok`, `rejected`, `error`), cùng độ sâu hàng đợi đọc từ CSDL lúc hỏi (thông báo chờ/hàng chết, lượt hỏi AI, lần tự hành động của tác tử, tệp đang kiểm dịch, OCR, thiết bị ngoại tuyến). **Truy vết OpenTelemetry** bật khi có `OTEL_EXPORTER_OTLP_ENDPOINT`: span cho mỗi yêu cầu HTTP (tiếp tục `traceparent` nếu có), span con cho câu lệnh SQL (psycopg) và lời gọi HTTP ra ngoài (httpx); span gắn `bamboo.request_id` = `X-Request-Id` của cổng API, phản hồi có `X-Trace-Id` để tra chéo với nhật ký tập trung. Nhóm dịch vụ (profile) `observability`: OTel Collector 0.164 (nhận OTLP, giới hạn bộ nhớ, chuyển Jaeger), Jaeger 2.23 (lưu bộ nhớ), Prometheus v3.15 (thu `actions`, số liệu APISIX đã có ở `:9091`, Keycloak `KC_METRICS_ENABLED`, Collector; giữ 7 ngày; luật cảnh báo cơ bản), Grafana 13.0 (nguồn Prometheus + Jaeger, bảng điều khiển **Bamboo tổng quan** dựng sẵn); giao diện chỉ nghe 127.0.0.1 (Grafana `:3001`, Jaeger `:16686`, Prometheus `:9090`), giới hạn RAM từng container (~1 GB cả nhóm). `make up` bật nhóm này và truy vết ở mức RAM 16, tắt ở mức 8 (`BAMBOO_OBSERVABILITY=true/false` chọn tay). `GRAFANA_ADMIN_PASSWORD` thuộc danh sách phải đổi ở production.
 - **Lý do:** `X-Request-Id` + `obs.log_event` cho biết một yêu cầu đã ghi log gì, nhưng không cho thấy thời gian nằm ở đâu (SQL, Flowable, Ollama) hay xu hướng theo thời gian; OpenTelemetry và Prometheus là chuẩn mở, Grafana xem cả hai ở một chỗ. Đặt trong profile để máy 8 GB không phải gánh thêm.
-- **Đã loại:** Grafana LGTM đầy đủ (Loki, Tempo, Mimir: nhiều dịch vụ, nặng); Elastic APM, SigNoz (thêm ClickHouse/Elasticsearch); bật span của APISIX (plugin `opentelemetry` cấu hình tĩnh, không tắt được theo biến khi không chạy Collector); `/metrics` qua cổng API.
-- **Giới hạn hiện tại:** Truy vết bắt đầu từ `actions` (chưa có span của APISIX, Hasura, Keycloak, Flowable); các worker nền (`flow-sync`, `ai-worker`, `iot-bridge`) chưa xuất số liệu riêng (độ sâu hàng đợi của chúng đọc qua `actions`); Jaeger lưu trong bộ nhớ, mất khi khởi động lại.
+- **Đã loại:** Grafana LGTM đầy đủ (Loki, Tempo, Mimir: nhiều dịch vụ, nặng); Elastic APM, SigNoz (thêm ClickHouse/Elasticsearch); `/metrics` qua cổng API; Hasura EE chỉ để Hasura tự xuất span (cần khóa license).
+- **Bổ sung 26/11/2026:** Cổng APISIX có span cho mọi yêu cầu (plugin `opentelemetry`, cấu hình trong `plugin_metadata` của `apisix.yaml`). Mặc định không lấy mẫu; `bamboo-start` (điểm vào của image `gateway`) chuyển sang `parent_base` (tiếp tục traceparent của client, không có thì lấy mẫu mọi yêu cầu) và trỏ collector về `OTEL_EXPORTER_OTLP_ENDPOINT` khi biến này có giá trị, cùng công tắc với `actions`. Cổng gắn traceparent (W3C) vào yêu cầu tới Hasura, actions, Keycloak; mọi Action của Hasura bật `forward_client_headers` nên traceparent tới được `actions`, một trace đi liền cổng → Hasura → actions → SQL. Hasura CE không xuất span riêng: thời gian ở Hasura là phần span của cổng không nằm trong span con của `actions`.
+- **Giới hạn hiện tại:** Hasura CE không có span riêng (thấy qua span của cổng); chưa có span của Keycloak, Flowable; các worker nền (`flow-sync`, `ai-worker`, `iot-bridge`) chưa xuất số liệu riêng (độ sâu hàng đợi của chúng đọc qua `actions`); Jaeger lưu trong bộ nhớ, mất khi khởi động lại.
 
 (adr-76)=
 ## ADR #76: mTLS nội bộ bằng chứng chỉ dịch vụ do CA OpenBao cấp (bắt đầu từ MQTT); Hasura Console bắt buộc tắt ở production
@@ -852,7 +855,8 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Quyết định:** OpenBao PKI có vai trò `service` (EC P-256, cờ máy chủ và máy khách, chỉ CN thuộc `SERVICE_IDENTITIES`); openbao-init cấp chứng chỉ 90 ngày cho từng danh tính theo `SERVICE_CERT_OUTPUTS` (`danh-tính=thư-mục@uid`) và cấp lại khi còn dưới 30 ngày mỗi lần chạy. Mosquitto có ba cổng: 1883 không mã hóa chỉ mở 127.0.0.1; **8883 TLS** cho thiết bị trong mạng OT (`MQTT_BIND`); **8884 mTLS nội bộ** bắt buộc chứng chỉ của CA nội bộ, CN là tên đăng nhập (`use_identity_as_username`), không mở ra ngoài mạng Docker. `iot-bridge` (CN `bamboo-bridge`) và `actions` khi quản trị tài khoản thiết bị (CN `bamboo-admin`) dùng cổng 8884 khi có chứng chỉ trong `MQTT_TLS_DIR`, không gửi mật khẩu; thiếu chứng chỉ thì quay về mật khẩu qua 1883 (máy dev). `BAMBOO_ENV=production` từ chối khởi động khi `HASURA_ENABLE_CONSOLE` còn bật (trước đây chỉ ghi trong tài liệu).
 - **Lý do:** Bước đầu của mTLS giữa dịch vụ đặt ở chặng mới do Bamboo tự viết cả hai đầu và mang dữ liệu từ mạng OT, nơi rủi ro giả mạo cao nhất; danh tính theo chứng chỉ do CA nội bộ cấp, xoay vòng tự động, không có mật khẩu dùng chung để lộ.
 - **Đã loại:** Service mesh (Istio, Linkerd: cần Kubernetes); sidecar TLS (ghostunnel, Envoy) cho mọi dịch vụ ngay (gấp đôi số container, chưa kiểm thử được trên máy 8 GB); chứng chỉ tự ký riêng từng dịch vụ (không có gốc tin cậy chung, không thu hồi được).
-- **Giới hạn hiện tại:** Các chặng còn lại vẫn là HTTP/TCP trong mạng Docker riêng và xác thực bằng khóa riêng từng dịch vụ (ADR #34, #35): APISIX → Hasura/actions/Keycloak, Hasura → actions, dịch vụ → PostgreSQL/OpenBao/SeaweedFS/Kafka (Trino đã TLS). Hasura v2 CE không gắn chứng chỉ máy khách khi gọi Action, nên chặng này cần sidecar hoặc khi lên Kubernetes thì service mesh.
+- **Bổ sung 26/11/2026 (chặng HTTP):** `infra/compose/mtls.yml` (tự thêm khi `BAMBOO_ENV=production`, job e2e của CI chạy với nó; máy dev mặc định không dùng để cổng gỡ lỗi còn HTTP) đưa các chặng HTTP nội bộ lên mTLS bằng cùng CA: Keycloak và Flowable phục vụ HTTPS gốc 8443 bắt buộc chứng chỉ máy khách (`https-client-auth=required`, Spring Boot `client-auth=need`; cổng quản trị 9000 của Keycloak giữ HTTP cho healthcheck, Prometheus); `actions` chạy `app.serve`: HTTPS 8443 bắt buộc chứng chỉ máy khách, HTTP 8000 chỉ ở 127.0.0.1; Hasura CE không có TLS nên chỉ nghe 127.0.0.1, sidecar ghostunnel `hasura-tls` chung mạng với Hasura nhận mTLS ở 8443 (chỉ CN `gateway`, `bootstrap`, `actions`) và `hasura-egress` đưa lời gọi Action, auth hook ra `actions:8443` với chứng chỉ `hasura`. Cổng APISIX gọi Hasura, actions, Keycloak bằng HTTPS với chứng chỉ `gateway` (`bamboo-start` sinh cấu hình khi có `GATEWAY_TLS_DIR`); plugin forward-auth không gắn được chứng chỉ máy khách nên đi qua route nội bộ chỉ nhận từ 127.0.0.1 của chính cổng. Dịch vụ Python dùng `bamboo_common.tls` (`INTERNAL_TLS_DIR`, `INTERNAL_TLS_IDENTITY`), sleeper, Prometheus, Vector dùng chứng chỉ riêng. Chứng chỉ có SAN là tên dịch vụ, khóa PKCS#8; mỗi dịch vụ một volume `*-tls` chỉ chứa chứng chỉ của nó.
+- **Giới hạn hiện tại (trước bổ sung trên):** Các chặng còn lại vẫn là HTTP/TCP trong mạng Docker riêng và xác thực bằng khóa riêng từng dịch vụ (ADR #34, #35): APISIX → Hasura/actions/Keycloak, Hasura → actions, dịch vụ → PostgreSQL/OpenBao/SeaweedFS/Kafka (Trino đã TLS). Hasura v2 CE không gắn chứng chỉ máy khách khi gọi Action, nên chặng này cần sidecar hoặc khi lên Kubernetes thì service mesh. Sau bổ sung: dịch vụ → PostgreSQL, OpenBao, SeaweedFS, Kafka, Meilisearch và APISIX → web, SeaweedFS vẫn chưa mTLS; chứng chỉ gia hạn khi `openbao-init` chạy lại (`make up`), dịch vụ đọc lại khi khởi động lại (ghostunnel tự nạp lại mỗi giờ).
 
 (adr-77)=
 ## ADR #77: Phả hệ và kiểm tra CDC thu tự động theo lịch, không đánh thức Trino (bổ sung ADR #64)
@@ -1027,6 +1031,49 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
   - Cùng kích thước tệp (2,5 GB, Q4_K_M), cùng giấy phép Apache-2.0, cùng họ Qwen3 nên không đổi yêu cầu phần cứng hay giấy phép.
 - **Đã loại:** Engine MLX của Ollama (nhanh hơn trên Apple Silicon nhưng Ollama chỉ hỗ trợ Mac trên 32 GB bộ nhớ hợp nhất và một số mô hình định dạng riêng, chưa có Qwen3 4B); mô hình riêng cho Mac (hai nền tảng chạy hai mô hình khác nhau, tác tử đã seed mang tên mô hình của nơi tạo); giảm ngữ cảnh xuống 8K (câu hỏi RAG khoảng 6.000 token, cộng 1.024 token trả lời và 4.096 khi tác tử bật suy nghĩ thì không đủ); `q8_0` trên Mac (không nhanh hơn `q4_0`).
 - **Giới hạn hiện tại:** Chưa đo trên GPU NVIDIA và CPU sau khi đổi mô hình (bản instruct không lập luận nên không thể chậm hơn, nhưng độ chính xác chỉ kiểm bằng 39 câu của `ai_smoke`). Chữ đầu tiên vẫn sau khoảng 8 giây trên M1 Pro vì phải đọc khoảng 6.000 token ngữ cảnh; ADR #89 đã loại việc thu hẹp ngữ cảnh. Máy đã có `.env` chép từ `.env.example` cũ giữ `qwen3:4b` và `q4_0` cho tới khi sửa tay (CHANGELOG ghi cách sửa).
+
+(adr-94)=
+## ADR #94: Ký số văn bản hệ thống phát hành bằng chứng thư tổ chức: HSM qua PKCS#11 hoặc dịch vụ ký số từ xa chuẩn CSC
+
+- **Ngày:** 26/11/2026
+- **Quyết định:** Quyết định nhân sự, báo cáo KPI và phiếu đề nghị mua sắm in ra PDF được ký PAdES (pyHanko, trường chữ
+  ký `BambooSeal`, SHA-256, dấu thời gian RFC 3161 khi có `ORG_SIGN_TSA_URL`) bằng chứng thư số công cộng của tổ chức
+  (`app.org_sign`). Khóa riêng không vào Bamboo: `ORG_SIGN_PROVIDER=pkcs11` dùng HSM hoặc token qua thư viện PKCS#11 của
+  hãng (chọn token, khóa, chứng thư theo nhãn; image `actions` có SoftHSM2 cho máy chưa có HSM), `csc` dùng dịch vụ ký số
+  từ xa của CA theo Cloud Signature Consortium API v1 (OAuth2 client credentials, `credentials/authorize` kèm PIN, ràng
+  mã băm khi SCAL2). PIN, bí mật OAuth2 đọc từ OpenBao `bms/org-sign`. Chỉ ký văn bản của công ty có mã số thuế nằm trong
+  chứng thư (đọc như khi kiểm đơn đăng ký, ADR #57); bản đã ký lưu khóa `<mã băm>.sealed.pdf`, tách bản chưa ký; ký lỗi
+  thì vẫn trả bản chưa ký và ghi lỗi.
+- **Lý do:** Văn bản do hệ thống phát hành cần giá trị pháp lý như văn bản giấy có dấu; chuẩn PKCS#11 và CSC là hai đường
+  mà HSM và các CA Việt Nam (ký số từ xa) cung cấp, nên cắm thiết bị hoặc tài khoản là ký được, không phải viết thêm mã.
+  Dấu thời gian giữ chữ ký kiểm được sau khi chứng thư hết hạn.
+- **Đã loại:** Khóa riêng trong tệp hoặc trong OpenBao (không đạt yêu cầu khóa nằm trong thiết bị an toàn); một bộ ký
+  cho mọi công ty bất kể mã số thuế (ký nhân danh công ty khác); ký bằng chữ ký Ed25519 của OpenBao (không phải chứng thư
+  số công cộng, trình đọc PDF không công nhận).
+- **Giới hạn hiện tại:** Một bộ ký cho mỗi cài đặt (mọi công ty dùng chung chứng thư phải cùng mã số thuế; nhiều pháp nhân
+  cần nhiều chứng thư thì chưa cấu hình được theo từng công ty); dịch vụ ký số từ xa đòi người dùng xác nhận trên điện
+  thoại cho từng lần ký không ký tự động được; chưa ký văn bản PDF khác (biên nhận, quy trình); chưa nhúng thông tin
+  thu hồi (PAdES B-LT/LTA). Kiểm thử dùng máy chủ CSC giả lập và SoftHSM2, chưa thử với HSM hay CA thật.
+
+(adr-95)=
+## ADR #95: Kubernetes (k3s) và Argo CD: manifest Kustomize sinh từ cấu hình compose, CI dựng thử trên cụm k3s tạm
+
+- **Ngày:** 26/11/2026
+- **Quyết định:** `tools/k8s/generate.py` sinh `infra/k8s/base` (mỗi dịch vụ một Deployment hoặc Job, Service, PVC,
+  ConfigMap) và `infra/k8s/components/<nhóm>` từ cấu hình compose đã qua `tools/release/compose_release.py`; biến
+  `${TÊN:-mặc định}` đọc từ Secret `bamboo-settings`, `depends_on` thành init container chờ Job xong hoặc Service sẵn sàng.
+  Overlay `ci` (image dựng tại chỗ, Secret từ mặc định của dev, bỏ dịch vụ nặng) và `production` (image GHCR, Ingress,
+  Secret tạo ngoài Git); `infra/k8s/argocd/application.yaml` cho Argo CD tự đồng bộ overlay production từ `main` (prune,
+  selfHeal). Workflow `Kubernetes` kiểm manifest khớp compose, schema (kubeconform), dựng phần lõi trên cụm k3s tạm (k3d)
+  và chạy `tools/ci/gateway-smoke.sh` qua cổng API. Compose vẫn là cách chạy chính, `reconcile.sh` (ADR #83) giữ nguyên.
+- **Lý do:** Một nguồn cấu hình cho cả hai cách chạy, không phải giữ hai bộ tay đồng bộ với nhau; k3s chạy được trên
+  một máy như compose, Argo CD cho GitOps đúng nghĩa (kéo từ Git, tự sửa lệch, xem lịch sử đồng bộ).
+- **Đã loại:** Helm chart viết tay (hai bộ cấu hình); kompose (không xử lý `depends_on`, cấu hình gắn từ kho mã, biến
+  mặc định); chuyển hẳn sang Kubernetes ngay (sleeper, Vector cần Docker API, máy 8 GB khó gánh thêm control plane).
+- **Giới hạn hiện tại:** Một node (PVC `ReadWriteOnce` dùng chung); không có sleeper nên dịch vụ nặng chạy thường trực;
+  chưa có mTLS trong cụm (dùng service mesh), chưa có External Secrets từ OpenBao (Secret tạo tay hoặc công cụ ngoài);
+  Job (`migrate`, `bootstrap`) chạy lại khi Argo CD thay bằng bản mới (`Replace=true`), chưa có sync wave; CI chỉ dựng
+  phần lõi (không AI, OCR, Trino, Kafka, IoT).
 
 (adr-mau)=
 ## Mẫu cho quyết định mới
