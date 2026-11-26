@@ -19,48 +19,113 @@
 
 name: Images
 
+# Image dựng sẵn trên GHCR (ghcr.io/thanhnlt/bamboo-*) cho amd64 và arm64, kèm compose phát hành dạng OCI artifact:
+#   docker compose -f oci://ghcr.io/thanhnlt/bamboo:<phiên bản> up -d -y
+# - Đẩy thẻ v*: dựng, đẩy image <phiên bản> và latest, phát hành compose, gắn compose.release.yml vào GitHub Release,
+#   chạy thử hệ thống từ image vừa đẩy.
+# - Chạy tay (workflow_dispatch) với `ref` là thẻ đã có (ví dụ v0.5.2): như trên cho mã của thẻ đó, workflow và công cụ
+#   lấy từ nhánh đang chọn (dựng lại image cho bản phát hành cũ).
+# - Pull request đổi Dockerfile, lockfile hay compose: chỉ dựng thử amd64, không đẩy.
+
 on:
   push:
-    branches: [main]
     tags: ["v*"]
   pull_request:
+    paths:
+      - .dockerignore
+      - .github/workflows/images.yml
+      - compose.yaml
+      - infra/**
+      - "**/pyproject.toml"
+      - "**/uv.lock"
+      - package.json
+      - pnpm-lock.yaml
+      - apps/web/package.json
+      - tools/release/**
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Thẻ phát hành cần dựng image (ví dụ v0.5.2); để trống thì dựng nhánh đang chọn"
+        required: false
+        default: ""
 
 concurrency:
-  group: images-${{ github.ref }}
+  group: images-${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
-  packages: write
 
 env:
   PREFIX: ghcr.io/thanhnlt/bamboo
 
 jobs:
-  build:
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.plan.outputs.ref }}
+      version: ${{ steps.plan.outputs.version }}
+      release: ${{ steps.plan.outputs.release }}
+      push: ${{ steps.plan.outputs.push }}
+      platforms: ${{ steps.plan.outputs.platforms }}
+    steps:
+      - id: plan
+        name: Chọn mã nguồn, phiên bản và nơi đẩy
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+        run: |
+          ref="${INPUT_REF:-$GITHUB_REF}"
+          case "$ref" in refs/*) ;; v[0-9]*) ref="refs/tags/$ref" ;; esac
+          push=true platforms=linux/amd64,linux/arm64 release=false
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            version="pr-${{ github.event.number }}" push=false platforms=linux/amd64 ref="$GITHUB_SHA"
+          elif [[ "$ref" =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            version="${BASH_REMATCH[1]}" release=true
+          else
+            version="sha-${GITHUB_SHA::7}" ref="$GITHUB_SHA"
+          fi
+          {
+            echo "ref=$ref"
+            echo "version=$version"
+            echo "release=$release"
+            echo "push=$push"
+            echo "platforms=$platforms"
+          } >> "$GITHUB_OUTPUT"
+          echo "Mã: $ref · phiên bản: $version · đẩy: $push · nền tảng: $platforms" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: actions, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions" }
+          - { name: actions, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions\nAPT_PACKAGES=softhsm2" }
           - { name: lakehouse, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/actions\nDEP_GROUPS=lakehouse" }
           - { name: seed, context: ., file: infra/docker/python.Dockerfile, args: "APP_DIR=services/seed" }
           - { name: migrate, context: ., file: infra/docker/migrate.Dockerfile, args: "" }
+          - { name: sleeper, context: ., file: infra/docker/sleeper.Dockerfile, args: "" }
+          - { name: ocr, context: ., file: infra/docker/ocr.Dockerfile, args: "" }
+          - { name: web, context: ., file: infra/docker/web.Dockerfile, args: "" }
           - { name: keycloak, context: infra/platform/keycloak, file: infra/platform/keycloak/Dockerfile, args: "" }
           - { name: openbao, context: infra/platform/openbao, file: infra/platform/openbao/Dockerfile, args: "" }
           - { name: gateway, context: infra/platform/apisix, file: infra/platform/apisix/Dockerfile, args: "" }
           - { name: trino, context: infra/platform/trino, file: infra/platform/trino/Dockerfile, args: "" }
-          - { name: sleeper, context: ., file: infra/docker/sleeper.Dockerfile, args: "" }
           - { name: kafka, context: infra/platform/kafka, file: infra/platform/kafka/Dockerfile, args: "" }
           - { name: mosquitto, context: infra/platform/mosquitto, file: infra/platform/mosquitto/Dockerfile, args: "" }
-          - { name: web, context: ., file: infra/docker/web.Dockerfile, args: "" }
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-qemu-action@v4
+        with:
+          ref: ${{ needs.plan.outputs.ref }}
+      - if: needs.plan.outputs.push == 'true'
+        uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
+      - if: needs.plan.outputs.push == 'true'
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -70,12 +135,12 @@ jobs:
         with:
           images: ${{ env.PREFIX }}-${{ matrix.name }}
           tags: |
-            type=ref,event=pr
-            type=sha,enable=${{ github.event_name != 'pull_request' }}
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ needs.plan.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.plan.outputs.release == 'true' }}
           labels: |
             org.opencontainers.image.title=bamboo-${{ matrix.name }}
+            org.opencontainers.image.version=${{ needs.plan.outputs.version }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.licenses=Apache-2.0
             org.opencontainers.image.vendor=Bamboo
       - uses: docker/build-push-action@v7
@@ -83,56 +148,74 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
           build-args: ${{ matrix.args }}
-          platforms: linux/amd64,linux/arm64
-          push: true
+          platforms: ${{ needs.plan.outputs.platforms }}
+          push: ${{ needs.plan.outputs.push == 'true' }}
+          provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,scope=${{ matrix.name }},mode=max
 
   compose:
-    needs: build
+    needs: [plan, build]
     runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
-      - id: tag
-        name: Chọn thẻ phát hành
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then tag="${GITHUB_REF_NAME#v}"
-          elif [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then tag="pr-${{ github.event.number }}"
-          else tag="sha-${GITHUB_SHA::7}"; fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Công cụ phát hành của nhánh đang chọn
+        uses: actions/checkout@v7
+      - name: Mã nguồn được dựng
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.ref }}
+          path: src
       - name: Sinh compose.release.yml
         run: |
           pip install --quiet pyyaml
-          python tools/release/compose_release.py "${{ steps.tag.outputs.tag }}" compose.release.yml
-          docker compose -f compose.release.yml config -q
-      - uses: docker/login-action@v4
+          BAMBOO_ROOT=src python tools/release/compose_release.py "$VERSION" compose.release.yml
+          docker compose -f compose.release.yml --profile '*' config -q
+      - uses: actions/upload-artifact@v7
+        with:
+          name: compose.release.yml
+          path: compose.release.yml
+      - if: needs.plan.outputs.push == 'true'
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Phát hành compose dạng OCI artifact
+        if: needs.plan.outputs.push == 'true'
         run: |
           docker compose version
-          docker compose -f compose.release.yml publish --yes --with-env "${PREFIX}:${{ steps.tag.outputs.tag }}"
-          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+          docker compose -f compose.release.yml publish --yes --with-env "${PREFIX}:${VERSION}"
+          if [[ "${{ needs.plan.outputs.release }}" == true ]]; then
             docker compose -f compose.release.yml publish --yes --with-env "${PREFIX}:latest"
           fi
-      - uses: actions/upload-artifact@v7
-        with:
-          name: compose.release.yml
-          path: compose.release.yml
+      - name: Gắn compose.release.yml vào GitHub Release
+        if: needs.plan.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${VERSION}"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" compose.release.yml --clobber
+          else
+            echo "Chưa có GitHub Release $tag: bỏ qua gắn tệp" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   smoke:
-    needs: compose
+    needs: [plan, compose]
+    if: needs.plan.outputs.push == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 40
     env:
-      TAG: ${{ needs.compose.outputs.tag }}
+      VERSION: ${{ needs.plan.outputs.version }}
     steps:
+      - uses: actions/checkout@v7
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -140,21 +223,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Một lệnh, không cần mã nguồn
         working-directory: ${{ runner.temp }}
-        run: time docker compose -f "oci://${PREFIX}:${TAG}" up -d -y
-      - uses: actions/checkout@v7
+        run: time docker compose -f "oci://${PREFIX}:${VERSION}" up -d -y
       - name: Chờ sẵn sàng
         run: tools/ci/wait-ready.sh 1200
-      - uses: pnpm/action-setup@v6.1.0
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-      - name: Kiểm thử đầu–cuối qua giao diện (Playwright)
-        run: |
-          pnpm install --frozen-lockfile --filter @bamboo/e2e
-          pnpm --filter @bamboo/e2e exec playwright install --with-deps chromium
-          pnpm --filter @bamboo/e2e test:e2e
+      # Kiểm thử giao diện (Playwright) chạy ở workflow CI trên mã nguồn; ở đây chỉ kiểm image chạy được qua cổng API.
       - name: Kiểm thử cổng API
         run: tools/ci/gateway-smoke.sh
       - name: Tài nguyên sử dụng
