@@ -29,4 +29,5 @@ request của kho cũ `CTUBamboo/Bamboo`.
 
 05-quyet-dinh-kien-truc
 06-lich-su-pull-request
+07-chuyen-kho-ma
 ```
