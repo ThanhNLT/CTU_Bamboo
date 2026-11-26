@@ -97,12 +97,20 @@ def pki(tmp_path):
 
 
 def _client(directory, identity: str) -> ssl.SSLContext:
+    """Ngữ cảnh mTLS máy khách cho một bộ chứng chỉ thử; trả lại biến môi trường cũ (container actions-test có sẵn
+    INTERNAL_TLS_* thật, các kiểm thử sau cần chúng để gọi Flowable, Keycloak)."""
+    keys = ("INTERNAL_TLS_DIR", "INTERNAL_TLS_IDENTITY")
+    saved = {k: os.environ.get(k) for k in keys}
     os.environ["INTERNAL_TLS_DIR"], os.environ["INTERNAL_TLS_IDENTITY"] = str(directory), identity
     tls.context.cache_clear()
     try:
         return tls.context()
     finally:
-        del os.environ["INTERNAL_TLS_DIR"], os.environ["INTERNAL_TLS_IDENTITY"]
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
         tls.context.cache_clear()
 
 
@@ -153,6 +161,9 @@ def test_actions_hai_cong_va_bat_buoc_chung_chi_may_khach(pki):
 
 
 def test_may_khach_chi_dung_mtls_voi_https(pki, monkeypatch):
+    monkeypatch.delenv("INTERNAL_TLS_DIR", raising=False)
+    monkeypatch.delenv("INTERNAL_TLS_IDENTITY", raising=False)
+    tls.context.cache_clear()
     assert tls.verify("https://keycloak:8443") is True, "chưa bật mTLS: mặc định của httpx"
     monkeypatch.setenv("INTERNAL_TLS_DIR", str(pki / "gateway"))
     monkeypatch.setenv("INTERNAL_TLS_IDENTITY", "gateway")
