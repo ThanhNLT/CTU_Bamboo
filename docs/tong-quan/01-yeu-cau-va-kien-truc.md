@@ -118,7 +118,7 @@ Mức: **Có** = đã hiện thực và kiểm thử; **Một phần** = có nh�
 | Quy trình, tự động hóa | BPMN | Flowable REST 8; thiết kế bằng lớp BPMN tự viết trên diagram-js ([ADR #81](#adr-81)), chạy thử sandbox, phát hành ([ADR #47](#adr-47)) | Có |
 | | Kịch bản ngầm | Quy trình tự động: hẹn giờ, webhook, sự kiện nghiệp vụ; hành động có sẵn và **kịch bản người dùng tự viết** (tập con Python chạy bằng trình thông dịch an toàn, chạy thử ngay trong trang thiết kế, [ADR #73](#adr-73)) | Có |
 | | Nạp dữ liệu theo lô | `/ingest/*` NDJSON/CSV, chạy thử, nguyên tử | Có |
-| Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); truy vết OpenTelemetry (Collector → Jaeger), số liệu Prometheus (actions, APISIX, Keycloak), Grafana có bảng điều khiển và cảnh báo dựng sẵn ([ADR #75](#adr-75)) | Có |
+| Vận hành, giám sát | Truy vết, nhật ký | `X-Request-Id` + `obs.log_event` (Vector); truy vết OpenTelemetry (Collector → Jaeger) liền một trace từ cổng APISIX qua Hasura tới `actions` và SQL, số liệu Prometheus (actions, APISIX, Keycloak), Grafana có bảng điều khiển và cảnh báo dựng sẵn ([ADR #75](#adr-75)) | Có |
 | | Kiểm toán bất biến | Chuỗi hash theo tenant, neo có chữ ký công bố ra ngoài CSDL ([ADR #33](#adr-33), [ADR #46](#adr-46)) | Có |
 | | Trục sự kiện | Debezium Server + Kafka KRaft ([ADR #38](#adr-38)) | Có |
 | | GitOps | Script đối chiếu `tools/gitops/reconcile.sh` (Git là nguồn sự thật: kéo nhánh triển khai, tự đưa hệ thống Compose về đúng cấu hình khi cấu hình đổi hoặc dịch vụ dừng), chạy mỗi 5 phút bằng systemd timer hoặc cron, tự bật khi `BAMBOO_ENV=production` ([ADR #83](#adr-83)); chưa dùng Argo CD, Kubernetes | Một phần |
