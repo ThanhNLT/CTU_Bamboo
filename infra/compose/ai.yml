@@ -35,7 +35,7 @@ services:
       OLLAMA_CONTEXT_LENGTH: "12288"
       OLLAMA_FLASH_ATTENTION: "1"
       OLLAMA_KV_CACHE_TYPE: ${AI_KV_CACHE_TYPE:-q4_0}
-      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
     entrypoint:
       - sh
@@ -67,7 +67,7 @@ services:
         condition: service_healthy
     environment:
       OLLAMA_HOST: http://ollama:11434
-      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
       AI_EMBED_MODEL: ${AI_EMBED_MODEL:-bge-m3}
     entrypoint: ["sh", "-c", "for m in \"$$AI_CHAT_MODEL\" \"$$AI_EMBED_MODEL\"; do ollama show \"$$m\" > /dev/null 2>&1 || ollama pull \"$$m\" || echo \"CẢNH BÁO: không tải được mô hình $$m, AI chưa dùng được\" >&2; done"]
     restart: "no"
