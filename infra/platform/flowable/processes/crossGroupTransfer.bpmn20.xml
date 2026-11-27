@@ -27,7 +27,7 @@
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+             targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">
   <process id="crossGroupTransfer" name="Điều chuyển liên tập đoàn" isExecutable="true">
     <documentation>Ba chứng từ liên kết (đi, tiếp nhận, quyết định) gộp thành một chuỗi: tenant nguồn, tenant đích rồi tenant mẹ.</documentation>
     <startEvent id="start" name="Gửi đề nghị điều chuyển liên tập đoàn"/>

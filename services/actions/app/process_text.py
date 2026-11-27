@@ -582,7 +582,7 @@ def build_bpmn(spec: ProcessSpec, key: str, name: str | None = None) -> tuple[st
         f'<definitions xmlns="{BPMN_NS}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
         f'xmlns:flowable="{FLOWABLE_NS}" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" '
         'xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" '
-        'targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">'
+        'targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">'
         f"{collab}"
         f'<process id="{key}" name={quoteattr(pname)} isExecutable="true">{doc}{"".join(body)}</process>'
         f'<bpmndi:BPMNDiagram id="diagram"><bpmndi:BPMNPlane id="plane" bpmnElement="{root_el}">{"".join(di)}'

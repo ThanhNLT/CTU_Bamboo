@@ -27,7 +27,7 @@
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+             targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">
   <process id="onboardingApproval" name="Tiếp nhận nhân sự" isExecutable="true">
     <documentation>Chuỗi duyệt đề nghị tiếp nhận nhân sự (TN-…): quản lý trực tiếp của vị trí được bổ nhiệm, rồi giám đốc công ty.</documentation>
     <startEvent id="start" name="Phòng nhân sự gửi đề nghị tiếp nhận"/>
