@@ -1043,7 +1043,8 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
   từ xa của CA theo Cloud Signature Consortium API v1 (OAuth2 client credentials, `credentials/authorize` kèm PIN, ràng
   mã băm khi SCAL2). PIN, bí mật OAuth2 đọc từ OpenBao `bms/org-sign`. Chỉ ký văn bản của công ty có mã số thuế nằm trong
   chứng thư (đọc như khi kiểm đơn đăng ký, ADR #57); bản đã ký lưu khóa `<mã băm>.sealed.pdf`, tách bản chưa ký; ký lỗi
-  thì vẫn trả bản chưa ký và ghi lỗi.
+  thì vẫn trả bản chưa ký và ghi lỗi. Một cài đặt nhiều pháp nhân đặt token, khóa hoặc credential và PIN riêng cho từng
+  mã số thuế (khóa `entities` của `bms/org-sign`, `ORG_SIGN_ENTITIES`); công ty không có mục riêng dùng bộ ký chung.
 - **Lý do:** Văn bản do hệ thống phát hành cần giá trị pháp lý như văn bản giấy có dấu; chuẩn PKCS#11 và CSC là hai đường
   mà HSM và các CA Việt Nam (ký số từ xa) cung cấp, nên cắm thiết bị hoặc tài khoản là ký được, không phải viết thêm mã.
   Dấu thời gian giữ chữ ký kiểm được sau khi chứng thư hết hạn.

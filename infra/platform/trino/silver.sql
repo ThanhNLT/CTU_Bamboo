@@ -1405,6 +1405,69 @@ FROM (
 ) AS latest
 WHERE _rn = 1 AND op <> 'd';
 
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_goods_receipt (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.proc_goods_receipt COMMENT 'Trạng thái hiện tại của proc.goods_receipt, dựng từ bronze.proc_goods_receipt' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    json_extract_scalar(after, '$["doc_no"]') AS "doc_no",
+    CAST(json_extract_scalar(after, '$["request_id"]') AS uuid) AS "request_id",
+    CAST(json_extract_scalar(after, '$["org_unit_id"]') AS uuid) AS "org_unit_id",
+    CAST(json_extract_scalar(after, '$["received_by"]') AS uuid) AS "received_by",
+    CAST(from_iso8601_timestamp_nanos(json_extract_scalar(after, '$["received_at"]')) AS timestamp(6) with time zone) AS "received_at",
+    CAST(json_extract_scalar(after, '$["amount"]') AS decimal(18, 2)) AS "amount",
+    json_extract_scalar(after, '$["note"]') AS "note",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.proc_goods_receipt
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
+CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_goods_receipt_item (
+    "op" varchar,
+    "source_ts" timestamp(6) with time zone,
+    "source_date" date,
+    "lsn" bigint,
+    "tx_id" bigint,
+    "tenant_id" varchar,
+    "record_key" varchar,
+    "before" varchar,
+    "after" varchar,
+    "kafka_partition" integer,
+    "kafka_offset" bigint,
+    "ingested_at" timestamp(6) with time zone
+) WITH (format_version = 2, partitioning = ARRAY['source_date']);
+CREATE OR REPLACE VIEW lakehouse.silver.proc_goods_receipt_item COMMENT 'Trạng thái hiện tại của proc.goods_receipt_item, dựng từ bronze.proc_goods_receipt_item' AS
+SELECT
+    CAST(json_extract_scalar(after, '$["tenant_id"]') AS uuid) AS "tenant_id",
+    CAST(json_extract_scalar(after, '$["id"]') AS uuid) AS "id",
+    CAST(json_extract_scalar(after, '$["receipt_id"]') AS uuid) AS "receipt_id",
+    CAST(json_extract_scalar(after, '$["request_item_id"]') AS uuid) AS "request_item_id",
+    CAST(json_extract_scalar(after, '$["quantity"]') AS decimal(18, 3)) AS "quantity",
+    CAST(json_extract_scalar(after, '$["amount"]') AS decimal(18, 2)) AS "amount",
+    source_ts AS _changed_at,
+    lsn AS _lsn
+FROM (
+    SELECT *, row_number() OVER (PARTITION BY record_key ORDER BY kafka_partition DESC, kafka_offset DESC) AS _rn
+    FROM lakehouse.bronze.proc_goods_receipt_item
+) AS latest
+WHERE _rn = 1 AND op <> 'd';
+
 CREATE TABLE IF NOT EXISTS lakehouse.bronze.proc_purchase_order (
     "op" varchar,
     "source_ts" timestamp(6) with time zone,

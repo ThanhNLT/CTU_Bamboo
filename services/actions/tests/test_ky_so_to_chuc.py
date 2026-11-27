@@ -317,3 +317,58 @@ def test_luu_pdf_da_ky_tach_khoi_ban_chua_ky():
     plain = Context(storage=_Storage())
     forms.store_pdf(plain, "t/doc", "abc", b"%PDF-1", TAX, "x")
     assert forms.cached_pdf_key(plain, "t/doc", "abc", TAX) == ("t/doc/abc.pdf", True)
+
+
+def test_cau_hinh_ky_so_theo_phap_nhan():
+    base = org_sign.Config.from_env(
+        env={"ORG_SIGN_PROVIDER": "pkcs11", "ORG_SIGN_PKCS11_LIB": "/lib/x.so", "ORG_SIGN_PKCS11_TOKEN": "chung"},
+        partial=True,
+    )
+    assert base is not None and not base.complete, "chỉ có phần dùng chung: không có bộ ký mặc định"
+    entities = org_sign.entity_configs(
+        base, '{"0101234567": {"pkcs11_token": "cty-a", "pkcs11_key": "seal-a", "pin": "1111"}, '
+        '"0107654321": {"pkcs11_key": "seal-b"}}'
+    )  # fmt: skip
+    a, b = entities["0101234567"], entities["0107654321"]
+    assert (a.pkcs11_lib, a.pkcs11_token, a.pkcs11_key, a.pkcs11_cert, a.pin) == (
+        "/lib/x.so", "cty-a", "seal-a", "seal-a", "1111"
+    )  # fmt: skip
+    assert (b.pkcs11_token, b.pkcs11_key) == ("chung", "seal-b"), "trường không ghi thì lấy từ cấu hình chung"
+    assert org_sign.entity_configs(base, "") == {}
+    with pytest.raises(org_sign.OrgSignError, match="JSON"):
+        org_sign.entity_configs(base, "{")
+    with pytest.raises(org_sign.OrgSignError, match="không hỗ trợ"):
+        org_sign.entity_configs(base, '{"0101234567": {"pkcs11_lib": "/khac.so"}}')
+    with pytest.raises(org_sign.OrgSignError, match="thiếu pkcs11_key"):
+        org_sign.entity_configs(base, '{"0101234567": {"pin": "1"}}')
+    with pytest.raises(org_sign.OrgSignError, match="ORG_SIGN_PKCS11_KEY"):
+        org_sign.Config.from_env(env={"ORG_SIGN_PROVIDER": "pkcs11", "ORG_SIGN_PKCS11_LIB": "/lib/x.so"})
+
+
+def test_ky_theo_phap_nhan_qua_csc(pki):
+    """Pháp nhân có chứng thư riêng ký bằng credential của mình; công ty khác dùng bộ ký mặc định (ở đây không có)."""
+    server, url, seen = _fake_csc(pki, False)
+    try:
+        base = org_sign.Config.from_env(
+            env={
+                "ORG_SIGN_PROVIDER": "csc",
+                "ORG_SIGN_CSC_URL": url,
+                "ORG_SIGN_CSC_TOKEN_URL": f"{url}/oauth2/token",
+                "ORG_SIGN_CSC_CLIENT_ID": "bamboo",
+            },
+            partial=True,
+        )
+        cfg = org_sign.entity_configs(
+            base, f'{{"{TAX}": {{"csc_credential": "cred-1", "pin": "{PIN}", "csc_client_secret": "client-secret"}}}}'
+        )[TAX]
+        registry = org_sign.SignerRegistry(None, {TAX: org_sign.OrgSigner(cfg)})
+        assert registry and registry.for_tax_code("0109999999") is None
+        assert org_sign.covers(registry, TAX) and not org_sign.covers(registry, "0109999999")
+
+        signed, ok = org_sign.seal(registry, TAX, _pdf(), "Quyết định nhân sự QD-2026-000002")
+        assert ok and seen["sign"] == 1
+        _check_signed(signed, pki["ca"])
+        original = _pdf()
+        assert org_sign.seal(registry, "0109999999", original, "x") == (original, False)
+    finally:
+        server.should_exit = True
