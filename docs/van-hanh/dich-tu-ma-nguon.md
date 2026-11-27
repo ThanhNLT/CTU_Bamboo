@@ -47,7 +47,7 @@ Phụ thuộc lấy từ PyPI và npm lúc dịch, không có bản sao nào n�
 ## Lấy mã nguồn
 
 ```bash
-git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd Bamboo
+git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd CTU_Bamboo
 ```
 
 Hoặc tải `bamboo-<phiên bản>.tar.gz` và `SHA256SUMS` ở [trang phát hành](https://github.com/ThanhNLT/CTU_Bamboo/releases):

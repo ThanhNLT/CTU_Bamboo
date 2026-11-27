@@ -32,7 +32,7 @@ Trang này dành cho người muốn dùng Bamboo để quản lý **công ty ho
 Cần Docker Engine 25+ và Docker Compose 2.34+ (cấu hình máy xem [Triển khai production](trien-khai.md) mục 1).
 
 ```bash
-git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd Bamboo
+git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd CTU_Bamboo
 cp .env.example .env
 ```
 
