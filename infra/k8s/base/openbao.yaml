@@ -45,6 +45,9 @@ spec:
         image: ghcr.io/thanhnlt/bamboo-openbao:0.5.2
         args:
         - server
+        env:
+        - name: SKIP_CHOWN
+          value: 'true'
         ports:
         - containerPort: 8200
         readinessProbe:
@@ -60,6 +63,9 @@ spec:
         - name: openbao-data
           mountPath: /openbao/file
           readOnly: false
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       volumes:
       - name: openbao-data
         persistentVolumeClaim:

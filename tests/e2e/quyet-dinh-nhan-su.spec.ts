@@ -47,7 +47,8 @@ test("Phó tổng giám đốc ban hành quyết định bổ nhiệm kiêm nhi�
   await dialog.getByLabel("Căn cứ / lý do").fill("Bổ sung nhân lực dự án");
   await dialog.getByRole("button", { name: "Ban hành" }).click();
   await expect(page.getByText(/Đã ban hành quyết định QD-\d{4}-\d{6}/)).toBeVisible();
-  await expect(page.getByRole("cell", { name: /^QD-\d{4}-\d{6}$/ }).first()).toBeVisible();
+  // Số quyết định nằm chung ô với tên người và mã nhân sự: "Đỗ Thị Hương QD-2026-000002 · TDX-0010".
+  await expect(page.getByRole("cell", { name: /QD-\d{4}-\d{6} · / }).first()).toBeVisible();
 });
 
 test("nhân viên không có nút ban hành quyết định", async ({ page }) => {

@@ -113,6 +113,11 @@ test("trưởng phòng vẽ quy trình cho phòng mình, phát hành, nhân viê
   await page.goto("/p/process");
   await page.getByRole("button", { name: "Tạo quy trình" }).click();
   await page.getByLabel("Tên quy trình mới").fill(NAME2);
+  // Chọn rõ phòng: test quyết định nhân sự chạy song song có thể bổ nhiệm kiêm nhiệm người này làm trưởng phòng khác,
+  // khi đó đơn vị đầu danh sách không còn là Phòng Mua hàng và nhân viên của phòng không được báo.
+  await page.getByRole("dialog").locator("div.ant-select[aria-label='Đơn vị sở hữu quy trình']").click();
+  await page.keyboard.type("Mua hàng");
+  await page.locator(".ant-select-item-option", { hasText: "Phòng Mua hàng" }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Tạo" }).click();
   await expect(page.getByText(`Đã tạo quy trình “${NAME2}”.`)).toBeVisible();
   await page.getByRole("button", { name: "Phát hành", exact: true }).click();

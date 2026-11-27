@@ -34,6 +34,7 @@ import argparse
 import difflib
 import pathlib
 import re
+import shlex
 import sys
 
 import yaml
@@ -88,6 +89,10 @@ ALIASES = {"trino": "trino-core", "tika": "tika-core", "gotenberg": "gotenberg-c
            "ocr": "ocr-core"}  # fmt: skip
 # Bỏ biến chỉ có nghĩa khi có sleeper.
 DROP_ENV = {"SLEEPER_URL"}
+# Image chạy bằng người dùng không phải root nhưng PVC mới tạo thuộc root: fsGroup cho volume nhóm của người dùng đó.
+# OpenBao (uid 100, gid 1000) bỏ bước chown của entrypoint, vốn thất bại khi không chạy bằng root và làm container dừng.
+POD_SECURITY = {"openbao": {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"}}
+EXTRA_ENV = {"openbao": {"SKIP_CHOWN": "true"}}
 VOLUME_SIZES = {"pgdata": "20Gi", "seaweedfs-data": "50Gi", "backups": "50Gi", "ollama-models": "20Gi",
                 "ocr-models": "5Gi", "kafka-data": "10Gi", "meilisearch-data": "5Gi", "prometheus-data": "5Gi"}  # fmt: skip
 
@@ -129,7 +134,8 @@ def _labels(name: str) -> dict:
 def _command(value, refs) -> list[str] | None:
     if value is None:
         return None
-    items = value if isinstance(value, list) else ["sh", "-c", value]
+    # Chuỗi trong compose được tách như shell (shlex), không chạy qua shell: image tự có entrypoint nhận các đối số này.
+    items = value if isinstance(value, list) else shlex.split(value)
     return [k8s_expand(str(x), refs) for x in items]
 
 
@@ -275,6 +281,7 @@ def build(version: str = VERSION):
             container["command"] = command
         if args:
             container["args"] = args
+        env = env + [{"name": k, "value": v} for k, v in EXTRA_ENV.get(name, {}).items()]
         if env:
             container["env"] = env
         if PORTS.get(name):
@@ -297,6 +304,8 @@ def build(version: str = VERSION):
             "enableServiceLinks": False,
             "containers": [container],
         }
+        if POD_SECURITY.get(name):
+            pod["securityContext"] = POD_SECURITY[name]
         waits = _wait_containers(name, svc, jobs, services)
         if waits:
             pod["initContainers"] = waits
