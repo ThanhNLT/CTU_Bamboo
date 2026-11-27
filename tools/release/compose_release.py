@@ -65,6 +65,13 @@ def build(version: str) -> dict:
         if svc.pop("build", None) is not None and svc.get("pull_policy") == "build":
             svc["pull_policy"] = "${BAMBOO_PULL_POLICY:-missing}"
         svc["image"] = svc["image"].replace(TAG_VAR, "${BAMBOO_TAG:-%s}" % version)
+        if os.environ.get("BAMBOO_IMAGE_PREFIX"):
+            # Thẻ dựng trước khi chuyển kho mặc định trỏ ghcr.io/ctubamboo: dùng nơi image vừa được đẩy lên.
+            svc["image"] = re.sub(
+                r"\$\{BAMBOO_IMAGE_PREFIX:-[^}]*\}",
+                lambda _: "${BAMBOO_IMAGE_PREFIX:-%s}" % os.environ["BAMBOO_IMAGE_PREFIX"],
+                svc["image"],
+            )
         inline_binds(name, svc, configs)
         for dep in list(svc.get("depends_on", {})):
             if "test" in spec["services"].get(dep, {}).get("profiles", []):

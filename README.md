@@ -291,7 +291,7 @@ Trang AI và OCR tự chọn nơi chạy: GPU NVIDIA nếu máy có, GPU Apple (
 |---|---|---|
 | CPU | 4 nhân (vCPU) | 8 nhân |
 | RAM Docker thấy được | 8 GB (đầy đủ gồm AI và OCR; mỗi lúc một mô hình AI, lượt hỏi đầu sau khi nhàn rỗi chậm hơn) | 16 GB (đầy đủ, mô hình hỏi đáp và mô hình nhúng cùng nằm trên RAM); thêm 2 GB nếu bật ClamAV |
-| Ổ đĩa | 20 GB SSD trống | 50 GB SSD (image OCR khoảng 14 GB, mô hình AI khoảng 3,7 GB) |
+| Ổ đĩa | 40 GB SSD trống (Docker Desktop: đặt giới hạn đĩa ảo từ 40 GB) | 60 GB SSD (image OCR khoảng 14 GB, mô hình AI khoảng 3,7 GB) |
 | GPU | Không cần (AI chạy CPU khi Docker có từ 7 GB RAM) | NVIDIA 8 GB VRAM trở lên (đã kiểm trên RTX 4060), hoặc Mac Apple Silicon 16 GB (AI chạy GPU Metal ngoài Docker, cần `brew install ollama uv`) |
 | Hệ điều hành | Linux, macOS, Windows 10/11 với WSL2 | Linux |
 | Kiến trúc | amd64 hoặc arm64 (`make up` tự dùng bản arm64 của PostGIS, ClamAV) | amd64 |
@@ -305,9 +305,19 @@ Lần đầu cần Internet để tải image và mô hình; sau đó chạy đ�
 
 ```bash
 git clone https://github.com/ThanhNLT/CTU_Bamboo.git
-cd Bamboo
+cd CTU_Bamboo
 make up        # đầy đủ gồm AI ở mọi mức RAM; máy 8 GB tự tiết kiệm RAM hơn (BAMBOO_RAM=8 hoặc 16 để chọn tay)
 ```
+
+| Máy | Cài trước | Chạy |
+|---|---|---|
+| Windows 10/11 | Docker Desktop (WSL2 backend), Git for Windows | PowerShell: `docker compose up -d` (không cần `make`); hoặc trong WSL2: `make up` |
+| macOS (Apple Silicon, Intel) | Docker Desktop; Apple Silicon thêm `brew install ollama uv` để AI chạy GPU Metal | `make up` (có sẵn `make`, tự chọn arm64, AI trên GPU); `docker compose up -d` chạy AI bằng CPU trong Docker |
+| Linux | Docker Engine 25+, Compose v2, `make` | `make up` |
+
+Docker Desktop (Windows, macOS) mặc định giới hạn ổ đĩa ảo khoảng 30 GB, không đủ cho image của Bamboo (khoảng 22 GB) cùng bộ
+đệm dựng image: đặt **Settings → Resources → Advanced → Disk usage limit** từ **40 GB** trở lên, nếu không CSDL sẽ báo
+`No space left on device`. Dọn bộ đệm dựng sau khi dựng xong: `docker builder prune -af`.
 
 Không có `make` thì dùng `docker compose up -d` (cũng chạy đầy đủ, gồm AI). Không cần tạo `.env` hay chạy migration tay: lệnh build
 image từ mã nguồn rồi tự chạy theo thứ tự migration CSDL, nạp dữ liệu demo, khởi tạo OpenBao, tạo bucket S3, deploy BPMN, nạp

@@ -173,6 +173,9 @@ jobs:
           ref: ${{ needs.plan.outputs.ref }}
           path: src
       - name: Sinh compose.release.yml
+        env:
+          # Thẻ cũ (trước khi chuyển kho) mặc định trỏ ghcr.io/ctubamboo; image vừa dựng nằm ở PREFIX.
+          BAMBOO_IMAGE_PREFIX: ${{ env.PREFIX }}
         run: |
           pip install --quiet pyyaml
           BAMBOO_ROOT=src python tools/release/compose_release.py "$VERSION" compose.release.yml
