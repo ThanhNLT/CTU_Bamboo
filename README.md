@@ -198,8 +198,7 @@ Danh sách đầy đủ thư viện Python, JavaScript và giấy phép: [NOTICE
 
 Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp theo:
 
-- **Bảo mật:** mTLS cho kết nối tới PostgreSQL, Kafka, SeaweedFS; ký số theo từng pháp nhân khi một cài đặt có
-  nhiều công ty khác mã số thuế.
+- **Bảo mật:** mTLS cho kết nối tới PostgreSQL, Kafka, SeaweedFS.
 - **Vận hành:** Kubernetes nhiều node (storage ReadWriteMany, service mesh cho mTLS), External Secrets từ OpenBao.
 - **Nghiệp vụ:** thuế GTGT tách dòng, trả trước, ghi nợ/ghi có trên hóa đơn; sửa quy tắc hạn mức theo đơn vị, nhóm hàng.
 - **Lakehouse:** chính sách vòng đời và xóa dữ liệu.

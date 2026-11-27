@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from .hr_account import KeycloakUsers
     from .mqtt_admin import Dynsec
-    from .org_sign import OrgSigner
+    from .org_sign import OrgSigner, SignerRegistry
     from .receipts import Signer
     from .search import Meili
     from .trino import Trino
@@ -66,7 +66,7 @@ class Context:
     actions_secret: str = ""
     webhook_allow_private: bool = False
     mqtt: "Dynsec | None" = None
-    org_signer: "OrgSigner | None" = None
+    org_signer: "OrgSigner | SignerRegistry | None" = None
 
 
 class ActionError(Exception):

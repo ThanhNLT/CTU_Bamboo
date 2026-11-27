@@ -161,7 +161,10 @@ export const BpmnEditor = forwardRef<BpmnEditorHandle, Props>(function BpmnEdito
         const sel = (v.get("selection") as { get: () => Element[] }).get()[0];
         if (sel && sel.id === e.element.id) handlers.current.onSelect(describe(sel));
       });
-      v.on("commandStack.changed", () => handlers.current.onChange());
+      // importXML xóa ngăn xếp lệnh và phát "changed" với trigger "clear": nạp sơ đồ không phải là sửa sơ đồ.
+      v.on("commandStack.changed", (e: { trigger?: string | null }) => {
+        if (e.trigger !== "clear") handlers.current.onChange();
+      });
     }
 
     const el = container.current!;

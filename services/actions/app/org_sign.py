@@ -32,6 +32,13 @@ riêng không bao giờ nằm trong Bamboo:
   credentials/authorize. Dịch vụ đòi người dùng xác nhận trên điện thoại cho từng lần ký thì không ký tự động được.
 
 `ORG_SIGN_TSA_URL` thêm dấu thời gian RFC 3161 (PAdES B-T). Không cấu hình thì văn bản vẫn in như cũ, không ký.
+
+Ký theo pháp nhân: một cài đặt nhiều công ty khác mã số thuế đặt chứng thư riêng cho từng công ty trong
+`ORG_SIGN_ENTITIES` hoặc khóa `entities` của OpenBao `bms/org-sign` (JSON `{mã số thuế: {trường: giá trị}}`, trường
+là `pkcs11_token`, `pkcs11_key`, `pkcs11_cert`, `pin`, `csc_credential`, `csc_client_id`, `csc_client_secret`,
+`csc_token`, `location`). Mỗi công ty dùng chung nhà cung cấp, thư viện PKCS#11 hoặc địa chỉ CSC của cấu hình chung
+nhưng token, khóa, credential, PIN riêng. Văn bản của công ty có mục riêng ký bằng mục đó, công ty khác dùng bộ ký
+mặc định; chứng thư vẫn phải mang đúng mã số thuế của công ty phát hành.
 """
 
 import asyncio
@@ -39,6 +46,7 @@ import base64
 import dataclasses
 import datetime as dt
 import io
+import json
 import logging
 import os
 import threading
@@ -78,7 +86,11 @@ class Config:
     location: str = ""
 
     @classmethod
-    def from_env(cls, pin: str = "", csc_client_secret: str = "", env=os.environ) -> "Config | None":
+    def from_env(
+        cls, pin: str = "", csc_client_secret: str = "", env=os.environ, partial: bool = False
+    ) -> "Config | None":
+        """Cấu hình chung. `partial`: chỉ đòi phần dùng chung (thư viện PKCS#11, địa chỉ CSC) khi khóa riêng của từng
+        pháp nhân nằm ở ORG_SIGN_ENTITIES."""
         provider = env.get("ORG_SIGN_PROVIDER", "").strip().lower()
         if provider in ("", "none"):
             return None
@@ -105,10 +117,51 @@ class Config:
                        ("ORG_SIGN_PKCS11_KEY", cfg.pkcs11_key)],
             "csc": [("ORG_SIGN_CSC_URL", cfg.csc_url), ("ORG_SIGN_CSC_CREDENTIAL", cfg.csc_credential)],
         }[provider]  # fmt: skip
-        absent = [name for name, value in missing if not value]
+        shared = {"ORG_SIGN_PKCS11_LIB", "ORG_SIGN_CSC_URL"}
+        absent = [name for name, value in missing if not value and (not partial or name in shared)]
         if absent:
             raise OrgSignError(f"Thiếu cấu hình ký số tổ chức: {', '.join(absent)}")
         return cfg
+
+    @property
+    def complete(self) -> bool:
+        """Đủ để ký: có khóa (PKCS#11) hoặc credential (CSC)."""
+        return bool(self.pkcs11_key if self.provider == "pkcs11" else self.csc_credential)
+
+
+ENTITY_FIELDS = frozenset(
+    {"pkcs11_token", "pkcs11_key", "pkcs11_cert", "pin", "csc_credential", "csc_client_id", "csc_client_secret",
+     "csc_token", "location"}
+)  # fmt: skip
+
+
+def entity_configs(base: Config, raw: str) -> dict[str, Config]:
+    """Cấu hình ký của từng pháp nhân từ JSON `{mã số thuế: {trường: giá trị}}`, kế thừa cấu hình chung."""
+    if not raw or not raw.strip():
+        return {}
+    try:
+        data = json.loads(raw)
+    except ValueError as exc:
+        raise OrgSignError(f"ORG_SIGN_ENTITIES không phải JSON hợp lệ: {exc}") from exc
+    if not isinstance(data, dict):
+        raise OrgSignError("ORG_SIGN_ENTITIES phải là đối tượng {mã số thuế: cấu hình}")
+    out: dict[str, Config] = {}
+    for tax_code, override in data.items():
+        tax_code = str(tax_code).strip()
+        if not tax_code or not isinstance(override, dict):
+            raise OrgSignError(f"Cấu hình ký số của pháp nhân {tax_code or '(trống)'} không hợp lệ")
+        unknown = sorted(set(override) - ENTITY_FIELDS)
+        if unknown:
+            raise OrgSignError(f"Trường không hỗ trợ trong cấu hình ký số của {tax_code}: {', '.join(unknown)}")
+        values = {k: str(v) for k, v in override.items()}
+        if "pkcs11_key" in values and "pkcs11_cert" not in values:
+            values["pkcs11_cert"] = values["pkcs11_key"]
+        cfg = dataclasses.replace(base, **values)
+        if not cfg.complete:
+            need = "pkcs11_key" if cfg.provider == "pkcs11" else "csc_credential"
+            raise OrgSignError(f"Cấu hình ký số của pháp nhân {tax_code} thiếu {need}")
+        out[tax_code] = cfg
+    return out
 
 
 class OrgSigner:
@@ -256,13 +309,34 @@ class _PinAuthorization(csc.CSCAuthorizationManager):
         )
 
 
+class SignerRegistry:
+    """Bộ ký mặc định cùng bộ ký riêng của từng pháp nhân (theo mã số thuế)."""
+
+    def __init__(self, default: "OrgSigner | None", entities: "dict[str, OrgSigner] | None" = None):
+        self.default = default
+        self.entities = dict(entities or {})
+
+    def for_tax_code(self, tax_code: str | None) -> "OrgSigner | None":
+        if tax_code and tax_code in self.entities:
+            return self.entities[tax_code]
+        return self.default
+
+    def __bool__(self) -> bool:
+        return self.default is not None or bool(self.entities)
+
+
+def _pick(signer: "OrgSigner | SignerRegistry | None", tax_code: str | None) -> "OrgSigner | None":
+    return signer.for_tax_code(tax_code) if isinstance(signer, SignerRegistry) else signer
+
+
 def tenant_tax_code(conn, tenant_id) -> str | None:
     row = conn.execute("SELECT tax_code FROM core.tenant WHERE id = %s", (tenant_id,)).fetchone()
     return row[0] if row else None
 
 
-def covers(signer: "OrgSigner | None", tax_code: str | None) -> bool:
+def covers(signer: "OrgSigner | SignerRegistry | None", tax_code: str | None) -> bool:
     """Bộ ký có chứng thư mang mã số thuế của công ty phát hành văn bản (lỗi đọc chứng thư thì coi như không)."""
+    signer = _pick(signer, tax_code)
     if signer is None or not tax_code:
         return False
     try:
@@ -272,8 +346,11 @@ def covers(signer: "OrgSigner | None", tax_code: str | None) -> bool:
         return False
 
 
-def seal(signer: "OrgSigner | None", tax_code: str | None, pdf: bytes, reason: str) -> tuple[bytes, bool]:
+def seal(
+    signer: "OrgSigner | SignerRegistry | None", tax_code: str | None, pdf: bytes, reason: str
+) -> tuple[bytes, bool]:
     """Ký PDF nếu có bộ ký và chứng thư mang đúng mã số thuế của công ty phát hành; lỗi ký thì trả bản chưa ký."""
+    signer = _pick(signer, tax_code)
     if signer is None or not tax_code:
         return pdf, False
     try:

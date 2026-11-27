@@ -47,7 +47,12 @@ SECRET_FIELDS = {
     "bms/trino-actions": {"username": "trino_user", "password": "trino_password"},
     "bms/mosquitto": {"admin_password": "mqtt_admin_password", "bridge_password": "mqtt_bridge_password"},
     # Ký số văn bản bằng chứng thư tổ chức (app.org_sign): PIN của token HSM hoặc dịch vụ ký số từ xa, bí mật OAuth2.
-    "bms/org-sign": {"pin": "org_sign_pin", "csc_client_secret": "org_sign_csc_client_secret"},
+    "bms/org-sign": {
+        "pin": "org_sign_pin",
+        "csc_client_secret": "org_sign_csc_client_secret",
+        # JSON {mã số thuế: cấu hình} cho chứng thư riêng của từng pháp nhân (ORG_SIGN_ENTITIES).
+        "entities": "org_sign_entities",
+    },
 }
 
 
@@ -134,6 +139,7 @@ class Settings:
     mqtt_tls_port: int = 8884
     org_sign_pin: str = ""
     org_sign_csc_client_secret: str = ""
+    org_sign_entities: str = ""
 
 
 DEV_DEFAULTS = {
@@ -325,6 +331,7 @@ def _from_env() -> Settings:
         signature_online=env("SIGNATURE_ONLINE", "true").lower() in ("1", "true", "yes"),
         org_sign_pin=env("ORG_SIGN_PIN", ""),
         org_sign_csc_client_secret=env("ORG_SIGN_CSC_CLIENT_SECRET", ""),
+        org_sign_entities=env("ORG_SIGN_ENTITIES", ""),
         setup_allow_unverified=env("SETUP_ALLOW_UNVERIFIED", "true").lower() in ("1", "true", "yes"),
         mqtt_host=env("MQTT_HOST", ""),
         mqtt_port=int(env("MQTT_PORT", "1883")),
