@@ -1,0 +1,110 @@
+# Bamboo - DX-OS Open-Core
+# @version 0.5.2
+# @author CTUBamboo
+# @copyright Copyright 2026 Bamboo
+# @license Apache-2.0
+# @see https://github.com/ThanhNLT/CTU_Bamboo, Bamboo project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Bamboo chạy trên Windows (Docker Desktop, clone bằng PowerShell hoặc WSL2) và macOS (Docker Desktop, Apple Silicon).
+# Không dựng cả hệ thống ở đây (CI chính chạy trên Linux); chỉ kiểm những gì hay hỏng riêng trên hai hệ này:
+# - Windows: checkout với core.autocrlf=true vẫn giữ LF (script chạy trong container hỏng khi có CRLF), cấu hình compose
+#   đọc được, script của máy chủ đúng cú pháp trong Git Bash.
+# - macOS: script mà make up chạy trên máy (tools/mac/ai.sh, ram_profile.sh, ...) chạy được với bash 3.2 mặc định của macOS.
+name: Portability
+
+on:
+  pull_request:
+    paths:
+      - .gitattributes
+      - Makefile
+      - compose.yaml
+      - infra/compose/**
+      - "tools/**.sh"
+      - .github/workflows/portability.yml
+  push:
+    branches: [main]
+    paths:
+      - .gitattributes
+      - Makefile
+      - compose.yaml
+      - infra/compose/**
+      - "tools/**.sh"
+  workflow_dispatch:
+
+concurrency:
+  group: portability-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout như người dùng Windows (core.autocrlf=true)
+        run: |
+          git config --global core.autocrlf true
+          git clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          git fetch --depth 1 origin "$GITHUB_SHA"
+          git checkout -q FETCH_HEAD
+      - name: Tệp văn bản giữ LF trong thư mục làm việc
+        working-directory: repo
+        run: |
+          # Tệp khai -text (CSV dữ liệu demo) hoặc eol=crlf (script PowerShell) cố ý giữ CRLF.
+          bad="$(git ls-files --eol | awk '$2 ~ /crlf|mixed/ && $0 !~ /attr\/-text|eol=crlf/ {print $NF}')"
+          if [ -n "$bad" ]; then echo "Có CRLF sau khi checkout trên Windows:"; echo "$bad"; exit 1; fi
+      - name: Cấu hình Docker Compose đọc được
+        working-directory: repo
+        run: |
+          docker compose version
+          docker compose config -q
+          docker compose -f compose.yaml -f infra/compose/mtls.yml config -q
+          docker compose --profile '*' config -q
+      - name: Cú pháp script của máy chủ (Git Bash)
+        working-directory: repo
+        run: |
+          for f in $(git ls-files 'tools/*.sh' 'tools/**/*.sh'); do bash -n "$f" || exit 1; done
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Script của máy chủ chạy với bash 3.2 mặc định của macOS
+        run: |
+          /bin/bash --version | head -1
+          for f in $(git ls-files 'tools/*.sh' 'tools/**/*.sh'); do /bin/bash -n "$f" || exit 1; done
+          # Cú pháp bash 4 trở lên không có trong bash 3.2 của macOS.
+          if git ls-files 'tools/*.sh' 'tools/**/*.sh' Makefile \
+            | xargs grep -n -E 'declare -A|\$\{[A-Za-z_]+(,,|\^\^)\}|\bmapfile\b|\breadarray\b|\[\[ -v |&>>'; then
+            echo "Dùng cú pháp bash 4 trong script chạy trên máy (macOS chỉ có bash 3.2)"; exit 1
+          fi
+      - name: Lệnh GNU không có trên macOS
+        run: |
+          if git ls-files 'tools/*.sh' 'tools/**/*.sh' Makefile \
+            | grep -v -E '^tools/(ci|db)/' \
+            | xargs grep -n -E 'sed -i[^ ]* [^"'"'"']|readlink -f|date -d |stat -c|grep -P|base64 -w'; then
+            echo "Lệnh chỉ có trên GNU/Linux trong script chạy trên máy macOS"; exit 1
+          fi
+      - name: tools/mac/ai.sh và ram_profile.sh chạy được khi chưa có Docker, Ollama
+        run: |
+          tools/mac/ai.sh compose-file || true
+          BAMBOO_RAM=8 tools/ram_profile.sh

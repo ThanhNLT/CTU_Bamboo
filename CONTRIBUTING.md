@@ -41,7 +41,7 @@ phân loại rồi gắn `needs-info` khi cần bạn bổ sung thông tin, ho�
 Cách nhanh nhất là Docker Compose, một lệnh dựng toàn bộ hệ thống kèm dữ liệu demo:
 
 ```bash
-git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd Bamboo
+git clone https://github.com/ThanhNLT/CTU_Bamboo.git && cd CTU_Bamboo
 make up                # http://localhost:8000, tài khoản demo trong README
 ```
 
