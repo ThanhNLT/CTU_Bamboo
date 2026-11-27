@@ -27,7 +27,7 @@
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+             targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">
   <process id="personnelDecision" name="Ban hành quyết định nhân sự" isExecutable="true">
     <documentation>Bổ nhiệm, điều chuyển, miễn nhiệm (QĐ-năm-số): có hiệu lực theo ngày chọn, bất biến, ghi nhật ký kiểm toán.</documentation>
     <startEvent id="start" name="Soạn quyết định nhân sự"/>

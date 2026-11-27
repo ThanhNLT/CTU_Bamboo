@@ -27,7 +27,7 @@
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+             targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">
   <process id="transferApproval" name="Điều chuyển nhân sự nội bộ" isExecutable="true">
     <documentation>Chuỗi duyệt điều chuyển nội bộ (DC-…): trưởng đơn vị tiếp nhận rồi trưởng phòng nhân sự của công ty chung gần nhất; ngày chuyển cách ngày gửi ít nhất 14 ngày.</documentation>
     <startEvent id="start" name="Gửi đề nghị điều chuyển"/>
