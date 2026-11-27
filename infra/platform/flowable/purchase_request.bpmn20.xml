@@ -26,7 +26,7 @@
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+             targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">
   <process id="purchaseRequestApproval" name="Duyệt đề nghị mua sắm" isExecutable="true">
     <startEvent id="submitted" name="Gửi duyệt"/>
     <sequenceFlow id="toApprove" sourceRef="submitted" targetRef="approveStep"/>

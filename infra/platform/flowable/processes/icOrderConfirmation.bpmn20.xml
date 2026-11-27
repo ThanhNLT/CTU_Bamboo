@@ -27,7 +27,7 @@
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-             targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+             targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">
   <process id="icOrderConfirmation" name="Xác nhận đơn hàng nội bộ" isExecutable="true">
     <documentation>Đơn mua nội bộ (IC-…) tự sinh khi đề nghị mua từ nhà cung cấp nội bộ được duyệt; bên bán xác nhận kèm lô xuất hoặc từ chối, người đặt hủy được khi còn chờ.</documentation>
     <startEvent id="start" name="Đơn hàng nội bộ được sinh"/>
