@@ -34,6 +34,7 @@ import argparse
 import difflib
 import pathlib
 import re
+import shlex
 import sys
 
 import yaml
@@ -133,7 +134,8 @@ def _labels(name: str) -> dict:
 def _command(value, refs) -> list[str] | None:
     if value is None:
         return None
-    items = value if isinstance(value, list) else ["sh", "-c", value]
+    # Chuỗi trong compose được tách như shell (shlex), không chạy qua shell: image tự có entrypoint nhận các đối số này.
+    items = value if isinstance(value, list) else shlex.split(value)
     return [k8s_expand(str(x), refs) for x in items]
 
 
