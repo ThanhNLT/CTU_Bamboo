@@ -84,7 +84,10 @@ export const DocumentList = ({
                   className={cn(
                     "flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
                     "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-bamboo-500",
-                    selected ? "border-bamboo-200 bg-bamboo-50" : "border-transparent hover:bg-canvas",
+                    // Tinted with bamboo-500 so hover/selection stay visible on the dark surface too.
+                    selected
+                      ? "border-bamboo-500/70 bg-bamboo-500/15 shadow-[inset_3px_0_0_var(--color-bamboo-500)]"
+                      : "border-transparent hover:border-line hover:bg-bamboo-500/[0.07]",
                   )}
                 >
                   <span className="min-w-0 flex-1">

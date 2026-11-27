@@ -60,7 +60,6 @@ const RULES: Record<string, Partial<Record<string, string | string[]>>> = {
   admin_ops: { list: "audit.read" },
   admin_catalog: { list: ["core.org.manage", "mdm.manage"] },
   proc_purchase_request: { create: "proc.purchase_request.create" },
-  hr_transfer_request: { list: ["hr.transfer.read", "hr.transfer.create"] },
   hr_onboarding_request: { list: "hr.onboarding.read", create: "hr.onboarding.create" },
 };
 

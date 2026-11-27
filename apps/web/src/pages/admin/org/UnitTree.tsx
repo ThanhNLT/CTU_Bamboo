@@ -20,7 +20,7 @@
  */
 
 import { Checkbox, ConfigProvider, Tree } from "antd";
-import { Building2, Folder } from "lucide-react";
+import { Building2, ChevronRight, Folder } from "lucide-react";
 import { useMemo, useState, type Key, type ReactNode } from "react";
 
 import { SearchInput } from "../../../components/ui";
@@ -116,9 +116,18 @@ export const UnitTree = ({
             components: { Tree: { nodeSelectedBg: "var(--color-bamboo-100)", nodeHoverBg: "var(--color-bamboo-50)" } },
           }}
         >
+          {/* Indent guides come from .org-tree in tailwind.css: one line per level, centred under the
+              parent's chevron, so every level lines up (antd's showLine draws them one column off). */}
           <Tree
+            className="org-tree"
             blockNode
-            showLine={{ showLeafIcon: false }}
+            switcherIcon={({ expanded }) => (
+              <ChevronRight
+                className={cn("h-3.5 w-3.5 text-muted transition-transform", expanded && "rotate-90")}
+                strokeWidth={2}
+                aria-hidden
+              />
+            )}
             treeData={tree}
             selectedKeys={selectedId ? [selectedId] : []}
             expandedKeys={expanded ?? defaultExpanded}

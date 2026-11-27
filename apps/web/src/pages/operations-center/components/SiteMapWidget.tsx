@@ -21,6 +21,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { Maximize2, Minus, Plus } from "lucide-react";
 
 import { cn } from "../../../utils/cn";
 import type { OpsSite } from "../api";
@@ -37,6 +38,21 @@ const HEIGHT = 280;
 const PAD = 26;
 
 type Box = { x: number; y: number; w: number; h: number };
+/** Zoom level and top-left offset as fractions of the fitted box. */
+type Zoom = { k: number; ox: number; oy: number };
+
+const MAX_ZOOM = 8;
+const NO_ZOOM: Zoom = { k: 1, ox: 0, oy: 0 };
+const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+
+/** Zoom by `factor` keeping the point at fraction (fx, fy) of the viewport fixed. */
+const zoomAt = (z: Zoom, factor: number, fx: number, fy: number): Zoom => {
+  const k = clamp(z.k * factor, 1, MAX_ZOOM);
+  if (k === 1) return NO_ZOOM;
+  const mx = z.ox + fx / z.k;
+  const my = z.oy + fy / z.k;
+  return { k, ox: clamp(mx - fx / k, 0, 1 - 1 / k), oy: clamp(my - fy / k, 0, 1 - 1 / k) };
+};
 
 const ISLANDS = ARCHIPELAGOS.map((a) => ({ ...a, ...project(a.lat, a.lng) }));
 const ISLAND_BOUNDS = ISLANDS.flatMap((p) => [
@@ -112,17 +128,36 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
   const [width, setWidth] = useState(600);
   const [whole, setWhole] = useState(false);
   const [selectedId, setSelectedId] = useState<string>();
+  const [zoom, setZoom] = useState<Zoom>(NO_ZOOM);
+  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     const el = boxRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width || 600));
     ro.observe(el);
-    return () => ro.disconnect();
+    // Non-passive so the page does not scroll while zooming the map.
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const factor = Math.exp(-e.deltaY * 0.0015);
+      setZoom((z) => zoomAt(z, factor, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("wheel", onWheel);
+    };
   }, []);
 
   const points = useMemo(() => sites.map((s) => ({ site: s, ...project(s.lat, s.lng) })), [sites]);
-  const box = fitBox(points, width / HEIGHT, whole);
+  const fit = fitBox(points, width / HEIGHT, whole);
+  const box: Box = {
+    x: fit.x + zoom.ox * fit.w,
+    y: fit.y + zoom.oy * fit.h,
+    w: fit.w / zoom.k,
+    h: fit.h / zoom.k,
+  };
   const pct = (x: number, y: number) => ({ left: ((x - box.x) / box.w) * 100, top: ((y - box.y) / box.h) * 100 });
   const selected =
     selectedId === undefined
@@ -133,7 +168,13 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
     <ChartWidget
       title={tr("Cơ sở và cảnh báo")}
       meta={
-        <ChipButton pressed={whole} onClick={() => setWhole((w) => !w)}>
+        <ChipButton
+          pressed={whole}
+          onClick={() => {
+            setWhole((w) => !w);
+            setZoom(NO_ZOOM);
+          }}
+        >
           {tr("Toàn quốc")}
         </ChipButton>
       }
@@ -163,9 +204,34 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div
           ref={boxRef}
-          className="relative min-w-0 flex-1 overflow-hidden rounded-xl border border-line/70 bg-[#eef4f7]"
+          className={cn(
+            "relative min-w-0 flex-1 touch-none select-none overflow-hidden rounded-xl border border-line/70 bg-[#eef4f7]",
+            zoom.k > 1 && "cursor-grab active:cursor-grabbing",
+          )}
           style={{ height: HEIGHT }}
-          onClick={(e) => e.target === e.currentTarget && setSelectedId("")}
+          onPointerDown={(e) => {
+            if (e.button !== 0 || zoom.k === 1) return;
+            drag.current = { x: e.clientX, y: e.clientY, moved: false };
+          }}
+          onPointerMove={(e) => {
+            const d = drag.current;
+            if (!d) return;
+            const dx = e.clientX - d.x;
+            const dy = e.clientY - d.y;
+            if (!d.moved && Math.hypot(dx, dy) < 3) return;
+            if (!d.moved) e.currentTarget.setPointerCapture(e.pointerId);
+            drag.current = { x: e.clientX, y: e.clientY, moved: true };
+            setZoom((z) => ({
+              ...z,
+              ox: clamp(z.ox - dx / width / z.k, 0, 1 - 1 / z.k),
+              oy: clamp(z.oy - dy / HEIGHT / z.k, 0, 1 - 1 / z.k),
+            }));
+          }}
+          onPointerUp={() => {
+            // Keep the drag flag until the click that follows, so a pan never deselects.
+            setTimeout(() => (drag.current = null));
+          }}
+          onClick={(e) => !drag.current?.moved && e.target === e.currentTarget && setSelectedId("")}
         >
           <svg
             className="pointer-events-none absolute inset-0 h-full w-full"
@@ -184,6 +250,7 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
           </svg>
           {ISLANDS.map((p) => {
             const at = pct(p.x, p.y);
+            if (at.left < 0 || at.left > 100 || at.top < 0 || at.top > 100) return null;
             const half = p.name.length * 3 + 6;
             const left = Math.min(Math.max((at.left / 100) * width, half), width - half);
             return (
@@ -205,6 +272,27 @@ export const SiteMapWidget = ({ sites, loading }: { sites: OpsSite[]; loading?: 
               onSelect={() => setSelectedId(site.id === selected?.id ? "" : site.id)}
             />
           ))}
+          <div className="absolute right-2 top-2 flex flex-col overflow-hidden rounded-lg border border-line/70 bg-surface/90 shadow-card">
+            {(
+              [
+                [tr("Phóng to"), Plus, () => setZoom((z) => zoomAt(z, 1.5, 0.5, 0.5)), zoom.k >= MAX_ZOOM],
+                [tr("Thu nhỏ"), Minus, () => setZoom((z) => zoomAt(z, 1 / 1.5, 0.5, 0.5)), zoom.k === 1],
+                [tr("Về khung ban đầu"), Maximize2, () => setZoom(NO_ZOOM), zoom.k === 1],
+              ] as const
+            ).map(([label, Icon, onClick, disabled]) => (
+              <button
+                key={label}
+                type="button"
+                title={label}
+                aria-label={label}
+                disabled={disabled}
+                onClick={onClick}
+                className="grid h-7 w-7 place-items-center text-ink transition-colors hover:bg-canvas disabled:opacity-40 disabled:hover:bg-transparent"
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            ))}
+          </div>
           {!loading && sites.length === 0 && (
             <p className="absolute inset-0 grid place-items-center px-6 text-center text-[12.5px] text-muted">
               {tr("Chưa có đơn vị nào có tọa độ. Quản trị nhập tỉnh và tọa độ cơ sở ở Cơ cấu tổ chức.")}

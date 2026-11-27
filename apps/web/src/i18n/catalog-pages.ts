@@ -1255,6 +1255,8 @@ export const EN_PAGES: Record<string, string> = {
   "Máy chủ trả lỗi {0}": "Server returned error {0}",
   Mã: "Code",
   "Mã biểu mẫu": "Form code",
+  "Ngày chuyển sớm nhất là {0}": "The earliest transfer date is {0}",
+  "Chọn ngày chuyển": "Pick a transfer date",
   "Mã băm của tệp ": "Hash of file ",
   "Mã băm đầu chuỗi": "Chain head hash",
   "Mã công ty": "Company code",
@@ -1620,8 +1622,8 @@ export const EN_PAGES: Record<string, string> = {
   "Phả hệ của ": "Lineage of ",
   "Phả hệ của {0}": "Lineage of {0}",
   "Phả hệ mức cột": "Column-level lineage",
-  "Phải cách hôm nay ít nhất {0} ngày để chuẩn bị hồ sơ và bàn giao công việc.":
-    "Must be at least {0} days from today to prepare records and hand over work.",
+  "Phải cách hôm nay ít nhất {0} ngày để chuẩn bị hồ sơ và bàn giao công việc — chọn được từ ngày {1}.":
+    "Must be at least {0} days from today to prepare records and hand over work — earliest date is {1}.",
   "Phải ghi lý do": "A reason is required",
   "Phải ghi lý do hủy": "A cancellation reason is required",
   "Phần lõi — luôn bật": "Core — always on",
@@ -1779,6 +1781,7 @@ export const EN_PAGES: Record<string, string> = {
   "Thu hồi": "Revoke",
   "Thu hồi vai trò?": "Revoke role?",
   "Thu nhỏ": "Zoom out",
+  "Về khung ban đầu": "Reset view",
   "Thuộc tính": "Properties",
   "Thuộc đơn vị": "Belongs to unit",
   "Thuộc: ": "Belongs to: ",

@@ -695,3 +695,29 @@
   border-start-end-radius: 10px;
   border-end-end-radius: 10px;
 }
+
+/* Org-unit tree (admin/org): a guide line per indent level, centred under the ancestor's chevron. */
+.org-tree .ant-tree-indent {
+  display: flex;
+  align-self: stretch;
+}
+.org-tree .ant-tree-indent-unit {
+  position: relative;
+}
+.org-tree .ant-tree-indent-unit::before {
+  content: "";
+  position: absolute;
+  /* Nodes sit 4px apart: extend down through the gap so the guide is continuous. */
+  top: 0;
+  bottom: -4px;
+  inset-inline-start: 50%;
+  border-inline-start: 1px solid color-mix(in srgb, var(--color-muted) 40%, transparent);
+}
+.org-tree .ant-tree-switcher,
+.org-tree .ant-tree-node-content-wrapper {
+  display: flex;
+  align-items: center;
+}
+.org-tree .ant-tree-switcher {
+  justify-content: center;
+}

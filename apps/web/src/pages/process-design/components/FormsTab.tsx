@@ -49,19 +49,28 @@ export const FormsTab = ({
   const patch = (i: number, f: Partial<FormDef>) => onChange(forms.map((x, n) => (n === i ? { ...x, ...f } : x)));
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
         {forms.map((f, i) => (
-          <section key={i} className="rounded-2xl border border-line bg-surface p-4 shadow-card" aria-label={f.name}>
-            <div className="flex gap-2">
+          <section
+            key={i}
+            className="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card"
+            aria-label={f.name}
+          >
+            <div className="flex flex-wrap gap-2">
               <Input
                 aria-label={tr("Tên biểu mẫu")}
+                placeholder={tr("Tên biểu mẫu")}
+                title={f.name}
+                className="min-w-[200px] flex-[2_1_220px]"
                 value={f.name}
                 disabled={readOnly}
                 onChange={(e) => patch(i, { name: e.target.value })}
               />
               <Input
                 aria-label={tr("Mã biểu mẫu")}
-                className="w-[160px] font-mono"
+                placeholder={tr("Mã biểu mẫu")}
+                title={f.key}
+                className="min-w-[160px] flex-[1_1_180px] font-mono"
                 value={f.key}
                 disabled={readOnly}
                 onChange={(e) => patch(i, { key: e.target.value.replace(/[^A-Za-z0-9_-]/g, "") })}
@@ -77,12 +86,14 @@ export const FormsTab = ({
             <p className="m-0 mt-1 text-[11.5px] text-muted">
               {usedBy[f.key]?.length ? trf("Dùng ở: {0}", [usedBy[f.key].join(", ")]) : tr("Chưa gắn vào tác vụ nào")}
             </p>
-            <ul className="m-0 mt-3 list-none flex flex-col gap-1.5 p-0">
+            <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
               {f.fields.map((fd, j) => (
-                <li key={j} className="flex items-center gap-2">
+                <li key={j} className="flex flex-wrap items-center gap-2 rounded-xl border border-line/70 p-2">
                   <Input
                     aria-label={tr("Nhãn trường")}
-                    size="small"
+                    placeholder={tr("Nhãn trường")}
+                    title={fd.label}
+                    className="min-w-[180px] flex-[1_1_220px]"
                     value={fd.label}
                     disabled={readOnly}
                     onChange={(e) =>
@@ -91,14 +102,14 @@ export const FormsTab = ({
                   />
                   <Select
                     aria-label={tr("Kiểu trường")}
-                    size="small"
-                    className="w-[150px] shrink-0"
+                    className="w-[170px] shrink-0"
                     value={fd.type}
                     disabled={readOnly}
                     options={FIELD_TYPES.map((t) => ({ value: t, label: t }))}
                     onChange={(v) => patch(i, { fields: f.fields.map((x, n) => (n === j ? { ...x, type: v } : x)) })}
                   />
                   <Checkbox
+                    className="whitespace-nowrap"
                     checked={fd.required}
                     disabled={readOnly}
                     onChange={(e) =>
@@ -111,10 +122,10 @@ export const FormsTab = ({
                     <button
                       type="button"
                       aria-label={tr("Xóa trường")}
-                      className="text-muted hover:text-red-600"
+                      className="ml-auto grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-canvas hover:text-red-600"
                       onClick={() => patch(i, { fields: f.fields.filter((_, n) => n !== j) })}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                 </li>
