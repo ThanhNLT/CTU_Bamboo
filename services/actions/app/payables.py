@@ -76,9 +76,7 @@ def post_goods_receipt(conn: psycopg.Connection, session: dict, args: dict, _ctx
     for line in lines:
         if not isinstance(line, dict) or not line.get("request_item_id"):
             raise ActionError("Dòng nhận hàng thiếu mã dòng đề nghị", "bad-request")
-        clean.append(
-            {"request_item_id": line["request_item_id"], "quantity": str(_amount(line.get("quantity")))}
-        )
+        clean.append({"request_item_id": line["request_item_id"], "quantity": str(_amount(line.get("quantity")))})
     receipt = conn.execute(
         "SELECT proc.post_goods_receipt(%s, %s, %s::jsonb, %s)",
         (args["request_id"], person, json.dumps(clean), args.get("note")),
