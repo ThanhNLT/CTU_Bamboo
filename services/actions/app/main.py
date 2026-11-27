@@ -306,18 +306,29 @@ class PathCORS:
         return await self.app(scope, receive, send)
 
 
-def _org_signer(settings: config.Settings) -> "org_sign.OrgSigner | None":
-    """Bộ ký số văn bản bằng chứng thư tổ chức (ORG_SIGN_*); cấu hình sai thì ghi lỗi và chạy tiếp không ký."""
+def _org_signer(settings: config.Settings) -> "org_sign.SignerRegistry | None":
+    """Bộ ký số văn bản bằng chứng thư tổ chức (ORG_SIGN_*), kèm bộ ký riêng của từng pháp nhân (ORG_SIGN_ENTITIES);
+    cấu hình sai thì ghi lỗi và chạy tiếp không ký."""
+    entities_raw = settings.org_sign_entities
     try:
-        cfg = org_sign.Config.from_env(settings.org_sign_pin, settings.org_sign_csc_client_secret)
+        cfg = org_sign.Config.from_env(
+            settings.org_sign_pin, settings.org_sign_csc_client_secret, partial=bool(entities_raw.strip())
+        )
+        if cfg is None:
+            return None
+        entities = org_sign.entity_configs(cfg, entities_raw)
     except org_sign.OrgSignError as exc:
         log.error("%s: văn bản PDF sẽ không được ký số", exc)
         return None
-    if cfg is None:
-        return None
-    signer = org_sign.OrgSigner(cfg)
-    log.info("ký số văn bản bằng chứng thư tổ chức qua %s", cfg.provider)
-    return signer
+    registry = org_sign.SignerRegistry(
+        org_sign.OrgSigner(cfg) if cfg.complete else None,
+        {tax: org_sign.OrgSigner(c) for tax, c in entities.items()},
+    )
+    log.info(
+        "ký số văn bản bằng chứng thư tổ chức qua %s%s", cfg.provider,
+        f", {len(entities)} pháp nhân có chứng thư riêng" if entities else "",
+    )  # fmt: skip
+    return registry
 
 
 def create_app(

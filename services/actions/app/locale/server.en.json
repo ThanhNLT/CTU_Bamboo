@@ -526,7 +526,6 @@
   "Loại chứng từ này chưa hỗ trợ trả lại để bổ sung": "This document type does not support returning for more information yet",
   "Loại chứng từ chưa hỗ trợ duyệt: {0}": "This document type does not support approval yet: {0}",
   "Loại chứng từ không nhận tệp đính kèm: {0}": "This document type does not accept attachments: {0}",
-  "Loại chứng từ này chưa hỗ trợ trả lại để bổ sung": "This document type does not support returning for more information yet",
   "Loại kết quả không hợp lệ: {0}": "Invalid result type: {0}",
   "Loại lịch không hợp lệ": "Invalid event type",
   "Loại quyết định không hợp lệ: {0}": "Invalid decision type: {0}",
@@ -1412,5 +1411,10 @@
   "“{0}” không có luồng vào": "“{0}” has no incoming flow",
   "“{0}” không đi tới được từ điểm bắt đầu": "“{0}” cannot be reached from the start",
   "“{0}” phải là hẹn giờ": "“{0}” must be a timer",
-  "📎 Tệp đính kèm": "📎 Attachment"
+  "📎 Tệp đính kèm": "📎 Attachment",
+  "Cấu hình ký số của pháp nhân {0} không hợp lệ": "The signing settings of legal entity {0} are invalid",
+  "Cấu hình ký số của pháp nhân {0} thiếu {1}": "The signing settings of legal entity {0} are missing {1}",
+  "ORG_SIGN_ENTITIES không phải JSON hợp lệ: {0}": "ORG_SIGN_ENTITIES is not valid JSON: {0}",
+  "ORG_SIGN_ENTITIES phải là đối tượng {mã số thuế: cấu hình}": "ORG_SIGN_ENTITIES must be an object {tax code: settings}",
+  "Trường không hỗ trợ trong cấu hình ký số của {0}: {1}": "Unsupported fields in the signing settings of {0}: {1}"
 }

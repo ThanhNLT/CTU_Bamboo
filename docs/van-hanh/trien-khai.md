@@ -315,6 +315,19 @@ khi có cấu hình; không cấu hình thì in như cũ. Chỉ văn bản của
     bao kv put -address=http://127.0.0.1:8200 secret/bms/org-sign pin=... csc_client_secret=...
   ```
 
+- **Nhiều pháp nhân:** một cài đặt có nhiều công ty khác mã số thuế thì mỗi công ty dùng chứng thư riêng. Phần dùng chung
+  (`ORG_SIGN_PROVIDER`, `ORG_SIGN_PKCS11_LIB` hoặc `ORG_SIGN_CSC_URL`, `ORG_SIGN_CSC_TOKEN_URL`) đặt như trên; phần riêng
+  ghi theo mã số thuế trong khóa `entities` của `secret/bms/org-sign` (hoặc `ORG_SIGN_ENTITIES` khi không có PIN), trường
+  `pkcs11_token`, `pkcs11_key`, `pkcs11_cert`, `pin`, `csc_credential`, `csc_client_id`, `csc_client_secret`, `csc_token`,
+  `location`. Công ty không có mục riêng dùng bộ ký chung nếu có (`ORG_SIGN_PKCS11_KEY` hoặc `ORG_SIGN_CSC_CREDENTIAL`):
+
+  ```bash
+  docker compose exec -e BAO_TOKEN=<root token> openbao bao kv put -address=http://127.0.0.1:8200 secret/bms/org-sign \
+    entities='{"0101234567": {"pkcs11_token": "cty-a", "pkcs11_key": "seal", "pin": "..."},
+               "0107654321": {"pkcs11_token": "cty-b", "pkcs11_key": "seal", "pin": "..."}}'
+  ```
+
+  Chứng thư của mỗi mục vẫn phải mang đúng mã số thuế của công ty đó, nếu không văn bản không được ký.
 - **Dấu thời gian:** `ORG_SIGN_TSA_URL` (máy chủ TSA của CA) gắn dấu thời gian RFC 3161, chữ ký kiểm được cả khi chứng thư
   đã hết hạn.
 
