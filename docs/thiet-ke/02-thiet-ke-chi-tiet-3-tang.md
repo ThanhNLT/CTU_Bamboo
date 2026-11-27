@@ -183,10 +183,12 @@ khai trong `App.tsx`, menu trong `nav.ts`, chuỗi giao diện trong `src/i18n/`
 | | `/settings/notifications` Kênh nhận thông báo | `messaging` | lõi |
 | [P] Quy trình số | `/p/documents` **Đề nghị mua sắm** (ứng dụng chính) | `purchase-requests` | `procurement` |
 | | `/p/ic-orders` Đơn hàng nội bộ | `ic-orders` | `ic` |
+| | `/p/payables` Nhận hàng & công nợ: phiếu nhận hàng, hóa đơn, thanh toán, đối trừ nội bộ | `payables` | `procurement` |
 | | `/p/records` Hồ sơ | `records` | `approval` |
 | | `/p/process` Thiết kế quy trình, quy trình tự động | `process-design`, `process` | `process` |
 | | `/p/projects` Dự án và kế hoạch | `projects` | `project` |
 | | `/admin/*` Tổ chức, người dùng, vai trò, danh mục, mô-đun, công ty | `admin` | lõi |
+| | `/admin/approval-rules` Hạn mức duyệt | `approval-rules` | lõi |
 | [D] Dữ liệu số | `/d/ops`, `/d/map` Trung tâm điều hành | `operations-center` | lõi |
 | | `/d/services` Dịch vụ dữ liệu | `data-services` | `data` |
 | | `/d/twin` Bản sao số | `digital-twin` | lõi |
@@ -212,6 +214,7 @@ khai trong `App.tsx`, menu trong `nav.ts`, chuỗi giao diện trong `src/i18n/`
 | Gửi duyệt | Nút "Lưu và gửi duyệt" | Chuỗi duyệt tính theo hạn mức và cây tổ chức; Flowable khởi chạy quy trình |
 | Duyệt | Hộp việc: duyệt, trả lại có ý kiến, từ chối | Việc duyệt, lịch sử, nhật ký kiểm toán, thông báo |
 | Phát hành | In phiếu PDF có mã kiểm tra, ký số tổ chức nếu có | Gotenberg, ký PAdES |
+| Nhận hàng, hóa đơn | Nhận hàng & công nợ: phiếu nhận theo dòng, hóa đơn đối chiếu ba bên, thanh toán, đối trừ nội bộ | `proc.goods_receipt`, `fin.invoice`, `fin.payment`, `fin.netting` |
 | Theo dõi | Hồ sơ, Trung tâm điều hành, Phân tích BI | CDC → Lakehouse → lớp ngữ nghĩa |
 
 ### 3.4. Mở rộng Tầng 2

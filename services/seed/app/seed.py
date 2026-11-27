@@ -463,11 +463,20 @@ class Seeder:
         tid = self.tenant_id(tenant)
         roles = {
             "NHAN_VIEN": ("Nhân viên", ["proc.purchase_request.create", "proc.purchase_request.read"]),
-            "QUAN_LY": ("Quản lý", ["proc.purchase_request.read", "wf.approval.act"]),
-            "KIEM_SOAT": ("Kiểm soát tài chính", ["proc.purchase_request.read", "audit.read"]),
+            "QUAN_LY": ("Quản lý", ["proc.purchase_request.read", "wf.approval.act", "proc.goods_receipt.create"]),
+            "KIEM_SOAT": (
+                "Kiểm soát tài chính",
+                ["proc.purchase_request.read", "audit.read", "fin.payable.read", "fin.payable.manage"],
+            ),
             "QUAN_TRI_TO_CHUC": (
                 "Quản trị tổ chức",
-                ["core.org.manage", "core.permission.manage", "core.module.manage", "core.ai.manage"],
+                [
+                    "core.org.manage",
+                    "core.permission.manage",
+                    "core.module.manage",
+                    "core.ai.manage",
+                    "wf.approval_rule.manage",
+                ],
             ),
         }
         for code, (name, perms) in roles.items():

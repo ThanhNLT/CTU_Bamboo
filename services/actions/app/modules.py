@@ -129,7 +129,7 @@ CATALOG: tuple[Module, ...] = (
         "approval",
         "Phê duyệt",
         "Chuỗi duyệt theo hạn mức, hộp việc, ủy quyền duyệt; nền cho các loại chứng từ cần duyệt",
-        actions=frozenset({"act_on_task"}),
+        actions=frozenset({"act_on_task", "approval_rules", "save_approval_rules"}),
         open_work=(
             OpenWork(
                 "việc duyệt đang mở",
@@ -140,7 +140,8 @@ CATALOG: tuple[Module, ...] = (
     Module(
         "procurement",
         "Mua sắm",
-        "Đề nghị mua sắm, nhà cung cấp đề xuất, phiếu in; quy trình duyệt chạy trên Flowable",
+        "Đề nghị mua sắm, nhà cung cấp đề xuất, phiếu in, nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; "
+        "quy trình duyệt chạy trên Flowable",
         depends=("approval",),
         services=("flowable",),
         actions=frozenset(
@@ -151,6 +152,12 @@ CATALOG: tuple[Module, ...] = (
                 "get_purchase_request_pdf",
                 "proposed_partners",
                 "adopt_proposed_partner",
+                "post_goods_receipt",
+                "record_invoice",
+                "void_invoice",
+                "record_payment",
+                "netting_overview",
+                "run_netting",
             }
         ),
         open_work=(_pending("proc.purchase_request", "đề nghị mua sắm chờ duyệt hoặc bị trả về"),),

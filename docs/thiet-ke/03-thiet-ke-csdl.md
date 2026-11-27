@@ -57,7 +57,8 @@ database, cách ly logic như mọi tenant khác (xem [ADR #15](#adr-15)).
 | `core` | 001, 002, 006, 009, 015, 021, 024, 025, 027, 039 | Tenant và quan hệ tenant, danh mục, đơn vị, vị trí, người, bổ nhiệm, quyền, vai trò, nhóm, ủy quyền, số chứng từ, tệp đính kèm và OCR, tác tử AI, lượt hỏi, công việc nạp lô |
 | `mdm` | 006, 018 | Nhà cung cấp (kể cả nhà cung cấp nội bộ), vật tư |
 | `wf` | 004, 005, 019, 032, 033, 040 | Quy tắc hạn mức, chuỗi duyệt, việc duyệt, lịch sử duyệt, đồng bộ Flowable, thiết kế quy trình, yêu cầu sửa quy trình, quy trình tự động và lần chạy, sự kiện nghiệp vụ |
-| `proc` | 003, 006, 014, 018 | Đề nghị mua sắm và dòng hàng, đơn mua |
+| `proc` | 003, 006, 014, 018, 067 | Đề nghị mua sắm và dòng hàng, đơn mua, phiếu nhận hàng |
+| `fin` | 067 | Hóa đơn nhà cung cấp, thanh toán, đối trừ công nợ nội bộ ([ADR #96](#adr-96)) |
 | `ic` | 003, 014 | Đơn hàng nội bộ và dòng hàng |
 | `mfg` | 014 | Lô sản xuất |
 | `hr` | 013, 029, 030 | Tiếp nhận nhân sự, nhật ký xem dữ liệu nhạy cảm, điều chuyển nội bộ và liên tập đoàn, quyết định nhân sự |
@@ -119,6 +120,7 @@ database, cách ly logic như mọi tenant khác (xem [ADR #15](#adr-15)).
 | `062_buoc_ai_quy_trinh` | `core.ai_agent_run.automation_run_id`, `element_id`: lần chạy tác tử của bước AI gắn với lần chạy quy trình tự động ([ADR #84](#adr-84)) |
 | `063_de_xuat_ai` | Mức tự chủ `suggest`, hành động `return_for_info`, `project_task` (chỉ ở mức này), `core.ai_agent.project_id`; `core.ai_suggestion` (đề xuất chờ người nhận chấp nhận, hết hạn qua `core.ai_suggestion_expire` trong `wf.refresh_all`) ([ADR #85](#adr-85)) |
 | `064_han_muc_tai_khoan` | `core.tenant.user_storage_quota_bytes` (mặc định 5 GB), `core.storage_used_by`: hạn mức dung lượng cho mỗi tài khoản theo tệp do người đó tải lên ([ADR #88](#adr-88)) |
+| `067_cong_no_phai_tra` | `proc.goods_receipt` (+ dòng), `fin.invoice`, `fin.payment`, `fin.netting`; `proc.post_goods_receipt`, `fin.record_invoice`, `fin.record_payment`, `fin.void_invoice`, `fin.run_netting`, `wf.replace_approval_rules`; quyền `proc.goods_receipt.create`, `fin.payable.read`, `fin.payable.manage`, `wf.approval_rule.manage` ([ADR #96](#adr-96)) |
 
 Quy ước số chứng từ (`core.next_doc_no(tenant, tiền tố)`, theo tenant, tiền tố và năm giờ Việt Nam, không nhảy số):
 `PR` đề nghị mua sắm, `IC` đơn hàng nội bộ, `PO` đơn mua, `TN` tiếp nhận nhân sự, `NV` mã nhân viên, `DC` điều chuyển nội
