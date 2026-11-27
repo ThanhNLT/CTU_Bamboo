@@ -1,0 +1,13 @@
+{
+  "code": "x_kho_hang",
+  "name": "Kho hàng",
+  "description": "Ứng dụng ngành mẫu (WMS): nhập kho từ phiếu nhận hàng, xuất kho, cảnh báo tồn thấp",
+  "vendor": "DX-OS Open-Core",
+  "version": "1.0.0",
+  "base_url": "http://kho-hang:8080",
+  "entry_path": "/",
+  "health_path": "/healthz",
+  "depends": ["procurement"],
+  "scopes": ["org.read", "people.read", "notify.send", "items.read", "receipts.read"],
+  "menu": [{ "label": "Kho hàng", "path": "/" }]
+}

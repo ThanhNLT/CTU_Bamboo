@@ -1,0 +1,12 @@
+{
+  "code": "x_khach_hang",
+  "name": "Khách hàng",
+  "description": "Ứng dụng ngành mẫu (CRM): khách hàng, cơ hội bán hàng theo giai đoạn, báo người phụ trách",
+  "vendor": "DX-OS Open-Core",
+  "version": "1.0.0",
+  "base_url": "http://khach-hang:8080",
+  "entry_path": "/",
+  "health_path": "/healthz",
+  "scopes": ["people.read", "notify.send"],
+  "menu": [{ "label": "Khách hàng", "path": "/" }]
+}

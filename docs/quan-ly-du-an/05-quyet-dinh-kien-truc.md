@@ -1099,6 +1099,23 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
 - **Giới hạn hiện tại:** Hóa đơn gắn một đề nghị; chưa có thuế GTGT tách dòng, trả trước, ghi nợ/ghi có; đối trừ chỉ giữa
   hai pháp nhân trong cùng tenant; giao diện sửa quy tắc mặc định của tenant (chưa sửa quy tắc theo đơn vị, nhóm hàng).
 
+(adr-97)=
+## ADR #97: Ứng dụng ngành mẫu Kho hàng và Khách hàng cắm vào Tầng 3 qua mô-đun ngoài; thêm phạm vi đọc đối tác, vật tư, phiếu nhận hàng
+
+- **Ngày:** 27/11/2026
+- **Quyết định:** Hai ứng dụng ngành mẫu là mô-đun ngoài (ADR #58), mỗi ứng dụng một dịch vụ HTTP chỉ dùng thư viện chuẩn
+  Python với dữ liệu riêng trong SQLite: `examples/kho-hang` (WMS rút gọn: nhập kho từ phiếu nhận hàng của Bamboo, xuất
+  kho, cảnh báo tồn thấp) và `examples/khach-hang` (CRM rút gọn: khách hàng, cơ hội theo giai đoạn). `/ext-api/v1` thêm
+  `GET /partners` (`partners.read`), `GET /items` (`items.read`), `GET /goods-receipts` (`receipts.read`); migration 068
+  mở ràng buộc phạm vi của `core.external_module`.
+- **Lý do:** Cho thấy Tầng 3 dùng lại dịch vụ Tầng 1 (định danh, công ty, nhân sự, thông báo, nhận hàng) mà không đọc
+  thẳng CSDL, không tài khoản S3 hay Flowable, chỉ qua phạm vi đã khai và yêu cầu ký HMAC; phần riêng của ngành (tồn kho,
+  cơ hội bán hàng) nằm trong ứng dụng. Phạm vi mới chỉ đọc, chỉ dữ liệu của công ty đã bật mô-đun.
+- **Đã loại:** Viết OMS, WMS, MES, EMR, CRM đầy đủ trong mã của Bamboo (đi ngược nguyên tắc Tầng 1 trung lập ngành); cho
+  mô-đun ngoài ghi chứng từ mua sắm (cần chuỗi duyệt, để ứng dụng độc lập dùng `/graphql` theo quyền người dùng).
+- **Giới hạn hiện tại:** Ứng dụng mẫu chưa có xác thực ngoài chữ ký Bamboo khi chạy độc lập, chưa có MES/SCADA, EMR, OMS;
+  kho hàng chưa có vị trí trong kho, lô, kiểm kê.
+
 (adr-mau)=
 ## Mẫu cho quyết định mới
 

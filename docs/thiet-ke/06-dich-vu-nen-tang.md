@@ -807,8 +807,27 @@ Mô-đun **phải** kiểm chữ ký và độ lệch thời gian (ví dụ dùn
 | `GET /ext-api/v1/org-units` | `org.read` | `[{id, code, name, parent_id, type}]` đơn vị còn hiệu lực |
 | `GET /ext-api/v1/people?q=` | `people.read` | `[{id, full_name, employee_code, position, org_unit_id}]`, tối đa 500 |
 | `POST /ext-api/v1/notifications` `{person_id, title, body?}` | `notify.send` | `{ok: true}`; thông báo loại `EXTERNAL`, tiêu đề có tiền tố `[tên mô-đun]` |
+| `GET /ext-api/v1/partners` | `partners.read` | `[{id, code, name, tax_code, internal}]` đối tác còn dùng |
+| `GET /ext-api/v1/items` | `items.read` | `[{id, code, name, uom, category, ref_price}]` vật tư còn dùng |
+| `GET /ext-api/v1/goods-receipts?since=` | `receipts.read` | `[{id, doc_no, received_at, request_doc_no, org_unit_id, org_unit, lines: [{item_code, description, uom, quantity, unit_price}]}]`, mới nhất trước, tối đa 500; `since` là thời điểm ISO 8601 |
 
 Lỗi trả `{message, code}`: `unauthorized` (401, sai khóa), `module-disabled` (403), `forbidden` (403, thiếu phạm vi), `not-found` (404).
+
+**Ứng dụng ngành mẫu** ([ADR #97](#adr-97)), cùng cách viết với `examples/mo-dun-mau`, dữ liệu riêng trong SQLite của ứng
+dụng (volume `/data`):
+
+| Thư mục | Mã | Việc | Phạm vi |
+|---|---|---|---|
+| `examples/kho-hang` | `x_kho_hang` | Kho hàng (WMS rút gọn): nhập kho từ phiếu nhận hàng của Bamboo (mỗi phiếu một lần), xuất kho không quá tồn, báo người phụ trách khi tồn dưới `MIN_STOCK` | `org.read`, `people.read`, `notify.send`, `items.read`, `receipts.read` |
+| `examples/khach-hang` | `x_khach_hang` | Khách hàng (CRM rút gọn): khách hàng, cơ hội bán hàng theo giai đoạn, báo người phụ trách khi được giao hoặc đổi giai đoạn | `people.read`, `notify.send` |
+
+```bash
+docker build -t kho-hang examples/kho-hang
+docker run -d --name kho-hang --network bamboo_default -v kho-hang-data:/data -e BAMBOO_API=http://gateway:9080 \
+  -e MODULE_KEY_FILE=/data/key kho-hang
+# Quản trị -> Quản lý chức năng -> Thêm mô-đun ngoài: dán examples/kho-hang/manifest.json, ghi khóa bmk_… vào /data/key
+make test-actions T=tests/test_ung_dung_nganh.py
+```
 
 ## 26. CDR, P.A.R.A, tác tử tự hành động, kịch bản (migration 056, 057, ADR #70–#73)
 

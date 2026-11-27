@@ -250,7 +250,7 @@ nghiệp vụ phức tạp viết thành Hasura Action trong `actions`.
 | Hướng | Nội dung |
 |---|---|
 | Bamboo → mô-đun | `X-Bamboo-Tenant`, `X-Bamboo-Person`, `X-Bamboo-Person-Name`, `X-Bamboo-Timestamp`, `X-Bamboo-Base`, `X-Bamboo-Signature` = HMAC-SHA256(khóa mô-đun, `timestamp\nMETHOD\npath?query\ntenant\nperson`); cookie và `Authorization` của trình duyệt không đi qua |
-| Mô-đun → Bamboo | `GET /ext-api/v1/org-units` (`org.read`), `GET /ext-api/v1/people` (`people.read`), `POST /ext-api/v1/notifications` (`notify.send`); `Authorization: Bearer bmk_…`, `X-Bamboo-Tenant`; 300 yêu cầu/phút |
+| Mô-đun → Bamboo | `GET /ext-api/v1/org-units` (`org.read`), `GET /ext-api/v1/people` (`people.read`), `GET /ext-api/v1/partners` (`partners.read`), `GET /ext-api/v1/items` (`items.read`), `GET /ext-api/v1/goods-receipts` (`receipts.read`), `POST /ext-api/v1/notifications` (`notify.send`); `Authorization: Bearer bmk_…`, `X-Bamboo-Tenant`; 300 yêu cầu/phút |
 | Lỗi | `{message, code}`: `unauthorized` 401, `module-disabled` 403, `forbidden` 403, `not-found` 404 |
 
 **Cô lập:** mô-đun không có tài khoản CSDL, S3 hay Flowable; chỉ thấy dữ liệu qua phạm vi đã khai; trang chạy trong iframe
@@ -260,10 +260,10 @@ sandbox với Content-Security-Policy; xin thêm phạm vi khi cập nhật thì
 
 | Ứng dụng ngành | Dùng lại từ Tầng 1 | Phần riêng của ứng dụng |
 |---|---|---|
-| OMS, WMS (Chip X, Điện thoại X, Gia dụng X) | Tổ chức, danh mục vật tư và nhà cung cấp, đơn hàng nội bộ, chuỗi duyệt, tệp chứng từ, CDC | Tồn kho theo vị trí, lệnh xuất nhập, vận chuyển |
+| OMS, WMS (Chip X, Điện thoại X, Gia dụng X) | Tổ chức, danh mục vật tư và nhà cung cấp, đơn hàng nội bộ, phiếu nhận hàng, chuỗi duyệt, tệp chứng từ, CDC | Tồn kho theo vị trí, lệnh xuất nhập, vận chuyển; mẫu chạy được: `examples/kho-hang` ([ADR #97](#adr-97)) |
 | MES/SCADA | Bản sao số, MQTT, NGSI-LD, sự cố theo ngưỡng, lô sản xuất (`mfg`) | Lệnh sản xuất, OEE, điều khiển thiết bị |
 | EMR (Bệnh viện X, tenant riêng) | Định danh, phân quyền theo dòng, mã hóa trường nhạy cảm, che PII, kiểm toán | Hồ sơ bệnh án, chuẩn FHIR |
-| CRM | Danh mục đối tác, thông báo đa kênh, Trợ lý AI, tìm kiếm | Cơ hội bán hàng, chăm sóc khách hàng |
+| CRM | Danh mục đối tác, thông báo đa kênh, Trợ lý AI, tìm kiếm | Cơ hội bán hàng, chăm sóc khách hàng; mẫu chạy được: `examples/khach-hang` ([ADR #97](#adr-97)) |
 
 Hệ thống nguồn mở tham khảo cho từng nhóm: [Yêu cầu và kiến trúc, mục 7](../tong-quan/01-yeu-cau-va-kien-truc.md).
 
