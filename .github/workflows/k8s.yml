@@ -99,4 +99,5 @@ jobs:
           kubectl -n bamboo get events --sort-by=.lastTimestamp | tail -60 || true
           for pod in $(kubectl -n bamboo get pods -o name); do
             echo "=== $pod"; kubectl -n bamboo logs "$pod" --all-containers --tail=40 || true
+            kubectl -n bamboo logs "$pod" --all-containers --previous --tail=40 2>/dev/null | sed 's/^/[trước] /' || true
           done
