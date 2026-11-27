@@ -56,6 +56,8 @@ type FormValues = {
 };
 
 const LEAD_DAYS = 14;
+/** Earliest effective date the server accepts: today + LEAD_DAYS (inclusive). */
+const earliestDate = () => dayjs().startOf("day").add(LEAD_DAYS, "day");
 
 export const TransferCreate = () => {
   const go = useGo();
@@ -179,13 +181,30 @@ export const TransferCreate = () => {
         <Form.Item
           name="effective_date"
           label={tr("Ngày chuyển")}
-          extra={trf("Phải cách hôm nay ít nhất {0} ngày để chuẩn bị hồ sơ và bàn giao công việc.", [LEAD_DAYS])}
-          rules={[{ required: true }]}
+          extra={trf(
+            "Phải cách hôm nay ít nhất {0} ngày để chuẩn bị hồ sơ và bàn giao công việc — chọn được từ ngày {1}.",
+            [LEAD_DAYS, earliestDate().format("DD-MMM-YYYY")],
+          )}
+          rules={[
+            { required: true },
+            {
+              validator: (_, v?: dayjs.Dayjs) =>
+                !v || !v.isBefore(earliestDate(), "day")
+                  ? Promise.resolve()
+                  : Promise.reject(
+                      new Error(trf("Ngày chuyển sớm nhất là {0}", [earliestDate().format("DD-MMM-YYYY")])),
+                    ),
+            },
+          ]}
         >
           <DatePicker
             style={{ width: "100%" }}
             format="DD-MMM-YYYY"
-            disabledDate={(d) => d.isBefore(dayjs().add(LEAD_DAYS, "day").startOf("day"))}
+            placeholder={tr("Chọn ngày chuyển")}
+            // Open on the first selectable date instead of a month where every day is disabled.
+            defaultPickerValue={earliestDate()}
+            disabledDate={(d) => d.isBefore(earliestDate(), "day")}
+            showToday={false}
           />
         </Form.Item>
         <Form.Item

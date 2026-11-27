@@ -115,35 +115,42 @@ const FileCardGrid = ({
   onDelete,
 }: { files: DriveFile[]; onOpen: (f: DriveFile) => void } & DeleteProps) => (
   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-    {files.map((f) => (
-      <div key={f.id} className="relative">
-        <button
-          type="button"
-          onClick={() => onOpen(f)}
-          disabled={f.scan !== "clean"}
-          title={f.scan === "clean" ? trf("Tải {0}", [f.name]) : undefined}
-          className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 text-left hover:border-bamboo-200 hover:bg-bamboo-50/30 disabled:cursor-not-allowed"
-        >
-          <div className="flex items-start justify-between gap-2">
-            <FileTypeBadge name={f.name} size="lg" />
-            <ScanStatus result={f.scan} />
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-[13px] font-medium text-ink" title={f.name}>
-              {f.name}
+    {files.map((f) => {
+      const deletable = canDelete(f, me);
+      return (
+        <div key={f.id} className="relative min-w-0">
+          <button
+            type="button"
+            onClick={() => onOpen(f)}
+            disabled={f.scan !== "clean"}
+            title={f.scan === "clean" ? trf("Tải {0}", [f.name]) : undefined}
+            className="flex h-full w-full min-w-0 flex-col gap-3 rounded-xl border border-line p-3 text-left hover:border-bamboo-200 hover:bg-bamboo-50/30 disabled:cursor-not-allowed"
+          >
+            <div className="flex w-full min-w-0 items-start justify-between gap-2">
+              <FileTypeBadge name={f.name} size="lg" />
+              <ScanStatus result={f.scan} />
             </div>
-            <div className="mt-0.5 truncate pr-8 text-[11.5px] text-muted">
-              {f.owner} · {f.updatedLabel} · {formatBytes(f.bytes)}
+            {/* Right padding keeps the text clear of the delete button pinned bottom-right. */}
+            <div className={cn("w-full min-w-0", deletable && "pr-9")}>
+              <div className="truncate text-[13px] font-medium text-ink" title={f.name}>
+                {f.name}
+              </div>
+              <div className="mt-0.5 truncate text-[11.5px] text-muted" title={f.owner}>
+                {f.owner}
+              </div>
+              <div className="truncate text-[11.5px] text-muted">
+                {f.updatedLabel} · {formatBytes(f.bytes)}
+              </div>
             </div>
-          </div>
-        </button>
-        {canDelete(f, me) && (
-          <div className="absolute bottom-2 right-2">
-            <DeleteButton file={f} onDelete={onDelete} />
-          </div>
-        )}
-      </div>
-    ))}
+          </button>
+          {deletable && (
+            <div className="absolute bottom-2.5 right-2.5">
+              <DeleteButton file={f} onDelete={onDelete} />
+            </div>
+          )}
+        </div>
+      );
+    })}
   </div>
 );
 

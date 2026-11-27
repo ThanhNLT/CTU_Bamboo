@@ -135,7 +135,7 @@ export const NAV_GROUPS: NavGroup[] = [
         to: "/h/transfer",
         icon: Shuffle,
         module: "hr",
-        access: { resource: "hr_transfer_request", action: "list" },
+        // No permission gate: every employee may file a transfer request for themself.
       },
       { key: "decisions", label: tr("Quyết định nhân sự"), to: "/h/decisions", icon: ScrollText, module: "hr" },
     ],
