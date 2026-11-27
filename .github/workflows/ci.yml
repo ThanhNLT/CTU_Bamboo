@@ -115,7 +115,7 @@ jobs:
       - name: Kiểm thử cổng API (token tại biên, WAF, chặn dịch vụ nội bộ, giới hạn tần suất)
         run: tools/ci/gateway-smoke.sh
       - uses: actions/upload-artifact@v7
-        if: failure()
+        if: failure() || cancelled()
         with:
           name: playwright-report
           path: tests/e2e/playwright-report
