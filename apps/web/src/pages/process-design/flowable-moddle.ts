@@ -80,7 +80,7 @@ export const newProcessXml = (key: string, name: string) => `<?xml version="1.0"
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
   xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn"
-  targetNamespace="https://github.com/ThanhNLT/Bamboo/bpmn">
+  targetNamespace="https://github.com/ThanhNLT/CTU_Bamboo/bpmn">
   <process id="${key}" name="${name.replace(/[<&"]/g, "")}" isExecutable="true">
     <startEvent id="start" name="${tr("Bắt đầu")}"/>
     <sequenceFlow id="toReview" sourceRef="start" targetRef="review"/>
