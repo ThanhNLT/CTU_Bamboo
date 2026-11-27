@@ -62,7 +62,10 @@ if [ -n "$tls" ]; then
     sed 's/^/      /' "$tls/gateway.crt"
     echo "    key: |"
     sed 's/^/      /' "$tls/gateway.key"
-    awk '
+    # CA nội bộ khai thẳng trong upstream (tls.ca_certs): proxy_ssl_trusted_certificate toàn cục không được áp dụng khi
+    # kiểm chứng chỉ upstream theo từng yêu cầu, Keycloak trả 502 "self-signed certificate in certificate chain".
+    awk -v ca="$tls/ca.crt" '
+      BEGIN { while ((getline line < ca) > 0) pem = pem "            " line "\n" }
       /^ *"[^"]*": 1 # BAMBOO_MTLS / {
         indent = substr($0, 1, index($0, "\"") - 1)
         n = split($0, part, "# BAMBOO_MTLS ")
@@ -71,6 +74,9 @@ if [ -n "$tls" ]; then
         print "    tls:"
         print "      client_cert_id: gateway-client"
         print "      verify: true"
+        print "      ca_certs:"
+        print "        - |"
+        printf "%s", pem
         next
       }
       { sub(/uri: http:\/\/actions:8000\/auth\/gateway$/, "uri: http://127.0.0.1:9080/__bamboo/auth-gateway"); print }

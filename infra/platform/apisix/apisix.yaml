@@ -135,6 +135,8 @@ routes:
     plugins:
       proxy-rewrite:
         uri: /auth/gateway
+        # Host (cũng là tên kiểm chứng chỉ upstream) là "actions" như SAN của chứng chỉ, không phải 127.0.0.1.
+        host: actions
 
   - id: healthz
     uri: /healthz

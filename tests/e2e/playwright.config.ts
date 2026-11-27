@@ -26,6 +26,8 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 20_000 },
   retries: process.env.CI ? 1 : 0,
+  // Lỗi chung (đăng nhập, cổng API) làm mọi test hết giờ: dừng sớm để job kịp in lỗi và tải báo cáo trước giới hạn 90 phút.
+  maxFailures: process.env.CI ? 6 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8000",
