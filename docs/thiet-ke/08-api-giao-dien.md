@@ -87,6 +87,8 @@ Nghiệp vụ nhiều bước đi qua 137 Hasura Action (dịch vụ `actions`, 
 |---|---|---|
 | Phê duyệt, mua sắm | `process_state`, `get_purchase_request_pdf`, `proposed_partners` | `submit_purchase_request`, `act_on_task`, `cancel_purchase_request`, `adopt_proposed_partner` |
 | Đơn hàng nội bộ | – | `confirm_ic_order`, `reject_ic_order`, `cancel_ic_order` |
+| Nhận hàng & công nợ ([ADR #96](#adr-96)) | `proc_purchase_request` (`goods_receipts`, `invoices`, `purchase_request_items.goods_receipt_items`), `fin_invoice` (+ `payments`), `fin_netting` | `post_goods_receipt`, `record_invoice`, `void_invoice`, `record_payment`, `netting_overview`, `run_netting` |
+| Hạn mức duyệt | – | `approval_rules`, `save_approval_rules` |
 | Nhân sự | `transfer_target_units`, `transfer_tenants`, `personnel_decisions`, `personnel_decision_context`, `get_personnel_decision_pdf` | `submit_onboarding_request`, `cancel_onboarding_request`, `save_onboarding_private`, `reveal_onboarding_private`, `retry_onboarding_account`, `create_person_accounts`, `create_transfer_request`, `submit_transfer_request`, `cancel_transfer_request`, `choose_transfer_position`, `create_transfer_out`, `submit_transfer_out`, `cancel_transfer_out`, `choose_transfer_in_position`, `issue_personnel_decision` |
 | Tệp, Ổ đĩa, tìm kiếm | `get_download_url`, `drive_usage`, `search_documents` | `get_upload_url`, `confirm_upload`, `delete_attachment` |
 | Thư viện tri thức | `kb_library` | `submit_kb_document`, `cancel_kb_document`, `retire_kb_document`, `kb_reindex` |

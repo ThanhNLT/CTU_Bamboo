@@ -49,7 +49,18 @@ export const myPermissions = (): Promise<Set<string>> => {
 
 const RULES: Record<string, Partial<Record<string, string | string[]>>> = {
   audit_log: { list: "audit.read" },
-  admin_area: { list: ["core.org.manage", "core.permission.manage", "core.module.manage", "mdm.manage", "audit.read"] },
+  admin_area: {
+    list: [
+      "core.org.manage",
+      "core.permission.manage",
+      "core.module.manage",
+      "mdm.manage",
+      "audit.read",
+      "wf.approval_rule.manage",
+    ],
+  },
+  admin_approval_rules: { list: "wf.approval_rule.manage" },
+  fin_payables: { list: ["fin.payable.read", "fin.payable.manage", "proc.goods_receipt.create"] },
   admin_modules: { list: "core.module.manage" },
   ai_agents: { list: "core.ai.manage" },
   admin_company: { list: ["core.org.manage", "core.permission.manage", "core.module.manage"] },

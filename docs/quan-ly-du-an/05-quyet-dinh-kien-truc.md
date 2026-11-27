@@ -1076,6 +1076,30 @@ Mỗi quyết định ghi: ngày, quyết định, lý do, phương án đã lo�
   Job (`migrate`, `bootstrap`) chạy lại khi Argo CD thay bằng bản mới (`Replace=true`), chưa có sync wave; CI chỉ dựng
   phần lõi (không AI, OCR, Trino, Kafka, IoT).
 
+(adr-96)=
+## ADR #96: Nhận hàng, hóa đơn, thanh toán và đối trừ công nợ nội bộ nằm trong CSDL; quy tắc hạn mức duyệt sửa trên giao diện
+
+- **Ngày:** 27/11/2026
+- **Quyết định:** Sau khi đề nghị mua sắm được duyệt, kho ghi phiếu nhận hàng (`proc.goods_receipt`, số `GR-…`) theo từng
+  dòng, không nhận quá số lượng đề nghị; kế toán ghi hóa đơn nhà cung cấp (`fin.invoice`, `INV-…`) và đối chiếu ba bên
+  với giá trị đã nhận (khớp khi tổng hóa đơn của đề nghị không vượt giá trị nhận quá 0,5%; nhận thêm hàng thì hóa đơn
+  chưa trả tự khớp lại); chỉ hóa đơn khớp mới được thanh toán (`fin.payment`, `PAY-…`, chuyển khoản hoặc tiền mặt, không
+  vượt số còn nợ). Hóa đơn của nhà cung cấp nội bộ (đối tác gắn đơn vị trong tập đoàn) mang công ty bán; `fin.run_netting`
+  đối trừ hai chiều giữa hai pháp nhân: phần nợ chéo nhỏ hơn ghi thành thanh toán `NETTING` vào các hóa đơn đến hạn sớm
+  nhất của cả hai bên (`fin.netting`, `NET-…`), cần quyền ở cả hai công ty. Quyền mới: `proc.goods_receipt.create`,
+  `fin.payable.read`, `fin.payable.manage`, `wf.approval_rule.manage`. `wf.replace_approval_rules` thay quy tắc hạn mức
+  của một quy trình: quy tắc cũ kết thúc hiệu lực, quy tắc mới bắt đầu ngay, bắt buộc có quy tắc từ 0 đồng. Giao diện:
+  `/p/payables` (Nhận hàng & công nợ), `/admin/approval-rules` (Hạn mức duyệt); migration 067.
+- **Lý do:** Như chuỗi duyệt, ràng buộc tiền nằm trong CSDL nên mọi đường ghi (Action, API, dữ liệu nạp) chịu cùng kiểm tra
+  và nhật ký kiểm toán chuỗi hash; đối chiếu ba bên chặn trả tiền cho hàng chưa về; đối trừ nội bộ giảm dòng tiền chuyển
+  qua lại giữa các công ty cùng tập đoàn. Quy tắc hạn mức là dữ liệu có hiệu lực theo thời gian nên chứng từ cũ vẫn tra
+  được chuỗi duyệt đã áp dụng.
+- **Đã loại:** Mô-đun kế toán đầy đủ (sổ cái kép, hạch toán) – ngoài phạm vi nền tảng, để ứng dụng ngành Tầng 3 hoặc phần
+  mềm kế toán nhận dữ liệu qua `/api/v1` và CDC; sửa trực tiếp bảng `wf.approval_rule` qua Hasura – không giữ được lịch sử và
+  dễ để trống khoảng giá trị.
+- **Giới hạn hiện tại:** Hóa đơn gắn một đề nghị; chưa có thuế GTGT tách dòng, trả trước, ghi nợ/ghi có; đối trừ chỉ giữa
+  hai pháp nhân trong cùng tenant; giao diện sửa quy tắc mặc định của tenant (chưa sửa quy tắc theo đơn vị, nhóm hàng).
+
 (adr-mau)=
 ## Mẫu cho quyết định mới
 

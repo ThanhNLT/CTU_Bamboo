@@ -200,8 +200,7 @@ Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp the
 
 - **Bảo mật:** mTLS cho kết nối tới PostgreSQL, Kafka, SeaweedFS.
 - **Vận hành:** Kubernetes nhiều node (storage ReadWriteMany, service mesh cho mTLS), External Secrets từ OpenBao.
-- **Nghiệp vụ:** nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; giao diện sửa quy tắc hạn mức duyệt; dịch thông báo
-  lỗi do máy chủ trả về sang tiếng Anh.
+- **Nghiệp vụ:** thuế GTGT tách dòng, trả trước, ghi nợ/ghi có trên hóa đơn; sửa quy tắc hạn mức theo đơn vị, nhóm hàng.
 - **Lakehouse:** chính sách vòng đời và xóa dữ liệu.
 - **Tầng 3:** ứng dụng ngành (OMS, WMS, MES/SCADA, EMR, CRM) cắm vào nền tảng.
 
@@ -263,10 +262,11 @@ flowchart LR
 | | Ứng dụng web cho thiết bị di động: cài lên màn hình chính, thanh điều hướng dưới, thông báo trên thiết bị | (mọi trang) |
 | [P] Quy trình số | **Đề nghị mua sắm**: lập, dòng hàng, đính kèm, gửi duyệt, duyệt / trả về / từ chối, hủy, bình luận, in phiếu, sơ đồ quy trình | `/p/documents` |
 | | Đơn hàng nội bộ: xác nhận kèm lô, từ chối, hủy | `/p/ic-orders` |
+| | Nhận hàng & công nợ: phiếu nhận hàng, hóa đơn đối chiếu ba bên, thanh toán, đối trừ công nợ nội bộ | `/p/payables` |
 | | Hồ sơ chứng từ | `/p/records` |
 | | Thiết kế quy trình BPMN: vẽ, kiểm lỗi, chạy thử, phát hành, yêu cầu sửa, chạy tự động | `/p/process` |
 | | Dự án và kế hoạch: văn bản kế hoạch chi tiết, WBS, phụ thuộc tự dời lịch, sơ đồ Gantt, đường găng, đường cơ sở, báo cáo tiến độ theo kỳ (in PDF) | `/p/projects` |
-| | Quản trị: cơ cấu tổ chức, người dùng, vai trò và phân quyền, danh mục và dữ liệu chủ (có nhập Excel) | `/admin/org`, `/admin/people`, `/admin/roles`, `/admin/catalog` |
+| | Quản trị: cơ cấu tổ chức, người dùng, vai trò và phân quyền, danh mục và dữ liệu chủ (có nhập Excel), hạn mức duyệt | `/admin/org`, `/admin/people`, `/admin/roles`, `/admin/catalog`, `/admin/approval-rules` |
 | [D] Dữ liệu số | Trung tâm điều hành thời gian thực kèm bản đồ cơ sở (quy trình, sản xuất, bệnh viện, chất lượng) | `/d/ops` |
 | | Dịch vụ dữ liệu trên Lakehouse | `/d/services` |
 | | Bản sao số phòng sạch: chuỗi đo, ngưỡng, sự cố, ghi nhận sự cố | `/d/twin` |

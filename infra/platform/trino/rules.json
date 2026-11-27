@@ -404,6 +404,26 @@
       "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
       "catalog": "lakehouse",
       "schema": "silver",
+      "table": "proc_goods_receipt",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
+      "table": "proc_goods_receipt_item",
+      "privileges": [
+        "SELECT"
+      ],
+      "filter": "\"tenant_id\" = CAST(substr(current_user, 3) AS uuid)"
+    },
+    {
+      "user": "t_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+      "catalog": "lakehouse",
+      "schema": "silver",
       "table": "proc_purchase_order",
       "privileges": [
         "SELECT"

@@ -44,8 +44,10 @@ SCHEMAS = (
     "chat",
     "cal",
     "pm",
+    "fin",
 )
 HIDDEN = {
+    ("proc", "v_request_receipt"),
     ("wf", "flow_sync"),
     ("wf", "v_flow_state"),
     ("core", "doc_sequence"),
@@ -115,6 +117,9 @@ CAN_READ = {
     ("hr", "transfer_group"): ("hr", "transfer_group_can_read"),
     ("ic", "ic_order"): ("ic", "ic_order_can_read"),
     ("proc", "purchase_order"): ("proc", "purchase_order_can_read"),
+    ("proc", "goods_receipt"): ("proc", "goods_receipt_can_read"),
+    ("fin", "invoice"): ("fin", "invoice_can_read"),
+    ("fin", "netting"): ("fin", "netting_can_read"),
     ("collab", "kb_document"): ("collab", "kb_document_can_read"),
     ("chat", "conversation"): ("chat", "conversation_can_read"),
     ("cal", "event"): ("cal", "event_can_read"),
@@ -219,13 +224,23 @@ SELECT_FILTER = {
     ("proc", "purchase_request_item"): {"_and": [TENANT, {"request": {"can_read": {"_eq": True}}}]},
     ("ic", "ic_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
     ("proc", "purchase_order_item"): {"_and": [TENANT, {"order": {"can_read": {"_eq": True}}}]},
+    ("proc", "goods_receipt_item"): {"_and": [TENANT, {"receipt": {"can_read": {"_eq": True}}}]},
+    ("fin", "payment"): {"_and": [TENANT, {"invoice": {"can_read": {"_eq": True}}}]},
 }
 
 MODULE_TABLES = {
     **{
         ("proc", t): "procurement"
-        for t in ("purchase_request", "purchase_request_item", "purchase_order", "purchase_order_item")
+        for t in (
+            "purchase_request",
+            "purchase_request_item",
+            "purchase_order",
+            "purchase_order_item",
+            "goods_receipt",
+            "goods_receipt_item",
+        )
     },
+    **{("fin", t): "procurement" for t in ("invoice", "payment", "netting")},
     **{("ic", t): "ic" for t in ("ic_order", "ic_order_item")},
     **{
         ("hr", t): "hr"
@@ -375,6 +390,83 @@ def _action(
         "permissions": [{"role": r} for r in roles],
         "comment": comment,
     }
+
+
+def _payable_actions() -> list[dict]:
+    """Nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ (mô-đun `procurement`), quy tắc hạn mức duyệt (ADR #96)."""
+    roles = [ROLE, ADMIN_ROLE]
+    return [
+        _action(
+            "post_goods_receipt",
+            "mutation",
+            [("request_id", "uuid!"), ("lines", "jsonb!"), ("note", "String")],
+            "FinDocResult!",
+            roles,
+            "Ghi phiếu nhận hàng cho đề nghị đã duyệt: [{request_item_id, quantity}], không nhận quá số còn lại",
+        ),
+        _action(
+            "record_invoice",
+            "mutation",
+            [
+                ("request_id", "uuid!"),
+                ("supplier_invoice_no", "String!"),
+                ("invoice_date", "date!"),
+                ("amount", "numeric!"),
+                ("due_date", "date"),
+            ],
+            "FinDocResult!",
+            roles,
+            "Ghi hóa đơn nhà cung cấp của đề nghị đã duyệt, đối chiếu với giá trị hàng đã nhận",
+        ),
+        _action(
+            "void_invoice",
+            "mutation",
+            [("invoice_id", "uuid!")],
+            "FinDocResult!",
+            roles,
+            "Hủy hóa đơn chưa thanh toán (ghi nhầm)",
+        ),
+        _action(
+            "record_payment",
+            "mutation",
+            [("invoice_id", "uuid!"), ("amount", "numeric!"), ("method", "String!"), ("reference", "String")],
+            "FinDocResult!",
+            roles,
+            "Ghi thanh toán (TRANSFER, CASH) cho hóa đơn đã khớp hàng nhận, không quá số còn nợ",
+        ),
+        _action(
+            "netting_overview",
+            "query",
+            [],
+            "FinData!",
+            roles,
+            "Pháp nhân và công nợ nội bộ hai chiều còn mở giữa từng cặp công ty",
+        ),
+        _action(
+            "run_netting",
+            "mutation",
+            [("company_a", "uuid!"), ("company_b", "uuid!"), ("note", "String")],
+            "FinDocResult!",
+            roles,
+            "Đối trừ công nợ nội bộ giữa hai công ty (cần quyền fin.payable.manage ở cả hai)",
+        ),
+        _action(
+            "approval_rules",
+            "query",
+            [("process_code", "String!")],
+            "FinData!",
+            roles,
+            "Quy tắc hạn mức duyệt đang hiệu lực của một quy trình, loại đơn vị, quyền sửa",
+        ),
+        _action(
+            "save_approval_rules",
+            "mutation",
+            [("process_code", "String!"), ("rules", "jsonb!")],
+            "FinData!",
+            roles,
+            "Thay quy tắc hạn mức duyệt của một quy trình (quy tắc cũ hết hiệu lực, giữ lịch sử)",
+        ),
+    ]
 
 
 def _project_actions() -> list[dict]:
@@ -1126,6 +1218,7 @@ def build(conn: psycopg.Connection) -> dict:
                 "Người được mời nhận lời, từ chối hoặc chưa chắc (ADR #65)",
             ),
             *_project_actions(),
+            *_payable_actions(),
             _action(
                 "semantic_catalog",
                 "query",
@@ -2543,6 +2636,14 @@ def build(conn: psycopg.Connection) -> dict:
                 {
                     "name": "TransferUnits",
                     "fields": [{"name": "units", "type": "json!"}],
+                },
+                {
+                    "name": "FinDocResult",
+                    "fields": [{"name": "id", "type": "uuid!"}, {"name": "doc_no", "type": "String!"}],
+                },
+                {
+                    "name": "FinData",
+                    "fields": [{"name": "data", "type": "json!"}],
                 },
                 {
                     "name": "IcOrderActionResult",
