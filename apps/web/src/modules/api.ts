@@ -82,6 +82,9 @@ export const SCOPE_LABEL: Record<string, string> = {
   "org.read": tr("Đọc cơ cấu tổ chức (đơn vị, vị trí)"),
   "people.read": tr("Đọc danh sách nhân sự (họ tên, mã nhân viên, vị trí)"),
   "notify.send": tr("Gửi thông báo cho người trong công ty"),
+  "partners.read": tr("Đọc danh mục đối tác (nhà cung cấp, công ty nội bộ)"),
+  "items.read": tr("Đọc danh mục vật tư, hàng hóa"),
+  "receipts.read": tr("Đọc phiếu nhận hàng của đề nghị mua sắm"),
 };
 
 export type ExtRegistered = {
