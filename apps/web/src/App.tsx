@@ -104,6 +104,10 @@ const loadDigitalTwin = () => import("./pages/digital-twin");
 const DigitalTwinPage = lazyNamed(loadDigitalTwin, "DigitalTwinPage");
 const loadDataLineage = () => import("./pages/data-lineage");
 const DataLineagePage = lazyNamed(loadDataLineage, "DataLineagePage");
+const loadPayables = () => import("./pages/payables");
+const PayablesPage = lazyNamed(loadPayables, "PayablesPage");
+const loadApprovalRules = () => import("./pages/approval-rules");
+const ApprovalRulesPage = lazyNamed(loadApprovalRules, "ApprovalRulesPage");
 const loadLedger = () => import("./pages/ledger");
 const LedgerPage = lazyNamed(loadLedger, "LedgerPage");
 const loadAiAssistant = () => import("./pages/ai-assistant");
@@ -199,6 +203,7 @@ function App() {
                   { name: "digital_twin", list: "/d/twin", meta: { label: tr("Bản sao số") } },
                   { name: "data_lineage", list: "/d/lineage", meta: { label: tr("Phả hệ dữ liệu") } },
                   { name: "ledger", list: "/d/ledger", meta: { label: tr("Sổ cái") } },
+                  { name: "fin_payables", list: "/p/payables", meta: { label: tr("Nhận hàng & công nợ") } },
                   { name: "api_portal", list: "/d/api", meta: { label: tr("Cổng dịch vụ API") } },
                   { name: "assistant", list: "/i/assistant", meta: { label: tr("Trợ lý đa năng") } },
                   { name: "ocr", list: "/i/ocr", meta: { label: tr("Nhập liệu OCR") } },
@@ -260,6 +265,7 @@ function App() {
                     meta: { label: tr("Thông báo ngoài ứng dụng") },
                   },
                   { name: "admin_catalog", list: "/admin/catalog", meta: { label: tr("Danh mục & dữ liệu chủ") } },
+                  { name: "admin_approval_rules", list: "/admin/approval-rules", meta: { label: tr("Hạn mức duyệt") } },
                   { name: "admin_modules", list: "/admin/modules", meta: { label: tr("Quản lý chức năng") } },
                   { name: "admin_company", list: "/admin/company", meta: { label: tr("Thông tin công ty") } },
                   { name: "collab_notification", meta: { hide: true } },
@@ -387,6 +393,14 @@ function App() {
                         element={
                           <RequireModule module="project">
                             <ProjectPage />
+                          </RequireModule>
+                        }
+                      />
+                      <Route
+                        path="/p/payables"
+                        element={
+                          <RequireModule module="procurement">
+                            <PayablesPage />
                           </RequireModule>
                         }
                       />
@@ -525,6 +539,7 @@ function App() {
                       <Route path="/admin/ops" element={<OpsPage />} />
                       <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
                       <Route path="/admin/catalog" element={<CatalogPage />} />
+                      <Route path="/admin/approval-rules" element={<ApprovalRulesPage />} />
                       <Route path="/admin/modules" element={<ModulesPage />} />
                       <Route path="/admin/company" element={<CompanyPage />} />
                       <Route path="/x/:code/*" element={<ExternalModulePage />} />
