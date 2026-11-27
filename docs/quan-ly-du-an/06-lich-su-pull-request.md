@@ -142,7 +142,7 @@ hữu sang ThanhNLT để giữ nguyên PR, issue và bình luận gốc.
 | 135 | Add test scenario document and adjust compose files | `chore/compose-kich-ban-kiem-thu` | Đã merge 24/11/2026, `221ad82` |
 | 136 | Add semantic search to the Search page | `update/semantic-search` | Đang mở lúc chuyển kho → #3 ở kho mới |
 | 137 | Use Qwen3 4B Instruct as default chat model and f16 KV cache on Mac | `update/instruct-chat-model` | Đang mở lúc chuyển kho → #4 ở kho mới |
-| 138 | Try to fix the e2e/playwright bug | `claude/e2e-dependencies-install-add490` | Đang mở lúc chuyển kho → #1 (đã merge) ở kho mới |
+| 138 | Try to fix the e2e/playwright bug | `fix/lakehouse-cold-start` | Đang mở lúc chuyển kho → #1 (đã merge) ở kho mới |
 | 139 | Rebuild prebuilt GHCR images and speed up image builds | `update/ghcr-images` | Đã merge 26/11/2026, `132f21b` → #5 ở kho mới |
 | 140 | Fix stale Playwright tests and raise the e2e job time limit | `update/e2e-fixes` | Đã merge 26/11/2026, `2894111` |
 | 141 | Trace requests from the API gateway through Hasura to actions | `update/gateway-tracing` | Đang mở lúc chuyển kho → #6 ở kho mới |
