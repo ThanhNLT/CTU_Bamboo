@@ -3538,4 +3538,7 @@ export const EN_PAGES: Record<string, string> = {
   "Thêm quy tắc": "Add rule",
   "Đề nghị mua sắm, nhà cung cấp đề xuất, phiếu in, nhận hàng, hóa đơn, thanh toán, đối trừ công nợ nội bộ; quy trình duyệt chạy trên Flowable":
     "Purchase requests, proposed suppliers, printable forms, goods receipts, invoices, payments, intercompany netting; the approval process runs on Flowable",
+  "Đọc danh mục đối tác (nhà cung cấp, công ty nội bộ)": "Read the partner catalog (suppliers, group companies)",
+  "Đọc danh mục vật tư, hàng hóa": "Read the item catalog",
+  "Đọc phiếu nhận hàng của đề nghị mua sắm": "Read goods receipts of purchase requests",
 };

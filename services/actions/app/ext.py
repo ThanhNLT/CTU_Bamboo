@@ -59,6 +59,9 @@ SCOPES = {
     "org.read": "Đọc cơ cấu tổ chức (đơn vị, vị trí)",
     "people.read": "Đọc danh sách nhân sự (họ tên, mã nhân viên, vị trí)",
     "notify.send": "Gửi thông báo cho người trong công ty",
+    "partners.read": "Đọc danh mục đối tác (nhà cung cấp, công ty nội bộ)",
+    "items.read": "Đọc danh mục vật tư, hàng hóa",
+    "receipts.read": "Đọc phiếu nhận hàng của đề nghị mua sắm",
 }
 _CODE = re.compile(r"^x_[a-z0-9_]{2,30}$")
 _PATH = re.compile(r"^/[A-Za-z0-9._~!$&'()*+,;=:@/%-]*$")
@@ -476,6 +479,70 @@ def router(pool_of: Callable[[], ConnectionPool], settings: config.Settings) -> 
             return [dict(zip(keys, (str(r[0]), r[1], r[2], r[3], r[4] and str(r[4])), strict=True)) for r in rows]
 
         return await _run(request, "people.read", work)
+
+    @api.get("/ext-api/v1/partners")
+    async def partners(request: Request):
+        def work(conn, _code, tenant):
+            rows = conn.execute(
+                """SELECT id, code, name, tax_code, internal_unit_id IS NOT NULL FROM mdm.partner
+                   WHERE tenant_id = %s AND is_active ORDER BY name LIMIT 2000""",
+                (tenant,),
+            )
+            keys = ("id", "code", "name", "tax_code", "internal")
+            return [dict(zip(keys, (str(r[0]), r[1], r[2], r[3], r[4]), strict=True)) for r in rows]
+
+        return await _run(request, "partners.read", work)
+
+    @api.get("/ext-api/v1/items")
+    async def items(request: Request):
+        def work(conn, _code, tenant):
+            rows = conn.execute(
+                """SELECT id, code, name, uom, category_code, ref_price FROM mdm.item
+                   WHERE tenant_id = %s AND is_active ORDER BY code LIMIT 5000""",
+                (tenant,),
+            )
+            keys = ("id", "code", "name", "uom", "category", "ref_price")
+            return [dict(zip(keys, (str(r[0]), r[1], r[2], r[3], r[4], r[5] and str(r[5])), strict=True)) for r in rows]
+
+        return await _run(request, "items.read", work)
+
+    @api.get("/ext-api/v1/goods-receipts")
+    async def goods_receipts(request: Request, since: str = ""):
+        """Phiếu nhận hàng (mới nhất trước), kèm dòng: mã vật tư nếu dòng đề nghị gắn danh mục. `since`: ISO 8601."""
+
+        def work(conn, _code, tenant):
+            try:
+                rows = conn.execute(
+                    """SELECT g.id, g.doc_no, g.received_at, r.doc_no, u.id, u.name,
+                              coalesce(jsonb_agg(jsonb_build_object(
+                                  'item_code', it.code, 'description', i.description, 'uom', i.uom,
+                                  'quantity', gi.quantity, 'unit_price', i.unit_price) ORDER BY i.line_no), '[]')
+                       FROM proc.goods_receipt g
+                       JOIN proc.purchase_request r ON r.id = g.request_id
+                       JOIN core.org_unit u ON u.id = g.org_unit_id
+                       JOIN proc.goods_receipt_item gi ON gi.receipt_id = g.id
+                       JOIN proc.purchase_request_item i ON i.id = gi.request_item_id
+                       LEFT JOIN mdm.item it ON it.id = i.item_id
+                       WHERE g.tenant_id = %s AND (%s = '' OR g.received_at > %s::timestamptz)
+                       GROUP BY g.id, r.doc_no, u.id, u.name
+                       ORDER BY g.received_at DESC LIMIT 500""",
+                    (tenant, since, since or None),
+                )
+            except psycopg.errors.InvalidDatetimeFormat as exc:
+                raise ActionError("since phải là thời điểm ISO 8601") from exc
+            keys = ("id", "doc_no", "received_at", "request_doc_no", "org_unit_id", "org_unit", "lines")
+            return [
+                dict(
+                    zip(
+                        keys,
+                        (str(r[0]), r[1], r[2].isoformat(), r[3], str(r[4]), r[5], r[6]),
+                        strict=True,
+                    )
+                )
+                for r in rows
+            ]
+
+        return await _run(request, "receipts.read", work)
 
     @api.post("/ext-api/v1/notifications")
     async def notify(request: Request):

@@ -202,7 +202,8 @@ Chưa có trong phiên bản hiện tại, là hướng phát triển tiếp the
 - **Vận hành:** Kubernetes nhiều node (storage ReadWriteMany, service mesh cho mTLS), External Secrets từ OpenBao.
 - **Nghiệp vụ:** thuế GTGT tách dòng, trả trước, ghi nợ/ghi có trên hóa đơn; sửa quy tắc hạn mức theo đơn vị, nhóm hàng.
 - **Lakehouse:** chính sách vòng đời và xóa dữ liệu.
-- **Tầng 3:** ứng dụng ngành (OMS, WMS, MES/SCADA, EMR, CRM) cắm vào nền tảng.
+- **Tầng 3:** ứng dụng ngành đầy đủ (OMS, MES/SCADA, EMR); hiện có hai mẫu chạy được là Kho hàng (`examples/kho-hang`) và
+  Khách hàng (`examples/khach-hang`).
 
 Giới hạn hiện tại khác: cách ly tenant là cách ly logic trong cùng một PostgreSQL (khóa kép `tenant_id`, phân quyền theo dòng),
 không phải CSDL riêng; quy trình tự thiết kế chưa thay luồng duyệt đang chạy; OCR rút trường bằng quy tắc nên mẫu lạ phải nhập
