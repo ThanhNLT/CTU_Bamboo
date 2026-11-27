@@ -181,6 +181,12 @@ spec:
               name: bamboo-settings
               key: ORG_SIGN_CSC_URL
               optional: true
+        - name: ORG_SIGN_ENTITIES
+          valueFrom:
+            secretKeyRef:
+              name: bamboo-settings
+              key: ORG_SIGN_ENTITIES
+              optional: true
         - name: ORG_SIGN_LOCATION
           valueFrom:
             secretKeyRef:
